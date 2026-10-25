@@ -169,6 +169,10 @@ struct Fixture {
         SendMessageW(item, BM_CLICK, 0, 0); pump(host);
     }
     void click(std::size_t block, int part) { click(id(block,part)); }
+    bool fullscreen() const { return !(GetWindowLongPtrW(control(110),GWL_STYLE)&WS_VISIBLE); }
+    void escape() {
+        PostMessageW(view,WM_KEYDOWN,VK_ESCAPE,1);pump(host);
+    }
     void replace(std::size_t block, int part, std::string_view value) {
         const auto item = control(block,part); require(IsWindowEnabled(item), "Cannot edit a locked answer");
         const auto source = wide(value);
@@ -552,8 +556,8 @@ void laboratory_interface_parity(){
         fixture.click(0,35);
         require(fixture.control(0,10)==editor&&fixture.text(0,10)==original&&!(GetWindowLongPtrW(editor,GWL_STYLE)&ES_AUTOHSCROLL),"The direct wrap icon recreated or changed the source instead of wrapping it");
         {PopupCapture capture(fixture.view);fixture.click(0,36);capture.verified();require(capture.captions==std::vector<std::string>{"MSVC C++20 · x64"},"The laboratory compiler control advertised an unavailable backend");}
-        fixture.click(0,20);require(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE,"The standalone editor did not enter real fullscreen");SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);
-        require(!(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&fixture.text(0,10)==original,"Escape from laboratory fullscreen changed the draft or retained an exit overlay");
+        fixture.click(0,20);require(fixture.fullscreen(),"The standalone editor did not enter real fullscreen");SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);
+        require(!fixture.fullscreen()&&fixture.text(0,10)==original,"Escape from laboratory fullscreen changed the draft or retained an exit overlay");
         CHARRANGE personal_selection{1,3};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&personal_selection));fixture.reopen();
         CHARRANGE restored_selection{};SendMessageW(fixture.control(0,10),EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored_selection));
         require(fixture.text(0,10)==original&&!(GetWindowLongPtrW(fixture.control(0,10),GWL_STYLE)&ES_AUTOHSCROLL)&&restored_selection.cpMin==1&&restored_selection.cpMax==3,"Reopening lost the laboratory draft, wrapping preference or restored its cursor to the default");
@@ -575,7 +579,7 @@ void back_navigation_tests(){
     ShowWindow(fixture.host,SW_SHOWNOACTIVATE);fixture.replace(0,10,fixture.text(0,10)+"// borrador conservado\n");const auto editor=fixture.control(0,10);const auto draft=fixture.text(0,10);
     CHARRANGE selection{4,8};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));fixture.click(0,20);
     SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);CHARRANGE restored{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored));
-    require(returned==0&&!(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&fixture.control(0,10)==editor&&fixture.text(0,10)==draft&&restored.cpMin==selection.cpMin&&restored.cpMax==selection.cpMax,"Escape left the lesson before closing fullscreen or changed the editor draft/selection");
+    require(returned==0&&!fixture.fullscreen()&&fixture.control(0,10)==editor&&fixture.text(0,10)==draft&&restored.cpMin==selection.cpMin&&restored.cpMax==selection.cpMax,"Escape left the lesson before closing fullscreen or changed the editor draft/selection");
     require(navigate_lesson_back(fixture.view),"Normal Back did not use the existing catalog callback");pump(fixture.host);require(returned==1&&fixture.page()==0&&fixture.text(0,10)==draft,"Normal Back changed page or the editor instead of its existing destination");
     SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);require(returned==2,"Escape inside the real C++ editor did not reuse normal Back");
     {
@@ -619,7 +623,7 @@ void long_prediction_cards_keep_independent_bounds(){
     require(before.nPos>0&&fixture.control(2,1)==source&&fixture.control(2,2)==answer&&GetFocus()==answer&&
         fixture.text(2,1)==original&&fixture.text(2,2)=="Borrador conservado"&&reading_script(fixture.view)==script,
         "Scrolling the rebased long page changed a source/answer HWND, focus, draft or narration script");
-    fixture.click(2,13);fixture.click(116);SCROLLINFO after{sizeof(after),SIF_POS};GetScrollInfo(viewport,SB_VERT,&after);
+    fixture.click(2,13);fixture.escape();SCROLLINFO after{sizeof(after),SIF_POS};GetScrollInfo(viewport,SB_VERT,&after);
     require(after.nPos==before.nPos&&fixture.control(2,1)==source&&fixture.control(2,2)==answer&&
         fixture.text(2,1)==original&&fixture.text(2,2)=="Borrador conservado"&&reading_script(fixture.view)==script,
         "Fullscreen and return from a rebased long page lost its original offset, editor identity or draft");
@@ -706,7 +710,7 @@ void long_lesson_bands_keep_independent_hit_targets(){
         PostMessageW(GetFocus(),WM_KEYDOWN,VK_ESCAPE,1);pump(fixture.host);
         SCROLLINFO after{sizeof(after),SIF_POS};GetScrollInfo(pane,SB_VERT,&after);
         CHARRANGE selection{};SendMessageW(field,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
-        require(!(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&after.nPos==before.nPos&&GetFocus()==field&&
+        require(!fixture.fullscreen()&&after.nPos==before.nPos&&GetFocus()==field&&
             selection.cpMin==1&&selection.cpMax==4&&edit_text(field)==draft&&reading_script(fixture.view)==script,
             "Escape from a rebased band changed its lesson offset, focused editor, selection, draft or narration source");
     }
@@ -792,7 +796,7 @@ void initial_readonly_source_layout(){
     fixture.click(2,35);resize(fixture,900);
     require(!visible_bar(source,SB_HORZ),"Widening the same readonly source retained an obsolete overflow scrollbar");
     fixture.click(2,20);require(!visible_bar(source,SB_HORZ)&&!visible_bar(source,SB_VERT),
-        "Readonly fullscreen shows bars when the real seven-line source fits");fixture.click(116);
+        "Readonly fullscreen shows bars when the real seven-line source fits");fixture.escape();
     CHARRANGE preserved{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&preserved));
     int final_numerator=0,final_denominator=0;
     SendMessageW(source,EM_GETZOOM,reinterpret_cast<WPARAM>(&final_numerator),reinterpret_cast<LPARAM>(&final_denominator));
@@ -813,7 +817,7 @@ void initial_readonly_source_layout(){
     }
     require(long_scrollable,"Long readonly fullscreen lost its genuine native vertical overflow scrollbar");
     SendMessageW(long_source,EM_LINESCROLL,0,6);SendMessageW(long_source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
-    require(offset.y>0,"Long readonly fullscreen no longer scrolls its actual source");longer.click(116);
+    require(offset.y>0,"Long readonly fullscreen no longer scrolls its actual source");longer.escape();
     std::cout<<"PASS production readonly source first-open caption and DPI-aware native bars: fit, genuine horizontal/vertical overflow, resize, wrap and fullscreen\n";
 }
 void mathematical_feedback_paragraph_spacing() {
@@ -871,7 +875,7 @@ void mathematical_feedback_paragraph_spacing() {
                 require(focused&&(focused==fixture.view||IsChild(fixture.view,focused))&&IsWindowEnabled(focused)&&!IsWindowEnabled(field),
                     "A correct mathematical answer disabled the focused field without retaining a live lesson keyboard anchor");
                 MSG escape{focused,WM_KEYDOWN,VK_ESCAPE,1};TranslateMessage(&escape);DispatchMessageW(&escape);pump(fixture.host);
-                require(!(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&fixture.page()==0,
+                require(!fixture.fullscreen()&&fixture.page()==0,
                     "Physical Escape after a correct fullscreen mathematical answer did not leave fullscreen on the same page");
             }
             const auto target=fixture.control(0,4);
@@ -921,7 +925,7 @@ void mathematical_feedback_paragraph_spacing() {
             require(IsWindowVisible(check)&&IsWindowVisible(target)&&fixture.control(0,5)==math_host&&fixture.control(0,3)==check&&fixture.control(0,4)==target&&
                 fixture.text(0,4)==canonical_feedback&&reading_script(fixture.view)==script,
                 "Mathematical fullscreen omitted its original Check/feedback or recreated the puzzle/narration source");
-            fixture.click(116);require(fixture.control(0,5)==math_host&&fixture.control(0,3)==check&&fixture.control(0,4)==target&&fixture.text(0,4)==canonical_feedback,
+            fixture.escape();require(fixture.control(0,5)==math_host&&fixture.control(0,3)==check&&fixture.control(0,4)==target&&fixture.text(0,4)==canonical_feedback,
                 "Returning from mathematical fullscreen changed its original answer or verdict controls");
             require(fixture.lesson.raw_json==original_json,"Math verdict spacing changed the curriculum");
         }
@@ -1217,7 +1221,7 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     require(fixture.control(0,1)==output_code&&fixture.control(0,2)==output_answer&&
         IsWindowVisible(output_code)&&IsWindowVisible(output_answer)&&!IsWindowVisible(fixture.control(0,3))&&
         reading_script(fixture.view)==script_before_fullscreen,"Fullscreen failed to move both original code/answer cards while retaining Check outside and the narration script");
-    fixture.click(116);
+    fixture.escape();
     require(fixture.text(0,1)==source_before_fullscreen&&fixture.text(0,2)==answer_before_fullscreen,
         "Leaving the two-card fullscreen changed the readonly source or written answer");
     SetFocus(output_answer);SendMessageW(output_answer,EM_SETSEL,0,-1);SendMessageW(output_answer,WM_CHAR,L'(',1);pump(fixture.host);
@@ -1244,7 +1248,7 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     SendMessageW(inline_answer,EM_SETSEL,0,-1);SendMessageW(inline_answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));pump(fixture.host);
     fixture.click(3,13);require(fixture.control(3,5)==inline_host&&GetDlgItem(inline_host,100)==inline_answer&&edit_text(inline_answer)=="<<",
         "Inline fullscreen recreated the existing hole/editor or discarded its draft");
-    fixture.click(116);fixture.click(3,12);require(edit_text(inline_answer).empty(),"The inline header reset did not clear only its own answer");
+    fixture.escape();fixture.click(3,12);require(edit_text(inline_answer).empty(),"The inline header reset did not clear only its own answer");
     const auto bank=GetDlgItem(drag_host,3000),first_card=GetDlgItem(bank,2000),second_card=GetDlgItem(bank,2001);
     require(bank&&first_card&&second_card,"The drag-fill palette or its real available choices are missing");
     RECT first_normal{},second_normal{};GetWindowRect(first_card,&first_normal);GetWindowRect(second_card,&second_normal);
@@ -1341,13 +1345,15 @@ void fixed_programming_header_and_spoken_labels() {
         const auto script=reading_script(fixture.view);fixture.click(0,13);
         require(GetParent(caption)!=pane&&fixture.control(0,1)==source&&fixture.control(0,2)==answer&&GetFocus()==answer,
             "Fullscreen recreated a code/answer HWND or lost its existing editor focus");
-        RECT before{},after{};GetWindowRect(caption,&before);
+        RECT before{},after{},view_bounds{};GetWindowRect(caption,&before);GetWindowRect(fixture.view,&view_bounds);
+        require(before.top==view_bounds.top&&!descendant(fixture.view,116),
+            "The expanded code header retained an empty exit strip or an unnecessary X button");
         SendMessageW(fixture.view,WM_VSCROLL,SB_BOTTOM,0);pump(fixture.host);GetWindowRect(caption,&after);
         SCROLLINFO scroll{sizeof(scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&scroll);
         require(scroll.nPos>0&&before.top==after.top&&before.bottom==after.bottom&&IsWindowVisible(caption)&&GetFocus()==answer,
             "Scrolling a long fullscreen exercise moved the fixed source header or stole editing focus");
         require(reading_script(fixture.view)==script,"Fixing the fullscreen header changed narration source/position identity");
-        fixture.click(116);require(GetParent(caption)==pane&&fixture.control(0,1)==source&&fixture.control(0,2)==answer&&GetFocus()==answer,
+        fixture.escape();require(GetParent(caption)==pane&&fixture.control(0,1)==source&&fixture.control(0,2)==answer&&GetFocus()==answer,
             "Closing fullscreen did not restore the original header parent and focused editor");
     }
     std::cout<<"PASS fixed fullscreen programming headers, original ES/EN/FR spoken code labels, excluded source and independent prediction wrap policy\n";
@@ -1411,18 +1417,18 @@ void simulated_code_and_choice_cards() {
     set_lesson_view_hooks(fixture.view,std::move(events));
     require(notifications>0&&reading_script(fixture.view)==script_before_fullscreen,
         "A later content notification during fullscreen lost the page narration projection");
-    require((GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(fixture.control(110),GWL_STYLE)&WS_VISIBLE),"Fullscreen retained the page toolbar instead of its explicit exit X");
+    require(fixture.fullscreen()&&!descendant(fixture.view,116),"Fullscreen retained the page toolbar or added an exit X");
     int before_n=0,before_d=0,after_n=0,after_d=0;
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&before_n),reinterpret_cast<LPARAM>(&before_d));
     SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(40,20));pump(fixture.host);
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
     const auto base=before_d?MulDiv(before_n,100,before_d):100;
-    require(after_d&&MulDiv(after_n,100,after_d)==2*base&&fixture.text(0,1)==original&&(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE),
+    require(after_d&&MulDiv(after_n,100,after_d)==2*base&&fixture.text(0,1)==original&&fixture.fullscreen(),
         "Double click failed to zoom the existing readonly code or incorrectly left fullscreen");
     SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(40,20));pump(fixture.host);
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
     require(after_d&&MulDiv(after_n,100,after_d)==base,"Second double click did not restore the original code zoom");
-    fixture.click(116);
+    fixture.escape();
     SCROLLINFO restored_scroll{sizeof(restored_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&restored_scroll);
     RECT restored_code_bounds{};GetWindowRect(code,&restored_code_bounds);
     require(restored_scroll.nPos==original_scroll.nPos&&EqualRect(&restored_code_bounds,&original_code_bounds)&&

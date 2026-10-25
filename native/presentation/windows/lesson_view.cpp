@@ -75,7 +75,6 @@ constexpr int page_status_id = 106, menu_id = 107, page_top_id = 108, page_botto
 constexpr int back_id = 110, reader_id = 111, language_id = 112, attempts_id = 113, settings_id = 114;
 constexpr int finish_id=115;
 thread_local std::string lesson_creation_error;
-constexpr int fullscreen_close_id=116;
 constexpr int continue_id=117;
 constexpr int fullscreen_palette_id=118;
 constexpr UINT attempts_state_message=WM_APP+187;
@@ -233,7 +232,7 @@ struct LessonView {
     HWND window = nullptr, pane = nullptr, fullscreen_header = nullptr, title = nullptr;
     HWND menu = nullptr, page_status = nullptr;
     HWND back = nullptr, reader = nullptr, language = nullptr, attempts = nullptr, settings = nullptr, reader_bar = nullptr;
-    HWND fullscreen_close = nullptr,fullscreen_palette = nullptr;
+    HWND fullscreen_palette = nullptr;
     std::optional<std::size_t> fullscreen_palette_block;
     int fullscreen_palette_height=0,fullscreen_palette_max_height=0;
     AttemptsState attempt_state;
@@ -1291,10 +1290,6 @@ struct LessonView {
             if(existing_reserve&&data!=before_attempt_migration)mark_dirty();
         }
         decorate_icon(settings,Icon::settings,ui("Ajustes de la lección","Lesson Settings","Paramètres de la leçon"));
-        fullscreen_close=control(L"BUTTON","",WS_TABSTOP|BS_PUSHBUTTON,fullscreen_close_id,window);
-        decorate_icon(fullscreen_close,Icon::close,ui("Salir de pantalla completa","Exit full screen","Quitter le plein écran"));
-        SetWindowSubclass(fullscreen_close,console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));
-        ShowWindow(fullscreen_close,SW_HIDE);
         pane = CreateWindowExW(WS_EX_CONTROLPARENT, pane_class, L"Contenido de la lección",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
             window, nullptr, GetModuleHandleW(nullptr), this);
@@ -2221,13 +2216,11 @@ struct LessonView {
             const auto focus=GetFocus();
             for(const auto child:fixed_header->cells)if(GetParent(child)!=fullscreen_header)SetParent(child,fullscreen_header);
             if(focus&&IsWindow(focus))SetFocus(focus);
-            SetWindowPos(fullscreen_header,HWND_TOP,0,px(56),area.right,fixed_header_height,SWP_NOACTIVATE|SWP_SHOWWINDOW);
+            SetWindowPos(fullscreen_header,HWND_TOP,0,0,area.right,fixed_header_height,SWP_NOACTIVATE|SWP_SHOWWINDOW);
         }else restore_fullscreen_header();
-        const int viewport_top=fullscreen_block?(fixed_header?px(56)+fixed_header_height:0):px(laboratory()?48:lesson_header_height);
+        const int viewport_top=fullscreen_block?fixed_header_height:px(laboratory()?48:lesson_header_height);
         for(const auto item:{back,title,page_status,settings,attempts,language,reader})ShowWindow(item,fullscreen_block||(laboratory()&&item!=back)?SW_HIDE:SW_SHOWNOACTIVATE);
         if(laboratory())MoveWindow(back,px(4),0,px(48),px(48),TRUE);
-        ShowWindow(fullscreen_close,fullscreen_block?SW_SHOWNOACTIVATE:SW_HIDE);
-        SetWindowPos(fullscreen_close,HWND_TOP,area.right-px(52),px(4),px(48),px(48),SWP_NOACTIVATE);
         int nav_top = static_cast<int>(area.bottom);
         const bool assisted = editing_bar && editing_bar->visible() && !import_open;
         const int bar_height = editing_bar ? editing_bar->logical_height() : 0;
@@ -2243,7 +2236,6 @@ struct LessonView {
         if (editing_bar) editing_bar->place(std::max(margin,(static_cast<int>(area.right) - std::min(available,px(1050))) / 2),
             nav_top - px(bar_height + 12),std::min(available,px(1050)),px(bar_height));
         MoveWindow(pane,0,viewport_top,static_cast<int>(area.right),std::max(px(18),nav_top - viewport_top - editing_height),TRUE);
-        if(fullscreen_block)SetWindowPos(fullscreen_close,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         if (import_open) layout_import();
         reflow();
         if(palette_reparented&&focused&&IsWindow(focused)&&IsWindowEnabled(focused)&&IsWindowVisible(focused)&&GetFocus()!=focused)SetFocus(focused);
@@ -2296,7 +2288,7 @@ struct LessonView {
         // without moving/painting provisional rectangles over adjacent rows.
         constexpr UINT placement_flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW;
         const auto pinned=fixed_header_row();
-        int top = fullscreen_block?(pinned?0:px(56)):px(24);
+        int top = fullscreen_block?0:px(24);
         for (auto& row : rows) {
             const int gap=px(row.column_gap);
             const bool fixed=&row==pinned;
@@ -3040,7 +3032,6 @@ struct LessonView {
         if (id >= pages_menu_base && id < pages_menu_base + static_cast<int>(lesson.pages.size()))
             { change_page(static_cast<std::size_t>(id - pages_menu_base)); return; }
         if (id == import_id) { import_state(); return; }
-        if(id==fullscreen_close_id&&fullscreen_block){toggle_fullscreen(*fullscreen_block,fullscreen_output);return;}
         if(id==finish_id){(void)finish_lesson();return;}
         if(id==continue_id){if(page+1<lesson.pages.size())change_page(page+1);else (void)finish_lesson();return;}
         if (id == menu_id) {
