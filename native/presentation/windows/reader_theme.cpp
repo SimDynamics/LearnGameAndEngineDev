@@ -20,6 +20,7 @@
 namespace lgaed::presentation::reader_theme {
 namespace {
 constexpr wchar_t surface_property[] = L"LGAED.ReaderSurface";
+constexpr wchar_t completed_property[] = L"LGAED.ReaderCompleted";
 constexpr wchar_t primary_property[] = L"LGAED.ReaderPrimaryButton";
 constexpr wchar_t icon_property[] = L"LGAED.ReaderIconButton";
 constexpr wchar_t premium_property[] = L"LGAED.ReaderPremiumButton";
@@ -61,7 +62,7 @@ COLORREF color(const Palette& colors, Surface surface) {
 LRESULT CALLBACK focus_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR) {
     if(message==WM_NCDESTROY){
         RemoveWindowSubclass(window,focus_subclass,focus_subclass_id);
-        RemovePropW(window,icon_property);RemovePropW(window,premium_property);RemovePropW(window,switch_property);
+        RemovePropW(window,completed_property);RemovePropW(window,icon_property);RemovePropW(window,premium_property);RemovePropW(window,switch_property);
         return DefSubclassProc(window,message,wp,lp);
     }
     if(message==WM_LBUTTONDOWN||message==WM_RBUTTONDOWN||message==WM_POINTERDOWN)keyboard_focus=false;
@@ -517,8 +518,25 @@ COLORREF unread_color(COLORREF background){
 }
 HBRUSH brush(Surface surface) { static Brushes brushes; return brushes.get(surface); }
 bool applied(HWND window) { return window && GetPropW(window, surface_property) != nullptr; }
+COLORREF completion_background(COLORREF surface) {
+    // Alpha 56/255 over the actual local surface, not a layered child HWND.
+    // On catalogue RGB(32,33,38) this rounds to the historic RGB(29,78,52).
+    constexpr unsigned alpha=56;
+    const auto over=[](unsigned source,unsigned destination){return (source*alpha+destination*(255-alpha)+127)/255;};
+    return RGB(over(18,GetRValue(surface)),over(238,GetGValue(surface)),over(102,GetBValue(surface)));
+}
 COLORREF background(HWND window) {
-    return applied(window) ? color(palette(window), static_cast<Surface>(surface_index(window))) : GetSysColor(COLOR_WINDOW);
+    const auto colors=palette(window);
+    const auto surface=applied(window)?color(colors,static_cast<Surface>(surface_index(window))):GetSysColor(COLOR_WINDOW);
+    return !colors.high_contrast&&GetPropW(window,completed_property)?completion_background(surface):surface;
+}
+void completed_control(HWND window,bool completed) {
+    if(!IsWindow(window))return;
+    if((GetPropW(window,completed_property)!=nullptr)==completed)return;
+    if(completed)SetPropW(window,completed_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)));
+    else RemovePropW(window,completed_property);
+    if(rich_edit(window))SendMessageW(window,EM_SETBKGNDCOLOR,0,background(window));
+    InvalidateRect(window,nullptr,FALSE);
 }
 COLORREF foreground(HWND window) {
     const auto colors=palette(window);
@@ -640,7 +658,9 @@ bool control_color(UINT message, WPARAM wparam, LPARAM lparam, LRESULT& result) 
     if (!applied(window)) return false;
     const auto dc = reinterpret_cast<HDC>(wparam);
     SetTextColor(dc, foreground(window)); SetBkColor(dc, background(window)); SetBkMode(dc, OPAQUE);
-    result = reinterpret_cast<LRESULT>(brush(static_cast<Surface>(surface_index(window))));
+    if(GetPropW(window,completed_property)&&!palette(window).high_contrast){
+        SetDCBrushColor(dc,background(window));result=reinterpret_cast<LRESULT>(GetStockObject(DC_BRUSH));
+    }else result = reinterpret_cast<LRESULT>(brush(static_cast<Surface>(surface_index(window))));
     return true;
 }
 bool draw_button(const DRAWITEMSTRUCT& item) {
@@ -650,6 +670,7 @@ bool draw_button(const DRAWITEMSTRUCT& item) {
     const bool pressed = (item.itemState & ODS_SELECTED) != 0;
     const bool icon = GetPropW(item.hwndItem,icon_property) != nullptr;
     const bool premium = GetPropW(item.hwndItem,premium_property) != nullptr;
+    const bool completed = GetPropW(item.hwndItem,completed_property) != nullptr;
     const auto parent=GetParent(item.hwndItem);
     const auto parent_fill=applied(parent)?background(parent):colors.canvas;
     const auto icon_fill=background(item.hwndItem);
@@ -663,6 +684,12 @@ bool draw_button(const DRAWITEMSTRUCT& item) {
         fill=RGB((GetRValue(base)*9+255)/10,(GetGValue(base)*9+255)/10,(GetBValue(base)*9+255)/10);
     }
     if (disabled) ink = colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.muted;
+    // Completed is distinct from disabled/busy. Keep native disabled click
+    // semantics, but do not paint a solved exercise as an unavailable action.
+    if(completed&&!icon&&!colors.high_contrast){
+        fill=background(item.hwndItem);ink=RGB(105,220,145);
+        if(contrast_ratio(ink,fill)<4.5)ink=colors.text;
+    }
     const auto saved = SaveDC(item.hDC);
     const int dpi=static_cast<int>(GetDpiForWindow(item.hwndItem));
     const auto px=[&](int value){return std::max(1,MulDiv(value,dpi,96));};
@@ -715,7 +742,9 @@ bool draw_button(const DRAWITEMSTRUCT& item) {
     SetTextColor(item.hDC, ink); SetBkMode(item.hDC, TRANSPARENT);
     std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(item.hwndItem)) + 1, L'\0');
     text.resize(static_cast<std::size_t>(GetWindowTextW(item.hwndItem, text.data(), static_cast<int>(text.size()))));
-    auto bounds = item.rcItem; InflateRect(&bounds, -7, -3);
+    auto bounds = item.rcItem;
+    const bool action=GetPropW(item.hwndItem,primary_property)!=nullptr;
+    InflateRect(&bounds,action?-px(12):-7,action?-px(4):-3);
     if (pressed) OffsetRect(&bounds, 1, 1);
     if(!icon&&!draw_success_label(item.hDC,text,bounds,ink)){
         UINT text_flags=DT_CENTER | ((item.itemState & ODS_NOACCEL) ? DT_HIDEPREFIX : 0);

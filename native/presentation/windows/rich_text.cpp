@@ -22,7 +22,7 @@ constexpr UINT_PTR hint_subclass_id=0x4c474854;
 struct EditHint {
     std::wstring text;
     COLORREF color=RGB(140,145,155);
-    bool normalizing_selection=false;
+    bool normalizing_selection=false,centered=false;
     bool showing(HWND edit) const {
         return !text.empty()&&GetWindowTextLengthW(edit)==0&&!(GetWindowLongPtrW(edit,GWL_STYLE)&ES_READONLY);
     }
@@ -79,11 +79,14 @@ struct EditHint {
             GetTextMetricsW(dc,&metrics)){
             bounds.left=baseline_x;bounds.top=baseline_y-metrics.tmAscent;
         }
+        // Center the hint in the same native formatting box as the empty
+        // insertion point. Its baseline still comes from TextServices.
+        if(centered){bounds.left=viewport.left;bounds.right=viewport.right;}
         IntersectClipRect(dc,clip.left,clip.top,clip.right,clip.bottom);
         SetBkMode(dc,TRANSPARENT);
         SetTextColor(dc,reader_theme::palette(edit).high_contrast?reader_theme::foreground(edit):color);
         const auto wrapping=(GetWindowLongPtrW(edit,GWL_STYLE)&ES_AUTOHSCROLL)?DT_SINGLELINE:DT_WORDBREAK;
-        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&bounds,DT_LEFT|DT_TOP|wrapping|DT_NOPREFIX);
+        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&bounds,(centered?DT_CENTER:DT_LEFT)|DT_TOP|wrapping|DT_NOPREFIX);
         RestoreDC(dc,saved);DeleteObject(font);
     }
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
@@ -423,14 +426,14 @@ std::string utf8(std::wstring_view source) {
     std::string result(static_cast<std::size_t>(length), '\0');
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source.data(), static_cast<int>(source.size()), result.data(), length, nullptr, nullptr); return result;
 }
-void set_edit_hint(HWND edit,std::string_view text,COLORREF color) {
+void set_edit_hint(HWND edit,std::string_view text,COLORREF color,bool centered) {
     if(!IsWindow(edit))throw std::invalid_argument("An edit hint requires a live RichEdit");
     DWORD_PTR existing=0;
     if(GetWindowSubclass(edit,EditHint::proc,hint_subclass_id,&existing)){
-        auto* hint=reinterpret_cast<EditHint*>(existing);hint->text=wide(text);hint->color=color;
+        auto* hint=reinterpret_cast<EditHint*>(existing);hint->text=wide(text);hint->color=color;hint->centered=centered;
     }
     else {
-        auto hint=std::make_unique<EditHint>();hint->text=wide(text);hint->color=color;
+        auto hint=std::make_unique<EditHint>();hint->text=wide(text);hint->color=color;hint->centered=centered;
         if(!SetWindowSubclass(edit,EditHint::proc,hint_subclass_id,reinterpret_cast<DWORD_PTR>(hint.get())))
             throw std::runtime_error("Cannot attach an empty edit hint");
         hint.release();
@@ -622,7 +625,17 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             const auto begin_wide = wide(std::string_view(displayed).substr(0,start)).size();
             const auto fragment = wide(std::string_view(displayed).substr(start,end-start));
             format(edit, begin_wide, begin_wide + fragment.size(), reader_theme::foreground(edit), reader_theme::code_font_face());
-            apply_cpp(edit, fragment, begin_wide, true);
+            // Explicit output prose gives this backtick span data semantics.
+            // In particular, "La salida es `Carga lista`" must not lex its
+            // words as two identifiers. Other code spans keep the C++ lexer.
+            static const std::wregex output_cue(
+                LR"((?:la salida es|salida(?: exacta)?[ :=]+|the output is|output[ :=]+|la sortie est|sortie[ :=]+)[ \t]*$)",
+                std::regex_constants::icase);
+            const auto prefix=std::wstring_view(source).substr(0,begin_wide);
+            const auto tail=prefix.substr(prefix.size()>128?prefix.size()-128:0);
+            if(std::regex_search(tail.begin(),tail.end(),output_cue))
+                format(edit,begin_wide,begin_wide+fragment.size(),accessible(edit,RGB(122,195,141)));
+            else apply_cpp(edit, fragment, begin_wide, true);
         }
     }
     for (const auto& range : curriculum::emphasis_ranges(text, emphasis)) {

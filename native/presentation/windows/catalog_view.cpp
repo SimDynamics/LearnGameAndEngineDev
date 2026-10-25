@@ -395,7 +395,7 @@ struct CatalogView {
         auto card = item.rcItem;card.bottom-=px(14);
         const auto snapshot = completion[item.itemID];
         const bool finished=snapshot.total>0&&snapshot.completed==snapshot.total&&!snapshot.pending_validation;
-        if(finished&&!palette.high_contrast){const auto fill=CreateSolidBrush(RGB(29,78,52));FillRect(item.hDC,&card,fill);DeleteObject(fill);}
+        if(finished&&!palette.high_contrast){const auto fill=CreateSolidBrush(reader_theme::completion_background(RGB(32,33,38)));FillRect(item.hDC,&card,fill);DeleteObject(fill);}
         else FillRect(item.hDC,&card,reader_theme::brush(reader_theme::Surface::catalog_card));
         const auto old_font = SelectObject(item.hDC,ordinal_font?ordinal_font:font); SetBkMode(item.hDC,TRANSPARENT); SetTextColor(item.hDC,palette.text);
         auto bounds = card; InflateRect(&bounds,-px(20),-px(20));

@@ -51,6 +51,9 @@ void paint_scrollbars(HWND window,HDC window_dc);
 void refresh_scrollbars(HWND window);
 [[nodiscard]] bool control_color(UINT message, WPARAM wparam, LPARAM lparam, LRESULT& result);
 [[nodiscard]] bool draw_button(const DRAWITEMSTRUCT& item);
+// Source-over completion tint, calibrated to the existing Android catalogue.
+[[nodiscard]] COLORREF completion_background(COLORREF surface);
+void completed_control(HWND window, bool completed);
 void primary_button(HWND button, bool primary = true);
 // Native BUTTON semantics, focus, accessible name and click handling remain
 // unchanged. Only the fill/frame are removed for Android-style icon actions.
