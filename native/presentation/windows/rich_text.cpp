@@ -320,6 +320,15 @@ std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::w
     // Named letters and control escapes retain identifier ink; standalone
     // escaped quotes/backslashes use string ink, like their C++ literal role.
     for(std::size_t index=0;index+1<text.size();++index){
+        if(text[index]==L'/'&&text[index+1]==L'/'){
+            // A prose mention is just the marker, not a comment extending to
+            // the end of the explanatory paragraph. Do not match URLs, paths,
+            // longer slash runs, or quote-delimited string contents here.
+            if((index==0||(technical_mention_boundary(text[index-1])&&std::wstring_view(L"/\\:\"'").find(text[index-1])==std::wstring_view::npos))&&
+                (index+2==text.size()||(technical_mention_boundary(text[index+2])&&std::wstring_view(L"/\\\"'").find(text[index+2])==std::wstring_view::npos)))
+                result.emplace_back(index,index+2);
+            continue;
+        }
         if(text[index]!=L'\\'||(std::wstring_view(L"ntr0abfv").find(text[index+1])==std::wstring_view::npos &&
             text[index+1]!=L'\\'&&text[index+1]!=L'"'))continue;
         if((index==0||technical_mention_boundary(text[index-1]))&&
