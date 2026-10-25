@@ -36,17 +36,41 @@ struct EditHint {
             CLEARTYPE_QUALITY,style.bPitchAndFamily,style.szFaceName[0]?style.szFaceName:L"Roboto");
         if(!font)return;
         const auto saved=SaveDC(dc);if(!saved){DeleteObject(font);return;}
-        IntersectClipRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom);
-        SelectObject(dc,font);SetBkMode(dc,TRANSPARENT);
+        SelectObject(dc,font);
+        // EM_GETRECT keeps the unzoomed formatting origin. Ask TextServices
+        // for the displayed insertion point so hint, text and caret share
+        // the same position after text zoom, DPI changes and scrolling.
+        POINTL origin{MulDiv(bounds.left,numerator,denominator),MulDiv(bounds.top,numerator,denominator)};
+        SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&origin),0);
+        bounds.left=origin.x;bounds.top=origin.y;
+        Microsoft::WRL::ComPtr<IRichEditOle> rich;
+        SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+        Microsoft::WRL::ComPtr<ITextDocument> document;
+        Microsoft::WRL::ComPtr<ITextRange> range;
+        TEXTMETRICW metrics{};LONG baseline_x=0,baseline_y=0;
+        if(rich&&SUCCEEDED(rich.As(&document))&&document->Range(0,0,&range)==S_OK&&range&&
+            range->GetPoint(tomStart|tomClientCoord|tomAllowOffClient|TA_BASELINE|TA_LEFT,&baseline_x,&baseline_y)==S_OK&&
+            GetTextMetricsW(dc,&metrics)){
+            bounds.left=baseline_x;bounds.top=baseline_y-metrics.tmAscent;
+        }
+        IntersectClipRect(dc,std::max(0L,bounds.left),std::max(0L,bounds.top),bounds.right,bounds.bottom);
+        SetBkMode(dc,TRANSPARENT);
         SetTextColor(dc,reader_theme::palette(edit).high_contrast?reader_theme::foreground(edit):color);
-        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&bounds,DT_LEFT|DT_TOP|DT_WORDBREAK|DT_NOPREFIX);
+        const auto wrapping=(GetWindowLongPtrW(edit,GWL_STYLE)&ES_AUTOHSCROLL)?DT_SINGLELINE:DT_WORDBREAK;
+        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&bounds,DT_LEFT|DT_TOP|wrapping|DT_NOPREFIX);
         RestoreDC(dc,saved);DeleteObject(font);
     }
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
         auto* self=reinterpret_cast<EditHint*>(raw);
         if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,hint_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
         const auto result=DefSubclassProc(edit,message,wp,lp);
-        if(message==WM_PAINT){const auto dc=GetDC(edit);self->paint(edit,dc);if(dc)ReleaseDC(edit,dc);}
+        if(message==WM_PAINT&&GetWindowTextLengthW(edit)==0){
+            // Native WM_PAINT has finished (including its caret handling).
+            // Balance this extra overlay draw without replacing that caret.
+            const bool restore_caret=GetFocus()==edit&&HideCaret(edit)!=FALSE;
+            const auto dc=GetDC(edit);self->paint(edit,dc);if(dc)ReleaseDC(edit,dc);
+            if(restore_caret)ShowCaret(edit);
+        }
         else if(message==WM_PRINTCLIENT)self->paint(edit,reinterpret_cast<HDC>(wp));
         else if(message==WM_CHAR||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR||message==WM_SETTEXT||
             message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL||message==EM_UNDO||message==WM_UNDO||
@@ -177,6 +201,42 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
 }
 void apply_cpp(HWND edit, std::wstring_view source, std::size_t offset = 0, bool monospaced = false) {
     for (const auto& ink : cpp_ink(edit, source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? reader_theme::code_font_face() : nullptr);
+}
+std::size_t inline_cpp_statement_end(std::wstring_view text,std::size_t initial) {
+    auto start=initial;
+    while(start<text.size()&&(text[start]==L' '||text[start]==L'\t'))++start;
+    const auto tail=text.substr(start);
+    if(!tail.starts_with(L"<<")&&!tail.starts_with(L">>")&&!tail.starts_with(L"+=")&&!tail.starts_with(L"-=")&&
+        !tail.starts_with(L"*=")&&!tail.starts_with(L"/=")&&!tail.starts_with(L"=")&&!tail.starts_with(L"++")&&!tail.starts_with(L"--"))return initial;
+    // Android's ProgrammingTechnicalRanges extends an already recognized
+    // C++ name to its statement terminator. Quotes and escapes belong to that
+    // fragment; ordinary quoted prose is never a technical seed by itself.
+    static const std::wregex prose_joiner(LR"(\s+(?:y|o|pero|porque|and|or|but|because|which|et|ou|mais|car|puis|qui|que)\b)",std::regex_constants::icase);
+    const auto limit=std::min(text.size(),start+512);
+    std::vector<wchar_t> closing;
+    for(auto index=start;index<limit;++index){
+        const auto current=text[index];
+        if(current==L'"'||current==L'\''){
+            const auto quote=current;
+            for(++index;index<limit&&text[index]!=quote;++index)if(text[index]==L'\\')++index;
+            if(index>=limit)return initial;
+            continue;
+        }
+        if(current==L';'&&closing.empty())return index+1;
+        const bool member_dot=current==L'.'&&index+1<limit&&
+            ((text[index+1]>=L'0'&&text[index+1]<=L'9')||
+                (index>0&&(identifier_part(text[index-1])||text[index-1]==L')'||text[index-1]==L']')&&identifier_part(text[index+1])));
+        if(closing.empty()&&(current==L'\r'||current==L'\n'||current==L'!'||current==L'?'||(current==L'.'&&!member_dot)||
+            ((current==L' '||current==L'\t')&&std::regex_search(text.begin()+index,text.begin()+limit,prose_joiner,std::regex_constants::match_continuous))))return initial;
+        if(current==L'(')closing.push_back(L')');
+        else if(current==L'[')closing.push_back(L']');
+        else if(current==L'{')closing.push_back(L'}');
+        else if(current==L')'||current==L']'||current==L'}'){
+            if(closing.empty()||closing.back()!=current)return initial;
+            closing.pop_back();
+        }
+    }
+    return initial;
 }
 struct Stream { const BYTE* bytes; std::size_t size, offset = 0; };
 DWORD CALLBACK stream_text(DWORD_PTR cookie, LPBYTE buffer, LONG requested, LONG* copied) {
@@ -377,11 +437,21 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     if (code) apply_cpp(edit, source);
     else {
         static const std::wregex technical(LR"((#\s*include(?:[ \t]*(?:<[^>\r\n]+>|"[^"\r\n]*"))?)|(\bstd[ \t]*::[A-Za-z_0-9:]*)|(\bmain(?:\(\))?)|(\breturn[ \t]+[0-9]+[ \t]*;?)|([Cc]\+\+[0-9]*)|(<<|>>))");
+        std::vector<std::pair<std::size_t,std::size_t>> statements;
         for (std::wsregex_iterator match(source.begin(), source.end(), technical), end; match != end; ++match) {
             const auto start = static_cast<std::size_t>(match->position()); const auto count = static_cast<std::size_t>(match->length());
             format(edit, start, start + count, reader_theme::foreground(edit), reader_theme::code_font_face());
             apply_cpp(edit, std::wstring_view(source).substr(start,count), start, true);
+            if((*match)[2].matched&&(statements.empty()||start>=statements.back().second)){
+                const auto statement_end=inline_cpp_statement_end(source,start+count);
+                if(statement_end>start+count)statements.emplace_back(start,statement_end);
+            }
         }
+        // Apply complete fragments after individual technical mentions so a
+        // word such as std::cout or << inside a literal keeps the string ink.
+        // Match Android's color-only treatment: preserve existing fonts,
+        // source positions and paragraph measurements.
+        for(const auto& [start,end]:statements)apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
         for (const auto& [start,end] : fragments) {
             const auto begin_wide = wide(std::string_view(displayed).substr(0,start)).size();
             const auto fragment = wide(std::string_view(displayed).substr(start,end-start));

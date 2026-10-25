@@ -1159,7 +1159,26 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     RECT normal_answer{};GetWindowRect(fill_answer,&normal_answer);
     require(normal_answer.bottom-normal_answer.top>MulDiv(32,dpi,96)&&normal_answer.bottom-normal_answer.top<MulDiv(82,dpi,96),
         "An empty answer did not fit one native text line plus Android's vertical padding");
-    update_lesson_preferences(fixture.view,[](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};});
+    const auto glyph_pixels=[](HWND field){
+        RECT area{};GetClientRect(field,&area);const auto dc=CreateCompatibleDC(nullptr);
+        BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=area.right;
+        info.bmiHeader.biHeight=-area.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        void* memory=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&memory,nullptr,0);
+        require(dc&&bitmap&&memory,"Cannot create the native answer clipping raster");const auto previous=SelectObject(dc,bitmap);
+        FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));
+        SendMessageW(field,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT|PRF_ERASEBKGND);GdiFlush();
+        const auto background=reader_theme::background(field);const auto pixels=static_cast<const std::uint32_t*>(memory);
+        std::size_t count=0;
+        for(std::size_t at=0;at<static_cast<std::size_t>(area.right)*area.bottom;++at){
+            const auto value=pixels[at];
+            if(std::abs(static_cast<int>((value>>16)&255)-GetRValue(background))+
+                std::abs(static_cast<int>((value>>8)&255)-GetGValue(background))+
+                std::abs(static_cast<int>(value&255)-GetBValue(background))>=96)++count;
+        }
+        SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);return count;
+    };
+    for(const auto zoom:{100,150,200}){
+    update_lesson_preferences(fixture.view,[zoom](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=static_cast<std::int64_t>(zoom);});
     for(const auto index:{0u,1u}){
         const auto answer=fixture.control(index,2);
         const auto pane=descendant_class(fixture.view,L"LearnGameAndEngineDev.LessonPane");
@@ -1187,11 +1206,37 @@ void simulated_exercise_code_cards(bool caret_only=false) {
         const auto padding=MulDiv(16,static_cast<int>(GetDpiForWindow(answer)),96);
         POINTL first_character{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first_character),0);
         int numerator=0,denominator=0;SendMessageW(answer,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-        require(content.top==MulDiv(padding,denominator,numerator)&&first_character.y>=padding&&first_character.y<=padding+1&&client.bottom-content.bottom>=padding&&
-            content.bottom-content.top>=caret.rcCaret.bottom-caret.rcCaret.top,
-            "A 150-percent answer or actual scrollbar clipped the editing line inside Android's vertical padding");
+        require(content.top==MulDiv(padding,denominator,numerator)&&std::abs(first_character.y-padding)<=1&&client.bottom-content.bottom>=padding&&
+            caret.rcCaret.top>=first_character.y-1&&caret.rcCaret.bottom<=content.bottom,
+            "A zoomed empty answer clipped its actual caret inside Android's vertical padding");
+        const auto empty_height=client.bottom;
+        for(const auto text:{"RocaAzul","RocaAzul gypq"}){
+        fixture.replace(index,2,text);SetFocus(answer);pump(fixture.host);
+        GUITHREADINFO typed_caret{};typed_caret.cbSize=sizeof(typed_caret);
+        POINTL typed_origin{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&typed_origin),0);
+        SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&content));GetClientRect(answer,&client);
+        require(GetGUIThreadInfo(GetCurrentThreadId(),&typed_caret)&&typed_caret.hwndCaret==answer&&
+            typed_caret.rcCaret.top>=typed_origin.y-1&&typed_caret.rcCaret.bottom<=content.bottom&&
+            std::abs(typed_origin.x-first_character.x)<=1&&std::abs(typed_origin.y-first_character.y)<=1&&fixture.control(index,2)==answer,
+            "Typing the first answer moved its line origin, clipped its caret or recreated the editor");
+        SetFocus(fixture.view);const auto normal_ink=glyph_pixels(answer);require(normal_ink>8,"The actual answer text was not drawn");
+        // A generous temporary viewport must not reveal any part of a glyph
+        // that the normal content-sized answer cropped off at its bottom.
+        RECT outer{};GetWindowRect(answer,&outer);const auto extra=MulDiv(64,dpi,96);
+        SetWindowPos(answer,nullptr,0,0,outer.right-outer.left,outer.bottom-outer.top+extra,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+        content.bottom+=extra;SendMessageW(answer,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+        require(glyph_pixels(answer)==normal_ink,"The normal answer viewport clipped native glyph pixels visible in a taller viewport");
+        SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,0);pump(fixture.host);
+        }
+        fixture.replace(index,2,"");GetClientRect(answer,&client);
+        require(client.bottom==empty_height&&fixture.control(index,2)==answer,
+            "Clearing an answer did not restore its original native empty-line height");
+        SendMessageW(answer,WM_UNDO,0,0);pump(fixture.host);
+        require(fixture.text(index,2)=="RocaAzul gypq","Native line measurement changed the answer Undo history");
+        fixture.replace(index,2,"");
     }
-    std::cout<<"PASS 150-percent answer native first-focus caret and zoom-aware Android padding\n";
+    }
+    std::cout<<"PASS 100/150/200-percent answer native caret, stable first-line origin, complete glyph raster and Undo\n";
     return;
     }
     update_lesson_preferences(fixture.view,[](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{100};});

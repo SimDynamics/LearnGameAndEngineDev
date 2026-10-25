@@ -6,6 +6,7 @@
 #include <richedit.h>
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -69,6 +70,52 @@ int main() {
             SendMessageW(hinted.value,EM_SETREADONLY,TRUE,0);const auto readonly=pixels();set_edit_hint(hinted.value,"");
             check(pixels()==readonly&&edit_text(hinted.value).empty(),"A readonly display acquired an editable placeholder");
             SendMessageW(hinted.value,EM_SETREADONLY,FALSE,0);
+            // Android's hint and entered text use the same native line. Check
+            // actual glyph bounds, not just a nonempty placeholder bitmap.
+            const auto hint_dpi=static_cast<int>(GetDpiForWindow(hinted.value));
+            SetWindowPos(hinted.value,nullptr,0,0,MulDiv(600,hint_dpi,96),MulDiv(160,hint_dpi,96),SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+            ShowWindow(parent.value,SW_SHOWNOACTIVATE);
+            const auto ink_bounds=[&](const auto& image,const auto& background){
+                RECT client{};GetClientRect(hinted.value,&client);RECT ink{client.right,client.bottom,0,0};
+                for(LONG y=0;y<client.bottom;++y)for(LONG x=0;x<client.right;++x){
+                    const auto at=static_cast<std::size_t>(y*client.right+x);
+                    if(((image[at]^background[at])&0x00ffffffu)==0)continue;
+                    ink.left=std::min(ink.left,x);ink.top=std::min(ink.top,y);
+                    ink.right=std::max(ink.right,x+1);ink.bottom=std::max(ink.bottom,y+1);
+                }
+                return ink;
+            };
+            for(const auto zoom:{100,150,200}){
+                SetFocus(parent.value);set_edit_hint(hinted.value,"");set_edit_text(hinted.value,"");
+                SendMessageW(hinted.value,EM_EMPTYUNDOBUFFER,0,0);SendMessageW(hinted.value,EM_SETZOOM,zoom,100);
+                const int padding=MulDiv(16,static_cast<int>(GetDpiForWindow(hinted.value)),96);
+                RECT area{};GetClientRect(hinted.value,&area);
+                RECT format{MulDiv(padding,100,zoom),MulDiv(padding,100,zoom),area.right-padding,area.bottom-padding};
+                SendMessageW(hinted.value,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+                const auto blank=pixels();set_edit_hint(hinted.value,"Escribe la salida",reader_theme::foreground(hinted.value));
+                const auto placeholder_ink=ink_bounds(pixels(),blank);
+                check(placeholder_ink.right>placeholder_ink.left&&placeholder_ink.bottom>placeholder_ink.top,
+                    "The zoomed native answer hint disappeared");
+                SetFocus(hinted.value);RedrawWindow(hinted.value,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);
+                GUITHREADINFO caret_before{};caret_before.cbSize=sizeof(caret_before);
+                check(GetGUIThreadInfo(GetCurrentThreadId(),&caret_before)&&caret_before.hwndCaret==hinted.value&&
+                    caret_before.rcCaret.bottom>caret_before.rcCaret.top&&caret_before.rcCaret.top>=0&&
+                    caret_before.rcCaret.bottom<=area.bottom-padding,
+                    "Focusing a zoomed empty answer did not retain its complete native editing caret");
+                for(int repaint=0;repaint<3;++repaint)RedrawWindow(hinted.value,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);
+                GUITHREADINFO caret_after{};caret_after.cbSize=sizeof(caret_after);
+                check(GetGUIThreadInfo(GetCurrentThreadId(),&caret_after)&&caret_after.hwndCaret==hinted.value&&
+                    EqualRect(&caret_before.rcCaret,&caret_after.rcCaret),
+                    "Repainting the hint moved or replaced the native caret");
+                SendMessageW(hinted.value,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"Escribe la salida"));
+                SetFocus(parent.value);const auto text_ink=ink_bounds(pixels(),blank);
+                check(std::abs(placeholder_ink.left-text_ink.left)<=1&&std::abs(placeholder_ink.top-text_ink.top)<=1&&
+                    std::abs(placeholder_ink.right-text_ink.right)<=2&&std::abs(placeholder_ink.bottom-text_ink.bottom)<=1,
+                    "Entering the first line moved or clipped text relative to its zoomed placeholder");
+                check(SendMessageW(hinted.value,EM_UNDO,0,0)&&edit_text(hinted.value).empty()&&
+                    SendMessageW(hinted.value,EM_CANREDO,0,0),"Zoomed hint painting changed the original text Undo/Redo history");
+            }
+            ShowWindow(parent.value,SW_HIDE);
         }
         {
             const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"prosa",0,"bold_italic"}}};
@@ -103,6 +150,42 @@ int main() {
             CHARRANGE after_hit{};SendMessageW(editor.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after_hit));
             check(after_hit.cpMin==preserved.cpMin&&after_hit.cpMax==preserved.cpMax,"Pure text hit testing changed the source selection");
             SendMessageW(editor.value,EM_SETZOOM,0,0);
+        }
+        {
+            reader_theme::apply(editor.value,reader_theme::Surface::canvas);
+            const auto base=reader_theme::foreground(editor.value);
+            const auto string_ink=reader_theme::palette(editor.value).high_contrast?base:RGB(122,195,141);
+            const auto check_ink=[&](std::wstring_view token,COLORREF ink){
+                const auto visible=wide(edit_text(editor.value));const auto begin=visible.find(token);
+                check(begin!=visible.npos,"The inline-string regression lost its original text");
+                for(auto index=begin;index<begin+token.size();++index)
+                    check(character(editor.value,static_cast<LONG>(index)).crTextColor==ink,
+                        "An inline literal lost Android's complete string color or leaked into ordinary prose");
+            };
+            const std::string screenshot=R"text(𐐀 Un espacio dentro de un literal sí es parte del mensaje. En std::cout << "Sala" << " " << "Central";, las inserciones aportan Sala, un espacio y Central.)text";
+            const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"Un espacio dentro de un literal",0,"bold"}}};
+            set_rich_text(editor.value,screenshot,emphasis);
+            check(edit_text(editor.value)==screenshot,"Coloring inline strings changed source text or narration offsets");
+            for(const auto token:{LR"("Sala")",LR"(" ")",LR"("Central")"})check_ink(token,string_ink);
+            check_ink(L"las inserciones aportan Sala",base);
+            const auto literal_at=static_cast<LONG>(wide(screenshot).find(L"Central\""));
+            const auto literal_style=character(editor.value,literal_at);
+            check(literal_style.yHeight==270&&std::wstring(literal_style.szFaceName)==L"Roboto"&&
+                (character(editor.value,static_cast<LONG>(wide(screenshot).find(L"Un espacio"))).dwEffects&CFE_BOLD),
+                "Inline color correction changed the literal's typography or an existing emphasis range");
+            const std::string escaped=R"text(En std::cout << "std::cout << \"Hola\"; int // sigue" << '\n';, después "texto normal".)text";
+            set_rich_text(editor.value,escaped);
+            check(edit_text(editor.value)==escaped,"Inline escaped strings changed their source characters");
+            check_ink(LR"text("std::cout << \"Hola\"; int // sigue")text",string_ink);
+            check_ink(LR"('\n')",string_ink);check_ink(LR"("texto normal")",base);
+            set_rich_text(editor.value,R"text(En std::cout << escoger(y, "Hola", '\n');, sigue la explicación.)text");
+            check_ink(LR"("Hola")",string_ink);check_ink(LR"('\n')",string_ink);
+            for(const auto prose:{R"text(La frase "Hola" es prosa; std::cout representa el recurso.)text",
+                R"text(Se menciona std::cout << "Hola" y luego otra frase; conserva su presentación.)text",
+                "Se menciona std::cout << \"Hola\"\nOtra línea termina;",
+                "Se menciona std::cout << \"Hola sin cerrar; continúa la frase."}){
+                set_rich_text(editor.value,prose);check_ink(L"Hola",base);
+            }
         }
         const std::string original = "#include <iostream>\n\nint main() {\n\tstd::cout << \"área  A\";  \n}\n";
         set_edit_text(editor.value, original);

@@ -220,7 +220,7 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             const auto expanded=f.snapshot();
             check(expanded.planned&&!expanded.playing&&!expanded.allocated&&expanded.key==paused.key&&expanded.index==paused.index&&expanded.offset==paused.offset&&
                 expanded.segments.size()==paused.segments.size(),"Readonly fullscreen or a later content notification discarded the existing plan/position");
-            SendMessageW(child(f.view,116),BM_CLICK,0,0);pump();f.reader->content_changed();pump();
+            SendMessageW(f.view,WM_KEYDOWN,VK_ESCAPE,0);pump();f.reader->content_changed();pump();
             const auto restored=f.snapshot();const auto after_history=narration::read_history(read_lesson_state(f.view));
             check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset&&restored.heard_through==paused.heard_through&&
                 !restored.playing&&!restored.allocated&&history.entries.size()==after_history.entries.size(),

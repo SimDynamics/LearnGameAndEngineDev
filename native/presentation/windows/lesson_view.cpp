@@ -157,7 +157,28 @@ bool blank_answer(std::string_view text) {
         return GetStringTypeW(CT_CTYPE1,&character,1,&kind)&&(kind&C1_SPACE)!=0;
     });
 }
+Microsoft::WRL::ComPtr<ITextDocument> edit_text_document(HWND edit) {
+    Microsoft::WRL::ComPtr<IRichEditOle> rich;
+    SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+    Microsoft::WRL::ComPtr<ITextDocument> document;
+    if(rich)(void)rich.As(&document);
+    return document;
+}
+std::optional<RECT> edit_character_bounds(ITextDocument* document,LONG character) {
+    if(!document)return {};
+    Microsoft::WRL::ComPtr<ITextRange> range;
+    if(document->Range(character,character,&range)!=S_OK||!range)return {};
+    RECT bounds{};
+    constexpr long coordinates=tomStart|tomClientCoord|tomAllowOffClient;
+    if(range->GetPoint(coordinates|TA_TOP|TA_LEFT,&bounds.left,&bounds.top)!=S_OK||
+        range->GetPoint(coordinates|TA_BOTTOM|TA_RIGHT,&bounds.right,&bounds.bottom)!=S_OK||bounds.bottom<=bounds.top)return {};
+    return bounds;
+}
 int edit_line_height(HWND edit,int scale) {
+    // TextServices owns the actual zoomed line box, including font fallback
+    // and leading. A separately created GDI font can underestimate it.
+    if(const auto bounds=edit_character_bounds(edit_text_document(edit).Get(),0))
+        return static_cast<int>(bounds->bottom-bounds->top);
     CHARFORMAT2W style{};style.cbSize=sizeof(style);SendMessageW(edit,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&style));
     const auto height=MulDiv(MulDiv(style.yHeight,static_cast<int>(GetDpiForWindow(edit)),1440),scale,100);
     const auto font=CreateFontW(-std::max(1,height),0,0,0,(style.dwEffects&CFE_BOLD)?FW_BOLD:FW_NORMAL,
@@ -968,23 +989,32 @@ struct LessonView {
         set_padding();
         RECT client{};GetClientRect(answer,&client);
         POINT offset{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
-        POINTL document_extent{};
+        LONG document_right=0;
+        const auto document=edit_text_document(answer);
+        const int fallback_height=edit_line_height(answer,content_text_scale());
+        LONG document_bottom=0;
         // RichEdit owns tabs, Unicode glyph widths, zoom and display wrapping.
         // Its default 0..100/page=0 range is not a document measurement.
         const bool has_text=GetWindowTextLengthW(answer)>0;
-        const auto lines=has_text?SendMessageW(answer,EM_GETLINECOUNT,0,0):0;
+        const auto lines=std::max<LRESULT>(1,SendMessageW(answer,EM_GETLINECOUNT,0,0));
         for(LRESULT line=0;line<lines;++line){
             const auto start=SendMessageW(answer,EM_LINEINDEX,static_cast<WPARAM>(line),0);
             if(start<0)continue;
             const auto length=SendMessageW(answer,EM_LINELENGTH,static_cast<WPARAM>(start),0);
             POINTL end{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),start+length);
-            document_extent.x=std::max(document_extent.x,end.x+offset.x);
-            document_extent.y=std::max(document_extent.y,end.y+offset.y);
+            document_right=std::max(document_right,end.x+offset.x);
+            // The last character's native bottom is the clipping boundary
+            // that must fit. Do not derive it from an unrelated GDI font or
+            // from the previous outer size of an empty answer.
+            const auto character=static_cast<LONG>(start+std::max<LRESULT>(0,length-1));
+            if(const auto bounds=edit_character_bounds(document.Get(),character))
+                document_bottom=std::max(document_bottom,bounds->bottom+offset.y);
+            else document_bottom=std::max(document_bottom,end.y+offset.y+fallback_height);
         }
         const auto dpi=GetDpiForWindow(answer);
         const int bar_width=GetSystemMetricsForDpi(SM_CXVSCROLL,dpi),bar_height=GetSystemMetricsForDpi(SM_CYHSCROLL,dpi);
-        const auto bottom=std::max<LONG>(px(top_padding),document_extent.y)+edit_line_height(answer,content_text_scale())+px(bottom_padding);
-        const auto right=document_extent.x+px(right_padding);
+        const auto bottom=std::max<LONG>(px(top_padding)+fallback_height,document_bottom)+px(bottom_padding);
+        const auto right=document_right+px(right_padding);
         bool horizontal=has_text&&(style&ES_AUTOHSCROLL)&&right>client.right;
         const bool vertical=!fit_height&&has_text&&bottom>client.bottom-(horizontal?bar_height:0)+px(1);
         if(vertical&&(style&ES_AUTOHSCROLL))horizontal=has_text&&right>client.right-bar_width;
