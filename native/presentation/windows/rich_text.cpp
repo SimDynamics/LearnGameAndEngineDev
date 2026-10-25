@@ -202,6 +202,31 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
 void apply_cpp(HWND edit, std::wstring_view source, std::size_t offset = 0, bool monospaced = false) {
     for (const auto& ink : cpp_ink(edit, source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? reader_theme::code_font_face() : nullptr);
 }
+bool technical_mention_boundary(wchar_t value) {
+    // Positive prose boundaries keep accented words and identifiers intact,
+    // independent of the process locale used by std::wregex's ASCII \b.
+    return std::wstring_view(L" \t\r\n\u00a0\u202f.,;:!?()[]{}\"'`«»“”‘’…/\\+-*=<>|&—–").find(value)!=std::wstring_view::npos;
+}
+std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::wstring_view text) {
+    std::vector<std::pair<std::size_t,std::size_t>> result;
+    // These are the escape seeds used by Android's SpanishTechnicalSpeech.
+    // Apply the existing lexer to the exact token: the letter is identifier
+    // ink, while a surrounding C++ string keeps its complete string ink.
+    for(std::size_t index=0;index+1<text.size();++index){
+        if(text[index]!=L'\\'||std::wstring_view(L"ntr0abfv").find(text[index+1])==std::wstring_view::npos)continue;
+        if((index==0||technical_mention_boundary(text[index-1]))&&
+            (index+2==text.size()||technical_mention_boundary(text[index+2])))result.emplace_back(index,index+2);
+    }
+    static const std::wregex named_letter(LR"((?:letra|car[aáÁ]cter)[ \t\r\n]+([A-Za-z]))",std::regex_constants::icase);
+    for(std::regex_iterator<std::wstring_view::const_iterator> match(text.begin(),text.end(),named_letter),end;match!=end;++match){
+        const auto cue=static_cast<std::size_t>(match->position());
+        const auto letter=static_cast<std::size_t>(match->position(1));
+        if((cue==0||technical_mention_boundary(text[cue-1]))&&
+            (letter+1==text.size()||technical_mention_boundary(text[letter+1])))result.emplace_back(letter,letter+1);
+    }
+    std::sort(result.begin(),result.end());
+    return result;
+}
 std::size_t inline_cpp_statement_end(std::wstring_view text,std::size_t initial) {
     auto start=initial;
     while(start<text.size()&&(text[start]==L' '||text[start]==L'\t'))++start;
@@ -447,6 +472,8 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 if(statement_end>start+count)statements.emplace_back(start,statement_end);
             }
         }
+        for(const auto& [start,end]:inline_character_mentions(source))
+            apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
         // Apply complete fragments after individual technical mentions so a
         // word such as std::cout or << inside a literal keeps the string ink.
         // Match Android's color-only treatment: preserve existing fonts,

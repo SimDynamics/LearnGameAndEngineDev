@@ -187,6 +187,55 @@ int main() {
                 set_rich_text(editor.value,prose);check_ink(L"Hola",base);
             }
         }
+        {
+            reader_theme::apply(editor.value,reader_theme::Surface::canvas);
+            const auto base=reader_theme::foreground(editor.value);
+            const bool high_contrast=reader_theme::palette(editor.value).high_contrast;
+            const auto identifier_ink=high_contrast?base:RGB(171,141,227);
+            const auto string_ink=high_contrast?base:RGB(122,195,141);
+            const auto literal_ink=high_contrast?base:RGB(224,151,109);
+            const auto check_range=[&](std::wstring_view context,std::size_t offset,std::size_t count,COLORREF ink){
+                const auto visible=wide(edit_text(editor.value));const auto start=visible.find(context);
+                check(start!=visible.npos&&offset+count<=context.size(),"The technical-character regression lost its source context");
+                for(auto index=start+offset;index<start+offset+count;++index)
+                    check(character(editor.value,static_cast<LONG>(index)).crTextColor==ink,
+                        "A technical character lost its Android ink or colored neighboring prose punctuation");
+            };
+            const std::string lesson=R"text(𐐀 Dentro de un literal, \n representa un salto de línea. Su escritura en el código utiliza una barra inversa y la letra n, pero el texto producido contiene un carácter de control. No se muestran la barra inversa ni la letra n: juntas forman el escape.)text";
+            const std::array<lgaed::curriculum::Emphasis,2> emphasis{{
+                {"\\n representa un salto de línea",0,"bold"},{"letra n",0,"italic"}}};
+            set_rich_text(editor.value,lesson,emphasis);
+            check(edit_text(editor.value)==lesson,"Character highlighting changed Unicode text or narration offsets");
+            check_range(LR"(\n representa)",0,1,base);check_range(LR"(\n representa)",1,1,identifier_ink);
+            check_range(L"la letra n, pero",0,9,base);check_range(L"la letra n, pero",9,1,identifier_ink);
+            check_range(L"la letra n, pero",10,6,base);
+            check_range(L"la letra n: juntas",9,1,identifier_ink);check_range(L"la letra n: juntas",10,8,base);
+            const auto visible=wide(lesson);
+            const auto named_style=character(editor.value,static_cast<LONG>(visible.find(L"letra n")+6));
+            check(named_style.yHeight==270&&std::wstring(named_style.szFaceName)==L"Roboto"&&(named_style.dwEffects&CFE_ITALIC)
+                &&(character(editor.value,static_cast<LONG>(visible.find(L"\\n")+1)).dwEffects&CFE_BOLD),
+                "Coloring a named letter changed its typography or authored emphasis");
+            for(const auto source:{"letra n","Letra N:","CARÁCTER n.","caracter t,","carácter q)","carácter v?"}){
+                set_rich_text(editor.value,source);const auto text=wide(source);const auto letter=text.find(L' ')+1;
+                check_range(text,0,letter,base);check_range(text,letter,1,identifier_ink);
+                if(letter+1<text.size())check_range(text,letter+1,text.size()-letter-1,base);
+            }
+            const std::string escapes=R"(\n \t \r \0 \a \b \f \v)";
+            set_rich_text(editor.value,escapes);
+            for(const auto token:{LR"(\n)",LR"(\t)",LR"(\r)",LR"(\a)",LR"(\b)",LR"(\f)",LR"(\v)"}){
+                check_range(token,0,1,base);check_range(token,1,1,identifier_ink);
+            }
+            check_range(LR"(\0)",0,1,base);check_range(LR"(\0)",1,1,literal_ink);
+            const std::string prose=R"text(La letra número, letra nombre, carácter nñ, carácter n2, carácter n_1; la n y una a. \nueva, \tarea, \z y alfa\n; superletra n y áletra n.)text";
+            set_rich_text(editor.value,prose);check_range(wide(prose),0,wide(prose).size(),base);
+            const std::string statement=R"text(En std::cout << "letra n: \n";, la letra n: sigue.)text";
+            set_rich_text(editor.value,statement);
+            check_range(LR"("letra n: \n")",0,std::wstring_view(LR"("letra n: \n")").size(),string_ink);
+            check_range(L"la letra n: sigue",9,1,identifier_ink);check_range(L"la letra n: sigue",10,7,base);
+            set_rich_text(editor.value,R"text(𐐀 `"letra n: \n"` y la letra n: sigue.)text");
+            check_range(LR"("letra n: \n")",0,std::wstring_view(LR"("letra n: \n")").size(),string_ink);
+            check_range(L"la letra n: sigue",9,1,identifier_ink);check_range(L"la letra n: sigue",10,7,base);
+        }
         const std::string original = "#include <iostream>\n\nint main() {\n\tstd::cout << \"área  A\";  \n}\n";
         set_edit_text(editor.value, original);
         check(edit_text(editor.value) == original, "RichEdit did not preserve exact indentation, spaces or final LF");
