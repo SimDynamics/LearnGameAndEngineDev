@@ -1,12 +1,11 @@
 """Compile and run the actual Windows speech frontend without loading Kokoro.
 
 Usage: python native/narration/worker/test_windows_symbol_speech.py --kotlinc PATH
-Uses temporary generated sources, never alters Android or recordings.
+Uses temporary production-generated sources, never alters Android or recordings.
 """
 from pathlib import Path
 import argparse
 import importlib.util
-import re
 import shutil
 import subprocess
 import tempfile
@@ -26,22 +25,33 @@ def main():
     spec = importlib.util.spec_from_file_location('windows_speech_build', WORKER / 'build_worker.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    canonical = APP / 'SpanishTechnicalSpeech.kt'
-    generated = module.windows_reading_source('SpanishTechnicalSpeech', canonical.read_text(encoding='utf-8-sig'))
-    dependencies = [APP / 'ManualEnglishTerms.kt', APP / 'ManualEnglishSpeech.kt']
-    # The helper's canonical filename is not part of the pronunciation contract.
-    matches = [path for path in APP.glob('*.kt') if re.search(r'\bobject\s+TechnicalSemicolonContext\b', path.read_text(encoding='utf-8-sig'))]
-    if len(matches) != 1:
-        raise RuntimeError('Cannot uniquely locate canonical TechnicalSemicolonContext')
-    dependencies += matches
     with tempfile.TemporaryDirectory(prefix='lgaed-symbol-speech-') as temporary:
         folder = Path(temporary)
-        source = folder / 'SpanishTechnicalSpeech.kt'
-        source.write_text(generated, encoding='utf-8')
+        # Use the application's actual platform adapters, including its real
+        # mathematical parser. Generate into this disposable directory only.
+        module.OUT = folder / 'host'
+        generated = module.host_sources()
+        names = {'SpanishTechnicalSpeech.kt', 'SpanishMathSpeech.kt',
+                 'ManualEnglishTerms.kt', 'ManualEnglishSpeech.kt',
+                 'MathExpression.kt', 'MathReadingAtoms.kt', 'MathTextSemantics.kt',
+                 'MathLatexSerializer.kt', 'MathLatexParser.kt', 'MathUiMessage.kt',
+                 'WindowsNarrationSpeechRules.kt'}
+        dependencies = [path for path in generated if path.name in names]
+        if {path.name for path in dependencies} != names:
+            raise RuntimeError('Missing production frontend dependency')
+        # The semicolon helper shares a source file with unrelated multilingual
+        # presentation code. Compile its complete original object unchanged.
+        original = (APP / 'ProgrammingTechnicalRanges.kt').read_text(encoding='utf-8-sig')
+        boundary = '/** Presentation-only C++ ranges over the original text, shared by all programming lessons. */'
+        if original.count(boundary) != 1:
+            raise RuntimeError('Canonical semicolon helper boundary changed')
+        semicolon = folder / 'TechnicalSemicolonContext.kt'
+        semicolon.write_text(original.split(boundary)[0], encoding='utf-8')
+        fixture = folder / 'WindowsSymbolSpeechTest.kt'
+        fixture.write_text((WORKER / 'test_windows_symbol_speech.kt.in').read_text(encoding='utf-8-sig'), encoding='utf-8')
         jar = folder / 'symbol-speech.jar'
         command = [args.kotlinc, '-jvm-target', '17', '-include-runtime', '-d', str(jar),
-                   str(source), *map(str, dependencies), str(WORKER / 'WindowsNarrationSpeechRules.kt'),
-                   str(WORKER / 'test_windows_symbol_speech.kt')]
+                   *map(str, dependencies), str(semicolon), str(fixture)]
         subprocess.run(command, check=True, cwd=ROOT)
         subprocess.run([args.java, '-jar', str(jar)], check=True, cwd=ROOT)
 
