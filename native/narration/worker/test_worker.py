@@ -260,6 +260,60 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
                                                language=language, voice=voice)["segments"]
                     self.assertTrue(any(icon in part["preparedText"] for part in embedded))
 
+    def test_08_named_letter_keeps_escape_and_original_source_ranges(self):
+        cases = [
+            (r"La secuencia \n incluye la barra inversa y la letra n.", "la letra ene"),
+            ("No se ven la barra inversa ni la letra n: juntas forman un salto.", "la letra ene:"),
+            ("La LETRA N: se nombra.", "LETRA ene:"),
+            ("El carácter n se lee como una letra.", "carácter ene"),
+        ]
+        for source, expected in cases:
+            with self.subTest(source=source):
+                segments = self.worker.ask("plan", text=source, language="es")["segments"]
+                spoken = " ".join(part["spokenText"] for part in segments)
+                self.assertIn(expected, spoken)
+                if r"\n" in source:
+                    self.assertIn("barra inversa ene", spoken)
+                for part in segments:
+                    self.assertEqual(source[part["sourceStart"]:part["sourceEnd"]], part["text"])
+                    self.assertTrue(part["displayedRanges"], "Named letters must retain original word alignment")
+                    self.assertEqual(len(part["spokenRanges"]), len(part["displayedRanges"]))
+                    for shown in part["displayedRanges"]:
+                        self.assertGreater(shown["end"], shown["start"])
+                        self.assertLessEqual(shown["end"], len(part["text"]))
+        ordinary = "La letra número continúa y el carácter nñ conserva su escritura."
+        spoken = " ".join(part["spokenText"] for part in self.worker.ask(
+            "plan", text=ordinary, language="es", mathMode="text")["segments"])
+        self.assertEqual(ordinary, spoken)
+        named = self.worker.ask("plan", text="La letra n.", language="es")["segments"]
+        spelled = self.worker.ask("plan", text="La letra ene.", language="es")["segments"]
+        self.assertEqual([part["key"] for part in named], [part["key"] for part in spelled])
+
+    def test_09_prose_pauses_share_foreground_and_background_preparation(self):
+        source = "Resultado: continúa (con cuidado) y termina; después comprueba."
+        segments = self.worker.ask("plan", text=source, language="es")["segments"]
+        self.assertEqual(["Resultado:", "continúa (", "con cuidado) y termina;", "después comprueba."],
+                         [part["spokenText"] for part in segments])
+        sources = [source, "Resultado: (con cuidado) y termina.",
+                   "No se ven la barra inversa ni la letra n: juntas forman un salto.",
+                   r"La secuencia \n conserva su nombre.",
+                   "main() utiliza std::cout y el carácter ':' junto con '('.",
+                   r"La fórmula \(3 + (2 * 4)\) mantiene su agrupación.",
+                   "Consulta https://ejemplo.test/ruta: continúa."]
+        for source in sources:
+            with self.subTest(source=source):
+                foreground = self.worker.ask("plan", text=source, language="es", voice="ef_dora")["segments"]
+                lesson = {"pages": [{"blocks": [{"type": "paragraph", "text": source}]}]}
+                background = self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson),
+                    page=0, language="es", uiLanguage="es", voice="ef_dora")["segments"]
+                for field in ("preparedText", "key"):
+                    self.assertEqual([part[field] for part in foreground], [part[field] for part in background], field)
+                self.assertTrue(all(part["displayedRanges"] for part in foreground))
+                self.assertTrue(all(part["spokenRanges"] for part in foreground), "No punctuation-only audio segments")
+        for source in sources[-3:]:
+            self.assertEqual(1, len(self.worker.ask("plan", text=source, language="es")["segments"]))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

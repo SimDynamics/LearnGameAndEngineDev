@@ -1,8 +1,8 @@
 """Build the Windows host for the existing Kotlin Kokoro frontend.
 
 The canonical phonemizers/dictionary remain in app/src/main/java. Generated
-sources under out/narration replace only Android platform glue, never speech
-rules, cache identities, model weights or curricular data.
+sources under out/narration adapt Android platform glue and the Windows reading
+rules below, without editing Android, model weights or curricular data.
 """
 from __future__ import annotations
 
@@ -459,8 +459,43 @@ internal object WindowsMathActions {
     return sources
 
 
+def windows_reading_source(name: str, code: str) -> str:
+    """Use the canonical parser and provenance in both foreground/background plans.
+
+    Only generated Windows sources change. Exact anchors fail closed if Android's
+    implementation moves, rather than silently leaving one preparation path stale.
+    """
+    if name == "SpanishTechnicalSpeech":
+        code = exact(code, "            selected[index]?.let { match ->", """            if (WindowsNarrationSpeechRules.isNamedLetter(text, index)) {
+                val letter = text[index].toString()
+                val name = readIdentifier(letter)
+                output.append(name)
+                if (name != letter) changed = true
+                index++
+                continue
+            }
+            selected[index]?.let { match ->""")
+    elif name == "NarrationSegments":
+        code = exact(code, "ManualEnglishSpeech.segment(paragraph, ::plainSentences)",
+                     "ManualEnglishSpeech.segment(paragraph) { plainSentences(it, prosePauses = true) }")
+        code = exact(code, "private fun plainSentences(paragraph: String): List<String>",
+                     "private fun plainSentences(paragraph: String, prosePauses: Boolean = false): List<String>")
+        code = exact(code, '                if (symbol !in ".!?;" ||', """                val prosePause = prosePauses && WindowsNarrationSpeechRules.isProsePause(source, index) &&
+                    source.substring(start, index).any(Char::isLetterOrDigit)
+                if ((!prosePause && symbol !in ".!?;") ||""")
+        code = exact(code, "                    (index + 1 < source.length && !source[index + 1].isWhitespace())",
+                     "                    (!prosePause && index + 1 < source.length && !source[index + 1].isWhitespace())")
+    return code
+
+
 def host_sources() -> list[Path]:
-    sources = [APP / "narration" / f"{name}.kt" for name in PURE_NARRATION]
+    sources = []
+    for name in PURE_NARRATION:
+        path = APP / "narration" / f"{name}.kt"
+        if name in {"SpanishTechnicalSpeech", "NarrationSegments"}:
+            sources.append(generated(f"{name}.kt", windows_reading_source(name, path.read_text(encoding="utf-8-sig"))))
+        else:
+            sources.append(path)
     sources += [APP / "math" / f"{name}.kt" for name in ("MathExpression", "MathReadingAtoms", "MathTextSemantics", "MathLatexSerializer")]
     for name in PHONEMES + ["KokoroOnnxEngine", "KokoroDurationModel"]:
         path = APP / "narration" / ("phonemes" if name in PHONEMES else "") / f"{name}.kt"
@@ -666,3 +701,4 @@ def build() -> None:
 if __name__ == "__main__":
     with build_lock():
         build()
+
