@@ -2632,7 +2632,7 @@ struct LessonView {
         }
         SCROLLINFO info{sizeof(info), SIF_RANGE | SIF_PAGE | SIF_POS};
         info.nMin = 0; info.nMax = std::max(0, extent - 1); info.nPage = static_cast<UINT>(std::max<LONG>(0, area.bottom)); info.nPos = scroll;
-        SetScrollInfo(pane, SB_VERT, &info, TRUE);
+        SetScrollInfo(pane, SB_VERT, &info, FALSE);
         ShowScrollBar(pane,SB_VERT,FALSE);
         place_reader_bar();
         RedrawWindow(pane,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
