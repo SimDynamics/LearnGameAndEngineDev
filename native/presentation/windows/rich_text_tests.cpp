@@ -72,7 +72,30 @@ int main() {
                 const auto begin=static_cast<const std::uint32_t*>(memory);std::vector<std::uint32_t> result(begin,begin+bounds.right*bounds.bottom);
                 SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);return result;};
             const auto empty=pixels();const auto modified=SendMessageW(hinted.value,EM_GETMODIFY,0,0);
-            set_edit_hint(hinted.value,"Escribe el código faltante");const auto hint=pixels();
+            const auto query_hint=[&](std::wstring_view expected){
+                CHARRANGE selection{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+                const auto focus=GetFocus();const auto mask=SendMessageW(hinted.value,EM_GETEVENTMASK,0,0);
+                const auto changed=SendMessageW(hinted.value,EM_GETMODIFY,0,0);
+                int numerator=0,denominator=0;
+                SendMessageW(hinted.value,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+                // These synchronous read messages must reach RichEdit with an
+                // active hint, including the exact query made by showing().
+                for(int repeat=0;repeat<16;++repeat){
+                    check(GetWindowTextLengthW(hinted.value)==static_cast<int>(expected.size())&&
+                        SendMessageW(hinted.value,WM_GETTEXTLENGTH,0,0)==static_cast<LRESULT>(expected.size()),
+                        "An active hint recursed on WM_GETTEXTLENGTH or became document text");
+                    CHARRANGE after{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+                    check(after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax,
+                        "Reading an active hint moved the real text selection");
+                }
+                int after_numerator=0,after_denominator=0;
+                SendMessageW(hinted.value,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_numerator),reinterpret_cast<LPARAM>(&after_denominator));
+                check(GetFocus()==focus&&SendMessageW(hinted.value,EM_GETEVENTMASK,0,0)==mask&&
+                    SendMessageW(hinted.value,EM_GETMODIFY,0,0)==changed&&
+                    numerator==after_numerator&&denominator==after_denominator&&wide(edit_text(hinted.value))==expected,
+                    "Reading an active hint changed focus, events, Modify, zoom or entered text");
+            };
+            set_edit_hint(hinted.value,"Escribe el código faltante");query_hint(L"");const auto hint=pixels();
             check(hint!=empty&&edit_text(hinted.value).empty()&&GetWindowTextLengthW(hinted.value)==0&&
                 !SendMessageW(hinted.value,EM_CANUNDO,0,0)&&SendMessageW(hinted.value,EM_GETMODIFY,0,0)==modified,
                 "The empty hint was not painted, became false document text, changed Modify or entered Undo");
@@ -90,7 +113,7 @@ int main() {
             check(SendMessageW(hinted.value,EM_UNDO,0,0)&&edit_text(hinted.value).empty()&&pixels()==hint,
                 "Undo failed to restore an empty document with a purely visual hint");
             check(SendMessageW(hinted.value,EM_CANREDO,0,0)!=0,"Painting the restored hint discarded Redo");
-            SendMessageW(hinted.value,EM_SETREADONLY,TRUE,0);const auto readonly=pixels();set_edit_hint(hinted.value,"");
+            SendMessageW(hinted.value,EM_SETREADONLY,TRUE,0);query_hint(L"");const auto readonly=pixels();set_edit_hint(hinted.value,"");
             check(pixels()==readonly&&edit_text(hinted.value).empty(),"A readonly display acquired an editable placeholder");
             SendMessageW(hinted.value,EM_SETREADONLY,FALSE,0);
             set_edit_hint(hinted.value,"Escribe la salida");
@@ -120,6 +143,7 @@ int main() {
             SendMessageW(hinted.value,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"Escribe"));
             SendMessageW(hinted.value,EM_SETSEL,0,1);CHARRANGE selected{};
             SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            query_hint(L"Escribe");
             wchar_t copied[16]{};SendMessageW(hinted.value,EM_GETSELTEXT,0,reinterpret_cast<LPARAM>(copied));
             check(selected.cpMin==0&&selected.cpMax==1&&std::wstring_view(copied)==L"E",
                 "The hint guard prevented selecting the first letter of real entered text");
@@ -165,6 +189,7 @@ int main() {
                 check(placeholder_ink.right>placeholder_ink.left&&placeholder_ink.bottom>placeholder_ink.top,
                     "The zoomed native answer hint disappeared");
                 SetFocus(hinted.value);RedrawWindow(hinted.value,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);
+                query_hint(L"");
                 GUITHREADINFO caret_before{};caret_before.cbSize=sizeof(caret_before);
                 check(GetGUIThreadInfo(GetCurrentThreadId(),&caret_before)&&caret_before.hwndCaret==hinted.value&&
                     caret_before.rcCaret.bottom>caret_before.rcCaret.top&&caret_before.rcCaret.top>=0&&
@@ -290,7 +315,7 @@ int main() {
             };
             const std::string lesson=R"text(𐐀 Dentro de un literal, \n representa un salto de línea. Su escritura en el código utiliza una barra inversa y la letra n, pero el texto producido contiene un carácter de control. No se muestran la barra inversa ni la letra n: juntas forman el escape.)text";
             const std::array<lgaed::curriculum::Emphasis,2> emphasis{{
-                {"\\n representa un salto de línea",0,"bold"},{"letra n",0,"italic"}}};
+                {"\\n representa un salto de línea",0,"bold"},{"letra n",1,"italic"}}};
             set_rich_text(editor.value,lesson,emphasis);
             check(edit_text(editor.value)==lesson,"Character highlighting changed Unicode text or narration offsets");
             check_range(LR"(\n representa)",0,1,base);check_range(LR"(\n representa)",1,1,identifier_ink);

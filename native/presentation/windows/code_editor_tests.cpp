@@ -532,6 +532,7 @@ int main() {
             reinterpret_cast<HMENU>(102), GetModuleHandleW(nullptr), nullptr);
         require(input != nullptr && !GetPropW(input, L"lgaed.test.editor"), "Create an independent stdin field without CodeEditor");
         lgaed::presentation::reader_theme::apply(input, lgaed::presentation::reader_theme::Surface::field);
+        lgaed::presentation::set_edit_hint(input,"Escribe la salida");
         const auto format = local_paste_format(input);
         const CHARRANGE selected{1, 3};
         SendMessageW(input, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&selected));
@@ -556,6 +557,18 @@ int main() {
         SendMessageW(input, EM_REDO, 0, 0);
         require(lgaed::presentation::edit_text(input) == "ApegadoB", "Standalone stdin paste keeps native Redo");
         require_local_paste_format(input, 1, 7, format);
+        lgaed::presentation::set_edit_text(input,"");
+        SendMessageW(input,EM_EMPTYUNDOBUFFER,0,0);
+        SendMessageW(input,WM_PASTE,0,0);
+        require(lgaed::presentation::edit_text(input)=="pegado" && GetWindowTextLengthW(input)==6 &&
+            selected_range(input).cpMin==6 && selected_range(input).cpMax==6,
+            "Pasting into an empty hinted answer must insert only plain text and retain its caret");
+        SendMessageW(input,EM_UNDO,0,0);
+        require(lgaed::presentation::edit_text(input).empty() && selected_range(input).cpMin==0 && selected_range(input).cpMax==0,
+            "Undoing a paste into a hinted answer must restore the empty insertion point");
+        SendMessageW(input,EM_REDO,0,0);
+        require(lgaed::presentation::edit_text(input)=="pegado" && native_ole(input)->GetObjectCount()==0,
+            "Redoing a paste into a hinted answer must preserve text and reject embedded objects");
         require(clipboard.restore(), "Restore original clipboard after standalone stdin test");
     });
 

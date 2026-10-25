@@ -89,7 +89,10 @@ struct EditHint {
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
         auto* self=reinterpret_cast<EditHint*>(raw);
         if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,hint_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
-        if(!self->normalizing_selection&&self->showing(edit)){
+        // showing() asks this HWND for WM_GETTEXTLENGTH. Only consult it for
+        // selection writes, or that synchronous query reenters this branch.
+        if((message==EM_SETSEL||(message==EM_EXSETSEL&&lp))&&
+            !self->normalizing_selection&&self->showing(edit)){
             if(message==EM_SETSEL)return DefSubclassProc(edit,message,0,0);
             if(message==EM_EXSETSEL&&lp){CHARRANGE insertion{};return DefSubclassProc(edit,message,0,reinterpret_cast<LPARAM>(&insertion));}
         }

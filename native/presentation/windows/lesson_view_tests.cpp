@@ -224,7 +224,8 @@ struct Fixture {
             replace(block,2,current.answers.at(0)); const auto current_page = page(); enter(block);
             require(page() == current_page, "Enter checked and unexpectedly changed page");
         }
-        require(text(block,4).starts_with("✓ Correcto"), "Authored response was not accepted through actual controls");
+        require(text(block,4).starts_with("✓ Correcto"), "Authored response was not accepted through actual controls: "
+            + lesson.id + "/page=" + std::to_string(page()) + "/block=" + std::to_string(block) + "/feedback=" + text(block,4));
     }
     void run(std::size_t block) {
         const auto compile = control(block,11);
@@ -1814,11 +1815,195 @@ void premium_attempt_indicator(){
     }
     std::cout<<"PASS Programming/Math free and Premium indicators: original full route accent, no Premium percentage, XML six-stop infinity gradient, DPI/contrast and free-panel semantics\n";
 }
+void text_sequence_lesson_all_pages() {
+    constexpr std::string_view lesson_id = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato";
+    const auto load = [](const curriculum::Lesson&) {
+        return windows::load_lesson(std::filesystem::path(build::source_root) /
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json");
+    };
+    const auto verify_page = [&](Fixture& fixture,std::size_t page) {
+        pump(fixture.host);
+        const auto current = lesson_page_state(fixture.view);
+        require(IsWindow(fixture.view) && current.lesson_id == lesson_id && current.count == 8 && current.index == page
+                && current.page_id == fixture.lesson.pages.at(page).stable_id,
+            "The actual text/sequence lesson did not open its requested page");
+        const auto regions = lesson_reading_regions(fixture.view);
+        require(!regions.empty(),"Opening the text/sequence lesson lost its narration regions");
+        // Exercise real RichEdit selection callbacks after construction as well
+        // as the formatting callbacks emitted while each page is being built.
+        for (const auto& region : regions) {
+            wchar_t type[128]{}; GetClassNameW(region.target,type,128);
+            if (std::wstring_view(type) != MSFTEDIT_CLASS) continue;
+            const auto before = edit_text(region.target);
+            CHARRANGE previous{}; SendMessageW(region.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            CHARRANGE selected{0,static_cast<LONG>(std::min<std::size_t>(wide(before).size(),8))};
+            SendMessageW(region.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected)); pump(fixture.host);
+            SendMessageW(region.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous)); pump(fixture.host);
+            require(edit_text(region.target) == before,"Selecting lesson text changed its source characters");
+        }
+        fixture.viewport_layout();
+    };
+    {
+        Fixture fixture({},load);
+        require(fixture.lesson.pages.size() == 8,"The text/sequence regression must cover all eight authored pages");
+        const auto original_json = fixture.lesson.raw_json;
+        for (std::size_t page = 0; page < 8; ++page) {
+            std::cout << "QA actual text/sequence lesson page " << page + 1 << "/8\n";
+            verify_page(fixture,page);
+            fixture.reopen(); verify_page(fixture,page);
+            for (std::size_t index = 0; index < fixture.lesson.pages[page].blocks.size(); ++index) {
+                const auto& block = fixture.lesson.pages[page].blocks[index];
+                if (block.type == BlockType::inline_fill_code) {
+                    const auto composition = fixture.control(index,5);
+                    for (std::size_t hole = 0; hole < block.answers.size(); ++hole) {
+                        const auto field = GetDlgItem(composition,100 + static_cast<int>(hole));
+                        require(field != nullptr,"The authored inline answer field is missing");
+                        const auto answer = wide(block.answers[hole]);
+                        SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(answer.c_str())); pump(fixture.host);
+                    }
+                    fixture.click(index,3);
+                    require(fixture.text(index,4).starts_with("✓ Correcto"),"The authored text/sequence inline answer was rejected");
+                } else if (block.type == BlockType::output_prediction) {
+                    // Multiline predictions own Enter for newline insertion.
+                    // Use their actual Check button rather than the single-line
+                    // Enter helper used by the first-program lesson fixtures.
+                    fixture.replace(index,2,block.answers.at(0)); fixture.click(index,3);
+                    require(fixture.text(index,4).starts_with("✓ Correcto"),"The authored text/sequence prediction was rejected: page="
+                        + std::to_string(page) + "/block=" + std::to_string(index) + "/feedback=" + fixture.text(index,4));
+                } else if (block.type == BlockType::multiple_choice || block.type == BlockType::fill_code
+                        || block.type == BlockType::order_code) {
+                    fixture.solve(index);
+                }
+            }
+            // Compiler controls remain live on page seven. Their execution is
+            // covered by compiler integration tests; no synthetic run receipt
+            // or correctness marker is inserted to visit the next page here.
+            if (page == 6) {
+                for (const auto index : {std::size_t{3},std::size_t{5},std::size_t{8}})
+                    require(descendant(fixture.view,id(index,10)) && descendant(fixture.view,id(index,11)),
+                        "Opening the experiment page lost an independent compiler editor/action");
+            }
+            if (page + 1 < 8) fixture.next();
+        }
+        fixture.select_page(0); verify_page(fixture,0);
+        fixture.select_page(7); verify_page(fixture,7);
+        require(fixture.lesson.raw_json == original_json,"Opening/navigating the regression lesson changed authored content");
+    }
+    // An old bookmark may name any page, even when previous answers are absent.
+    // Recreate that condition in new isolated profiles without smoke-test mode.
+    for (std::size_t page = 0; page < 8; ++page) {
+        Fixture restored([&](state::StateData& data,const curriculum::Lesson& lesson) {
+            state::prepare_lesson_state(data,lesson); state::save_current_page(data,lesson,page);
+        },load);
+        verify_page(restored,page); restored.reopen(); verify_page(restored,page);
+    }
+    std::cout << "PASS actual text/sequence lesson: fresh opening, eight-page gated navigation, RichEdit selection, narration targets, independent editors and every restored bookmark\n";
+}
+void text_sequence_application_restoration() {
+    wchar_t module[32768]{};
+    require(GetModuleFileNameW(nullptr,module,static_cast<DWORD>(std::size(module))) > 0,"Cannot locate the lesson test executable");
+    const auto executable = std::filesystem::path(module).parent_path()/L"bin/LearnGameAndEngineDev.exe";
+    require(std::filesystem::is_regular_file(executable),"Build the actual application beside the lesson tests before restoration QA");
+    const auto lesson = windows::load_lesson(std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json");
+    const auto shell_for = [](DWORD process_id) {
+        struct Search { DWORD process_id; HWND shell = nullptr; } search{process_id};
+        EnumWindows([](HWND window,LPARAM context)->BOOL {
+            auto& search = *reinterpret_cast<Search*>(context); DWORD owner = 0; GetWindowThreadProcessId(window,&owner);
+            wchar_t type[128]{}; GetClassNameW(window,type,128);
+            if (owner == search.process_id && std::wstring_view(type) == L"LearnGameAndEngineDev.NativeShell") {
+                search.shell = window; return FALSE;
+            }
+            return TRUE;
+        },reinterpret_cast<LPARAM>(&search));
+        return search.shell;
+    };
+    const auto caption = [](HWND window) {
+        require(window != nullptr,"The restored application is missing an expected native text control");
+        DWORD_PTR length = 0;
+        require(SendMessageTimeoutW(window,WM_GETTEXTLENGTH,0,0,SMTO_ABORTIFHUNG|SMTO_BLOCK,1000,&length) && length < 65536,
+            "The restored application is unresponsive while querying native text");
+        std::wstring text(static_cast<std::size_t>(length) + 1,L'\0'); DWORD_PTR copied = 0;
+        require(SendMessageTimeoutW(window,WM_GETTEXT,text.size(),reinterpret_cast<LPARAM>(text.data()),
+                SMTO_ABORTIFHUNG|SMTO_BLOCK,1000,&copied),"Cannot read restored native text through Windows message marshalling");
+        text.resize(static_cast<std::size_t>(copied)); return utf8(text);
+    };
+    for (std::size_t page = 0; page < lesson.pages.size(); ++page) {
+        const auto token = L"lesson-restore-" + std::to_wstring(GetCurrentProcessId()) + L"-"
+            + std::to_wstring(GetTickCount64()) + L"-" + std::to_wstring(page);
+        const auto environment = resolve_windows_environment({ProfileId::Codex,token,false});
+        require(!std::filesystem::exists(environment.paths.root),"Application restoration QA must own a new isolated profile");
+        initialize_profile_directories(environment.paths);
+        {
+            state::StateStore store(environment.paths.root); auto data = store.load();
+            state::prepare_lesson_state(data,lesson); state::save_current_page(data,lesson,page);
+            auto& preferences = data.preferences["native_windows"];
+            preferences["ui_language"] = std::string("es"); preferences["content_language"] = std::string("es");
+            preferences["catalog/locale"] = std::string("es"); preferences["catalog/route"] = std::string("programming");
+            preferences["catalog/course"] = std::string("cpp_fundamentals");
+            preferences["catalog/unit"] = std::string("programas_y_ejecucion"); preferences["navigation/lesson"] = lesson.id;
+            store.save(data);
+        }
+        auto command = L"\"" + executable.wstring() + L"\" --profile Codex --qa-instance " + token;
+        STARTUPINFOW startup{sizeof(startup)}; startup.dwFlags = STARTF_USESHOWWINDOW; startup.wShowWindow = SW_SHOWNOACTIVATE;
+        PROCESS_INFORMATION child{};
+        require(CreateProcessW(executable.c_str(),command.data(),nullptr,nullptr,FALSE,0,nullptr,
+                executable.parent_path().c_str(),&startup,&child),"Cannot launch the actual application for isolated restoration QA");
+        struct ChildScope {
+            PROCESS_INFORMATION process;
+            HWND shell = nullptr;
+            ~ChildScope() {
+                if (WaitForSingleObject(process.hProcess,0) == WAIT_TIMEOUT) {
+                    if (shell) PostMessageW(shell,WM_CLOSE,0,0);
+                    // A failing child must not leak a QA window/process into
+                    // subsequent tests. This handle is only our created child.
+                    if (WaitForSingleObject(process.hProcess,3000) == WAIT_TIMEOUT) TerminateProcess(process.hProcess,9);
+                }
+                CloseHandle(process.hThread); CloseHandle(process.hProcess);
+            }
+        } owner{child};
+        HWND view = nullptr;
+        const auto deadline = GetTickCount64() + 20000;
+        do {
+            require(WaitForSingleObject(child.hProcess,0) == WAIT_TIMEOUT,"The actual application exited while restoring the lesson");
+            owner.shell = shell_for(child.dwProcessId);
+            if (owner.shell) view = descendant_class(owner.shell,L"LearnGameAndEngineDev.LessonView");
+            if (view && descendant(view,990) && descendant(view,105)
+                    && descendant_class(view,L"LearnGameAndEngineDev.ReaderBar")) break;
+            WaitForSingleObject(child.hProcess,25);
+        } while (GetTickCount64() < deadline);
+        require(view && descendant_class(view,L"LearnGameAndEngineDev.ReaderBar"),
+            "Automatic restoration did not create the real lesson and its narration reader");
+        require(caption(descendant(view,990)) == lesson.title,"Automatic restoration opened a different lesson");
+        const auto page_label = std::to_string(page + 1) + " de 8";
+        require(caption(descendant(view,105)).find(page_label) != std::string::npos,
+            "Automatic restoration selected a different page bookmark");
+        const auto sustained_until = GetTickCount64() + 2200;
+        do {
+            require(WaitForSingleObject(child.hProcess,0) == WAIT_TIMEOUT && IsWindow(view),
+                "The restored lesson closed during normal message-loop permanence QA");
+            DWORD_PTR response = 0;
+            require(SendMessageTimeoutW(owner.shell,WM_NULL,0,0,SMTO_ABORTIFHUNG|SMTO_BLOCK,1000,&response),
+                "The restored application's normal Windows message loop stopped responding");
+            WaitForSingleObject(child.hProcess,50);
+        } while (GetTickCount64() < sustained_until);
+        require(caption(descendant(view,990)) == lesson.title
+                && caption(descendant(view,105)).find(page_label) != std::string::npos,
+            "Permanence QA changed the restored lesson or page");
+        require(PostMessageW(owner.shell,WM_CLOSE,0,0),"Cannot request a normal close of the isolated application");
+        require(WaitForSingleObject(child.hProcess,10000) == WAIT_OBJECT_0,"The isolated application did not close normally");
+        DWORD exit_code = 1;
+        require(GetExitCodeProcess(child.hProcess,&exit_code) && exit_code == 0,"The isolated application did not exit successfully");
+        std::cout << "PASS actual executable automatic restoration page " << page + 1 << "/8: responsive >2s, normal close, exit 0, no smoke-test\n";
+    }
+}
 }
 
 int main(int argc,char* argv[]) {
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
-    if(argc>1&&!caret_only)return 2;
+    const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
+    const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
+    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -1826,7 +2011,10 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(restoration_only){text_sequence_application_restoration();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
+        text_sequence_lesson_all_pages();
+        if(text_sequence_only)return 0;
         long_prediction_cards_keep_independent_bounds();
         long_lesson_bands_keep_independent_hit_targets();
         initial_readonly_source_layout();
