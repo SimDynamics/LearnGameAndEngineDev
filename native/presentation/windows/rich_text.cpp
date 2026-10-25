@@ -317,7 +317,8 @@ std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::w
     // Apply the existing lexer to the exact token: the letter is identifier
     // ink, while a surrounding C++ string keeps its complete string ink.
     for(std::size_t index=0;index+1<text.size();++index){
-        if(text[index]!=L'\\'||std::wstring_view(L"ntr0abfv").find(text[index+1])==std::wstring_view::npos)continue;
+        if(text[index]!=L'\\'||(std::wstring_view(L"ntr0abfv").find(text[index+1])==std::wstring_view::npos &&
+            text[index+1]!=L'\\'&&text[index+1]!=L'"'))continue;
         if((index==0||technical_mention_boundary(text[index-1]))&&
             (index+2==text.size()||technical_mention_boundary(text[index+2])))result.emplace_back(index,index+2);
     }
@@ -591,8 +592,14 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 if(statement_end>start+count)statements.emplace_back(start,statement_end);
             }
         }
-        for(const auto& [start,end]:inline_character_mentions(source))
-            apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
+        for(const auto& [start,end]:inline_character_mentions(source)) {
+            // Standalone escaped quotes/backslashes are single technical
+            // symbols. Color both characters, not just a dangling quote.
+            const bool symbol_escape=end-start==2&&source[start]==L'\\'&&
+                (source[start+1]==L'"'||source[start+1]==L'\\');
+            if(symbol_escape)format(edit,start,end,accessible(edit,RGB(171,141,227)));
+            else apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
+        }
         // Apply complete fragments after individual technical mentions so a
         // word such as std::cout or << inside a literal keeps the string ink.
         // Match Android's color-only treatment: preserve existing fonts,

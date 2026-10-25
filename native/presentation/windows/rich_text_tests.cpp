@@ -313,6 +313,15 @@ int main() {
                 check_range(token,0,1,base);check_range(token,1,1,identifier_ink);
             }
             check_range(LR"(\0)",0,1,base);check_range(LR"(\0)",1,1,literal_ink);
+            const std::string isolated=R"text(Los símbolos \" y \\ son escapes técnicos; se leen por separado.)text";
+            set_rich_text(editor.value,isolated);
+            check(edit_text(editor.value)==isolated,"Isolated escaped symbols changed the original narration text");
+            check_range(LR"(\")",0,2,identifier_ink);
+            check_range(LR"(\\)",0,2,identifier_ink);
+            check_range(L" son escapes técnicos",0,std::wstring_view(L" son escapes técnicos").size(),base);
+            const std::string ordinary_quotes=R"text(En la ruta C:\\carpeta y en "una cita" no hay símbolos escapados aislados.)text";
+            set_rich_text(editor.value,ordinary_quotes);
+            check_range(wide(ordinary_quotes),0,wide(ordinary_quotes).size(),base);
             const std::string prose=R"text(La letra número, letra nombre, carácter nñ, carácter n2, carácter n_1; la n y una a. \nueva, \tarea, \z y alfa\n; superletra n y áletra n.)text";
             set_rich_text(editor.value,prose);check_range(wide(prose),0,wide(prose).size(),base);
             const std::string statement=R"text(En std::cout << "letra n: \n";, la letra n: sigue.)text";

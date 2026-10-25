@@ -313,6 +313,36 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
         for source in sources[-3:]:
             self.assertEqual(1, len(self.worker.ask("plan", text=source, language="es")["segments"]))
 
+    def test_10_isolated_escaped_quotes_and_backslashes_are_spoken_as_symbols(self):
+        samples = [
+            (r'Los símbolos \" y \\ representan escapes técnicos.',
+             ["barra inversa comilla", "barra inversa barra inversa"]),
+            (r'Para escribir una comilla se utiliza \".', ["barra inversa comilla"]),
+            (r'La secuencia \\ representa una barra inversa.', ["barra inversa barra inversa"]),
+            (r'En std::cout << "\""; se imprime una comilla.', ["barra inversa comilla"]),
+        ]
+        for source, expected in samples:
+            with self.subTest(source=source):
+                segments = self.worker.ask("plan", text=source, language="es", voice="ef_dora")["segments"]
+                spoken = " ".join(segment["spokenText"] for segment in segments)
+                for phrase in expected:
+                    self.assertIn(phrase, spoken)
+                self.assertNotIn("barra inversa comilla doble", spoken)
+                for part in segments:
+                    self.assertEqual(source[part["sourceStart"]:part["sourceEnd"]], part["text"])
+                    self.assertEqual(len(part["spokenRanges"]), len(part["displayedRanges"]))
+                    self.assertTrue(part["displayedRanges"])
+                lesson = {"pages": [{"blocks": [{"type": "paragraph", "text": source}]}]}
+                background = self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson),
+                    page=0, language="es", uiLanguage="es", voice="ef_dora")["segments"]
+                self.assertEqual([part["preparedText"] for part in segments],
+                                 [part["preparedText"] for part in background])
+                self.assertEqual([part["key"] for part in segments],
+                                 [part["key"] for part in background])
+        path = r'La ruta C:\\carpeta no es una secuencia aislada.'
+        spoken = " ".join(p["spokenText"] for p in self.worker.ask("plan", text=path, language="es")["segments"])
+        self.assertNotIn("barra inversa barra inversa", spoken)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

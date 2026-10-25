@@ -466,7 +466,13 @@ def windows_reading_source(name: str, code: str) -> str:
     implementation moves, rather than silently leaving one preparation path stale.
     """
     if name == "SpanishTechnicalSpeech":
-        code = exact(code, "            selected[index]?.let { match ->", """            if (WindowsNarrationSpeechRules.isNamedLetter(text, index)) {
+        code = exact(code, "            selected[index]?.let { match ->", """            if (WindowsNarrationSpeechRules.isIsolatedSymbolEscape(text, index)) {
+                output.append(if (text[index + 1] == '"') "barra inversa comilla" else "barra inversa barra inversa")
+                index += 2
+                changed = true
+                continue
+            }
+            if (WindowsNarrationSpeechRules.isNamedLetter(text, index)) {
                 val letter = text[index].toString()
                 val name = readIdentifier(letter)
                 output.append(name)
@@ -475,6 +481,8 @@ def windows_reading_source(name: str, code: str) -> str:
                 continue
             }
             selected[index]?.let { match ->""")
+        code = exact(code, "                    add(codeSymbols[next] ?: readIdentifier(next.toString()))",
+                     """                    add(if (next == '"') "comilla" else codeSymbols[next] ?: readIdentifier(next.toString()))""")
     elif name == "NarrationSegments":
         code = exact(code, "ManualEnglishSpeech.segment(paragraph, ::plainSentences)",
                      "ManualEnglishSpeech.segment(paragraph) { plainSentences(it, prosePauses = true) }")
