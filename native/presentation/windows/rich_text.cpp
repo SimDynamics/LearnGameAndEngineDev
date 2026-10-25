@@ -347,6 +347,29 @@ std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::w
     std::sort(result.begin(),result.end());
     return result;
 }
+// Only an explicitly introduced C++ literal is a string seed in prose.
+// Ordinary quotation marks, unfinished quotes and paragraph punctuation are not.
+std::vector<std::pair<std::size_t,std::size_t>> inline_string_literals(std::wstring_view text) {
+    static const std::wregex cue(
+        LR"((?:literal(?: de (?:cadena|texto))?|cadena(?: de (?:texto|caracteres))?)(?: exact[oa])?[ \t]+)",
+        std::regex_constants::icase);
+    std::vector<std::pair<std::size_t,std::size_t>> result;
+    for(std::regex_iterator<std::wstring_view::const_iterator> match(text.begin(),text.end(),cue),last;match!=last;++match){
+        const auto word=static_cast<std::size_t>(match->position());
+        const auto begin=word+static_cast<std::size_t>(match->length());
+        if((word&&!technical_mention_boundary(text[word-1]))||begin>=text.size()||text[begin]!=L'"')continue;
+        if(!result.empty()&&begin<result.back().second)continue;
+        for(auto end=begin+1;end<text.size()&&text[end]!=L'\r'&&text[end]!=L'\n';++end){
+            if(text[end]==L'\\'){
+                if(end+1==text.size()||text[end+1]==L'\r'||text[end+1]==L'\n')break;
+                ++end;
+            }else if(text[end]==L'"'){
+                result.emplace_back(begin,end+1);break;
+            }
+        }
+    }
+    return result;
+}
 std::size_t inline_cpp_statement_end(std::wstring_view text,std::size_t initial) {
     auto start=initial;
     while(start<text.size()&&(text[start]==L' '||text[start]==L'\t'))++start;
@@ -637,6 +660,10 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 format(edit,begin_wide,begin_wide+fragment.size(),accessible(edit,RGB(122,195,141)));
             else apply_cpp(edit, fragment, begin_wide, true);
         }
+        // Last lexical layer: operator-looking characters inside an explicit
+        // literal keep string ink. Do not change its face, text or source offsets.
+        for(const auto& [begin,end]:inline_string_literals(source))
+            format(edit,begin,end,accessible(edit,RGB(122,195,141)));
     }
     for (const auto& range : curriculum::emphasis_ranges(text, emphasis)) {
         const auto start = wide(std::string_view(displayed).substr(0, mapping[range.start])).size();

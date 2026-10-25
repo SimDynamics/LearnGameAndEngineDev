@@ -1,0 +1,55 @@
+package com.learngraphicsprogramming.app.narration
+
+/** Exercise the real Windows-generated normalizer, not replacement-string stubs. */
+fun main() {
+    fun normalized(text: String) = text.replace(Regex("\\s+"), " ").trim()
+    val failures = mutableListOf<String>()
+    var assertions = 0
+    fun verify(value: Boolean, message: String) { assertions++; if (!value) failures += message }
+    val cases = listOf(
+        "`\"\"`" to "comilla doble comilla doble",
+        "\"\"" to "comilla doble comilla doble",
+        "`//`" to "doble diagonal",
+        "//" to "doble diagonal",
+        "`\"//\"`" to "comilla doble doble diagonal comilla doble",
+        "`'a'`" to "abre comilla simple a cierra comilla simple"
+    )
+    for ((source, expected) in cases) {
+        val ordinary = SpanishTechnicalSpeech.prepare(source).text
+        verify(normalized(ordinary) == expected, "Wrong speech for $source: $ordinary")
+        val owners = mutableListOf<Triple<Int,Int,String>>()
+        val observed = SpanishTechnicalSpeech.prepareObserved(source) { start, end, spoken ->
+            verify(start in 0..source.length && end in start..source.length, "Invalid source owner for $source: $start,$end")
+            owners += Triple(start,end,spoken)
+        }
+        verify(normalized(observed.text) == expected, "Wrong observed speech for $source: ${observed.text}")
+        verify(normalized(owners.joinToString("") { it.third }) == expected, "Observed and spoken output diverged: $source $owners")
+    }
+    // Full source uses the app's explicit code span. Unmarked prose deliberately
+    // recognizes only local technical fragments, not every ordinary quotation.
+    val statement = "`std::cout << \"Hola\";`"
+    val spoken = SpanishTechnicalSpeech.prepare(statement).text
+    verify(Regex("comilla doble").findAll(spoken).count() == 2 && "abre comilla doble" !in spoken && "cierra comilla doble" !in spoken,
+        "Wrong full code delimiter reading: $spoken")
+    val prose = "Fuera de un literal, // comienza un comentario que llega hasta el final de la línea."
+    val comment = SpanishTechnicalSpeech.prepare(prose).text
+    verify("doble diagonal" in comment, "Wrong prose comment: $comment")
+    val url = "https://example.org/a"
+    val urlSpeech = SpanishTechnicalSpeech.prepare(url).text
+    verify(urlSpeech == url, "Changed URL: $urlSpeech")
+    val math = SpanishTechnicalSpeech.prepare("a / b", "inline").text
+    verify(math == "a / b", "Changed mathematical slash: $math")
+    val slash = SpanishTechnicalSpeech.prepare("`/`").text
+    verify("doble diagonal" !in slash, "Changed single slash: $slash")
+    val letter = SpanishTechnicalSpeech.prepare("la letra n: juntas").text
+    verify("ene" in letter && "letra n" !in letter, "Lost technical named-letter reading: $letter")
+    val source = "`\"//\"`"
+    val owners = mutableListOf<Triple<Int,Int,String>>()
+    val prepared = SpanishTechnicalSpeech.prepareForReading(source) { a,b,s -> owners += Triple(a,b,s) }
+    verify("doble diagonal" in prepared.text && owners.all { it.first in 0..source.length && it.second in it.first..source.length },
+        "Wrong Kokoro reading/source ownership: ${prepared.text}; $owners")
+    val background = SpanishTechnicalSpeech.prepareForKokoro(source).text
+    verify(prepared.text == background, "Foreground/background preparation diverged: ${prepared.text}; $background")
+    check(failures.isEmpty()) { failures.joinToString("\n") }
+    println("PASS $assertions Windows technical-speech assertions: delimiters, empty literals, double diagonal in prose/code/strings, single quotes/slashes, URLs, math, named letters, provenance and Kokoro preparation")
+}

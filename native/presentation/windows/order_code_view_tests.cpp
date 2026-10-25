@@ -99,6 +99,10 @@ int main(){using namespace lgaed::presentation;
         SendMessageW(source_row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&letter0),0);SendMessageW(source_row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&letter1),1);
         check((after_space.x-before_space.x)*100<(letter1.x-letter0.x)*95&&
             (after_space.x-before_space.x)*100>(letter1.x-letter0.x)*65,"The original80-percent space advance was lost or changed actual source characters");
+        // ClearType may leave only two fully opaque pixels in a thin numeral.
+        // Measure its actual antialiased coverage against the known dark gutter,
+        // retaining the same center tolerance and the zoom-growth assertion.
+        const auto number_ink=[](COLORREF value){return GetRValue(value)>28||GetGValue(value)>28||GetBValue(value)>28;};
         int normal_number_ink_height=0;
         if(!reader_theme::palette(view.window()).high_contrast){Drawing raster(view.window());
             check(GetPixel(raster.dc,px(1),first_rect.top+px(5))==RGB(20,20,20),"The numbered gutter lost Android's inset surface");
@@ -115,10 +119,10 @@ int main(){using namespace lgaed::presentation;
             int composed_edge=0;for(int y=first_rect.top;y<first_rect.top+px(2);++y)for(int x=first_rect.left+px(20);x<first_rect.right-px(20);++x)
                 if(raster.pixel(x,y)==RGB(74,74,74))++composed_edge;
             check(composed_edge>0,"Printing the complete real code child erased its original chip outline");
-            int top=raster.height,bottom=-1;for(int y=first_rect.top;y<first_rect.bottom;++y)for(int x=0;x<first_rect.left;++x)if(raster.pixel(x,y)==RGB(111,119,130)){top=std::min(top,y);bottom=std::max(bottom,y);}
+            int top=raster.height,bottom=-1;for(int y=first_rect.top;y<first_rect.bottom;++y)for(int x=0;x<first_rect.left;++x)if(number_ink(raster.pixel(x,y))){top=std::min(top,y);bottom=std::max(bottom,y);}
             normal_number_ink_height=bottom-top+1;
             check(normal_number_ink_height>0&&std::abs((top+bottom)-(first_rect.top+first_rect.bottom))<=px(8),
-                "The original18sp line number is absent or no longer centered beside its fragment");
+                (std::string("The original18sp line number is absent or no longer centered beside its fragment: ")+std::to_string(normal_number_ink_height)+" ink top/bottom="+std::to_string(top)+","+std::to_string(bottom)+" card top/bottom="+std::to_string(first_rect.top)+","+std::to_string(first_rect.bottom)).c_str());
         }
         const auto shaded_start=static_cast<LONG>(source[0].find("Acceso"));CHARRANGE shaded{shaded_start,shaded_start+6},old_selection{};
         SendMessageW(source_row,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&old_selection));SendMessageW(source_row,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&shaded));
@@ -164,7 +168,7 @@ int main(){using namespace lgaed::presentation;
             "Restoring a shaded word or scaling/reflowing replaced its original syntax or base font");
         MoveWindow(view.window(),px(10),px(10),px(700),view.height_for_width(px(700)),TRUE);pump();
         if(normal_number_ink_height>0){Drawing scaled(view.window());const auto first_scaled=bounds(GetDlgItem(view.window(),100+static_cast<int>(view.order().front())));GdiFlush();
-            int top=scaled.height,bottom=-1;for(int y=first_scaled.top;y<first_scaled.bottom;++y)for(int x=0;x<first_scaled.left;++x)if(scaled.pixel(x,y)==RGB(111,119,130)){top=std::min(top,y);bottom=std::max(bottom,y);}
+            int top=scaled.height,bottom=-1;for(int y=first_scaled.top;y<first_scaled.bottom;++y)for(int x=0;x<first_scaled.left;++x)if(number_ink(scaled.pixel(x,y))){top=std::min(top,y);bottom=std::max(bottom,y);}
             check(bottom-top+1>normal_number_ink_height,"The painted line number stayed tiny while its code increased to150percent");}
         {std::vector<std::string> many_fragments(112,";");many_fragments.front()="111";OrderCodeView many(host,std::move(many_fragments),{},{});many.set_text_scale(150);(void)many.height_for_width(px(700));
             const auto row=GetDlgItem(many.window(),100);POINTL start{},end{};SendMessageW(row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&start),0);SendMessageW(row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),3);
