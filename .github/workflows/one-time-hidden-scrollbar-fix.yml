@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Apply two redraw flags, verify the diff, and remove this temporary workflow
+      - name: Apply the shared reflow flag, verify the diff, and remove this temporary workflow
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -49,10 +49,11 @@ jobs:
           before = base64.b64decode(entry['content']).decode('utf-8')
           pattern = r'SetScrollInfo\(pane,\s*SB_VERT,\s*&info,\s*TRUE\)'
           after, count = re.subn(pattern, lambda match: match.group(0).replace('TRUE', 'FALSE'), before)
-          if count != 2:
-              raise RuntimeError('Expected exactly two hidden lesson-pane redraw calls; found ' + str(count))
-          # Keep all other tree entries. Remove this one-time task in the same
-          # commit as the source fix, without running any repository code.
+          if count != 1:
+              raise RuntimeError('Expected the one shared hidden lesson-pane redraw call; found ' + str(count))
+          # scroll_to invokes reflow: the shared call handles both navigation
+          # and layout. Do not change scrollbars owned by overflowing editors.
+          # Keep all other tree entries and remove this task in the same commit.
           tree = request('/git/trees', {
               'base_tree': metadata['tree']['sha'],
               'tree': [{'path': source_path, 'mode': '100644', 'type': 'blob', 'content': after},
@@ -64,15 +65,15 @@ jobs:
           files = {item['filename']: item for item in comparison['files']}
           if set(files) != {source_path, workflow_path} or files[workflow_path]['status'] != 'removed':
               raise RuntimeError('Unexpected files in candidate commit; branch was not updated.')
-          if files[source_path]['additions'] != 2 or files[source_path]['deletions'] != 2:
-              raise RuntimeError('Source diff must contain exactly two line replacements.')
+          if files[source_path]['additions'] != 1 or files[source_path]['deletions'] != 1:
+              raise RuntimeError('Source diff must contain exactly one line replacement.')
           if request('/git/ref/heads/' + branch)['object']['sha'] != head:
               raise RuntimeError('Branch advanced during verification; do not overwrite it.')
           request('/git/refs/heads/' + branch, {'sha': commit['sha'], 'force': False}, 'PATCH')
-          print('Published two-line hidden scrollbar fix:', commit['sha'])
+          print('Published hidden scrollbar fix:', commit['sha'])
           print(files[source_path].get('patch', ''))
           Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(
-              'Applied exactly two redraw-flag replacements in `' + source_path + '`.\n\n'
+              'Applied exactly one redraw-flag replacement in the reflow shared by layout and scrolling.\n\n'
               'The temporary workflow was removed in the same commit. Native Windows runtime tests were not run.\n\n'
               'Commit: `' + commit['sha'] + '`\n', encoding='utf-8')
           PY
