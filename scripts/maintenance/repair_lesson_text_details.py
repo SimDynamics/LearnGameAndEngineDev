@@ -105,8 +105,10 @@ s = s[:a]+r'''    SIZE text_size(HWND row,int fallback_line){
         return {std::max(1L,right-first.x)+px(32)+2,std::max(1L,bottom-first.y)+px(16)+2};
     }
 '''+s[b:]
-s = replace(s,'''            SendMessageW(row,EM_REQUESTRESIZE,0,0);sizes[i]=text_size(row,line);''','''            POINT origin{};SendMessageW(row,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
-            SendMessageW(row,EM_REQUESTRESIZE,0,0);sizes[i]=text_size(row,line);''')
+s = replace(s,'''            SendMessageW(row,EM_REQUESTRESIZE,0,0);sizes[i]=text_size(row,line);
+''','''            POINT origin{};SendMessageW(row,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
+            SendMessageW(row,EM_REQUESTRESIZE,0,0);sizes[i]=text_size(row,line);
+''')
 save(name,s)
 
 name = 'native/narration/worker/build_worker.py'
