@@ -466,6 +466,12 @@ def windows_reading_source(name: str, code: str) -> str:
     implementation moves, rather than silently leaving one preparation path stale.
     """
     if name == "SpanishTechnicalSpeech":
+        # Windows-only labels; retain canonical parsing and source ownership.
+        code = exact(code, '                    result += "abre $name"', '                    result += if (char == \'"\') name else "abre $name"')
+        code = exact(code, '                    result += "cierra $name"', '                    result += if (char == \'"\') name else "cierra $name"')
+        code = exact(code, '    private val codeOperators = listOf(', '    private val codeOperators = listOf(\n        "//" to "doble diagonal",')
+        code = exact(code, 'text[index] == \'"\' && (inside.contains(\'\\\\\')', 'text[index] == \'"\' && (inside.isEmpty() || inside == "//" || inside.contains(\'\\\\\')')
+        code = exact(code, '    private fun readLiteral(source: String): String = buildList {\n        var index = 0\n        while (index < source.length) {\n            val char = source[index]', '    private fun readLiteral(source: String): String = buildList {\n        var index = 0\n        while (index < source.length) {\n            val char = source[index]\n            if (source.startsWith("//", index)) {\n                add("doble diagonal"); index += 2; continue\n            }')
         code = exact(code, "            selected[index]?.let { match ->", """            if (WindowsNarrationSpeechRules.isIsolatedSymbolEscape(text, index)) {
                 output.append(if (text[index + 1] == '"') "barra inversa comilla" else "barra inversa barra inversa")
                 index += 2
