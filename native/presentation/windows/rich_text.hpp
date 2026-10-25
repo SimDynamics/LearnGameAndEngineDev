@@ -19,8 +19,12 @@ enum class RichTextRole { body, prompt, heading, lesson_title };
 // Plain editing preserves the original characters and exposes paragraph breaks as LF.
 [[nodiscard]] std::string edit_text(HWND edit);
 void set_edit_text(HWND edit, std::string_view text);
-// Empty editable RichEdit hint only: never inserts text, changes selection,
-// participates in Undo or exposes a false value to the lesson narrator.
+// Keep the RichEdit renderer/syntax colors, but accept only text from paste/drop.
+// Idempotent; the HWND owns the callback and releases it when destroyed.
+void use_plain_text_input(HWND edit);
+// Empty editable RichEdit hint: never inserts text, participates in Undo or
+// exposes a false value to narration. Only its synthetic empty-paragraph
+// selection is collapsed; real document selection remains native.
 void set_edit_hint(HWND edit, std::string_view text, COLORREF color = RGB(140,145,155));
 // Android's display-only compactCodeSpaces: narrow U+0020 visually, without
 // replacing characters, syntax spans, selection, scrolling or Undo.

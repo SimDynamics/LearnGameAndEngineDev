@@ -22,14 +22,42 @@ constexpr UINT_PTR hint_subclass_id=0x4c474854;
 struct EditHint {
     std::wstring text;
     COLORREF color=RGB(140,145,155);
+    bool normalizing_selection=false;
+    bool showing(HWND edit) const {
+        return !text.empty()&&GetWindowTextLengthW(edit)==0&&!(GetWindowLongPtrW(edit,GWL_STYLE)&ES_READONLY);
+    }
+    void collapse_empty_selection(HWND edit) {
+        if(normalizing_selection||!showing(edit))return;
+        CHARRANGE selected{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        if(selected.cpMin==0&&selected.cpMax==0)return;
+        // An empty RichEdit still has a selectable, synthetic final CR.
+        // Keep that mark from appearing as selected text under the overlay.
+        normalizing_selection=true;CHARRANGE insertion{};
+        SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&insertion));
+        normalizing_selection=false;
+    }
     void paint(HWND edit,HDC dc) const {
-        if(text.empty()||GetWindowTextLengthW(edit)!=0||(GetWindowLongPtrW(edit,GWL_STYLE)&ES_READONLY)||!dc)return;
-        RECT bounds{};SendMessageW(edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&bounds));
-        if(bounds.right<=bounds.left||bounds.bottom<=bounds.top)return;
+        if(!showing(edit)||!dc)return;
+        RECT format{},client{};SendMessageW(edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));GetClientRect(edit,&client);
         CHARFORMAT2W style{};style.cbSize=sizeof(style);
         SendMessageW(edit,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&style));
         int numerator=0,denominator=0;SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
         if(!numerator||!denominator){numerator=1;denominator=1;}
+        // EM_GETRECT retains all four unzoomed insets. TextServices exposes
+        // the actual viewport; scale each inset separately as the fallback.
+        RECT viewport{MulDiv(format.left,numerator,denominator),MulDiv(format.top,numerator,denominator),
+            client.right-MulDiv(client.right-format.right,numerator,denominator),
+            client.bottom-MulDiv(client.bottom-format.bottom,numerator,denominator)};
+        Microsoft::WRL::ComPtr<IRichEditOle> rich;
+        SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+        Microsoft::WRL::ComPtr<ITextDocument2> extended;
+        if(rich&&SUCCEEDED(rich.As(&extended))){
+            RECT measured{};
+            if(extended->GetClientRect(tomClientCoord|tomIncludeInset,&measured.left,&measured.top,&measured.right,&measured.bottom)==S_OK)
+                viewport=measured;
+        }
+        RECT clip{};if(!IntersectRect(&clip,&client,&viewport))return;
+        auto bounds=viewport;
         const auto height=MulDiv(MulDiv(style.yHeight,static_cast<int>(GetDpiForWindow(edit)),1440),numerator,denominator);
         const auto font=CreateFontW(-std::max(1,height),0,0,0,(style.dwEffects&CFE_BOLD)?FW_BOLD:FW_NORMAL,
             (style.dwEffects&CFE_ITALIC)!=0,FALSE,FALSE,style.bCharSet,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
@@ -40,11 +68,9 @@ struct EditHint {
         // EM_GETRECT keeps the unzoomed formatting origin. Ask TextServices
         // for the displayed insertion point so hint, text and caret share
         // the same position after text zoom, DPI changes and scrolling.
-        POINTL origin{MulDiv(bounds.left,numerator,denominator),MulDiv(bounds.top,numerator,denominator)};
+        POINTL origin{viewport.left,viewport.top};
         SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&origin),0);
         bounds.left=origin.x;bounds.top=origin.y;
-        Microsoft::WRL::ComPtr<IRichEditOle> rich;
-        SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
         Microsoft::WRL::ComPtr<ITextDocument> document;
         Microsoft::WRL::ComPtr<ITextRange> range;
         TEXTMETRICW metrics{};LONG baseline_x=0,baseline_y=0;
@@ -53,7 +79,7 @@ struct EditHint {
             GetTextMetricsW(dc,&metrics)){
             bounds.left=baseline_x;bounds.top=baseline_y-metrics.tmAscent;
         }
-        IntersectClipRect(dc,std::max(0L,bounds.left),std::max(0L,bounds.top),bounds.right,bounds.bottom);
+        IntersectClipRect(dc,clip.left,clip.top,clip.right,clip.bottom);
         SetBkMode(dc,TRANSPARENT);
         SetTextColor(dc,reader_theme::palette(edit).high_contrast?reader_theme::foreground(edit):color);
         const auto wrapping=(GetWindowLongPtrW(edit,GWL_STYLE)&ES_AUTOHSCROLL)?DT_SINGLELINE:DT_WORDBREAK;
@@ -63,7 +89,26 @@ struct EditHint {
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
         auto* self=reinterpret_cast<EditHint*>(raw);
         if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,hint_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
+        if(!self->normalizing_selection&&self->showing(edit)){
+            if(message==EM_SETSEL)return DefSubclassProc(edit,message,0,0);
+            if(message==EM_EXSETSEL&&lp){CHARRANGE insertion{};return DefSubclassProc(edit,message,0,reinterpret_cast<LPARAM>(&insertion));}
+        }
+        const bool selects=message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK||message==WM_LBUTTONUP||
+            message==WM_RBUTTONDOWN||message==WM_RBUTTONDBLCLK||message==WM_RBUTTONUP||
+            (message==WM_MOUSEMOVE&&(wp&(MK_LBUTTON|MK_RBUTTON)))||message==WM_KEYDOWN||message==WM_CHAR||message==WM_SETFOCUS||
+            message==WM_COPY||message==WM_CUT||message==WM_CLEAR||message==WM_PASTE||message==EM_PASTESPECIAL||message==WM_SETTEXT||
+            message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL||message==EM_UNDO||message==WM_UNDO||
+            message==EM_REDO||message==EM_SETREADONLY;
+        // Collapse before native mouse-down can begin dragging an existing
+        // CR selection, and after native selection changes. Forward the full
+        // gesture sequence so lesson panning/capture and real text still work.
+        if(selects)self->collapse_empty_selection(edit);
         const auto result=DefSubclassProc(edit,message,wp,lp);
+        // Enter can submit a response and synchronously rebuild the lesson.
+        // Do not touch this overlay after a lower handler destroyed its HWND.
+        DWORD_PTR attached=0;
+        if(!GetWindowSubclass(edit,proc,hint_subclass_id,&attached)||attached!=raw)return result;
+        if(selects)self->collapse_empty_selection(edit);
         if(message==WM_PAINT&&GetWindowTextLengthW(edit)==0){
             // Native WM_PAINT has finished (including its caret handling).
             // Balance this extra overlay draw without replacing that caret.
@@ -72,12 +117,71 @@ struct EditHint {
             if(restore_caret)ShowCaret(edit);
         }
         else if(message==WM_PRINTCLIENT)self->paint(edit,reinterpret_cast<HDC>(wp));
-        else if(message==WM_CHAR||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR||message==WM_SETTEXT||
+        else if(message==WM_CHAR||message==WM_PASTE||message==EM_PASTESPECIAL||message==WM_CUT||message==WM_CLEAR||message==WM_SETTEXT||
             message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL||message==EM_UNDO||message==WM_UNDO||
             message==EM_REDO||message==EM_SETREADONLY||message==EM_SETCHARFORMAT||message==EM_SETZOOM||
             message==WM_SETFONT||message==WM_SETFOCUS||message==WM_KILLFOCUS||message==WM_SIZE)
             InvalidateRect(edit,nullptr,FALSE);
         return result;
+    }
+};
+constexpr UINT_PTR plain_input_subclass_id=0x4c475054;
+class PlainTextInput final : public IRichEditOleCallback {
+    LONG references=1;
+    HWND window;
+    bool writable() const {
+        return IsWindow(window)&&IsWindowEnabled(window)&&!(GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY);
+    }
+public:
+    explicit PlainTextInput(HWND edit):window(edit){}
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void** result) override {
+        if(!result)return E_POINTER;
+        *result=nullptr;
+        if(iid!=IID_IUnknown&&iid!=IID_IRichEditOleCallback)return E_NOINTERFACE;
+        *result=static_cast<IRichEditOleCallback*>(this);AddRef();return S_OK;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override {return static_cast<ULONG>(InterlockedIncrement(&references));}
+    ULONG STDMETHODCALLTYPE Release() override {
+        const auto remaining=static_cast<ULONG>(InterlockedDecrement(&references));
+        if(!remaining)delete this;
+        return remaining;
+    }
+    HRESULT STDMETHODCALLTYPE GetNewStorage(LPSTORAGE* storage) override {
+        if(storage)*storage=nullptr;return E_NOTIMPL;
+    }
+    HRESULT STDMETHODCALLTYPE GetInPlaceContext(LPOLEINPLACEFRAME*,LPOLEINPLACEUIWINDOW*,LPOLEINPLACEFRAMEINFO) override {return E_NOTIMPL;}
+    HRESULT STDMETHODCALLTYPE ShowContainerUI(BOOL) override {return S_OK;}
+    HRESULT STDMETHODCALLTYPE QueryInsertObject(LPCLSID,LPSTORAGE,LONG) override {return E_ACCESSDENIED;}
+    HRESULT STDMETHODCALLTYPE DeleteObject(LPOLEOBJECT) override {return S_OK;}
+    HRESULT STDMETHODCALLTYPE QueryAcceptData(LPDATAOBJECT data,CLIPFORMAT* format,DWORD,BOOL,HGLOBAL) override {
+        if(!data||!format)return E_INVALIDARG;
+        if(!writable())return E_ACCESSDENIED;
+        // RichEdit consults this for keyboard/menu paste, Paste Special and
+        // OLE drops. Force the text representation even when RTF, HTML, or
+        // an embedded image is the source's preferred format.
+        for(const auto candidate:{CF_UNICODETEXT,CF_TEXT}){
+            FORMATETC requested{static_cast<CLIPFORMAT>(candidate),nullptr,DVASPECT_CONTENT,-1,TYMED_HGLOBAL};
+            if(data->QueryGetData(&requested)==S_OK){*format=requested.cfFormat;return S_OK;}
+        }
+        return DV_E_FORMATETC;
+    }
+    HRESULT STDMETHODCALLTYPE ContextSensitiveHelp(BOOL) override {return E_NOTIMPL;}
+    HRESULT STDMETHODCALLTYPE GetClipboardData(CHARRANGE*,DWORD,LPDATAOBJECT*) override {return E_NOTIMPL;}
+    HRESULT STDMETHODCALLTYPE GetDragDropEffect(BOOL,DWORD,LPDWORD effect) override {
+        // Preserve RichEdit's move/copy decision for real text. Only the
+        // accepted data format changes; this callback does not start a drag.
+        return effect?S_OK:E_POINTER;
+    }
+    HRESULT STDMETHODCALLTYPE GetContextMenu(WORD,LPOLEOBJECT,CHARRANGE*,HMENU* menu) override {
+        if(menu)*menu=nullptr;return E_NOTIMPL;
+    }
+    static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
+        if(message==WM_NCDESTROY){
+            auto* self=reinterpret_cast<PlainTextInput*>(raw);self->window=nullptr;
+            RemoveWindowSubclass(edit,proc,plain_input_subclass_id);
+            self->Release();
+        }
+        return DefSubclassProc(edit,message,wp,lp);
     }
 };
 struct FormatTransaction {
@@ -319,6 +423,21 @@ void set_edit_hint(HWND edit,std::string_view text,COLORREF color) {
         hint.release();
     }
     InvalidateRect(edit,nullptr,FALSE);
+}
+void use_plain_text_input(HWND edit) {
+    if(!IsWindow(edit))throw std::invalid_argument("Plain text input requires a live RichEdit");
+    DWORD_PTR existing=0;
+    if(GetWindowSubclass(edit,PlainTextInput::proc,plain_input_subclass_id,&existing))return;
+    auto* callback=new PlainTextInput(edit);
+    if(!SetWindowSubclass(edit,PlainTextInput::proc,plain_input_subclass_id,reinterpret_cast<DWORD_PTR>(callback))){
+        callback->Release();throw std::runtime_error("Cannot attach plain text input");
+    }
+    if(!SendMessageW(edit,EM_SETOLECALLBACK,0,reinterpret_cast<LPARAM>(static_cast<IRichEditOleCallback*>(callback)))){
+        RemoveWindowSubclass(edit,PlainTextInput::proc,plain_input_subclass_id);
+        callback->Release();throw std::runtime_error("Cannot restrict RichEdit to text input");
+    }
+    // The subclass keeps the initial reference; RichEdit added its own.
+    // Both are released by native destruction, regardless of callback order.
 }
 void compact_code_spaces(HWND edit) {
     GETTEXTLENGTHEX length{GTL_PRECISE|GTL_NUMCHARS,1200};

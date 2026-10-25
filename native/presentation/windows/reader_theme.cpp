@@ -1,4 +1,5 @@
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/rich_text.hpp"
 #include "core/lesson_state.hpp"
 #include "native_build_config.hpp"
 
@@ -578,7 +579,10 @@ void apply(HWND window, Surface surface) {
     if(trackbar(window))SetWindowSubclass(window,slider_subclass,slider_subclass_id,0);
     if((GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))||rich_edit(window))
         SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
-    if (rich_edit(window)) SendMessageW(window, EM_SETBKGNDCOLOR, 0, background(window));
+    if (rich_edit(window)) {
+        SendMessageW(window, EM_SETBKGNDCOLOR, 0, background(window));
+        if(!(GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY))use_plain_text_input(window);
+    }
     if (push_button(window)) {
         const auto original = GetWindowLongPtrW(window, GWL_STYLE);
         SetWindowLongPtrW(window, GWL_STYLE, (original & ~static_cast<LONG_PTR>(BS_TYPEMASK)) | BS_OWNERDRAW);

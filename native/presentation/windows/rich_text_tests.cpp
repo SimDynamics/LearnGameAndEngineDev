@@ -4,6 +4,10 @@
 #include "platform/windows/state_store.hpp"
 
 #include <richedit.h>
+#include <commctrl.h>
+#include <richole.h>
+#include <tom.h>
+#include <wrl/client.h>
 #include <algorithm>
 #include <array>
 #include <cstdlib>
@@ -14,6 +18,22 @@
 namespace {
 void check(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
 struct Window { HWND value; ~Window() { if (value) DestroyWindow(value); } };
+struct HintGestureProbe {
+    std::vector<UINT> messages;
+    bool consume=false;
+    static LRESULT CALLBACK proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR value) {
+        auto& self=*reinterpret_cast<HintGestureProbe*>(value);
+        if(message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK||message==WM_MOUSEMOVE||message==WM_LBUTTONUP){
+            self.messages.push_back(message);
+            if(self.consume){
+                if(message==WM_LBUTTONDOWN)SetCapture(item);
+                if(message==WM_LBUTTONUP&&GetCapture()==item)ReleaseCapture();
+                return 73;
+            }
+        }
+        return DefSubclassProc(item,message,wp,lp);
+    }
+};
 CHARFORMAT2W character(HWND edit, LONG position) {
     CHARRANGE before{}; SendMessageW(edit, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&before));
     CHARRANGE range{position,position + 1}; SendMessageW(edit, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&range));
@@ -39,6 +59,9 @@ int main() {
                 0,0,360,90,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
             check(hinted.value!=nullptr,"Cannot create the real hinted RichEdit");reader_theme::apply(hinted.value,reader_theme::Surface::card);
             set_rich_text(hinted.value,"",{},true);SendMessageW(hinted.value,EM_EMPTYUNDOBUFFER,0,0);
+            HintGestureProbe gesture;
+            check(SetWindowSubclass(hinted.value,HintGestureProbe::proc,9917,reinterpret_cast<DWORD_PTR>(&gesture))!=FALSE,
+                "Cannot attach the hint's lower gesture probe");
             const auto pixels=[&]{RECT bounds{};GetClientRect(hinted.value,&bounds);const auto dc=CreateCompatibleDC(nullptr);
                 BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=bounds.right;
                 info.bmiHeader.biHeight=-bounds.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
@@ -70,6 +93,40 @@ int main() {
             SendMessageW(hinted.value,EM_SETREADONLY,TRUE,0);const auto readonly=pixels();set_edit_hint(hinted.value,"");
             check(pixels()==readonly&&edit_text(hinted.value).empty(),"A readonly display acquired an editable placeholder");
             SendMessageW(hinted.value,EM_SETREADONLY,FALSE,0);
+            set_edit_hint(hinted.value,"Escribe la salida");
+            const auto empty_selection=[&]{
+                CHARRANGE range{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&range));
+                check(range.cpMin==0&&range.cpMax==0&&edit_text(hinted.value).empty(),
+                    "The synthetic final paragraph was selected as if it were the placeholder's first letter");
+            };
+            SendMessageW(hinted.value,EM_SETSEL,0,-1);empty_selection();
+            CHARRANGE synthetic{0,1};SendMessageW(hinted.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&synthetic));empty_selection();
+            POINTL start{};SendMessageW(hinted.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&start),0);
+            const auto down=MAKELPARAM(start.x+1,start.y+1),moved=MAKELPARAM(start.x+90,start.y+40);
+            gesture.messages.clear();
+            SendMessageW(hinted.value,WM_LBUTTONDOWN,MK_LBUTTON,down);empty_selection();
+            SendMessageW(hinted.value,WM_MOUSEMOVE,MK_LBUTTON,moved);empty_selection();
+            SendMessageW(hinted.value,WM_LBUTTONUP,0,moved);empty_selection();
+            SendMessageW(hinted.value,WM_LBUTTONDBLCLK,MK_LBUTTON,down);empty_selection();
+            SendMessageW(hinted.value,WM_LBUTTONUP,0,down);empty_selection();
+            check(gesture.messages==std::vector<UINT>{WM_LBUTTONDOWN,WM_MOUSEMOVE,WM_LBUTTONUP,WM_LBUTTONDBLCLK,WM_LBUTTONUP},
+                "The empty hint swallowed part of the native pointer sequence");
+            gesture.consume=true;gesture.messages.clear();
+            check(SendMessageW(hinted.value,WM_LBUTTONDOWN,MK_LBUTTON,down)==73&&GetCapture()==hinted.value&&
+                SendMessageW(hinted.value,WM_MOUSEMOVE,MK_LBUTTON,moved)==73&&GetCapture()==hinted.value&&
+                SendMessageW(hinted.value,WM_LBUTTONUP,0,moved)==73&&GetCapture()!=hinted.value,
+                "The hint blocked a lower panning handler or stole its mouse capture");
+            empty_selection();gesture.consume=false;
+            SendMessageW(hinted.value,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"Escribe"));
+            SendMessageW(hinted.value,EM_SETSEL,0,1);CHARRANGE selected{};
+            SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            wchar_t copied[16]{};SendMessageW(hinted.value,EM_GETSELTEXT,0,reinterpret_cast<LPARAM>(copied));
+            check(selected.cpMin==0&&selected.cpMax==1&&std::wstring_view(copied)==L"E",
+                "The hint guard prevented selecting the first letter of real entered text");
+            set_edit_text(hinted.value,"");set_edit_hint(hinted.value,"");
+            SendMessageW(hinted.value,EM_SETSEL,0,-1);SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            check(selected.cpMin==0&&selected.cpMax==1,"An inactive hint changed ordinary native selection behavior");
+            SendMessageW(hinted.value,EM_SETSEL,0,0);
             // Android's hint and entered text use the same native line. Check
             // actual glyph bounds, not just a nonempty placeholder bitmap.
             const auto hint_dpi=static_cast<int>(GetDpiForWindow(hinted.value));
@@ -85,12 +142,23 @@ int main() {
                 }
                 return ink;
             };
-            for(const auto zoom:{100,150,200}){
+            const auto native_viewport=[&]{
+                Microsoft::WRL::ComPtr<IRichEditOle> rich;
+                SendMessageW(hinted.value,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+                Microsoft::WRL::ComPtr<ITextDocument2> document;
+                check(rich&&SUCCEEDED(rich.As(&document)),"Cannot inspect the real hint text viewport");
+                RECT viewport{};
+                check(document->GetClientRect(tomClientCoord|tomIncludeInset,&viewport.left,&viewport.top,&viewport.right,&viewport.bottom)==S_OK,
+                    "Cannot measure all four real hint text insets");
+                return viewport;
+            };
+            for(const auto zoom:{75,100,125,150,175,200}){
                 SetFocus(parent.value);set_edit_hint(hinted.value,"");set_edit_text(hinted.value,"");
                 SendMessageW(hinted.value,EM_EMPTYUNDOBUFFER,0,0);SendMessageW(hinted.value,EM_SETZOOM,zoom,100);
                 const int padding=MulDiv(16,static_cast<int>(GetDpiForWindow(hinted.value)),96);
                 RECT area{};GetClientRect(hinted.value,&area);
-                RECT format{MulDiv(padding,100,zoom),MulDiv(padding,100,zoom),area.right-padding,area.bottom-padding};
+                const int inset=MulDiv(padding,100,zoom);
+                RECT format{inset,inset,area.right-inset,area.bottom-inset};
                 SendMessageW(hinted.value,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
                 const auto blank=pixels();set_edit_hint(hinted.value,"Escribe la salida",reader_theme::foreground(hinted.value));
                 const auto placeholder_ink=ink_bounds(pixels(),blank);
@@ -114,7 +182,26 @@ int main() {
                     "Entering the first line moved or clipped text relative to its zoomed placeholder");
                 check(SendMessageW(hinted.value,EM_UNDO,0,0)&&edit_text(hinted.value).empty()&&
                     SendMessageW(hinted.value,EM_CANREDO,0,0),"Zoomed hint painting changed the original text Undo/Redo history");
+                // A long, wrapped hint must clip exactly like native text at
+                // every edge, including zoomed right/bottom asymmetric insets.
+                SetFocus(parent.value);set_edit_hint(hinted.value,"");
+                RECT asymmetric{MulDiv(MulDiv(11,hint_dpi,96),100,zoom),MulDiv(MulDiv(13,hint_dpi,96),100,zoom),
+                    area.right-MulDiv(MulDiv(29,hint_dpi,96),100,zoom),area.bottom-MulDiv(MulDiv(37,hint_dpi,96),100,zoom)};
+                SendMessageW(hinted.value,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&asymmetric));
+                const auto without_hint=pixels();const auto viewport=native_viewport();
+                const std::string long_hint=std::string(120,'W')+"\nEscribe la salida\nEscribe la salida\nEscribe la salida\nEscribe la salida";
+                set_edit_hint(hinted.value,long_hint);const auto clipped=pixels();std::size_t ink=0;
+                for(LONG y=0;y<area.bottom;++y)for(LONG x=0;x<area.right;++x){
+                    const auto at=static_cast<std::size_t>(y*area.right+x);
+                    if(((clipped[at]^without_hint[at])&0x00ffffffu)==0)continue;
+                    ++ink;
+                    check(x>=viewport.left&&x<viewport.right&&y>=viewport.top&&y<viewport.bottom,
+                        "Hint pixels escaped the native zoomed text viewport");
+                }
+                check(ink>20&&edit_text(hinted.value).empty()&&SendMessageW(hinted.value,EM_CANREDO,0,0),
+                    "Clipping the hint lost its text, modified the document or discarded Redo");
             }
+            RemoveWindowSubclass(hinted.value,HintGestureProbe::proc,9917);
             ShowWindow(parent.value,SW_HIDE);
         }
         {

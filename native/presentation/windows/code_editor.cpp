@@ -601,7 +601,10 @@ struct CodeEditor::Impl {
                         self.pair(static_cast<wchar_t>(wparam))) return 0;
                 if (wparam == L'}' && self.closing_brace()) return 0;
             }
-            const auto mutating = message == WM_CHAR || message == WM_PASTE || message == WM_CUT ||
+            const bool paste_key=message==WM_KEYDOWN&&
+                (((GetKeyState(VK_CONTROL)&0x8000)&&wparam==L'V')||
+                    ((GetKeyState(VK_SHIFT)&0x8000)&&wparam==VK_INSERT));
+            const auto mutating = message == WM_CHAR || message == WM_PASTE || message == EM_PASTESPECIAL || paste_key || message == WM_CUT ||
                 message == WM_CLEAR || message == EM_REPLACESEL ||
                 (message == WM_KEYDOWN && (wparam == VK_DELETE || wparam == VK_BACK));
             if (mutating) {
@@ -634,6 +637,7 @@ CodeEditor::CodeEditor(HWND rich_edit, EditorDocument document, bool multiline,
     std::function<void()> submit, bool code_assistance, bool auto_indent, bool line_numbers)
     : impl_(std::make_unique<Impl>(rich_edit, multiline, std::move(submit), code_assistance, auto_indent)) {
     if (!IsWindow(rich_edit)) throw std::invalid_argument("CodeEditor requires a RichEdit control");
+    presentation::use_plain_text_input(rich_edit);
     SendMessageW(rich_edit, EM_SETUNDOLIMIT, 0, 0);
     SendMessageW(rich_edit, EM_EXLIMITTEXT, 0, 4 * 1024 * 1024);
     SendMessageW(rich_edit, EM_SETEVENTMASK, 0, SendMessageW(rich_edit, EM_GETEVENTMASK, 0, 0) | ENM_CHANGE);
