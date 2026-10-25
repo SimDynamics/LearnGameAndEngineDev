@@ -15,6 +15,8 @@
 
 #include <commctrl.h>
 #include <richedit.h>
+#include <richole.h>
+#include <tom.h>
 #include <oleacc.h>
 #include <wrl/client.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -56,6 +58,16 @@ CHARFORMAT2W character_format(HWND edit,LONG character = 0) {
     CHARRANGE range{character,character+1};SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
     CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(edit,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
     SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));return format;
+}
+RECT rich_edit_viewport(HWND field) {
+    Microsoft::WRL::ComPtr<IRichEditOle> rich;
+    SendMessageW(field,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+    Microsoft::WRL::ComPtr<ITextDocument2> document;
+    require(rich&&SUCCEEDED(rich.As(&document)),"Cannot query the actual native answer view rectangle");
+    RECT bounds{};
+    require(document->GetClientRect(tomClientCoord|tomIncludeInset,&bounds.left,&bounds.top,&bounds.right,&bounds.bottom)==S_OK,
+        "Cannot retrieve the zoomed native answer view rectangle");
+    return bounds;
 }
 HWND descendant(HWND parent, int control) {
     struct Search { int id; HWND result = nullptr; } search{control};
@@ -1017,6 +1029,73 @@ void native_answer_overflow_bars(){
         "Undo lost the original multiline text or its content-sized geometry");
     std::cout<<"PASS answer automatic height, horizontal overflow, unchanged native controls/selections and Undo\n";
 }
+void native_answer_end_viewport(){
+    Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"({"id":"qa_answer_end_viewport","title":"Navegación de respuesta","pages":[{"blocks":[
+        {"type":"output_prediction","question":"Escribe las dos líneas.","code":"std::cout << \"Entrada\\nSalida\";","answers":["Entrada\nSalida"]}]}]})");});
+    const auto answer=fixture.control(0,2);
+    fixture.replace(0,2,"Entrada\nSalida");
+    const auto end_key=[&](bool control,bool shift){
+        std::array<BYTE,256> previous{};require(GetKeyboardState(previous.data()),"Cannot preserve test-thread modifier state");
+        struct RestoreKeys { std::array<BYTE,256>& keys; ~RestoreKeys(){SetKeyboardState(keys.data());} } restore{previous};
+        auto keys=previous;
+        for(const auto key:{VK_CONTROL,VK_LCONTROL,VK_RCONTROL})keys[key]=0;
+        for(const auto key:{VK_SHIFT,VK_LSHIFT,VK_RSHIFT})keys[key]=0;
+        if(control)keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
+        if(shift)keys[VK_SHIFT]=keys[VK_LSHIFT]=0x80;
+        require(SetKeyboardState(keys.data()),"Cannot set isolated test-thread modifiers");
+        SendMessageW(answer,WM_KEYDOWN,VK_END,1);SendMessageW(answer,WM_KEYUP,VK_END,LPARAM{1}<<31);
+        CHARRANGE selected{};SendMessageW(answer,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));return selected;
+    };
+    const auto same_selection=[&](CHARRANGE expected){
+        CHARRANGE actual{};SendMessageW(answer,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&actual));
+        require(actual.cpMin==expected.cpMin&&actual.cpMax==expected.cpMax,"Viewport correction changed the native End selection");
+    };
+    for(const auto zoom:{75,100,125,150,175,200}){
+        update_lesson_preferences(fixture.view,[zoom](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=static_cast<std::int64_t>(zoom);});
+        SendMessageW(fixture.view,WM_VSCROLL,SB_BOTTOM,0);pump(fixture.host);SetFocus(answer);pump(fixture.host);
+        const auto second=SendMessageW(answer,EM_LINEINDEX,1,0);
+        require(second>0&&SendMessageW(answer,EM_GETLINECOUNT,0,0)==2,"The End fixture lost its two real answer lines");
+        for(const auto modifiers:{0,1,2,3}){
+            const bool control=(modifiers&1)!=0,shift=(modifiers&2)!=0;
+            const auto start=control?0:second;SendMessageW(answer,EM_SETSEL,start,start);pump(fixture.host);
+            const auto selected=end_key(control,shift);pump(fixture.host);same_selection(selected);
+            POINT offset{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+            POINTL first{},last{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+            SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&last),second);
+            const auto viewport=rich_edit_viewport(answer);
+            require(offset.y==0&&first.y>=viewport.top-1&&last.y>first.y&&last.y<viewport.bottom&&
+                !(GetWindowLongPtrW(answer,GWL_STYLE)&WS_VSCROLL)&&fixture.control(0,2)==answer&&fixture.text(0,2)=="Entrada\nSalida",
+                "End, Ctrl+End or Shift+End hid the first line of a complete two-line answer");
+        }
+    }
+    SendMessageW(answer,WM_UNDO,0,0);pump(fixture.host);
+    require(fixture.text(0,2).empty(),"Caret/viewport normalization created an answer Undo entry");
+    SendMessageW(answer,EM_REDO,0,0);pump(fixture.host);
+    require(fixture.text(0,2)=="Entrada\nSalida","Caret/viewport normalization damaged answer Redo");
+
+    // A direction that truly overflows must retain the position chosen by
+    // the native caret, even though the other direction fits completely.
+    fixture.replace(0,2,std::string(400,'x'));SetFocus(answer);SendMessageW(answer,EM_SETSEL,0,0);pump(fixture.host);
+    const auto horizontal_selection=end_key(true,false);
+    POINT before{},after{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));pump(fixture.host);
+    SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));same_selection(horizontal_selection);
+    require(before.x>0&&after.x==before.x&&after.y==0,"End normalization reset a genuine horizontal answer scroll");
+
+    update_lesson_preferences(fixture.view,[](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{100};});
+    std::string lines;for(int row=0;row<40;++row)lines+="Entrada\n";fixture.replace(0,2,lines);
+    SendMessageW(fixture.view,WM_VSCROLL,SB_TOP,0);pump(fixture.host);
+    RECT bounds{};GetWindowRect(answer,&bounds);
+    // Exercise the same real RichEdit with a bounded viewport, as when a
+    // host cannot offer its complete automatic height. Do not reflow it.
+    SetWindowPos(answer,nullptr,0,0,bounds.right-bounds.left,MulDiv(90,GetDpiForWindow(answer),96),SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+    SetFocus(answer);SendMessageW(answer,EM_SETSEL,0,0);pump(fixture.host);
+    const auto vertical_selection=end_key(true,false);
+    SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));pump(fixture.host);
+    SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));same_selection(vertical_selection);
+    require(before.y>0&&after.y==before.y&&fixture.text(0,2)==lines&&fixture.control(0,2)==answer,
+        "End normalization reset a genuine vertical answer scroll or changed its original editor");
+    std::cout<<"PASS End/Ctrl+End/Shift+End: both answer lines visible at 75–200 percent, real overflow preserved, unchanged selection/HWND/Undo\n";
+}
 void native_solved_answer_style(){
     Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_solved_answer_surface","title":"Respuestas legibles","pages":[{"blocks":[
         {"type":"output_prediction","question":"Escribe la salida.","code":"std::cout << \"Archivo preparado\";","answers":["Archivo preparado"]},
@@ -1177,7 +1256,7 @@ void simulated_exercise_code_cards(bool caret_only=false) {
         }
         SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);return count;
     };
-    for(const auto zoom:{100,150,200}){
+    for(const auto zoom:{75,100,125,150,175,200}){
     update_lesson_preferences(fixture.view,[zoom](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=static_cast<std::int64_t>(zoom);});
     for(const auto index:{0u,1u}){
         const auto answer=fixture.control(index,2);
@@ -1206,17 +1285,23 @@ void simulated_exercise_code_cards(bool caret_only=false) {
         const auto padding=MulDiv(16,static_cast<int>(GetDpiForWindow(answer)),96);
         POINTL first_character{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first_character),0);
         int numerator=0,denominator=0;SendMessageW(answer,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-        require(content.top==MulDiv(padding,denominator,numerator)&&std::abs(first_character.y-padding)<=1&&client.bottom-content.bottom>=padding&&
-            caret.rcCaret.top>=first_character.y-1&&caret.rcCaret.bottom<=content.bottom,
+        const auto viewport_bounds=rich_edit_viewport(answer);
+        // EM_GETRECT reports unzoomed insets. Comparing the caret with that
+        // rectangle misses a zoomed bottom inset clipping the actual view.
+        require(content.top==MulDiv(padding,denominator,numerator)&&std::abs(first_character.y-padding)<=1&&
+            std::abs(viewport_bounds.top-padding)<=1&&std::abs(client.bottom-viewport_bounds.bottom-padding)<=1&&
+            caret.rcCaret.top>=first_character.y-1&&caret.rcCaret.bottom<=viewport_bounds.bottom,
             "A zoomed empty answer clipped its actual caret inside Android's vertical padding");
         const auto empty_height=client.bottom;
-        for(const auto text:{"RocaAzul","RocaAzul gypq"}){
+        for(const auto text:{"RocaAzul",": 'dfgd'","ÁÉí gypq","RocaAzul gypq"}){
         fixture.replace(index,2,text);SetFocus(answer);pump(fixture.host);
         GUITHREADINFO typed_caret{};typed_caret.cbSize=sizeof(typed_caret);
         POINTL typed_origin{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&typed_origin),0);
         SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&content));GetClientRect(answer,&client);
+        const auto typed_viewport=rich_edit_viewport(answer);
         require(GetGUIThreadInfo(GetCurrentThreadId(),&typed_caret)&&typed_caret.hwndCaret==answer&&
-            typed_caret.rcCaret.top>=typed_origin.y-1&&typed_caret.rcCaret.bottom<=content.bottom&&
+            typed_caret.rcCaret.top>=typed_origin.y-1&&typed_caret.rcCaret.bottom<=typed_viewport.bottom&&
+            std::abs(client.bottom-typed_viewport.bottom-padding)<=1&&
             std::abs(typed_origin.x-first_character.x)<=1&&std::abs(typed_origin.y-first_character.y)<=1&&fixture.control(index,2)==answer,
             "Typing the first answer moved its line origin, clipped its caret or recreated the editor");
         SetFocus(fixture.view);const auto normal_ink=glyph_pixels(answer);require(normal_ink>8,"The actual answer text was not drawn");
@@ -1236,7 +1321,7 @@ void simulated_exercise_code_cards(bool caret_only=false) {
         fixture.replace(index,2,"");
     }
     }
-    std::cout<<"PASS 100/150/200-percent answer native caret, stable first-line origin, complete glyph raster and Undo\n";
+    std::cout<<"PASS 75/100/125/150/175/200-percent answer native viewport/caret, stable first-line origin, complete glyph raster and Undo\n";
     return;
     }
     update_lesson_preferences(fixture.view,[](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{100};});
@@ -1741,7 +1826,7 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
-        if(caret_only){simulated_exercise_code_cards(true);return 0;}
+        if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         long_prediction_cards_keep_independent_bounds();
         long_lesson_bands_keep_independent_hit_targets();
         initial_readonly_source_layout();
@@ -1756,6 +1841,7 @@ int main(int argc,char* argv[]) {
         physical_enter_and_attempt_fill();
         premium_attempt_indicator();
         native_solved_answer_style();
+        native_answer_end_viewport();
         native_compiler_editor_overflow_bars();
         native_compiler_output_overflow_bars();
         lesson_interface_languages();

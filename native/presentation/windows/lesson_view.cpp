@@ -68,6 +68,7 @@ constexpr UINT header_action_message = WM_APP + 75;
 constexpr UINT math_result_message = WM_APP + 76;
 constexpr UINT finish_lesson_message = WM_APP + 77;
 constexpr UINT math_restore_message = WM_APP + 78;
+constexpr UINT answer_viewport_message = WM_APP + 79;
 constexpr UINT_PTR save_timer = 73;
 constexpr UINT_PTR attempts_timer = 94;
 constexpr int import_id = 104;
@@ -291,6 +292,8 @@ struct LessonView {
     struct ConsoleFocus { HWND editor=nullptr;CHARRANGE selection{};bool native_selection=false; };
     std::map<HWND,ConsoleFocus> icon_focus;
     std::map<HWND,bool> answer_disabled_readonly;
+    std::set<HWND> pending_answer_viewports;
+    bool syncing_answer_viewport=false;
     std::map<HWND,HWND> choice_labels;
     std::optional<std::size_t> selected_puzzle;
     bool enter_held=false;
@@ -966,14 +969,37 @@ struct LessonView {
         if(GetFocus()!=snapshot.editor)SetFocus(snapshot.editor);
         if(selection&&snapshot.native_selection)SendMessageW(snapshot.editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&snapshot.selection));
     }
+    void queue_answer_viewport(HWND answer) {
+        if(updating||laying_out||syncing_answer_viewport||!answer||
+            std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer;}))return;
+        // EN_VSCROLL is raised before native caret scrolling is complete.
+        // Coalesce selection/scroll notifications and inspect its final state.
+        if(pending_answer_viewports.insert(answer).second&&
+            !PostMessageW(window,answer_viewport_message,reinterpret_cast<WPARAM>(answer),0))
+            pending_answer_viewports.erase(answer);
+    }
+    void sync_answer_viewport(HWND answer) {
+        if(!pending_answer_viewports.erase(answer))return;
+        if(updating||laying_out||syncing_answer_viewport||!IsWindow(answer)||
+            std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer;}))return;
+        syncing_answer_viewport=true;
+        struct SyncGuard { bool& value; ~SyncGuard(){value=false;} } guard{syncing_answer_viewport};
+        // Home/End and selection moves change no text, so EN_CHANGE does not
+        // reflow their answer. Clear a hidden offset only in an axis whose
+        // complete document fits; retain native scrolling for real overflow.
+        (void)update_answer_scrollbars(answer);
+    }
     int update_answer_scrollbars(HWND answer,int top_padding=16,int right_padding=0,int bottom_padding=16,
                                  bool fit_height=false,int left_padding=-1,const POINT* restored_offset=nullptr) {
         const auto style=GetWindowLongPtrW(answer,GWL_STYLE);
         POINT saved{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
         if(restored_offset)saved=*restored_offset;
         RECT format{};SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
-        const auto left=left_padding<0?format.left:px(left_padding);
         int numerator=0,denominator=0;SendMessageW(answer,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        const auto inset=[&](int logical){
+            return numerator>0&&denominator>0?MulDiv(px(logical),denominator,numerator):px(logical);
+        };
+        const auto left=left_padding<0?format.left:inset(left_padding);
         // Measure the full width first. An old vertical bar must not narrow
         // wrapped text enough to keep itself alive after content shrinks.
         if(style&WS_HSCROLL)SendMessageW(answer,EM_SHOWSCROLLBAR,SB_HORZ,FALSE);
@@ -981,9 +1007,13 @@ struct LessonView {
         const auto set_padding=[&]{
             RECT content{};GetClientRect(answer,&content);
             content.left=left;
-            content.top=numerator>0&&denominator>0?MulDiv(px(top_padding),denominator,numerator):px(top_padding);
-            content.right=std::max(content.left+1,content.right-px(right_padding));
-            content.bottom=std::max(content.top+1,content.bottom-px(bottom_padding));
+            // EM_SETRECT's four insets belong to the unzoomed document.
+            // Convert every inset, not just the top: a 16px bottom inset
+            // otherwise becomes 32px at 200%, clipping a line that already
+            // fits the outer height measured from TextServices.
+            content.top=inset(top_padding);
+            content.right=std::max(content.left+1,content.right-inset(right_padding));
+            content.bottom=std::max(content.top+1,content.bottom-inset(bottom_padding));
             SendMessageW(answer,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
         };
         set_padding();
@@ -2155,6 +2185,7 @@ struct LessonView {
         } else {
             if(separate)simulated_header(index,true);
             vm.answer = rich("", control_id(index, 2), true, {}, true);
+            SendMessageW(vm.answer,EM_SETEVENTMASK,0,SendMessageW(vm.answer,EM_GETEVENTMASK,0,0)|ENM_SCROLL);
             reader_theme::apply(vm.answer,reader_theme::Surface::card);
             CHARFORMAT2W answer_format{};answer_format.cbSize=sizeof(answer_format);
             answer_format.dwMask=CFM_SIZE|CFM_COLOR;answer_format.yHeight=(current.type==BlockType::fill_code?17:18)*15;
@@ -2182,6 +2213,7 @@ struct LessonView {
     void render_page() {
         cancel_math();
         choice_labels.clear();selected_puzzle.reset();
+        pending_answer_viewports.clear();
         end_drag();restore_fullscreen_palette();restore_fullscreen_header(); fullscreen_block.reset();fullscreen_lesson_scroll.reset();
         updating = true;
         controls.clear();
@@ -3052,6 +3084,7 @@ struct LessonView {
             return;
         }
         if (notification == EN_CHANGE) { edit_changed(sender); return; }
+        if(notification==EN_VSCROLL||notification==EN_HSCROLL){queue_answer_viewport(sender);return;}
         if(notification==EN_SETFOCUS)for(std::size_t i=0;i<controls.size();++i)
             if(sender==controls[i].answer||sender==find_item(control_id(i,3)))selected_puzzle=i;
         if ((notification == EN_SETFOCUS || notification == EN_KILLFOCUS) && editing_bar) editing_bar->refresh();
@@ -3193,7 +3226,7 @@ LRESULT CALLBACK quiz_answer_proc(HWND item,UINT message,WPARAM wparam,LPARAM lp
     // accept a pair, Tab, Enter, clipboard edit or Undo through its shortcuts.
     if(!IsWindowEnabled(item)&&(message==WM_CHAR||message==WM_KEYDOWN||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR
         ||message==WM_UNDO||message==EM_UNDO||message==EM_REDO||message==EM_REPLACESEL))return 0;
-    if(message==WM_NCDESTROY){view.answer_disabled_readonly.erase(item);RemoveWindowSubclass(item,quiz_answer_proc,24);}
+    if(message==WM_NCDESTROY){view.answer_disabled_readonly.erase(item);view.pending_answer_viewports.erase(item);RemoveWindowSubclass(item,quiz_answer_proc,24);}
     return DefSubclassProc(item,message,wparam,lparam);
 }
 LRESULT CALLBACK gesture_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
@@ -3277,6 +3310,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         if (reader_theme::control_color(message,wparam,lparam,themed)) return themed;
         if (message == WM_DRAWITEM && view->draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam))) return TRUE;
         switch (message) {
+        case answer_viewport_message:view->sync_answer_viewport(reinterpret_cast<HWND>(wparam));return 0;
         case WM_KEYDOWN: if(wparam==VK_ESCAPE&&view->navigate_back())return 0;break;
         case enter_key_message:return lparam&&view->enter_key(*reinterpret_cast<const MSG*>(lparam));
         case header_action_message: {
@@ -3324,6 +3358,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case WM_COMMAND: view->command(LOWORD(wparam), HIWORD(wparam), reinterpret_cast<HWND>(lparam)); return 0;
         case WM_NOTIFY: {
             const auto* header = reinterpret_cast<NMHDR*>(lparam);
+            if(header->code==EN_SELCHANGE)view->queue_answer_viewport(header->hwndFrom);
             if (header->code == EN_REQUESTRESIZE) {
                 const auto* request = reinterpret_cast<REQRESIZE*>(lparam);
                 for (auto& row : view->rows) if (std::ranges::find(row.cells, header->hwndFrom) != row.cells.end()) {
