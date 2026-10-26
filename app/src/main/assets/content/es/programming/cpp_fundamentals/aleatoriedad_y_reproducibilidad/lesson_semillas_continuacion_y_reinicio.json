@@ -10,19 +10,45 @@
         },
         {
           "type": "paragraph",
-          "text": "Una semilla determina el estado inicial del motor. Para repetir un experimento necesitas además la misma distribución, sus parámetros y el mismo orden de llamadas. En el mismo entorno, preparar esos elementos igual permite repetir la secuencia. No hace falta conocer sus números de antemano para comprobar esa relación.",
+          "text": "La semilla determina el estado inicial del motor (Köppe et al., 2023). Para repetir una muestra, también deben coincidir la preparación de la distribución, sus parámetros y el orden de las llamadas. Preparar ambos objetos igual y repetir sus llamadas permite reproducir el experimento en el mismo entorno (Stroustrup, 2024).\n\nNo hace falta conocer de antemano los números de la muestra: se puede comprobar si dos ejecuciones preparadas de esa forma producen la misma secuencia.",
           "emphasis": [
             {
-              "text": "estado inicial"
+              "text": "estado inicial del motor",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "misma distribución"
+              "text": "preparación de la distribución",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "misma secuencia",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Para vector<int>, == compara el tamaño y los valores en el mismo orden. Dos muestras pueden compararse sin imprimir su contenido. En este contexto conservar el orden es importante: no ordenaremos las muestras antes de decidir si repetimos la ejecución."
+          "text": "En vector<int>, == compara si las colecciones tienen el mismo tamaño y los mismos valores en las posiciones correspondientes (Köppe et al., 2023). Por eso permite comparar las muestras sin imprimir cada dato.\n\nEl orden forma parte de esa igualdad. Ordenar las muestras antes de compararlas respondería otra pregunta: dos colecciones pueden contener los mismos valores y haberlos obtenido en órdenes distintos.",
+          "emphasis": [
+            {
+              "text": "mismo tamaño",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "posiciones correspondientes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "El orden forma parte",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -36,7 +62,19 @@
         },
         {
           "type": "note",
-          "text": "El algoritmo que uniform_int_distribution utiliza para transformar valores puede variar entre bibliotecas. Registrar semilla, motor, límites y llamadas permite reproducir en el mismo entorno; conservar también los datos concretos ayuda a investigar en otro entorno."
+          "text": "El algoritmo de uniform_int_distribution puede variar entre bibliotecas (Köppe et al., 2023). Estas comparaciones se realizan dentro del mismo entorno.\n\nPara investigar otro entorno conviene conservar también los datos observados, además del tipo de motor, la semilla, la distribución y la historia de llamadas. En esta actividad, las muestras se guardan en los vectores del programa.",
+          "emphasis": [
+            {
+              "text": "dentro del mismo entorno",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "vectores del programa",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         }
       ]
     },
@@ -48,7 +86,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Si reutilizas el motor y la distribución, la siguiente llamada continúa el experimento. Separar un recorrido en dos bucles no reinicia los objetos. Construirlos de nuevo sí prepara otros objetos desde su comienzo. La semilla elegida al construir no se aplica automáticamente otra vez en cada vuelta."
+          "text": "Cuando se conservan el motor y la distribución, la siguiente obtención utiliza el estado al que llegaron esos objetos. Dividir seis obtenciones en un bucle de dos y otro de cuatro no los reconstruye: la segunda parte continúa desde donde terminó la primera.\n\nEl motor mantiene su estado entre llamadas; el número utilizado como semilla no se aplica de nuevo en cada vuelta (Köppe et al., 2023). Crear otros objetos desde la configuración inicial comienza otro experimento.",
+          "emphasis": [
+            {
+              "text": "se conservan el motor y la distribución",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "continúa desde donde terminó",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no se aplica de nuevo",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -69,7 +124,12 @@
             "Volver a sembrar antes de obtener cada dato."
           ],
           "correctIndex": 1,
-          "explanation": "La continuación usa el estado al que ya llegó el experimento. Reconstruir o volver a sembrar cambia el contrato."
+          "explanation": "La continuación usa el estado al que ya llegó el experimento. Reconstruir o volver a sembrar cambia el contrato.",
+          "reviewFeedback": [
+            "Distingue el estado al que llegó el primer lote del estado que prepara un constructor nuevo.",
+            "Sigue qué objetos deben recibir las llamadas del segundo lote para continuar el primero.",
+            "Revisa qué estado prepara seed y qué estado requiere la continuación de una muestra."
+          ]
         }
       ]
     },
@@ -81,7 +141,24 @@
         },
         {
           "type": "paragraph",
-          "text": "motor.seed(semilla) restablece el estado inicial asociado con esa semilla. No imprime ni devuelve una muestra. Una distribución también puede conservar información entre llamadas; reset() elimina esa dependencia sin cambiar sus parámetros. Para un reinicio completo restablecemos el motor y llamamos a reset() en la distribución. Otra opción es construir ambos de nuevo."
+          "text": "motor.seed(semilla) restablece el motor al estado inicial que corresponde a ese valor. Es una operación sobre el motor; no imprime ni devuelve una muestra (Köppe et al., 2023).\n\nUna distribución puede conservar información entre obtenciones. Su operación reset() elimina la dependencia de los valores obtenidos antes, sin cambiar sus parámetros (Köppe et al., 2023). No vuelve a sembrar el motor.\n\nPara repetir desde el comienzo se restablece el motor y se reinicia la distribución antes de reproducir las llamadas. También se pueden construir ambos objetos de nuevo con la misma preparación. La diferencia con continuar está en qué estado se utiliza, no en escribir uno o dos bucles.",
+          "emphasis": [
+            {
+              "text": "restablece el motor",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sin cambiar sus parámetros",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "qué estado se utiliza",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -102,7 +179,12 @@
             "Reconstruir sólo la distribución hace que el motor existente lea otra vez la variable semilla."
           ],
           "correctIndex": 1,
-          "explanation": "El constructor leyó un valor; no dejó una conexión permanente con la variable. seed es la operación que modifica el estado del motor."
+          "explanation": "El constructor leyó un valor; no dejó una conexión permanente con la variable. seed es la operación que modifica el estado del motor.",
+          "reviewFeedback": [
+            "El constructor recibe un valor al ejecutarse. Reconsidera si una asignación posterior a otra variable vuelve a invocar ese constructor.",
+            "Relaciona el valor actual de semilla con la operación que restablece el motor existente.",
+            "La distribución y el motor son objetos distintos. Comprueba cuál de ellos recibe la operación propuesta."
+          ]
         }
       ]
     },
@@ -114,7 +196,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Misma preparación y mismas llamadas permiten repetir. Semillas diferentes permiten preparar otros comienzos, pero no se garantiza que cada dato distribuido sea diferente: dos experimentos pueden coincidir en un resultado o en una muestra pequeña. Tampoco se exige que llamadas sucesivas produzcan valores distintos. Repetición de valores y repetición de todo el procedimiento son ideas diferentes."
+          "text": "Repetir la preparación y las llamadas permite reproducir una muestra en el mismo entorno (Stroustrup, 2024). Esta relación no significa que una semilla reserve un resultado distinto para cada valor del intervalo.\n\nDos experimentos con semillas diferentes pueden coincidir en un dato o en una muestra pequeña. También pueden repetirse valores en obtenciones sucesivas. Observar una coincidencia aislada no permite decidir si se conservaron, se reconstruyeron o se reiniciaron los objetos.",
+          "emphasis": [
+            {
+              "text": "coincidir en un dato",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "coincidencia aislada",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -125,11 +219,33 @@
             "Las semillas son iguales porque cada semilla tiene su propio entero exclusivo."
           ],
           "correctIndex": 0,
-          "explanation": "Un intervalo pequeño admite coincidencias. La semilla prepara estado, no reserva un resultado exclusivo."
+          "explanation": "Un intervalo pequeño admite coincidencias. La semilla prepara estado, no reserva un resultado exclusivo.",
+          "reviewFeedback": [
+            "Distingue lo que informa un resultado coincidente de lo que habría que conocer de la preparación y las llamadas.",
+            "El intervalo forma parte de la configuración elegida. Revisa si una coincidencia de datos lo modifica.",
+            "Considera cuántas semillas pueden usarse y cuántos resultados admite el intervalo antes de atribuir uno exclusivo a cada semilla."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El motor también tiene una llamada directa, motor(), que obtiene un valor de su secuencia y avanza su estado. Ese valor no está limitado por nuestra distribución. Si sólo vas a compararlo, auto conserva el tipo que devuelve el motor sin convertirlo a int. Una llamada directa adicional modifica la historia; para repetir hay que reproducirla también."
+          "text": "El motor también se puede invocar directamente: motor() devuelve un valor de su propia secuencia y avanza su estado (Köppe et al., 2023). Esa llamada no pasa por nuestra distribución y su resultado no queda limitado por el intervalo que ella tiene configurado.\n\nEn el programa siguiente sólo se comparan esos valores. auto conserva el tipo devuelto por el motor, sin convertirlo a int. Una obtención directa adicional cambia el punto del proceso; para reproducirlo también habría que repetir esa llamada.",
+          "emphasis": [
+            {
+              "text": "directamente",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "avanza su estado",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "también habría que repetir esa llamada",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -151,10 +267,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(int cantidad, int primer_lote). Cada llamada prepara dos motores con semilla 53 y dos distribuciones independientes 1..9. Con el primero obtiene cantidad datos; con el segundo obtiene primer_lote y después los restantes, conservando los mismos objetos entre lotes y reuniendo sus datos en otro vector. Compara las secuencias completas y muestra Por lotes:B. Reinicia después el primer motor y su distribución, obtiene de nuevo cantidad datos y muestra Reinicio:B al compararlos con la primera muestra. Termina ambas líneas con un salto.\n\nEn main prueba (6,2), (0,0), (1,0) y (1,1), en ese orden. Pulsa Compilar, ejecutar y comprobar. Las ocho líneas deben alternar Por lotes:1 y Reinicio:1. Las comparaciones incluyen tamaño, valores y orden; no imprimas unos como constantes.",
+          "text": "Construye probar(int cantidad, int primer_lote). Las llamadas de esta actividad cumplen 0 <= primer_lote <= cantidad. Cada llamada prepara dos motores con semilla 53 y dos distribuciones independientes para 1..9.\n\nCon el primer par obtiene cantidad datos y los conserva en un vector. Con el segundo par obtiene primer_lote datos y después cantidad-primer_lote, manteniendo los mismos objetos entre los dos bucles y reuniendo sus resultados en otro vector. Compara ambas secuencias completas y muestra Por lotes:B.\n\nDespués restablece el primer motor con la semilla 53 y llama a reset() en su distribución. Obtiene de nuevo cantidad datos en otro vector y los compara con la muestra original, que debe conservarse intacta. Muestra Reinicio:B. Termina ambas líneas con un salto.\n\nEn main reúne (6,2), (0,0), (1,0) y (1,1), en ese orden. Pulsa Compilar, ejecutar y comprobar. Las ocho líneas deben alternar Por lotes:1 y Reinicio:1. Los bools deben proceder de las comparaciones de los vectores, incluyendo tamaño, valores y orden, en lugar de imprimirse como constantes.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "0 <= primer_lote <= cantidad",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "manteniendo los mismos objetos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "conservarse intacta",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tamaño, valores y orden",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -205,7 +338,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: los lotes comparten sus objetos de generación; la muestra original permanece intacta; cada muestra tiene seis elementos; el reinicio restablece ambos componentes; las comparaciones incluyen orden y tamaño. Las líneas son Por lotes:1 y Reinicio:1. Con cero y un dato ambas comparaciones también coinciden cuando la partición es correcta. La coincidencia vacía no demuestra haber obtenido datos."
+          "text": "Este primer programa resuelve sólo la partición de seis datos en dos y cuatro. Sus tres muestras tienen seis elementos; muestra Por lotes:1 y Reinicio:1, sin salto después del último uno.\n\nLa referencia completa que sigue define probar y reúne las cuatro particiones de la actividad, cada resultado con su salto. Con cero datos, los vectores vacíos comparan iguales, pero esa coincidencia no demuestra que se haya obtenido ningún valor. Los dos casos de un dato comprueban una primera parte vacía y una segunda parte vacía.\n\nEn todas las pruebas, los lotes comparten sus objetos de generación, el reinicio restablece ambos componentes y la muestra original permanece intacta. Otra implementación es válida si conserva esas responsabilidades y produce los informes requeridos.",
+          "emphasis": [
+            {
+              "text": "sólo la partición de seis datos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "referencia completa",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "vectores vacíos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "muestra original permanece intacta",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -239,7 +394,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Reproducir también exige registrar las llamadas"
+          "text": "Conservar las llamadas y resumir sus datos"
         },
         {
           "type": "multiple_choice",
@@ -250,24 +405,52 @@
             "Motor, distribución con sus límites y cantidad y orden de llamadas, incluso las descartadas."
           ],
           "correctIndex": 2,
-          "explanation": "La historia de consumo forma parte del experimento. Los nombres locales no determinan la secuencia."
+          "explanation": "La historia de consumo forma parte del experimento. Los nombres locales no determinan la secuencia.",
+          "reviewFeedback": [
+            "Sigue el estado que dejan las obtenciones descartadas antes de producir los datos que se conservan.",
+            "Distingue el orden en que se obtuvieron los valores de una ordenación posterior de la colección.",
+            "Relaciona la configuración inicial con todas las llamadas que consumen estado, aunque su resultado no se guarde."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En el editor independiente siguiente construye una comprobación de suma con datos generados. Prepara motor 67 y distribución 2..2; conserva sus objetos mientras obtiene primero tres datos y después otros dos en un segundo vector. Calcula y muestra Primero:6 y Continuacion:4. Reinicia motor y distribución, obtiene otros tres y muestra Repeticion:1 al comparar con la primera colección. Cada línea lleva salto. Pulsa Compilar, ejecutar y comprobar. El intervalo de un único valor fija las sumas; el código debe conservar o restablecer los objetos según la pregunta, sin exigir un número fijo de avances internos del motor.",
+          "text": "Integra la generación de datos con una suma en este editor independiente. Prepara un motor con semilla 67 y una distribución 2..2. Conserva sus objetos mientras obtiene primero tres datos en un vector y después otros dos en un segundo vector.\n\nCalcula las sumas de ambas colecciones y muestra Primero:6 y Continuacion:4. Después restablece el motor con la semilla 67 y reinicia la distribución; obtiene otros tres datos y muestra Repeticion:1 al compararlos con el primer vector. Cada línea termina con un salto. Pulsa Compilar, ejecutar y comprobar.\n\nEl intervalo de un único valor fija las sumas y permite centrar la práctica en las colecciones y su resumen. El programa debe conservar o restablecer los objetos en los puntos indicados, sin suponer cuántos avances internos necesita la distribución.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "una suma",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "un motor con semilla 67",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "en los puntos indicados",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "note",
-          "text": "Reproducir un procedimiento exige conservar su configuración y su estado inicial; continuar utiliza el estado alcanzado. Restablecer motor y distribución son decisiones relacionadas pero distintas (Stroustrup, 2024, sección 4.7.5; Working Draft: Programming Languages — C++, s. f., secciones [rand.req.eng] y [rand.req.dist]). La reproducción de valores distribuidos se compara dentro del mismo entorno.",
+          "text": "El objetivo de esta consola comprueba las sumas y la igualdad de las colecciones. Como todos los resultados de 2..2 son dos, esas salidas no distinguen por sí solas una continuación de un reinicio. Para distinguir los procedimientos hay que seguir cuándo se construyen los objetos y qué llamadas se realizan sobre ellos.\n\nContinuar utiliza el estado alcanzado. Volver al inicio exige restablecer el motor y la distribución, dos operaciones con funciones diferentes (Köppe et al., 2023).",
           "emphasis": [
             {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
+              "text": "no distinguen por sí solas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cuándo se construyen los objetos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "dos operaciones con funciones diferentes",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -285,6 +468,23 @@
               }
             ]
           }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__semillas__intervalo_unico_y_evidencia",
+          "question": "Con la distribución 2..2, una implementación conserva el motor entre obtenciones y otra lo restablece antes de cada dato. Ambas guardan tres doses y después dos. ¿Qué permiten concluir las sumas 6 y 4?",
+          "options": [
+            "Las sumas prueban que ambas conservaron los mismos objetos y el mismo estado entre obtenciones.",
+            "Las sumas son compatibles con ambos procedimientos; para distinguirlos hay que seguir los objetos y sus llamadas.",
+            "La segunda debe producir algún dato fuera del intervalo, porque volver a sembrar cambia los límites."
+          ],
+          "correctIndex": 1,
+          "explanation": "En 2..2, cada resultado es dos. Las sumas confirman los datos y las cantidades de esas colecciones, pero no prueban por sí solas la conservación del estado. El procedimiento se distingue siguiendo la construcción de los objetos y las llamadas a seed y reset.",
+          "reviewFeedback": [
+            "En un intervalo de un único valor, revisa si una misma suma puede proceder de distintas historias de llamadas.",
+            "Distingue los datos que se observaron de las decisiones del programa que deben examinarse para explicar cómo se obtuvieron.",
+            "Separa la operación que prepara el estado del motor de los parámetros que fijan el intervalo de la distribución."
+          ]
         }
       ]
     },
@@ -296,7 +496,19 @@
         },
         {
           "type": "note",
-          "text": "Consulta después de construir y comprobar el último editor. Las operaciones usan únicamente los datos acotados de esta actividad."
+          "text": "La referencia conserva los objetos durante las dos obtenciones por lotes y restablece motor y distribución antes de obtener la colección repetida. Las sumas se calculan a partir de los vectores.\n\nEl intervalo 2..2 garantiza los valores de estas colecciones; para evaluar el procedimiento se distingue además la conservación y el reinicio de los objetos, como en los puzzles de la lección.",
+          "emphasis": [
+            {
+              "text": "durante las dos obtenciones por lotes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "a partir de los vectores",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "code",
@@ -305,5 +517,904 @@
         }
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0004",
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "block_0006_0004",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002"
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "ea819d892ae401518aeefbc1385ef88232a021d7b76e30e6e78b42fdb9a9266e"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "cd4b6bc0242d6af01e9b04f3f15b98e0781471486ee1cbc0b9068b0bb28c500d"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "0d12989fef150fa5d92eba5bd1f8ba87caa2bb0e35553d12032227abcc52e8a2"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "282c7c63c24dde220ac7aea0d1b2c82708b4def4d13feb859cf0d9521761a110"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "67815406204e4eb2b6005c7a1fe8e9c554ed122cffc51955efb9b491af7b0531"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "b075f262ac32638cc5b35977e392febae7143cad214fa9d9694fa68977730530"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "45636fc643fa41801a1976878c41064ee7f106894866834da41d7cfd830d2306"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "b7df3c5da32f025bb8e88be418ef8fcfe1bb9c94c36ccab5ca2c77022437a5f0"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "9bb161dc6c16f3284004a9ea1b7f407df07ac2c5c385b7f6c4400aef941e54e6"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "c5700ab0e0c562f30c99219d02059900c558360cea0fefdedf1fe4701b713303"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "b1f5d9c631d6587dc69a02a9d54309daec9e0bafdf435ab1e083ef9a93938105"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "ffd3744eaa09ddcfd855786b9a9e1f0c670a0657e99b9b0debe1a84f168a2a64"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "23b9ca64580f9504af4bc07a857630dc8dc4897f0514e5de1893c065d73e4045"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "2130a71503f819736883ce6194002a0d05a18365b64d662a46b00e8003cd8256"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "9b5aab5a2d36a7bb92795413a0fbf72885ca1c172f27b008e22c3a69f35239b9"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "intervalo_unico_y_evidencia_del_procedimiento"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "3153a64c47f0f917e4675ea147ce43745472c805c054c72365345f9f29cd869d",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "ea819d892ae401518aeefbc1385ef88232a021d7b76e30e6e78b42fdb9a9266e"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "cd4b6bc0242d6af01e9b04f3f15b98e0781471486ee1cbc0b9068b0bb28c500d"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "b1ae4bca2d0fdf1a06200225baa8a10f8b739af16575c02a35d3b053c349a4ae"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "282c7c63c24dde220ac7aea0d1b2c82708b4def4d13feb859cf0d9521761a110"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "88168d0f4c1e249950fceacd05880a2c83da0c02265e29e7ca3e31bac71ecc84"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "16881e78a3872c5614c28f9e0a9c8e14f763ccd77842ece416c8bb1dca8f6fff"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "45636fc643fa41801a1976878c41064ee7f106894866834da41d7cfd830d2306"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "6911c073e1e819a0de73f4d31a19f3fc59734781756cf257d0de0fd47d3d4e04"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "e9f9eca942e3ad99150bb24279701012b9479e4cc050940dda6b96115a3b3903"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "4a2d510a2086aca1cc7b4c3c5161f611362ff86c6a0e8a1d32eced47c19fb1ef"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "513e45c534f96dec694308e469c830e32210eb9388d8c4f24b06f50a6a095489",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "ea819d892ae401518aeefbc1385ef88232a021d7b76e30e6e78b42fdb9a9266e"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "cd4b6bc0242d6af01e9b04f3f15b98e0781471486ee1cbc0b9068b0bb28c500d"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "0d12989fef150fa5d92eba5bd1f8ba87caa2bb0e35553d12032227abcc52e8a2"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "282c7c63c24dde220ac7aea0d1b2c82708b4def4d13feb859cf0d9521761a110"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "67815406204e4eb2b6005c7a1fe8e9c554ed122cffc51955efb9b491af7b0531"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "b075f262ac32638cc5b35977e392febae7143cad214fa9d9694fa68977730530"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "45636fc643fa41801a1976878c41064ee7f106894866834da41d7cfd830d2306"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "b7df3c5da32f025bb8e88be418ef8fcfe1bb9c94c36ccab5ca2c77022437a5f0"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "9bb161dc6c16f3284004a9ea1b7f407df07ac2c5c385b7f6c4400aef941e54e6"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "c5700ab0e0c562f30c99219d02059900c558360cea0fefdedf1fe4701b713303"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "b1f5d9c631d6587dc69a02a9d54309daec9e0bafdf435ab1e083ef9a93938105"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "ffd3744eaa09ddcfd855786b9a9e1f0c670a0657e99b9b0debe1a84f168a2a64"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "23b9ca64580f9504af4bc07a857630dc8dc4897f0514e5de1893c065d73e4045"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "2130a71503f819736883ce6194002a0d05a18365b64d662a46b00e8003cd8256"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "9b5aab5a2d36a7bb92795413a0fbf72885ca1c172f27b008e22c3a69f35239b9"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "c0f642219b38d8ff52162623cd82ab7390f7196fdcb4217b2eaebe4e3248b51d",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "ea819d892ae401518aeefbc1385ef88232a021d7b76e30e6e78b42fdb9a9266e"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "cd4b6bc0242d6af01e9b04f3f15b98e0781471486ee1cbc0b9068b0bb28c500d"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "6b72fcd7316af6ad7fbec7e9b971d034139ff5da610c02c7c293fcf6391a4a54"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "282c7c63c24dde220ac7aea0d1b2c82708b4def4d13feb859cf0d9521761a110"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "c641e8c6342c76690df3c0bfc80298394713bfa2a6caf4b99fc5a03a64da44ff"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "0e8caafd0ebbd3170e8fb05bc74b1c6848d9504b71ea2f3d29f92c95fd3dcd1c"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "45636fc643fa41801a1976878c41064ee7f106894866834da41d7cfd830d2306"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "d5dcf70f4e9b0e690fe492a20828e2fae775256be029b44249f5b9fec31d41cb"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "adc4dd674b37880d75c12cbe314a3b5a06c6b6e4cc08a64317bcdf172ab9ccbe"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "9ad5d32838266da2a28feb1cfc09f3b449598b233494de423a2bc349a32d5363"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "intervalo_unico_y_evidencia_del_procedimiento",
+        "sha256": "637f7fa04eb262407d40da530a18aca23bdfda0639f187f5908fd809ff6cf203",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8c91f6347f2a067d757a72a070aceeb1292680f10d9048de73258fe500e0f7e7",
+        "afterSha256": "3f40714a4675665c2c19c9484e6c84ababd8c7a74afa917723703f71b2d2e4d1"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "08a999dc2f8deef66da4ae2b1d86cfa77b462be54f281c695edf617fa7e3492a",
+        "afterSha256": "fea7590a2b34200ef54351928b19aad281e6a369a955e06026c5c6448d0c8e68"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "e9d919aa9cf729a121d649e7a3f9e7944fc99c4e1eee58acf33bc4c1605e59cf",
+        "afterSha256": "919f59704ba76a9d3203ffda2b9967c2d6ea951fb6536139e451d13edf3d6856"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3a05b11c18c27c99fe06ebdac1ffc6e57c843d3962a67ecbc44297593fb53e8c",
+        "afterSha256": "03390593775af9ae0482af0d530c36c259aecb953adc699dc06215dc65098cbc"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "b5d1531490a35d665380fc33586ae5c35ec08e780fe91e99f447c9b5c652b0df",
+        "afterSha256": "61d2d83077bcd72769091a8a8ae321197141f85ad3b2d717094aa028bccac71d"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "eba5ff561d674d0b770c8b3c8479fc6188cf4e6a45f59262d09783e89c870c0b",
+        "afterSha256": "12c6b6d66e05e0a0b594a6ff3af0816bdc17d9f914b2dd91a197dee4b4098a83"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "a153f012e89d936128412bab642d55becda7da841f150c1a2163f21d0f16691f",
+        "afterSha256": "1b07c0efbde3a39b1ea7c779a4d1d6ba7b96178b75aad38a24094a2942e55325"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "bdb6d6700491cc5389136f92e50eb77746712978106362b61521f6954b814ef3",
+        "afterSha256": "ad207f1fa306e276805dd2d69e75b51fde8497e9f2bf65e22fc05312138daaa3"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "7d3c7e767f068d3e8ef9708f6a8080ceb16f56f8a7f1bce07d559937c43e040b",
+        "afterSha256": "79ed7afa61b23f15ccfcb52826ad331785158ad3987be590cd778fada23bb00e"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "b2fef10b15f36c5c551b68db6e632e996ad65b37ff87e00c1e767833eec258dc",
+        "afterSha256": "74c0e909abbe5acad174c8991844ea5e793e640fbf5b98efdb5558ca34c3d1cb"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1fa12dddee53ca130be260ff863736af8c6e698a8f1b22586989a2329e23810a",
+        "afterSha256": "ea2bac8803f4911f63d546b7cc70d7e395b116a920553d7478490e346caca1e6"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "b7bd32a2a8ad391b135f4837f58f057d1babb6ece234a2e9eac3980d7e320b5b",
+        "afterSha256": "6a42a081e4d4c80bd77d0418665f6e1b873de15bcfb5470c22a125e66e758fb0"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "782ef454c570b3b88dff10d888910c3b1989f0d9322c9a7d4b71964df2edbc40",
+        "afterSha256": "928ec5de5259a705164c2394ec5094486355fb3b19871bcf57969970e7de8359"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "d1795d5a8662c9ecac7ac281ba3729bd139931342cb2437e94b521fe32c7591f",
+        "afterSha256": "321554f533971975d88c47bbb2d500ad118ff808aa5b0677397b07ce923c4871"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "1ffd723cd647b206bf83792f391a4e428a9d80496c3edece23be0bc20217a50f",
+        "afterSha256": "5246c943f1b9b80c5607244a84dea41ed6a09c749faf064007fe3c191f76f501"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "c270117ae6820550fb601cdd0e7f90d9dcf5507d869f12ab241b89140b2306e9",
+        "afterSha256": "006fb20b1c51179f4e74fc900903e50891d20669541addbfbeeb526a654dee35"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "6abc656d12b82180816bdae275bbae6d7b9e11e39c576dc54035bf3850caa336",
+        "afterSha256": "5056cee1c557a812d01379c5d2b384d775d5a2a72e783e3d8502ab46adcf53b1"
+      }
+    ]
+  }
 }

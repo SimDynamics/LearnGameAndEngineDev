@@ -10,21 +10,40 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera una prueba completa: datos, expectativa y comparación. Generar datos sólo resuelve la primera parte. Para decidir si el programa responde correctamente necesitas una expectativa obtenida desde el requisito o una propiedad que deba cumplirse. Mirar números distintos en pantalla no sustituye esa comparación.",
+          "text": "Una prueba necesita datos, una expectativa y una comparación. Ejecutar el programa con unas entradas y contrastar su resultado con lo esperado permite buscar errores de forma sistemática (Stroustrup, 2024).\n\nLa generación sólo prepara los datos. Para decidir si la función responde correctamente hace falta una expectativa obtenida del requisito o una propiedad que deba cumplir. Mostrar números variados no realiza esa comparación.",
           "emphasis": [
             {
-              "text": "expectativa",
+              "text": "datos, una expectativa y una comparación",
+              "style": "bold",
               "occurrence": 1
             },
             {
-              "text": "comparación",
+              "text": "La generación sólo prepara los datos",
+              "style": "bold",
               "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Trabajaremos sobre contar_desde: recibe hasta doce enteros de 0..9 y un mínimo de 0..9. Devuelve cuántos datos son mayores o iguales al mínimo, sin modificar la colección. Por ejemplo, en {2,4,4,7} con mínimo cuatro hay tres aceptados. Conserva la igualdad y las repeticiones: son observaciones distintas."
+          "text": "La función de esta actividad es contar_desde. Recibe un vector de hasta doce enteros entre cero y nueve y un mínimo entre cero y nueve. Devuelve cuántos elementos son mayores o iguales al mínimo, sin modificar el vector.\n\nEn {2,4,4,7}, con mínimo cuatro, cumplen tres elementos: los dos cuatros y el siete. La igualdad forma parte del requisito y las apariciones repetidas cuentan por separado.",
+          "emphasis": [
+            {
+              "text": "mayores o iguales",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sin modificar el vector",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cuentan por separado",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -35,7 +54,12 @@
             "Una colección que sólo tenga valores muy superiores al mínimo."
           ],
           "correctIndex": 1,
-          "explanation": "La frontera de igualdad distingue ambas reglas. Una semilla no expresa por sí sola el comportamiento esperado."
+          "explanation": "La frontera de igualdad distingue ambas reglas. Una semilla no expresa por sí sola el comportamiento esperado.",
+          "reviewFeedback": [
+            "Identifica qué resultado se espera antes de cambiar la configuración que produce los datos.",
+            "Relaciona el caso elegido con el valor que pertenece a una de las dos condiciones y no a la otra.",
+            "Comprueba qué diferencia hay entre las condiciones cuando ningún dato coincide con el límite."
+          ]
         }
       ]
     },
@@ -47,7 +71,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe casos vacíos, sin aceptados, con todos aceptados y con igualdad repetida. Son preguntas distintas. Una distribución puede generar cualquiera de esas situaciones dentro de su dominio, pero una cantidad finita de muestras no promete visitarlas. Los casos escogidos siguen siendo necesarios aunque los ensayos generados pasen."
+          "text": "Los casos elegidos permiten comprobar preguntas concretas del requisito, además de ejecutar ensayos generados (Stroustrup, 2024). Aquí interesan una colección vacía, otra sin elementos aceptados, otra con todos aceptados y una con valores repetidos justo en el mínimo.\n\nUna cantidad finita de muestras no garantiza que aparezcan esas situaciones. En la batería del editor se escribirán como vectores de prueba y se compararán con expectativas conocidas. Un resumen sin fallos generados no sustituye esas comprobaciones.",
+          "emphasis": [
+            {
+              "text": "preguntas concretas del requisito",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "vectores de prueba",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no sustituye",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -58,11 +99,33 @@
             "La distribución uniforme garantiza que cada frontera apareció alguna vez."
           ],
           "correctIndex": 0,
-          "explanation": "Una muestra finita no demuestra cobertura completa. El conjunto de casos y el contrato deben quedar explícitos."
+          "explanation": "Una muestra finita no demuestra cobertura completa. El conjunto de casos y el contrato deben quedar explícitos.",
+          "reviewFeedback": [
+            "Distingue los casos ejecutados de los casos que admite todo el dominio.",
+            "Considera si cuarenta muestras recorren necesariamente cada combinación de tamaño, valores y mínimo.",
+            "Distingue que una situación esté permitida por la distribución de que haya aparecido en esta batería."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Si aparece un fallo, conserva los datos concretos, el mínimo y la configuración de generación. La semilla ayuda a repetir la historia en el mismo entorno; los datos concretos permiten volver a probar el caso sin depender de cómo otra biblioteca transforme la secuencia. Evita cambiar varias cosas antes de haber explicado la primera diferencia."
+          "text": "Si una comparación falla, el programa debe mostrar el vector concreto y su mínimo en la consola, junto con los datos que permiten identificar el ensayo. La semilla y la historia de llamadas ayudan a repetirlo dentro del mismo entorno; conservar los valores permite volver a probar ese caso aunque cambie la biblioteca de generación (Stroustrup, 2024).\n\nEn el editor de código, esos valores pueden incorporarse como otra llamada fija del verificador mientras se corrige el mismo objetivo. Localiza primero qué resultado no coincide con su expectativa; después modifica la parte correspondiente y vuelve a comprobar la batería.",
+          "emphasis": [
+            {
+              "text": "en la consola",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "otra llamada fija del verificador",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "qué resultado no coincide",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         }
       ]
     },
@@ -74,7 +137,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Podemos generar primero la cantidad de elementos y después sus valores. En cada intento conservaremos un vector propio y un mínimo. La distribución de tamaños incluye cero, pero no obliga a que un ensayo concreto produzca una muestra vacía. El límite doce permite copiar size() a int de forma deliberada y mantener pequeños los conteos."
+          "text": "Un ensayo puede obtener primero el tamaño de la colección y después sus valores. En la actividad también se obtiene un mínimo; cada vector conserva juntos los datos de su propio caso.\n\nLa distribución de tamaños permite cero, pero no obliga a obtenerlo en un intento concreto. Por eso la colección vacía se comprueba también como caso elegido. Todas las colecciones tienen como máximo doce elementos: su tamaño cabe en int y el conteo no puede exceder doce.",
+          "emphasis": [
+            {
+              "text": "su propio caso",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "como caso elegido",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "como máximo doce elementos",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -88,7 +168,24 @@
         },
         {
           "type": "paragraph",
-          "text": "El código obtiene valores aunque una comparación anterior hubiera fallado: esas obtenciones están en instrucciones anteriores al &&. Una llamada necesaria no debe ocultarse detrás de un cortocircuito que cambie la historia de generación."
+          "text": "Las obtenciones del programa anterior ocurren antes de la expresión que acumula iguales. Aunque una comparación previa hubiera producido false, los siguientes tamaños y valores se siguen obteniendo.\n\n&& puede omitir la evaluación de su segundo operando si el primero es false (Köppe et al., 2023). Una obtención necesaria para el experimento debe mantenerse fuera de ese cortocircuito: omitirla cambiaría la historia de llamadas.",
+          "emphasis": [
+            {
+              "text": "antes de la expresión",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "se siguen obteniendo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "omitirla cambiaría",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         }
       ]
     },
@@ -100,7 +197,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Para cada muestra podemos contar los datos que NO cumplen el mínimo y restarlos del tamaño. Ese cálculo da otra representación del requisito: aceptados = observaciones - rechazados. No copies sólo la misma condición y la misma suma de la función bajo prueba; podrías repetir su defecto. Tampoco una segunda implementación demuestra por sí sola que interpretamos bien el requisito: conserva los casos calculados a mano."
+          "text": "Otra forma de calcular la expectativa consiste en contar los valores menores que el mínimo. Cada observación pertenece a uno de dos grupos: menor que el mínimo o mayor o igual. Por eso el conteo buscado es el tamaño de la colección menos los descartados.\n\nEsta versión usa otra representación del requisito, en lugar de copiar exactamente la condición y la suma de contar_desde. Aun así, dos implementaciones pueden compartir una interpretación equivocada. Las expectativas elegidas a partir del requisito permiten contrastar también esa interpretación.",
+          "emphasis": [
+            {
+              "text": "dos grupos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "menos los descartados",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "compartir una interpretación equivocada",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -111,11 +225,33 @@
             "Guardar sólo el tamaño, porque determina cuántos cumplen cualquier mínimo."
           ],
           "correctIndex": 1,
-          "explanation": "Una expectativa independiente del código puede detectar una interpretación equivocada compartida."
+          "explanation": "Una expectativa independiente del código puede detectar una interpretación equivocada compartida.",
+          "reviewFeedback": [
+            "Revisa qué ocurriría si las dos implementaciones repiten la misma interpretación errónea del requisito.",
+            "Relaciona la expectativa fijada desde el requisito con la igualdad que excluyen ambas versiones.",
+            "El tamaño no informa cuántos valores alcanzan el mínimo. Examina qué observación necesita esa expectativa."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Una propiedad puede ser más débil que el requisito. Que el resultado esté entre cero y el tamaño no distingue todos los conteos equivocados. Para este laboratorio combinaremos comparación exacta, un cálculo alternativo y fronteras manuales."
+          "text": "Una propiedad necesaria puede ser insuficiente para comprobar todo el requisito (Stroustrup, 2024). Un conteo que siempre devuelva cero queda entre cero y el tamaño, incluso cuando hay elementos que cumplen el mínimo. Esa propiedad no descubriría el error.\n\nPara comprobar contar_desde se combinan casos con expectativas conocidas y el cálculo por descartes sobre muestras generadas. Cada parte aporta una comparación distinta; ninguna convierte por sí sola una batería finita en una prueba de todos los datos posibles.",
+          "emphasis": [
+            {
+              "text": "siempre devuelva cero",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "expectativas conocidas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "todos los datos posibles",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         }
       ]
     },
@@ -127,18 +263,59 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye contar_desde y verificar, donde verificar recibe datos, mínimo y cantidad esperada y devuelve si coincide. Ejecuta cuatro casos manuales independientes: vacío con mínimo cuatro espera cero; {1,2} con mínimo tres espera cero; {4,4} con mínimo cuatro espera dos; {3,4,4,5} con mínimo cuatro espera tres. Muestra Fallos elegidos:N. No uses una cadena de && que pueda omitir pruebas."
-        },
-        {
-          "type": "paragraph",
-          "text": "Añade esperado_por_descartes usando conteo de valores menores al mínimo. Prepara un motor con semilla 229 y tres distribuciones: tamaño 0..12, mínimo 0..9 y valor 0..9. En cada uno de cuarenta intentos obtiene primero tamaño, después mínimo y luego los valores. Compara contar_desde con el cálculo alternativo y muestra Fallos generados:N. Si hay una diferencia, conserva y muestra ese vector y su mínimo antes del resumen. Todos los bucles deben ser finitos."
-        },
-        {
-          "type": "paragraph",
-          "text": "Con una implementación correcta ambos resúmenes deben ser cero. Pulsa Compilar, ejecutar y comprobar para revisar esta batería completa: stdout debe contener Fallos elegidos:0 y Fallos generados:0 en dos líneas, sin salto final. La detección de un defecto deliberado tiene el editor independiente siguiente; no cambia la versión correcta de esta actividad.",
+          "text": "Construye contar_desde y verificar. verificar recibe el vector, el mínimo y la cantidad esperada; llama a contar_desde y devuelve si el resultado coincide con esa expectativa.\n\nEjecuta cuatro casos elegidos independientes: vacío con mínimo cuatro espera cero; {1,2} con mínimo tres espera cero; {4,4} con mínimo cuatro espera dos; {3,4,4,5} con mínimo cuatro espera tres.\n\nMuestra Fallos elegidos:N. Cuenta un fallo por cada caso cuyo resultado no coincida, aunque ese caso contenga varios valores mal contados. Ejecuta las cuatro comprobaciones: una cadena de && podría omitir las siguientes después del primer false.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "llama a contar_desde",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "un fallo por cada caso",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "las cuatro comprobaciones",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye esperado_por_descartes: cuenta los datos menores que el mínimo y resta ese conteo del tamaño del vector. Prepara un motor con semilla 229 y tres distribuciones: tamaño 0..12, mínimo 0..9 y valor 0..9.\n\nEn cada uno de cuarenta ensayos obtiene primero el tamaño, después el mínimo y luego tantos valores como indique ese tamaño. Conserva el vector de ese ensayo y compara contar_desde con esperado_por_descartes. Cuenta una discrepancia por ensayo y muestra Fallos generados:N.\n\nSi aparece una diferencia, muestra el vector, su mínimo y el número de ensayo antes del resumen Fallos generados. Esos datos permiten investigar el caso concreto en la consola. Todos los recorridos están acotados por los tamaños y el número de ensayos indicados.",
+          "emphasis": [
+            {
+              "text": "primero el tamaño, después el mínimo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "una discrepancia por ensayo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "el caso concreto",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Con una implementación correcta, los dos resúmenes muestran cero fallos. Pulsa Compilar, ejecutar y comprobar: stdout debe contener Fallos elegidos:0 y Fallos generados:0, en dos líneas y sin salto después del último cero.\n\nLa actividad siguiente utiliza otro editor para comprobar que esos verificadores detectan un defecto deliberado. Conserva aquí la implementación correcta y sus reintentos.",
+          "emphasis": [
+            {
+              "text": "los dos resúmenes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "otro editor",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -163,10 +340,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor contiene deliberadamente contar_desde con >. Conserva ese defecto seguro y reconstruye los cuatro verificadores elegidos con sus expectativas originales, sin cambiarlas para aceptar el fallo. stdout debe mostrar únicamente Fallos elegidos:2 y un salto final. Pulsa Compilar, ejecutar y comprobar: el objetivo es detectar los dos desacuerdos de igualdad.\n\nConstruye también los cuarenta ensayos acotados. Presenta sus diferencias, vectores y mínimo en std::cerr, junto con el resumen Fallos generados:N, para inspeccionarlos dentro de la app. No se exige un N concreto entre bibliotecas. La comparación automática de esta actividad revisa las pruebas elegidas; el canal de errores permite investigar las muestras que hayan fallado.",
+          "text": "Este editor contiene deliberadamente contar_desde con >. Conserva esa función y reconstruye las cuatro llamadas elegidas con sus expectativas: vacío/4 espera cero; {1,2}/3 espera cero; {4,4}/4 espera dos; {3,4,4,5}/4 espera tres. Una discrepancia cuenta como un caso fallido, no como tantos fallos como valores se perdieron.\n\nstdout debe mostrar únicamente Fallos elegidos:2 y un salto final. Pulsa Compilar, ejecutar y comprobar para acreditar la detección de esos dos desacuerdos. No cambies las expectativas para que acepten el defecto.\n\nConstruye también cuarenta ensayos, con semilla 229, tamaño 0..12 y mínimo y valores 0..9. En cada ensayo obtiene tamaño, mínimo y valores, en ese orden. Compara el conteo defectuoso con esperado_por_descartes. Escribe sus diferencias en std::cerr, con el vector y el mínimo de cada caso, y termina ese canal con Fallos generados:N.\n\nEl botón compara el stdout esperado y comprueba que stderr tenga contenido. No exige un valor concreto de N ni una lista de muestras entre bibliotecas. El objetivo de este editor es construir las comprobaciones y su informe: conservar el defecto permite comprobar que las expectativas lo detectan.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Conserva esa función",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "No cambies las expectativas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "termina ese canal con Fallos generados:N",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "stderr tenga contenido",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -180,7 +374,8 @@
                 "outputs": [
                   "Fallos elegidos:2\n"
                 ],
-                "explanation": "Las expectativas independientes detectan dos casos de igualdad que la condición defectuosa excluye. La cantidad de diferencias generadas se observa aparte y no se convierte en una respuesta fija entre bibliotecas."
+                "explanation": "Las expectativas independientes detectan dos casos de igualdad que la condición defectuosa excluye. La cantidad de diferencias generadas se observa aparte y no se convierte en una respuesta fija entre bibliotecas.",
+                "standardError": "nonBlank"
               }
             ]
           }
@@ -200,11 +395,40 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: conservar los datos; incluir igualdad y repetidos; obtener expectativas manuales correctas; ejecutar todos los casos elegidos; respetar los dominios de tamaño y valor; consumir tamaño, mínimo y valores en el orden declarado; informar cualquier diferencia con su caso concreto. La referencia correcta muestra Fallos elegidos:0 y Fallos generados:0. Con el defecto >, dos casos elegidos fallan: {4,4} y {3,4,4,5}. Los fallos generados dependen de las muestras; no son una respuesta exacta entre bibliotecas."
+          "text": "La primera referencia reúne las pruebas del conteo correcto. Sus resúmenes son Fallos elegidos:0 y Fallos generados:0. Incluye la igualdad y los repetidos, ejecuta todos los casos elegidos y compara cada ensayo generado con el conteo por descartes.\n\nLa referencia del defecto, situada después de la actividad de fronteras, mantiene >. En ella fallan los casos {4,4} y {3,4,4,5}: cada llamada aporta una discrepancia al resumen de dos fallos elegidos. El informe generado utiliza stderr y su cantidad depende de las muestras de esa biblioteca.\n\nEn ambas baterías, tamaño, mínimo y valores se obtienen en el orden declarado y se conserva el caso concreto de cualquier diferencia. Un resumen se calcula desde las comparaciones realizadas; no sustituye esas llamadas.",
+          "emphasis": [
+            {
+              "text": "conteo correcto",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cada llamada aporta una discrepancia",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "se calcula desde las comparaciones",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La función se comprueba sobre sus argumentos, sin reconocer sólo mensajes impresos. El editor independiente siguiente amplía la batería a mínimos de frontera y valores repetidos. El contraste complementario y los casos elegidos comprueban aspectos distintos del mismo requisito."
+          "text": "El programa de pruebas debe llamar a la función con sus argumentos y comparar los resultados obtenidos. Esas comprobaciones son las que producen el resumen que revisa la consola.\n\nEl editor siguiente recupera el conteo con mínimos de frontera y valores repetidos. Tiene su propio programa, informe y reintentos; conserva las dos actividades anteriores.",
+          "emphasis": [
+            {
+              "text": "llamar a la función",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "su propio programa",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "heading",
@@ -212,10 +436,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde este editor reconstruye contar_desde y verificar para cuatro casos: {0,4,9} con mínimo cero espera tres; la misma colección con mínimo nueve espera uno; doce valores cinco con mínimo cinco esperan doce; esos mismos datos con mínimo seis esperan cero. Ejecuta todas las llamadas y muestra Fronteras:N, donde N cuenta los desacuerdos. No añadas salto final. Pulsa Compilar, ejecutar y comprobar: se espera Fronteras:0.",
+          "text": "Reconstruye contar_desde y verificar en este editor. Ejecuta cuatro casos: {0,4,9} con mínimo cero espera tres; {0,4,9} con mínimo nueve espera uno; doce valores cinco con mínimo cinco esperan doce; esos mismos doce valores con mínimo seis esperan cero.\n\nCuenta un desacuerdo por caso y muestra Fronteras:N, sin salto final. Pulsa Compilar, ejecutar y comprobar: se espera Fronteras:0. Todas las llamadas deben ejecutarse, incluso si alguna anterior falla.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "cuatro casos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "un desacuerdo por caso",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Todas las llamadas",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -258,7 +494,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Localizar un error de igualdad con datos fijos"
+          "text": "Del conteo a la selección de los datos"
         },
         {
           "type": "output_prediction",
@@ -272,16 +508,60 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye seleccionar_desde(const vector<int>& datos,int minimo), que devuelve los valores >= minimo en su orden, conserva repetidos y no modifica datos. Comprueba los cuatro casos manuales del conteo y las fronteras mínimo cero, mínimo nueve y doce valores iguales. Reúne sus diferencias en Fallos elegidos:N.\n\nProduce después cuarenta muestras con los mismos dominios acotados y orden de obtenciones ya practicados. La cantidad seleccionada debe coincidir con esperado_por_descartes; cada valor seleccionado cumple el umbral y el resultado debe ser una subsecuencia del original en el mismo orden. Para comprobar esto, avanza una posición de búsqueda en el original por cada elegido y rechaza si no lo encuentras sin retroceder. Compara además el original con una copia anterior. Muestra Fallos generados:N y Conservacion:B.\n\nPulsa Compilar, ejecutar y comprobar. stdout debe contener Fallos elegidos:0, Fallos generados:0 y Conservacion:1, cada uno terminado con salto. Si aparece una diferencia, presenta datos y mínimo en std::cerr para investigarlos dentro de la app y añádelos a las pruebas fijas al corregir el mismo objetivo. No se exige ninguna muestra aleatoria concreta.",
+          "text": "Construye seleccionar_desde(const vector<int>& datos, int minimo). Devuelve todos los valores mayores o iguales al mínimo, en el orden en que aparecen. Conserva las repeticiones y no modifica datos. Cada aparición elegida debe corresponder a una posición distinta del original.\n\nComprueba estas siete parejas de datos y mínimo contra sus vectores esperados: vacío/4 devuelve vacío; {1,2}/3 devuelve vacío; {4,4}/4 devuelve {4,4}; {3,4,4,5}/4 devuelve {4,4,5}; {0,4,9}/0 devuelve {0,4,9}; {0,4,9}/9 devuelve {9}; doce valores cinco con mínimo cinco devuelven esos mismos doce valores. Muestra Fallos elegidos:N, contando un desacuerdo por caso.\n\nPrepara un motor con semilla 229 y distribuciones de tamaño 0..12, mínimo 0..9 y valor 0..9. Produce cuarenta ensayos; en cada uno obtiene tamaño, mínimo y después sus valores.\n\nComprueba tres propiedades de la selección: su tamaño coincide con esperado_por_descartes; cada valor elegido cumple el umbral; y es una subsecuencia del original. Esto último significa que sus elementos se encuentran en posiciones que avanzan siempre hacia delante, aunque se omitan otras posiciones.\n\nPara comprobar la subsecuencia, conserva una posición de búsqueda en el original. Busca desde ella el siguiente elegido y, después de encontrarlo, avanza a la posición posterior. Rechaza si no aparece antes del final. Así dos repeticiones elegidas no pueden reutilizar una misma aparición del original.\n\nCantidad, pertenencia y orden se necesitan juntas: tener el tamaño correcto no impide elegir valores incorrectos; cumplir el umbral no impide inventar repeticiones; ser subsecuencia no impide omitir valores que debían elegirse. Conserva además una copia previa de datos y compárala con el original después de seleccionar.\n\nCuenta un fallo por ensayo cuya selección incumpla alguna de esas propiedades. Muestra Fallos generados:N y Conservacion:B. Si hay una diferencia, presenta el vector y el mínimo en std::cerr para investigarlos dentro de la app; esos datos pueden añadirse como prueba fija al corregir el mismo objetivo.\n\nPulsa Compilar, ejecutar y comprobar. stdout debe contener Fallos elegidos:0, Fallos generados:0 y Conservacion:1, cada línea terminada con un salto. No se exige ninguna muestra generada concreta.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "todos los valores mayores o iguales",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "siete parejas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tres propiedades",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "posiciones que avanzan siempre hacia delante",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Cantidad, pertenencia y orden",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Conservacion:B",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "note",
-          "text": "Combinar casos elegidos y ensayos generados ayuda a comprobar aspectos distintos del requisito (Stroustrup, 2024, secciones 4.7.4–4.7.5). La cantidad de ensayos no certifica cobertura completa; los datos de una diferencia permiten formular después un caso fijo que la reproduzca."
+          "text": "Los casos elegidos y los ensayos generados permiten investigar aspectos diferentes del requisito (Stroustrup, 2024). Los primeros fijan preguntas y expectativas concretas; los segundos amplían los datos examinados con una configuración reproducible.\n\nEl número de ensayos no acredita cobertura completa. Conservar el vector y el mínimo de una discrepancia permite incorporarla después como caso fijo, dentro del programa de pruebas.",
+          "emphasis": [
+            {
+              "text": "expectativas concretas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no acredita cobertura completa",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "dentro del programa de pruebas",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -308,13 +588,1030 @@
         },
         {
           "type": "note",
-          "text": "Consulta después de construir y comprobar el último editor. Las expectativas de salida son propiedades del contrato, no listas aleatorias de otra biblioteca."
+          "text": "La referencia reúne la selección, sus siete casos fijos y las comprobaciones de tamaño, pertenencia, subsecuencia y conservación del original. El recorrido de búsqueda avanza después de cada aparición elegida.\n\nLas salidas esperadas describen propiedades del contrato. Una lista generada por otra biblioteca no se convierte en respuesta obligatoria del ejercicio.",
+          "emphasis": [
+            {
+              "text": "después de cada aparición",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "propiedades del contrato",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos,int minimo) {\n    std::vector<int> resultado;\n    for(int dato:datos) { if(dato>=minimo) { resultado.push_back(dato); } }\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos,int minimo) {\n    int descartados=0;\n    for(int dato:datos) { if(dato<minimo) { ++descartados; } }\n    return static_cast<int>(datos.size())-descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,const std::vector<int>& elegidos,int minimo) {\n    if(static_cast<int>(elegidos.size())!=esperado_por_descartes(datos,minimo)) { return false; }\n    std::size_t posicion=0;\n    for(int elegido:elegidos) {\n        if(elegido<minimo) { return false; }\n        while(posicion<datos.size() && datos.at(posicion)!=elegido) { ++posicion; }\n        if(posicion==datos.size()) { return false; }\n        ++posicion;\n    }\n    return true;\n}\n\nint main() {\n    int fijos=0;\n    if(seleccionar_desde({},4)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({1,2},3)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({4,4},4)!=std::vector<int>{4,4}) { ++fijos; }\n    if(seleccionar_desde({3,4,4,5},4)!=std::vector<int>{4,4,5}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},0)!=std::vector<int>{0,4,9}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},9)!=std::vector<int>{9}) { ++fijos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(seleccionar_desde(iguales,5)!=iguales) { ++fijos; }\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},minimos{0,9},valores{0,9};\n    int fallos=0;\n    bool conservado=true;\n    for(int intento=0;intento<40;++intento) {\n        const int cantidad=tamanos(motor);\n        const int minimo=minimos(motor);\n        std::vector<int> datos;\n        for(int i=0;i<cantidad;++i) { datos.push_back(valores(motor)); }\n        const std::vector<int> original=datos;\n        const std::vector<int> elegidos=seleccionar_desde(datos,minimo);\n        conservado=conservado && datos==original;\n        if(!propiedades(datos,elegidos,minimo)) {\n            ++fallos;\n            std::cerr<<\"Minimo:\"<<minimo<<\";Datos:\";\n            for(int dato:datos) { std::cerr<<'['<<dato<<']'; }\n            std::cerr<<'\\n';\n        }\n    }\n    std::cout<<\"Fallos elegidos:\"<<fijos<<\"\\nFallos generados:\"<<fallos\n             <<\"\\nConservacion:\"<<conservado<<\"\\n\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "83f50cb212aee0bf4f48ca0ddd0aad69aba9581cc0752518f17dff20ac514091"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "5f246f08a991ea51e60830ac954b03addb02062c182fe7dbf593ed37073e72e2"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "dea2d31cbe2ed9f6c62dff8a73650c6e3d41028f1c6b58b7cead915410d2df0e"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "cefafadab6d9c0363a85551877cdc586837f52152cd2312688d0c33afda95ff3"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "552bddcf0a50594827593a3220d396e662ed3225c199949d44fcf1f5797cd4d0"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "380affa5e92351095e2adb934d10535b4f8d498ffca65266e5d2126d2056c291"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "473b150839412c92fe6ba9288cd06a375a098ced53217d826a7eee9a8a020357"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "4496815e8d0a9e0eb09095f6cdd09e3ebb7b5c3073db643e2412a855638e3876"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "02933754cc2840ae428321613441bc4ab529fa6f30b7366f1edf3c1d0922b088"
+          },
+          {
+            "id": "block_0005_0009",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0010",
+            "sha256": "dd3c7f78d55612c0d6128f204fc7aed3a294678dedef43cab98c9cf496396970"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "6f00d0407fd5da073e5308911d9126b09ad4531a82650048558ef3decfcb9a32"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "928ba50c0c6a902253771ce4b47476a2152c63eb296e3d8b1f4485255f859e22"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "c40c1e0934488149cd69e4a81c213511fff5cda0686234c19ed86a34aeef6be5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008",
+          "block_0005_0009",
+          "block_0005_0010"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "8db7cba1917b0382e613ef144c98f80117b339b8fdf1c39a6e0b920fbdfc26ca",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "8cc0115ff3d4cc043ef3e4d49cce7cea33ac47cf3062ea4d56caad365af93388"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "ad9efe457c8f514d9a68139f1d297dbb87f5340764004a2348b207e98a1078ed"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "cd90666e7251496a7a6e3dfcb2dd462a05acb3f7ec54cabfcc58ec5908b537b9"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "ffea3b11c057614cf8d442cf11c341ca28355d2d820110d33ca2925fa755182f"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "7c771f0198fc27b99f850edd6d9c53985d70c9d2a4c10de20724b41f225f6aa8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "852a4e5ca2a94f720e5b152f9d0e1a6052e43469dbf77180c0bde419505a27a0"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "90cc2d85eea0183288e408bc847315a49c3c29b16334be34f50ea5d3f425eb19"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "116ed00439b34eb9615522fc69077665dfb2480553400b14e00e2ea50c16137b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "83f50cb212aee0bf4f48ca0ddd0aad69aba9581cc0752518f17dff20ac514091"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "5f246f08a991ea51e60830ac954b03addb02062c182fe7dbf593ed37073e72e2"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "dea2d31cbe2ed9f6c62dff8a73650c6e3d41028f1c6b58b7cead915410d2df0e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "cefafadab6d9c0363a85551877cdc586837f52152cd2312688d0c33afda95ff3"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "552bddcf0a50594827593a3220d396e662ed3225c199949d44fcf1f5797cd4d0"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "380affa5e92351095e2adb934d10535b4f8d498ffca65266e5d2126d2056c291"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "473b150839412c92fe6ba9288cd06a375a098ced53217d826a7eee9a8a020357"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "4496815e8d0a9e0eb09095f6cdd09e3ebb7b5c3073db643e2412a855638e3876"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "02933754cc2840ae428321613441bc4ab529fa6f30b7366f1edf3c1d0922b088"
+              },
+              {
+                "id": "block_0005_0009",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0010",
+                "sha256": "dd3c7f78d55612c0d6128f204fc7aed3a294678dedef43cab98c9cf496396970"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "6f00d0407fd5da073e5308911d9126b09ad4531a82650048558ef3decfcb9a32"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "928ba50c0c6a902253771ce4b47476a2152c63eb296e3d8b1f4485255f859e22"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "c40c1e0934488149cd69e4a81c213511fff5cda0686234c19ed86a34aeef6be5"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "ae93c17a701f0b2492c773bf7406c760ef7f59f4386998c5af870b90681898ed",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "0d91772e555acf71261d4737c3be65fb52d6296d54e62c488a8fbb4da8ef8a94"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b90f33111a4a2dcf19a04c530339c41112e16ba1f2248eb4bc6962cd2a304c50"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "9a4ce4eb020a02bbe0a344cde807cab76189e50ff2a736decdc1db28fefc5b95"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "f441959ab9d881608517ef94b3aa48bb5e1d2522a3f3f087cd06b015bcb268df"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "6493cbc5e15da1573b5567ca0ae578dea4482b36d84d789f4af932e6c7cacba9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "591ce42ffd7fb62fd0863c9d5550f5161cfd5bfa9e38973dd256a6450fc1aa10"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "67c1e4369ee1c74a685ed4ae04c9fd00e97a29ffce6b85e4624d7de0b916f947"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "1d32dc299a389bafa5b74c7505c8131f84d98d3db9a6f526b9705d7eaa22f55c",
+        "afterSha256": "4606841e7684f537321a7a69653d996e94cc50d370e85d79da9ab77984498557"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "8e8687a934df64dc19d0dfa388e6e5c369ede9a9cf8e16a7d60212e9f1bde1b1",
+        "afterSha256": "118251a1f39b4c79eec58620c93a34f5e80bc22731ac34145f70205a21cb6425"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "c17b32e04c4b5a86c520e29072aa77da4e2c3b5f3789349afe5d7a13b4faf0f8",
+        "afterSha256": "afe9201a2b8272233a2960103093530c8b6e77b432492d40ba7bc07d8462005f"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f2c8d3dcf4a88998a82cbb9066a18618f516cc58fcd255b54cf9da612f601eda",
+        "afterSha256": "d41e60ff885569899b1282a2eb77914d8090453e26740377cbcc8f4de9d35530"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "901cd3a60d705bd1153030b02623d71c27dc476ea9f04e78598b5d1fa9b35047",
+        "afterSha256": "dd2c26bfec4559d4f4e7a23ae6d9a358d6cd8d651f5f0220c0a0cdcef9e6bdcb"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "882190274b9d645bfbf70d1bd072b198a0f32e887f55b31f0e4f64d5de6b3b45",
+        "afterSha256": "a8d751c78a10cd67bf9d87ab4f4dadb43a08ce6c468ff7b99578daaaf4c7e80c"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "6c5a03ea23c03b289e40f8c101f010f8118d438e7bf404f2d1a9f89b14d41126",
+        "afterSha256": "0b4cfa3d4fe7af31c7487d3b01630ff8ec48606975ee3a8f9efbb4a1ddf122d3"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "ded01fe7046da30e2b1ad589758ca943d548d9664790fda28e4e10890d389e72",
+        "afterSha256": "5c3481686f72d967781ffefee69710a1261f9a1729eebe2d25d854334e85e68d"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8f33b8c189f4b8db7457bdbe97c7b69bb813e1c4425ddc7329a8ac3eca4ea154",
+        "afterSha256": "d0229269283a02e362adebb91df36f5797a7c85e388b89d0edd6383575f86299"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "35ffae1729b0ea48e0cbf7c1dd66224867f6378c60e6963855770b1eabcad277",
+        "afterSha256": "64d0ea1303cc854740d1955c197aa7af48d8c655ea3fc255acd370a0f82233fe"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "14f4753a640ba5926390dfbf7a3f17b693e5b29f695a18e09c81edfa13ef0efb",
+        "afterSha256": "61ad4a66bfa98359967f9f3aa64d43086161d48093c71dce6219dc9eca7f1a38"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "02a3e6bd15085c7abf0b9251a559864008bc624b81f637f726ab4eb8e197fc38",
+        "afterSha256": "85d4bff8da3f88c5745b85c0b4a015a86a8ff1258b14f1277688faabc676fb08"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5bbb1553b11db66843ca519505ec0546e5d6d6e9d9101d74aa119f3f535dcd2f",
+        "afterSha256": "d4ef5c93bb9506ac9a08ce58434f62b220668ffbfdfdd00ccf63bf35883ead1f"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "789d71b05a8aaf64e339d2e489d1b3e54370c30316cbcae37654bf9612363888",
+        "afterSha256": "7ce9c726456cc04169bcad31a7be7dc372ccf0380c06ff35cac2c82b2fbbdb09"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "8338a5dcdf2d1e529a2b386dd81faebec1c241d481fb9e20f1331fa70432a736",
+        "afterSha256": "59f97bcccd46fbdc4b41859f6f026ed596b4effabad499495862293928a4eebb"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "ab8a294f3248117ece4d0a018669f15277138aca2e4918256b8085242e5baa08",
+        "afterSha256": "08d8b8ec762e2261137b3829ef00f7a005a31c199d92c76bfda25493ab15d47a"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "f3b5f5640119738314ce65dbf75798b750aa2ed6e12fe8f72fde6c5c26e8e0e5",
+        "afterSha256": "16e0a287ca8578102005cbda5e1f74ec605115e4a47ff19c3e838ca1ddace7be"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "d17ae9cbe5dc02070b986f56fe2d50a8e5dd72a8d78e2565f3b8f1bd5e407605",
+        "afterSha256": "24c848437d6081054a478bc796feebd625481b3f1398d561304237364fa78a4c"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "7997fe5317c19b33bfd6da9cb443ef24ff5e5fcc7555b8497df57feb94853637",
+        "afterSha256": "60139ae730fbddb876d612bb66494dc389c2ef7ee278f10aaad509fe7fd7dac2"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "daa0635365a8f3a81dff13e662bdf75a5741345aedeaa2ae7334208f9b675f15",
+        "afterSha256": "e46f866e9933aaad3d99cb0917e55fb4e6d6efb0383ef12690a31a75728ff4cc"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "e189ef9095da53c4aaff336ea041bfa79f42dad7d6e0fcbe759199055a99d429",
+        "afterSha256": "6d4f2d4beeaae3b1daa700b59420cc02ae63b946f9fe790dcd165d29baf49b0a"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "2384f23c17a543f9712fa240129e678bbadd2c337e48594d275ea7e9e5a6077d",
+        "afterSha256": "c0bba52514ed8a22c37ef86d3559d75ce15c70da8e0a10f071f453971e00a94b"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "b7f771932a4f4521e7967fd1550e25bccd8d0311b1d94c2d7237f6296feb6be6",
+        "afterSha256": "07addec42833d7d856aa9d4d5ee4e1512170303dd863a0b7ea8d2fbc0ff51d77"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "6d4f2d4beeaae3b1daa700b59420cc02ae63b946f9fe790dcd165d29baf49b0a",
+        "afterSha256": "418cd7d299a9c432995643f1e0a3c28e6ebb646b6ea5c6cac038a876b738b495"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0004",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003"
+      ]
+    },
+    {
+      "activity": "block_0004_0007",
+      "blocks": [
+        "block_0005_0007",
+        "block_0005_0008"
+      ]
+    },
+    {
+      "activity": "block_0005_0006",
+      "blocks": [
+        "block_0005_0009",
+        "block_0005_0010"
+      ]
+    },
+    {
+      "activity": "block_0006_0004",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0007",
+      "requires": [
+        "block_0004_0004"
+      ]
+    },
+    {
+      "activity": "block_0006_0001",
+      "requires": [
+        "block_0004_0004"
       ]
     }
   ]
