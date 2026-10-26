@@ -1,4 +1,4 @@
-# Comprobación opcional de stdout en el Laboratorio
+# Comprobación opcional de salida en el Laboratorio
 
 `cpp_compiler` admite `outputCheck` opcional. Sin él, el botón existente muestra «Compilar y ejecutar» y conserva la exploración libre sin evaluación. Con él, ese mismo botón muestra «Compilar, ejecutar y comprobar»: una pulsación construye, ejecuta y comprueba la salida nueva. No se añade un segundo botón. Work incorpora los casos a las actividades después de verificar su objetivo; el motor no deduce respuestas de la prosa, de una predicción contigua ni del código de referencia.
 
@@ -31,6 +31,7 @@ El ejemplo comprueba únicamente la construcción final de esa etapa. Las ejecuc
 - Los casos deben identificar inequívocamente la ejecución bajo el modo seleccionado. En un proyecto CMake, cada caso admite `target` opcional: el nombre exacto y sensible a mayúsculas del ejecutable que debe producir esa salida. Dos ejecutables pueden compartir entrada y tener salidas distintas. Se usa el objetivo realmente capturado al pulsar ejecutar, sin deducirlo del código ni añadir un selector curricular de respuestas.
 - Sin `target`, se conserva el contrato anterior: el caso se identifica por entrada y es aplicable a cualquier objetivo del bloque. No se permite mezclar un caso global y otro con `target` para la misma entrada, ni repetir un mismo par objetivo/entrada. No existe precedencia implícita entre ellos. `target` sólo es válido en bloques con `cmake` y acepta el mismo formato que `cmake.target`: `[A-Za-z_][A-Za-z0-9_.+-]{0,127}`. No obliga a que sea el objetivo inicial: el alumno puede cambiar de ejecutable y reconstruirlo.
 - `explanation` es texto opcional no vacío de acierto. `reviewFeedback` es un array opcional, también puede ser vacío: cada regla declara `outputs` y `text` no vacío. Sólo una coincidencia literal con esas salidas incorrectas permite mostrar su orientación. Las condiciones no pueden solaparse entre reglas ni con las salidas correctas.
+- En Windows, cada caso admite además `standardError: "nonBlank"` para exigir información adicional en stderr durante una ejecución correcta. Se detalla más adelante; omitirlo mantiene exactamente el contrato de stdout anterior.
 - Sin explicación se muestra sólo el veredicto. Un error no previsto muestra sólo «Incorrecto». No se infiere una causa, no se expone la salida esperada y los campos internos no entran en el guion normal de la lección. Se rechazan tipos y propiedades desconocidos como errores de configuración, no como respuestas incorrectas.
 
 ## Ejecución y conservación
@@ -67,6 +68,30 @@ Work puede declarar un caso por consumidor, conservando su entrada y salida lite
 La salida del cliente nunca acredita la batería. Un objetivo o entrada sin caso mantiene la ejecución disponible, sin veredicto ni aceptación implícita de otro consumidor. Cambiar el objetivo invalida la comprobación anterior, incluso si todos los archivos siguen iguales; volver al objetivo anterior requiere ejecutar de nuevo. La reapertura conserva el objetivo y los archivos, pero no recupera un veredicto. Configuración, generación, construcción y ejecución conservan sus diagnósticos y no consumen corazones. Las explicaciones y orientaciones opcionales pertenecen a su caso, sin revelar el resultado de otro ejecutable.
 
 Este contrato prepara las siete prácticas registradas en `CPP_COMPROBACION_POR_OBJETIVO_CMAKE`. Su incorporación curricular corresponde a Work: el motor y las pruebas no añaden `outputCheck` a esos assets.
+
+## Diagnóstico adicional de ejecución en Windows
+
+Cuando la actividad pide observar un diagnóstico de biblioteca cuya redacción puede variar, Windows permite añadir un requisito al mismo caso sin fijar esa frase:
+
+```json
+"outputCheck": {
+  "cases": [
+    {
+      "standardInput": "",
+      "outputs": ["Indice invalido:Fin"],
+      "standardError": "nonBlank"
+    }
+  ]
+}
+```
+
+El caso exige simultáneamente stdout literal y al menos un carácter de stderr distinto de espacio, TAB, CR, LF, FF o VT ASCII. Una cadena vacía o formada sólo por esos separadores no acredita el diagnóstico. No se recorta ni se reescribe la consola. `standardError` sólo admite el literal `"nonBlank"`; los valores desconocidos o de otro tipo son errores de configuración. Para no comprobar stderr se omite la propiedad. El requisito pertenece al caso identificado por entrada y, si existe, `target`; no se hereda de otro caso o ejecutable.
+
+Sólo se utilizan los dos canales de la **misma ejecución nueva**, terminada con código cero y correspondiente al programa/configuración/entrada capturados. Los diagnósticos de compilación, enlace o CMake nunca satisfacen stderr, aunque contengan texto. Una ejecución correcta que escribe en stderr sigue siendo una ejecución correcta; ese canal no es por sí mismo un fallo. Si stdout coincide y falta el diagnóstico requerido, el objetivo completo continúa pendiente y no habilita sus referencias ni el avance. La retroalimentación distingue la coincidencia de stdout del requisito adicional pendiente; no impone una frase de biblioteca ni revela otra solución.
+
+Un logro anterior de stdout no acredita el requisito nuevo. La identidad de la prueba de finalización incluye `standardError`; al incorporarlo se conservan borradores, respuestas históricas y direcciones de estado, pero se necesita una ejecución que satisfaga el objetivo completo. Una vez conseguido, conserva las mismas reglas de acierto persistente de Windows: sólo el botón de reinicio lo revoca.
+
+Work puede añadir el requisito a un caso existente sin cambiar sus `outputs`, entrada, objetivo CMake, programa ni identificadores. En lecciones con `stateLayout` v2, `prepare_v2` registra el cambio completo mediante la procedencia antes/después habitual, conservando origen, familia y direcciones. El validador permite esta ampliación compatible y rechaza retirar o debilitar un requisito publicado, así como cambiar las respuestas de stdout o el código bajo la misma identidad. No se regeneran mapas ni se convierten aciertos antiguos en pruebas del nuevo canal. Esta ampliación corresponde al motor Windows; no amplía por sí misma el contrato del motor Android conservado.
 
 ## Entrada del laboratorio
 

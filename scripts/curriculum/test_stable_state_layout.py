@@ -264,6 +264,22 @@ class StateLayoutTest(unittest.TestCase):
         prepared['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['outputs'] = ['Wrong target']
         with self.assertRaises(m.LayoutError): m.validate(prepared)
 
+    def test_new_stderr_goal_preserves_addresses_and_cannot_be_removed(self):
+        original = fixture()
+        original['pages'][1]['blocks'][1]['outputCheck'] = {
+            'cases': [{'standardInput': '', 'outputs': ['Indice invalido:Fin']}]}
+        prepared = m.prepare(original)
+        revised = deepcopy(prepared)
+        revised['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['standardError'] = 'nonBlank'
+        m.validate_transition(prepared, revised)
+        self.assertEqual(m.validate(prepared), m.validate(revised))
+        self.assertEqual(prepared['stateLayout']['origin'], revised['stateLayout']['origin'])
+        with self.assertRaisesRegex(m.LayoutError, 'cannot be removed'):
+            m.validate_transition(revised, prepared)
+        revised['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['standardError'] = 'nonEmpty'
+        with self.assertRaisesRegex(m.LayoutError, 'Unsupported compiler stderr'):
+            m.validate(revised)
+
     def test_duplicate_json_keys_are_rejected(self):
         import tempfile
         with tempfile.TemporaryDirectory() as folder:
@@ -494,6 +510,30 @@ class ExtendedStateLayoutTest(unittest.TestCase):
         m.validate_transition(family['es'], moved)
         self.assertEqual(m.validate(moved)[2, 1], (0, 1))
         self.assertEqual(len(moved['stateLayout']['editorial']), 2)
+
+    def test_stderr_objective_revision_is_anchored_without_recycling_storage(self):
+        family = divergent_family()
+        family['es']['pages'][1]['blocks'][1]['outputCheck'] = {
+            'cases': [{'standardInput': '', 'outputs': ['Indice invalido:Fin']}]}
+        source = self.prepared(family)
+        edited = deepcopy(source)
+        edited['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['standardError'] = 'nonBlank'
+        revised = m.prepare_v2(edited, 'es', family, source)
+        m.validate_transition(source, revised)
+        self.assertEqual(m.validate(source), m.validate(revised))
+        self.assertEqual(source['stateLayout']['origin'], revised['stateLayout']['origin'])
+        self.assertEqual(len(revised['stateLayout']['editorial']), 1)
+        self.assertNotEqual(m.fingerprint(source['pages'][1]['blocks'][1]),
+                            m.fingerprint(revised['pages'][1]['blocks'][1]))
+        weakened = deepcopy(revised)
+        del weakened['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['standardError']
+        with self.assertRaises(m.LayoutError):
+            m.prepare_v2(weakened, 'es', family, revised)
+        for field, value in [('outputs', ['Other']), ('standardInput', 'Other')]:
+            changed = deepcopy(edited)
+            changed['pages'][1]['blocks'][1]['outputCheck']['cases'][0][field] = value
+            with self.subTest(field=field), self.assertRaises(m.LayoutError):
+                m.prepare_v2(changed, 'es', family, source)
 
     def test_same_shaped_paragraphs_cannot_exchange_their_coverage(self):
         family = divergent_family(); edited = deepcopy(family['es'])

@@ -339,11 +339,7 @@ struct LessonView {
         curriculum::validate_activity_relationships(lesson);
         state::validate_lesson_state(data, lesson,route);
         state::prepare_lesson_state(data, lesson);
-        page = state::current_page(data, lesson);
-        if(lesson.compiler_puzzles_required)for(std::size_t prior=0;prior<page;++prior)
-            if(std::ranges::any_of(lesson.pages[prior].blocks,[&](const auto& activity){
-                return activity.type==BlockType::cpp_compiler&&activity.output_check&&!windows::compiler_puzzle_completed(data,lesson,activity);
-            })){page=prior;break;}
+        page = resolve_entry_page(state::current_page(data, lesson));
         if (no_student_state) {
             // Initial UI bookkeeping is not a student edit. Closing an untouched
             // first page must not make an otherwise empty profile unimportable.
@@ -638,11 +634,12 @@ struct LessonView {
             if (!target || source.empty() || (!fullscreen_block&&!(GetWindowLongPtrW(target,GWL_STYLE) & WS_VISIBLE))) return;
             const auto& current = block(index); const auto& vm = controls[index];
             const bool compiler_feedback=is_feedback&&current.type==BlockType::cpp_compiler;
-            const bool compiler_gate=lesson.compiler_puzzles_required&&current.type==BlockType::cpp_compiler&&current.output_check;
+            const bool compiler_gate=compiler_completion_required(lesson,current);
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
                 is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback||compiler_gate,
                 compiler_gate?windows::compiler_puzzle_completed(data,lesson,current):compiler_feedback?vm.feedback_correct:vm.response.correct});
+            result.back().required_compiler=compiler_gate;
             result.back().anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id
                 +"/part/"+std::to_string(GetDlgCtrlID(target)-control_id(index,0));
         };
@@ -826,6 +823,27 @@ struct LessonView {
         const auto proofs = completion_snapshot(); const auto found = proofs.find(activity.stable_id);
         return found != proofs.end() && found->second;
     }
+    static bool compiler_completion_required(const curriculum::Lesson& model,const curriculum::Block& activity) {
+        return activity.type==BlockType::cpp_compiler&&activity.output_check
+            &&(model.compiler_puzzles_required||curriculum::compiler_is_puzzle_prerequisite(model,activity));
+    }
+    std::size_t resolve_entry_page(std::size_t requested) const {
+        auto resolved=std::min(requested,lesson.pages.size()-1);
+        const auto proofs=completion_snapshot();
+        for(;;){auto prerequisite_page=resolved;
+            for(std::size_t prior=0;prior<=resolved;++prior)for(const auto& current:lesson.pages[prior].blocks){
+                if(prior<resolved&&compiler_completion_required(lesson,current)
+                    &&!windows::compiler_puzzle_completed(data,lesson,current))prerequisite_page=std::min(prerequisite_page,prior);
+                if(!exercise(current.type)&&!curriculum::compiler_is_puzzle_prerequisite(lesson,current))continue;
+                for(const auto& position:curriculum::activity_prerequisites(lesson,current)){
+                    const auto found=proofs.find(lesson.pages[position.page].blocks[position.block].stable_id);
+                    if(found==proofs.end()||!found->second)prerequisite_page=std::min(prerequisite_page,position.page);
+                }
+            }
+            if(prerequisite_page==resolved)return resolved;
+            resolved=prerequisite_page;
+        }
+    }
     bool reference_available(const curriculum::Block& reference) const {
         if(lesson.compiler_puzzles_required)for(const auto& prior:lesson.pages.at(page).blocks){
             if(&prior==&reference)break;
@@ -925,6 +943,8 @@ struct LessonView {
         if (fullscreen_block == index) fullscreen_block.reset();
         if (controls[index].source_editor) capture_draft(index);
         if (running_block == index) cancel_run();
+        if (checking_math == index) cancel_math();
+        if (controls[index].math) cancel_restore();
         // Detach adapters before their HWNDs. Other editors and their Undo
         // histories are left alive when a prerequisite reveals/hides this one.
         controls[index] = BlockControls{};
@@ -943,7 +963,7 @@ struct LessonView {
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index);
             const bool available = reference_available(current);
-            const bool locked = available && current.type == BlockType::cpp_compiler && !activity_available(current);
+            const bool locked = available && !activity_available(current);
             if (controls[index].rendered == available && (!available || controls[index].locked == locked)) continue;
             changed = true;
             remove_block(index);
@@ -1218,6 +1238,9 @@ struct LessonView {
         }
         rows.back().simulated_card=index*2+(response?1:0);rows.back().card_header=true;
         rows.back().column_gap=0;
+        // Android addCode() gives standalone reference cards an external 8dp
+        // top margin. Do not apply it to the exercise/answer toolbars.
+        if(current.type==BlockType::code)rows.back().padding_before=8;
         for(const auto item:rows.back().cells)reader_theme::apply(item,reader_theme::Surface::card_header);
         toolbar_caption(caption,"</> "+code_language);
     }
@@ -1952,8 +1975,8 @@ struct LessonView {
         const auto& candidate = lesson.pages.at(index);
         const auto proofs = completion_snapshot();
         for (const auto& item : candidate.blocks) {
-            if (item.type == BlockType::cpp_compiler && !activity_available(item,proofs)) return false;
-            if(lesson.compiler_puzzles_required&&item.type==BlockType::cpp_compiler&&item.output_check
+            if (!activity_available(item,proofs)) return false;
+            if(compiler_completion_required(lesson,item)
                 &&!windows::compiler_puzzle_completed(data,lesson,item))return false;
             if (!exercise(item.type)) continue;
             if(item.type==BlockType::math_puzzle&&!verified_math.contains(curriculum::exercise_key(lesson,item)))return false;
@@ -1963,9 +1986,10 @@ struct LessonView {
         return true;
     }
     bool can_enter(std::size_t index) const {
-        if(lesson.compiler_puzzles_required)for(std::size_t prior=0;prior<index;++prior)
+        if(resolve_entry_page(index)!=index)return false;
+        for(std::size_t prior=0;prior<index;++prior)
             if(std::ranges::any_of(lesson.pages[prior].blocks,[&](const auto& activity){
-                return activity.type==BlockType::cpp_compiler&&activity.output_check&&!windows::compiler_puzzle_completed(data,lesson,activity);
+                return compiler_completion_required(lesson,activity)&&!windows::compiler_puzzle_completed(data,lesson,activity);
             }))return false;
         const auto proofs = completion_snapshot();
         return std::ranges::all_of(lesson.pages.at(index).blocks,[&](const auto& item) {
@@ -2118,11 +2142,14 @@ struct LessonView {
         // Locked references have no HWND, text provider or scrollable row.
         if (!reference_available(current)) return;
         vm.rendered = true;
-        if (current.type == BlockType::cpp_compiler && !activity_available(current)) {
+        if (!activity_available(current)) {
             vm.locked = true;
-            text_row(ui("Completa y comprueba correctamente la actividad anterior requerida para abrir este editor.",
+            text_row(current.type==BlockType::cpp_compiler?ui("Completa y comprueba correctamente la actividad anterior requerida para abrir este editor.",
                 "Complete and correctly check the required previous activity to open this editor.",
-                "Termine et vérifie correctement l'activité précédente requise pour ouvrir cet éditeur."),control_id(index,18));
+                "Termine et vérifie correctement l'activité précédente requise pour ouvrir cet éditeur.")
+                :ui("Completa y comprueba correctamente la actividad anterior requerida para abrir este ejercicio.",
+                "Complete and correctly check the required previous activity to open this exercise.",
+                "Termine et vérifie correctement l'activité précédente requise pour ouvrir cet exercice."),control_id(index,18));
             return;
         }
         if (exercise(current.type))
@@ -2658,7 +2685,14 @@ struct LessonView {
                 (block(block_index).type==BlockType::fill_code||block(block_index).type==BlockType::output_prediction);
             const bool answer_body=separate_response&&row.cells.front()==controls[block_index].answer;
             const int card_bottom=row.card_end?(answer_body?0:16):0;
-            const int card_margin=row.card_end&&separate_response?(answer_body?18:readonly_body?32:0):0;
+            // The 16dp card_bottom is inside the painted card; Android's
+            // addCode() has a further 24dp external bottom margin. Combined
+            // with the next reference's 8dp top margin, adjacent code cards
+            // retain a 32dp gap without altering their source or syntax ink.
+            const bool standalone_reference=row.card_end&&block_index<controls.size()
+                &&block(block_index).type==BlockType::code;
+            const int card_margin=standalone_reference?24
+                :row.card_end&&separate_response?(answer_body?18:readonly_body?32:0):0;
             if(row.simulated_card&&!fixed){
                 if(row.card_header){card_surfaces[*row.simulated_card]=simulated_card_surfaces.size();
                     simulated_card_surfaces.push_back({{left,top,left+width,top+height},top+height});}
@@ -2847,6 +2881,8 @@ struct LessonView {
             const auto separator=lesson.id.find("__");const auto course=separator==std::string::npos?std::string{}:lesson.id.substr(0,separator);
             return curriculum::learning_flow(data,course).swipe_finish&&finish_lesson();
         }
+        if(value>page){const auto prerequisite=resolve_entry_page(value);
+            if(prerequisite!=value){if(prerequisite!=page&&can_visit(prerequisite))(void)change_page(prerequisite);return false;}}
         if (!can_visit(value)) return false;
         // A selector jump cannot bypass a declared prerequisite, even when
         // old progress or an imported bookmark already reaches a later page.
@@ -3067,11 +3103,16 @@ struct LessonView {
             fresh.exit_code = result->execution.exit_code ? static_cast<int>(*result->execution.exit_code) : -1;
             fresh.standard_input = running_input; fresh.standard_output = result->execution.stdout_bytes;
             fresh.executable=result->executable;
+            fresh.standard_error=result->execution.stderr_bytes;
             auto evaluation = windows::evaluate_cpp_output_check(*block(index).output_check, fresh, vm.revision);
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct;
                 auto text = verdict_text(correct);
-                if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
+                if(evaluation.stdout_correct&&!evaluation.stderr_correct)text+='\n'+ui(
+                    "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.",
+                    "Standard output is correct; the requested runtime diagnostic is missing from stderr.",
+                    "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr.");
+                else if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
                 const bool objective_completed=correct&&windows::record_compiler_puzzle_case(data,lesson,block(index),running_program,fresh,text);
                 if(!correct||objective_completed){feedback(index,text,objective_completed,true);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
                 else if(vm.status)set_rich_text(vm.status,ui("Caso correcto. Casos comprobados: ","Case passed. Checked cases: ","Cas correct. Cas vérifiés : ")
@@ -3183,7 +3224,7 @@ struct LessonView {
             state::validate_lesson_state(import_preview->data, lesson,route);
             state::commit_android_import(*import_preview, environment.paths.root);
             data = store.load(); state::prepare_lesson_state(data, lesson);
-            page = state::current_page(data, lesson); dirty = false; import_done = true;
+            page = resolve_entry_page(state::current_page(data, lesson)); dirty = false; import_done = true;
             import_preview.reset();
             SendMessageW(import_path, EM_SETREADONLY, TRUE, 0);
             for (auto item : {import_browse, import_review, import_commit}) EnableWindow(item, FALSE);

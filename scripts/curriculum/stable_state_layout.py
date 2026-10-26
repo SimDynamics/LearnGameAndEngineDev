@@ -28,6 +28,8 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
+DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
+                                      "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
 
 
 def require(condition: bool, message: str) -> None:
@@ -108,12 +110,34 @@ def state_payload(block: dict) -> dict:
                 if type(case) is dict:
                     case.pop("explanation", None)
                     case.pop("reviewFeedback", None)
+                    if "standardError" in case:
+                        require(case["standardError"] == "nonBlank", "Unsupported compiler stderr requirement")
+                        # Historical state addresses retain their stdout contract;
+                        # native completion proofs hash the additional objective.
+                        case.pop("standardError")
         return payload
     return block
 
 
 def state_fingerprint(block: dict) -> str:
     return fingerprint(state_payload(block))
+
+
+def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
+    """A runtime-channel objective may be added, never silently removed."""
+    for identity, block in before.items():
+        if block.get("type") != "cpp_compiler" or identity not in after:
+            continue
+        old_config, config = block.get("outputCheck"), after[identity].get("outputCheck")
+        if type(old_config) is not dict or type(config) is not dict:
+            continue  # Full response fingerprints protect removal/type changes.
+        old_cases, cases = old_config.get("cases"), config.get("cases")
+        if type(old_cases) is not list or type(cases) is not list or len(old_cases) != len(cases):
+            continue
+        for old_case, case in zip(old_cases, cases):
+            if type(old_case) is dict and "standardError" in old_case:
+                require(type(case) is dict and case.get("standardError") == old_case["standardError"],
+                        "A published compiler stderr objective cannot be removed or weakened")
 
 
 def _pages(document: dict) -> list[dict]:
@@ -446,10 +470,13 @@ def _validate_presentation_relationships(document: dict) -> None:
             activities.add(activity)
             require(activity in blocks, f"{field} activity does not exist")
             target = blocks[activity]
-            require(target.get("type") == "cpp_compiler", f"{field} activity must be a compiler")
             if field == "referenceAfter":
+                require(target.get("type") == "cpp_compiler", "Reference activity must be a compiler")
                 require(type(target.get("outputCheck")) is dict,
                         "Reference activity requires an authored output check")
+            else:
+                require(target.get("type") in DEPENDENT_ACTIVITY_TYPES,
+                        "A dependent activity must be an exercise or compiler")
             entries = link[entries_key]
             require(type(entries) is list and 0 < len(entries) <= 100_000,
                     f"{field} relationship needs a nonempty {entries_key} list")
@@ -669,6 +696,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(retired[:len(old_retired)] == old_retired,
             "Retired activity archives are append-only and cannot be restored or rewritten")
     before, after = _all_blocks(baseline), _all_blocks(current)
+    _preserve_compiler_channel_requirements(before, after)
     old_positions = {identity: (record["id"], index, record["blocks"])
                      for record in old_meta["current"] for index, identity in enumerate(record["blocks"])}
     newly_retired = {item["id"] for item in retired[len(old_retired):]}
@@ -736,6 +764,7 @@ def validate_transition(previous: dict, current: dict) -> None:
             "Published v2 metadata cannot be removed or downgraded")
     baseline = prepare(previous)
     validate(current)
+    _preserve_compiler_channel_requirements(_blocks(baseline), _blocks(current))
     require(current["stateLayout"]["origin"] == baseline["stateLayout"]["origin"],
             "The immutable origin was changed; do not reset the baseline")
     previous_other = _transition_metadata(baseline)

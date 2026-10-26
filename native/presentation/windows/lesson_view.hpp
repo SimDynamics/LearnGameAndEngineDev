@@ -32,6 +32,7 @@ struct LessonReadingRegion {
     bool passive_label = false;
     // Stable component identity survives removal of preceding visual controls.
     std::string anchor, retired_successor;
+    bool required_compiler = false;
 };
 struct LessonReadingArchive {
     std::string page_identity;

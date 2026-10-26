@@ -174,6 +174,12 @@ std::string state_fingerprint(const JsonObject& original) {
             const auto object = item.GetObject();
             if (object.HasKey(L"explanation")) object.Remove(L"explanation");
             if (object.HasKey(L"reviewFeedback")) object.Remove(L"reviewFeedback");
+            // Adding this runtime objective cannot change historical block
+            // addresses/drafts. Native completion hashes include it separately.
+            if (object.HasKey(L"standardError")) {
+                require(text(object,"standardError") == "nonBlank", "Unknown runtime stderr expectation");
+                object.Remove(L"standardError");
+            }
         }
     }
     return fingerprint(value);
@@ -493,9 +499,13 @@ OutputCheck read_output_check(const JsonObject& value,bool cmake=false) {
     result.input_comparison = comparison(value.HasKey(L"inputComparison") ? text(value, "inputComparison") : "exact", true);
     const auto cases = array(value, "cases"); require(cases.Size() > 0, "Missing output check cases");
     for (const auto& case_value : cases) {
-        const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target"});
+        const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError"});
         OutputCase record; record.standard_input = text(item, "standardInput"); record.outputs = strings(array(item, "outputs"), true);
         record.explanation = optional_text(item, "explanation");
+        if (item.HasKey(L"standardError")) {
+            require(text(item, "standardError") == "nonBlank", "Unknown runtime stderr expectation");
+            record.standard_error = StandardErrorExpectation::non_blank;
+        }
         if(item.HasKey(L"target")){require(cmake,"An outputCheck target requires a CMake project");record.executable=text(item,"target");validate_cmake_config(CmakeConfig{*record.executable,{},"Debug"});}
         if (item.HasKey(L"reviewFeedback")) {
             std::set<std::string> reviewed(record.outputs.begin(), record.outputs.end());
@@ -621,6 +631,30 @@ Block read_block(const JsonObject& value,std::string_view original) {
     }
     return result;
 }
+void read_relationships(const JsonObject& root, Lesson& lesson) {
+    if (root.HasKey(L"referenceAfter")) {
+        const auto relationships = array(root,"referenceAfter");
+        require(relationships.Size() <= 100000,"Too many reference relationships");
+        for (const auto& item : relationships) {
+            const auto relation = item.GetObject(); allowed_keys(relation,{"activity","blocks"},true);
+            ReferenceAfter record{text(relation,"activity"),strings(array(relation,"blocks"),true,false)};
+            require(valid_id(record.activity),"Invalid reference activity identity");
+            for (const auto& identity : record.blocks) require(valid_id(identity),"Invalid reference block identity");
+            lesson.reference_after.push_back(std::move(record));
+        }
+    }
+    if (root.HasKey(L"activityAfter")) {
+        const auto relationships = array(root,"activityAfter");
+        require(relationships.Size() <= 100000,"Too many activity relationships");
+        for (const auto& item : relationships) {
+            const auto relation = item.GetObject(); allowed_keys(relation,{"activity","requires"},true);
+            ActivityAfter record{text(relation,"activity"),strings(array(relation,"requires"),true,false)};
+            require(valid_id(record.activity),"Invalid dependent activity identity");
+            for (const auto& identity : record.prerequisites) require(valid_id(identity),"Invalid activity prerequisite identity");
+            lesson.activity_after.push_back(std::move(record));
+        }
+    }
+}
 void resolve_addresses(Lesson& lesson) {
     auto& layout = lesson.state_layout;
     std::map<std::string, StateAddress> addresses;
@@ -690,6 +724,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale);
         }
+        read_relationships(root,lesson);
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
         require(original_pages.size() == pages.Size(),"Original JSON page ownership mismatch");
@@ -704,29 +739,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
-        if (root.HasKey(L"referenceAfter")) {
-            const auto relationships = array(root,"referenceAfter");
-            require(relationships.Size() <= 100000,"Too many reference relationships");
-            for (const auto& item : relationships) {
-                const auto relation = item.GetObject(); allowed_keys(relation,{"activity","blocks"},true);
-                ReferenceAfter record{text(relation,"activity"),strings(array(relation,"blocks"),true,false)};
-                require(valid_id(record.activity),"Invalid reference activity identity");
-                for (const auto& identity : record.blocks) require(valid_id(identity),"Invalid reference block identity");
-                lesson.reference_after.push_back(std::move(record));
-            }
-        }
         validate_reference_relationships(lesson);
-        if (root.HasKey(L"activityAfter")) {
-            const auto relationships = array(root,"activityAfter");
-            require(relationships.Size() <= 100000,"Too many activity relationships");
-            for (const auto& item : relationships) {
-                const auto relation = item.GetObject(); allowed_keys(relation,{"activity","requires"},true);
-                ActivityAfter record{text(relation,"activity"),strings(array(relation,"requires"),true,false)};
-                require(valid_id(record.activity),"Invalid dependent activity identity");
-                for (const auto& identity : record.prerequisites) require(valid_id(identity),"Invalid activity prerequisite identity");
-                lesson.activity_after.push_back(std::move(record));
-            }
-        }
         validate_activity_relationships(lesson);
         return lesson;
     } catch (const winrt::hresult_error& error) {
@@ -760,6 +773,14 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale);
         }
+        read_relationships(root,lesson);
+        // The catalog keeps its historical read-only progress projection, but
+        // dependency sources need their real objectives even in lessons that
+        // have not enabled mandatory compiler puzzles globally.
+        std::set<std::string> goal_owners;
+        for (const auto& relation : lesson.reference_after) goal_owners.insert(relation.activity);
+        for (const auto& relation : lesson.activity_after)
+            goal_owners.insert(relation.prerequisites.begin(),relation.prerequisites.end());
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
         require(original_pages.size() == pages.Size(),"Original JSON page ownership mismatch");
@@ -772,7 +793,9 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                 const auto block = blocks.GetAt(b).GetObject();
                 const auto raw = original.text(original_blocks[b]);
                 if (text(block,"type") == "cpp_compiler") {
-                    if((lesson.compiler_puzzles_required||!lesson.state_layout.retirement_history.empty())&&block.HasKey(L"outputCheck")) {
+                    const auto identity = lesson.state_layout.version ? lesson.state_layout.current[p].blocks[b] :
+                        "block_" + std::to_string(p) + '_' + std::to_string(b);
+                    if((lesson.compiler_puzzles_required||!lesson.state_layout.retirement_history.empty()||goal_owners.contains(identity))&&block.HasKey(L"outputCheck")) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
                         page.blocks.push_back(read_block(block,raw));
@@ -798,6 +821,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        validate_reference_relationships(lesson);
+        validate_activity_relationships(lesson);
         return lesson;
     } catch (const winrt::hresult_error& error) {
         throw std::runtime_error("Curriculum progress JSON/contract error: " + utf8(error.message()));

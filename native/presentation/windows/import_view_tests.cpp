@@ -3,6 +3,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
@@ -15,6 +16,7 @@
 #include <iostream>
 #include <locale>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -253,13 +255,15 @@ struct View {
     curriculum::Lesson lesson;
     std::filesystem::path content;
     HWND host = nullptr, view = nullptr;
+    bool supplied_model = false;
 
-    View() : environment(resolve_windows_environment({ProfileId::Codex,
+    explicit View(std::optional<curriculum::Lesson> supplied = {}) : environment(resolve_windows_environment({ProfileId::Codex,
             L"native-import-view-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()), false})),
         content(std::filesystem::path(build::source_root) / L"app/src/main/assets/content") {
         require(!std::filesystem::exists(environment.paths.root), "An import UI test cannot reuse a real profile");
         initialize_profile_directories(environment.paths);
         lesson = windows::load_lesson(content / L"es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        if(supplied){lesson=std::move(*supplied);supplied_model=true;}
         host = CreateWindowExW(WS_EX_CONTROLPARENT, L"LgaedImportViewTests", L"Native Android import QA",
             WS_OVERLAPPEDWINDOW, 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
         require(host != nullptr, "Cannot create native import host");
@@ -270,7 +274,7 @@ struct View {
         if (host) DestroyWindow(host);
     }
     void open() {
-        view = create_lesson_view(host, environment, content);
+        view = supplied_model?create_lesson_view(host,environment,lesson):create_lesson_view(host, environment, content);
         require(view != nullptr, "Cannot create the real lesson/import view");
         RECT bounds{}; GetClientRect(host, &bounds);
         MoveWindow(view, 0, 0, bounds.right, bounds.bottom, TRUE);
@@ -373,6 +377,36 @@ void assert_restored(View& view, const ExportFixture& exported, bool original_ex
     }
 }
 
+void imported_stdout_success_does_not_accredit_a_new_runtime_stderr_goal() {
+    auto lesson=windows::parse_lesson_json(R"json({"id":"qa_import_stderr","title":"Importar ambos canales","compilerPuzzlesRequired":true,
+      "pages":[{"blocks":[{"type":"paragraph","text":"Introducción para importar antes de editar."}]},{"blocks":[{"id":"runtime","type":"cpp_compiler","initialCode":"#include <iostream>\nint main(){std::cout << \"Mensaje estable\";}\n",
+        "outputCheck":{"cases":[{"standardInput":"","outputs":["Mensaje estable"]}]}},
+        {"type":"paragraph","text":"Contenido posterior."}]},{"blocks":[{"type":"paragraph","text":"Final."}]}]})json");
+    state::StateData old;state::prepare_lesson_state(old,lesson);state::save_current_page(old,lesson,1);
+    const auto exercise=curriculum::exercise_key(lesson,lesson.pages[1].blocks[0]);
+    state::put_response(old,exercise,state::Response{"Correcto antiguo de stdout",true});
+    state::Draft draft;draft.source=lesson.pages[1].blocks[0].initial_code+"// borrador importado\n";
+    const auto draft_key=curriculum::draft_key("programming",lesson,lesson.pages[1].blocks[0]);state::put_draft(old,draft_key,draft);
+    lesson.pages[1].blocks[0].output_check->cases[0].standard_error=curriculum::StandardErrorExpectation::non_blank;
+    View view(std::move(lesson));const auto folder=view.environment.paths.projects/L"stderr-export";export_preferences(folder,old);
+    const auto original=hashes(folder);view.click(104);view.path(folder);view.click(203);
+    require(IsWindowEnabled(view.control(205)),"The compatible added stderr goal rejected historical Android state");
+    view.click(205);require(view.summary().starts_with("Importación completada"),"The isolated stderr-history import did not complete");view.click(206);
+    const auto verify=[&]{const auto current=view.saved();const auto response=state::get_response(current,exercise);
+        require(response&&response->correct&&response->answer=="Correcto antiguo de stdout",
+            "The new runtime-channel goal deleted or changed the imported opaque stdout response");
+        require(view.page()==1&&edit_text(view.control(0,10))==draft.source&&!lesson_page_state(view.view).can_next
+            &&!windows::compiler_puzzle_completed(current,view.lesson,view.lesson.pages[1].blocks[0])
+            &&!descendant(view.view,block_id(1,0)),"Imported stdout correctness accredited the new diagnostic, exposed following content or lost the draft");
+        require(hashes(folder)==original,"Runtime-channel import/reopen altered its source export");};
+    verify();require(edit_text(view.control(0,4)).empty(),"Import restored an old cached output verdict as current");
+    view.reopen();verify();view.click(block_id(0,11));wait_for(view.host,[&]{return IsWindowEnabled(view.control(0,11));},"The imported compiler did not execute");
+    require(edit_text(view.control(0,14))=="Mensaje estable"&&edit_text(view.control(0,4)).find("falta el diagnóstico solicitado en stderr")!=std::string::npos,
+        "A fresh imported stdout-only program failed to expose the missing runtime diagnostic");
+    verify();view.reopen();verify();
+    std::cout<<"PASS actual Android import of old stdout correctness: added stderr goal remains pending, draft/opaque response/export preserved, fresh partial evaluation and reopen\n";
+}
+
 } // namespace
 
 int main() {
@@ -381,6 +415,7 @@ int main() {
     host.lpszClassName = L"LgaedImportViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        imported_stdout_success_does_not_accredit_a_new_runtime_stderr_goal();
         View view;
         ExportFixture exported(view.environment.paths.projects / L"exportación & revisión", view.lesson);
         const auto initial_hashes = hashes(exported.folder);

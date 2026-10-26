@@ -5,6 +5,9 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "native_build_config.hpp"
 
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
+
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -36,6 +39,42 @@ void page_progress_matches_android_without_crediting_unanswered_puzzles() {
         "A lesson flag credited an unanswered exercise in page progress");
     check(catalog_lesson_page_progress(data,lesson,[](const Block&) { return true; }).completed == 3,
         "A verified exercise did not complete its original page");
+}
+void dependent_puzzles_keep_historical_progress_without_granting_execution_proofs() {
+    using namespace lgaed; using namespace curriculum;
+    using winrt::Windows::Data::Json::JsonObject;
+    using winrt::Windows::Data::Json::JsonValue;
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
+    const auto original = windows::load_lesson(path);
+    auto root = JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    root.Insert(L"activityAfter",JsonValue::Parse(LR"([{"activity":"block_0004_0004","requires":["ejecucion_original_editor","block_0004_0002"]}])"));
+    const auto projected = windows::parse_lesson_progress_metadata(winrt::to_string(root.Stringify()));
+    state::StateData data;
+    data.preferences["learning_progress"]["lesson_"+original.id+"_started"] = true;
+    for (const auto& page : original.pages) for (const auto& block : page.blocks) {
+        if (block.type == BlockType::multiple_choice || block.type == BlockType::output_prediction ||
+            block.type == BlockType::fill_code || block.type == BlockType::order_code)
+            state::put_response(data,exercise_key(original,block),state::Response{"Historical exact answer",true});
+    }
+    const auto preserved = data;
+    const auto correct = [&](const Block& block) {
+        const auto response = state::get_response(data,exercise_key(projected,block));
+        return response && response->correct;
+    };
+    const auto before = catalog_lesson_page_progress(data,original,correct);
+    const auto after = catalog_lesson_page_progress(data,projected,correct);
+    check(before.completed > 0 && before.completed == after.completed && before.total == after.total && data == preserved,
+        "Adding a dependency changed historical puzzle progress or wrote student data during projection");
+    check(!projected.compiler_puzzles_required && projected.activity_after.size() == 1 &&
+        projected.reference_after.size() == original.reference_after.size() &&
+        projected.pages[4].blocks[3].output_check && projected.pages[4].blocks[6].output_check,
+        "The catalog discarded compiler source goals or existing references outside mandatory mode");
+    check(!windows::compiler_puzzle_completed(data,projected,projected.pages[4].blocks[3]) &&
+        !windows::compiler_puzzle_completed(data,projected,projected.pages[4].blocks[6]),
+        "A historical correct puzzle answer granted execution authorization to its prerequisites");
+    check(state::get_response(data,exercise_key(projected,projected.pages[4].blocks[7]))->answer == "Historical exact answer",
+        "A protected puzzle lost its exact historical response");
 }
 void compiler_puzzles_keep_captured_success_until_explicit_reset() {
     using namespace lgaed;using namespace curriculum;
@@ -173,6 +212,7 @@ int main() {
     using namespace curriculum;
     try {
         page_progress_matches_android_without_crediting_unanswered_puzzles();
+        dependent_puzzles_keep_historical_progress_without_granting_execution_proofs();
         compiler_puzzles_keep_captured_success_until_explicit_reset();
         stable_progress_groups_survive_splits_reordering_and_new_activities();
         unit_percentage_weights_lessons_like_android_and_keeps_completion_counts();

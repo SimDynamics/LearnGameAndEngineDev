@@ -4,6 +4,7 @@ No compila C++, no modifica archivos y no certifica las respuestas pedagógicas.
 """
 
 import argparse
+import copy
 import json
 import hashlib
 import math
@@ -935,8 +936,11 @@ def validate_cpp_output_check_contract(block, where):
         require(isinstance(case, dict), case_where, "caso debe ser un objeto")
         if not isinstance(case, dict):
             continue
-        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target"}, case_where,
+        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError"}, case_where,
                 "campo de caso outputCheck no admitido")
+        if "standardError" in case:
+            require(case["standardError"] == "nonBlank", case_where,
+                    "standardError de caso sólo admite nonBlank; omitirlo conserva stdout solamente")
         target = case.get("target")
         if "target" in case:
             require(isinstance(block.get("cmake"), dict), case_where,
@@ -1028,6 +1032,19 @@ SEQUENCE_EDITORIAL_REVISIONS = {
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
+    if isinstance(old.get('outputCheck'), dict) and isinstance(base.get('outputCheck'), dict):
+        # Adding an explicit runtime-channel objective preserves historical draft
+        # addresses and stdout answers. Completion proofs independently hash the
+        # entire new objective, so an old stdout-only success cannot satisfy it.
+        previous_cases = old['outputCheck'].get('cases')
+        cases = base['outputCheck'].get('cases')
+        if isinstance(previous_cases, list) and isinstance(cases, list) and len(previous_cases) == len(cases):
+            projected = copy.deepcopy(base['outputCheck'])
+            for before, after in zip(previous_cases, projected['cases']):
+                if isinstance(before, dict) and isinstance(after, dict) and 'standardError' not in before \
+                        and after.get('standardError') == 'nonBlank':
+                    del after['standardError']
+            base = dict(base, outputCheck=projected)
     if (relative, pn, bn) == (
         'app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json', 4, 2
     ) and 'outputCheck' in old and 'outputCheck' in current:

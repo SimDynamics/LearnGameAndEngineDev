@@ -97,7 +97,13 @@ void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& less
 void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
                                       const CppRunRequest& current) {
     if(block.output_check&&!compiler_puzzle_completed(data,lesson,block)
-        &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current))
-        reset_compiler_puzzle(data,lesson,block);
+        &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current)) {
+        // Editing revokes only an incomplete attempt of this exact objective.
+        // Older objectives remain historical data when an authored requirement
+        // grows (for example, stdout plus a runtime stderr diagnostic).
+        const auto prefix=base(lesson,block);
+        if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
+            std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix);});
+    }
 }
 } // namespace lgaed::windows

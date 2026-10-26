@@ -52,12 +52,14 @@ struct EmphasisRange { std::size_t start = 0, end = 0; std::string style; };
 // Offsets address UTF-8 source bytes. Presentation converts them to UTF-16 positions.
 [[nodiscard]] std::vector<EmphasisRange> emphasis_ranges(std::string_view text, std::span<const Emphasis> entries);
 struct OutputReviewFeedback { std::vector<std::string> outputs; std::string text; };
+enum class StandardErrorExpectation { ignored, non_blank };
 struct OutputCase {
     std::string standard_input;
     std::vector<std::string> outputs;
     std::string explanation;
     std::vector<OutputReviewFeedback> review_feedback;
     std::optional<std::string> executable;
+    StandardErrorExpectation standard_error = StandardErrorExpectation::ignored;
 };
 struct OutputCheck {
     TextComparison input_comparison = TextComparison::exact;
@@ -94,8 +96,8 @@ struct Page {
 // Presentation-only relationships, authored at the lesson root so no historical
 // block fingerprint, answer or storage slot changes when a reference is linked.
 struct ReferenceAfter { std::string activity; std::vector<std::string> blocks; };
-// Compiler dependencies use the same stable owners and completion evidence as
-// references. They do not allocate progress slots or change block fingerprints.
+// Compiler and puzzle dependencies use the same stable compiler owners and
+// completion evidence as references. They allocate no new progress slots.
 struct ActivityAfter { std::string activity; std::vector<std::string> prerequisites; };
 // A before-retirement reading snapshot is archival provenance, never a second
 // active lesson. Full pages retain wording as well as the old visibility graph.
@@ -140,6 +142,10 @@ void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::optional<StatePosition> active_block_successor(const Lesson&, std::string_view stable_id);
 [[nodiscard]] std::optional<StatePosition> reference_activity(const Lesson&, const Block& reference);
 [[nodiscard]] std::vector<StatePosition> activity_prerequisites(const Lesson&, const Block& activity);
+// A source compiler remains a reader/advance gate for a dependent puzzle,
+// including paths through other compilers. Isolated legacy compiler chains do
+// not become mandatory, and historical progress counters retain their owners.
+[[nodiscard]] bool compiler_is_puzzle_prerequisite(const Lesson&, const Block& compiler);
 // Deterministic framing of the authored objective, independent of prose or an
 // imported exercise response. The platform hashes this with the executed draft.
 [[nodiscard]] std::string reference_objective_frame(const Lesson&, const Block& activity);
@@ -168,9 +174,16 @@ struct FreshExecution {
     int exit_code = -1;
     std::string standard_input, standard_output;
     std::optional<std::string> executable;
+    // Runtime stderr only. Build diagnostics never enter this field.
+    std::string standard_error;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
-struct OutputEvaluation { OutputVerdict verdict = OutputVerdict::unavailable; std::string feedback; };
+struct OutputEvaluation {
+    OutputVerdict verdict = OutputVerdict::unavailable;
+    std::string feedback;
+    bool stdout_correct = false;
+    bool stderr_correct = false;
+};
 [[nodiscard]] OutputEvaluation evaluate_output_check(
     const OutputCheck&, const FreshExecution&, std::uint64_t current_revision);
 

@@ -31,6 +31,7 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -1972,6 +1973,16 @@ void text_sequence_lesson_all_pages() {
                 require(fixture.text(2,1) == fixture.lesson.pages[7].blocks[2].code
                         && fixture.text(3,1) == fixture.lesson.pages[7].blocks[3].code,
                     "The completed compiler chain failed to reveal its exact authored comparison references");
+                // Android LessonActivity.addCode() assigns 8dp top/24dp
+                // bottom margins outside each card. RichEdit's 16dp bottom
+                // fill is inside the first card and must not swallow the gap.
+                RECT first_body{},next_header{};
+                GetWindowRect(fixture.control(2,1),&first_body);
+                GetWindowRect(fixture.control(3,16),&next_header);
+                const auto dpi=static_cast<int>(GetDpiForWindow(fixture.view));
+                const int expected=MulDiv(16+24+8,dpi,96);
+                require(std::abs(next_header.top-first_body.bottom-expected)<=1,
+                    "Two adjacent authored C++ references lost Android's separate card margins");
             }
             if (page + 1 < 8) fixture.next();
         }
@@ -2224,6 +2235,212 @@ void multiple_input_compiler_is_one_pending_objective_until_every_case_passes() 
         "Compiling an unlisted input after completion revoked the approved puzzle");
     std::cout<<"PASS one compiler with two real inputs: partial status and reader gate, checked-case persistence, independent inputs and sticky full success\n";
 }
+void runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels() {
+    Fixture f({},[](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({
+      "id":"qa_runtime_stderr","title":"Dos canales","compilerPuzzlesRequired":true,
+      "pages":[{"blocks":[
+        {"id":"runtime","type":"cpp_compiler","question":"Observa ambos canales.","initialCode":"#include <iostream>\nint main(){bool mostrarDiagnostico=false;std::cout << \"Indice invalido:Fin\";if(mostrarDiagnostico)std::cerr << \"diagnostico variable de la biblioteca\";}\n","outputCheck":{"cases":[{"standardInput":"","outputs":["Indice invalido:Fin"],"explanation":"Ambos canales observados."}]}},
+        {"id":"reference","type":"paragraph","text":"Referencia posterior al objetivo completo."}
+      ]},{"blocks":[{"type":"paragraph","text":"Fin de la comprobación."}]}]})json");
+        model.state_layout.version=1;model.state_layout.locale="es";
+        model.state_layout.lineage=state::sha256("qa-runtime-stderr-layout-v1");model.state_layout.legacy_lineage=model.state_layout.lineage;
+        for(const auto& page:model.pages){curriculum::StatePage layout;layout.id=page.stable_id;
+            for(const auto& block:page.blocks)layout.blocks.push_back(block.stable_id);
+            model.state_layout.origin.push_back(layout);model.state_layout.current.push_back(std::move(layout));}
+        model.reference_after.push_back({model.pages[0].blocks[0].stable_id,{model.pages[0].blocks[1].stable_id}});
+        curriculum::validate_reference_relationships(model);return model;});
+    f.run(0);
+    const auto legacy=f.saved();const auto& original=f.lesson.pages[0].blocks[0];
+    require(windows::compiler_puzzle_completed(legacy,f.lesson,original)&&lesson_page_state(f.view).can_next,
+        "The legacy stdout-only contract did not retain its existing behavior");
+    state::Preferences history;
+    for(const auto& [key,value]:legacy.preferences.at("native_windows"))
+        if(key.starts_with("compiler-puzzle/v1/"))history.emplace(key,value);
+    require(!history.empty(),"The native legacy execution did not publish its historical proof");
+    f.close();
+    f.lesson.pages[0].blocks[0].output_check->cases[0].standard_error=curriculum::StandardErrorExpectation::non_blank;
+    f.open();
+    const auto retained=[&]{const auto saved=f.saved();for(const auto& [key,value]:history){
+        const auto found=state::find(saved,"native_windows",key);
+        require(found&&*found==value,"A new stderr requirement overwrote or erased an earlier objective's history");}};
+    retained();
+    require(f.text(0,10)==original.initial_code&&f.text(0,4).empty()&&!lesson_page_state(f.view).can_next
+        &&!descendant(f.view,id(1,0)),"An old stdout achievement accredited the new runtime stderr objective or revealed its reference");
+    int submitted=0;bool last_correct=true;LessonViewHooks hooks;
+    hooks.feedback_changed=[&](HWND,std::size_t,bool correct){++submitted;last_correct=correct;};set_lesson_view_hooks(f.view,hooks);
+    f.run(0);
+    require(f.text(0,14)=="Indice invalido:Fin"&&f.text(0,4).starts_with("✗ Incorrecto")
+        &&f.text(0,4).find("La salida estándar es correcta; falta el diagnóstico solicitado en stderr.")!=std::string::npos
+        &&submitted==1&&!last_correct&&!lesson_page_state(f.view).can_next&&!descendant(f.view,id(1,0)),
+        "Stdout without the requested runtime diagnostic became a complete success or lost its partial feedback");
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==0&&region.is_exercise&&!region.solved;}),
+        "The partial stdout verdict released the reader gate");
+    retained();f.reopen();
+    require(f.text(0,10)==original.initial_code&&f.text(0,14).empty()&&!lesson_page_state(f.view).can_next,
+        "Reopening a partial stdout observation invented stderr, a completed objective or a fresh console");
+    auto changed=original.initial_code;const auto flag=changed.find("false");require(flag!=changed.npos,"Missing QA diagnostic flag");changed.replace(flag,5,"true");
+    f.replace(0,10,"#error QA_BUILD_DIAGNOSTIC\nint main(){}\n");f.run(0);
+    require(f.text(0,4).empty()&&f.text(0,14).find("QA_BUILD_DIAGNOSTIC")!=std::string::npos
+        &&!lesson_page_state(f.view).can_next&&!descendant(f.view,id(1,0)),
+        "Build stderr was treated as the requested successful runtime diagnostic");
+    retained();f.replace(0,10,changed);f.run(0);
+    const auto complete=f.text(0,4);
+    require(complete=="✓ Correcto\n\nAmbos canales observados."&&f.text(0,14)=="Indice invalido:Fin"
+        &&lesson_page_state(f.view).can_next&&descendant(f.view,id(1,0)),
+        "One successful current execution with both channels did not complete the new goal and reveal its reference");
+    SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(0,79),BN_CLICKED),0);pump(f.host);
+    require(f.text(0,14)=="diagnostico variable de la biblioteca","The runtime stderr channel was lost or mixed with build diagnostics");
+    retained();f.reopen();
+    require(f.text(0,10)==changed&&f.text(0,4)==complete&&f.text(0,14).empty()&&lesson_page_state(f.view).can_next,
+        "Reopening lost the full two-channel proof/draft or restored stale console output");
+    f.replace(0,10,original.initial_code);f.run(0);
+    require(f.text(0,4)==complete&&f.text(0,14)=="Indice invalido:Fin"&&lesson_page_state(f.view).can_next,
+        "Rerunning without stderr revoked an already completed puzzle or hid its fresh stdout");
+    retained();f.replace(0,10,"#error QA_AFTER_SUCCESS\nint main(){}\n");f.run(0);
+    require(f.text(0,4)==complete&&f.text(0,14).find("QA_AFTER_SUCCESS")!=std::string::npos&&lesson_page_state(f.view).can_next,
+        "A later build error replaced a completed two-channel verdict or hid diagnostics");
+    retained();f.reopen();require(f.text(0,4)==complete&&lesson_page_state(f.view).can_next,
+        "The persisted two-channel achievement was not independent of its later edited draft");
+    f.click(0,12);require(f.text(0,4).empty()&&!lesson_page_state(f.view).can_next&&!descendant(f.view,id(1,0)),
+        "Only explicit Reset must revoke the completed runtime-channel objective");
+    std::cout<<"PASS runtime stderr: legacy stdout proof preserved, current two-channel goal, partial reader/reference gates, build rejection, reopen, sticky success and explicit reset\n";
+}
+void use_stable_dependency_fixture_layout(curriculum::Lesson& model) {
+    model.state_layout.version=1;model.state_layout.locale="es";
+    model.state_layout.lineage=state::sha256(model.id+"/dependent-fixture-v1");model.state_layout.legacy_lineage=model.state_layout.lineage;
+    for(const auto& page:model.pages){curriculum::StatePage layout;layout.id=page.stable_id;
+        for(const auto& block:page.blocks)layout.blocks.push_back(block.stable_id);
+        model.state_layout.origin.push_back(layout);model.state_layout.current.push_back(std::move(layout));}
+}
+void dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses() {
+    const std::array<std::string,7> targets{{
+        R"({"type":"output_prediction","question":"QA_SECRETO predicción","code":"std::cout << 7; // QA_SECRETO","answers":["7"],"explanation":"QA_SECRETO explicación"})",
+        R"({"type":"fill_code","question":"QA_SECRETO completar","code":"int QA_SECRETO = 7;","answers":["7"],"explanation":"QA_SECRETO explicación"})",
+        R"({"type":"multiple_choice","question":"QA_SECRETO elección","options":["QA_SECRETO A","QA_SECRETO B"],"correctIndex":0,"explanation":"QA_SECRETO explicación"})",
+        R"({"type":"order_code","question":"QA_SECRETO ordenar","fragments":["QA_SECRETO primero","QA_SECRETO segundo"],"correctOrder":[0,1],"explanation":"QA_SECRETO explicación"})",
+        R"({"type":"inline_fill_code","question":"QA_SECRETO hueco","template":"std::cout [] \"QA_SECRETO\";","answers":["<<"],"explanation":"QA_SECRETO explicación"})",
+        R"({"type":"drag_fill_code","question":"QA_SECRETO arrastre","template":"int [](){return 0;}","choices":["main","QA_SECRETO"],"correctOrder":[0],"explanation":"QA_SECRETO explicación"})",
+        R"({"type":"math_puzzle","schemaVersion":1,"prompt":"QA_SECRETO medida","responses":[{"id":"number","type":"math_numeric_input","label":"QA_SECRETO número","validator":{"type":"numeric","expected":6}}]})"
+    }};
+    for(std::size_t type=0;type<targets.size();++type){
+        Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
+            const auto& target=lesson.pages[0].blocks[1];state::Response response;response.correct=target.type!=BlockType::math_puzzle;
+            response.answer="7";if(target.type==BlockType::multiple_choice)response.selected=0;
+            if(target.type==BlockType::order_code)response.order={0,1};
+            if(target.type==BlockType::inline_fill_code)response.raw_json=R"({"answers":["<<"],"opaque":"historia"})";
+            if(target.type==BlockType::drag_fill_code)response.raw_json=R"({"slots":[0],"opaque":"historia"})";
+            if(target.type==BlockType::math_puzzle)response.raw_json=R"({"responses":{},"opaque":"historia matemática"})";
+            state::put_response(data,curriculum::exercise_key(lesson,target),response);state::save_current_page(data,lesson,1);
+        },[&](const curriculum::Lesson&){auto model=windows::parse_lesson_json(
+            "{\"id\":\"qa_dependent_type_"+std::to_string(type)+"\",\"title\":\"Dependencia\",\"pages\":[{\"blocks\":["
+            R"({"type":"cpp_compiler","question":"Construye primero.","initialCode":"#include <iostream>\nint main(){std::cout << 1;}\n","outputCheck":{"cases":[{"standardInput":"","outputs":["1"]}]}},)"
+            +targets[type]+R"(]},{"blocks":[{"type":"paragraph","text":"Final."}]}]})");
+            use_stable_dependency_fixture_layout(model);model.activity_after.push_back({model.pages[0].blocks[1].stable_id,{model.pages[0].blocks[0].stable_id}});return model;});
+        const auto response_key=curriculum::exercise_key(f.lesson,f.lesson.pages[0].blocks[1]);
+        const auto original=state::string_value(f.initial_data,"learning_progress",response_key);
+        const auto preserved=[&]{require(state::string_value(f.saved(),"learning_progress",response_key)==original,
+            "Locking/unlocking changed a dependent puzzle's historical response bytes");};
+        const auto locked=[&]{require(f.page()==0&&!lesson_page_state(f.view).can_next&&descendant(f.view,id(1,18))
+            &&!descendant(f.view,id(1,0))&&!descendant(f.view,id(1,1))&&!descendant(f.view,id(1,2))
+            &&!descendant(f.view,id(1,3))&&!descendant(f.view,id(1,4))&&!descendant(f.view,id(1,5)),
+            "A pending source exposed a dependent prompt, code, answer, feedback, check control or native compound view");
+            require(f.text(1,18).find("QA_SECRETO")==std::string::npos
+                &&std::ranges::none_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==1;}),
+                "A dependent puzzle leaked its authored payload through the generic placeholder or reader");
+            require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==0&&region.is_exercise&&!region.solved;}),
+                "A compiler prerequisite for a puzzle was not a reader gate without the global mandatory flag");preserved();};
+        locked();f.run(0);require(descendant(f.view,id(1,3)),"A successful source did not reveal the dependent puzzle");preserved();
+        const auto check=f.control(1,3);f.replace(0,10,"#include <iostream>\nint main(){std::cout << 9;}\n");f.run(0);
+        require(f.control(1,3)==check,"Editing/recompiling a completed source revoked or recreated the dependent puzzle");preserved();
+        f.click(0,12);locked();f.reopen();locked();f.run(0);
+        require(descendant(f.view,id(1,3)),"Reset and a fresh source success failed to recover the dependent response");preserved();
+    }
+    std::cout<<"PASS seven dependent puzzle types: no hidden payload/controls/narration, pending source gate, exact response history, sticky success, Reset and reopen\n";
+}
+void dependent_puzzle_bookmarks_resolve_transitive_pending_sources() {
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        const auto& target=lesson.pages[2].blocks[0];state::put_response(data,curriculum::exercise_key(lesson,target),state::Response{"2",true});
+        state::save_current_page(data,lesson,3);
+    },[](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({"id":"qa_dependent_transitive","title":"Cadena",
+      "pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"#include <iostream>\nint main(){std::cout << 0;}\n","outputCheck":{"cases":[{"standardInput":"","outputs":["1"]}]}}]},
+      {"blocks":[{"type":"cpp_compiler","initialCode":"#include <iostream>\nint main(){std::cout << 2;}\n","outputCheck":{"cases":[{"standardInput":"","outputs":["2"]}]}}]},
+      {"blocks":[{"type":"output_prediction","question":"Recupera lo construido.","code":"std::cout << 2;","answers":["2"]}]},
+      {"blocks":[{"type":"paragraph","text":"Marcador posterior."}]}]})json");use_stable_dependency_fixture_layout(model);
+        model.activity_after.push_back({model.pages[1].blocks[0].stable_id,{model.pages[0].blocks[0].stable_id}});
+        model.activity_after.push_back({model.pages[2].blocks[0].stable_id,{model.pages[1].blocks[0].stable_id}});return model;});
+    require(f.page()==0&&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,2),
+        "A later historical bookmark/selector bypassed the first transitive compiler prerequisite");
+    f.run(0);require(f.text(0,4).starts_with("✗ Incorrecto")&&!navigate_lesson_view(f.view,3),
+        "An incorrect prerequisite permitted a later dependent bookmark");
+    f.replace(0,10,"#include <iostream>\nint main(){std::cout << 1;}\n");f.run(0);f.next();
+    require(f.page()==1&&!lesson_page_state(f.view).can_next,"The direct source did not remain independently pending after its own prerequisite");
+    f.run(0);f.next();require(f.page()==2&&f.text(0,2)=="2"&&f.text(0,4).starts_with("✓ Correcto"),
+        "Completing both source programs lost or re-evaluated the historical dependent response");
+    f.next();f.select_page(0);f.click(0,12);f.close();
+    state::StateStore store(f.environment.paths.root);auto data=store.load();state::save_current_page(data,f.lesson,3);store.save(data);f.open();
+    require(f.page()==0,"Reopening with a later marker did not return to the reset transitive source");
+    f.replace(0,10,"#include <iostream>\nint main(){std::cout << 1;}\n");f.run(0);f.next();f.next();require(f.text(0,2)=="2"&&f.text(0,4).starts_with("✓ Correcto"),
+        "Resetting an earlier source erased the independent downstream success or puzzle response");
+    std::cout<<"PASS dependent cross-page bookmarks: transitive roots, wrong/current source gates, selector, completed-response recovery, scoped Reset and reopen\n";
+}
+void authored_dependent_puzzle_locations_protect_historical_bookmarks() {
+    // Relations are QA-only projections of the requested constructions. Work
+    // still authors and accepts their integration in the unchanged assets.
+    struct Location{const char* file;const char* source;const char* target;};
+    const std::array<Location,19> locations{{
+        {"objetos_y_estado/lesson_objetos_valores_y_tipos.json","block_0004_0006","block_0005_0006"},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json","block_0006_0006","block_0007_0006"},
+        {"expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json","block_0002_0002","block_0003_0003"},
+        {"repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json","block_0008_0003","block_0009_0004"},
+        {"repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json","block_0008_0003","relacionar_aportes_de_cada_orden"},
+        {"repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json","block_0008_0003","block_0009_0005"},
+        {"repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json","block_0001_0002","block_0002_0001"},
+        {"repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json","block_0001_0002","block_0002_0002"},
+        {"repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json","block_0001_0002","block_0005_0004"},
+        {"funciones_y_contratos/lesson_referencias_para_modificar.json","block_0007_0004","block_0010_0002"},
+        {"funciones_y_contratos/lesson_referencias_para_modificar.json","block_0007_0004","block_0011_0005"},
+        {"funciones_y_contratos/lesson_referencias_para_modificar.json","block_0012_0003","block_0015_0002"},
+        {"funciones_y_contratos/lesson_espacios_de_nombres_y_nombres_calificados.json","block_0007_0006","block_0010_0001"},
+        {"funciones_y_contratos/lesson_espacios_de_nombres_y_nombres_calificados.json","block_0007_0006","block_0010_0002"},
+        {"errores_y_construccion_gradual/lesson_distinguir_fallos_y_localizar_la_causa.json","block_0005_0004","block_0007_0002"},
+        {"errores_y_construccion_gradual/lesson_limpiar_sin_cambiar_el_comportamiento.json","block_0005_0004","block_0007_0002"},
+        {"errores_y_construccion_gradual/lesson_sesion_de_pedidos_con_errores_controlados.json","block_0001_0002","block_0002_0001"},
+        {"errores_y_construccion_gradual/lesson_sesion_de_pedidos_con_errores_controlados.json","block_0001_0002","block_0002_0002"},
+        {"excepciones_y_recuperacion/lesson_transferencia_con_movimientos_controlados.json","block_0001_0003","block_0002_0001"}
+    }};
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
+    for(const auto& location:locations){
+        Fixture f([&](state::StateData& data,const curriculum::Lesson& model){
+            const auto target=curriculum::stable_block_position(model,location.target);require(target.has_value(),"An authored dependent target moved without updating its QA location");
+            const auto& block=model.pages[target->page].blocks[target->block];state::Response response;
+            response.raw_json=R"({"opaque":"historia curricular conservada"})";
+            if(block.type==BlockType::multiple_choice){response.correct=true;response.selected=static_cast<std::int64_t>(*block.correct_index);}
+            else if(block.type==BlockType::output_prediction||block.type==BlockType::fill_code){response.correct=true;response.answer=block.answers.at(0);}
+            state::put_response(data,curriculum::exercise_key(model,block),response);state::save_current_page(data,model,target->page);
+        },[&](const curriculum::Lesson&){auto model=windows::load_lesson(folder/location.file);
+            const auto source=curriculum::stable_block_position(model,location.source),target=curriculum::stable_block_position(model,location.target);
+            require(source&&target&&source->page<target->page,"The authored dependency QA source must remain earlier than its requested puzzle");
+            const auto& compiler=model.pages[source->page].blocks[source->block];require(compiler.type==BlockType::cpp_compiler&&compiler.output_check,
+                "An authored dependency QA source lost its evaluable compiler objective");
+            auto relation=std::ranges::find_if(model.activity_after,[&](const auto& item){return item.activity==location.target;});
+            if(relation==model.activity_after.end())model.activity_after.push_back({location.target,{location.source}});
+            else if(std::ranges::find(relation->prerequisites,std::string(location.source))==relation->prerequisites.end())relation->prerequisites.push_back(location.source);
+            return model;});
+        const auto source=*curriculum::stable_block_position(f.lesson,location.source),target=*curriculum::stable_block_position(f.lesson,location.target);
+        const auto key=curriculum::exercise_key(f.lesson,f.lesson.pages[target.page].blocks[target.block]);
+        const auto original=state::string_value(f.initial_data,"learning_progress",key);
+        require(f.page()<=source.page&&f.page()<target.page&&!navigate_lesson_view(f.view,target.page),
+            "An authored dependent historical bookmark or Pages action bypassed its pending construction");
+        const auto marker='/'+std::string(location.target)+'/';
+        require(std::ranges::none_of(lesson_reading_regions(f.view),[&](const auto& region){return region.anchor.find(marker)!=std::string::npos;}),
+            "An authored dependent puzzle exposed its narration before its construction");
+        require(state::string_value(f.saved(),"learning_progress",key)==original,
+            "Redirecting an authored dependent bookmark changed its historical response");
+        f.reopen();require(f.page()<=source.page&&state::string_value(f.saved(),"learning_progress",key)==original,
+            "Reopening an authored dependency lost either the protected entry or its preserved response");
+    }
+    std::cout<<"PASS 19 authored dependent-puzzle locations: QA-only relations, historical bookmarks/Pages protected, narration excluded and responses preserved across reopen\n";
+}
 void compiler_puzzle_completion_and_navigation() {
     Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
         state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,1);
@@ -2293,9 +2510,11 @@ int main(int argc,char* argv[]) {
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
     const bool compiler_puzzles_only=argc==2&&std::string_view(argv[1])=="--compiler-puzzles";
+    const bool stderr_objective_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
+    const bool dependent_puzzles_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool editor_overflow_only=argc==2&&std::string_view(argv[1])=="--editor-overflow";
     const bool answer_overflow_only=argc==2&&std::string_view(argv[1])=="--answer-overflow";
-    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!editor_overflow_only&&!answer_overflow_only)return 2;
+    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -2306,9 +2525,12 @@ int main(int argc,char* argv[]) {
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}
         if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
-        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();compiler_puzzle_completion_and_navigation();return 0;}
+        if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();return 0;}
+        if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
+        runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();
         long_prediction_cards_keep_independent_bounds();
         long_lesson_bands_keep_independent_hit_targets();
         initial_readonly_source_layout();

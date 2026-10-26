@@ -1,11 +1,17 @@
 #include "core/lesson.hpp"
 
 #include <algorithm>
+#include <set>
 #include <stdexcept>
 
 namespace lgaed::curriculum {
 namespace {
 bool whitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f'; }
+bool puzzle_type(BlockType type) {
+    return type == BlockType::multiple_choice || type == BlockType::output_prediction ||
+        type == BlockType::fill_code || type == BlockType::order_code ||
+        type == BlockType::inline_fill_code || type == BlockType::drag_fill_code || type == BlockType::math_puzzle;
+}
 bool identifier(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || static_cast<unsigned char>(c) >= 128;
 }
@@ -253,8 +259,9 @@ void validate_activity_relationships(const Lesson& lesson) {
         activities.push_back(relation.activity);
         const auto target = stable_block_position(lesson,relation.activity);
         if (!target) throw std::invalid_argument("Dependent activity does not exist");
-        if (lesson.pages[target->page].blocks[target->block].type != BlockType::cpp_compiler)
-            throw std::invalid_argument("Dependent activity requires a compiler");
+        const auto type = lesson.pages[target->page].blocks[target->block].type;
+        if (type != BlockType::cpp_compiler && !puzzle_type(type))
+            throw std::invalid_argument("Dependent activity requires a compiler or puzzle");
         if (relation.prerequisites.empty()) throw std::invalid_argument("Activity relationship has no prerequisites");
         std::vector<std::string> prerequisites;
         for (const auto& identity : relation.prerequisites) {
@@ -284,6 +291,29 @@ std::vector<StatePosition> activity_prerequisites(const Lesson& lesson, const Bl
     }
     return result;
 }
+bool compiler_is_puzzle_prerequisite(const Lesson& lesson, const Block& compiler) {
+    if (compiler.type != BlockType::cpp_compiler || !compiler.output_check || lesson.activity_after.empty()) return false;
+    std::map<std::string,BlockType> types;
+    for (const auto& page : lesson.pages) for (const auto& block : page.blocks) types.emplace(block.stable_id,block.type);
+    std::map<std::string,std::vector<std::string_view>> successors;
+    for (const auto& relation : lesson.activity_after) for (const auto& prerequisite : relation.prerequisites)
+        successors[prerequisite].push_back(relation.activity);
+    std::vector<std::string_view> pending{compiler.stable_id};
+    std::set<std::string_view> visited;
+    while (!pending.empty()) {
+        const auto identity = pending.back(); pending.pop_back();
+        if (!visited.insert(identity).second) continue;
+        const auto descendants = successors.find(std::string(identity));
+        if (descendants == successors.end()) continue;
+        for (const auto target : descendants->second) {
+            const auto found = types.find(std::string(target));
+            if (found == types.end()) continue;
+            if (puzzle_type(found->second)) return true;
+            if (found->second == BlockType::cpp_compiler) pending.push_back(target);
+        }
+    }
+    return false;
+}
 std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
     if (activity.type != BlockType::cpp_compiler || !activity.output_check)
         throw std::invalid_argument("Only an authored compiler output check can unlock a reference");
@@ -303,6 +333,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         result += std::to_string(item.outputs.size()) + '[';
         for (const auto& output : item.outputs) token(output);
         result += ']';
+        // Keep stdout-only proof identities byte-for-byte compatible, while a
+        // newly authored stderr objective always requires fresh native proof.
+        if (item.standard_error == StandardErrorExpectation::non_blank) token("standard-error/nonBlank/v1");
     }
     result += ']';
     return result;
@@ -461,11 +494,16 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         }
     }
     if (!selected) return {};
-    if (std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end())
-        return {OutputVerdict::correct, selected->explanation};
+    const bool stdout_correct = std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end();
+    const bool stderr_correct = selected->standard_error == StandardErrorExpectation::ignored ||
+        !trimmed(execution.standard_error).empty();
+    if (stdout_correct && stderr_correct)
+        return {OutputVerdict::correct, selected->explanation, true, true};
+    if (stdout_correct)
+        return {OutputVerdict::incorrect, "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
     for (const auto& rule : selected->review_feedback)
-        if (std::ranges::find(rule.outputs, execution.standard_output) != rule.outputs.end()) return {OutputVerdict::incorrect, rule.text};
-    return {OutputVerdict::incorrect, {}};
+        if (std::ranges::find(rule.outputs, execution.standard_output) != rule.outputs.end()) return {OutputVerdict::incorrect, rule.text, false, stderr_correct};
+    return {OutputVerdict::incorrect, {}, false, stderr_correct};
 }
 
 } // namespace lgaed::curriculum

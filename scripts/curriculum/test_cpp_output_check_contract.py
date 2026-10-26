@@ -147,6 +147,37 @@ class CppOutputCheckContractTest(unittest.TestCase):
     def test_legacy_cmake_checks_need_no_target_or_content_migration(self):
         self.assertEqual([], self.cmake_errors(self.check["cases"]))
 
+    def test_runtime_stderr_objective_is_optional_per_case_and_target(self):
+        check = copy.deepcopy(self.check)
+        check["cases"][0]["standardError"] = "nonBlank"
+        original = copy.deepcopy(check)
+        self.assertEqual([], self.errors(check))
+        self.assertEqual(original, check)
+        self.assertEqual([], self.cmake_errors([
+            {"target": "client", "standardInput": "", "outputs": ["OK"]},
+            {"target": "diagnostic", "standardInput": "", "outputs": ["OK"],
+             "standardError": "nonBlank"}]))
+        for value in (None, False, True, [], {}, "", "nonEmpty", "exact", "ignored", "NONBLANK"):
+            with self.subTest(value=value):
+                check["cases"][0]["standardError"] = value
+                self.assertTrue(self.errors(check))
+
+    def test_adding_stderr_objective_keeps_existing_stdout_source_and_answers(self):
+        old = dict(self.block, outputCheck=copy.deepcopy(self.check))
+        revised = copy.deepcopy(old)
+        revised["outputCheck"]["cases"][0]["standardError"] = "nonBlank"
+        self.assertTrue(contract.preserves_previous_compiler("fixture.json", 0, 0, old, revised, {}))
+        self.assertFalse(contract.preserves_previous_compiler("fixture.json", 0, 0, revised, old, {}))
+        for patch in ({"outputs": ["Other"]}, {"standardInput": "Other"}, {"target": "Other"},
+                      {"explanation": "Another explanation"}, {"standardError": "nonEmpty"}):
+            changed = copy.deepcopy(revised)
+            changed["outputCheck"]["cases"][0].update(patch)
+            with self.subTest(patch=patch):
+                self.assertFalse(contract.preserves_previous_compiler("fixture.json", 0, 0, old, changed, {}))
+        changed = copy.deepcopy(revised)
+        changed["initialCode"] = "Different source"
+        self.assertFalse(contract.preserves_previous_compiler("fixture.json", 0, 0, old, changed, {}))
+
 
 if __name__ == "__main__":
     unittest.main()

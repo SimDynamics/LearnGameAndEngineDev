@@ -107,6 +107,47 @@ class RetiredStateLayoutTest(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate_transition(before, changed)
 
+    def test_stderr_objectives_preserve_active_addresses_and_immutable_retirement_snapshots(self):
+        filename, identities = PLANS[0]
+        before = source(filename)
+        required = deepcopy(before)
+        editor = layout._blocks(required)[identities[1]]
+        previous_editor = deepcopy(editor)
+        editor["outputCheck"]["cases"][0]["standardError"] = "nonBlank"
+        required["stateLayout"]["editorial"].append({"id": identities[1],
+            "beforeSha256": layout.fingerprint(previous_editor), "afterSha256": layout.fingerprint(editor)})
+        layout.validate_transition(before, required)
+        after = retired(required, identities)
+        layout.validate_transition(required, after)
+        archived = after["stateLayout"]["retired"][1]["block"]
+        self.assertEqual("nonBlank", archived["outputCheck"]["cases"][0]["standardError"])
+        history = deepcopy(after["stateLayout"]["retirementHistory"])
+        # A later active objective can be extended while old reading payloads
+        # retain precisely the requirements published when they were archived.
+        revised = deepcopy(after)
+        active_id = "block_0004_0002"
+        active = layout._blocks(revised)[active_id]
+        old_active = deepcopy(active)
+        active["outputCheck"]["cases"][0]["standardError"] = "nonBlank"
+        revised["stateLayout"]["editorial"].append({"id": active_id,
+            "beforeSha256": layout.fingerprint(old_active), "afterSha256": layout.fingerprint(active)})
+        layout.validate_transition(after, revised)
+        self.assertEqual(layout.validate(after), layout.validate(revised))
+        self.assertEqual(history, revised["stateLayout"]["retirementHistory"])
+        for part in ("retired", "retirementHistory"):
+            changed = deepcopy(after)
+            if part == "retired":
+                case = changed["stateLayout"][part][1]["block"]["outputCheck"]["cases"][0]
+            else:
+                old_pages = changed["stateLayout"][part][0]["pages"]
+                old_editor = next(block for page in old_pages for block in page["blocks"]
+                                  if block.get("type") == "cpp_compiler" and
+                                  block.get("outputCheck", {}).get("cases", [{}])[0].get("standardError"))
+                case = old_editor["outputCheck"]["cases"][0]
+            del case["standardError"]
+            with self.subTest(part=part), self.assertRaises(layout.LayoutError):
+                layout.validate_transition(after, changed)
+
     def test_unknown_duplicate_foreign_and_cyclic_retirements_are_rejected(self):
         filename, identities = PLANS[0]
         before = source(filename)

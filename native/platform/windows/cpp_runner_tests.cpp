@@ -155,6 +155,72 @@ int main() {
             "Pinned Windows SDK provenance");
     });
 
+    test("The current successful execution proves stderr independently of stable stdout", [&] {
+        using namespace lgaed::curriculum;
+        OutputCheck check; check.cases.push_back({"",{"Indice invalido:Fin"}});
+        check.cases.front().standard_error = StandardErrorExpectation::non_blank;
+        const std::string source = "#include <iostream>\n#include <vector>\n#include <stdexcept>\n"
+            "int main(){std::vector<int> datos{2,9};int indice{2};bool mostrarDiagnostico{false};"
+            "try{std::cout<<datos.at(indice);}catch(const std::out_of_range& error){"
+            "std::cout<<\"Indice invalido\";if(mostrarDiagnostico)std::cerr<<error.what()<<\"\\n\";}"
+            "std::cout<<\":Fin\";return 0;}\n";
+        const auto evaluate = [&](const CppRunResult& result) {
+            FreshExecution execution; execution.source_revision = result.revision;
+            execution.compilation_succeeded = result.compilation.succeeded();
+            execution.execution_succeeded = result.execution.succeeded();
+            execution.exit_code = static_cast<int>(result.execution.exit_code.value_or(0xFFFFFFFFu));
+            execution.standard_output = result.execution.stdout_bytes;
+            execution.standard_error = result.execution.stderr_bytes;
+            return evaluate_cpp_output_check(check,execution,result.revision);
+        };
+        const auto disabled = run_cpp(request(source));
+        successful(disabled);
+        require(disabled.execution.stdout_bytes == "Indice invalido:Fin" &&
+            disabled.execution.stderr_bytes.empty(), "Disabled flag must produce only stable stdout");
+        const auto partial = evaluate(disabled);
+        require(partial.verdict == OutputVerdict::incorrect && partial.stdout_correct && !partial.stderr_correct,
+            "The stdout-only run must not complete the stderr objective");
+        auto enabled_source = source;
+        enabled_source.replace(enabled_source.find("{false}"),7,"{true}");
+        const auto enabled = run_cpp(request(enabled_source));
+        successful(enabled);
+        require(enabled.execution.stdout_bytes == disabled.execution.stdout_bytes &&
+            !enabled.execution.stderr_bytes.empty(), "Enabled flag must add runtime stderr without changing stdout");
+        const auto complete = evaluate(enabled);
+        require(complete.verdict == OutputVerdict::correct && complete.stdout_correct && complete.stderr_correct,
+            "Successful MSVC runtime diagnostic must satisfy the objective without fixing its wording");
+        const auto broken = run_cpp(request("int main(){ deliberate compile failure; }\n"));
+        require(!broken.compilation.succeeded() && broken.execution.status == CppPhaseStatus::not_started &&
+            (!broken.compilation.stdout_bytes.empty() || !broken.compilation.stderr_bytes.empty()),
+            "The failing compiler must retain diagnostics without executing");
+        require(evaluate(broken).verdict == OutputVerdict::unavailable,
+            "Build diagnostics must never satisfy the runtime stderr objective");
+        require(evaluate(disabled).verdict == OutputVerdict::incorrect,
+            "An older diagnostic must not leak into another captured result");
+    });
+
+    test("Native CRLF stdout retains its partial stderr result and legacy checks ignore stderr", [] {
+        using namespace lgaed::curriculum;
+        OutputCheck check; check.cases.push_back({"",{"A\nB"}});
+        check.cases.front().standard_error = StandardErrorExpectation::non_blank;
+        FreshExecution execution; execution.source_revision = 7; execution.exit_code = 0;
+        execution.compilation_succeeded = execution.execution_succeeded = true;
+        execution.standard_output = "A\r\nB";
+        const auto partial = evaluate_cpp_output_check(check,execution,7);
+        require(partial.verdict == OutputVerdict::incorrect && partial.stdout_correct && !partial.stderr_correct &&
+            !partial.feedback.empty(), "Native line endings must preserve partial feedback and channel results");
+        execution.standard_error = " \t\r\n";
+        require(!evaluate_cpp_output_check(check,execution,7).stderr_correct,
+            "Whitespace alone cannot count as a diagnostic");
+        execution.standard_error = "Implementation-dependent diagnostic\r\n";
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::correct,
+            "CRLF stdout and an implementation-dependent diagnostic must complete the objective");
+        check.cases.front().standard_error = StandardErrorExpectation::ignored;
+        execution.standard_error.clear();
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::correct,
+            "Legacy stdout contracts must still succeed without runtime stderr");
+    });
+
     test("Binary capture preserves UTF8 spaces tabs and explicit LF bytes", [&] {
         // Avoid changing text-mode semantics in the adapter: the program owns
         // its mode, and captures below prove that the adapter does not trim.

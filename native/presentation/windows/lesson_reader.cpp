@@ -338,8 +338,10 @@ struct LessonReader::Impl {
                 answer_priority=AnswerPriority{previous_priority->block,std::max(*first,boundary)};
             }}
             if(!feedback_target&&!answer_priority)restore_answered_priority();
+            bool fresh_feedback_selected=false;
             if(feedback_target){const auto found=std::ranges::find_if(parts,[&](const auto& part){return part.region.feedback&&part.region.block_index==*feedback_target;});
                 if(found!=parts.end()){
+                    fresh_feedback_selected=true;
                     position.segment=found-parts.begin();position.milliseconds=0;position.finished=false;
                     // Reuse the recording, never listening credit from an older
                     // submission that happened to generate the same verdict.
@@ -348,18 +350,44 @@ struct LessonReader::Impl {
                     if(found->region.correct&&found->region.solved)answer_priority=AnswerPriority{*feedback_target,static_cast<std::size_t>(position.segment)};
                     else if(answer_priority&&answer_priority->block==*feedback_target)answer_priority.reset();
                 }feedback_target.reset();}
+            if(!fresh_feedback_selected)constrain_required_compiler_bookmark();
             previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));if(wanted&&!finished)acquire();
         }else if(result.audio&&result.index<parts.size())parts[result.index].audio=std::move(result.audio);
         }paint_progress();update_buttons();}
     std::size_t current()const{return parts.empty()?0:std::min(static_cast<std::size_t>(std::max<std::int64_t>(0,position.segment)),parts.size()-1);}
+    void constrain_required_compiler_bookmark(){
+        const auto at=current();
+        for(std::size_t first=0;first<parts.size();){
+            auto last=first;
+            while(last+1<parts.size()&&parts[last+1].region.block_index==parts[first].region.block_index)++last;
+            const bool pending=std::ranges::any_of(parts.begin()+first,parts.begin()+last+1,[](const auto& part){
+                return part.region.required_compiler&&!part.region.solved;
+            });
+            if(pending&&(at>last||(position.finished&&at>=first))){
+                // A new prerequisite can leave the exact same spoken script
+                // and recording key. Its old finished/late bookmark is still
+                // historical data, never permission to skip the pending run.
+                // Adjust only this in-memory position; opening the lesson must
+                // not rewrite the student's three saved page slots.
+                position.segment=static_cast<std::int64_t>(first);position.milliseconds=0;position.finished=false;
+                position.heard_through=std::min(position.heard_through,position.segment);
+                answer_priority.reset();wanted=false;waiting_gate=false;return;
+            }
+            first=last+1;
+        }
+    }
     std::optional<std::size_t> correct_feedback_start(std::size_t block)const{
         for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.block_index==block&&parts[i].region.feedback&&parts[i].region.correct&&parts[i].region.solved)return i;
         return {};
     }
     bool passes_prefix(std::size_t destination,bool manual_forward=false)const{
         const auto active=answer_priority?correct_feedback_start(answer_priority->block):std::optional<std::size_t>{};
+        const bool within_feedback=active&&destination<parts.size()&&parts[destination].region.feedback
+            &&parts[destination].region.block_index==answer_priority->block;
         for(std::size_t i=0;i<destination&&i<parts.size();++i){const auto& part=parts[i];if(!part.region.is_exercise)continue;
-            if(active&&i<*active)continue;
+            // A fresh answer may read its complete feedback. It cannot grant
+            // permission to continue past a different pending compiler.
+            if(active&&i<*active&&(!part.region.required_compiler||within_feedback))continue;
             const bool last=i+1>=parts.size()||parts[i+1].region.block_index!=part.region.block_index;
             if(!last)continue;if(!part.region.solved)return false;
             const auto permitted=active?static_cast<std::int64_t>(answer_priority->allowed_through):position.heard_through;
@@ -409,7 +437,8 @@ struct LessonReader::Impl {
             const bool pending_feedback=parts[at].region.feedback&&parts[at].region.correct&&position.heard_through<=static_cast<std::int64_t>(at);
             const bool unanswered=parts[at].region.is_exercise&&!parts[at].region.solved;
             if(end_of_wrong){wanted=false;waiting_gate=false;save();}
-            else if(at+1==parts.size()&&(!pending_feedback||(answer_priority&&answer_priority->allowed_through>at))&&!unanswered){finished=true;wanted=false;save(true);}
+            else if(at+1==parts.size()&&(!pending_feedback||(answer_priority&&answer_priority->allowed_through>at))&&!unanswered
+                &&passes_prefix(parts.size())){finished=true;wanted=false;save(true);}
             else if(at+1==parts.size()||(!wrong&&!can_enter(at+1))){wanted=false;waiting_gate=true;save();}
             else{position.segment=static_cast<std::int64_t>(at+1);position.milliseconds=0;save();play_current();}
             paint_progress();update_buttons();}}

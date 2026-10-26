@@ -117,9 +117,9 @@ struct Fixture{
     ~Fixture(){reader.reset();if(view){(void)flush_lesson_view(view);DestroyWindow(view);}if(host)DestroyWindow(host);}
     LessonReaderSnapshot snapshot(){auto result=reader->snapshot();check(result.error.empty(),"Real reader error: "+result.error);return result;}
     void ready(){wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"real page synthesis/word alignment");}
-    void answer(std::string_view text){const auto edit=child(view,1102);const auto value=wide(text);CHARRANGE range{0,-1};
+    void answer(std::string_view text,std::size_t block=1){const auto edit=child(view,1002+static_cast<int>(block)*100);const auto value=wide(text);CHARRANGE range{0,-1};
         SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(value.c_str()));
-        SendMessageW(child(view,1103),BM_CLICK,0,0);reader->pause();ready();
+        SendMessageW(child(view,1003+static_cast<int>(block)*100),BM_CLICK,0,0);reader->pause();ready();
         check(!snapshot().playing&&!snapshot().allocated,"Pending feedback preparation overrode a subsequent pause");}
     void page(std::size_t index){reader->pause();check(navigate_lesson_view(view,index),"Cannot navigate QA page");reader->content_changed();ready();}
     void edit_program(std::string_view source,std::size_t block=1){reader->pause();const auto edit=child(view,1010+static_cast<int>(block)*100);const auto value=wide(source);CHARRANGE range{0,-1};
@@ -128,12 +128,183 @@ struct Fixture{
         wait([&]{return IsWindowEnabled(action);},"real checked compiler execution");if(pause_after)reader->pause();ready();
         if(pause_after)check(!snapshot().playing&&!snapshot().allocated,"Compiler feedback preparation overrode a subsequent pause");}
 };
+void runtime_stderr_reader_objective(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    auto lesson=compiler_model(true);lesson.id="qa_native_reader_runtime_stderr";
+    auto& expected=lesson.pages[0].blocks[1].output_check->cases[0];
+    expected.standard_error=curriculum::StandardErrorExpectation::non_blank;
+    expected.explanation="Los dos canales cumplen el objetivo.";
+    Fixture f(backend,false,true,true,"es",std::move(lesson));
+    f.reader->restart();wait([&]{return f.snapshot().waiting_gate;},"reader reaches runtime stderr objective");
+    f.run_program(1,false);
+    wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&!value.preparing&&value.segments[value.index].feedback;},
+        "partial stdout feedback is read and stops at the incomplete runtime stderr goal");
+    const auto partial=f.snapshot();
+    check(!partial.finished&&!partial.segments[partial.index].correct
+        &&edit_text(child(f.view,1104)).find("La salida estándar es correcta; falta el diagnóstico solicitado en stderr.")!=std::string::npos,
+        "Partial stdout did not keep its actual incomplete spoken feedback");
+    check(std::ranges::none_of(partial.segments,[](const auto& segment){return segment.block==2;}),
+        "The reader planned later prose before the current runtime stderr goal was complete");
+    f.reader->seek_seconds(60);check(f.snapshot().segments[f.snapshot().index].feedback,
+        "Forward seeking escaped the partial runtime-channel verdict");
+    f.reader->pause();
+    f.edit_program("#include <iostream>\nint main(){std::cout << \"Bien\";std::cerr << \"detalle variable\";}\n");f.ready();
+    f.run_program(1,true);const auto correct=f.snapshot();
+    check(!correct.playing&&!correct.allocated&&correct.segments[correct.index].feedback&&correct.segments[correct.index].correct,
+        "The complete runtime-channel verdict lost its listening boundary or overrode manual pause");
+    f.reader->toggle();wait([&]{return f.snapshot().finished;},"complete runtime stderr feedback is heard before later prose");
+    const auto completed=f.snapshot();
+    check(std::ranges::any_of(completed.segments,[](const auto& segment){return segment.block==2;}),
+        "The completed runtime-channel objective did not allow subsequent narration");
+    std::cout<<"PASS real Kokoro runtime stderr goal: partial stdout spoken and stopped, forward gate, manual pause and full-feedback continuation\n";
 }
 
-int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
+void dependent_puzzle_reader_bookmarks(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    for(const bool same_page:{false,true}) {
+        auto lesson=compiler_model(false);lesson.id=same_page?"qa_reader_dependency_same":"qa_reader_dependency_later";
+        lesson.pages.front().blocks.resize(2);
+        curriculum::Block puzzle;puzzle.type=curriculum::BlockType::fill_code;puzzle.stable_id="recovered_program";
+        puzzle.question="Recupera el programa construido y completa el símbolo.";
+        puzzle.code="std::cout ___ \"Bien\";";puzzle.answers={"<<"};
+        puzzle.explanation="El símbolo conserva la salida del programa.";
+        if(!same_page) {
+            auto tail=lesson.pages.front().blocks.front();tail.stable_id="after_free_compiler";tail.address={0,2,{},{}};
+            tail.text="Una explicación posterior al editor.";lesson.pages.front().blocks.push_back(std::move(tail));
+            curriculum::Page later;later.stable_id="later_page";
+            auto paragraph=lesson.pages.front().blocks.front();paragraph.stable_id="later_intro";paragraph.address={1,0,{},{}};
+            paragraph.text="Página de recuperación.";later.blocks.push_back(std::move(paragraph));
+            lesson.pages.push_back(std::move(later));
+        }
+        const std::size_t target_page=same_page?0:1,target_block=same_page?2:1;
+        puzzle.address={target_page,target_block,{},{}};lesson.pages[target_page].blocks.push_back(puzzle);
+        lesson.state_layout.version=1;lesson.state_layout.locale="es";
+        lesson.state_layout.lineage=state::sha256(lesson.id);lesson.state_layout.legacy_lineage=lesson.state_layout.lineage;
+        for(const auto& page:lesson.pages){curriculum::StatePage layout;layout.id=page.stable_id;
+            for(const auto& block:page.blocks)layout.blocks.push_back(block.stable_id);
+            lesson.state_layout.origin.push_back(layout);lesson.state_layout.current.push_back(std::move(layout));}
+        Fixture f(backend,false,true,true,"es",lesson,false,target_page);
+        f.answer("<<",target_block);f.reader->pause();const auto old=f.snapshot();
+        const auto old_part=std::ranges::find_if(old.segments,[&](const auto& part){return part.block==target_block&&!part.feedback;});
+        check(old_part!=old.segments.end(),"The historical answered puzzle has no real spoken prompt");
+        const auto old_at=static_cast<std::int64_t>(old_part-old.segments.begin());
+        const auto old_page=lesson_page_state(f.view).narration_page_identity;
+        const auto response_key=curriculum::exercise_key(lesson,lesson.pages[target_page].blocks[target_block]);
+        const auto accepted=state::get_response(read_lesson_state(f.view),response_key);
+        check(accepted&&accepted->correct,"The historical puzzle was not answered by its real control");
+        const auto response_preserved=[&]{const auto current=state::get_response(read_lesson_state(f.view),response_key);
+            return current&&current->answer==accepted->answer&&current->correct==accepted->correct
+                &&current->raw_json==accepted->raw_json&&current->selected==accepted->selected
+                &&current->order==accepted->order&&current->reviewed_answer_identity==accepted->reviewed_answer_identity;};
+        std::string finished_key="other-finished",finished_page="other-page-b";
+        std::int64_t finished_segment=0;
+        if(!same_page){f.page(0);f.reader->pause();const auto source_history=f.snapshot();
+            check(source_history.segments.back().block==2,"The old free compiler fixture has no later spoken paragraph");
+            finished_key=source_history.key;finished_page=lesson_page_state(f.view).narration_page_identity;
+            finished_segment=static_cast<std::int64_t>(source_history.segments.size()-1);f.page(target_page);}
+        f.reader.reset();
+        update_lesson_preferences(f.view,[&](state::StateData& data){
+            auto history=narration::begin({},"other-paused","owner-a",{0,120,0,false},{},"other-page-a");
+            history=narration::begin(std::move(history),finished_key,"owner-b",{finished_segment,200,0,false},{},finished_page);
+            history=narration::checkpoint(std::move(history),finished_key,"owner-b",{finished_segment,200,0,true});
+            history=narration::begin(std::move(history),old.key,"historical-puzzle",{old_at,231,0,false},{},old_page);
+            narration::write_history(data,history);
+        });
+        check(flush_lesson_view(f.view),"Cannot preserve the old dependency bookmark");DestroyWindow(f.view);f.view=nullptr;
+        lesson.activity_after.push_back({puzzle.stable_id,{lesson.pages[0].blocks[1].stable_id}});
+        curriculum::validate_activity_relationships(lesson);
+        f.view=create_lesson_view(f.host,f.environment,lesson);check(f.view!=nullptr,"Cannot reopen the protected puzzle model");
+        MoveWindow(f.view,0,0,980,720,TRUE);
+        LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
+        hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+        hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
+        set_lesson_view_hooks(f.view,std::move(hooks));
+        f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+        const auto locked=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));
+        check(lesson_page_state(f.view).index==0&&!locked.playing&&!locked.allocated&&!locked.finished,
+            "A historical later bookmark bypassed its compiler or started playback");
+        check(std::ranges::none_of(locked.segments,[&](const auto& part){return part.source==puzzle.question||part.source==puzzle.explanation;}),
+            "A locked puzzle leaked its historical prompt or feedback into the new script");
+        check(history.entries.size()==3&&history.entries.front().key==old.key&&history.entries.front().position.segment==old_at
+            &&history.entries.front().position.milliseconds==231
+            &&history.entries[1].key==finished_key&&history.entries[1].position.finished
+            &&history.entries[2].key=="other-paused"&&history.entries[2].position.milliseconds==120,
+            "Resolving a protected bookmark rewrote or evicted existing narration positions");
+        check(response_preserved(),
+            "Protecting a historical puzzle changed its valid response");
+        f.reader->restart();wait([&]{return f.snapshot().waiting_gate;},"explicit puzzle prerequisite stops the reader without a global compiler flag");
+        f.reader->seek_seconds(60);check(!f.snapshot().finished&&f.snapshot().segments[f.snapshot().index].block==1,
+            "Seeking bypassed an explicit puzzle prerequisite");
+        f.run_program(1,true);
+        if(!same_page)f.page(target_page);
+        const auto revealed=f.snapshot();
+        check(std::ranges::any_of(revealed.segments,[&](const auto& part){return part.block==target_block&&part.feedback&&part.correct;}),
+            "Completing the prerequisite lost the restored puzzle feedback");
+        check(edit_text(child(f.view,1002+static_cast<int>(target_block)*100))=="<<"
+            &&response_preserved(),
+            "Revealing a protected puzzle lost or reevaluated its answer");
+        if(!same_page)check(revealed.key==old.key&&revealed.index==static_cast<std::size_t>(old_at)&&revealed.offset==231&&!revealed.playing,
+            "The exact old puzzle bookmark did not return after its prerequisite was completed");
+        if(!same_page)f.page(0);f.reader->pause();SendMessageW(child(f.view,1112),BM_CLICK,0,0);f.ready();
+        check(response_preserved()
+            &&std::ranges::none_of(f.snapshot().segments,[&](const auto& part){return part.source==puzzle.question||part.source==puzzle.explanation;}),
+            "Resetting the compiler erased the puzzle response or exposed locked narration");
+        if(!same_page)check(!navigate_lesson_view(f.view,target_page),"Reset allowed a historical later puzzle to bypass its prerequisite");
+        std::cout<<"PASS real reader protected puzzle "<<(same_page?"same page":"later bookmark")
+            <<": old answer and three positions preserved, no hidden script, prerequisite gate, restore and Reset\n";
+    }
+}
+
+void independent_feedback_does_not_complete_a_pending_compiler(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    auto lesson=compiler_model(false);lesson.id="qa_reader_independent_feedback";
+    lesson.pages.front().blocks.resize(2);
+    curriculum::Block puzzle;puzzle.type=curriculum::BlockType::fill_code;puzzle.stable_id="protected";
+    puzzle.question="Recupera el programa construido.";puzzle.code="std::cout ___ \"Bien\";";puzzle.answers={"<<"};puzzle.address={0,2,{},{}};
+    lesson.pages.front().blocks.push_back(puzzle);
+    puzzle.stable_id="independent";puzzle.address.block=3;puzzle.question="Completa el símbolo independiente.";
+    puzzle.explanation="El símbolo conserva la salida del programa. Esta respuesta no resuelve el compilador pendiente.";
+    puzzle.review_feedback="Revisa el símbolo. Conserva los dos signos.";lesson.pages.front().blocks.push_back(puzzle);
+    lesson.state_layout.version=1;lesson.state_layout.locale="es";
+    lesson.state_layout.lineage=state::sha256(lesson.id);lesson.state_layout.legacy_lineage=lesson.state_layout.lineage;
+    curriculum::StatePage page;page.id=lesson.pages[0].stable_id;
+    for(const auto& block:lesson.pages[0].blocks)page.blocks.push_back(block.stable_id);
+    lesson.state_layout.origin.push_back(page);lesson.state_layout.current.push_back(std::move(page));
+    lesson.activity_after.push_back({"protected",{lesson.pages[0].blocks[1].stable_id}});
+    Fixture f(backend,false,true,true,"es",lesson);
+    const auto fresh_feedback=[&](bool correct){const auto snapshot=f.snapshot();
+        check(snapshot.segments[snapshot.index].feedback&&snapshot.segments[snapshot.index].block==3
+            &&snapshot.segments[snapshot.index].correct==correct&&!snapshot.playing&&!snapshot.allocated,
+            "A pending compiler swallowed fresh feedback from an independent puzzle or overrode pause");};
+    f.answer(">>",3);fresh_feedback(false);f.reader->toggle();
+    wait([&]{const auto snapshot=f.snapshot();return !snapshot.playing&&!snapshot.allocated&&snapshot.segments[snapshot.index].feedback
+        &&snapshot.segments[snapshot.index].block==3&&snapshot.offset>=snapshot.segments[snapshot.index].duration_ms-1;},
+        "the independent incorrect guide is heard completely");
+    check(!f.snapshot().finished,"The independent incorrect guide completed a pending compiler page");
+    f.answer("<<",3);fresh_feedback(true);f.reader->toggle();
+    wait([&]{const auto snapshot=f.snapshot();return !snapshot.playing&&!snapshot.allocated&&snapshot.waiting_gate;},
+        "the independent correct feedback is heard completely and stops at the compiler requirement");
+    const auto complete=f.snapshot();
+    check(!complete.finished&&complete.index+1==complete.segments.size()&&complete.segments[complete.index].feedback
+        &&complete.segments[complete.index].correct&&complete.segments[complete.index].block==3
+        &&complete.offset>=complete.segments[complete.index].duration_ms-1&&!lesson_page_state(f.view).can_next,
+        "Correct feedback was cut short or falsely finished a page with a required compiler pending");
+    check(std::ranges::none_of(complete.segments,[](const auto& part){return part.block==2;}),
+        "Independent feedback exposed the protected puzzle");
+    f.run_program(1,true);check(std::ranges::any_of(f.snapshot().segments,[](const auto& part){return part.block==2;}),
+        "Completing the compiler failed to reveal its own protected puzzle");
+    std::cout<<"PASS independent real feedback: complete incorrect/correct explanations, manual pause and no false page completion across a required compiler\n";
+}
+}
+
+int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
+    const bool dependencies_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
+    if(argc>1&&!stderr_only&&!dependencies_only)return 2;
+    std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
+        runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
+        dependent_puzzle_reader_bookmarks(backend);
+        independent_feedback_does_not_complete_a_pending_compiler(backend);
         {
             Fixture f(backend,true);KeyboardStateScope keyboard;ReaderCommandProbe probe(f.reader->bar());
             const auto edit=child(f.view,1102),play=GetDlgItem(f.reader->bar(),6504);SetFocus(edit);

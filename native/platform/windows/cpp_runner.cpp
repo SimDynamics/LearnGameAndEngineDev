@@ -524,7 +524,10 @@ curriculum::OutputEvaluation evaluate_cpp_output_check(const curriculum::OutputC
     }
     if (!changed) return exact;
     const auto native = curriculum::evaluate_output_check(native_check,execution,current_revision);
-    return native.verdict == curriculum::OutputVerdict::correct || exact.feedback.empty() ? native : exact;
+    // A native CRLF spelling may satisfy stdout while the additional stderr
+    // objective is still pending. Preserve that partial result and its guide.
+    return native.verdict == curriculum::OutputVerdict::correct ||
+        (native.stdout_correct && !exact.stdout_correct) || exact.feedback.empty() ? native : exact;
 }
 
 CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){

@@ -204,6 +204,100 @@ void retirement_contract_tests(const Lesson& first) {
     check(useful == 8,"The eight useful U1 compiler practices were not preserved");
     std::cout << "Retired U1 compiler contracts, original slots, active bookmarks and eight useful editors: PASS\n";
 }
+void standard_error_objective_tests(const Lesson& real_lesson) {
+    using lgaed::windows::parse_lesson_json;
+    using winrt::Windows::Data::Json::JsonObject;
+    using winrt::Windows::Data::Json::JsonValue;
+    constexpr auto source = R"json({"id":"stderr_objective","title":"Runtime channels","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}","outputCheck":{"cases":[{"standardInput":"","outputs":["Indice invalido:Fin"],"explanation":"Both objectives checked.","standardError":"nonBlank"}]}}]}]})json";
+    const auto model = parse_lesson_json(source);
+    const auto& block = model.pages.front().blocks.front();
+    const auto& goal = *block.output_check;
+    check(goal.cases.front().standard_error == StandardErrorExpectation::non_blank, "Runtime stderr requirement was not loaded");
+    FreshExecution execution{7,true,true,0,"","Indice invalido:Fin",{}};
+    auto result = evaluate_output_check(goal,execution,7);
+    check(result.verdict == OutputVerdict::incorrect && result.stdout_correct && !result.stderr_correct &&
+        !result.feedback.empty() && result.feedback != goal.cases.front().explanation,
+        "Stdout-only success falsely completed or revealed the complete stderr objective");
+    for (const auto whitespace : {"", " ", "\t\r\n\v\f "}) {
+        execution.standard_error = whitespace;
+        result = evaluate_output_check(goal,execution,7);
+        check(result.verdict == OutputVerdict::incorrect && result.stdout_correct && !result.stderr_correct,
+            "Whitespace-only runtime stderr counted as a diagnostic");
+    }
+    for (const auto diagnostic : {"invalid vector subscript", "vector::_M_range_check: __n (which is 5)", " \tMSVC runtime diagnostic\r\n"}) {
+        execution.standard_error = diagnostic;
+        result = evaluate_output_check(goal,execution,7);
+        check(result.verdict == OutputVerdict::correct && result.stdout_correct && result.stderr_correct &&
+            result.feedback == goal.cases.front().explanation,
+            "A library-specific runtime diagnostic was rejected or its complete feedback was lost");
+    }
+    execution.standard_output += '\n';
+    result = evaluate_output_check(goal,execution,7);
+    check(result.verdict == OutputVerdict::incorrect && !result.stdout_correct && result.stderr_correct,
+        "Runtime stderr hid a significant stdout character difference");
+    execution.standard_output = "Indice invalido:Fin";
+    for (const auto revision : {6u,8u})
+        check(evaluate_output_check(goal,execution,revision).verdict == OutputVerdict::unavailable,
+            "A stale runtime diagnostic was reused after editing");
+    execution.compilation_succeeded = false;
+    check(evaluate_output_check(goal,execution,7).verdict == OutputVerdict::unavailable,
+        "Build stderr was treated as a successful runtime diagnostic");
+    execution.compilation_succeeded = true; execution.execution_succeeded = false;
+    check(evaluate_output_check(goal,execution,7).verdict == OutputVerdict::unavailable,
+        "A failed runtime was credited for its stderr");
+    execution.execution_succeeded = true; execution.exit_code = 1;
+    check(evaluate_output_check(goal,execution,7).verdict == OutputVerdict::unavailable,
+        "A nonzero exit status was credited for its stderr");
+    execution.exit_code = 0;
+    auto legacy = goal; legacy.cases.front().standard_error = StandardErrorExpectation::ignored;
+    execution.standard_error.clear();
+    check(evaluate_output_check(legacy,execution,7).verdict == OutputVerdict::correct,
+        "An absent stderr requirement changed the historical stdout contract");
+    for (const auto invalid : {R"("nonEmpty")", R"("ignored")", R"("nonblank")", R"("")", "null", "true", "42", "[]", "{}"}) {
+        auto corrupt = std::string(source); replace_once(corrupt,R"("nonBlank")",invalid);
+        rejects([&] { (void)parse_lesson_json(corrupt); }, "An unsupported runtime stderr requirement was accepted");
+    }
+    const auto targeted = parse_lesson_json(R"json({"id":"targeted_stderr","title":"Targeted channels","pages":[{"blocks":[{"type":"cpp_compiler","projectFiles":[{"path":"main.cpp","initialCode":"int main(){}"},{"path":"CMakeLists.txt","initialCode":"add_executable(first main.cpp)\nadd_executable(second main.cpp)"}],"cmake":{"target":"first"},"outputCheck":{"cases":[{"standardInput":"","outputs":["same"],"target":"first"},{"standardInput":"","outputs":["same"],"target":"second","standardError":"nonBlank"}]}}]}]})json");
+    execution.standard_output = "same"; execution.executable = "first";
+    const auto& targeted_goal = *targeted.pages.front().blocks.front().output_check;
+    check(evaluate_output_check(targeted_goal,execution,7).verdict == OutputVerdict::correct,
+        "A different CMake target inherited the stderr objective");
+    execution.executable = "second";
+    check(evaluate_output_check(targeted_goal,execution,7).verdict == OutputVerdict::incorrect,
+        "The target-specific stderr objective was ignored");
+    execution.standard_error = "diagnostic";
+    check(evaluate_output_check(targeted_goal,execution,7).verdict == OutputVerdict::correct,
+        "The selected CMake target could not complete its own stderr objective");
+    execution.executable = "third";
+    check(evaluate_output_check(targeted_goal,execution,7).verdict == OutputVerdict::unavailable,
+        "A diagnostic from an unauthored target completed another objective");
+
+    // Adding the new criterion preserves every original slot/draft signature;
+    // only native completion evidence must be obtained again for the full goal.
+    auto upgraded_root = JsonObject::Parse(winrt::to_hstring(real_lesson.raw_json));
+    std::optional<StatePosition> location;
+    for (std::size_t p = 0; p < real_lesson.pages.size() && !location; ++p)
+        for (std::size_t b = 0; b < real_lesson.pages[p].blocks.size(); ++b)
+            if (real_lesson.pages[p].blocks[b].output_check) { location = StatePosition{p,b}; break; }
+    check(location.has_value(), "The historical state fixture lost its compiler goal");
+    upgraded_root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(location->page)).GetObject().GetNamedArray(L"blocks")
+        .GetAt(static_cast<unsigned>(location->block)).GetObject().GetNamedObject(L"outputCheck").GetNamedArray(L"cases")
+        .GetAt(0).GetObject().Insert(L"standardError",JsonValue::CreateStringValue(L"nonBlank"));
+    const auto upgraded = parse_lesson_json(winrt::to_string(upgraded_root.Stringify()));
+    const auto& before = real_lesson.pages[location->page].blocks[location->block];
+    const auto& after = upgraded.pages[location->page].blocks[location->block];
+    check(real_lesson.state_layout.lineage == upgraded.state_layout.lineage &&
+        real_lesson.state_layout.signatures == upgraded.state_layout.signatures &&
+        exercise_key(real_lesson,before) == exercise_key(upgraded,after) &&
+        draft_key("programming",real_lesson,before) == draft_key("programming",upgraded,after),
+        "Adding runtime stderr changed historical state addresses or drafts");
+    check(reference_objective_frame(real_lesson,before) != reference_objective_frame(upgraded,after),
+        "An old stdout proof could be inherited by the new complete objective");
+    auto restored = after; restored.output_check->cases.front().standard_error = StandardErrorExpectation::ignored;
+    check(reference_objective_frame(real_lesson,before) == reference_objective_frame(upgraded,restored),
+        "Stdout-only objective framing changed despite the absent stderr requirement");
+    std::cout << "Runtime stderr objectives, partial stdout, exact output, target/revision ownership and stable slots: PASS\n";
+}
 }
 int main() {
     try {
@@ -213,6 +307,7 @@ int main() {
         const auto lesson = lgaed::windows::load_lesson(path);
         narration_metadata_tests(lesson);
         retirement_contract_tests(lesson);
+        standard_error_objective_tests(lesson);
         {
             const auto reviewed=parse_lesson_json(R"({"id":"reviews","title":"Reviews","pages":[{"blocks":[{"type":"multiple_choice","question":"Q","options":["A","B","C"],"correctIndex":1,"explanation":"Success","reviewFeedback":["Review A","Review B","Review C"]}]}]})");
             const auto& choice=reviewed.pages[0].blocks[0];
@@ -287,6 +382,43 @@ int main() {
               draft_key("programming",dependent,dependent.pages[4].blocks[6]) == draft_key("programming",lesson,modification) &&
               reference_activity(dependent,dependent.pages[5].blocks[0]) == StatePosition{4,6},
             "Activity-only metadata changed state fingerprints, historical draft owners or integrated references");
+        const auto protected_puzzle = parse_lesson_json(dependent_json(
+            R"([{"activity":"block_0004_0004","requires":["ejecucion_original_editor","block_0004_0002"]}])"));
+        const auto& protected_block = protected_puzzle.pages[4].blocks[7];
+        check(protected_block.type == BlockType::multiple_choice &&
+            activity_prerequisites(protected_puzzle,protected_block) == std::vector<StatePosition>{{4,3},{4,6}} &&
+            protected_block.question == lesson.pages[4].blocks[7].question &&
+            protected_block.options == lesson.pages[4].blocks[7].options &&
+            protected_block.correct_index == lesson.pages[4].blocks[7].correct_index &&
+            exercise_key(protected_puzzle,protected_block) == exercise_key(lesson,lesson.pages[4].blocks[7]) &&
+            protected_puzzle.state_layout.signatures == lesson.state_layout.signatures,
+            "A protected puzzle lost its prerequisite ownership, complete answer or original state slot");
+        for (const auto type : {BlockType::cpp_compiler,BlockType::multiple_choice,BlockType::output_prediction,
+                BlockType::fill_code,BlockType::order_code,BlockType::inline_fill_code,BlockType::drag_fill_code,BlockType::math_puzzle}) {
+            auto typed = protected_puzzle; typed.pages[4].blocks[7].type = type;
+            validate_activity_relationships(typed);
+        }
+        for (const auto type : {BlockType::heading,BlockType::paragraph,BlockType::note,BlockType::code}) {
+            auto typed = protected_puzzle; typed.pages[4].blocks[7].type = type;
+            rejects([&] { validate_activity_relationships(typed); }, "Presentation-only content was accepted as a dependent activity");
+        }
+        check(!compiler_is_puzzle_prerequisite(dependent,dependent.pages[4].blocks[3]) &&
+            !compiler_is_puzzle_prerequisite(dependent,dependent.pages[4].blocks[6]),
+            "An isolated legacy compiler chain became a mandatory puzzle prerequisite");
+        const auto transitive_puzzle = parse_lesson_json(dependent_json(
+            R"([{"activity":"block_0004_0002","requires":["ejecucion_original_editor"]},{"activity":"block_0004_0004","requires":["block_0004_0002"]}])"));
+        check(!transitive_puzzle.compiler_puzzles_required &&
+            compiler_is_puzzle_prerequisite(transitive_puzzle,transitive_puzzle.pages[4].blocks[3]) &&
+            compiler_is_puzzle_prerequisite(transitive_puzzle,transitive_puzzle.pages[4].blocks[6]) &&
+            !compiler_is_puzzle_prerequisite(transitive_puzzle,transitive_puzzle.pages[5].blocks[6]) &&
+            !compiler_is_puzzle_prerequisite(transitive_puzzle,transitive_puzzle.pages[4].blocks[7]),
+            "A puzzle's direct/transitive source gates were lost, widened to an unrelated editor or applied to the puzzle itself");
+        const auto projected_puzzle = lgaed::windows::parse_lesson_progress_metadata(protected_puzzle.raw_json);
+        check(projected_puzzle.activity_after.size() == 1 &&
+            projected_puzzle.pages[4].blocks[3].output_check.has_value() &&
+            projected_puzzle.pages[4].blocks[6].output_check.has_value() &&
+            activity_prerequisites(projected_puzzle,projected_puzzle.pages[4].blocks[7]) == std::vector<StatePosition>{{4,3},{4,6}},
+            "Catalog projection lost puzzle prerequisites or verifiable compiler goals without mandatory mode");
         auto compiler_without_check = dependent;
         compiler_without_check.pages[5].blocks[6].output_check.reset();
         validate_activity_relationships(compiler_without_check);
@@ -299,7 +431,7 @@ int main() {
                 R"({"activity":"block_0004_0002","requires":["ejecucion_original_editor"]})",
                 R"([{"activity":"missing","requires":["ejecucion_original_editor"]}])",
                 R"([{"activity":"block_0004_0002","requires":["missing"]}])",
-                R"([{"activity":"block_0004_0004","requires":["ejecucion_original_editor"]}])",
+                R"([{"activity":"modificar_mensaje_titulo","requires":["ejecucion_original_editor"]}])",
                 R"([{"activity":"block_0004_0002","requires":["block_0004_0004"]}])",
                 R"([{"activity":"block_0004_0002","requires":["block_0004_0002"]}])",
                 R"([{"activity":"ejecucion_original_editor","requires":["block_0004_0002"]}])",
@@ -314,7 +446,11 @@ int main() {
                 R"([{"requires":["ejecucion_original_editor"]}])",
                 R"([{"activity":"block_0004_0002","requires":["ejecucion_original_editor"],"unknown":true}])",
                 R"([{"activity":"ejecucion_original_editor","requires":["block_0004_0002"]},{"activity":"block_0004_0002","requires":["ejecucion_original_editor"]}])"})
+        {
             rejects([&] { (void)parse_lesson_json(dependent_json(invalid_relation)); }, "Malformed or unsafe activity dependency accepted");
+            rejects([&] { (void)lgaed::windows::parse_lesson_progress_metadata(dependent_json(invalid_relation)); },
+                "Catalog projection accepted a malformed or unsafe activity dependency");
+        }
         check(!original.standard_input && !modification.standard_input, "Input invented for a lesson that does not require it");
         check(evaluate_text_answer(prediction, "Zona inicial").correct, "Exact authored prediction rejected");
         for (const auto value : {"\"Zona inicial\"", "Zona inicial ", "Zona inicial\n", " Zona inicial", "Zona  inicial"})

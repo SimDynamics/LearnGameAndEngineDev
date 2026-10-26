@@ -194,6 +194,65 @@ un respaldo histórico. Después de incorporarla se ejecutan `check`, `check-tre
 y el validador contra el mismo SHA. Las puertas no acreditan ejecución Android.
 No se deben generar archivos de traducción cuando no se esté traduciendo.
 
+## Actividades dependientes en Windows
+
+La propiedad raíz opcional `activityAfter` puede proteger un compilador o un
+puzzle que recupera la implementación de una construcción anterior. Usa las
+identidades estables de `stateLayout.current`, que pueden ser distintas del
+campo `id` curricular del puzzle:
+
+```json
+"activityAfter": [
+  {
+    "activity": "puzzle_de_recuperacion",
+    "requires": ["constructor_previo"]
+  }
+]
+```
+
+El ejemplo describe la relación, sin añadir esas identidades a ninguna lección.
+`activity` admite `cpp_compiler`, `multiple_choice`, `fill_code`,
+`output_prediction`, `order_code`, `drag_fill_code`, `inline_fill_code` o
+`math_puzzle`. Cada identidad de `requires` debe ser un `cpp_compiler` con
+`outputCheck` y debe estar antes del destino en el orden visual vigente, en la
+misma página o en una anterior. Se necesitan todos los requisitos declarados.
+No se admiten identidades desconocidas o repetidas, listas vacías, relaciones
+consigo mismas ni dependencias hacia atrás que formen ciclos. Un puzzle no
+puede actuar como requisito bajo este contrato.
+
+Antes de cumplir el requisito, Windows protege el contenido y las acciones del
+destino, incluidos su código, narración y accesibilidad. El selector y la
+restauración de un marcador posterior respetan ese requisito y permiten volver
+a la construcción pendiente. Al resolverla reaparece el puzzle original con
+su respuesta e intento guardados; la relación no responde el puzzle ni concede
+otro acierto. Un antiguo `correct=true`, una predicción o visitar una página no
+acreditan la construcción. Un logro completo y comprobado del compilador sigue
+las reglas de Windows: editar o recompilar no lo revoca; su reinicio explícito
+vuelve a dejar pendiente el requisito y conserva los datos del destino.
+
+Estas relaciones funcionan también sin `compilerPuzzlesRequired`: expresan la
+dependencia pedagógica concreta, no la obligatoriedad global de todos los
+compiladores de la lección. Si el destino es un puzzle, sus compiladores
+requeridos directos y transitivos son puntos de detención del lector y del
+avance hasta acreditar sus objetivos, aunque se omita esa propiedad. Una cadena
+aislada de compilador a compilador conserva su comportamiento anterior. El
+catálogo carga y valida las fuentes y la disponibilidad de estas relaciones,
+manteniendo los conteos y respuestas históricos: un progreso antiguo no autoriza
+mostrar el contenido protegido. `referenceAfter` conserva su contrato anterior:
+sólo conecta un compilador comprobable con bloques posteriores `heading`,
+`paragraph`, `note` o `code`; no se utiliza para esconder puzzles. Los
+compiladores dependientes anteriores continúan usando la misma sintaxis.
+
+Añadir o revisar `activityAfter` no modifica los bloques, respuestas, borradores,
+origen, familia, direcciones ni pruebas editoriales. Las puertas de transición
+siguen protegiendo todos esos datos. Las relaciones se declaran sobre el orden
+visual validado después de mover un bloque, nunca sobre su dirección histórica
+de almacenamiento. Las presentaciones archivadas en `retirementHistory`
+conservan sus relaciones publicadas exactas y no se reescriben al proteger un
+nuevo destino activo. Work incorpora las relaciones españolas en los JSON y
+realiza su aceptación curricular; no se sincronizan traducciones ni se añaden
+dependencias automáticamente a los assets.
+
 ## Retiro compatible en Windows
 
 `stateLayout.retired` permite retirar del recorrido español un compilador

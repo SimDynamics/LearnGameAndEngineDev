@@ -43,6 +43,36 @@ def relations(document):
     return document
 
 
+def puzzle_examples():
+    """Real answer payload shapes, independent of the relationship metadata."""
+    return [
+        {"type": "multiple_choice", "id": "choice", "question": "Elige el valor.",
+         "options": ["2", "3"], "correctIndex": 0},
+        {"type": "fill_code", "id": "fill", "question": "Completa.",
+         "language": "cpp", "code": "int x = [];", "answers": ["2"]},
+        {"type": "output_prediction", "id": "prediction", "question": "Predice.",
+         "language": "cpp", "code": "std::cout << 2;", "answers": ["2"]},
+        {"type": "order_code", "id": "order", "question": "Ordena.", "language": "cpp",
+         "fragments": ["int x = 2;", "std::cout << x;"], "correctOrder": [0, 1]},
+        {"type": "drag_fill_code", "id": "drag", "question": "Completa.", "language": "cpp",
+         "template": "int x = [];", "choices": ["2", "3"], "correctOrder": [0]},
+        {"type": "inline_fill_code", "id": "inline", "question": "Completa.", "language": "cpp",
+         "template": "int x = [];", "answers": ["2"]},
+        {"type": "math_puzzle", "id": "math", "question": "Relaciona los valores.",
+         "responses": [{"id": "pair", "type": "math_matching_drag",
+                        "sources": [{"id": "a", "text": "2"}],
+                        "targets": [{"id": "b", "text": "2"}],
+                        "validator": {"type": "matching", "expected": {"a": "b"}}}]},
+    ]
+
+
+def prepared_with_puzzle(puzzle, version):
+    document = source()
+    document["pages"][1]["blocks"][3] = deepcopy(puzzle)
+    return (layout.prepare(document) if version == 1 else
+            layout.prepare_v2(document, "es", {"es": document}))
+
+
 class PresentationRelationshipContractTest(unittest.TestCase):
     def test_valid_optional_links_preserve_all_blocks_and_storage_addresses(self):
         for version in (1, 2):
@@ -151,8 +181,7 @@ class PresentationRelationshipContractTest(unittest.TestCase):
         with self.assertRaisesRegex(layout.LayoutError, "authored output check"):
             layout.validate(document)
         for activity, prerequisite in (("block_0000_0002", "block_0000_0000"),
-                                       ("block_0001_0000", "block_0000_0002"),
-                                       ("block_0001_0003", "block_0000_0003")):
+                                       ("block_0001_0000", "block_0000_0002")):
             document = prepared()
             document["activityAfter"] = [{"activity": activity, "requires": [prerequisite]}]
             with self.assertRaises(layout.LayoutError):
@@ -161,6 +190,68 @@ class PresentationRelationshipContractTest(unittest.TestCase):
         document["activityAfter"] = [{"activity": "block_0000_0003", "requires": ["block_0001_0000"]}]
         with self.assertRaisesRegex(layout.LayoutError, "authored output check"):
             layout.validate(document)
+
+    def test_seven_puzzle_targets_preserve_responses_addresses_and_language_history(self):
+        self.assertEqual({puzzle["type"] for puzzle in puzzle_examples()},
+                         layout.DEPENDENT_ACTIVITY_TYPES - {"cpp_compiler"})
+        for version in (1, 2):
+            for puzzle in puzzle_examples():
+                with self.subTest(version=version, type=puzzle["type"]):
+                    previous = prepared_with_puzzle(puzzle, version)
+                    current = deepcopy(previous)
+                    current["activityAfter"] = [{"activity": "block_0001_0003",
+                                                 "requires": ["block_0000_0000", "block_0000_0003"]}]
+                    original = deepcopy(current)
+                    layout.validate_transition(previous, current)
+                    self.assertEqual(layout.validate(previous), layout.validate(current))
+                    self.assertEqual(previous["pages"], current["pages"])
+                    self.assertEqual(previous["stateLayout"], current["stateLayout"])
+                    self.assertEqual(layout.lineage(previous), layout.lineage(current))
+                    self.assertEqual(original, current)
+                    programming.ERRORS.clear()
+                    programming.validate_lesson_state_contract(current, "dependent puzzle")
+                    self.assertEqual([], programming.ERRORS)
+
+    def test_seven_puzzle_targets_can_move_next_to_their_prerequisite_without_new_storage(self):
+        for version in (1, 2):
+            for puzzle in puzzle_examples():
+                with self.subTest(version=version, type=puzzle["type"]):
+                    previous = prepared_with_puzzle(puzzle, version)
+                    plan = deepcopy(previous["stateLayout"]["current"])
+                    plan[1]["blocks"].remove("block_0001_0003")
+                    plan[0]["blocks"].insert(1, "block_0001_0003")
+                    moved = layout.reorder(previous, plan)
+                    moved["activityAfter"] = [{"activity": "block_0001_0003",
+                                               "requires": ["block_0000_0000"]}]
+                    layout.validate_transition(previous, moved)
+                    self.assertEqual((1, 3), layout.validate(moved)[0, 1])
+                    self.assertEqual(puzzle, moved["pages"][0]["blocks"][1])
+                    self.assertEqual(previous["stateLayout"]["origin"], moved["stateLayout"]["origin"])
+
+    def test_puzzles_cannot_become_prerequisites_or_be_hidden_as_reference_content(self):
+        for puzzle in puzzle_examples():
+            for field, relationship in (
+                    ("activityAfter", {"activity": "block_0001_0000", "requires": ["block_0001_0003"]}),
+                    ("referenceAfter", {"activity": "block_0000_0000", "blocks": ["block_0001_0003"]}),
+                    ("referenceAfter", {"activity": "block_0001_0003", "blocks": ["block_0001_0001"]})):
+                document = prepared_with_puzzle(puzzle, 2)
+                document[field] = [relationship]
+                with self.subTest(type=puzzle["type"], field=field, relationship=relationship), \
+                        self.assertRaises(layout.LayoutError):
+                    layout.validate(document)
+
+    def test_relations_do_not_authorize_changing_existing_puzzle_answers_or_code(self):
+        for version in (1, 2):
+            for puzzle in puzzle_examples():
+                previous = prepared_with_puzzle(puzzle, version)
+                current = deepcopy(previous)
+                current["activityAfter"] = [{"activity": "block_0001_0003", "requires": ["block_0000_0000"]}]
+                block = current["pages"][1]["blocks"][3]
+                field = next(field for field in ("correctIndex", "answers", "correctOrder", "responses")
+                             if field in block)
+                block[field] = 1 if field == "correctIndex" else ["changed answer"]
+                with self.subTest(version=version, type=puzzle["type"]), self.assertRaises(layout.LayoutError):
+                    layout.validate_transition(previous, current)
 
     def test_prerequisites_must_precede_the_target_and_references_must_follow(self):
         document = prepared()
