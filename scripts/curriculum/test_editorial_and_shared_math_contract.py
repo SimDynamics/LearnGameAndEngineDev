@@ -111,7 +111,7 @@ class EditorialAndSharedMathContractTest(unittest.TestCase):
     def test_current_eight_changes_pass_without_replacing_the_reference_commit(self):
         cases = self.editorial_cases("879f5ce", "14add7ae10ddac9e23d262c69b0fcb77d89272d0")
         self.assertEqual(8, len(cases))
-        self.assertEqual(27, len(contract.APPROVED_EDITORIAL_REVISIONS))
+        self.assertEqual(29, len(contract.APPROVED_EDITORIAL_REVISIONS))
         for location, (old, new) in cases.items():
             with self.subTest(location=location):
                 differences = {key for key in old.keys() | new.keys() if old.get(key) != new.get(key)}
@@ -237,6 +237,79 @@ class EditorialAndSharedMathContractTest(unittest.TestCase):
             contract.ERRORS.clear()
             contract.validate_math_tolerance({"tolerance": value}, "fixture")
             self.assertTrue(contract.ERRORS)
+
+
+class ReviewedV2EditorialContractTest(unittest.TestCase):
+    """The two reviewed v2 edits keep their original exercise and provenance."""
+
+    cases = (
+        ("repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json", 10, 6, "question",
+         "Ahora las órdenes cambian entre vueltas: 1, 2 y 3. Predice el resumen sin ejecutar primero; explica qué orden aporta a cada contador.",
+         "Ahora las órdenes cambian entre vueltas: 1, 2 y 3. Predice el resumen sin ejecutar primero.",
+         ["1:2:1"]),
+        ("colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json", 8, 3, "explanation",
+         "Copiar el vector crea otra colección con copias de sus elementos. Modificar la copia no altera el origen.",
+         "Copiar el vector crea otra colección con copias de sus elementos (Köppe et al., 2023). Modificar la copia no altera el origen.",
+         ["3 5"]),
+    )
+
+    def fixtures(self):
+        for revision in ("329f0e4", "d24f7df"):
+            for lesson, page, block, field, before_text, after_text, answers in self.cases:
+                previous = historical_lesson(revision, lesson)
+                current = contract.load(contract.CONTENT / lesson)
+                # Exercise approvals use immutable coordinates, even when the
+                # visible activity has moved to accommodate the new puzzle.
+                aligned = state_layout.align_for_previous_validation(previous, current)
+                pn, bn = next(position for position, origin in state_layout.validate(previous).items()
+                              if origin == (page - 1, block - 1))
+                old = previous["pages"][pn]["blocks"][bn]
+                new = aligned["pages"][pn]["blocks"][bn]
+                self.assertEqual(before_text, old[field])
+                self.assertEqual(after_text, new[field])
+                self.assertEqual(answers, old["answers"])
+                self.assertEqual(answers, new["answers"])
+                yield revision, (lesson, page, block), field, previous, current, old, new
+
+    def preserved(self, location, old, new):
+        lesson, page, block = location
+        relative = (contract.CONTENT / lesson).relative_to(contract.ROOT).as_posix()
+        return contract.preserves_previous_exercise(relative, page - 1, block - 1, old, new)
+
+    def test_both_reviewed_edits_pass_with_their_real_published_v2_proofs(self):
+        for revision, location, field, previous, current, old, new in self.fixtures():
+            with self.subTest(revision=revision, location=location):
+                self.assertEqual(2, current["stateLayout"]["version"])
+                state_layout.validate_transition(previous, current)
+                self.assertEqual({field}, {key for key in old.keys() | new.keys()
+                                          if old.get(key) != new.get(key)})
+                self.assertTrue(self.preserved(location, old, new))
+
+    def test_exact_text_approval_cannot_change_any_other_exercise_field_or_location(self):
+        for revision, location, field, _, _, old, new in self.fixtures():
+            for key in new.keys() - {"reviewFeedback"}:
+                changed = copy.deepcopy(new)
+                changed[key] = "UNAPPROVED CHANGE"
+                with self.subTest(revision=revision, location=location, key=key):
+                    self.assertFalse(self.preserved(location, old, changed))
+            self.assertFalse(self.preserved(location, old, dict(new, addedTechnicalField="UNAPPROVED")))
+            self.assertFalse(self.preserved(location, dict(old, **{field: old[field] + " UNAPPROVED"}), new))
+            self.assertFalse(self.preserved((location[0], location[1], location[2] + 1), old, new))
+            self.assertFalse(self.preserved((location[0], location[1] + 1, location[2]), old, new))
+
+    def test_approved_wording_still_requires_the_exact_published_origin_and_editorial_proof(self):
+        for revision, location, _, previous, current, _, _ in self.fixtures():
+            for target in ("origin", "family", "editorial"):
+                changed = copy.deepcopy(current)
+                if target == "origin":
+                    changed["stateLayout"]["origin"][0]["blocks"][0]["sha256"] = "0" * 64
+                elif target == "family":
+                    changed["stateLayout"]["family"]["es"]["sha256"] = "0" * 64
+                else:
+                    changed["stateLayout"]["editorial"] = []
+                with self.subTest(revision=revision, location=location, target=target):
+                    with self.assertRaises(state_layout.LayoutError):
+                        state_layout.align_for_previous_validation(previous, changed)
 
 
 if __name__ == "__main__":

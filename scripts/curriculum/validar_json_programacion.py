@@ -198,6 +198,15 @@ APPROVED_EDITORIAL_REVISIONS = {
     ('programas_y_ejecucion/lesson_texto_secuencia_y_formato.json', 7, 4, 'output_prediction', 'question'): (
         'ade2fccf6105bfd136127f960de80ee2ac9ad02f3d6b0c3630e20c0537257950',
         '7f48db3071af57952889a2c2680f14dba906231d495638855feb71c4bf23c53a'),  # 879f5ce -> HEAD
+    # CPP_VALIDACION_EDITORIAL_PREGUNTAS_V2: revisiones españolas revisadas
+    # frente a 329f0e4 y d24f7df. El mapa v2 verifica por separado su origen,
+    # prueba editorial y contrato; sólo se autorizan estos dos textos exactos.
+    ('repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json', 10, 6, 'output_prediction', 'question'): (
+        'a54834fb2cefc6b3f3946b7e592175fa3164554ec52ea99ba7ac89f6c97914b2',
+        '5a118dbec6bb4eae859123e8b7885c3b62ba8f5c408666e6244d7f36bbaee468'),
+    ('colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json', 8, 3, 'output_prediction', 'explanation'): (
+        'a3d1d92f090b19d0c97d7bcc0bd7a33bef8cf583d0617a5999c02aa165370abc',
+        '926fca6af960c61774ddf1bdf6c97caa1b19cdc02b0a33a9a72aca32a64bbe74'),
 }
 
 # Reordenaciones puntuales que retiran pistas de posición, sin cambiar opciones

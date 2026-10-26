@@ -8,6 +8,8 @@ project(LearnGameAndEngineDev VERSION 0.1.0 LANGUAGES CXX RC)
 
 include(cmake/VerifyNativeToolchain.cmake)
 lgaed_verify_native_toolchain()
+include(cmake/VerifyNativeDependencies.cmake)
+lgaed_verify_native_dependencies()
 
 # These settings apply to the host, not to future student compilation activities.
 set(CMAKE_CXX_STANDARD 20)
