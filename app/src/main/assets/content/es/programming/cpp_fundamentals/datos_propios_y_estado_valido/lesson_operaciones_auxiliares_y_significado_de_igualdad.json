@@ -10,10 +10,10 @@
         },
         {
           "type": "paragraph",
-          "text": "La interfaz de Pedido ya permite consultar código, unidades y estado. Si necesitamos saber si dos pedidos tienen el mismo valor completo, podemos escribir una función libre que use esas consultas. No necesitamos abrir los miembros privados ni añadir una operación que los devuelva para modificarlos. Una interfaz pequeña debe ser suficiente para las acciones que promete.",
+          "text": "La interfaz pública de Pedido permite consultar su código, cantidad y estado. Una función auxiliar puede reunir esas consultas para responder otra pregunta sin acceder directamente a los miembros privados (Stroustrup, 2024).\n\nEn este modelo se define mismo_valor para comprobar que los tres datos coincidan. Es una función libre: se declara fuera de la clase y recibe los dos pedidos que compara. No necesita abrir la representación ni añadir una función miembro para cada consulta derivada.",
           "emphasis": [
             {
-              "text": "mismo valor completo"
+              "text": "función auxiliar"
             },
             {
               "text": "función libre"
@@ -27,7 +27,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia const evita copiar por cada consulta y expresa que la comparación no cambiará los pedidos. La conjunción exige acuerdo en todos los datos que decidimos que forman el valor."
+          "text": "Los parámetros const Pedido& reciben los pedidos por referencia, sin crear copias de esos objetos para pasarlos a la función, y no permiten modificarlos por esa vía (Stroustrup, 2024). Las consultas utilizadas están declaradas const.\n\nLa expresión une tres comparaciones mediante &&. Para este mismo_valor deben coincidir el código, las unidades y el estado. Que coincida sólo uno de ellos no basta.",
+          "emphasis": [
+            {
+              "text": "sin crear copias de esos objetos"
+            },
+            {
+              "text": "tres comparaciones"
+            }
+          ]
         }
       ]
     },
@@ -49,7 +57,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Nuestro tipo no garantiza unicidad del código entre objetos. Comparar solamente el código contesta otra pregunta y puede ser útil, pero no es la igualdad completa definida aquí. Decide el significado antes de elegir una escritura breve."
+          "text": "Este tipo no exige que el código sea único entre todos los objetos. Dos pedidos pueden conservar la misma etiqueta y tener cantidades o estados diferentes.\n\nComparar sólo codigo() responde si sus códigos coinciden. mismo_valor responde si coinciden los tres datos que aquí forman el valor completo. Es necesario decidir qué pregunta se quiere contestar antes de elegir la comparación.",
+          "emphasis": [
+            {
+              "text": "sus códigos coinciden"
+            },
+            {
+              "text": "el valor completo"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -60,7 +76,12 @@
             "Sus valores son distintos por el estado."
           ],
           "correctIndex": 2,
-          "explanation": "El estado forma parte explícita de la definición de valor."
+          "explanation": "El estado forma parte explícita de la definición de valor.",
+          "reviewFeedback": [
+            "Esta elección utiliza el código como único criterio. Recupera qué datos reúne mismo_valor en la comparación de este modelo.",
+            "Esta elección compara código y cantidad. Revisa si el estado también forma parte del valor que se definió.",
+            "Relaciona el dato de estado con las comparaciones que componen mismo_valor."
+          ]
         }
       ]
     },
@@ -72,7 +93,15 @@
         },
         {
           "type": "paragraph",
-          "text": "C++ permite definir operaciones con operadores para tipos propios. bool operator==(const Pedido& a, const Pedido& b) define cómo comparar estos dos operandos. operator== es el nombre especial de esa función; el resultado bool responde si son iguales. Conservar el significado convencional de igualdad hace la expresión a == b legible."
+          "text": "La sobrecarga de operadores permite dar a una operación conocida una definición para un tipo propio (Stroustrup, 2024). En bool operator==(const Pedido& a, const Pedido& b), operator== identifica la función que implementa la comparación y bool es su tipo de resultado.\n\nEn este ejemplo, escribir a == b utiliza esa función con los dos pedidos como operandos; su cuerpo devuelve mismo_valor(a, b) (Köppe et al., 2023). La escritura es más breve, pero conserva la regla de comparar código, unidades y estado. Definirla con el significado esperado de igualdad ayuda a leer el programa (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "sobrecarga de operadores"
+            },
+            {
+              "text": "dos pedidos como operandos"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -86,7 +115,15 @@
         },
         {
           "type": "paragraph",
-          "text": "operator!= reutiliza == y niega su resultado para que ambas operaciones tengan definiciones coherentes."
+          "text": "En la implementación mostrada, operator!= devuelve !(a == b). Reutiliza la igualdad definida y niega su resultado, de modo que las dos operaciones responden preguntas complementarias (Stroustrup, 2024).\n\nEl signo ! se aplica al resultado bool de toda la comparación entre paréntesis. La desigualdad no vuelve a inventar otro criterio, como comparar sólo los códigos.",
+          "emphasis": [
+            {
+              "text": "niega su resultado"
+            },
+            {
+              "text": "toda la comparación"
+            }
+          ]
         },
         {
           "type": "fill_code",
@@ -97,7 +134,8 @@
             "!",
             "not"
           ],
-          "explanation": "Diferentes significa que no se cumple la igualdad completa. ! y su escritura alternativa not niegan el mismo resultado bool; ambas mantienen coherencia con ==."
+          "explanation": "Diferentes significa que no se cumple la igualdad completa. ! y su escritura alternativa not niegan el mismo resultado bool; ambas mantienen coherencia con ==.",
+          "reviewFeedback": "Identifica qué resultado tiene primero la comparación entre paréntesis y qué operación lógica permite expresar su contrario. No cambies los criterios de igualdad."
         }
       ]
     },
@@ -108,6 +146,24 @@
           "text": "Lo que una sobrecarga puede y debe conservar"
         },
         {
+          "type": "paragraph",
+          "text": "Las funciones libres operator== y operator!= mostradas reciben dos parámetros. Al menos uno debe ser de una clase o enumeración, o una referencia a ellas. Pedido cumple esa condición; no se puede redefinir así la suma incorporada de dos int (Köppe et al., 2023).\n\nEstas comparaciones conservan sus dos operandos, su prioridad y su agrupación. Definir == no cambia cómo se combina con && ni permite crear símbolos nuevos (Köppe et al., 2023).\n\nElegir una operación con el significado esperado es una decisión de diseño, además de respetar la sintaxis. Que una acción pueda asociarse a un símbolo no hace que ese símbolo explique bien su propósito (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "dos parámetros",
+              "style": "bold"
+            },
+            {
+              "text": "dos operandos",
+              "style": "bold"
+            },
+            {
+              "text": "significado esperado",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "multiple_choice",
           "question": "Al definir == para Pedido, ¿qué afirmación corresponde?",
           "options": [
@@ -116,11 +172,12 @@
             "Permite redefinir la suma de dos int sin ningún tipo propio."
           ],
           "correctIndex": 1,
-          "explanation": "Las sobrecargas no crean una nueva prioridad ni permiten reemplazar operaciones únicamente entre tipos incorporados."
-        },
-        {
-          "type": "paragraph",
-          "text": "Al menos un operando de una sobrecarga debe ser de un tipo propio. No podemos inventar símbolos de operador ni cambiar cuántos operandos tiene un operador mediante esta función. Elegir una operación con el significado esperado es una decisión de diseño: que algo pueda escribirse como + no justifica llamarlo suma."
+          "explanation": "Las sobrecargas no crean una nueva prioridad ni permiten reemplazar operaciones únicamente entre tipos incorporados.",
+          "reviewFeedback": [
+            "Distingue definir el comportamiento de una operación para un tipo de cambiar las reglas sintácticas con las que se agrupan las expresiones.",
+            "Comprueba que la función corresponda al tipo propio y conserve los dos operandos de la comparación.",
+            "Revisa qué tipos deben aparecer entre los parámetros de una función libre de operador. Distingue un tipo propio de los tipos incorporados."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -131,7 +188,12 @@
             "enviar(), porque es una transición con su propio contrato."
           ],
           "correctIndex": 2,
-          "explanation": "Un nombre de acción comunica su intención y no sugiere una relación algebraica que el modelo no tiene."
+          "explanation": "Un nombre de acción comunica su intención y no sugiere una relación algebraica que el modelo no tiene.",
+          "reviewFeedback": [
+            "Esta expresión consulta una relación entre dos valores. Reconsidera qué significa aplicar una transición a un pedido y qué recibe cada operación.",
+            "Esta expresión niega una comparación entre valores. Distingue esa pregunta de una solicitud que cambia el estado de un objeto.",
+            "Relaciona el propósito de la operación con el estado anterior y el resultado que comunica su contrato."
+          ]
         }
       ]
     },
@@ -153,7 +215,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La igualdad no aporta automáticamente un orden. No podemos llamar sort sobre Pedido sin definir antes qué comparación de orden responde a nuestro problema. Tampoco necesitamos añadir orden para contar coincidencias: basta la operación que requiere esta tarea."
+          "text": "Saber qué pedidos son iguales no determina cuál debe aparecer antes. La igualdad completa de este modelo no establece un criterio de orden para sus códigos, cantidades y estados.\n\nOrdenar una colección requeriría elegir también una comparación de orden. Para contar coincidencias no hace falta añadirla: el recorrido utiliza únicamente la igualdad y conserva los elementos, incluidos los repetidos.",
+          "emphasis": [
+            {
+              "text": "no establece un criterio de orden"
+            },
+            {
+              "text": "incluidos los repetidos"
+            }
+          ]
         }
       ]
     },
@@ -165,8 +235,14 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Medida con etiqueta string y cantidad int. Construye mismo_valor y los operadores == y != para comparar ambos miembros de forma coherente. En main compara los pares A,2/A,2; A,2/A,3 y A,2/B,2, en ese orden. Por cada par muestra igualdad:desigualdad como bools 0 o 1 y termina la línea con un salto.\n\nDespués recorre {{A,2},{A,3},{A,2},{B,2}} y cuenta los registros iguales a {A,2}, sin alterar ni eliminar ninguno. Muestra Coincidencias:2, sin salto final. Pulsa Compilar, ejecutar y comprobar. Las líneas anteriores deben ser 1:0, 0:1 y 0:1. Las comparaciones y el conteo forman una sola batería.",
+          "text": "Define struct Medida con los miembros públicos etiqueta, de tipo std::string, y cantidad, de tipo int. Esta asociación no impone otra restricción sobre las cantidades. Construye mismo_valor y los operadores == y != para comparar ambos miembros de forma coherente. Las comparaciones no deben modificar las medidas.\n\nEn main compara una medida con etiqueta A y cantidad 2 con estas tres medidas, en orden: A con 2, A con 3 y B con 2. Por cada pareja muestra igualdad:desigualdad, con los resultados bool como 0 o 1. Las tres primeras líneas deben ser 1:0, 0:1 y 0:1; cada una termina con un salto.\n\nDespués recorre las medidas A con 2, A con 3, A con 2 y B con 2. Cuenta cuántas tienen el mismo valor completo que A con 2, sin modificar ni eliminar elementos. Muestra Coincidencias:2 en una cuarta línea, sin salto final. Pulsa Compilar, ejecutar y comprobar. El mismo programa reúne las tres comparaciones y el conteo.",
           "emphasis": [
+            {
+              "text": "miembros públicos"
+            },
+            {
+              "text": "ambos miembros"
+            },
             {
               "text": "Compilar, ejecutar y comprobar"
             }
@@ -189,7 +265,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Usar un struct público aquí mantiene la asociación sencilla que queremos comparar. La actividad no añade una regla adicional sobre cantidades. Tu igualdad debe conservar la diferencia entre misma etiqueta y mismo valor completo."
+          "text": "La asociación pública mantiene visibles los dos datos que se comparan. Tener la misma etiqueta no significa tener el mismo valor completo: también importa la cantidad. Una comparación observa esos datos sin cambiarlos.",
+          "emphasis": [
+            {
+              "text": "también importa la cantidad"
+            }
+          ]
         }
       ]
     },
@@ -206,7 +287,111 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: deben coincidir ambos miembros para que == sea verdadero; != es verdadero exactamente cuando == es falso; ninguna comparación cambia sus argumentos; el conteo incluye repeticiones y deja intacta la colección. Comprueba el vector vacío, uno que coincide, uno que no coincide y varios con etiquetas repetidas. Esta definición no introduce un orden de clasificación."
+          "text": "El programa anterior muestra una forma de definir las comparaciones y contar elementos de una colección. La referencia completa al final de la página añade las tres parejas de la actividad y el rótulo del conteo para producir sus cuatro líneas.\n\nEn ambas versiones, == requiere coincidencia de etiqueta y cantidad; != niega esa misma regla. El recorrido incluye las repeticiones y conserva la colección. El puzzle siguiente recupera esos criterios con un vector vacío, una medida que coincide, otra que no coincide y varias etiquetas repetidas, sin reemplazar el programa ya construido.",
+          "emphasis": [
+            {
+              "text": "La referencia completa"
+            },
+            {
+              "text": "incluye las repeticiones"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__igualdad__conteos_cuatro_vectores",
+          "prompt": "La medida buscada tiene etiqueta R y cantidad 7. Cada pareja de la tabla indica etiqueta y cantidad, en ese orden. Para cada vector, predice cuántos elementos tienen el mismo valor completo que la medida buscada. Cuenta los elementos repetidos por separado; no modifiques ni elimines datos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conteos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "vacio",
+                  "type": "numeric",
+                  "label": "Vector vacío",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "coincide",
+                  "type": "numeric",
+                  "label": "Un elemento: (R, 7)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "no_coincide",
+                  "type": "numeric",
+                  "label": "Un elemento: (R, 8)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "repetidos",
+                  "type": "numeric",
+                  "label": "Cinco elementos: (R, 7), (R, 8), (R, 7), (S, 7), (R, 7)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Vector",
+                "Coincidencias"
+              ],
+              "rows": [
+                [
+                  "Vector vacío",
+                  {
+                    "field": "vacio"
+                  }
+                ],
+                [
+                  "Un elemento: (R, 7)",
+                  {
+                    "field": "coincide"
+                  }
+                ],
+                [
+                  "Un elemento: (R, 8)",
+                  {
+                    "field": "no_coincide"
+                  }
+                ],
+                [
+                  "Cinco elementos: (R, 7), (R, 8), (R, 7), (S, 7), (R, 7)",
+                  {
+                    "field": "repetidos"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "vacio": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "coincide": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "no_coincide": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "repetidos": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El vector vacío no aporta coincidencias. La medida aislada R con 7 coincide y R con 8 difiere en cantidad. En el último vector coinciden los tres elementos R con 7; repetirlos no los convierte en un único elemento.",
+            "incorrect": "Compara cada elemento con la etiqueta y la cantidad de la medida buscada. Un elemento sólo aporta una coincidencia si cumple ambas condiciones. Cuenta las repeticiones por separado."
+          }
         },
         {
           "type": "output_prediction",
@@ -227,6 +412,811 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    const Medida buscada{\"A\", 2};\n    const std::vector<Medida> pares{{\"A\", 2}, {\"A\", 3}, {\"B\", 2}};\n    for (const auto& otra : pares) {\n        std::cout << (buscada == otra) << \":\" << (buscada != otra) << \"\\n\";\n    }\n    const std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) {\n        if (medida == buscada) { ++cantidad; }\n    }\n    std::cout << \"Coincidencias:\" << cantidad;\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "abc234fa84ecc977d72193e0612aa5f6f5524d7896c212c0b9111766218deb2e"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "53f6651a8db7da1da4466bf9405a1b4d541dd436f956e83caf287901e34520e6"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "8537e6d43b8218a770497923eb8fcaeb975aa524be5b2d5d919a0b7bf048f3e7"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "535936c98a8f9c17fef9eebcc37910cb32d862944fcae7806c400416f5229e76"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "779dca198992acef1c78f943d9e6884b16870cea93d961834ec05836635075ce"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "76a443fe04f9c455f6160ca42d45f552a46d8b94d280eb03c461d2387642d74b"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "6c149a54d1b9f9074bb9cb3f71e98417fc402f5720a27bc63d7b68cfaf0f4ac2"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "281019de0e696e7d4191c5bf941daa14d0d7df139fae258117be6a5b4c2a04b7"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "5501fa8ec218042776407a8e061053e866be968fbb84bf928a50fa6afe9e5d87"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "177f72f161506be3b7f30e68758d4a3fec7150e009ba6824f42be9a0f562c048"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "7a38e1a8f89c5f2f3300033a63201bd407c8ffce7012a9d8446d91c89f55734e"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "bbfc0fd4c1469a69fcd8062c1ac7ce1e2dd99208f4fa19fdc872ae8b8e9cb777"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0002",
+          "block_0003_0001",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "conteos_igualdad_en_cuatro_vectores",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "601a2b2d54a5d1e70c35d3f8de505ca4f4825cc5b4c76351aa092d5ea9b64400",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "abc234fa84ecc977d72193e0612aa5f6f5524d7896c212c0b9111766218deb2e"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "53f6651a8db7da1da4466bf9405a1b4d541dd436f956e83caf287901e34520e6"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "d23934c0400d8d18ff8c2b1aa63880e63804a8e8466464f3fb8e86b821539933"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "535936c98a8f9c17fef9eebcc37910cb32d862944fcae7806c400416f5229e76"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "779dca198992acef1c78f943d9e6884b16870cea93d961834ec05836635075ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "9160a90cf89a6e6a15989d7f31dffb8f978a8977bd9da2169311e8129a76618e"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1c81a2992f6d0ebffe72e15f99e47894d094552eb6f8e77ef33368beb593a850"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "281019de0e696e7d4191c5bf941daa14d0d7df139fae258117be6a5b4c2a04b7"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "14dbe14c5820e3af6d9559d04d968d0b298589fe180c488590ac375f90de0913"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "177f72f161506be3b7f30e68758d4a3fec7150e009ba6824f42be9a0f562c048"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "7a38e1a8f89c5f2f3300033a63201bd407c8ffce7012a9d8446d91c89f55734e"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "f253270a488651e3227eb6d74f528f8f8221f6d61de4c366b005f6ec06746c6f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "abc234fa84ecc977d72193e0612aa5f6f5524d7896c212c0b9111766218deb2e"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "53f6651a8db7da1da4466bf9405a1b4d541dd436f956e83caf287901e34520e6"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "8537e6d43b8218a770497923eb8fcaeb975aa524be5b2d5d919a0b7bf048f3e7"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "535936c98a8f9c17fef9eebcc37910cb32d862944fcae7806c400416f5229e76"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "779dca198992acef1c78f943d9e6884b16870cea93d961834ec05836635075ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "76a443fe04f9c455f6160ca42d45f552a46d8b94d280eb03c461d2387642d74b"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "6c149a54d1b9f9074bb9cb3f71e98417fc402f5720a27bc63d7b68cfaf0f4ac2"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "281019de0e696e7d4191c5bf941daa14d0d7df139fae258117be6a5b4c2a04b7"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5501fa8ec218042776407a8e061053e866be968fbb84bf928a50fa6afe9e5d87"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "177f72f161506be3b7f30e68758d4a3fec7150e009ba6824f42be9a0f562c048"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "7a38e1a8f89c5f2f3300033a63201bd407c8ffce7012a9d8446d91c89f55734e"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "bbfc0fd4c1469a69fcd8062c1ac7ce1e2dd99208f4fa19fdc872ae8b8e9cb777"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "b768c1de941733a907d106bdb948b5c56e3e2eb27efec63d3ef70fdb04addfad",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "abc234fa84ecc977d72193e0612aa5f6f5524d7896c212c0b9111766218deb2e"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "53f6651a8db7da1da4466bf9405a1b4d541dd436f956e83caf287901e34520e6"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "dbaece71a1567e3c3d0efc4d85325903808d01347e56c2ddc8fe0337a5133f5a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "535936c98a8f9c17fef9eebcc37910cb32d862944fcae7806c400416f5229e76"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "779dca198992acef1c78f943d9e6884b16870cea93d961834ec05836635075ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "b838c8099fd085881350ecae962dd02af748ef1bc41b86bfcd5f0bc3d519b7f6"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "81bfdea2e6fcdfe9de419d5eb99a9442b6f08276df0700654d3fa7e1ce95518a"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "281019de0e696e7d4191c5bf941daa14d0d7df139fae258117be6a5b4c2a04b7"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "dd2d6c2c072eb6272109a48322e6d8f409f54f90464cab032937345c826842cb"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "177f72f161506be3b7f30e68758d4a3fec7150e009ba6824f42be9a0f562c048"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "7a38e1a8f89c5f2f3300033a63201bd407c8ffce7012a9d8446d91c89f55734e"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "conteos_igualdad_en_cuatro_vectores",
+        "sha256": "33aab53614504bfeabfb0b47f3b2b83952e62897d28351c4c5818cc63ad8f4a3",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0a9db4b2bdd53c2859f3ab546fd667ccb96f6b67744223d503d3882be2906808",
+        "afterSha256": "99c7d6d9469435e9bdcb8f13a18d16b4b9941540ab2419287fc22d9d9a10fab8"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "a9736db40c5a72b0296d1b9201db05ee1e391cbb406775cefdcff4b168035ba3",
+        "afterSha256": "8d5253a4bc99fec89b55e0878e4e9d74a11a01b16b3b947d34e49942a5d5ea62"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "0ae4d8af754cebf95a7a538b1f01e5218daadc118400b461d7a34a31e6c2f7b6",
+        "afterSha256": "ddb4d8ee6ca5082c30c2fe6fafb30d7cfd6564a3a0c6a290d769d84734f93cc6"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "b9d05ba6689516ddcd564a4c09a34638a5fb518dadde2cd00c110cbf59286e32",
+        "afterSha256": "262c34ad752078e443cc6361e829dd1222af52201424afbb3acbf8dd0aa6110a"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "db94210e9298594095418b796054aeb8ea8553843e7508d25e10cee236fc6baa",
+        "afterSha256": "2a0d4690015ca813ed4fa00872decab8d28c4824b7f452bdc6cf57d68a87fe97"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "b2ff740a63a1e71b93c803f8731c12c77a5b17cff986e7500a24cce99e5493ca",
+        "afterSha256": "efcaaf392c5ea7fb0694ad8b721ba81d848158fe49d2be585848226fc30f1299"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "7c935abba0a0a3fd4632ae0d51b2c94862db13cbb57a1c1b64b74cb68eec18a4",
+        "afterSha256": "3d1e751572a8d0a5ff867f4c6c88b5957ba8d1eb1d756b9571efe691990e3170"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "db7ce454cc810a1fedd2a3055c6919fa8979eef316507946c17d2b351288de26",
+        "afterSha256": "8a8800b423add248966032f90ab5974d6c7afcbfb6ebd5d0ac40dee32224a3ee"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "d5a4e29b6eb6e8c4a1ca37918322815b501cd3db815405d29d7b9a0a31900d0e",
+        "afterSha256": "0d0df3e15f2093699d11165918b76a01cc0698e937d985340b769a81392f1843"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "80a08a6f1ef53e4f8ab58805794ed53b73e4067c5decfb98b3537874fdd4b0cc",
+        "afterSha256": "9bd45eebb788eddead452da11614d217683b0043c939f46d7df6837625f9a0ac"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "1296b8d3e6ec63028d4c496db77bd812d9440f918eeb76329343d677950095fa",
+        "afterSha256": "54774fd09058611020855a38d37eb4745957dbb761d65a8fc3284a6075f0f3a1"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f92664116f11a01e9323c3e2c78cb6df7e976bb9539b5bd6a4eaca1cf385c808",
+        "afterSha256": "7f2ccc844a5b8035463f4df75696ab703f56632ab8c03b8f3f66aa3f165ea413"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "58ef56f694eee46f0faaeb56850d38a09a9af61f41dbc737b1fed18e318384bb",
+        "afterSha256": "7834f374a8182e5f25c1c81ed382fa88fa4941678d62b5b1132c213544ec6618"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "11e8e689391ff4bdadf443db8a084747faa96935e022ae164239cc6ecd6ddf94",
+        "afterSha256": "ab65bb12c1035a68001360a8df03bf2867a52e42678ef2283555c28d41b623a3"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0d0df3e15f2093699d11165918b76a01cc0698e937d985340b769a81392f1843",
+        "afterSha256": "f1c6337d19c59d5e1373b3140851a537156e95586a3b036fc514eec42e9a6b55"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0005_0003",
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0004",
+        "block_0006_0005"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "conteos_igualdad_en_cuatro_vectores",
+      "requires": [
+        "block_0005_0002"
       ]
     }
   ]

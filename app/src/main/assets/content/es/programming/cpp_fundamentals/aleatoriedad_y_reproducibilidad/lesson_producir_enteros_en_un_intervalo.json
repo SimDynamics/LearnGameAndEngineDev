@@ -10,22 +10,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Hasta ahora elegimos los datos de cada prueba. Podemos producir otros mediante un procedimiento. Un generador pseudoaleatorio calcula una secuencia a partir de un estado; no obtiene cada resultado por una decisión humana ni promete que sea impredecible. En esta unidad fijamos manualmente cómo empieza para poder investigar y repetir nuestros experimentos.",
+          "text": "Hasta ahora los datos de cada prueba se han elegido directamente. También se pueden producir mediante un procedimiento: un generador pseudoaleatorio calcula una secuencia a partir de un estado que va cambiando (Stroustrup, 2024).\n\nEl cálculo sigue unas reglas; el término pseudoaleatorio no promete que el próximo valor sea imposible de anticipar. En estas prácticas se fija cómo empieza el generador para poder repetir e investigar los experimentos.",
           "emphasis": [
             {
-              "text": "generador pseudoaleatorio"
+              "text": "generador pseudoaleatorio",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "estado que va cambiando",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "repetir e investigar",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "La cabecera <random> ofrece motores y distribuciones. std::mt19937 motor{31}; construye un motor con un estado inicial determinado por 31. Ese número se llama semilla. std::uniform_int_distribution<int> reparto{2, 5}; construye una distribución que obtiene enteros desde dos hasta cinco, incluidos. El motor proporciona valores de su propia secuencia; la distribución los transforma al intervalo que necesitamos.",
+          "text": "La cabecera <random> ofrece motores y distribuciones. El motor proporciona los valores de una secuencia; la distribución los transforma para obtener datos del tipo y del intervalo que pide el programa (Stroustrup, 2024). Son dos objetos con funciones distintas.\n\nstd::mt19937 motor{31}; construye un motor cuyo estado inicial se prepara a partir de 31. Ese número se llama semilla (Köppe et al., 2023). No es el límite de los datos que se desean obtener.\n\nstd::uniform_int_distribution<int> reparto{2, 5}; construye una distribución de resultados int entre dos y cinco, incluidos ambos extremos (Köppe et al., 2023). En el ejemplo siguiente, la semilla configura el comienzo del motor y los límites configuran la distribución.",
           "emphasis": [
             {
-              "text": "semilla"
+              "text": "dos objetos con funciones distintas",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "motores y distribuciones"
+              "text": "semilla",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "incluidos ambos extremos",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -36,7 +57,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta comparación guiada muestra En rango: 1. No hemos especificado cuál de los cuatro enteros debe aparecer. Construimos objetos de biblioteca y usamos su interfaz; no necesitamos implementar sus algoritmos ni escribir plantillas propias."
+          "text": "Este programa muestra En rango: 1. La comparación comprueba que el dato obtenido está entre dos y cinco. No establece cuál de esos cuatro enteros debe aparecer.\n\nLos objetos se construyen con los tipos de la biblioteca y se utilizan mediante su interfaz. En esta lección se estudian la obtención de los datos y las propiedades que deben cumplir; no se exige implementar el algoritmo del motor.",
+          "emphasis": [
+            {
+              "text": "entre dos y cinco",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cuatro enteros",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -47,7 +80,12 @@
             "Un motor construido con 4 y 8, sin distribución: sus valores ya quedan en ese intervalo."
           ],
           "correctIndex": 0,
-          "explanation": "El motor y el intervalo cumplen funciones distintas. En la distribución entera ambos extremos pertenecen al intervalo."
+          "explanation": "El motor y el intervalo cumplen funciones distintas. En la distribución entera ambos extremos pertenecen al intervalo.",
+          "reviewFeedback": [
+            "Relaciona la fuente de la secuencia con el objeto que fija el intervalo de los resultados.",
+            "Revisa si la distribución entera incluye el valor escrito como límite superior.",
+            "Distingue los datos usados para preparar el motor de los límites de la distribución."
+          ]
         }
       ]
     },
@@ -59,7 +97,24 @@
         },
         {
           "type": "paragraph",
-          "text": "En reparto(motor), reparto es el objeto que acabamos de construir, no el nombre de una función libre. Su interfaz permite usarlo con paréntesis y entregar el motor como argumento. La llamada devuelve un int. La distribución solicita valores al motor y puede necesitar varias llamadas internas; no contaremos una llamada al motor por cada dato distribuido. Tampoco modificamos a mano el estado interno."
+          "text": "En reparto(motor), reparto es el objeto de distribución que se acaba de construir. Su interfaz admite la escritura con paréntesis y recibe motor como argumento; esta llamada devuelve un int. El nombre reparto no designa aquí una función libre.\n\nLa distribución utiliza el motor para obtener el dato. Una llamada a la distribución no significa que se haya invocado exactamente una vez el motor: la interfaz no fija esa correspondencia (Köppe et al., 2023). Para construir una muestra se cuentan los resultados solicitados a la distribución, sin modificar a mano el estado interno.",
+          "emphasis": [
+            {
+              "text": "objeto de distribución",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "esta llamada devuelve un int",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "los resultados solicitados a la distribución",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "fill_code",
@@ -91,7 +146,24 @@
         },
         {
           "type": "paragraph",
-          "text": "El intervalo de la distribución no es el rango de índices de un vector. Con límites -2 y 2 hay cinco enteros posibles: -2, -1, 0, 1 y 2. Para índices de un vector no vacío, en cambio, el último permitido sería size()-1. Primero decide qué representan tus límites; después escribe la construcción adecuada."
+          "text": "Los dos límites de uniform_int_distribution<int> pertenecen al intervalo permitido (Köppe et al., 2023). Con -2 y 2 son posibles cinco enteros: -2, -1, 0, 1 y 2.\n\nUn intervalo de datos no tiene el mismo significado que los índices de un vector. En un vector no vacío, el último índice permitido es size()-1. Primero se decide qué representan los límites; después se configura la distribución o se escribe el acceso correspondiente.",
+          "emphasis": [
+            {
+              "text": "Los dos límites",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cinco enteros",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "los índices de un vector",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -102,11 +174,28 @@
             "3, 4, 5, 6."
           ],
           "correctIndex": 2,
-          "explanation": "La distribución incluye tanto el extremo inferior como el superior; no usa un intervalo abierto."
+          "explanation": "La distribución incluye tanto el extremo inferior como el superior; no usa un intervalo abierto.",
+          "reviewFeedback": [
+            "Comprueba qué ocurre con el entero igual al límite superior escrito.",
+            "Comprueba qué ocurre con el entero igual al límite inferior escrito.",
+            "Relaciona ambos extremos con las condiciones que describen el intervalo permitido."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Los límites también pueden ser iguales. uniform_int_distribution<int>{4, 4} sólo puede devolver cuatro. Sigue siendo un intervalo válido, con un único resultado posible. No suponemos cuántos valores internos solicita esa distribución al motor."
+          "text": "Los límites deben estar ordenados y pueden ser iguales. uniform_int_distribution<int>{4, 4} tiene un único resultado posible: cuatro (Köppe et al., 2023).\n\nLa distribución sigue teniendo una interfaz válida. Saber cuál es su único resultado no permite deducir cuántas obtenciones internas realiza del motor.",
+          "emphasis": [
+            {
+              "text": "pueden ser iguales",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "un único resultado posible",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -128,7 +217,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Uniforme significa que los enteros del intervalo tienen la misma probabilidad según la distribución. No significa que cada grupo de llamadas deba contenerlos el mismo número de veces. Los resultados pueden repetirse y algunos valores pueden no aparecer en una muestra corta. Esta operación tampoco selecciona elementos sin repetición."
+          "text": "En esta distribución, los enteros del intervalo tienen la misma probabilidad (Köppe et al., 2023). Esa propiedad no exige que aparezcan el mismo número de veces en cada grupo de llamadas.\n\nEn una muestra corta pueden repetirse valores y faltar otros. Obtener seis datos de tres valores posibles no impone que cada valor aparezca dos veces. Tampoco se trata de una selección sin repetición. Para comprobar el programa, hay que distinguir la propiedad de cada dato de las frecuencias observadas en la muestra.",
+          "emphasis": [
+            {
+              "text": "la misma probabilidad",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "En una muestra corta",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "propiedad de cada dato",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -139,11 +245,28 @@
             "Los repetidos demuestran que la semilla fue ignorada."
           ],
           "correctIndex": 0,
-          "explanation": "Una distribución uniforme no promete turnos ni ausencia de repetidos. Una muestra corta no certifica ni refuta por sí sola su calidad."
+          "explanation": "Una distribución uniforme no promete turnos ni ausencia de repetidos. Una muestra corta no certifica ni refuta por sí sola su calidad.",
+          "reviewFeedback": [
+            "Distingue la repetición observada de la condición de pertenecer al intervalo.",
+            "Revisa si la distribución conserva una lista de valores ya usados o permite volver a obtener un mismo entero.",
+            "Relaciona el papel de la semilla con lo que puede inferirse de observar unos valores repetidos."
+          ]
         },
         {
           "type": "note",
-          "text": "Usaremos este mecanismo para experimentos de programación, con cantidades pequeñas y semillas explícitas. No lo convertimos en una garantía de seguridad ni en una prueba de imprevisibilidad."
+          "text": "Las prácticas utilizan cantidades pequeñas y semillas explícitas para poder estudiar sus resultados. La comprobación del intervalo no es una garantía de seguridad ni demuestra que los valores sean impredecibles.",
+          "emphasis": [
+            {
+              "text": "semillas explícitas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "comprobación del intervalo",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         }
       ]
     },
@@ -155,10 +278,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(int cantidad, int minimo, int maximo). Cada llamada crea un motor con semilla 59 y una distribución entera para el intervalo indicado, obtiene cantidad datos y los conserva en un vector en orden. Muestra Cantidad:N desde su tamaño y En rango:B desde una comprobación de todos los elementos; termina ambas líneas con un salto. Todas las llamadas de esta actividad cumplen minimo <= maximo y cantidades entre cero y dieciséis.\n\nDesde main prueba (16,-2,4), (0,-2,4), (1,-2,4), (10,5,5) y (7,-4,-1), en ese orden. Pulsa Compilar, ejecutar y comprobar. Las cantidades deben ser 16, 0, 1, 10 y 7; cada línea En rango debe mostrar uno. No imprimas esas respuestas como constantes. No se comprueban listas concretas de valores ni frecuencias iguales entre bibliotecas.",
+          "text": "Construye probar(int cantidad, int minimo, int maximo). Cada llamada crea un motor con semilla 59 y una distribución entera para el intervalo indicado. Obtiene cantidad datos y los conserva en un vector, en el orden en que se producen.\n\nMuestra Cantidad:N a partir del tamaño del vector y En rango:B a partir de la comprobación de que todos sus elementos están en el intervalo. Termina ambas líneas con un salto. En estas pruebas, minimo <= maximo y cantidad está entre cero y dieciséis.\n\nEn main reúne estas cinco llamadas, en este orden: (16,-2,4), (0,-2,4), (1,-2,4), (10,5,5) y (7,-4,-1). Pulsa Compilar, ejecutar y comprobar. Las cantidades deben ser 16, 0, 1, 10 y 7; cada línea En rango debe mostrar uno. Obtén esos valores del vector y de su comprobación, no de constantes que imiten la salida.\n\nEl objetivo verifica cantidades y límites. Los algoritmos de las distribuciones pueden variar entre implementaciones (Köppe et al., 2023); una lista obtenida con otra biblioteca no se convierte en la respuesta obligatoria de esta actividad.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "en el orden en que se producen",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "todos sus elementos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cinco llamadas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cantidades y límites",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -209,11 +349,45 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: dieciséis llamadas de la distribución, un elemento guardado por cada resultado, orden conservado y comprobación de cada elemento. La referencia muestra Cantidad:16 y En rango:1. Con cero llamadas muestra Cantidad:0 y En rango:1; con una, Cantidad:1 y En rango:1. Cambiar los límites a 5..5 obliga a que todo dato sea cinco. No se exige que aparezcan ambos extremos ni que haya cantidades iguales de cada valor."
+          "text": "Este primer programa construye únicamente la muestra de dieciséis datos entre -2 y 4. Muestra Cantidad:16 y En rango:1. No añade un salto de línea después de ese último uno. Permite observar cómo se guarda cada resultado y cómo se recorre el vector para comprobar la propiedad.\n\nLa referencia completa que sigue define probar y reúne las cinco muestras del objetivo, con el salto al final de cada línea. Incluye la colección vacía, una sola observación, el intervalo 5..5 y el intervalo negativo.",
+          "emphasis": [
+            {
+              "text": "únicamente la muestra de dieciséis datos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "referencia completa",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cinco muestras del objetivo",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La variable dentro acumula una propiedad; la cantidad confirma cuántas observaciones existen. Ninguna de esas comprobaciones demuestra por sí sola que la muestra tenga frecuencias equilibradas. Se aceptan otras implementaciones que cumplan el contrato."
+          "text": "dentro empieza en true y acumula si los valores observados pertenecen al intervalo. En un vector vacío no se encuentra ningún elemento que incumpla la condición: dentro permanece true. El tamaño cero permite distinguir ese caso de una muestra con datos.\n\nCantidad y En rango describen propiedades diferentes. No demuestran que las frecuencias de la muestra estén equilibradas, ni obligan a visitar todos los valores del intervalo. Se aceptan otras formas de construir y comprobar el vector que conserven esas propiedades y las salidas pedidas.",
+          "emphasis": [
+            {
+              "text": "dentro empieza en true",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "El tamaño cero",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "propiedades diferentes",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "heading",
@@ -261,15 +435,871 @@
         },
         {
           "type": "note",
-          "text": "La distribución entera usa un intervalo inclusivo con límites ordenados (Stroustrup, 2024, sección 4.7.5; Working Draft: Programming Languages — C++, s. f., sección [rand.dist.uni.int]). La batería comprueba cantidad y pertenencia sin convertir una lista de otra biblioteca en requisito.",
+          "text": "Cantidad, límites y semilla son decisiones diferentes. La distribución entera admite sus dos extremos cuando los límites están ordenados (Köppe et al., 2023); la cantidad determina cuántos resultados se solicitan.\n\nLa batería comprueba el tamaño y la pertenencia al intervalo. Conserva el significado de esos objetivos al variar la configuración, sin añadir como requisito una lista producida por otra biblioteca.",
           "emphasis": [
             {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
+              "text": "decisiones diferentes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tamaño y la pertenencia",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         }
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004",
+        "block_0005_0005"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0006_0001",
+      "requires": [
+        "block_0004_0003"
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "6471c3e83e6ab02d355eace68927cc3a47c4b0cde29d6474372bb29effdbd043"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "d788f73ff7b41a2657a1269b45564e48732fea697496fb4f81762ebe7ca98f88"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "60c743af6fad29ea61e12d78de66be46b33bad46c6f7175fd04e3b899b1fa0ec"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "a64e9adae93686f51ddf66fa5d7a686966e24de20752fd247ca97dfb7a2f0f39"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "930f155df83625d879208027838eeae3e08f57442468aa4b9a90ded99b904481"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "b7e5ff908b43262d8e1f6add4d63fe64fda24d734078ad8b57a6f4ebffd6ea21"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "f595f1e1bec0490ba017976d4e7f4ec3594ab53da974e91550ec9ec8d7c846eb"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "139676d5a3cb1a108da29fec9ba3759a6549bc7b58a613893d48c4e9542409b6"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "7ae75fb474ea922322435cbf01040a69282cc18329cb1fdfd983e55ed9bc1188"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "f6865e5fb1943f19a651ce67106efc9c1e7a3ddfe535c9a9cdc57f93304f34a8"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "0dd10d25b509f1e9be38593aa0191c8449219afa85a5ab90ce7dfb5571e44689"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "fceb4edf6d3d0b6df1eb64863884206caed2fda76cf5bd9eda1a5331b921095f"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1599bbfff0c5e4518b36f59e4d48f7a9ea11d6a5372d70f57dbb9f4dbd25192b"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "705bf470892f1cb8addab10a8927eeb950f854882537c87d25826baf510ed91a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "5cfb001422ccd8370c995ad9e8caaef5802ca585708397a6b30d9edaf1d25198"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "f4c25629c5de66f0dd675d516778dcfc4804b765788dfe014d1a9ac8da61d376"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "60c743af6fad29ea61e12d78de66be46b33bad46c6f7175fd04e3b899b1fa0ec"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "79d9f93cb66c6d0ca9cd56036e7945f2c099581cef6ccf0be494d0edc54a8060"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "930f155df83625d879208027838eeae3e08f57442468aa4b9a90ded99b904481"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "b7e5ff908b43262d8e1f6add4d63fe64fda24d734078ad8b57a6f4ebffd6ea21"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "2ee9a19fe6b7294b8ebb4094bd9f87baa4c4f441ad1b386fcbe2df6d9fd9cc65"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "6911c073e1e819a0de73f4d31a19f3fc59734781756cf257d0de0fd47d3d4e04"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "65b049da67ede473c0a5cd290cd5cfb9a1243988d522b2899d985544c1f7491c"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "fceb4edf6d3d0b6df1eb64863884206caed2fda76cf5bd9eda1a5331b921095f"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "0806db7e7d6ca4dfc5ff7b94852b0fe177e02b30b77906111f1ae38478f6de3a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "6471c3e83e6ab02d355eace68927cc3a47c4b0cde29d6474372bb29effdbd043"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "d788f73ff7b41a2657a1269b45564e48732fea697496fb4f81762ebe7ca98f88"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "60c743af6fad29ea61e12d78de66be46b33bad46c6f7175fd04e3b899b1fa0ec"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "a64e9adae93686f51ddf66fa5d7a686966e24de20752fd247ca97dfb7a2f0f39"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "930f155df83625d879208027838eeae3e08f57442468aa4b9a90ded99b904481"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "b7e5ff908b43262d8e1f6add4d63fe64fda24d734078ad8b57a6f4ebffd6ea21"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "f595f1e1bec0490ba017976d4e7f4ec3594ab53da974e91550ec9ec8d7c846eb"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "139676d5a3cb1a108da29fec9ba3759a6549bc7b58a613893d48c4e9542409b6"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7ae75fb474ea922322435cbf01040a69282cc18329cb1fdfd983e55ed9bc1188"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "f6865e5fb1943f19a651ce67106efc9c1e7a3ddfe535c9a9cdc57f93304f34a8"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "0dd10d25b509f1e9be38593aa0191c8449219afa85a5ab90ce7dfb5571e44689"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "fceb4edf6d3d0b6df1eb64863884206caed2fda76cf5bd9eda1a5331b921095f"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1599bbfff0c5e4518b36f59e4d48f7a9ea11d6a5372d70f57dbb9f4dbd25192b"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "567b1b97391fe010f1c65ba0168eb8c5334994dc07bc06c4d43a43ff6767aa74",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "24a9b91b18fdd9315177fc3d91910a51c2bfcc28f6326a1d2e70a75c05628b98"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "05d861552ab1ba5b71ae88f2da088d22b8bb3545c8177f4a75fc43dc9e9ef47e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "60c743af6fad29ea61e12d78de66be46b33bad46c6f7175fd04e3b899b1fa0ec"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "35abd2bf7fe50d53187e4fd43e8f44bebe10d48acfce8680df7bdc4cd44f58e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "930f155df83625d879208027838eeae3e08f57442468aa4b9a90ded99b904481"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "b7e5ff908b43262d8e1f6add4d63fe64fda24d734078ad8b57a6f4ebffd6ea21"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "aad55eb8d5aae8139f548601258c39f5a8f17e2f2dbc60cd783f8398869cf515"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "d5dcf70f4e9b0e690fe492a20828e2fae775256be029b44249f5b9fec31d41cb"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "7786dbc4b829ad6984222a73d3c1ab42673e2a18a70a46f86ba3894b7a057416"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "fceb4edf6d3d0b6df1eb64863884206caed2fda76cf5bd9eda1a5331b921095f"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "908b8bc7acceaf202f2310beead359c5a49eef93c88170796b03782614a0ae85",
+        "afterSha256": "d735a773610088fb18b07e5e4844699ef972c154f8b51e7a2a87d249755ad489"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "54b12dd63b96b770c441925164f188d367d51ff5122d7b6e77d2bd4e86d204d0",
+        "afterSha256": "de73fff5502b72d671bf019af5e7452ce288d26e15cb8e03cd183d01acaf1c83"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "6ce53b0b89cb36ab1aa46ba6f2594b02b0f1ee1c70f0aeb1acd4053a94326e0c",
+        "afterSha256": "96e0635009c57d8f9d1b0868895b7c4c9b6fbf619e8d5a82675712ff12ed8690"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "92d98760edb72fa25e1915b56c7f7425065df580a2d95abcae2bcde1923207b4",
+        "afterSha256": "b9462b5543ae762804d8efac838b64dfa9e24729c803deeea0d6e06ec5513759"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "215d64ceddffa8626a74744c3cd8e3a322e9d7f7e2e4125318ae5df657032e83",
+        "afterSha256": "126d1abcf15b65819e1814b3a8f75c023ad9a14a3b74611f44bce87c9065fabc"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "8d3ffcdf118dbe3f6638bc195769f119c5524604249fc72e278efe22629026fa",
+        "afterSha256": "9ccb43d95b44f25b597344591f406e28fbdc4ff5b70b29e1c03ab1c3249a0ce2"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "701ca2f381b170c53d19d5b3a0d82e35ecc48fdc241fc863ac60b3b520bc4e74",
+        "afterSha256": "ed87ca2f3ec38654fce50e4a80336b548b33a18479c06738d45a659f72ca3003"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "dd05916d81e19f8554551d9f2d2a5b4ca3dcb0153fa20e93b3e80c6144d02480",
+        "afterSha256": "95a18701193d74c7f18706eaea87c3009740b5ccb9641a172b3ce3dd7aa75602"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "265f8d31652caddf9e5845df25cc44cedabbf7f24e60511bfe17d269714d95ee",
+        "afterSha256": "f90a60d8555d7df5c15e21ec347f8b0c926cdec91ae0cf615b589ec067021d87"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f4b94ae37e7911802708bc629bca2a2c2f0736d1fd55d9a117314b7b426547ca",
+        "afterSha256": "835338571bb92ff521d212125003f36330d2f881729261723c3a0ced03def1bc"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "e47f0d84f89b3ed4c3afc5e71e3ed5af84854b45ce204c2b5c90fefd61435985",
+        "afterSha256": "8f8bdd523bb0acec3a3f5208d410e82aa03ec83e628a773e75824956b375b911"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e4ea9c07f4b8bb20ca9895fef26b9c3448443835a80f60944b4ff10702367fa1",
+        "afterSha256": "943f56a3f52b0ec4e4a6d7ac5dfdbec88adbbef4f8126551fbfdc7f858e2925f"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "de2695fb610774afcba3feadfe00a5fd1053efb6981de72d3675f7bd55b0db27",
+        "afterSha256": "0c2ebf6de12268dad3865e43e904d441dd189470a8e3cecea9f69ee85e91ec2e"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "6b2779aaea9d2e096ddb4af68d75b007e344caceb490b9bc797ad39a50d556cc",
+        "afterSha256": "75a71652dd6ed19e8635dd21b68361206fc3bfb8f663eb94ffd20d0f86ffe147"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "62616e73007571251e98396b538c3ff24c906cb267781843a5a9aa7410c2ee30",
+        "afterSha256": "f462d85e450301a0a1bd0482e12e7bc77fb3700b39a5c7a18f7fe10b91b6f8c2"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "0c2ebf6de12268dad3865e43e904d441dd189470a8e3cecea9f69ee85e91ec2e",
+        "afterSha256": "d5795ea840f8cd6c8e4ce80e4266c7f24f1e9c904c144c1d779b08f82016050c"
+      }
+    ]
+  }
 }

@@ -6,24 +6,41 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Recuperar el modelo desde sus requisitos"
+          "text": "Reconstruir Pedido desde sus requisitos"
         },
         {
           "type": "paragraph",
-          "text": "Construye Pedido desde una consigna, sin consultar primero el código de referencia. Cada objeto contiene código no vacío, unidades de una a veinte y Estado preparado, enviado o cancelado. La construcción recibe código y unidades, conserva los argumentos válidos y empieza preparado. Los argumentos inválidos deben interrumpir la construcción mediante PedidoInvalido. No existe construcción sin argumentos.",
+          "text": "Construye Pedido desde la especificación, sin consultar primero la referencia. Cada objeto reúne un código no vacío, una cantidad de una a veinte unidades y un Estado: preparado, enviado o cancelado.\n\nEl constructor recibe código y unidades. Conserva esos dos argumentos cuando son válidos y establece el estado preparado. Si el código está vacío o la cantidad queda fuera del intervalo, lanza PedidoInvalido e interrumpe la construcción. No ofrece construcción sin argumentos: ese constructor necesita el código y la cantidad. La copia desde otro Pedido válido conserva los valores de ese objeto, como se practicó antes.",
           "emphasis": [
             {
-              "text": "preparado",
-              "occurrence": 1
+              "text": "código no vacío",
+              "style": "bold"
             },
             {
-              "text": "construcción sin argumentos"
+              "text": "de una a veinte unidades",
+              "style": "bold"
+            },
+            {
+              "text": "estado preparado",
+              "style": "bold"
+            },
+            {
+              "text": "interrumpe la construcción",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Ofrece codigo(), unidades() y estado() const. cambiar_unidades(int) sólo acepta una cantidad del dominio cuando el pedido sigue preparado. enviar() y cancelar() sólo aceptan la transición desde preparado. Las tres operaciones devuelven bool: true al aceptar y false al rechazar, conservando todos los miembros cuando rechazan. Los datos son privados."
+          "text": "Los datos son privados. Ofrece las consultas codigo(), unidades() y estado(), todas const. cambiar_unidades(int) sólo acepta una cantidad de una a veinte mientras el pedido siga preparado. enviar() y cancelar() sólo aceptan la transición desde preparado al estado que indica su nombre.\n\nLas tres operaciones devuelven bool: true cuando aceptan la solicitud y false cuando la rechazan. Cada rechazo conserva código, unidades y estado; no reinicia el pedido ni sustituye la cantidad anterior.",
+          "emphasis": [
+            {
+              "text": "todas const"
+            },
+            {
+              "text": "Cada rechazo conserva código, unidades y estado"
+            }
+          ]
         }
       ]
     },
@@ -31,11 +48,22 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Predecir y comprobar las solicitudes"
+          "text": "Predecir los efectos antes de construir"
         },
         {
           "type": "paragraph",
-          "text": "El programa que construirás debe contener el tipo, sus operaciones y un main de prueba. Para {\"M\", 4}, solicita en este orden: cambiar a siete; cambiar a cero; enviar; cancelar; cambiar a dos. En cada paso imprime una pareja resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar presenta la comparación estado() == Estado::enviado. Ejecuta la solicitud antes de consultar el objeto. Antes de construir y ejecutar el programa, completa la tabla de resultados y selecciona el motivo de cada aceptación o rechazo en el puzzle siguiente. Distingue en él la cantidad, el estado y la condición de cada operación. Después del puzzle, construye el programa en el editor y pulsa «Compilar, ejecutar y comprobar» para contrastar esas cinco parejas."
+          "text": "El programa debe definir el tipo, sus operaciones y un main de prueba. Empieza con un pedido de código M y cuatro unidades. Solicita, en este orden, cambiar a siete, cambiar a cero, enviar, cancelar y cambiar a dos. Cada solicitud actúa sobre el estado que dejó la anterior.\n\nPrimero resuelve el puzzle siguiente: completa los resultados y elige el motivo de cada aceptación o rechazo. Después construye el programa en el editor de código. Por cada solicitud, muestra resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar muestra la comparación estado() == Estado::enviado. Realiza cada solicitud antes de consultar el objeto.\n\nPulsa Compilar, ejecutar y comprobar para verificar las cinco parejas. Aquí debes implementar las reglas del modelo; la predicción anterior permite contrastar si las operaciones que construiste cumplen esas reglas.",
+          "emphasis": [
+            {
+              "text": "Primero resuelve el puzzle siguiente"
+            },
+            {
+              "text": "Realiza cada solicitud antes de consultar el objeto"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "math_puzzle",
@@ -379,18 +407,32 @@
         },
         {
           "type": "paragraph",
-          "text": "La traza de la actividad inicial no comprueba por sí sola todos los contratos de Pedido. La actividad siguiente comprueba construcciones válidas e inválidas. Las pruebas posteriores de transición y copia tienen sus propios editores; no requieren reemplazar sucesivamente esta primera secuencia."
+          "text": "La primera traza combina operaciones aceptadas y rechazadas, pero no cubre por sí sola todos los requisitos del constructor. El siguiente editor comprueba el dominio de construcción con un programa independiente. Más adelante, otros editores recuperan las transiciones y la copia; cada actividad conserva su propio borrador.",
+          "emphasis": [
+            {
+              "text": "programa independiente"
+            },
+            {
+              "text": "su propio borrador"
+            }
+          ]
         },
         {
           "type": "heading",
-          "text": "Comprobar el dominio de construcción en una sola batería"
+          "text": "Comprobar las fronteras de construcción"
         },
         {
           "type": "paragraph",
-          "text": "Construye Pedido y una función de prueba que intente crear un objeto desde código y unidades. Si acepta, muestra codigo:unidades; si captura PedidoInvalido fuera del constructor, muestra Rechazado. Termina cada prueba con un salto de línea.\n\nEn main prueba M con una unidad, M con veinte, código vacío con cuatro, M con cero y M con veintiuna. Pulsa Compilar, ejecutar y comprobar. Las líneas deben ser M:1, M:20 y tres veces Rechazado. Conserva los datos inválidos para comprobar el rechazo; no los cambies silenciosamente ni completes un pedido alternativo.",
+          "text": "Construye Pedido y una función de prueba que intente crear un objeto desde código y unidades. Si la construcción termina normalmente, muestra codigo:unidades utilizando sus consultas. Si un catch situado fuera del constructor recibe PedidoInvalido, muestra Rechazado. Termina cada prueba con un salto de línea.\n\nEn main reúne estos cinco intentos, en este orden: M con una unidad, M con veinte, código vacío con cuatro, M con cero y M con veintiuna. Las líneas requeridas son M:1, M:20 y tres veces Rechazado, incluida la última con su salto. Pulsa Compilar, ejecutar y comprobar.\n\nConserva los argumentos inválidos de las pruebas: el objetivo es comprobar que impiden construir el pedido, sin sustituirlos silenciosamente por otros valores.",
           "emphasis": [
             {
+              "text": "cinco intentos"
+            },
+            {
               "text": "Compilar, ejecutar y comprobar"
+            },
+            {
+              "text": "Conserva los argumentos inválidos"
             }
           ]
         },
@@ -415,7 +457,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia de implementación y lectura de la traza"
+          "text": "Referencia de la construcción y sus cinco solicitudes"
         },
         {
           "type": "code",
@@ -424,11 +466,27 @@
         },
         {
           "type": "paragraph",
-          "text": "La traza de referencia es 1:7, 0:7, 1:1, 0:1 y 0:7, cada pareja en su propia línea. El rechazo de cero conserva siete; enviar cambia el estado; las dos solicitudes posteriores fallan porque el pedido ya no está preparado."
+          "text": "La referencia produce 1:7, 0:7, 1:1, 0:1 y 0:7, una pareja por línea. El cambio a cero devuelve false y conserva las siete unidades aceptadas. enviar() acepta la transición y deja el pedido enviado. Desde ese estado se rechazan cancelar() y el cambio a dos; las consultas permiten observar que el valor anterior permanece.",
+          "emphasis": [
+            {
+              "text": "las siete unidades aceptadas"
+            },
+            {
+              "text": "el valor anterior permanece"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios: todos los objetos que terminaron de construirse satisfacen el invariante; las consultas const sólo leen; cada aceptación realiza exactamente el cambio solicitado; cada rechazo conserva código, cantidad y estado; la construcción inválida no se disfraza de éxito. Se aceptan otras implementaciones que cumplan estos requisitos y produzcan la traza solicitada."
+          "text": "El constructor establece un estado válido; las operaciones públicas deben conservar la validez de los objetos sobre los que actúan (Stroustrup, 2024). Comprueba ambas responsabilidades, además del resultado que muestra cada llamada.\n\nEn este modelo, las consultas const observan los datos sin modificarlos. Cada aceptación realiza el cambio solicitado y cada rechazo conserva código, cantidad y estado. La construcción inválida lanza, en lugar de entregar un pedido alternativo. Otra implementación es válida si respeta estos requisitos y produce la salida solicitada.",
+          "emphasis": [
+            {
+              "text": "establece un estado válido"
+            },
+            {
+              "text": "conserva código, cantidad y estado"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -455,11 +513,22 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Separar tipo y política de una colección"
+          "text": "Distinguir el valor de un pedido de las reglas de la colección"
         },
         {
           "type": "paragraph",
-          "text": "La clase protege cada Pedido. Una colección puede añadir otras reglas, por ejemplo que no haya dos códigos iguales. Nuestra clase no impone esa unicidad entre objetos. Para el siguiente informe los datos preparados tienen códigos distintos y se buscan por código. Si una aplicación aceptara códigos repetidos, tendría que decidir si busca el primero, todos o rechaza la colección."
+          "text": "La copia por valor recibe los miembros del objeto del que parte (Stroustrup, 2024). Por eso dos objetos Pedido pueden conservar el mismo código: copiar uno no modifica automáticamente esa etiqueta.\n\nLa clase protege la validez de cada pedido, pero no impone que sus códigos sean distintos en toda una colección. Para el informe siguiente, los datos preparados sí tienen códigos distintos y la búsqueda utiliza ese código. Si se admitieran repeticiones, habría que decidir si buscar la primera coincidencia, buscar todas o rechazar la colección. Esa regla corresponde a la colección y al uso que se hace de ella.",
+          "emphasis": [
+            {
+              "text": "el mismo código"
+            },
+            {
+              "text": "no impone que sus códigos sean distintos"
+            },
+            {
+              "text": "los datos preparados sí tienen códigos distintos"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -470,11 +539,27 @@
             "La copia crea siempre un código distinto sin pedirlo."
           ],
           "correctIndex": 1,
-          "explanation": "La copia por valor y una identidad única global son decisiones diferentes."
+          "explanation": "Copiar conserva los datos del pedido, incluido su código. Que una colección permita o rechace códigos repetidos es otra regla; no se establece automáticamente por copiar el objeto.",
+          "reviewFeedback": [
+            "Esta elección atribuye a la copia la pérdida de validez. Identifica qué dato del objeto cambiaría al copiarlo y comprueba si la regla del modelo exige códigos distintos entre todos los objetos.",
+            "Distingue las condiciones de validez de cada Pedido de las condiciones que podría imponer una colección.",
+            "Esta elección supone que copiar genera una etiqueta nueva. Revisa de dónde recibe sus miembros un objeto construido por copia."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Trabajaremos con como máximo veinte pedidos. Cada cantidad es como máximo veinte, así que un total de todas las cantidades no supera cuatrocientos y cabe holgadamente en int. Esta justificación pertenece al contrato del informe, además del contrato de cada objeto."
+          "text": "El informe trabajará con un máximo de veinte pedidos y ninguna solicitud añadirá objetos. Cada cantidad es, como máximo, veinte: incluso sumando todas, el total no superará cuatrocientos y se puede representar en int.\n\nEste límite de tamaño pertenece al contrato del informe. La clase Pedido, por sí sola, no limita cuántos pedidos puede contener una colección.",
+          "emphasis": [
+            {
+              "text": "un máximo de veinte pedidos"
+            },
+            {
+              "text": "no superará cuatrocientos"
+            },
+            {
+              "text": "contrato del informe"
+            }
+          ]
         }
       ]
     },
@@ -482,12 +567,21 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Aplicar solicitudes sin perder los fallos"
+          "text": "Procesar solicitudes y conservar las asociaciones"
         },
         {
           "type": "paragraph",
-          "text": "Construye procesar(vector<Pedido>& pedidos, const vector<Solicitud>& solicitudes). Solicitud contiene codigo string y unidades int. Busca cada código sin acceder al índice que representa ausencia. Presenta codigo:Aplicada, codigo:Rechazada o codigo:Ausente, una línea por solicitud. Después muestra Pedidos: seguido de codigo:unidades; por pedido en orden, un espacio y Total:suma. Termina también esa línea con un salto. El procesamiento no añade pedidos ni cambia su orden.\n\nEn main reúne cinco sesiones, mostrando primero su nombre en una línea. Base tiene A:2, B:5 y C:1; envía B y solicita A:6, B:3, X:4, A:21 y C:20. Vacio no tiene pedidos y solicita X:4. Ausente tiene D:3 y solicita X:4. Valida e invalida tiene E:2 y solicita E:5 y E:0. Cancelado tiene F:4 previamente cancelado y solicita F:3.\n\nPulsa Compilar, ejecutar y comprobar. Los totales de las cinco sesiones deben ser 31, 0, 3, 5 y 4. Las solicitudes conservan su orden y cada una utiliza el estado que dejó la anterior. La colección vacía conserva el rótulo Pedidos: y el espacio anterior a Total:0.",
+          "text": "Construye procesar(vector<Pedido>& pedidos, const vector<Solicitud>& solicitudes). Solicitud es un registro con codigo de tipo string y unidades de tipo int. Busca el pedido de cada solicitud por su código y comprueba la ausencia antes de acceder a un elemento.\n\nPor cada solicitud muestra codigo:Aplicada, codigo:Rechazada o codigo:Ausente, en una línea. Al terminar, muestra Pedidos:, seguido de codigo:unidades; por cada pedido en su orden original, un espacio y Total:suma. Termina también esa línea con un salto. No añadas, elimines ni reordenes pedidos. Las solicitudes aceptadas sí cambian las unidades del pedido encontrado.\n\nEn main prepara estas cinco sesiones y escribe el nombre de cada una antes de procesarla:\n\nBase: A con dos unidades, B con cinco y C con una. Envía B y solicita, en orden, A:6, B:3, X:4, A:21 y C:20.\n\nVacio: ningún pedido; solicita X:4.\n\nAusente: D con tres unidades; solicita X:4.\n\nValida e invalida: E con dos unidades; solicita E:5 y E:0.\n\nCancelado: F con cuatro unidades, previamente cancelado; solicita F:3.\n\nPulsa Compilar, ejecutar y comprobar. Los totales respectivos deben ser 31, 0, 3, 5 y 4. Evalúa las solicitudes en su orden original, sobre el estado que dejó cada anterior. Para la colección vacía, conserva el rótulo Pedidos: y el espacio que lo separa de Total:0.",
           "emphasis": [
+            {
+              "text": "comprueba la ausencia antes de acceder"
+            },
+            {
+              "text": "No añadas, elimines ni reordenes pedidos"
+            },
+            {
+              "text": "Las solicitudes aceptadas sí cambian las unidades"
+            },
             {
               "text": "Compilar, ejecutar y comprobar"
             }
@@ -510,7 +604,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Ausente significa que no existe un pedido con ese código; Rechazada significa que existe y su operación no puede aceptar la solicitud. En Base, A conserva seis al rechazar veintiuna y B conserva cinco por estar enviado. La sesión Valida e invalida conserva el cinco aceptado antes de rechazar cero. Cancelado conserva su código, cantidad y estado. No conviertas la ausencia en un acceso ni fabriques un pedido nuevo para responderla."
+          "text": "Ausente indica que la búsqueda no encontró un pedido con ese código. Rechazada indica que sí lo encontró, pero cambiar_unidades no aceptó la solicitud. Esa distinción determina el mensaje; la ausencia no debe convertirse en un acceso a un elemento ni en un pedido nuevo.\n\nEn Base, A conserva seis al rechazar veintiuna y B conserva cinco porque está enviado. En Valida e invalida, el rechazo de cero conserva las cinco unidades aceptadas antes. En Cancelado permanecen el código F, las cuatro unidades y el estado cancelado.",
+          "emphasis": [
+            {
+              "text": "Ausente"
+            },
+            {
+              "text": "Rechazada"
+            },
+            {
+              "text": "la ausencia no debe convertirse en un acceso"
+            }
+          ]
         }
       ]
     },
@@ -518,7 +623,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia del informe y dominio de cada acceso"
+          "text": "Ejemplo parcial: búsqueda y procesamiento de Base"
         },
         {
           "type": "code",
@@ -527,11 +632,40 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia muestra A:Aplicada, B:Rechazada, X:Ausente, A:Rechazada y C:Aplicada en líneas distintas. El cierre es A:6;B:5;C:20; Total:31. B conserva sus cinco unidades después del rechazo; A conserva seis frente a veintiuna; la ausencia de X no crea un pedido nuevo."
+          "text": "Este primer ejemplo desarrolla únicamente la búsqueda y las solicitudes de Base dentro de main. No es todavía el programa completo de las cinco sesiones: no define procesar ni imprime los rótulos que exige aquella actividad.\n\nMuestra A:Aplicada, B:Rechazada, X:Ausente, A:Rechazada y C:Aplicada en líneas distintas. El cierre es A:6;B:5;C:20; Total:31. La referencia completa de más abajo reúne la función, los nombres de sesión y todas las líneas requeridas.",
+          "emphasis": [
+            {
+              "text": "únicamente la búsqueda y las solicitudes de Base"
+            },
+            {
+              "text": "No es todavía el programa completo"
+            },
+            {
+              "text": "La referencia completa"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios: el tamaño representa ausencia y se comprueba antes de indexar; el resultado de la operación determina Aplicada o Rechazada; cada solicitud se evalúa contra el estado dejado por las anteriores; el informe usa ese estado real y conserva las asociaciones; no modifica la colección que está recorriendo ni inventa un elemento para ausencia. La búsqueda aquí presupone códigos distintos."
+          "text": "La búsqueda utiliza pedidos.size() para representar ausencia. Antes de emplear la posición como índice, comprueba si corresponde a un elemento encontrado. El resultado de cambiar_unidades determina Aplicada o Rechazada.\n\nCada solicitud utiliza los valores que dejaron las anteriores. Durante el recorrido se conservan el tamaño y el orden: no se insertan, eliminan ni reordenan pedidos. Si una solicitud se acepta, cambian únicamente las unidades del pedido cuyo código se encontró. El informe final consulta los objetos resultantes y la búsqueda presupone códigos distintos.",
+          "emphasis": [
+            {
+              "text": "pedidos.size()",
+              "style": "bold"
+            },
+            {
+              "text": "Antes de emplear la posición como índice",
+              "style": "bold"
+            },
+            {
+              "text": "tamaño y el orden",
+              "style": "bold"
+            },
+            {
+              "text": "unidades del pedido cuyo código se encontró",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -542,11 +676,16 @@
             "Acceder siempre al elemento cero para imprimir algo."
           ],
           "correctIndex": 1,
-          "explanation": "La ausencia es un resultado del recorrido, no una posición de elemento."
+          "explanation": "pedidos.size() representa aquí la ausencia. No es el índice de un elemento: los índices válidos quedan por debajo de ese tamaño. La comprobación evita acceder con la posición que significa que la búsqueda no encontró el código.",
+          "reviewFeedback": [
+            "Examina el caso en que posicion es exactamente igual a pedidos.size(). Decide si ese valor designa un elemento existente o el resultado de no encontrarlo.",
+            "Relaciona el resultado de la búsqueda con la condición que debe cumplirse antes de indexar.",
+            "Esta elección sustituye la búsqueda por el elemento cero. Comprueba qué ocurriría con la colección vacía y qué código tendría ese elemento en una colección no vacía."
+          ]
         },
         {
           "type": "heading",
-          "text": "Referencia del informe con las cinco sesiones"
+          "text": "Referencia completa de procesar y las cinco sesiones"
         },
         {
           "type": "code",
@@ -559,7 +698,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Diseñar datos que distingan implementaciones equivocadas"
+          "text": "Elegir pruebas que hagan visibles las modificaciones incorrectas"
         },
         {
           "type": "multiple_choice",
@@ -570,7 +709,12 @@
             "Cantidad válida primero y cantidad inválida después, consultando el estado conservado."
           ],
           "correctIndex": 2,
-          "explanation": "La respuesta false por sí sola no prueba que no haya ocurrido una modificación."
+          "explanation": "Una implementación puede devolver false después de haber escrito una cantidad inválida. Consultar los miembros después del rechazo permite comprobar si conserva la cantidad que se había aceptado; observar sólo el bool no permite distinguir esos comportamientos.",
+          "reviewFeedback": [
+            "Esta prueba observa sólo el valor devuelto. Piensa qué diferencia visible habría si la operación devolviera false pero hubiera escrito antes sobre un miembro.",
+            "Esta prueba sólo construye el pedido. Revisa si llega a ejecutar la operación cuyo rechazo se quiere investigar.",
+            "Relaciona el cambio aceptado con la consulta que permite observar qué cantidad queda después de la solicitud rechazada."
+          ]
         },
         {
           "type": "output_prediction",
@@ -584,16 +728,30 @@
         },
         {
           "type": "paragraph",
-          "text": "Las siguientes recuperaciones tienen borradores independientes. La primera distingue cancelar antes de otras solicitudes y repetir un envío; la segunda comprueba que una copia recibe un valor propio. Cada programa conserva una batería fija y permite corregir y reintentar sin cambiar de requisito."
+          "text": "Las dos actividades siguientes utilizan editores y borradores independientes. La primera recupera los efectos de cancelar antes de otras solicitudes y de intentar enviar dos veces. La segunda comprueba los valores de dos objetos después de copiarlos.\n\nCada editor reúne una batería fija: corrige y reintenta ese mismo objetivo sin sustituirlo por el de la otra actividad.",
+          "emphasis": [
+            {
+              "text": "editores y borradores independientes"
+            },
+            {
+              "text": "una batería fija"
+            }
+          ]
         },
         {
           "type": "heading",
-          "text": "Recuperar el rechazo después de cancelar y enviar"
+          "text": "Comprobar solicitudes posteriores a cancelar o enviar"
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye Pedido desde sus requisitos. Crea V con nueve unidades; cancela, intenta cambiar a tres, enviar y cancelar otra vez. Muestra las líneas Cancelar:1, Cambiar:0, Enviar:0, Cancelar de nuevo:0 y Conservado:V:9:1, donde el último bool consulta si sigue cancelado. Crea otro Pedido R con tres unidades e intenta enviar dos veces; muestra Envios:1:0:1, con el estado enviado al final. Ejecuta cada solicitud antes de consultar.\n\nTermina cada línea con salto salvo la última. Pulsa Compilar, ejecutar y comprobar. Los rechazos no pueden cambiar los miembros ni reiniciar el modelo a preparado.",
+          "text": "Reconstruye Pedido desde los requisitos del modelo. Crea un pedido de código V y nueve unidades. Solicita, en este orden, cancelar, cambiar a tres, enviar y cancelar otra vez. Muestra el resultado de cada llamada en las líneas Cancelar:1, Cambiar:0, Enviar:0 y Cancelar de nuevo:0.\n\nDespués consulta ese mismo objeto y muestra Conservado:V:9:1. El último bool corresponde a la comparación de su estado con Estado::cancelado: permite comprobar que los rechazos no lo devolvieron a preparado.\n\nCrea otro pedido de código R y tres unidades. Solicita enviar dos veces y consulta después si permanece enviado. Muestra Envios:1:0:1, con los dos resultados y esa comparación en ese orden.\n\nTermina todas las líneas con un salto, salvo la última. Ejecuta las solicitudes antes de consultar los objetos y pulsa Compilar, ejecutar y comprobar. Los rechazos deben conservar todos los miembros.",
           "emphasis": [
+            {
+              "text": "Reconstruye Pedido"
+            },
+            {
+              "text": "Los rechazos deben conservar todos los miembros"
+            },
             {
               "text": "Compilar, ejecutar y comprobar"
             }
@@ -616,12 +774,18 @@
         },
         {
           "type": "heading",
-          "text": "Reconstruir y comprobar dos valores independientes"
+          "text": "Comprobar que una copia tiene su propio valor"
         },
         {
           "type": "paragraph",
-          "text": "En este editor reconstruye Pedido, crea original con código C y dos unidades y cópialo. Cambia únicamente las unidades del original a cinco y envía sólo la copia. Muestra Original:C:5:1 y Copia:C:2:1 en líneas distintas, sin salto final. En la primera línea el bool consulta preparado; en la segunda, enviado. Pulsa Compilar, ejecutar y comprobar. Consulta ambos objetos: modificar uno no debe mantener sus miembros sincronizados con el otro.",
+          "text": "En este editor reconstruye Pedido. Crea original con código C y dos unidades, y construye copia a partir de ese objeto. Cambia las unidades de original a cinco y envía sólo copia.\n\nConsulta ambos objetos y muestra Original:C:5:1 y Copia:C:2:1 en líneas distintas, sin salto al final de la segunda. En la primera línea, el bool compara el estado con Estado::preparado; en la segunda, con Estado::enviado.\n\nPulsa Compilar, ejecutar y comprobar. Las consultas deben mostrar que cada objeto conserva el resultado de las operaciones solicitadas sobre él: cambiar original no cambia automáticamente copia, y enviar copia no envía original.",
           "emphasis": [
+            {
+              "text": "Consulta ambos objetos"
+            },
+            {
+              "text": "cada objeto conserva el resultado"
+            },
             {
               "text": "Compilar, ejecutar y comprobar"
             }
@@ -648,7 +812,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Justificar antes de dar por terminado el modelo"
+          "text": "Relacionar cada camino con su contrato"
         },
         {
           "type": "math_puzzle",
@@ -749,15 +913,28 @@
             "Nada: el invariante numérico basta para toda la interfaz."
           ],
           "correctIndex": 0,
-          "explanation": "Una operación puede incumplir su contrato aun dejando datos numéricos dentro del dominio."
+          "explanation": "El intervalo de unidades no es el único requisito. enviar() debe comprobar que el pedido está preparado antes de pasar a enviado. Aceptar desde cancelado incumple esa transición, aunque la cantidad siga entre una y veinte.",
+          "reviewFeedback": [
+            "Distingue las condiciones sobre los datos de las condiciones que permiten realizar una transición.",
+            "Esta elección considera suficiente terminar en un enumerador nombrado. Revisa qué estado de partida exige enviar(), además de qué estado produce.",
+            "Esta elección observa únicamente el intervalo de unidades. Recupera qué condición de estado solicita la operación enviar()."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El modelo queda abierto a requisitos nuevos, que necesitarán decisiones y pruebas nuevas. No añadimos herencia ni memoria manual para representar estos objetos concretos: la asociación, construcción y operaciones bastan para el problema planteado."
+          "text": "Las pruebas corresponden a los requisitos concretos de este modelo. Añadir otros requisitos exigirá decidir qué cambia en la interfaz y diseñar casos que permitan observar ese cambio.\n\nLa copia y la asignación proporcionadas para esta clase trasladan los valores de sus miembros (Stroustrup, 2024). No establecen por sí solas una identidad histórica ni la unicidad de los códigos en una colección. Esas propiedades necesitarían reglas adicionales si el problema llegara a exigirlas.",
+          "emphasis": [
+            {
+              "text": "los requisitos concretos de este modelo"
+            },
+            {
+              "text": "reglas adicionales"
+            }
+          ]
         },
         {
           "type": "heading",
-          "text": "Referencias de recuperación"
+          "text": "Referencias de las dos actividades de recuperación"
         },
         {
           "type": "code",
@@ -1726,7 +1903,270 @@
         "id": "block_0001_0003",
         "beforeSha256": "ed949ac3879259ff6bcd13a88f244cd8ef88c5fdaf0d2c46b4ce71712ec1a07b",
         "afterSha256": "e3ccaaf088fae8e706e3d6a6728097cdbf0d475ad1588837fcfbd5fa35b8d7c3"
+      },
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "f5df3248e2b33761d32940829742842bbfd79c6f67a2ca4fc86f80c380db3ae9",
+        "afterSha256": "bdcae8a1866423bf44640fe059d3eda11fb6dad5dab8d3f23b952ecd77850321"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c4d69501ec168c9459288c4cb251637daf53801272a7c6b14fe17613f0198503",
+        "afterSha256": "d07c8d845fe5c267c6e7584c297f9046c837f73a18bf9f24de24d004c211b6e6"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "42bfe7a75305b6773a111573a8783512c95a4a1c127a2bb8d6b624f6d5b06808",
+        "afterSha256": "f8e0a431313a115117a8f95b0c753797d90deb76d487a7b76bfec2a241588f96"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "9c2d19c6fd79551758487553bd901b0f61150658ae28c4e49d5d65b011da672b",
+        "afterSha256": "a2d01c12b443df04c2d63f3869defaff3b91fda2a90db5f0e6139cbd66a1397f"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "65a487b18865170768a8a39ea383b3308a1030c7d82c65a6f3ec3a79a602fa5a",
+        "afterSha256": "cffb4ebf33ac98d6119a95ccd0dedb14a90d3f9c219cf3dd6e2cdddad544cf4b"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "e3ccaaf088fae8e706e3d6a6728097cdbf0d475ad1588837fcfbd5fa35b8d7c3",
+        "afterSha256": "96b9562f4ee0132d91bfaa8c01522fefd96dbfc3b97100b0a075fa684c81628e"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "58a0e6a3d80812dc3be8d5aa4367baa761a2cd4240ed07d847e984b3ea44660d",
+        "afterSha256": "c7ba5a5e6529ecf5bfdf8ffdeef6cf3634e69b819197841edcda1db18895995c"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "00543815b3b06eb86db68314c3831d340764d2a39732c7e8899ad2e6ecbb7e2b",
+        "afterSha256": "e15f4b80181afd107b70b549ff75edf274e5333e65dad6a95e4ef53efb8980a1"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "9a5a044aaf0e9bbcf783d455ac3c17025a8ee1937a91cd2544f9fb843f7df1b4",
+        "afterSha256": "c5dd9328c01ddae885cbf48d6f0e355af5e0f4709cc6cf61322d3ac288d45c20"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "34543fb429c27b5496ca435b1521b67192f30400c3b108cdd2df699c93e8c003",
+        "afterSha256": "6b6a11ddd66f339e4ceece5cdbd43b9dcfe0211bb308b3c4d2c2b51ef2c7f683"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "a4cffd7f2320a1f30a0e41900fbdc73e8022b07014b9eda6ca8f1ce482ba17ec",
+        "afterSha256": "f753502c20c95cea6d94e47ddb649f50c7e06e2bbf3a6c049afbfbb35942bf1e"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "cc995f9d9ef419b46f8bfb4104add388f4e6f7090132988781652fce1302c9a6",
+        "afterSha256": "0531749ea45730644a85014a0e653cc1d2665e81d838e1066a1ded7b300de4fc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "3763ada260245375073a652653fceb5af9ef59d3113ea9a8db91a1a7065b76a7",
+        "afterSha256": "5ecc5565a8b58423589ff4c4141a444364e3b93c6964369f91070fefafdd449f"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "dfdd192585d52e6793cebd8096a84d95aabd84089d84a0971282809966264281",
+        "afterSha256": "71afcb640d7e2bd4a918fefc9e36e96c725ae234f11a0a8ebf5ab9e9510ce184"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "92b261fe8a99e4d932b32ee4567cd9c21df954581553dfa5ea317ca4c1464980",
+        "afterSha256": "a18d1b88e4d134ffb213ef25d8575922041df511825bba8e6b2b41dd43c1a67b"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "2abc88ac872ccd004938dfa49e625d87787ab7c0cb9819420b36bbc756195638",
+        "afterSha256": "e5c0e350120697050048eac2177b9ce4b1ec59872163906fcdd6d389f055e38f"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "168f92f0dfaa90d8e1ebfa8d8e661c6d1a9b27ed0b9fdb1c0b687e7f022694be",
+        "afterSha256": "1a5fc92f3f9c267aea25dc2e336271a2187faf011747ccf7b15588dad5453107"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "222bde062abd64c3d8b9acaaad7bf9a7f7e74945dd0cfea389f68ebaf52f9aa2",
+        "afterSha256": "3e418230284a031a4ffeb3754973a07b6495b16f83d1bdf88572e4f8f67bd9b6"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "777fbc546db165393f85653689da8e2f8511856fe8bd7f9c4e1dbc35b25a2189",
+        "afterSha256": "2a30fc87d3546f7c7e8cae4e1092020701892240da9fa975ace3a50e08da5f61"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "c58108ec7eb5fadf04eb1d80c474fd64ddcf939aa6c82cc705cff6aff56cc40f",
+        "afterSha256": "9ba10db75e121930fd9d789c1dc22e83655c3b31eb5f15aa66c34b4b6518f7d0"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "dd2679bd7375c7f435fd3e996966602e98615beea91622a466f0cbc124144fec",
+        "afterSha256": "8e1c93061b30a37913ac8edaeb75ce580f73bce6237d5348800e4ce750b67d25"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "6d39c17e4260054f6d7f427b2c262c1e37ca60d280e6fbea075464a4eb4563a6",
+        "afterSha256": "caaf4f0577d21dba8788f9247a9b2d5f069f678f1fb3c086e36c6340bd06153d"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "53ccfec0b0272f587322ddbdcdd8882ebf3de7a69c38760cf3439984db5b0b7a",
+        "afterSha256": "db27f9b8514077f588a60a8175b2a94b93fe8b4b4643d17aabe1271ef0588a93"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "a1e7d6513c3266c9bb93a9712eeedd8ee4de5e06fd3bfe04c353da1887b86d53",
+        "afterSha256": "beff67d0a9b78b67312762c0414035f9c0cda5320932e1758d20e824fbb6e110"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "39ea1bbaefb5cdfa1d13fdd152bcaaca93c84f442a1078c92fbc1edf1b5ff3e0",
+        "afterSha256": "2b6d2a4f50ee3a1af8cc51a491d9a5ef9d7c9af731cff6756f05373e88bdfcc5"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "26f78b575155bc4669aeb40a819f6eea2b2a1c226f5762f03adaa42c73247d7f",
+        "afterSha256": "4ba9e346806d5d56ecf9b57bee5907478ca45c0236bd607cd5822177d602f9b1"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "36a8a462023a67875ec0db79eb52970a4c74666d92623ac61bf0b1c3c4cddfe0",
+        "afterSha256": "7b46faa68e082a55c8bc156dc1f53a3293d4dc169d17f9aca96cef9301a29e6c"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "ef435b5f53ae0d89688be536a8a1153085870a5aea0fc0e3824dba8f3f037439",
+        "afterSha256": "cbf31b0f2c8ebd05bd57ab071ac178b5628f3afced2046ee0b62334133fcfee7"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "07b69cb23f07b1e1a6b96d45cdb043a846f024816b6c41b7b6935219fe2ab33d",
+        "afterSha256": "cab94906029c2c45b960ce7665b5b06018e45b6735ed80587607292ce9026ce0"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "2fc8ccfbd8ed40f0c200c0d977b2adc124a7124b883a033f64b701181d178523",
+        "afterSha256": "a8c0eb7770b3eddf4a671f451b4be64a6a267b511c08b01473a3d2534bbc2a92"
+      },
+      {
+        "id": "block_0007_0000",
+        "beforeSha256": "cd6cde2ac55e4bbab0fd40a65c4fd133136286332d7f88bd969105943356cbd8",
+        "afterSha256": "b0f861a2ea63a4ca5896131ba2999a501c288a8ce286efc81c877e6c2d2b25f5"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "9c04120d229432deb3112117ec40d8c34ce7fcc7328ffe0d14e9e05749925f89",
+        "afterSha256": "d29b723c357e4373dee6db547c819acb9d14c0b1a30602be38c65eeb7c97bccb"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "29961adef27ec255e746b5c1ce78d24c4fecf67e015695388aa47b1ec3f46e71",
+        "afterSha256": "8ee97d3899b86b68afe98678ccf6047bd8ab9f5320f1e2337e0c2699b51b8800"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "79907c556340fa36a7da995f77b802c0829d5dbdb54374e2ffe22eb4832ec40a",
+        "afterSha256": "53748929c537c6edac6f8e703a73b9bbef53dc01e3cf24700d026e5570f0be9a"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "d07c8d845fe5c267c6e7584c297f9046c837f73a18bf9f24de24d004c211b6e6",
+        "afterSha256": "ccdad62e1d98fe608fc2477f78466fdb6d27777bffb1aef98e8060fcbad7d0e4"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "8e1c93061b30a37913ac8edaeb75ce580f73bce6237d5348800e4ce750b67d25",
+        "afterSha256": "8a5e130e5e471d37fc45dcc0ddc5a2cc48850f82121c6e4c59efdd455949b1ac"
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0001_0002",
+      "blocks": [
+        "block_0002_0000",
+        "block_0002_0001",
+        "block_0002_0002",
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0001_0007",
+      "blocks": [
+        "block_0002_0005",
+        "block_0002_0006"
+      ]
+    },
+    {
+      "activity": "block_0004_0002",
+      "blocks": [
+        "block_0004_0003",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0005",
+        "block_0005_0006"
+      ]
+    },
+    {
+      "activity": "block_0006_0006",
+      "blocks": [
+        "block_0007_0005"
+      ]
+    },
+    {
+      "activity": "block_0006_0009",
+      "blocks": [
+        "block_0007_0006"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0001_0007",
+      "requires": [
+        "block_0001_0002"
+      ]
+    },
+    {
+      "activity": "block_0002_0004",
+      "requires": [
+        "block_0001_0002"
+      ]
+    },
+    {
+      "activity": "block_0004_0002",
+      "requires": [
+        "block_0001_0002",
+        "block_0001_0007"
+      ]
+    },
+    {
+      "activity": "block_0005_0004",
+      "requires": [
+        "block_0004_0002"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "requires": [
+        "block_0001_0002"
+      ]
+    },
+    {
+      "activity": "block_0007_0001",
+      "requires": [
+        "block_0006_0006",
+        "block_0006_0009"
+      ]
+    }
+  ]
 }
