@@ -10,10 +10,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Una clase debe distinguir las operaciones que consultan de las que cambian su objeto. int x() const coloca const después de la lista de parámetros para declarar que esta consulta no modifica el estado del punto. Puede llamarse tanto para un Punto modificable como para un const Punto. mover_a cambia sus coordenadas y no se declara const.",
+          "text": "El Punto de este ejemplo guarda dos coordenadas. Consultarlas permite observar su estado; moverlo cambia esas coordenadas. Distinguir las operaciones que observan de las que modifican permite usar también objetos que deben conservar su valor (Stroustrup, 2024).\n\nEn int x() const, const aparece después de los parámetros. Declara que esa función miembro puede llamarse sobre un objeto constante. En esta clase, el compilador impide que su cuerpo modifique x_ o y_. La consulta puede aplicarse tanto a un Punto modificable como a un const Punto; mover_a es una operación modificadora y no se declara const (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "consulta no modifica el estado"
+              "text": "observan"
+            },
+            {
+              "text": "modifican"
+            },
+            {
+              "text": "después de los parámetros"
             }
           ]
         },
@@ -24,13 +30,13 @@
         },
         {
           "type": "paragraph",
-          "text": "const en la variable expresa que ese objeto no debe cambiarse por las operaciones normales. const en la función miembro expresa cómo puede usarse esa operación sobre el objeto de la llamada. Son posiciones distintas con funciones relacionadas.",
+          "text": "const en la declaración del objeto y const después de los parámetros de una función miembro tienen papeles relacionados, pero distintos. const Punto referencia{1,3}; crea un objeto que no debe modificarse después de su inicialización. int x() const declara una operación disponible para observar también ese tipo de objeto (Stroustrup, 2024).\n\nNo basta con que el cuerpo de una función se limite a devolver un dato. La declaración debe indicar que la función miembro es const para poder llamarla sobre un const Punto. Así, el código usuario puede conocer esa posibilidad sin examinar su implementación.",
           "emphasis": [
             {
-              "text": "const en la variable"
+              "text": "declaración del objeto"
             },
             {
-              "text": "const en la función miembro"
+              "text": "función miembro es const"
             }
           ]
         }
@@ -99,7 +105,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Añadir const al nombre de un objeto no selecciona un resultado numérico ni copia automáticamente su estado. La inicialización de ese objeto sigue siendo la que escribiste; const limita las modificaciones permitidas después."
+          "text": "const no elige unas coordenadas ni crea por sí solo una copia. La inicialización sigue siendo la que se escribe: const Punto copia = punto; crea otro objeto a partir de los miembros de punto (Köppe et al., 2023). Después, esa copia conserva sus propias coordenadas aunque el original se mueva.\n\nUna referencia const Punto&, en cambio, permite consultar el objeto recibido sin copiarlo y sin modificarlo a través de esa referencia (Stroustrup, 2024). Si el objeto original es modificable, puede cambiar después por otra vía permitida. La referencia no guarda una instantánea de sus coordenadas.",
+          "emphasis": [
+            {
+              "text": "otro objeto"
+            },
+            {
+              "text": "sin copiarlo"
+            },
+            {
+              "text": "no guarda una instantánea"
+            }
+          ]
         }
       ]
     },
@@ -174,7 +191,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Las decisiones se combinan: const auto& evita copiar cada objeto para leerlo y clasifica el acceso como no modificador; las consultas de la clase permiten esa lectura. Una interfaz sin consultas const dificultaría usar objetos que sólo deben observarse."
+          "text": "En for (const auto& punto : puntos), cada vuelta usa una referencia constante al elemento correspondiente. No se crea una copia de ese Punto para leerlo. Las consultas x() e y() están declaradas const y por eso se pueden llamar mediante esa referencia (Stroustrup, 2024).\n\nEl recorrido reúne dos decisiones: usar una referencia para acceder al elemento existente y ofrecer consultas que permitan observarlo sin modificarlo. No hace falta quitar const para presentar sus coordenadas.",
+          "emphasis": [
+            {
+              "text": "referencia constante"
+            },
+            {
+              "text": "No se crea una copia"
+            },
+            {
+              "text": "consultas x() e y()"
+            }
+          ]
         }
       ]
     },
@@ -186,8 +214,14 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Dimension con constructor, miembros privados y consultas filas() y columnas() const. Crea const Dimension fija{2,5}. Crea original{1,3}, copia ese objeto a un const y después modifica original mediante cambiar_a(4,2). Las cantidades de esta actividad permanecen entre cero y diez.\n\nMuestra una primera línea 2x5 consultando fija; después muestra copia y original como 1x3 4x2, con un espacio entre ambos y sin salto al final. Pulsa Compilar, ejecutar y comprobar. Cada resultado debe proceder del objeto correspondiente; una copia constante conserva sus propios valores.",
+          "text": "Define Dimension con constructor, miembros privados y las consultas filas() y columnas(), ambas declaradas const. Incluye cambiar_a para modificar las dos cantidades de un objeto que no sea constante. En esta actividad sólo se usan cantidades entre cero y diez.\n\nCrea const Dimension fija{2,5}. Después crea un objeto original con una fila y tres columnas. Crea otro Dimension llamado copia, decláralo const e inicialízalo a partir de original. Por último, cambia original mediante cambiar_a(4,2).\n\nMuestra 2x5 en la primera línea consultando fija. En la segunda, muestra las dimensiones de copia y de original como 1x3 4x2, con un espacio entre ambos resultados. No añadas espacios al principio o al final ni un salto después de la segunda línea.\n\nPulsa Compilar, ejecutar y comprobar. Cada resultado debe proceder de las consultas al objeto correspondiente; la copia constante conserva las cantidades que recibió al crearse.",
           "emphasis": [
+            {
+              "text": "ambas declaradas const"
+            },
+            {
+              "text": "Dimension llamado copia"
+            },
             {
               "text": "Compilar, ejecutar y comprobar"
             }
@@ -210,7 +244,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Las consultas const permiten leer el objeto fijo y la copia constante. Cambiar el original por una vía modificable no cambia esa copia. La siguiente actividad comprueba por separado una llamada de modificación sobre un objeto const; no mezcla un diagnóstico intencional con esta ejecución válida."
+          "text": "Las consultas const permiten leer tanto el objeto fijo como la copia constante. Cambiar original por una vía modificable conserva los valores de copia: son objetos distintos.\n\nLa siguiente actividad utiliza otro editor para observar un diagnóstico de compilación. Se mantiene separada de la construcción que ya produjo las dos líneas solicitadas.",
+          "emphasis": [
+            {
+              "text": "objetos distintos"
+            },
+            {
+              "text": "otro editor"
+            }
+          ]
         },
         {
           "type": "heading",
@@ -218,7 +260,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor independiente ya existe const Dimension fija{2,5}. Añade `fija.cambiar_a(4,2);` y pulsa Compilar y ejecutar. Debe fallar la compilación porque cambiar_a no es una consulta const y modifica el objeto. Observa el diagnóstico sin exigir una frase concreta. No se espera salida ni excepción durante la ejecución: el programa no debe llegar a ejecutarse. Conserva const y la interfaz mientras investigas este rechazo."
+          "text": "Este editor contiene const Dimension fija{2,5}. Dentro de main, después de crear fija, añade la llamada fija.cambiar_a(4,2); y pulsa Compilar y ejecutar. Conserva const en el objeto y conserva la interfaz de Dimension.\n\nLa compilación debe rechazarse porque cambiar_a no puede llamarse sobre ese objeto constante. Observa el diagnóstico: su redacción puede variar entre compiladores. El objetivo es reconocer un error de compilación; no se espera que el programa llegue a ejecutarse ni que produzca salida.",
+          "emphasis": [
+            {
+              "text": "fija.cambiar_a(4,2);"
+            },
+            {
+              "text": "error de compilación"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -239,7 +289,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: las consultas const permiten leer objetos y referencias constantes, no cambian sus miembros y mantienen el formato pedido; cambiar_a conserva la clasificación modificadora; una copia es independiente y mantiene su momento. No se exige una única distribución de las definiciones."
+          "text": "Las consultas const permiten leer el objeto fijo y la copia constante sin cambiar sus miembros. cambiar_a continúa siendo una operación modificadora; sólo se usa sobre original. La copia conserva las cantidades que recibió al inicializarse, no las actualizaciones posteriores de original.\n\nLa primera línea presenta el objeto fijo. La segunda permite comparar la copia con el original ya modificado. Otra organización de las definiciones también es válida si conserva esas propiedades y la salida solicitada.",
+          "emphasis": [
+            {
+              "text": "La copia conserva"
+            },
+            {
+              "text": "Otra organización"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -254,5 +312,823 @@
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "22943a5536d94b9020124b0062bb832ed2220e13612f195e2dfbd29e2fd6c25f"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "348e81d1a5f68d4bb30bca6cd961dc59a0b7299c8a5c68c5314ef132884b1ec9"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "32f9dcd58215bf823585e82d8d2394b07a9f5a11ff8190c7c7c216c055d7295c"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "2cfdbf0f1163dc8c645f19250abe7ee441282d341fa5b2203a78c9a0523b4829"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "342e97eba4f36851a3bd1ffc6abe686ccd6e85f208a63999f2fe3401bf2dda89"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "598d83e4b3126caecfe356b10a4ce7bb040dcc382e1a1370fb2abc77c1a18bb5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "3041ba5981bd18051f213db4643b6a5899ae5c6f11f144712b07ae47b58b691e"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "0a42964e685a09a580e871352e069eae76a97cd0464fb2a09ac9ebd5b1310376"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "65c56782bab267b0c5e1245b6924633e656f09b4cf085c2ec8cb3d59379786f9"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "bd60c9f81ae3646a5c7fbd9d70c312151c5abd4edd0661cd2f89644abd6b34b1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "ba7dc7428d1853a7b293ab2a02e8d9b32ee7ec62456bfdb74fb1a14ff1601a74"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "d365f879bba9f269a9766da0ef010d87b3eb83b77e9b1a06868105eeca6206bf"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "0c95d0b4c8c3335e58cff477a72662a7312d41bf1ae8c4e968e0bc4c9dfd3ab2"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "7ea1ac0ca0607740c06ba7c22c891a3430f02f9e9e3eb925a39de47bc5ae6cd4"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "39d6426c40424a592da3ee4bc59e5b8be53e63cfc64226294b2d4e48528aa588",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "22943a5536d94b9020124b0062bb832ed2220e13612f195e2dfbd29e2fd6c25f"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "348e81d1a5f68d4bb30bca6cd961dc59a0b7299c8a5c68c5314ef132884b1ec9"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "32f9dcd58215bf823585e82d8d2394b07a9f5a11ff8190c7c7c216c055d7295c"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "2cfdbf0f1163dc8c645f19250abe7ee441282d341fa5b2203a78c9a0523b4829"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "fd79a5b4faeb3381dac0fd8620fb10977adbdd9d436f6a81d3444d2aa54823d2"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "b51cac6e531afc5bd670333778ad0505c452c0e092edc7bfa03b9247fece286f"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "454fbe75d0c9ff429a6483e7053a84d2dc796273cbae112a095e501df52d0018"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "28fc26e3f72622c1a880418158c6dd8ff21b5fbf1a461076935a8346ff122893"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "65c56782bab267b0c5e1245b6924633e656f09b4cf085c2ec8cb3d59379786f9"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "9719936f9cbf2743b6e2449709f82a9a20b2b7c5c4c53e2f2ae7e41dee2f1799"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "ba7dc7428d1853a7b293ab2a02e8d9b32ee7ec62456bfdb74fb1a14ff1601a74"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "14dbe14c5820e3af6d9559d04d968d0b298589fe180c488590ac375f90de0913"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0c95d0b4c8c3335e58cff477a72662a7312d41bf1ae8c4e968e0bc4c9dfd3ab2"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "122926ab30b540393454ba0c8d9bf36e91b510d4d8196858212bddd8b76af54d"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "111db9f38176ce5aca3f2e69b11bb79d14ad3e54a00ece6884d89915c0a59690",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "22943a5536d94b9020124b0062bb832ed2220e13612f195e2dfbd29e2fd6c25f"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "348e81d1a5f68d4bb30bca6cd961dc59a0b7299c8a5c68c5314ef132884b1ec9"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "32f9dcd58215bf823585e82d8d2394b07a9f5a11ff8190c7c7c216c055d7295c"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "2cfdbf0f1163dc8c645f19250abe7ee441282d341fa5b2203a78c9a0523b4829"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "342e97eba4f36851a3bd1ffc6abe686ccd6e85f208a63999f2fe3401bf2dda89"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "598d83e4b3126caecfe356b10a4ce7bb040dcc382e1a1370fb2abc77c1a18bb5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "3041ba5981bd18051f213db4643b6a5899ae5c6f11f144712b07ae47b58b691e"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "0a42964e685a09a580e871352e069eae76a97cd0464fb2a09ac9ebd5b1310376"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "65c56782bab267b0c5e1245b6924633e656f09b4cf085c2ec8cb3d59379786f9"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bd60c9f81ae3646a5c7fbd9d70c312151c5abd4edd0661cd2f89644abd6b34b1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "ba7dc7428d1853a7b293ab2a02e8d9b32ee7ec62456bfdb74fb1a14ff1601a74"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "d365f879bba9f269a9766da0ef010d87b3eb83b77e9b1a06868105eeca6206bf"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0c95d0b4c8c3335e58cff477a72662a7312d41bf1ae8c4e968e0bc4c9dfd3ab2"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "7ea1ac0ca0607740c06ba7c22c891a3430f02f9e9e3eb925a39de47bc5ae6cd4"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "b3408e4fb6ac34af37320888ffe84ef848f1074a5d50de17f996f0dc3cbef14a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "22943a5536d94b9020124b0062bb832ed2220e13612f195e2dfbd29e2fd6c25f"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "348e81d1a5f68d4bb30bca6cd961dc59a0b7299c8a5c68c5314ef132884b1ec9"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "32f9dcd58215bf823585e82d8d2394b07a9f5a11ff8190c7c7c216c055d7295c"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "2cfdbf0f1163dc8c645f19250abe7ee441282d341fa5b2203a78c9a0523b4829"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "c92a236fcd748fc47270daecf40c4bd0a87fc11b98cc2eed6203ae58157544db"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "d6d4d392f8b7bc3059fb7ea83d3574b69adcb7181e959dcd125640f391274123"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "7d892128ad679d9e3981a0c1a3346a96155dd8b05d269fd888566aebbfb8c786"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "7eb8e24dbfdf4865e0711f2e9f416ddd1e3e2675564f78335178e5849b3a24ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "65c56782bab267b0c5e1245b6924633e656f09b4cf085c2ec8cb3d59379786f9"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "aa5d08559428b2232e7952f74e0857bf65aaa8331ce7223dcce69e3ca21cc058"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "ba7dc7428d1853a7b293ab2a02e8d9b32ee7ec62456bfdb74fb1a14ff1601a74"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "dd2d6c2c072eb6272109a48322e6d8f409f54f90464cab032937345c826842cb"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0c95d0b4c8c3335e58cff477a72662a7312d41bf1ae8c4e968e0bc4c9dfd3ab2"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "654a86ae9f80c59e7756ced007344466e4e521970e26f8e28bc07b1f9919aed1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0267dbc77299a5e0a0bce4483708cb599c418eaa1bfb3f6b68b5b10fb206784e",
+        "afterSha256": "a5f382508d53b7fd88f24fea5f57a93d6c1435677b48cc3c541f6d33ea0352de"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8c48a4667b8c0783a8ae24e4345875c7b8e9a7421e4d73c48799413ce550bd6e",
+        "afterSha256": "4b7002583516416f32bde885b5cda1c007639920ee904d1788c07a9ca6a737dc"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1839c4bee0b68238f6c80d998e7fb33b34cf731e4476fe729f08f6a09c5e5ac3",
+        "afterSha256": "612778e209df217c1dfb0de6e841c0fbe3ecc5c6756c87895ade5df9aadd1fcc"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "798961db55ea87e3079870336b957917d9390fbbeb4c8d498259a8dd1e7412d9",
+        "afterSha256": "3717cfba4d24a34d6206395e5eccb9d64bfa8b8f3d151b954aaa693465f4683a"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "2f6670ffd011fcdb4b2b3d8e4af6f22c24b267a5bf20e451428bd071ea14c311",
+        "afterSha256": "19d9e83b1e2a474dff0c6e221c6b5f31d7f7fa3f56786918a04071a2c47038b0"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "acbd1b98a1d76bd66285a0d1f3a61e98ddbb20014768a20af04e2b14f0ef070f",
+        "afterSha256": "c6fb0bb90df5f1c115098c101ba06e862aeed7948217b7441f0695d8face4f68"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "6fe5b5449271829d5a1454e94450b43ac5fe635a50623f4c5cda7358b999ae35",
+        "afterSha256": "5ee9e4550469ca26d9e23612fc417f24762466634fc2b7b1aa3422956903d172"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "7565876f5d9bb91b562b7dacff3808bdb8239b098cf7154c7540cf204548d84b",
+        "afterSha256": "35c00d9e29e6d0fc3b5708f444021f9bc30e17dff950cae364c2415c6c15f36d"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "3717cfba4d24a34d6206395e5eccb9d64bfa8b8f3d151b954aaa693465f4683a",
+        "afterSha256": "1a93bd043f7b786506562951d42bb0a12dbb2ea302a355707b32338634d54623"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "19d9e83b1e2a474dff0c6e221c6b5f31d7f7fa3f56786918a04071a2c47038b0",
+        "afterSha256": "ad5cb84460ceb778dbc8ce01cdfe022be87936c3b0590962fc94e9f50972dc1a"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0006_0003",
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0006_0006",
+      "requires": [
+        "block_0006_0002"
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true
 }

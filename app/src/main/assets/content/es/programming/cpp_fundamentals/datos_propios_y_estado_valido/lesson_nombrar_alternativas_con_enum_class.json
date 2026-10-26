@@ -10,17 +10,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Un pedido puede estar preparado, enviado o cancelado según las reglas del ejemplo. Usar números sueltos obliga a recordar qué significa cada uno; usar cadenas permite errores de escritura que siguen siendo cadenas válidas. enum class Estado { preparado, enviado, cancelado }; introduce un tipo propio con nombres para esas alternativas."
+          "text": "Un pedido puede estar preparado, enviado o cancelado según las reglas del ejemplo. Usar números sueltos obliga a recordar qué significa cada uno; usar cadenas permite escribir otra palabra sin que deje de ser texto válido.\n\nenum class Estado { preparado, enviado, cancelado }; define un tipo propio con nombres para esas alternativas. Cada nombre de la lista es un enumerador: una constante del tipo Estado (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "tipo propio",
+              "style": "bold"
+            },
+            {
+              "text": "enumerador",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Escribimos Estado::enviado porque enviado pertenece al ámbito del tipo Estado. Los dos puntos dobles califican un nombre del tipo; no acceden a un miembro de un objeto mediante punto. enum class no es una clase con constructores y métodos: es una enumeración con ámbito.",
+          "text": "Escribimos Estado::enviado porque enviado pertenece al ámbito de Estado. Los dos puntos dobles califican el nombre con su tipo; el punto de un acceso como registro.estado, en cambio, selecciona un miembro de un objeto concreto. La declaración enum class define una enumeración con ámbito (Stroustrup, 2024).\n\nUna variable Estado recibe valores de ese tipo. Ni el entero 1 ni el texto \"enviado\" se convierten implícitamente en Estado::enviado. Esto permite que el compilador detecte esas mezclas de tipos antes de ejecutar el programa (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "ámbito del tipo Estado"
+              "text": "ámbito de Estado",
+              "style": "bold"
             },
             {
-              "text": "enumeración con ámbito"
+              "text": "enumeración con ámbito",
+              "style": "bold"
+            },
+            {
+              "text": "mezclas de tipos",
+              "style": "bold"
             }
           ]
         },
@@ -78,7 +94,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Si no escribimos valores explícitos, el primer enumerador tiene representación cero y los siguientes aumentan de uno en uno. Podemos observar la representación mediante static_cast<int>(estado). Esa conversión no significa que el número sea una cantidad para sumar ni que la progresión numérica defina las transiciones permitidas."
+          "text": "Si no se escribe un valor explícito para el primer enumerador, su valor numérico es cero. Cada enumerador siguiente sin inicializador toma el valor anterior más uno. static_cast<int>(estado) permite consultar ese valor como un entero (Stroustrup, 2024).\n\nEn este modelo, los números identifican alternativas: no son cantidades de pedidos. Que enviado siga a preparado en la lista tampoco define cuándo se permite enviar un pedido. La numeración y las reglas para cambiar de estado cumplen funciones distintas.",
+          "emphasis": [
+            {
+              "text": "valor numérico",
+              "style": "bold"
+            },
+            {
+              "text": "reglas para cambiar de estado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -103,7 +129,13 @@
         },
         {
           "type": "paragraph",
-          "text": "No imprimimos directamente un Estado con cout en estos ejemplos: aún no hemos definido una operación de salida para este tipo. Usamos comparaciones, conversión explícita o una función que devuelva el nombre visible."
+          "text": "Una enumeración con ámbito no se convierte implícitamente a int; para consultar su representación numérica se necesita la conversión explícita mostrada (Stroustrup, 2024).\n\nEn estos programas, std::cout no dispone de una operación para presentar directamente un Estado. Se puede imprimir el resultado de una comparación, el valor numérico ya convertido o el texto que entregue una función.\n\nLa siguiente página distingue convertir un número de comprobar si representa una alternativa reconocida por el programa.",
+          "emphasis": [
+            {
+              "text": "presentar directamente un Estado",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -115,7 +147,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La enumeración con ámbito que usamos tiene int como tipo de representación. static_cast<Estado>(9) puede producir un valor de ese tipo sin corresponder a preparado, enviado ni cancelado. Por tanto, enum class reduce mezclas accidentales, pero no valida un número convertido contra la lista de alternativas del programa."
+          "text": "En esta definición de enum class no se especifica otro tipo de representación: el tipo subyacente es int. Sus valores posibles incluyen los valores de ese tipo entero, aunque no todos tengan un enumerador asociado (Köppe et al., 2023).\n\nPor eso static_cast<Estado>(9) produce un Estado que no coincide con preparado, enviado ni cancelado. La conversión explícita solicita el cambio de tipo; no comprueba que el número esté en la lista de alternativas que reconoce este programa. Esa comprobación debe escribirse aparte (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "tipo subyacente",
+              "style": "bold"
+            },
+            {
+              "text": "no comprueba",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -153,7 +195,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La función completa todos los caminos, incluida una representación no reconocida. Devolver ese texto no crea un pedido válido: sólo presenta el valor que recibió. La construcción del objeto y las transiciones del pedido deberán proteger sus propias reglas."
+          "text": "La función devuelve texto en todos los caminos: si no coincide ninguna alternativa nombrada, devuelve No reconocido. Ese último camino tiene sentido porque la conversión explícita de la página anterior puede producir un Estado sin nombre en la lista.\n\nPresentar un valor no lo valida como estado de un pedido. Las reglas del programa deben decidir qué valores admitir y qué cambios de estado permitir. La función nombre se ocupa únicamente de elegir el texto.",
+          "emphasis": [
+            {
+              "text": "devuelve texto en todos los caminos",
+              "style": "bold"
+            },
+            {
+              "text": "Presentar un valor no lo valida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -175,7 +227,22 @@
         },
         {
           "type": "paragraph",
-          "text": "En código anterior también encontrarás enum sin class. Sus enumeradores quedan disponibles en el ámbito que contiene la enumeración y sus valores pueden convertirse implícitamente a enteros. Esa diferencia puede facilitar una escritura breve, pero también permite mezclas que una enumeración con ámbito rechaza. Para estos tipos propios elegimos enum class y hacemos explícitas las conversiones necesarias."
+          "text": "En código anterior también aparece enum sin class: una enumeración sin ámbito. Sus enumeradores quedan disponibles en el ámbito que contiene la declaración y sus valores admiten conversión implícita a enteros. Con enum class se usa la calificación del tipo y no se ofrece esa conversión implícita a int (Stroustrup, 2024).\n\nLa diferencia importa cuando dos conjuntos tienen un nombre como normal: Estado::normal y Prioridad::normal identifican constantes de tipos distintos. En estas actividades se usa enum class para conservar esa distinción y hacer explícitas las conversiones necesarias.",
+          "emphasis": [
+            {
+              "text": "enumeración sin ámbito",
+              "style": "bold"
+            },
+            {
+              "text": "conversión implícita",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tipos distintos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -209,10 +276,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Define enum class Prioridad con normal, urgente y aplazada. Construye nombre_prioridad para devolver Normal, Urgente o Aplazada según la alternativa, y No reconocida ante el valor convertido desde nueve. En main presenta urgente, normal, aplazada y ese valor convertido, una línea por resultado y con salto final en las cuatro.\n\nDefine también Registro con codigo string y prioridad de tipo Prioridad. Prepara un vector con A normal, B urgente y C aplazada. Recorre los registros y muestra codigo:nombre; para cada uno, sin espacios ni salto final. Pulsa Compilar, ejecutar y comprobar. Las cuatro líneas son Urgente, Normal, Aplazada y No reconocida; la última es `A:Normal;B:Urgente;C:Aplazada;`.",
+          "text": "Construye un programa con enum class Prioridad y los enumeradores normal, urgente y aplazada. Define nombre_prioridad para devolver Normal, Urgente o Aplazada según la alternativa y No reconocida para el valor convertido explícitamente desde nueve.\n\nEn main, muestra primero los nombres de urgente, normal, aplazada y el valor convertido desde nueve, en ese orden: Urgente, Normal, Aplazada y No reconocida. Cada resultado ocupa una línea y termina con un salto de línea.\n\nDefine también struct Registro con codigo de tipo std::string y prioridad de tipo Prioridad. Prepara un vector con los registros A normal, B urgente y C aplazada. Después de las cuatro líneas anteriores, recórrelo para producir una quinta línea: A:Normal;B:Urgente;C:Aplazada;. No añadas espacios ni un salto de línea al final de esa quinta línea.\n\nPulsa Compilar, ejecutar y comprobar. La comprobación contrasta la salida completa del mismo programa.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "enum class Prioridad",
+              "style": "bold"
+            },
+            {
+              "text": "struct Registro",
+              "style": "bold"
+            },
+            {
+              "text": "quinta línea",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -233,7 +314,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Los miembros de Registro conservan alternativas del tipo Prioridad, no números sueltos ni cadenas. La función de presentación traduce esa alternativa al rótulo que verá el usuario. La conversión explícita desde nueve sirve para comprobar el camino de valor no reconocido; no define una nueva prioridad."
+          "text": "Los miembros de Registro conservan alternativas de Prioridad. La función nombre_prioridad entrega el rótulo correspondiente sin reemplazar el miembro por texto ni modificarlo.\n\nEl valor convertido desde nueve prueba el camino No reconocida; no añade un enumerador a la definición. Los resultados deben proceder de las llamadas y del recorrido solicitados, no de un único mensaje escrito de antemano.",
+          "emphasis": [
+            {
+              "text": "sin reemplazar el miembro por texto",
+              "style": "bold"
+            },
+            {
+              "text": "no añade un enumerador",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -271,7 +362,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: las tres alternativas pertenecen a Prioridad y se califican con su tipo; nombre_prioridad devuelve el texto correspondiente sin modificar el argumento; el valor convertido desde nueve obtiene No reconocida; la variante conserva juntos el código y la prioridad de cada registro. No se exige una única implementación de la selección."
+          "text": "En la referencia, cada alternativa pertenece a Prioridad y se califica con ese tipo; nombre_prioridad devuelve el rótulo sin modificar el argumento. El caso convertido desde nueve comprueba el camino No reconocida.\n\nLos registros conservan juntos su código y su prioridad. La función de presentación se reutiliza en el recorrido: no hace falta convertir la prioridad en un entero para obtener su nombre. La selección puede resolverse con distintas implementaciones correctas.",
+          "emphasis": [
+            {
+              "text": "conservan juntos su código y su prioridad",
+              "style": "bold"
+            },
+            {
+              "text": "distintas implementaciones correctas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -280,7 +381,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta variante produce R:Urgente;S:Normal;. Mantiene juntos el código y la prioridad y no necesita convertir la enumeración en un entero para presentarla."
+          "text": "Este ejemplo de dos registros produce R:Urgente;S:Normal;, sin salto final. Recupera la asociación entre el código y la prioridad de cada registro usando otros datos. La referencia siguiente reúne todos los resultados solicitados en la actividad del editor.",
+          "emphasis": [
+            {
+              "text": "otros datos",
+              "style": "bold"
+            },
+            {
+              "text": "todos los resultados solicitados",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "heading",
@@ -293,5 +404,953 @@
         }
       ]
     }
-  ]
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0004",
+        "block_0007_0005",
+        "block_0007_0006",
+        "block_0007_0007",
+        "block_0007_0008"
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "4a35437a40e97c1625afc43f45a79c74df84b34d4cab1b0bb93cffe734595a5d"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "26405c6ed56d3e89608336149db2f4c0bdea7b664bf84ed49bc16e3963a3eff4"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "d9f830580e6ea161e3ad63d80d20798f8c14148b599af0c68556875790d46eb9"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "636eb9565cef83ad8b11a78805ac7685ed85f18c0bda775609ab27180c356bd5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "725cdb19fd70834662b81004a9a7c20dd05014a5b82dabba7c51e597e14c8878"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "f73d6df2fb638014afe2649402f776e1ad5755bc6c8186269d63ddf0712b9c29"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "11bd18fbc21bc252442b94a2096cc29a0cd68d8b37e94fea80dc07ec33176f90"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "44971745344f68d3b213a52d89f1d3e3c8d0e12c481a644ce40025001d9369f5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "6ce443dd624ac35de6b946d6a16b0678dca7d465aeead2d0e5e1c12f3e76a0c3"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "00fd3fca2b4925dbbd13d8b4ed1852121b81b05de2fcf92e554551ba25c202a4"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "8474ad9df2a41be69ab480653401eee3c10ef64484dfecd2899be10dd07867e3"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1a78daf5aa56041f871806135eaa43ccc9b9733342445fd7a0ebfefc669603bf"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "ab7b3af55f767a3f06271765d386327e9f64b13eeddbc194b5243fb125d17f92"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1dd03f3ad3a2a6ab336b5ac3f03b019eca46a769ec1dcdd7983f128764b51328"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "6e6ed0e7e6c96253686f3f4c4f1aaf570a91bb3e495854667d2424bf571d3b0a"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "761cb3018578c17f6fcc7876da98acf718e36de435544dc34004f532c024567d"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "d7449f2f3eeea375894034a4b9b4c5df999f160d04f8e8153d7fbfaff94ee89e"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "56d9c44a23a21b79ae8e14b4118912e6b5ad1e3979630a635e5e69e9470c12c0"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "366e04e96ce0f422d93fcd435de4f3264884183d75562de4428bffdd72282562",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "60e38c9c987f42c24987d4b055d30a238e1dd86ff324e5ffa31cbc50b0fee551"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "26405c6ed56d3e89608336149db2f4c0bdea7b664bf84ed49bc16e3963a3eff4"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "d9f830580e6ea161e3ad63d80d20798f8c14148b599af0c68556875790d46eb9"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "636eb9565cef83ad8b11a78805ac7685ed85f18c0bda775609ab27180c356bd5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "725cdb19fd70834662b81004a9a7c20dd05014a5b82dabba7c51e597e14c8878"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "f73d6df2fb638014afe2649402f776e1ad5755bc6c8186269d63ddf0712b9c29"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "11bd18fbc21bc252442b94a2096cc29a0cd68d8b37e94fea80dc07ec33176f90"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "8c26f0ddc543a50daa88210b43e7d28a436a4b978d15ebf2ebb97e24c82238d6"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "b8fbb48d4680f057c3c562a51c39ca49ac055cb1e38f95f7c354ecd84bfa09f3"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "641f0b951400cbfd3b43d01aea025bdd550a44719d0a64da7d98915fea1841e8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "f721e26711b41cafa07fe66c1e8d22ded07173b6009d9b655572cf03aac1df3a"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "dbde7ab524c554956c518b5a12e40847303f077af41fcb457816095350b87e3e"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "393a207d622c5375143066c9f4c68b0612072889902e6e879af9fcaeaf944170"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0f727648d8389fa6d63f228e61846abd1a668e836ada9637864ac2e61b0a4e4d"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "6e6ed0e7e6c96253686f3f4c4f1aaf570a91bb3e495854667d2424bf571d3b0a"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "f670099bc6b321de40c966ff0bb35f5fde081cbb40e26bf1cc020fd5fcf12e39"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "3454db124d39c36f89833e595ef91e0fea40e013ac3046f741de61b1d08db4ca"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "56dd4f4c5cc0f41de94f8986d22274ea4a99256c56dbbfa448d9896a36e0eb5f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "4a35437a40e97c1625afc43f45a79c74df84b34d4cab1b0bb93cffe734595a5d"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "26405c6ed56d3e89608336149db2f4c0bdea7b664bf84ed49bc16e3963a3eff4"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "d9f830580e6ea161e3ad63d80d20798f8c14148b599af0c68556875790d46eb9"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "636eb9565cef83ad8b11a78805ac7685ed85f18c0bda775609ab27180c356bd5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "725cdb19fd70834662b81004a9a7c20dd05014a5b82dabba7c51e597e14c8878"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "f73d6df2fb638014afe2649402f776e1ad5755bc6c8186269d63ddf0712b9c29"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "11bd18fbc21bc252442b94a2096cc29a0cd68d8b37e94fea80dc07ec33176f90"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "44971745344f68d3b213a52d89f1d3e3c8d0e12c481a644ce40025001d9369f5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "6ce443dd624ac35de6b946d6a16b0678dca7d465aeead2d0e5e1c12f3e76a0c3"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "00fd3fca2b4925dbbd13d8b4ed1852121b81b05de2fcf92e554551ba25c202a4"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "8474ad9df2a41be69ab480653401eee3c10ef64484dfecd2899be10dd07867e3"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1a78daf5aa56041f871806135eaa43ccc9b9733342445fd7a0ebfefc669603bf"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "ab7b3af55f767a3f06271765d386327e9f64b13eeddbc194b5243fb125d17f92"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1dd03f3ad3a2a6ab336b5ac3f03b019eca46a769ec1dcdd7983f128764b51328"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "6e6ed0e7e6c96253686f3f4c4f1aaf570a91bb3e495854667d2424bf571d3b0a"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "761cb3018578c17f6fcc7876da98acf718e36de435544dc34004f532c024567d"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "d7449f2f3eeea375894034a4b9b4c5df999f160d04f8e8153d7fbfaff94ee89e"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "56d9c44a23a21b79ae8e14b4118912e6b5ad1e3979630a635e5e69e9470c12c0"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "a0b19ec5ca0e8606012a91669572810bb33367fa2e89f3e41591888d5062c478",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "f096cee3ef05b7acccb8be66a5a79b2d674431244d80689b3024ca92a61353fa"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "26405c6ed56d3e89608336149db2f4c0bdea7b664bf84ed49bc16e3963a3eff4"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "d9f830580e6ea161e3ad63d80d20798f8c14148b599af0c68556875790d46eb9"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "636eb9565cef83ad8b11a78805ac7685ed85f18c0bda775609ab27180c356bd5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "725cdb19fd70834662b81004a9a7c20dd05014a5b82dabba7c51e597e14c8878"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "f73d6df2fb638014afe2649402f776e1ad5755bc6c8186269d63ddf0712b9c29"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "11bd18fbc21bc252442b94a2096cc29a0cd68d8b37e94fea80dc07ec33176f90"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f710af154a3f732780f10c21fafba101de0ac99349b868dd4b9b9af492838fdc"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "578b1d07604fda03805ca5b61b47e642ddc5671d09062b3e18fd7379339b134b"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "8e2668f39722d960a73c8b5a4a963c2d4dc8c3b0429ff8b16794b83743c71272"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "ec0bdf1e97d985c02c9feb7c10ea1a9d5c31513bd05429dd4b895e3f742e1269"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "bf7cb4295576ff5e4e19979876807d60370997545d61674f27fd4b2e11e5f1cd"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "dd2d6c2c072eb6272109a48322e6d8f409f54f90464cab032937345c826842cb"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "11324f1c8ce1ea69e490b17f2cb73b6d3cb2d638a8105adf037ccff85fce0925"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "6e6ed0e7e6c96253686f3f4c4f1aaf570a91bb3e495854667d2424bf571d3b0a"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "792b36cac6dfda696462dcae4f5f9faed2b017a3502efdaaec5cc96ed271c591"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "3032702eb63153f076854759291fe2563a22b0f7a9097f47b7a1d734e6bebb7d"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "931ed8203f1e1483aab79dbfedd942a1915b72dfb8cfca9df33f3b43bb3d2da0",
+        "afterSha256": "ee148536d75929191d29f42192da1f8f75933e6670e9df762cd969c5de9c4bd9"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "b64770e8da5c448952a56908b8daacee4171a0b23a66b81f18e674eb31387096",
+        "afterSha256": "7014d1c6a4c5ecaa935bde84d9655005fd0268f5aefa7434126fc1d2ecf0f472"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a37391f50ecd6242f77d87be51bcb25503a1dab2a2b462569e94e76cbf72373b",
+        "afterSha256": "c7521359d2e607f86b68dc730993e1eba5642b354f01e56cfeeadfa75b1d874c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "bf2d23e48309af691998d5c97100ceda063b79066ee4f6be4c239fe823de8636",
+        "afterSha256": "cd92c777fb989095ab9af830bd1a7879b9e6e44370c0e8713081ec2e6d424ca2"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "c1dff8c6df5d6e756e36cd607954ae6fb2e042bc518567f5954e0cadfdaaf484",
+        "afterSha256": "76a31597ed53b98d872f26e7ffbf87542f544f7af437c7b49422054f62bc824a"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ed4b24c3c04aa5252ec900fe9b73c82ec0c51707311fd6bc39ec4582ab16d0e1",
+        "afterSha256": "bfbc81762de79943c8402591df1b4d5d5893db05f439d7724787640877d9cd14"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f10f246187cc34034919aab6b2c273a7396c2e647aee8bfb11be7d5984007202",
+        "afterSha256": "26e75c8e8da2bbf1e4dc074c041739ba175020fdd1c58e5cc45ad2df5d16f86c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "af2854157d4e7add4e209785320bdcf77146df842707bcd64220d9e0424d88e2",
+        "afterSha256": "dede568ad2c520ffcb96a2959c2d4dc79d102b81908897666a12155716ee8e88"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "868f3425b39a25034c2c0aa55f44fbfba30d717dfbab417ea3ed18732427cf6c",
+        "afterSha256": "942c970d2064f1a711d2074600974dfcf29d781759daff3de35c4eb1b4722e42"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "8288315fbba49b5a7dec44559c9e86189c724eb0f2860f530f66dce6d73b4adc",
+        "afterSha256": "2b2130600a438efb3dcb42b02f21a19abbfb5374c1cf7945be83ea2d1dbe459c"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "15358cf9ab55babfe6a831e5dd09419477b18fc0ab9013bd6a521e58d48415a2",
+        "afterSha256": "b0f413e9f411cf17f7e07dba54829bb9657cb5340ef7c22a92549abed3f166b1"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "cd92c777fb989095ab9af830bd1a7879b9e6e44370c0e8713081ec2e6d424ca2",
+        "afterSha256": "333d1f7e680f30db4059a2106cf4fcf00999470f4cd08e0c6ef084a0ccab3ad7"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "26e75c8e8da2bbf1e4dc074c041739ba175020fdd1c58e5cc45ad2df5d16f86c",
+        "afterSha256": "4b13c8c7cc1fe8d3643bb9c9eee2121d154b74ce91e6872136b27028094e90c9"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "dede568ad2c520ffcb96a2959c2d4dc79d102b81908897666a12155716ee8e88",
+        "afterSha256": "c7f8d63521c79a3f1ffb2f0276862a13f9362bb61684a4b868aa6da080034cab"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "333d1f7e680f30db4059a2106cf4fcf00999470f4cd08e0c6ef084a0ccab3ad7",
+        "afterSha256": "e0be4cfe45e06696829ddcaeac97298acb4f1a0c34b1c90f31735da354dbcd88"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true
 }

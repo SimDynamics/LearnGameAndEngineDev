@@ -173,48 +173,20 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Predecir, comprobar y modificar un mensaje"
+          "text": "Predecir y modificar un mensaje"
         },
         {
           "type": "output_prediction",
           "id": "prediccion_revision_inicial",
-          "question": "Antes de ejecutar el programa inicial del editor de código, predice exactamente su mensaje. Conserva el espacio y no añadas comillas ni un salto final.",
+          "question": "Lee el programa mostrado y predice exactamente su mensaje. Conserva el espacio y no añadas comillas ni un salto final.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
           "answers": [
             "Revision inicial"
           ],
           "outputComparison": "exact",
-          "explanation": "La inserción envía Revision inicial. Esta es la salida de la versión válida de partida; quitar después el terminador impide construir esa otra versión, no cambia por sí mismo el literal.",
+          "explanation": "La inserción envía Revision inicial, con un espacio y sin salto final. Es la salida del programa válido mostrado. La actividad posterior de reparación utiliza otro editor con un error de sintaxis; esa versión debe repararse antes de poder ejecutarse.",
           "reviewFeedback": "Identifica el contenido que la instrucción envía a std::cout. No incluyas las marcas que delimitan o terminan la instrucción."
-        },
-        {
-          "type": "paragraph",
-          "text": "En el siguiente editor de código, ejecuta el programa que acabas de leer sin modificarlo. Pulsa Compilar, ejecutar y comprobar y contrasta la salida con tu predicción. Esta primera comprobación corresponde al programa original.",
-          "emphasis": [
-            {
-              "text": "sin modificarlo"
-            },
-            {
-              "text": "Compilar, ejecutar y comprobar"
-            }
-          ]
-        },
-        {
-          "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
-          "outputCheck": {
-            "inputComparison": "exact",
-            "cases": [
-              {
-                "standardInput": "",
-                "outputs": [
-                  "Revision inicial"
-                ],
-                "explanation": "La instrucción de salida envía el contenido del literal a std::cout. return 0; termina main sin añadir un cero al mensaje."
-              }
-            ]
-          }
         },
         {
           "type": "paragraph",
@@ -230,16 +202,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Pulsa Compilar, ejecutar y comprobar. La aplicación construye y ejecuta la revisión actual antes de evaluar su salida. Si compila pero el mensaje no coincide con el objetivo, aparece Incorrecto y puedes corregir el literal en este mismo editor.\n\nSi hay un error de compilación, esa revisión no se ejecuta ni recibe un veredicto de salida. Al iniciar la acción se vacía Salida del programa; el diagnóstico de construcción se muestra por separado. Lee ese diagnóstico para reparar la sintaxis, en lugar de buscar un resultado que el programa con el error no produjo. La actividad de reparación situada después de los puzzles permite comprobar esa diferencia.",
+          "text": "Pulsa Compilar, ejecutar y comprobar. Para resolver este objetivo, la revisión debe construirse y ejecutarse correctamente y mostrar Revision completa. En un intento todavía pendiente, una salida diferente recibe Incorrecto y puedes corregir el literal en este mismo editor.\n\nUna revisión cuya construcción falla no se ejecuta. Lee su diagnóstico para reparar la sintaxis: ese programa no ha producido una salida nueva que permita comprobar el objetivo. El diagnóstico puede señalar la instrucción siguiente al error.\n\nSi ya habías resuelto el objetivo, Correcto conserva ese logro; la consola y los diagnósticos muestran lo ocurrido en la ejecución actual. La actividad de reparación posterior permite contrastar un fallo de construcción con una ejecución válida.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             },
             {
-              "text": "esa revisión no se ejecuta"
+              "text": "no se ejecuta",
+              "style": "bold"
             },
             {
-              "text": "el diagnóstico de construcción se muestra por separado"
+              "text": "Correcto conserva ese logro",
+              "style": "bold"
             }
           ]
         },
@@ -587,8 +562,6 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0005",
-          "ejecucion_original_fuente_compilacion_y_diagnostico_consigna",
-          "ejecucion_original_fuente_compilacion_y_diagnostico_editor",
           "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
@@ -1131,17 +1104,551 @@
         "id": "block_0003_0007",
         "beforeSha256": "799115d7b2153a45713fbd06665f51f6ac26032aeab92571b00a893840fd234d",
         "afterSha256": "04f5fc6196366d0d9e572e759c6c2c39d3211396ade44704276497a5d18b9fcc"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "e5356fe5b51a3b5eacb181873a4d34a400f1a7db3619def399c81cec788adc80",
+        "afterSha256": "af81aceef16db2c263ff7ecabead78e4ee7d805e3e79bcb3bc9f4d2bc0e8c9ce"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "d8751b58e3d92346487d5e3e47936bd311ec277973b59ceb7b56132393ffa773",
+        "afterSha256": "09e5ebaa5ab0974fd2e5b5863f9749ad47b035aab078f9bf510482c9b26d89a7"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8af7be3ff94687c11aa8a70ad82448e5cecdc25e53d23157c775f1e975a3e00d",
+        "afterSha256": "b8c509edefb9761bcdbf623768445380fa6ea87d0be6332426e9d887905764d5"
+      }
+    ],
+    "retired": [
+      {
+        "id": "ejecucion_original_fuente_compilacion_y_diagnostico_consigna",
+        "page": "page_0003",
+        "next": "block_0003_0001",
+        "block": {
+          "type": "paragraph",
+          "text": "En el siguiente editor de código, ejecuta el programa que acabas de leer sin modificarlo. Pulsa Compilar, ejecutar y comprobar y contrasta la salida con tu predicción. Esta primera comprobación corresponde al programa original.",
+          "emphasis": [
+            {
+              "text": "sin modificarlo"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        }
+      },
+      {
+        "id": "ejecucion_original_fuente_compilacion_y_diagnostico_editor",
+        "page": "page_0003",
+        "next": "block_0003_0001",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Revision inicial"
+                ],
+                "explanation": "La instrucción de salida envía el contenido del literal a std::cout. return 0; termina main sin añadir un cero al mensaje."
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "retirementHistory": [
+      {
+        "retired": [
+          "ejecucion_original_fuente_compilacion_y_diagnostico_consigna",
+          "ejecucion_original_fuente_compilacion_y_diagnostico_editor"
+        ],
+        "current": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              "block_0000_0000",
+              "block_0000_0001",
+              "block_0000_0002",
+              "block_0000_0003",
+              "block_0000_0004"
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              "block_0001_0000",
+              "block_0001_0001",
+              "block_0001_0002",
+              "block_0001_0003",
+              "block_0001_0004"
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              "block_0002_0000",
+              "block_0002_0001",
+              "block_0002_0002",
+              "block_0002_0003",
+              "block_0002_0004"
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              "block_0003_0000",
+              "block_0003_0005",
+              "ejecucion_original_fuente_compilacion_y_diagnostico_consigna",
+              "ejecucion_original_fuente_compilacion_y_diagnostico_editor",
+              "block_0003_0001",
+              "block_0003_0002",
+              "block_0003_0003",
+              "block_0003_0004",
+              "block_0003_0006",
+              "block_0003_0007",
+              "block_0003_0008"
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              "block_0004_0000",
+              "block_0004_0001"
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              "block_0005_0000",
+              "block_0005_0001"
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              "block_0006_0000",
+              "block_0006_0001",
+              "block_0006_0002",
+              "block_0006_0003"
+            ]
+          }
+        ],
+        "pages": [
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Qué hace cada herramienta"
+              },
+              {
+                "type": "paragraph",
+                "text": "El texto que editamos es código fuente. El compilador analiza ese texto según las reglas de C++ y, si lo acepta, lo traduce a código objeto: una parte preparada para construir el programa. El enlazador combina las partes necesarias, incluidas las de las bibliotecas, para formar el ejecutable. Después podemos ejecutar ese resultado (Stroustrup, 2024).\n\nEl botón Compilar, ejecutar y comprobar coordina esas etapas en el editor de código. Aunque usemos un solo botón, editar el texto, construir el programa y ejecutarlo son operaciones diferentes. Un diagnóstico de construcción se interpreta antes de buscar el mensaje del programa en la consola (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "El compilador analiza ese texto"
+                  },
+                  {
+                    "text": "El enlazador combina las partes necesarias"
+                  },
+                  {
+                    "text": "editar el texto, construir el programa y ejecutarlo son operaciones diferentes"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "El editor permite cambiar el texto del programa. Sus colores ayudan a reconocer partes del código, pero no prueban que el programa se pueda construir ni que cumpla el objetivo. Esas comprobaciones requieren las herramientas de construcción y la comparación con el resultado esperado (Stroustrup, 2024).\n\nLa biblioteca estándar aporta recursos ya preparados. En nuestros programas usamos #include <iostream> para disponer de los de entrada y salida, como std::cout; no tenemos que construir desde cero el mecanismo que lleva el mensaje a la consola (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "Sus colores ayudan a reconocer partes del código"
+                  },
+                  {
+                    "text": "no prueban que el programa se pueda construir"
+                  }
+                ]
+              },
+              {
+                "type": "multiple_choice",
+                "id": "editor_compilador",
+                "question": "Has escrito un archivo en un editor y aún no has construido el programa. ¿Qué tienes en este punto?",
+                "options": [
+                  "El código fuente que debe analizarse y construirse.",
+                  "La salida final del programa.",
+                  "Una prueba de que todos los resultados son correctos."
+                ],
+                "correctIndex": 0,
+                "explanation": "El archivo contiene la descripción en C++; todavía falta construir y ejecutar para observar su comportamiento."
+              },
+              {
+                "type": "multiple_choice",
+                "id": "funcion_enlazador",
+                "question": "¿Qué tarea corresponde al enlazador en el modelo estudiado?",
+                "options": [
+                  "Combinar las partes necesarias para formar el ejecutable.",
+                  "Traducir cada archivo fuente a una parte del programa.",
+                  "Ejecutar el programa y recoger su salida de texto."
+                ],
+                "correctIndex": 0,
+                "explanation": "Combina partes del programa; no define la intención ni valida todos los requisitos."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Los detalles de sintaxis tienen significado"
+              },
+              {
+                "type": "paragraph",
+                "text": "El compilador aplica las reglas del lenguaje; no corrige el código adivinando nuestra intención. C++ distingue mayúsculas de minúsculas: std::cout y std::Cout no son el mismo nombre. También importan las comillas que cierran el literal y el punto y coma que termina la instrucción (Stroustrup, 2024).\n\nEl diagnóstico indica dónde la herramienta detectó un problema y aporta una explicación. Ese lugar no siempre es el comienzo de la causa. Por eso conviene leer el mensaje y revisar también el código cercano, especialmente la instrucción anterior (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "C++ distingue mayúsculas de minúsculas"
+                  },
+                  {
+                    "text": "Ese lugar no siempre es el comienzo de la causa"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "Si falta el punto y coma antes de return, el compilador puede señalar return: allí descubre que la instrucción anterior no terminó como esperaba. Cambiar el texto del literal no repararía ese terminador ausente. Primero identifica qué regla no se cumple y modifica la parte relacionada con ella (Stroustrup, 2024).\n\nEl texto exacto del diagnóstico puede variar entre herramientas. No necesitas memorizar una frase: necesitas relacionar la indicación con la estructura de tu programa y comprobar la reparación al construirlo de nuevo (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "la instrucción anterior no terminó"
+                  },
+                  {
+                    "text": "comprobar la reparación al construirlo de nuevo"
+                  }
+                ]
+              },
+              {
+                "type": "multiple_choice",
+                "id": "falta_terminador",
+                "question": "La salida anterior a return no tiene su ;. El diagnóstico señala return. ¿Qué conviene revisar primero?",
+                "options": [
+                  "La terminación de la instrucción anterior y el contexto cercano.",
+                  "Cambiar el mensaje del literal porque precede al diagnóstico.",
+                  "Eliminar return porque el diagnóstico señala esa línea."
+                ],
+                "correctIndex": 0,
+                "explanation": "El lugar donde se detecta el problema no siempre es donde comenzó."
+              },
+              {
+                "type": "fill_code",
+                "id": "reparar_operador",
+                "question": "La siguiente instrucción debe mostrar Puesto 4. Sustituye el hueco por el operador de inserción correcto.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puesto 4\";\n    return 0;\n}\n",
+                "answers": [
+                  "<<"
+                ],
+                "explanation": "Dos signos << forman el operador que inserta el texto en el flujo."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Compilar no comprueba la intención completa"
+              },
+              {
+                "type": "paragraph",
+                "text": "Un programa puede cumplir las reglas de C++ y producir un resultado diferente del solicitado. Compilar correctamente no demuestra que sus operaciones resuelvan nuestra tarea; hay que contrastarlas con el objetivo (Stroustrup, 2024).\n\nSi el requisito era mostrar Pedido recibido y el literal contiene Pedido cancelado, ambos textos son válidos para C++. El error está en elegir el mensaje que no corresponde al requisito. Esta diferencia entre una operación válida y una solución adecuada es un error lógico (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "Compilar correctamente no demuestra"
+                  },
+                  {
+                    "text": "error lógico"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "Distingue la etapa en la que aparece el problema. Un error de compilación impide traducir correctamente esa versión del código; uno de enlace impide combinar sus partes. Otros defectos sólo se reconocen al ejecutar el programa o al comparar el resultado con lo solicitado (Stroustrup, 2024).\n\nEn esta unidad practicamos dos casos concretos: una instrucción que no se puede construir por un signo ausente y una instrucción válida cuyo mensaje no cumple la tarea. Más adelante recuperaremos la misma distinción al trabajar con cálculos y datos.",
+                "emphasis": [
+                  {
+                    "text": "la etapa en la que aparece el problema"
+                  }
+                ]
+              },
+              {
+                "type": "multiple_choice",
+                "id": "mensaje_equivocado",
+                "question": "El requisito es mostrar Pedido recibido. El programa compila y muestra Pedido cancelado. ¿Qué queda por corregir?",
+                "options": [
+                  "Cambiar sólo el comentario que describe el mensaje esperado.",
+                  "Cambiar el literal ejecutado para cumplir el mensaje requerido.",
+                  "Aceptar el resultado porque la compilación tuvo éxito."
+                ],
+                "correctIndex": 1,
+                "explanation": "La sintaxis válida no garantiza que el texto corresponda a la tarea."
+              },
+              {
+                "type": "multiple_choice",
+                "id": "mayuscula_nombre",
+                "question": "Usamos std::cout, pero por error escribimos std::Cout. ¿Cuál es la corrección justificada?",
+                "options": [
+                  "Mantener el cambio: la computadora interpreta ambos nombres igual.",
+                  "Cambiar las palabras del mensaje.",
+                  "Recuperar la escritura exacta std::cout."
+                ],
+                "correctIndex": 2,
+                "explanation": "C++ distingue nombres por sus caracteres, incluidas mayúsculas y minúsculas."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Predecir, comprobar y modificar un mensaje"
+              },
+              {
+                "type": "output_prediction",
+                "id": "prediccion_revision_inicial",
+                "question": "Antes de ejecutar el programa inicial del editor de código, predice exactamente su mensaje. Conserva el espacio y no añadas comillas ni un salto final.",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
+                "answers": [
+                  "Revision inicial"
+                ],
+                "outputComparison": "exact",
+                "explanation": "La inserción envía Revision inicial. Esta es la salida de la versión válida de partida; quitar después el terminador impide construir esa otra versión, no cambia por sí mismo el literal.",
+                "reviewFeedback": "Identifica el contenido que la instrucción envía a std::cout. No incluyas las marcas que delimitan o terminan la instrucción."
+              },
+              {
+                "type": "paragraph",
+                "text": "En el siguiente editor de código, ejecuta el programa que acabas de leer sin modificarlo. Pulsa Compilar, ejecutar y comprobar y contrasta la salida con tu predicción. Esta primera comprobación corresponde al programa original.",
+                "emphasis": [
+                  {
+                    "text": "sin modificarlo"
+                  },
+                  {
+                    "text": "Compilar, ejecutar y comprobar"
+                  }
+                ]
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
+                "outputCheck": {
+                  "inputComparison": "exact",
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Revision inicial"
+                      ],
+                      "explanation": "La instrucción de salida envía el contenido del literal a std::cout. return 0; termina main sin añadir un cero al mensaje."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "paragraph",
+                "text": "Separar modificaciones ayuda a relacionar una causa con su efecto. Un programa pequeño permite localizar qué instrucción cambia y contrastar su resultado sin acumular alteraciones innecesarias (Stroustrup, 2024).\n\nEn el siguiente editor de código, modifica únicamente el contenido del literal para mostrar Revision completa. Conserva intacto todo el resto del programa, incluidas las comillas que delimitan ese contenido. Escribe exactamente esas dos palabras, con un espacio, sin comillas en la salida ni salto final.",
+                "emphasis": [
+                  {
+                    "text": "relacionar una causa con su efecto"
+                  },
+                  {
+                    "text": "modifica únicamente el contenido del literal"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "text": "Pulsa Compilar, ejecutar y comprobar. La aplicación construye y ejecuta la revisión actual antes de evaluar su salida. Si compila pero el mensaje no coincide con el objetivo, aparece Incorrecto y puedes corregir el literal en este mismo editor.\n\nSi hay un error de compilación, esa revisión no se ejecuta ni recibe un veredicto de salida. Al iniciar la acción se vacía Salida del programa; el diagnóstico de construcción se muestra por separado. Lee ese diagnóstico para reparar la sintaxis, en lugar de buscar un resultado que el programa con el error no produjo. La actividad de reparación situada después de los puzzles permite comprobar esa diferencia.",
+                "emphasis": [
+                  {
+                    "text": "Compilar, ejecutar y comprobar"
+                  },
+                  {
+                    "text": "esa revisión no se ejecuta"
+                  },
+                  {
+                    "text": "el diagnóstico de construcción se muestra por separado"
+                  }
+                ]
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
+                "outputCheck": {
+                  "inputComparison": "exact",
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Revision completa"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "multiple_choice",
+                "id": "prueba_controlada",
+                "question": "Si cambias a la vez el nombre main, las comillas y el texto, ¿por qué cuesta más interpretar el primer fallo?",
+                "options": [
+                  "Porque el nuevo texto del mensaje explica cualquier diagnóstico.",
+                  "Porque hay que distinguir los efectos de varias modificaciones.",
+                  "Porque basta atribuir el fallo al último cambio que recuerdas."
+                ],
+                "correctIndex": 1,
+                "explanation": "Separar cambios ayuda a relacionar una causa con un efecto; no es una prohibición del lenguaje."
+              },
+              {
+                "type": "heading",
+                "text": "Reparar la terminación de una instrucción"
+              },
+              {
+                "type": "paragraph",
+                "text": "Este programa conserva el mensaje Revision inicial, pero le falta el punto y coma que termina la instrucción de salida (Stroustrup, 2024). Pulsa Compilar, ejecutar y comprobar para examinar el diagnóstico antes de reparar el código. El mensaje y la línea señalada pueden variar entre compiladores; el fallo puede detectarse al analizar la instrucción siguiente. Si un diagnóstico señala la línea de return, revisa también la terminación de la instrucción anterior; no borres return para ocultar una falta anterior.\n\nRestaura únicamente el signo que falta y vuelve a pulsar la misma acción. El objetivo de esta actividad es construir una versión válida que muestre Revision inicial, con un espacio y sin salto final. Hasta que la construcción y la ejecución terminen correctamente, no hay una salida evaluable.",
+                "emphasis": [
+                  {
+                    "text": "le falta el punto y coma"
+                  },
+                  {
+                    "text": "la terminación de la instrucción anterior"
+                  },
+                  {
+                    "text": "no hay una salida evaluable"
+                  }
+                ]
+              },
+              {
+                "type": "cpp_compiler",
+                "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\"\n    return 0;\n}\n",
+                "outputCheck": {
+                  "inputComparison": "exact",
+                  "cases": [
+                    {
+                      "standardInput": "",
+                      "outputs": [
+                        "Revision inicial"
+                      ],
+                      "explanation": "La nueva ejecución muestra el mensaje original después de reparar la terminación de la instrucción de salida."
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Volver a la estructura sin el ejemplo"
+              },
+              {
+                "type": "drag_fill_code",
+                "id": "piezas_estructura",
+                "question": "Completa el programa que debe mostrar Revision lista. Cada ficha se usa como máximo una vez.",
+                "template": "#include <iostream>\nint []() {\n    std::cout [] \"Revision lista\"[]\n    return 0;\n}",
+                "choices": [
+                  "main",
+                  "<<",
+                  ";",
+                  "Main",
+                  "<"
+                ],
+                "correctOrder": [
+                  0,
+                  1,
+                  2
+                ]
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Comprobar la estructura"
+              },
+              {
+                "type": "note",
+                "text": "Solución después de la práctica: main conserva el punto de entrada; << inserta el literal y ; termina la instrucción. Los distractores cambian el nombre o el operador. Compilar y comparar con el requisito siguen siendo comprobaciones distintas."
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "heading",
+                "text": "Contrastar el programa construido"
+              },
+              {
+                "type": "paragraph",
+                "text": "Esta referencia corresponde al cambio de mensaje: la nueva ejecución debe mostrar Revision completa, con un espacio y sin caracteres adicionales. Compilar, ejecutar y comprobar compara esa salida con el objetivo de su editor. Otra implementación puede cumplirlo utilizando los elementos ya estudiados.",
+                "emphasis": [
+                  {
+                    "text": "al cambio de mensaje"
+                  },
+                  {
+                    "text": "Compilar, ejecutar y comprobar"
+                  }
+                ]
+              },
+              {
+                "type": "code",
+                "language": "cpp",
+                "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision completa\";\n    return 0;\n}\n"
+              },
+              {
+                "type": "paragraph",
+                "text": "En la actividad de reparación, quitar el punto y coma impide construir esa revisión. El diagnóstico puede señalar la instrucción siguiente, porque allí se detecta la terminación ausente. Restaurar el signo repara esa causa concreta (Stroustrup, 2024).\n\nEl cambio de Revision inicial a Revision completa es otra actividad: conserva la sintaxis y modifica el texto enviado. Distinguir la construcción de una revisión y la comprobación de su comportamiento permite interpretar cada resultado (Stroustrup, 2024).",
+                "emphasis": [
+                  {
+                    "text": "impide construir esa revisión"
+                  },
+                  {
+                    "text": "es otra actividad"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "compilerPuzzlesRequired": false,
+        "referenceAfter": [
+          {
+            "activity": "block_0003_0003",
+            "blocks": [
+              "block_0006_0000",
+              "block_0006_0001",
+              "block_0006_0002"
+            ]
+          },
+          {
+            "activity": "block_0003_0008",
+            "blocks": [
+              "block_0006_0003"
+            ]
+          }
+        ],
+        "activityAfter": [
+          {
+            "activity": "block_0003_0003",
+            "requires": [
+              "ejecucion_original_fuente_compilacion_y_diagnostico_editor"
+            ]
+          }
+        ]
       }
     ]
   },
-  "activityAfter": [
-    {
-      "activity": "block_0003_0003",
-      "requires": [
-        "ejecucion_original_fuente_compilacion_y_diagnostico_editor"
-      ]
-    }
-  ],
+  "activityAfter": [],
   "referenceAfter": [
     {
       "activity": "block_0003_0003",
@@ -1157,5 +1664,6 @@
         "block_0006_0003"
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true
 }
