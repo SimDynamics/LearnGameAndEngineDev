@@ -40,16 +40,9 @@ struct StateAddition {
     StatePosition storage;
     std::string progress_page;
 };
-struct StateLayout {
-    int version = 0;
-    std::string locale;
-    std::vector<StatePage> origin, current;
-    std::map<std::string, StateFamily> family;
-    std::vector<StateAddition> additions;
-    std::map<std::string, std::string> signatures;
-    std::string lineage, legacy_lineage;
-    std::string raw_json;
-};
+// Archived blocks retain their complete authored contract and original address.
+// They are absent from pages/current and therefore never become a new activity.
+struct StateRetirement { std::string id, page, next, raw_json, sha256; };
 struct Emphasis {
     std::string text;
     std::size_t occurrence = 0;
@@ -104,6 +97,29 @@ struct ReferenceAfter { std::string activity; std::vector<std::string> blocks; }
 // Compiler dependencies use the same stable owners and completion evidence as
 // references. They do not allocate progress slots or change block fingerprints.
 struct ActivityAfter { std::string activity; std::vector<std::string> prerequisites; };
+// A before-retirement reading snapshot is archival provenance, never a second
+// active lesson. Full pages retain wording as well as the old visibility graph.
+struct StateRetirementHistory {
+    std::vector<std::string> retired;
+    std::vector<StatePage> current;
+    std::vector<Page> pages;
+    bool compiler_puzzles_required = false;
+    std::vector<ReferenceAfter> reference_after;
+    std::vector<ActivityAfter> activity_after;
+    std::string raw_json, sha256;
+};
+struct StateLayout {
+    int version = 0;
+    std::string locale;
+    std::vector<StatePage> origin, current;
+    std::map<std::string, StateFamily> family;
+    std::vector<StateAddition> additions;
+    std::map<std::string, std::string> signatures;
+    std::string lineage, legacy_lineage;
+    std::string raw_json;
+    std::vector<StateRetirement> retired;
+    std::vector<StateRetirementHistory> retirement_history;
+};
 struct Lesson {
     std::string id, title, locale, raw_json;
     std::filesystem::path source_path;
@@ -112,11 +128,16 @@ struct Lesson {
     std::vector<ReferenceAfter> reference_after;
     std::vector<ActivityAfter> activity_after;
     std::optional<std::string> narration_language;
+    std::vector<Block> retired_blocks;
+    bool compiler_puzzles_required = false;
 };
 
 void validate_reference_relationships(const Lesson&);
 void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::optional<StatePosition> stable_block_position(const Lesson&, std::string_view stable_id);
+[[nodiscard]] bool retired_block(const Lesson&, std::string_view stable_id);
+// Resolve an archived reader anchor without rewriting its historical bookmark.
+[[nodiscard]] std::optional<StatePosition> active_block_successor(const Lesson&, std::string_view stable_id);
 [[nodiscard]] std::optional<StatePosition> reference_activity(const Lesson&, const Block& reference);
 [[nodiscard]] std::vector<StatePosition> activity_prerequisites(const Lesson&, const Block& activity);
 // Deterministic framing of the authored objective, independent of prose or an

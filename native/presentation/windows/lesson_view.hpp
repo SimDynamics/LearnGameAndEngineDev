@@ -30,6 +30,12 @@ struct LessonReadingRegion {
     // Spoken Android heading, anchored to its compact visual language caption.
     // It has no invented word map onto that differently written caption.
     bool passive_label = false;
+    // Stable component identity survives removal of preceding visual controls.
+    std::string anchor, retired_successor;
+};
+struct LessonReadingArchive {
+    std::string page_identity;
+    std::vector<LessonReadingRegion> regions;
 };
 struct LessonViewHooks {
     std::string lesson_label = "Lección";
@@ -65,6 +71,11 @@ inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
 [[nodiscard]] std::vector<LessonReadingRegion> legacy_lesson_reading_regions(HWND window);
 // Exact prior script before Android code-heading narration was restored.
 [[nodiscard]] std::vector<LessonReadingRegion> pre_caption_lesson_reading_regions(HWND window);
+// Reconstructs an archived pre-retirement script for bookmark migration only.
+[[nodiscard]] std::vector<LessonReadingRegion> retired_lesson_reading_regions(HWND window);
+// Each retirement batch retains its exact prior page identity and script.
+// Archived text is used only to prove a stored bookmark, never for playback.
+[[nodiscard]] std::vector<LessonReadingArchive> retired_lesson_reading_archives(HWND window);
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks);
 // The caller owns the reader bar. It must be a child of the lesson view; the
 // bar overlays the viewport, as on Android; it never reserves a footer.

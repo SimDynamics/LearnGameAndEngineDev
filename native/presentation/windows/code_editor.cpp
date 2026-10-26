@@ -4,6 +4,8 @@
 
 #include <commctrl.h>
 #include <richedit.h>
+#include <richole.h>
+#include <tom.h>
 
 #include <algorithm>
 #include <array>
@@ -14,6 +16,7 @@
 
 namespace lgaed::windows {
 namespace {
+constexpr UINT literal_quote_message=WM_APP+0x434;
 
 std::wstring wide(std::string_view text) {
     if (text.empty()) return {};
@@ -137,10 +140,41 @@ std::size_t column_at(std::wstring_view text, std::size_t cursor) {
     return column;
 }
 
-enum class Lexical { code, string, character, line_comment, block_comment };
-Lexical context_at(std::wstring_view text, std::size_t cursor) {
-    auto context = Lexical::code;
+enum class Lexical { code, string, character, raw_string, line_comment, block_comment };
+struct Delimiter { wchar_t character; std::size_t position; };
+struct CodeContext {
+    Lexical lexical = Lexical::code;
+    std::vector<Delimiter> openings;
+    std::size_t last_code = std::wstring_view::npos;
+};
+
+bool identifier_character(wchar_t character) {
+    return (character >= L'a' && character <= L'z') || (character >= L'A' && character <= L'Z') ||
+        (character >= L'0' && character <= L'9') || character == L'_';
+}
+
+bool numeric_token_before(std::wstring_view text, std::size_t position) {
+    if(!position||!identifier_character(text[position-1]))return false;
+    auto start = position;
+    while (start && (identifier_character(text[start - 1]) || text[start - 1] == L'\'')) --start;
+    return text[start] >= L'0' && text[start] <= L'9';
+}
+
+bool digit_separator(std::wstring_view text, std::size_t position) {
+    return position+1<text.size()&&identifier_character(text[position+1])&&numeric_token_before(text,position);
+}
+
+wchar_t closing_for(wchar_t opening) {
+    return opening == L'(' ? L')' : opening == L'[' ? L']' : opening == L'{' ? L'}' : L'\0';
+}
+
+CodeContext code_context(std::wstring_view text, std::size_t cursor,
+    std::vector<std::pair<std::size_t,std::size_t>>* literals = nullptr) {
+    CodeContext result;
+    auto& context = result.lexical;
     bool escape = false;
+    std::wstring raw_end;
+    std::size_t literal_start=0;
     for (std::size_t index = 0; index < cursor; ++index) {
         const auto character = text[index];
         const auto next = index + 1 < cursor ? text[index + 1] : L'\0';
@@ -148,18 +182,82 @@ Lexical context_at(std::wstring_view text, std::size_t cursor) {
             if (character == L'\n') context = Lexical::code;
         } else if (context == Lexical::block_comment) {
             if (character == L'*' && next == L'/') { context = Lexical::code; ++index; }
+        } else if (context == Lexical::raw_string) {
+            if (text.substr(index, raw_end.size()) == raw_end && index + raw_end.size() <= cursor) {
+                index += raw_end.size() - 1;
+                result.last_code = index;
+                if(literals)literals->emplace_back(literal_start,index+1);
+                context = Lexical::code;
+            }
         } else if (context == Lexical::string || context == Lexical::character) {
             if (escape) escape = false;
             else if (character == L'\\') escape = true;
             else if ((context == Lexical::string && character == L'"') ||
-                (context == Lexical::character && character == L'\'')) context = Lexical::code;
+                (context == Lexical::character && character == L'\'')) {
+                context = Lexical::code;
+                result.last_code = index;
+                if(literals)literals->emplace_back(literal_start,index+1);
+            }
         } else if (character == L'/' && next == L'/') { context = Lexical::line_comment; ++index; }
         else if (character == L'/' && next == L'*') { context = Lexical::block_comment; ++index; }
-        else if (character == L'"') context = Lexical::string;
-        else if (character == L'\'') context = Lexical::character;
+        else {
+            if (character == L'R' && next == L'"') {
+                const auto delimiter_end = text.find(L'(', index + 2);
+                if (delimiter_end != text.npos && delimiter_end < cursor && delimiter_end - index - 2 <= 16 &&
+                        text.substr(index + 2, delimiter_end - index - 2).find_first_of(L" ()\\\t\r\n") == text.npos) {
+                    raw_end = L")" + std::wstring(text.substr(index + 2, delimiter_end - index - 2)) + L'"';
+                    context = Lexical::raw_string;
+                    literal_start=index;
+                    result.last_code = index;
+                    index = delimiter_end;
+                    continue;
+                }
+            }
+            if (character != L' ' && character != L'\t' && character != L'\r' && character != L'\n')
+                result.last_code = index;
+            if (character == L'"') { context = Lexical::string;literal_start=index; }
+            else if (character == L'\'' && !digit_separator(text, index)) { context = Lexical::character;literal_start=index; }
+            else if (closing_for(character)) result.openings.push_back({character, index});
+            else if (!result.openings.empty() && closing_for(result.openings.back().character) == character)
+                result.openings.pop_back();
+        }
     }
-    return context;
+    if(literals&&(context==Lexical::string||context==Lexical::character||context==Lexical::raw_string))
+        literals->emplace_back(literal_start,cursor);
+    return result;
 }
+
+Lexical context_at(std::wstring_view text, std::size_t cursor) {
+    return code_context(text, cursor).lexical;
+}
+
+std::size_t line_start_at(std::wstring_view text, std::size_t cursor) {
+    if (!cursor) return 0;
+    const auto previous = text.rfind(L'\n', cursor - 1);
+    return previous == text.npos ? 0 : previous + 1;
+}
+
+class FrozenText {
+    ITextDocument* document_ = nullptr;
+    bool frozen_ = false;
+public:
+    explicit FrozenText(HWND window) {
+        IRichEditOle* ole = nullptr;
+        if(SendMessageW(window,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(&ole))&&ole) {
+            ole->QueryInterface(__uuidof(ITextDocument),reinterpret_cast<void**>(&document_));
+            ole->Release();
+            if(document_) { LONG count=0;frozen_=SUCCEEDED(document_->Freeze(&count)); }
+        }
+    }
+    ~FrozenText() {
+        if(document_) {
+            if(frozen_) { LONG count=0;document_->Unfreeze(&count); }
+            document_->Release();
+        }
+    }
+    FrozenText(const FrozenText&)=delete;
+    FrozenText& operator=(const FrozenText&)=delete;
+};
 
 } // namespace
 
@@ -167,11 +265,16 @@ EditorDocument predefined_code_document(std::string_view source) {
     const auto text = wide(source);
     EditorDocument document;
     document.text = source;
+    std::vector<std::pair<std::size_t,std::size_t>> literals;
+    (void)code_context(text,text.size(),&literals);
+    std::size_t literal_index=0;
     bool indentation = true;
     for (std::size_t index = 0; index < text.size();) {
+        while(literal_index<literals.size()&&literals[literal_index].second<=index)++literal_index;
+        const bool literal=literal_index<literals.size()&&literals[literal_index].first<=index;
         if (text[index] == L'\n' || text[index] == L'\r') { indentation = true; ++index; }
         else if (indentation && text[index] == L'\t') ++index;
-        else if (indentation && text.substr(index, 4) == L"    ") {
+        else if (indentation && !literal && text.substr(index, 4) == L"    ") {
             document.indentation_starts.push_back(static_cast<std::int64_t>(index));
             index += 4;
         } else { indentation = false; ++index; }
@@ -202,6 +305,7 @@ struct CodeEditor::Impl {
     bool suppress_tab_char = false;
     bool suppress_backspace_char = false;
     bool suppress_enter_char = false;
+    std::optional<WPARAM> literal_quote_key;
     std::optional<CHARRANGE> pending_edit;
     bool pending_backspace = false;
     std::vector<Snapshot> history;
@@ -271,38 +375,85 @@ struct CodeEditor::Impl {
         applying = was_applying;
     }
 
-    void apply(const Snapshot& value, bool notify_parent = true) {
+    void apply(const Snapshot& value, bool notify_parent = true, bool load_document = false, bool reveal_cursor = false) {
         const auto previous_applying = applying;
+        const auto desired_scroll=value.scroll;
         const auto events = SendMessageW(window, EM_GETEVENTMASK, 0, 0);
+        struct ApplyingScope {
+            bool& target;
+            bool previous;
+            ~ApplyingScope(){target=previous;}
+        } applying_scope{applying,previous_applying};
+        applying=true;
         {
-            struct Restore {
-                HWND window;
-                bool& target;
-                bool previous;
-                LRESULT events;
-                ~Restore() {
-                    SendMessageW(window, EM_SETEVENTMASK, 0, events);
-                    target = previous;
+            // Keep the actual edit and the parent's syntax formatting in the
+            // same native paint transaction. Nested formatters balance their
+            // own Freeze calls without exposing an intermediate selection.
+            FrozenText frozen(window);
+            {
+                struct Restore {
+                    HWND window;
+                    LRESULT events;
+                    ~Restore() {
+                        SendMessageW(window, EM_SETEVENTMASK, 0, events);
+                    }
+                } restore{window, events};
+                SendMessageW(window, EM_SETEVENTMASK, 0,
+                    events & ~static_cast<LRESULT>(ENM_CHANGE|ENM_SELCHANGE));
+                if(load_document) {
+                    // Only explicit initialization/reset streams the whole
+                    // source. SF_TEXT prevents RTF-looking code from parsing.
+                    presentation::set_edit_text(window, utf8(value.text));
+                    tab_stops();
+                } else {
+                    const auto previous=control_text(window);
+                    std::size_t first=0,old_end=previous.size(),new_end=value.text.size();
+                    while(first<old_end&&first<new_end&&previous[first]==value.text[first])++first;
+                    if(first&&first<previous.size()&&previous[first-1]>=0xD800&&previous[first-1]<=0xDBFF&&
+                            previous[first]>=0xDC00&&previous[first]<=0xDFFF)--first;
+                    while(old_end>first&&new_end>first&&previous[old_end-1]==value.text[new_end-1]) { --old_end;--new_end; }
+                    if(old_end<previous.size()&&old_end>first&&previous[old_end]>=0xDC00&&previous[old_end]<=0xDFFF&&
+                            previous[old_end-1]>=0xD800&&previous[old_end-1]<=0xDBFF) { ++old_end;++new_end; }
+                    if(first!=old_end||first!=new_end) {
+                        const auto replacement=value.text.substr(first,new_end-first);
+                        select(window,first,old_end);
+                        // EM_REPLACESEL always inserts literal Unicode text;
+                        // unlike EM_SETTEXTEX it does not detect RTF headers.
+                        SendMessageW(window,EM_REPLACESEL,FALSE,reinterpret_cast<LPARAM>(replacement.c_str()));
+                        if(control_text(window)!=value.text)throw std::runtime_error("Native incremental edit was not accepted");
+                    }
                 }
-            } restore{window, applying, previous_applying, events};
-            applying = true;
-            // EN_CHANGE can synchronously reenter the parent during EM_STREAMIN.
-            // Its syntax formatter must see a completed snapshot, never a stream
-            // whose text, selection and indentation identity are still loading.
-            SendMessageW(window, EM_SETEVENTMASK, 0, events & ~static_cast<LRESULT>(ENM_CHANGE));
-            // EM_SETTEXTEX recognizes an RTF header even with codepage 1200.
-            // Keep the existing explicit SF_TEXT | SF_UNICODE plain-text load.
-            presentation::set_edit_text(window, utf8(value.text));
-            tab_stops();
-            select(window, value.cursor.cpMin, value.cursor.cpMax);
-            SendMessageW(window, EM_SETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&value.scroll));
-            SendMessageW(window, EM_EMPTYUNDOBUFFER, 0, 0);
-        }
-        if (notify_parent && !previous_applying && (events & ENM_CHANGE)) {
-            if (const auto parent = GetParent(window)) {
-                SendMessageW(parent, WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(window), EN_CHANGE),
-                    reinterpret_cast<LPARAM>(window));
+                select(window, value.cursor.cpMin, value.cursor.cpMax);
+                SendMessageW(window, EM_SETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&desired_scroll));
+                SendMessageW(window, EM_EMPTYUNDOBUFFER, 0, 0);
             }
+            if (notify_parent && !previous_applying && (events & ENM_CHANGE)) {
+                if (const auto parent = GetParent(window)) {
+                    SendMessageW(parent, WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(window), EN_CHANGE),
+                        reinterpret_cast<LPARAM>(window));
+                }
+            }
+        }
+        // TOM can defer layout/scroll work until its outer Unfreeze. Restore
+        // the exact journal position after that work, then reveal a newly typed
+        // line without changing the scroll recorded for Undo.
+        // Keep snapshot capture guarded through the callback and Unfreeze:
+        // document() is also an observer and must not overwrite this journal
+        // entry with RichEdit's temporary, not-yet-restored native scroll.
+        SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&desired_scroll));
+        if(reveal_cursor) {
+            SendMessageW(window,EM_SCROLLCARET,0,0);
+        }
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
+        if(notify_parent&&!previous_applying&&(events&ENM_CHANGE)) {
+            // EN_CHANGE intentionally runs inside Freeze so syntax coloring
+            // cannot flash. Native line geometry is final only after Unfreeze;
+            // The owner observing this edit can now refresh its viewport.
+            // Keep this explicit: EN_UPDATE also covers native repaint/format
+            // operations, which would turn viewport measurements into a loop.
+            if(const auto parent=GetParent(window))
+                SendMessageW(parent,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),
+                    reinterpret_cast<LPARAM>(window));
         }
     }
 
@@ -368,7 +519,7 @@ struct CodeEditor::Impl {
         std::sort(next.units.begin(), next.units.end());
         next.cursor = {static_cast<LONG>(cursor_start), static_cast<LONG>(cursor_end)};
         commit(std::move(next));
-        apply(now());
+        apply(now(),true,false,true);
     }
 
     void insert_tab() {
@@ -428,39 +579,83 @@ struct CodeEditor::Impl {
             replace(start,end,L"\n",start+1,start+1);
             return true;
         }
-        const auto previous= start ? now().text.rfind(L'\n',start-1) : std::wstring::npos;
-        const auto line_start=previous==std::wstring::npos?0:previous+1;
+        const auto context = code_context(now().text, start);
+        // Whitespace inside a literal is program data, including multiline raw
+        // strings. Enter must not silently add indentation to that content.
+        if (context.lexical == Lexical::string || context.lexical == Lexical::character ||
+                context.lexical == Lexical::raw_string) {
+            replace(start,end,L"\n",start+1,start+1);
+            return true;
+        }
+        const auto line_start=line_start_at(now().text,start);
         auto indent_end=line_start;
         while(indent_end<start&&(now().text[indent_end]==L' '||now().text[indent_end]==L'\t'))++indent_end;
-        const auto base=now().text.substr(line_start,indent_end-line_start);
-        auto trimmed=start;
-        while(trimmed>line_start&&(now().text[trimmed-1]==L' '||now().text[trimmed-1]==L'\t'))--trimmed;
-        const bool opens=trimmed>line_start&&now().text[trimmed-1]==L'{';
-        const bool split=opens&&end<now().text.size()&&now().text[end]==L'}';
-        const auto child=base+(opens?L"\t":L"");
+        auto base_start=line_start;
+        const auto last=context.last_code;
+        const bool code_line=context.lexical!=Lexical::block_comment;
+        const bool opens=code_line&&last!=std::wstring::npos&&last>=line_start&&closing_for(now().text[last]);
+        const auto opening=opens?now().text[last]:L'\0';
+        // A continuation belongs to its original opening line. Repeating Enter
+        // inside (...) or [...] must not add another level on every line.
+        const bool continuation=code_line&&!context.openings.empty()&&
+            (context.openings.back().character==L'('||context.openings.back().character==L'[');
+        if(continuation) {
+            base_start=line_start_at(now().text,context.openings.back().position);
+            indent_end=base_start;
+            while(indent_end<context.openings.back().position&&
+                    (now().text[indent_end]==L' '||now().text[indent_end]==L'\t'))++indent_end;
+        }
+        const auto base=now().text.substr(base_start,indent_end-base_start);
+        auto closing_position=end;
+        while(closing_position<now().text.size()&&(now().text[closing_position]==L' '||now().text[closing_position]==L'\t'))
+            ++closing_position;
+        const bool split=opens&&closing_position<now().text.size()&&now().text[closing_position]==closing_for(opening);
+        const auto child=base+((opens||continuation)?L"\t":L"");
         auto replacement=L"\n"+child;
         if(split)replacement+=L"\n"+base;
         std::vector<std::int64_t> inherited;
-        for(const auto unit:now().units)if(unit>=static_cast<std::int64_t>(line_start)&&unit+4<=static_cast<std::int64_t>(indent_end)) {
-            inherited.push_back(static_cast<std::int64_t>(start+1)+unit-static_cast<std::int64_t>(line_start));
-            if(split)inherited.push_back(static_cast<std::int64_t>(start+child.size()+2)+unit-static_cast<std::int64_t>(line_start));
+        for(const auto unit:now().units)if(unit>=static_cast<std::int64_t>(base_start)&&unit+4<=static_cast<std::int64_t>(indent_end)) {
+            inherited.push_back(static_cast<std::int64_t>(start+1)+unit-static_cast<std::int64_t>(base_start));
+            if(split)inherited.push_back(static_cast<std::int64_t>(start+child.size()+2)+unit-static_cast<std::int64_t>(base_start));
         }
-        replace(start,end,replacement,start+1+child.size(),start+1+child.size(),{},inherited);
+        replace(start,split?closing_position:end,replacement,start+1+child.size(),start+1+child.size(),{},inherited);
         return true;
     }
 
-    bool closing_brace() {
+    bool closing_delimiter(wchar_t character) {
         if (!multiline || !code_assistance || !auto_indent) return false;
+        if(character!=L'}'&&character!=L')'&&character!=L']')return false;
         const auto range=selection(window);
         const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
-        const auto previous=start?now().text.rfind(L'\n',start-1):std::wstring::npos;
-        const auto line_start=previous==std::wstring::npos?0:previous+1;
-        if(start==line_start||now().text.find_first_not_of(L" \t",line_start)<start)return false;
-        auto erase=start;
-        if(now().text[start-1]==L'\t')--erase;
-        else while(erase>line_start&&start-erase<4&&now().text[erase-1]==L' ')--erase;
-        if(erase==start)return false;
-        replace(erase,end,L"}",erase+1,erase+1);return true;
+        const auto line_start=line_start_at(now().text,start);
+        if(now().text.find_first_not_of(L" \t",line_start)<start)return false;
+        const auto context=code_context(now().text,start);
+        if(context.lexical!=Lexical::code)return false;
+        auto base_start=line_start;
+        auto base_end=start;
+        if(!context.openings.empty()&&closing_for(context.openings.back().character)==character) {
+            const auto opening_position=context.openings.back().position;
+            base_start=line_start_at(now().text,opening_position);
+            base_end=base_start;
+            while(base_end<opening_position&&(now().text[base_end]==L' '||now().text[base_end]==L'\t'))++base_end;
+        } else {
+            // Retain Android's one-level fallback for an unfinished snippet
+            // whose opening brace has not been written in this editor yet.
+            if(character!=L'}'||start==line_start)return false;
+            if(now().text[start-1]==L'\t')--base_end;
+            else while(base_end>line_start&&start-base_end<4&&now().text[base_end-1]==L' ')--base_end;
+        }
+        const auto base=now().text.substr(base_start,base_end-base_start);
+        const bool existing=start==end&&end<now().text.size()&&now().text[end]==character;
+        if(existing&&base==now().text.substr(line_start,start-line_start)) {
+            select(window,start+1,start+1);cursor_snapshot();return true;
+        }
+        std::vector<std::int64_t> inherited;
+        for(const auto unit:now().units)if(unit>=static_cast<std::int64_t>(base_start)&&unit+4<=static_cast<std::int64_t>(base_end))
+            inherited.push_back(static_cast<std::int64_t>(line_start)+unit-static_cast<std::int64_t>(base_start));
+        const auto cursor=line_start+base.size()+1;
+        replace(line_start,existing?end+1:end,base+character,cursor,cursor,{},inherited);
+        return true;
     }
 
     bool pair(wchar_t character) {
@@ -476,6 +671,8 @@ struct CodeEditor::Impl {
         if (start == end && start < now().text.size() && now().text[start] == character &&
                 ((context == Lexical::code && (character == L')' || character == L']' || character == L'}')) ||
                     (character == L'"' && context == Lexical::string) ||
+                    (character == L'"' && context == Lexical::raw_string &&
+                        context_at(now().text,start+1)==Lexical::code) ||
                     (character == L'\'' && context == Lexical::character))) {
             select(window, start + 1, start + 1);
             cursor_snapshot();
@@ -488,13 +685,26 @@ struct CodeEditor::Impl {
         else if (character == L'{') closing = L'}';
         else if (character == L'"') closing = L'"';
         else if (character == L'\'') {
-            if (start && now().text[start - 1] >= L'0' && now().text[start - 1] <= L'9') return false;
+            if (numeric_token_before(now().text,start)) return false;
             closing = L'\'';
         }
         if (!closing) return false;
         const auto replacement = std::wstring(1, character) + now().text.substr(start, end - start) + closing;
         replace(start, end, replacement, start + 1, end + 1);
         return true;
+    }
+
+    wchar_t dead_quote_character(WPARAM key,LPARAM key_data) const {
+        if(!code_assistance||key>255)return L'\0';
+        std::array<BYTE,256> keyboard{};
+        if(!GetKeyboardState(keyboard.data()))return L'\0';
+        const auto layout=GetKeyboardLayout(0);
+        auto scan=static_cast<UINT>((static_cast<std::uintptr_t>(key_data)>>16)&0xFF);
+        if(!scan)scan=MapVirtualKeyExW(static_cast<UINT>(key),MAPVK_VK_TO_VSC,layout);
+        std::array<wchar_t,8> translated{};
+        const auto count=ToUnicodeEx(static_cast<UINT>(key),scan,keyboard.data(),translated.data(),
+            static_cast<int>(translated.size()),4,layout);
+        return count<0&&(translated.front()==L'\''||translated.front()==L'"')?translated.front():L'\0';
     }
 
     bool insert_shortcut(std::string_view text) {
@@ -504,8 +714,8 @@ struct CodeEditor::Impl {
         capture();
         if(supplied==L"\t"&&code_assistance){insert_tab();return true;}
         if((supplied==L"\n"||supplied==L"\r"||supplied==L"\r\n")&&newline())return true;
+        if(supplied.size()==1&&closing_delimiter(supplied.front()))return true;
         if(supplied.size()==1&&code_assistance&&pair(supplied.front()))return true;
-        if(supplied==L"}"&&closing_brace())return true;
         const auto value=lf(supplied);const auto range=selection(window);
         const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
         replace(start,end,value,start+value.size(),start+value.size());return true;
@@ -528,6 +738,10 @@ struct CodeEditor::Impl {
         LPARAM lparam, UINT_PTR, DWORD_PTR data) {
         auto& self = *reinterpret_cast<Impl*>(data);
         try {
+            if(message==literal_quote_message) {
+                const auto quote=static_cast<wchar_t>(wparam);
+                return (quote==L'\''||quote==L'"')&&self.insert_shortcut(std::string(1,static_cast<char>(quote)));
+            }
             if (message == WM_NCDESTROY) {
                 RemoveWindowSubclass(window, subclass, 1);
                 self.window = nullptr;
@@ -542,6 +756,13 @@ struct CodeEditor::Impl {
                 if (key == VK_RETURN) result |= DLGC_WANTALLKEYS;
                 return result;
             }
+            if(message==WM_KILLFOCUS||message==WM_INPUTLANGCHANGE)self.literal_quote_key.reset();
+            const bool editable=IsWindowEnabled(window)&&!(GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY);
+            if(!editable&&((message==WM_CHAR&&(wparam>=L' '||wparam==L'\b'||wparam==L'\t'||
+                    wparam==L'\r'||wparam==L'\n'||wparam==0x1A||wparam==0x19))||
+                    (message==WM_KEYDOWN&&(wparam==VK_TAB||wparam==VK_BACK||wparam==VK_RETURN||
+                        ((GetKeyState(VK_CONTROL)&0x8000)&&(wparam==L'Z'||wparam==L'Y'))))||
+                    message==WM_UNDO||message==EM_UNDO||message==EM_REDO))return 0;
             // Programmatic key delivery must respect the same lock as the
             // native editor; custom newline insertion bypasses RichEdit's edit path.
             if (((message == WM_KEYDOWN && wparam == VK_RETURN) ||
@@ -597,9 +818,9 @@ struct CodeEditor::Impl {
                 if ((wparam == L'\r' || wparam == L'\n') && self.multiline) {
                     if(!std::exchange(self.suppress_enter_char,false))self.newline();return 0;
                 }
+                if(wparam<=0xFFFF&&self.closing_delimiter(static_cast<wchar_t>(wparam)))return 0;
                 if (self.code_assistance && wparam >= L' ' && wparam <= 0xFFFF &&
                         self.pair(static_cast<wchar_t>(wparam))) return 0;
-                if (wparam == L'}' && self.closing_brace()) return 0;
             }
             const bool paste_key=message==WM_KEYDOWN&&
                 (((GetKeyState(VK_CONTROL)&0x8000)&&wparam==L'V')||
@@ -692,10 +913,31 @@ void CodeEditor::reset(EditorDocument document) {
     impl_->current = 0;
     // Initialization/reset is owned by the caller; the adapter may not yet be
     // attached to the parent's model. Only actual edits and undo/redo notify it.
-    impl_->apply(impl_->now(), false);
+    impl_->apply(impl_->now(), false, true);
 }
 void CodeEditor::insert_tab() { impl_->insert_tab(); }
 bool CodeEditor::insert_shortcut(std::string_view text) { return impl_->insert_shortcut(text); }
+bool CodeEditor::handle_key_message(const MSG& message) {
+    if(!message.hwnd||(message.message!=WM_KEYDOWN&&message.message!=WM_KEYUP))return false;
+    DWORD_PTR data=0;
+    if(!GetWindowSubclass(message.hwnd,Impl::subclass,1,&data)||!data)return false;
+    auto& editor=*reinterpret_cast<Impl*>(data);
+    if(message.message==WM_KEYUP) {
+        if(editor.literal_quote_key&&*editor.literal_quote_key==message.wParam) {
+            editor.literal_quote_key.reset();return true;
+        }
+        return false;
+    }
+    if(!IsWindowEnabled(message.hwnd)||(GetWindowLongPtrW(message.hwnd,GWL_STYLE)&ES_READONLY))return false;
+    const auto quote=editor.dead_quote_character(message.wParam,message.lParam);
+    if(!quote)return false;
+    // No TranslateMessage call has happened yet, so neither Windows nor
+    // RichEdit has a dead character to consume/reset. Other accents and plain
+    // input fields continue through their native message paths unchanged.
+    editor.literal_quote_key=message.wParam;
+    SendMessageW(message.hwnd,literal_quote_message,quote,0);
+    return true;
+}
 void CodeEditor::undo() { impl_->undo(); }
 void CodeEditor::redo() { impl_->redo(); }
 

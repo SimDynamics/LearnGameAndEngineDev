@@ -24,7 +24,10 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory"})
+RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
 
 
 def require(condition: bool, message: str) -> None:
@@ -184,10 +187,16 @@ def _blocks(document: dict) -> dict[str, dict]:
             for identity, block in zip(record["blocks"], page.get("blocks", []))}
 
 
+def _all_blocks(document: dict) -> dict[str, dict]:
+    """Historical validation includes archived contracts, never their presentation."""
+    return {**_blocks(document), **{item["id"]: item["block"]
+                                  for item in document["stateLayout"].get("retired", [])}}
+
+
 def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     pages = _pages(document)
     meta = document["stateLayout"]
-    require(set(meta) == V2_FIELDS, "Invalid stateLayout v2 fields")
+    require(V2_FIELDS <= set(meta) <= V2_FIELDS | V2_OPTIONAL_FIELDS, "Invalid stateLayout v2 fields")
     require(type(meta["locale"]) is str and meta["locale"] in LOCALES, "Unsupported stateLayout locale")
     page_ids, historical, digests = _origin(meta["origin"])
     family = meta["family"]
@@ -241,7 +250,33 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             seen_blocks.append(identity)
             mapping[p, b] = storage[identity]
     require(len(set(seen_pages)) == len(seen_pages) and set(seen_pages) == set(page_ids), "Page identities changed")
-    require(len(set(seen_blocks)) == len(seen_blocks) and set(seen_blocks) == set(storage), "Block identities changed")
+    retired = meta.get("retired", [])
+    require(type(retired) is list and len(retired) <= 100_000, "Malformed retired activity archive")
+    require(not retired or meta["locale"] == "es", "Retirement is currently authorized only for Spanish")
+    retired_ids = set()
+    for item in retired:
+        require(type(item) is dict and set(item) == {"id", "page", "next", "block"},
+                "A retired activity needs its identity, page, successor and complete block")
+        identity = _identity(item["id"])
+        require(identity in storage and identity not in retired_ids and identity not in seen_blocks,
+                "A retired identity is unknown, duplicated or still active")
+        require(item["page"] in page_ids, "Unknown retired activity page")
+        require(type(item["next"]) is str and (item["next"] == "" or item["next"] in storage)
+                and item["next"] != identity, "Invalid retired activity successor")
+        require(type(item["block"]) is dict and item["block"].get("type") in RETIRABLE_TYPES,
+                "Only compiler activities and their presentation blocks can be retired")
+        require(state_fingerprint(item["block"]) == digests[identity],
+                "The retired response/code contract changed")
+        retired_ids.add(identity)
+    require(len(set(seen_blocks)) == len(seen_blocks) and set(seen_blocks) | retired_ids == set(storage),
+            "Block identities changed")
+    successors = {item["id"]: item["next"] for item in retired}
+    for identity in successors:
+        visited = set()
+        while identity in successors:
+            require(identity not in visited, "Cyclic retired activity successors")
+            visited.add(identity)
+            identity = successors[identity]
     editorial = meta["editorial"]
     require(type(editorial) is list and len(editorial) <= 100_000, "Malformed editorial proof")
     chains = {}
@@ -258,7 +293,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             chains[identity] = [before]
         require(after not in chains[identity], "Cyclic editorial proof")
         chains[identity].append(after)
-    actual = _blocks(document)
+    actual = _all_blocks(document)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
     return mapping
@@ -293,7 +328,7 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
                 "Published v2 metadata cannot be removed or regenerated")
         result = deepcopy(document)
         if result["stateLayout"].get("editorial") == previous["stateLayout"]["editorial"]:
-            before, after = _blocks(previous), _blocks(result)
+            before, after = _all_blocks(previous), _all_blocks(result)
             for identity, block in before.items():
                 require(identity in after, "An existing activity was removed")
                 if fingerprint(block) != fingerprint(after[identity]):
@@ -440,10 +475,74 @@ def _validate_presentation_relationships(document: dict) -> None:
                             "An activity prerequisite must precede its activity in visual order")
 
 
+def _validate_retirement_history(document: dict) -> None:
+    meta = document.get("stateLayout", {})
+    if "retirementHistory" not in meta:
+        return
+    require(meta.get("version") == 2, "Retirement reading history requires stateLayout v2")
+    history = meta["retirementHistory"]
+    require(type(history) is list and len(history) <= 100_000, "Malformed retirement reading history")
+    archived = [entry["id"] for entry in meta.get("retired", [])]
+    available = _all_blocks(document)
+    page_ids = {record["id"] for record in meta["current"]}
+    page_shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
+                   for page, record in zip(document["pages"], meta["current"])}
+    covered, batches = [], []
+    for snapshot in history:
+        require(type(snapshot) is dict and set(snapshot) == {
+            "retired", "current", "pages", "compilerPuzzlesRequired", "referenceAfter", "activityAfter"},
+            "A retirement reading snapshot needs the complete previous pages, layout, flow and relationships")
+        require(type(snapshot["compilerPuzzlesRequired"]) is bool, "Historical compiler flow must be boolean")
+        ids = snapshot["retired"]
+        require(type(ids) is list and ids, "An archival reading snapshot needs its retirement batch")
+        for identity in ids:
+            _identity(identity)
+        require(len(set(ids)) == len(ids) and set(ids) <= set(archived), "Unknown or repeated reading-history retirement")
+        pages = _pages(snapshot)
+        current = snapshot["current"]
+        require(type(current) is list and len(current) == len(pages) == len(page_ids), "Historical reading page count changed")
+        seen_pages, seen_blocks = set(), set()
+        for page, record in zip(pages, current):
+            require(type(record) is dict and set(record) == {"id", "blocks"}, "Malformed historical reading page")
+            identity = _identity(record["id"])
+            require(identity in page_ids and identity not in seen_pages, "Historical reading page identity changed")
+            seen_pages.add(identity)
+            require({key: value for key, value in page.items() if key != "blocks"} == page_shells[identity],
+                    "Historical reading page metadata changed")
+            require(type(record["blocks"]) is list and len(record["blocks"]) == len(page.get("blocks", [])),
+                    "Historical reading blocks do not match their identities")
+            for block_id, block in zip(record["blocks"], page.get("blocks", [])):
+                _identity(block_id)
+                require(block_id in available and block_id not in seen_blocks, "Unknown or repeated historical reading block")
+                require(state_fingerprint(block) == state_fingerprint(available[block_id]),
+                        "Historical reading snapshot changed a response/code contract")
+                seen_blocks.add(block_id)
+        historical = {"pages": pages, "stateLayout": {"current": current},
+                      "referenceAfter": snapshot["referenceAfter"], "activityAfter": snapshot["activityAfter"]}
+        _validate_presentation_relationships(historical)
+        covered.extend(ids)
+        batches.append((set(ids), seen_blocks))
+    require(len(set(covered)) == len(covered) and (not covered or covered == archived[-len(covered):]),
+            "Retirement reading batches must own an exact suffix of the archived identities")
+    active = set(_blocks(document))
+    additions = {entry["id"] for entry in meta["additions"]}
+    for ids, before in reversed(batches):
+        # Later v2 additions did not exist in this presentation. Only an
+        # addition may be absent; original identities and this batch remain
+        # mandatory. Transition validation separately pins the exact snapshot.
+        expected = active | ids
+        require(ids <= before <= expected and expected - before <= additions and not active & ids,
+                "Historical reading layout does not match its retirement batch")
+        active = before
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
+    if "compilerPuzzlesRequired" in document:
+        require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
     _validate_presentation_relationships(document)
+    _validate_retirement_history(document)
     return mapping
 
 
@@ -451,7 +550,7 @@ def _transition_metadata(document: dict) -> dict:
     # Only these validated root presentation extensions may change independently
     # of an immutable origin. All other lesson metadata remains protected.
     return {k: v for k, v in document.items()
-            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS}
+            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | FLOW_FIELDS}
 
 
 def reorder(document: dict, plan: list[dict], additions: list[dict] | None = None) -> dict:
@@ -488,6 +587,56 @@ def reorder(document: dict, plan: list[dict], additions: list[dict] | None = Non
     return result
 
 
+def retire(document: dict, identities: list[str], *, activity_after: list[dict] | None = None,
+           reference_after: list[dict] | None = None,
+           compiler_puzzles_required: bool | None = None) -> dict:
+    """Archive explicitly selected Spanish activities without recycling their slots.
+
+    Relationship updates are authored by the caller in the same transition. No
+    prerequisite is silently removed, and this helper never writes source files.
+    """
+    validate(document)
+    require(document.get("stateLayout", {}).get("version") == 2,
+            "Retirement requires an existing stateLayout v2 family")
+    require(document["stateLayout"]["locale"] == "es", "Retirement is currently authorized only for Spanish")
+    require(type(identities) is list and identities, "Supply a nonempty retirement plan")
+    for identity in identities:
+        _identity(identity)
+    require(len(set(identities)) == len(identities), "Supply a unique retirement plan")
+    active = _blocks(document)
+    require(set(identities) <= active.keys(), "Only active identities can be retired")
+    result = deepcopy(document)
+    archive = result["stateLayout"].setdefault("retired", [])
+    retiring = set(identities)
+    snapshot = {"retired": [], "current": deepcopy(document["stateLayout"]["current"]),
+                "pages": deepcopy(document["pages"]),
+                "compilerPuzzlesRequired": document.get("compilerPuzzlesRequired", False),
+                "referenceAfter": deepcopy(document.get("referenceAfter", [])),
+                "activityAfter": deepcopy(document.get("activityAfter", []))}
+    for page, record in zip(result["pages"], result["stateLayout"]["current"]):
+        old_ids, old_blocks = record["blocks"], page.get("blocks", [])
+        for index, identity in enumerate(old_ids):
+            if identity not in retiring:
+                continue
+            require(old_blocks[index].get("type") in RETIRABLE_TYPES,
+                    "Only compiler activities and their presentation blocks can be retired")
+            successor = next((candidate for candidate in old_ids[index + 1:] if candidate not in retiring), "")
+            archive.append({"id": identity, "page": record["id"], "next": successor,
+                            "block": deepcopy(old_blocks[index])})
+            snapshot["retired"].append(identity)
+        page["blocks"] = [block for identity, block in zip(old_ids, old_blocks) if identity not in retiring]
+        record["blocks"] = [identity for identity in old_ids if identity not in retiring]
+    result["stateLayout"].setdefault("retirementHistory", []).append(snapshot)
+    for field, relationships in (("activityAfter", activity_after), ("referenceAfter", reference_after)):
+        if relationships is not None:
+            result[field] = deepcopy(relationships)
+    if compiler_puzzles_required is not None:
+        require(type(compiler_puzzles_required) is bool, "compilerPuzzlesRequired must be boolean")
+        result["compilerPuzzlesRequired"] = compiler_puzzles_required
+    validate_transition(document, result)
+    return result
+
+
 def _validate_transition_v2(previous: dict, current: dict) -> None:
     validate(current)
     baseline = prepare(previous)
@@ -503,6 +652,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 "The historical locale is not anchored to the published source")
     require(_transition_metadata(baseline) == _transition_metadata(current),
             "A reorder cannot modify lesson metadata")
+    require(not baseline.get("compilerPuzzlesRequired", False) or current.get("compilerPuzzlesRequired", False),
+            "Published mandatory compiler puzzles cannot be silently disabled")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
                 for page, record in zip(document["pages"], document["stateLayout"]["current"])}
@@ -513,7 +664,40 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     old_editorial = old_meta["editorial"] if old_v2 else []
     require(meta["editorial"][:len(old_editorial)] == old_editorial,
             "Editorial proof is append-only; the published provenance cannot be replaced")
-    before, after = _blocks(baseline), _blocks(current)
+    old_retired = old_meta.get("retired", []) if old_v2 else []
+    retired = meta.get("retired", [])
+    require(retired[:len(old_retired)] == old_retired,
+            "Retired activity archives are append-only and cannot be restored or rewritten")
+    before, after = _all_blocks(baseline), _all_blocks(current)
+    old_positions = {identity: (record["id"], index, record["blocks"])
+                     for record in old_meta["current"] for index, identity in enumerate(record["blocks"])}
+    newly_retired = {item["id"] for item in retired[len(old_retired):]}
+    old_history = old_meta.get("retirementHistory", []) if old_v2 else []
+    history = meta.get("retirementHistory", [])
+    require(history[:len(old_history)] == old_history, "Retirement reading snapshots are append-only")
+    appended_history = history[len(old_history):]
+    require(not newly_retired or appended_history,
+            "A new retirement must archive its previous reading presentation")
+    if appended_history:
+        require(len(appended_history) == 1 and newly_retired,
+                "One transition can archive only its actual previous reading layout")
+        snapshot = appended_history[0]
+        expected = {"retired": [item["id"] for item in retired[len(old_retired):]],
+                    "current": old_meta["current"], "pages": baseline["pages"],
+                    "compilerPuzzlesRequired": baseline.get("compilerPuzzlesRequired", False),
+                    "referenceAfter": baseline.get("referenceAfter", []),
+                    "activityAfter": baseline.get("activityAfter", [])}
+        require(fingerprint(snapshot) == fingerprint(expected),
+                "Retirement reading snapshot does not match the complete previous published presentation")
+    for item in retired[len(old_retired):]:
+        identity = item["id"]
+        require(identity in old_positions, "A retirement must archive an existing active block")
+        require(fingerprint(item["block"]) == fingerprint(before[identity]),
+                "A retired block must preserve its complete published snapshot")
+        page, index, siblings = old_positions[identity]
+        successor = next((candidate for candidate in siblings[index + 1:] if candidate not in newly_retired), "")
+        require(item["page"] == page and item["next"] == successor,
+                "A retirement must preserve its actual previous position and successor")
     require(before.keys() <= after.keys(), "An existing activity was removed")
     appended = {}
     for proof in meta["editorial"][len(old_editorial):]:
@@ -557,6 +741,8 @@ def validate_transition(previous: dict, current: dict) -> None:
     previous_other = _transition_metadata(baseline)
     current_other = _transition_metadata(current)
     require(previous_other == current_other, "A reorder cannot modify lesson metadata")
+    require(not baseline.get("compilerPuzzlesRequired", False) or current.get("compilerPuzzlesRequired", False),
+            "Published mandatory compiler puzzles cannot be silently disabled")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
     after_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
@@ -606,8 +792,7 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
         return current
     validate_transition(previous, current)
     old = prepare(previous)
-    blocks = {identity: block for page, record in zip(current["pages"], current["stateLayout"]["current"])
-              for identity, block in zip(record["blocks"], page.get("blocks", []))}
+    blocks = _all_blocks(current)
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
     result["pages"] = [{**deepcopy(page_by_id[record["id"]]),
@@ -625,7 +810,7 @@ def original_projection(document: dict) -> dict:
     if "stateLayout" not in document:
         return document
     validate(document)
-    blocks = _blocks(document)
+    blocks = _all_blocks(document)
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
@@ -672,7 +857,7 @@ def check_localized_family(documents: list[dict], locales: list[str] | None = No
         # Slots of additions must not acquire independent owners in another map.
         slots, owners = {}, {}
         for document in v2:
-            blocks = _blocks(document)
+            blocks = _all_blocks(document)
             for addition in document["stateLayout"]["additions"]:
                 slot = (addition["storage"]["page"], addition["storage"]["block"])
                 require(slot not in slots or slots[slot] == addition["id"],
@@ -770,7 +955,7 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
     documents = {path.relative_to(repository).as_posix(): load(path)
                  for path in sorted(content.rglob("lesson_*.json"))}
     for path, document in documents.items():
-        if PRESENTATION_FIELDS & document.keys():
+        if (PRESENTATION_FIELDS | FLOW_FIELDS) & document.keys():
             try:
                 validate(document)
             except (ValueError, KeyError, TypeError) as exc:

@@ -112,7 +112,8 @@ No se reconstruyen traducciones ni se rellenan sus orígenes para hacerlos coinc
 La primera familia se ancla al SHA publicado; al adoptar después otro idioma se
 reutiliza esa misma familia, sin cambiar la referencia histórica.
 
-El objeto `stateLayout` v2 contiene exactamente estos campos:
+El objeto `stateLayout` v2 contiene estos campos obligatorios y admite los archivos
+opcionales `retired` y `retirementHistory` descritos más abajo:
 
 | Campo | Contrato |
 | --- | --- |
@@ -123,6 +124,8 @@ El objeto `stateLayout` v2 contiene exactamente estos campos:
 | `family` | Por idioma publicado: `sha256` del documento histórico sin `stateLayout` y su propio `origin`. Se calculan desde Git, sin exportar copias históricas. |
 | `additions` | Altas con `id`, `sha256`, `storage: {page, block}` y `progressPage`. |
 | `editorial` | Pruebas encadenadas `{id, beforeSha256, afterSha256}` de los bloques completos cuya prosa cambia. |
+| `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
+| `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
@@ -133,7 +136,8 @@ si se demuestra su origen anterior; sus metadatos se conservan.
 
 Cada alta tiene identidad y dirección reservadas, fuera de las páginas históricas
 de todos los idiomas de la familia. Las altas son acumulativas: no se pueden
-retirar, reasignar ni reciclar sus direcciones. `progressPage` asigna el bloque
+borrar, reasignar ni reciclar sus direcciones. Su retiro del recorrido requiere
+el archivo explícito descrito más abajo. `progressPage` asigna el bloque
 a un grupo de progreso original. El peso de las páginas originales se conserva;
 una actividad nueva comienza pendiente y puede añadir un requisito a su grupo.
 Esta ampliación no añade, divide ni fusiona páginas.
@@ -190,6 +194,97 @@ un respaldo histórico. Después de incorporarla se ejecutan `check`, `check-tre
 y el validador contra el mismo SHA. Las puertas no acreditan ejecución Android.
 No se deben generar archivos de traducción cuando no se esté traduciendo.
 
+## Retiro compatible en Windows
+
+`stateLayout.retired` permite retirar del recorrido español un compilador
+redundante y sus bloques de presentación. Las páginas y `current` contienen sólo
+los bloques activos. La identidad retirada sigue perteneciendo a su origen o
+alta y conserva íntegro su bloque en este archivo:
+
+```json
+{
+  "id": "identidad_publicada",
+  "page": "page_0004",
+  "next": "siguiente_identidad_activa",
+  "block": {"type": "cpp_compiler", "initialCode": "CODIGO_PUBLICADO_INTACTO"}
+}
+```
+
+El ejemplo ilustra la forma, no un bloque curricular nuevo. `block` debe ser el
+objeto completo de la versión publicada, con todos sus campos y valores.
+`page` y `next` prueban la posición anterior; `next` es la primera identidad
+posterior que sigue activa en esa página, o la cadena vacía si no existe.
+Si esa identidad se retira después, se sigue su propio sucesor. No se admiten
+ciclos, identidades duplicadas, identidades a la vez activas y retiradas ni
+contratos nuevos bajo una dirección antigua.
+
+La primera transición contrasta el archivo con el bloque publicado completo.
+Después el archivo es acumulativo e inmutable: no se puede cambiar, borrar ni
+reactivar una entrada bajo el mismo contrato. Se conservan `origin`, `family`,
+las altas, sus direcciones y las pruebas editoriales. También se conservan los
+datos históricos del estudiante; las respuestas y borradores archivados no se
+convierten en aciertos de otra actividad. La persistencia fija además la firma
+completa de cada entrada archivada y rechaza su eliminación o sustitución.
+
+Los tipos retirables son `cpp_compiler`, `heading`, `paragraph`, `note` y `code`.
+Esta autorización inicial corresponde a español. No habilita borrar puzzles,
+cambiar su contrato ni modificar las traducciones. El lector y el catálogo usan
+únicamente los bloques activos; una posición de lector archivada se resuelve
+hacia contenido activo sin aplicar sus milisegundos a otra frase ni borrar el
+registro histórico.
+
+Cada lote nuevo añade una entrada inmutable a `retirementHistory`, con estas
+seis claves: `retired` (identidades retiradas por el lote, en el orden del archivo),
+`current` (mapa visible anterior completo), `pages` (páginas anteriores completas,
+incluidos todos sus bloques), `compilerPuzzlesRequired` (booleano efectivo anterior),
+`referenceAfter` y `activityAfter` (relaciones anteriores exactas, o listas vacías).
+El generador captura estos valores antes de retirar bloques o cambiar relaciones.
+La puerta de transición contrasta esa captura con la versión publicada; no permite
+inventar texto anterior, orden, dependencias ni reglas de avance. Una revisión de
+prosa simultánea conserva así el texto que realmente escuchó el estudiante.
+
+Este archivo es procedencia histórica para verificar una lectura anterior; sus
+bloques no crean controles, actividades ni narración nueva. El lector reconstruye
+el guion con el mapa y las relaciones anteriores, comprueba su identidad y sólo
+entonces busca un destino activo. Un editor que antes estaba oculto por una
+dependencia no se incorpora por accidente al guion anterior. Se preserva el límite
+de tres posiciones y ningún tiempo escuchado acredita otro audio. La persistencia
+también fija estas capturas completas de forma acumulativa. Los retiros antiguos
+sin `retirementHistory` siguen siendo válidos; su ausencia no permite inventar
+una presentación anterior ni omitir la captura de un lote nuevo.
+
+La API de autoría no escribe archivos ni deduce qué dependencias deben desaparecer:
+
+```python
+from scripts.curriculum import stable_state_layout as state
+
+propuesta = state.retire(
+    leccion_publicada,
+    ["consigna_redundante", "editor_redundante"],
+    activity_after=dependencias_activas_explicitas,
+    reference_after=referencias_activas_explicitas,
+    compiler_puzzles_required=True,
+)
+state.validate_transition(leccion_publicada, propuesta)
+```
+
+Las relaciones no pueden seguir apuntando al archivo retirado. El autor debe
+preservar explícitamente las dependencias entre los intentos útiles y comprobar
+la transición contra su referencia publicada habitual. El validador curricular
+recupera los bloques archivados en sus coordenadas anteriores para seguir
+verificando también su contrato; archivar no elude las guardas de código o
+respuestas.
+
+`compilerPuzzlesRequired` es un booleano opcional en la raíz de la lección,
+independiente del archivo. Su ausencia conserva el flujo anterior; `true` activa
+la obligatoriedad de los objetivos evaluables del compilador. Una publicación
+que ya lo activa no puede desactivarlo silenciosamente. La propuesta concreta
+de U1 debe integrar el retiro de las tres repeticiones y esta activación juntos;
+el mecanismo técnico no modifica automáticamente ningún JSON del curso.
+
+Este contrato y sus verificadores son de Windows. No acreditan soporte ni
+ejecución de esta extensión en Android.
+
 ## Lectura y alcance de la recuperación
 
 El lector sigue usando tres posiciones recientes, incluidas las finalizadas,
@@ -202,8 +297,10 @@ la huella de la página completa, segmento y desplazamiento. Si también cambia
 su texto hablado, los hashes no permiten reconstruir el guion anterior: se
 conserva ese registro sin aplicarlo a otro audio ni inventar milisegundos. Para
 una página hablada intacta se puede verificar el guion de origen y recuperar
-exactamente su pausa después de moverla. No se duplica texto curricular para
-sortear esta limitación ni se modifica la política de posiciones.
+exactamente su pausa después de moverla. Los lotes de retiro con
+`retirementHistory` aportan la presentación publicada verificable descrita arriba;
+fuera de ese contrato no se inventa ni conserva una copia alternativa de la
+lección para sortear la falta de procedencia. La política de posiciones se mantiene.
 
 ## Compatibilidad de herramientas v1
 

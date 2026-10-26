@@ -201,29 +201,44 @@ struct FormatTransaction {
     POINT scroll{};
     LRESULT events = 0, modified = 0;
     ITextDocument* document = nullptr;
-    bool suspended = false, visible = false;
+    bool suspended = false, frozen = false, redraw = false;
     explicit FormatTransaction(HWND target) : edit(target) {
         SendMessageW(edit, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&selection));
         SendMessageW(edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&scroll));
         events = SendMessageW(edit, EM_GETEVENTMASK, 0, 0);
         modified = SendMessageW(edit, EM_GETMODIFY, 0, 0);
         SendMessageW(edit, EM_SETEVENTMASK, 0, 0);
-        visible = (GetWindowLongPtrW(edit,GWL_STYLE) & WS_VISIBLE) != 0;
-        if (visible) SendMessageW(edit, WM_SETREDRAW, FALSE, 0);
         IRichEditOle* rich = nullptr;
         SendMessageW(edit, EM_GETOLEINTERFACE, 0, reinterpret_cast<LPARAM>(&rich));
         if (rich) {
             rich->QueryInterface(__uuidof(ITextDocument), reinterpret_cast<void**>(&document)); rich->Release();
-            if (document) { long count = 0; suspended = SUCCEEDED(document->Undo(tomSuspend, &count)); }
+            if (document) {
+                long count = 0;
+                frozen = SUCCEEDED(document->Freeze(&count));
+                suspended = SUCCEEDED(document->Undo(tomSuspend, &count));
+            }
+        }
+        // WM_SETREDRAW changes WS_VISIBLE. A syntax pass on every edit must
+        // not briefly remove a live child from its parent's composition.
+        if (!frozen) {
+            redraw = (GetWindowLongPtrW(edit,GWL_STYLE) & WS_VISIBLE) != 0;
+            if (redraw) SendMessageW(edit, WM_SETREDRAW, FALSE, 0);
         }
     }
     ~FormatTransaction() {
         SendMessageW(edit, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&selection));
-        SendMessageW(edit, EM_SETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&scroll));
         SendMessageW(edit, EM_SETMODIFY, static_cast<WPARAM>(modified), 0);
-        if (document) { if (suspended) { long count = 0; document->Undo(tomResume, &count); } document->Release(); }
+        if (document) {
+            long count = 0;
+            if (suspended) document->Undo(tomResume, &count);
+            if (frozen) document->Unfreeze(&count);
+            document->Release();
+        }
+        // Native unfreezing can finish layout and round the viewport. Restore
+        // its exact saved position after that layout, as the reader shade does.
+        SendMessageW(edit, EM_SETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&scroll));
         SendMessageW(edit, EM_SETEVENTMASK, 0, events);
-        if (visible) SendMessageW(edit, WM_SETREDRAW, TRUE, 0);
+        if (redraw) SendMessageW(edit, WM_SETREDRAW, TRUE, 0);
         InvalidateRect(edit, nullptr, FALSE);
     }
 };
@@ -260,13 +275,25 @@ void format(HWND edit, std::size_t start, std::size_t end, COLORREF color, const
 bool identifier_start(wchar_t c) { return (c >= L'A' && c <= L'Z') || (c >= L'a' && c <= L'z') || c == L'_'; }
 bool identifier_part(wchar_t c) { return identifier_start(c) || (c >= L'0' && c <= L'9'); }
 struct Ink { std::size_t start, end; COLORREF color; };
+enum class CppInk { identifier, keyword, string, literal, preprocessor, comment };
+COLORREF cpp_color(HWND edit, CppInk category) {
+    switch (category) {
+    case CppInk::identifier: return accessible(edit,RGB(171,141,227));
+    case CppInk::keyword: return accessible(edit,RGB(231,155,186));
+    case CppInk::string: return accessible(edit,RGB(122,195,141));
+    case CppInk::literal: return accessible(edit,RGB(224,151,109));
+    case CppInk::preprocessor: return accessible(edit,RGB(92,156,231));
+    case CppInk::comment: return accessible(edit,RGB(172,172,172));
+    }
+    return reader_theme::foreground(edit);
+}
 std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
-    const auto identifier_color = accessible(edit, RGB(171,141,227));
-    const auto keyword_color = accessible(edit, RGB(231,155,186));
-    const auto string_color = accessible(edit, RGB(122,195,141));
-    const auto literal_color = accessible(edit, RGB(224,151,109));
-    const auto preprocessor_color = accessible(edit, RGB(92,156,231));
-    const auto comment_color = accessible(edit, RGB(172,172,172));
+    const auto identifier_color = cpp_color(edit,CppInk::identifier);
+    const auto keyword_color = cpp_color(edit,CppInk::keyword);
+    const auto string_color = cpp_color(edit,CppInk::string);
+    const auto literal_color = cpp_color(edit,CppInk::literal);
+    const auto preprocessor_color = cpp_color(edit,CppInk::preprocessor);
+    const auto comment_color = cpp_color(edit,CppInk::comment);
     static const std::set<std::wstring_view> keywords{L"alignas",L"alignof",L"asm",L"break",L"case",L"catch",L"class",L"concept",L"const",L"consteval",L"constexpr",L"constinit",L"continue",L"co_await",L"co_return",L"co_yield",L"default",L"delete",L"do",L"else",L"enum",L"explicit",L"export",L"extern",L"for",L"friend",L"goto",L"if",L"inline",L"mutable",L"namespace",L"new",L"noexcept",L"operator",L"private",L"protected",L"public",L"register",L"requires",L"return",L"sizeof",L"static",L"static_assert",L"struct",L"switch",L"template",L"throw",L"try",L"typedef",L"typename",L"union",L"using",L"virtual",L"volatile",L"while",L"import",L"module"};
     std::vector<Ink> result;
     auto index = std::size_t{0};
@@ -322,11 +349,41 @@ bool technical_mention_boundary(wchar_t value) {
     // independent of the process locale used by std::wregex's ASCII \b.
     return std::wstring_view(L" \t\r\n\u00a0\u202f.,;:!?()[]{}\"'`«»“”‘’…/\\+-*=<>|&—–").find(value)!=std::wstring_view::npos;
 }
+std::size_t escape_mention_end(std::wstring_view text,std::size_t start) {
+    if(start>=text.size()||text[start]!=L'\\')return start;
+    auto end=start;
+    while(end<text.size()&&text[end]==L'\\')++end;
+    if(end<text.size()&&std::wstring_view(L"ntr0abfv\"'").find(text[end])!=text.npos)++end;
+    else if(end-start!=2)return start;
+    return end==text.size()||technical_mention_boundary(text[end])?end:start;
+}
+bool named_string_character(std::wstring_view text,std::size_t start,std::size_t end) {
+    if(end-start!=1)return false;
+    // A letter is not globally a string. Only its explanation as part of a
+    // literal/escape or a visible control-character spelling supplies that role.
+    auto begin=text.find_last_of(L".!?\r\n",start);
+    begin=begin==text.npos?0:begin+1;
+    auto limit=text.find_first_of(L".!?\r\n",end);
+    if(limit==text.npos)limit=text.size();
+    const auto sentence=text.substr(begin,limit-begin);
+    static const std::wregex string_context(LR"((literal|escape|secuencia de control|string literal|s[eé]quence d.[eé]chappement))",std::regex_constants::icase);
+    static const std::wregex slash_context(LR"((barra(?:s)? (?:inversa(?:s)?|invertida(?:s)?)|backslash))",std::regex_constants::icase);
+    static const std::wregex control_context(LR"((salto(?:s)?|control|tabulaci[oó]n|newline|line break))",std::regex_constants::icase);
+    const auto contains=[&](const std::wregex& expression){
+        for(std::regex_iterator<std::wstring_view::const_iterator> match(sentence.begin(),sentence.end(),expression),last;
+                match!=last;++match){
+            const auto at=static_cast<std::size_t>(match->position()),after=at+static_cast<std::size_t>(match->length());
+            if((at==0||technical_mention_boundary(sentence[at-1]))&&
+                    (after==sentence.size()||technical_mention_boundary(sentence[after])))return true;
+        }
+        return false;
+    };
+    return contains(string_context)||(contains(slash_context)&&contains(control_context));
+}
 std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::wstring_view text) {
     std::vector<std::pair<std::size_t,std::size_t>> result;
-    // These are the escape seeds used by Android's SpanishTechnicalSpeech.
-    // Named letters and control escapes retain identifier ink; standalone
-    // escaped quotes/backslashes use string ink, like their C++ literal role.
+    // A standalone escape in prose describes the contents of a literal. Its
+    // full spelling uses the same ink as that spelling inside actual C++ code.
     for(std::size_t index=0;index+1<text.size();++index){
         if(text[index]==L'/'&&text[index+1]==L'/'){
             // A prose mention is just the marker, not a comment extending to
@@ -337,12 +394,11 @@ std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::w
                 result.emplace_back(index,index+2);
             continue;
         }
-        if(text[index]!=L'\\'||(std::wstring_view(L"ntr0abfv").find(text[index+1])==std::wstring_view::npos &&
-            text[index+1]!=L'\\'&&text[index+1]!=L'"'))continue;
-        if((index==0||technical_mention_boundary(text[index-1]))&&
-            (index+2==text.size()||technical_mention_boundary(text[index+2])))result.emplace_back(index,index+2);
+        if(text[index]!=L'\\'||(index&&(!technical_mention_boundary(text[index-1])||text[index-1]==L'\\')))continue;
+        const auto end=escape_mention_end(text,index);
+        if(end>index){result.emplace_back(index,end);index=end-1;}
     }
-    static const std::wregex named_letter(LR"((?:letra|car[aáÁ]cter)[ \t\r\n]+([A-Za-z]))",std::regex_constants::icase);
+    static const std::wregex named_letter(LR"((?:letras?|car[aáÁ]cter(?:es)?|letters?|characters?|lettres?)[ \t\r\n]+([A-Za-z]))",std::regex_constants::icase);
     for(std::regex_iterator<std::wstring_view::const_iterator> match(text.begin(),text.end(),named_letter),end;match!=end;++match){
         const auto cue=static_cast<std::size_t>(match->position());
         const auto letter=static_cast<std::size_t>(match->position(1));
@@ -635,13 +691,10 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 if(statement_end>start+count)statements.emplace_back(start,statement_end);
             }
         }
-        for(const auto& [start,end]:inline_character_mentions(source)) {
-            // A standalone escaped quote or backslash is a C++ string escape,
-            // not an identifier. Color its full pair with string literal ink,
-            // without coloring the surrounding explanatory prose.
-            const bool symbol_escape=end-start==2&&source[start]==L'\\'&&
-                (source[start+1]==L'"'||source[start+1]==L'\\');
-            if(symbol_escape)format(edit,start,end,accessible(edit,RGB(122,195,141)));
+        const auto character_mentions=inline_character_mentions(source);
+        for(const auto& [start,end]:character_mentions) {
+            if(source[start]==L'\\'||named_string_character(source,start,end))
+                format(edit,start,end,cpp_color(edit,CppInk::string));
             else apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
         }
         // Apply complete fragments after individual technical mentions so a
@@ -661,14 +714,18 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 std::regex_constants::icase);
             const auto prefix=std::wstring_view(source).substr(0,begin_wide);
             const auto tail=prefix.substr(prefix.size()>128?prefix.size()-128:0);
-            if(std::regex_search(tail.begin(),tail.end(),output_cue))
-                format(edit,begin_wide,begin_wide+fragment.size(),accessible(edit,RGB(122,195,141)));
+            const bool named_string=fragment.size()==1&&
+                std::ranges::find(character_mentions,std::pair{begin_wide,begin_wide+fragment.size()})!=character_mentions.end()&&
+                named_string_character(source,begin_wide,begin_wide+fragment.size());
+            if(std::regex_search(tail.begin(),tail.end(),output_cue)||
+                    (fragment.starts_with(L"\\")&&escape_mention_end(fragment,0)==fragment.size())||named_string)
+                format(edit,begin_wide,begin_wide+fragment.size(),cpp_color(edit,CppInk::string));
             else apply_cpp(edit, fragment, begin_wide, true);
         }
         // Last lexical layer: operator-looking characters inside an explicit
         // literal keep string ink. Do not change its face, text or source offsets.
         for(const auto& [begin,end]:inline_string_literals(source))
-            format(edit,begin,end,accessible(edit,RGB(122,195,141)));
+            format(edit,begin,end,cpp_color(edit,CppInk::string));
     }
     for (const auto& range : curriculum::emphasis_ranges(text, emphasis)) {
         const auto start = wide(std::string_view(displayed).substr(0, mapping[range.start])).size();

@@ -9,6 +9,8 @@
 #include "presentation/windows/icons.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/compiler_completion.hpp"
+#include "core/retirement_test_fixture.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/narration_worker.hpp"
 #include "native_build_config.hpp"
@@ -1028,8 +1030,25 @@ void native_answer_overflow_bars(){
         require(!bars(item)&&offset.x==0&&offset.y==0,"Clearing an answer retained bars or hidden scrolling");}
     require(height(multiline)==empty_height,"Clearing a multiline answer did not restore its content-sized height");
     SendMessageW(multiline,WM_UNDO,0,0);pump(fixture.host);
+    if(fixture.text(1,2)!=lines||height(multiline)<=two_line_height||(bars(multiline)&WS_VSCROLL)){
+        CHARRANGE cursor{};SendMessageW(multiline,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&cursor));
+        POINT offset{},caret{};SendMessageW(multiline,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+        SendMessageW(multiline,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&caret),cursor.cpMax);
+        std::cerr<<"Answer Undo geometry: equal="<<(fixture.text(1,2)==lines)<<", bytes="<<fixture.text(1,2).size()<<'/'<<lines.size()
+            <<", heights empty/two/current="<<empty_height<<'/'<<two_line_height<<'/'<<height(multiline)
+            <<", bars="<<bars(multiline)<<", lines="<<SendMessageW(multiline,EM_GETLINECOUNT,0,0)
+            <<", selection="<<cursor.cpMin<<':'<<cursor.cpMax<<", caret="<<caret.x<<','<<caret.y
+            <<", scroll="<<offset.x<<','<<offset.y<<'\n';
+    }
     require(fixture.text(1,2)==lines&&height(multiline)>two_line_height&&!(bars(multiline)&WS_VSCROLL),
         "Undo lost the original multiline text or its content-sized geometry");
+    const auto restored_height=height(multiline);
+    SendMessageW(multiline,EM_REDO,0,0);pump(fixture.host);
+    require(fixture.text(1,2).empty()&&height(multiline)==empty_height&&!bars(multiline)&&fixture.control(1,2)==multiline,
+        "Redo did not shrink the same multiline answer and remove the restored overflow");
+    SendMessageW(multiline,WM_UNDO,0,0);pump(fixture.host);
+    require(fixture.text(1,2)==lines&&height(multiline)==restored_height&&!(bars(multiline)&WS_VSCROLL),
+        "Repeated Undo changed the restored answer's exact content-sized height");
     std::cout<<"PASS answer automatic height, horizontal overflow, unchanged native controls/selections and Undo\n";
 }
 void native_answer_end_viewport(){
@@ -1173,6 +1192,15 @@ void native_compiler_editor_overflow_bars(){
         fixture.replace(0,15,large);require(bars(input)==(WS_HSCROLL|WS_VSCROLL),"Long stdin did not acquire real scrolling");
         fixture.replace(0,15,"");require(!bars(input),"Clearing stdin did not remove its scrollbars");
         SendMessageW(source,WM_UNDO,0,0);pump(fixture.host);
+        if(fixture.text(0,10)!=large||!(bars(source)&WS_VSCROLL)||(bars(source)&WS_HSCROLL)){
+            RECT client{},format{};GetClientRect(source,&client);SendMessageW(source,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+            POINT position{};SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+            std::cerr<<"Compiler Undo overflow: laboratory="<<laboratory<<", source="<<fixture.text(0,10).size()<<'/'<<large.size()
+                <<", equal="<<(fixture.text(0,10)==large)<<", bars="<<bars(source)
+                <<", lines="<<SendMessageW(source,EM_GETLINECOUNT,0,0)<<", client="<<client.right<<'x'<<client.bottom
+                <<", format="<<format.left<<','<<format.top<<','<<format.right<<','<<format.bottom
+                <<", scroll="<<position.x<<','<<position.y<<'\n';
+        }
         require(fixture.text(0,10)==large&&(bars(source)&WS_VSCROLL)&&!(bars(source)&WS_HSCROLL),
             "Undo lost the source or failed to restore its wrapped vertical overflow");
     }
@@ -2090,13 +2118,184 @@ void text_sequence_application_restoration() {
         std::cout << "PASS actual executable automatic restoration page " << page + 1 << "/8: responsive >2s, normal close, exit 0, no smoke-test\n";
     }
 }
+void real_retirement_pages_preserve_all_eight_useful_editors() {
+    struct Plan {const char* file;std::size_t page;const char* instruction;const char* editor;};
+    const std::array plans{
+        Plan{"lesson_primer_programa_y_salida.json",4,"ejecucion_original_consigna","ejecucion_original_editor"},
+        Plan{"lesson_texto_secuencia_y_formato.json",6,"ejecucion_original_texto_secuencia_y_formato_consigna","ejecucion_original_texto_secuencia_y_formato_editor"},
+        Plan{"lesson_fuente_compilacion_y_diagnostico.json",3,"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"}
+    };
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
+    std::size_t useful_editors=0;
+    for(const auto& plan:plans){
+        const auto path=folder/plan.file;const auto original_hash=state::sha256(state::read_bytes(path));
+        Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
+            state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,plan.page);
+            for(const auto& p:lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler){
+                state::Draft draft;draft.source=block.initial_code+"// borrador QA independiente: "+block.stable_id+"\n";
+                state::put_draft(data,curriculum::draft_key("programming",lesson,block),draft);
+                state::put_response(data,curriculum::exercise_key(lesson,block),state::Response{"",true});
+            }
+        },[&](const curriculum::Lesson&){return windows::load_lesson(path);});
+        require(f.page()==plan.page,"The original U1 page bookmark changed before retirement");
+        const auto original=f.lesson;
+        const auto retired_editor=std::ranges::find(original.pages[plan.page].blocks,std::string(plan.editor),&curriculum::Block::stable_id);
+        require(retired_editor!=original.pages[plan.page].blocks.end(),"A real Work retirement editor was not found");
+        const auto retired_key=curriculum::draft_key("programming",original,*retired_editor);
+        const auto before=f.saved();const auto archived_draft=state::get_draft(before,retired_key,"");
+        require(!archived_draft.source.empty(),"The retirement QA draft was never stored");
+        f.close();const std::array<std::string,2> identities{plan.instruction,plan.editor};
+        f.lesson=test::retire_lesson(original,identities);f.supplied_model=true;f.open();
+        require(f.page()==plan.page&&f.lesson.compiler_puzzles_required&&!lesson_page_state(f.view).can_next
+            &&!navigate_lesson_view(f.view,plan.page+1),"An old marker/correct flag bypassed a useful required editor after retirement");
+        const auto regions=lesson_reading_regions(f.view);
+        require(std::ranges::none_of(regions,[&](const auto& region){return region.key.find(plan.editor)!=std::string::npos||region.key.find(plan.instruction)!=std::string::npos;}),
+            "Retired instructions/editor remain in active narration");
+        const auto legacy=retired_lesson_reading_regions(f.view);
+        const auto retired_anchor=std::ranges::find_if(legacy,[&](const auto& region){return region.key.find(plan.editor)!=std::string::npos;});
+        require(retired_anchor!=legacy.end()&&!retired_anchor->retired_successor.empty()
+            &&std::ranges::any_of(regions,[&](const auto& region){return region.anchor.starts_with(retired_anchor->retired_successor);}),
+            "A bookmark inside a retired compiler has no reachable active narration successor");
+        const auto after=f.saved();
+        require(state::get_draft(after,retired_key,"").source==archived_draft.source,"Retirement erased or rewrote the archived compiler draft");
+        std::size_t current_editors=0;
+        for(const auto& p:f.lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler){
+            ++current_editors;
+            const auto key=curriculum::draft_key("programming",f.lesson,block);
+            require(state::get_draft(after,key,"").source==state::get_draft(before,key,"").source,
+                "Retirement merged, moved or rewrote an independent useful compiler draft");
+            require(!windows::compiler_puzzle_completed(after,f.lesson,block),"A retired execution or old correct flag accredited a useful editor");
+        }
+        require(current_editors==2,"A Work U1 retirement plan removed useful practice or retained a redundant compiler");
+        useful_editors+=current_editors;
+        struct ArchivedTextProbe{std::string marker;bool leaked=false;} probe{"borrador QA independiente: "+std::string(plan.editor)};
+        EnumChildWindows(f.view,[](HWND item,LPARAM value)->BOOL{auto& probe=*reinterpret_cast<ArchivedTextProbe*>(value);
+            if(window_text(item).find(probe.marker)!=std::string::npos)probe.leaked=true;return !probe.leaked;},reinterpret_cast<LPARAM>(&probe));
+        require(!probe.leaked,"A retired compiler draft still has a native visible/accessibility control");
+        f.reopen();require(f.page()==plan.page&&state::get_draft(f.saved(),retired_key,"").source==archived_draft.source,
+            "Reopening the retired route lost its coherent active bookmark or archived draft");
+        require(state::sha256(state::read_bytes(path))==original_hash,"The QA retirement changed an authored lesson asset");
+    }
+    Fixture final_lesson({},[&](const curriculum::Lesson&){auto model=windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");model.compiler_puzzles_required=true;return model;});
+    for(const auto& p:final_lesson.lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler)++useful_editors;
+    require(useful_editors==8,"The three retirement plans did not retain exactly the eight useful U1 editors");
+    std::cout<<"PASS three actual U1 retirement plans: old bookmarks, archived and independent active drafts, native/narration exclusion and all eight useful editors\n";
+}
+void retired_reading_regions_are_empty_during_import_and_return_after_cancel() {
+    // A presentation-only retirement on a copy of page zero exercises the
+    // visible heading path; no authored asset or student's profile is changed.
+    Fixture f({},[](const curriculum::Lesson& source){
+        const auto paragraph=std::ranges::find(source.pages[0].blocks,BlockType::paragraph,&curriculum::Block::type);
+        require(paragraph!=source.pages[0].blocks.end(),"The import retirement fixture has no presentation paragraph");
+        const std::array identities{paragraph->stable_id};return test::retire_lesson(source,identities);
+    });
+    require(f.page()==0&&!retired_lesson_reading_regions(f.view).empty(),"The retirement fixture did not reach a real first-page heading/script");
+    state::StateStore storage(f.environment.paths.root);require(state::can_import_android_profile(storage.load()),"Import QA requires an untouched private profile");
+    const auto before=read_lesson_state(f.view);
+    SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(104,BN_CLICKED),0);pump(f.host);
+    require(descendant(f.view,201)&&IsWindowVisible(descendant(f.view,201)),"The actual import panel did not open");
+    require(lesson_reading_regions(f.view).empty()&&retired_lesson_reading_regions(f.view).empty()
+        &&legacy_lesson_reading_regions(f.view).empty()&&pre_caption_lesson_reading_regions(f.view).empty(),
+        "Import exposed a hidden page or archived narration script");
+    SendMessageW(descendant(f.view,206),BM_CLICK,0,0);pump(f.host);
+    require(!descendant(f.view,201)&&!retired_lesson_reading_regions(f.view).empty()&&read_lesson_state(f.view)==before,
+        "Canceling import failed to restore the archived-bookmark projection or changed lesson data");
+    std::cout<<"PASS retired reading projection during actual import/cancel: heading is safe, no folder selected, no data imported\n";
+}
+void multiple_input_compiler_is_one_pending_objective_until_every_case_passes() {
+    Fixture f({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({
+      "id":"qa_multiple_input_compiler","title":"Dos entradas","compilerPuzzlesRequired":true,"pages":[{"blocks":[
+        {"type":"cpp_compiler","question":"Comprueba ambas entradas.","initialCode":"#include <iostream>\nint main(){int n=0;std::cin >> n;std::cout << n*2;}\n","initialStandardInput":"1","outputCheck":{"cases":[{"standardInput":"1","outputs":["2"]},{"standardInput":"2","outputs":["4"]}]}},
+        {"type":"paragraph","text":"Después de los dos casos."}
+      ]},{"blocks":[{"type":"paragraph","text":"Página final."}]}]})json");});
+    f.run(0);
+    require(f.text(0,4).empty()&&f.text(0,34).find("Caso correcto. Casos comprobados: 1 de 2.")!=std::string::npos
+        &&!lesson_page_state(f.view).can_next&&!descendant(f.view,id(1,0)),
+        "A single passing input displayed global Correcto, revealed later content or enabled advance");
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==0&&region.is_exercise&&!region.solved;}),
+        "A partial compiler case released its narration gate");
+    f.reopen();require(f.text(0,4).empty()&&f.text(0,34).find("1 de 2")!=std::string::npos,
+        "Reopening lost independent checked cases or invented a completed objective");
+    f.replace(0,15,"2");f.run(0);
+    require(f.text(0,4)=="✓ Correcto"&&lesson_page_state(f.view).can_next&&descendant(f.view,id(1,0)),
+        "Changing only input failed to combine both actual cases of the same program");
+    f.replace(0,15,"un caso no declarado");f.run(0);
+    require(f.text(0,4)=="✓ Correcto"&&lesson_page_state(f.view).can_next,
+        "Compiling an unlisted input after completion revoked the approved puzzle");
+    std::cout<<"PASS one compiler with two real inputs: partial status and reader gate, checked-case persistence, independent inputs and sticky full success\n";
+}
+void compiler_puzzle_completion_and_navigation() {
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,1);
+        for(const auto& block:lesson.pages[0].blocks)if(block.type==BlockType::cpp_compiler)
+            state::put_response(data,curriculum::exercise_key(lesson,block),state::Response{"",true});
+    },[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({
+        "id":"qa_required_compiler_puzzles","title":"Puzzles de compilador","compilerPuzzlesRequired":true,
+        "pages":[{"blocks":[
+          {"type":"cpp_compiler","question":"Muestra uno.","initialCode":"#include <iostream>\nint main(){std::cout << 1;}\n","outputCheck":{"cases":[{"standardInput":"","outputs":["1"],"explanation":"La salida es uno."}]}},
+          {"type":"cpp_compiler","question":"Muestra dos.","initialCode":"#include <iostream>\nint main(){std::cout << 2;}\n","outputCheck":{"cases":[{"standardInput":"","outputs":["2"]}]}},
+          {"type":"paragraph","text":"Continuación posterior a ambos objetivos."}
+        ]},{"blocks":[{"type":"paragraph","text":"Página final."}]}]})json");});
+    require(f.page()==0&&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,1),
+        "An old correct flag/bookmark bypassed a required real compiler objective");
+    require(!descendant(f.view,id(1,10))&&!descendant(f.view,id(2,0)),
+        "Pending compiler exposed the following editor or lesson content");
+    const auto pending=lesson_reading_regions(f.view);
+    require(std::ranges::any_of(pending,[](const auto& region){return region.block_index==0&&region.is_exercise&&!region.solved;})
+        &&std::ranges::none_of(pending,[](const auto& region){return region.block_index==1||region.block_index==2;}),
+        "Pending compiler lacks its narration boundary or exposed later narration");
+    const auto continuous_header=[&]{RECT header{},source{},toolbar{},pane{};GetWindowRect(f.control(0,16),&header);GetWindowRect(f.control(0,10),&source);
+        GetWindowRect(GetParent(f.control(0,16)),&toolbar);GetWindowRect(GetParent(f.control(0,10)),&pane);
+        if(header.bottom!=source.top)std::cerr<<"QA compiler toolbar gap: fullscreen="<<f.fullscreen()<<", dpi="<<GetDpiForWindow(f.view)
+            <<", caption="<<header.top<<','<<header.bottom<<", source="<<source.top<<','<<source.bottom
+            <<", toolbar-parent="<<toolbar.top<<','<<toolbar.bottom<<", source-pane="<<pane.top<<','<<pane.bottom<<'\n';
+        require(header.bottom==source.top,"A black strip separates the real compiler toolbar and editor body");
+        const auto saved=f.text(0,10);require(saved==f.lesson.pages[0].blocks[0].initial_code,"Removing the toolbar strip changed the first source line");};
+    for(const auto scale:{75,100,150}){
+        update_lesson_preferences(f.view,[scale](state::StateData& data){data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{scale};});
+        continuous_header();f.click(0,20);continuous_header();f.escape();continuous_header();
+    }
+    int submissions=0;LessonViewHooks hooks;hooks.feedback_changed=[&](HWND,std::size_t,bool){++submissions;};set_lesson_view_hooks(f.view,hooks);
+    f.replace(0,10,"#include <iostream>\nint main(){std::cout << 9;}\n");f.run(0);
+    require(f.text(0,4).starts_with("✗ Incorrecto")&&!lesson_page_state(f.view).can_next,
+        "Wrong output completed a required compiler puzzle");
+    f.replace(0,10,f.lesson.pages[0].blocks[0].initial_code);f.run(0);
+    const auto accepted=f.text(0,4);const auto submitted=submissions;
+    require(accepted.starts_with("✓ Correcto")&&descendant(f.view,id(1,10))&&!lesson_page_state(f.view).can_next,
+        "First objective did not independently reveal the second required editor");
+    f.replace(0,10,"int main( { // conserva este borrador de diagnóstico\n");
+    require(f.text(0,4)==accepted&&descendant(f.view,id(1,10)),"Editing revoked a completed objective or its feedback");
+    f.run(0);
+    require(f.text(0,4)==accepted&&submissions==submitted&&!f.text(0,14).empty(),
+        "Compiling after success replaced the achievement, replayed evaluation or hid the actual diagnostic");
+    const auto edited=f.text(0,10);f.reopen();
+    require(f.text(0,10)==edited&&f.text(0,4)==accepted&&descendant(f.view,id(1,10)),
+        "Reopen did not preserve the current draft independently of the captured successful program");
+    update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("en");});
+    f.reopen();require(f.text(0,4)=="✓ Correct\n\nLa salida es uno.",
+        "Reopening an approved Spanish goal in English damaged the verdict prefix or its explanation");
+    update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("es");});
+    require(f.text(0,4)==accepted,"Changing only interface language lost the approved compiler feedback");
+    f.run(1);require(f.text(1,4)=="✓ Correcto"&&lesson_page_state(f.view).can_next&&descendant(f.view,id(2,0)),
+        "Two independent compiler completions did not open the subsequent content/page");
+    f.next();f.reopen();require(f.page()==1,"A real completed compiler objective did not preserve a later bookmark");
+    f.select_page(0);f.click(0,12);
+    require(f.text(0,4).empty()&&!descendant(f.view,id(1,10))&&!lesson_page_state(f.view).can_next,
+        "Explicit reset failed to revoke its achievement and required advance");
+    f.run(0);require(f.text(1,4)=="✓ Correcto"&&lesson_page_state(f.view).can_next,
+        "Reset of the first puzzle erased the independent second achievement");
+    std::cout<<"PASS required compiler puzzles: old markers rejected, independent execution, sticky success, free diagnostics, reopen, reset and narration gates\n";
+}
 }
 
 int main(int argc,char* argv[]) {
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
-    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only)return 2;
+    const bool compiler_puzzles_only=argc==2&&std::string_view(argv[1])=="--compiler-puzzles";
+    const bool editor_overflow_only=argc==2&&std::string_view(argv[1])=="--editor-overflow";
+    const bool answer_overflow_only=argc==2&&std::string_view(argv[1])=="--answer-overflow";
+    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!editor_overflow_only&&!answer_overflow_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -2104,7 +2303,10 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(answer_overflow_only){native_answer_overflow_bars();return 0;}
+        if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
         long_prediction_cards_keep_independent_bounds();
@@ -2196,7 +2398,7 @@ int main(int argc,char* argv[]) {
         RECT caption{}, reset{}, source{};
         GetWindowRect(view.control(3,16), &caption); GetWindowRect(view.control(3,12), &reset);
         GetWindowRect(view.control(3,10), &source);
-        require(caption.top == reset.top && reset.left == caption.right && source.top > caption.bottom,
+        require(caption.top == reset.top && reset.left == caption.right && source.top == caption.bottom,
                 "Reset control is not beside C++ as specified by the existing lesson");
         SCROLLINFO wheel_before{sizeof(wheel_before), SIF_POS}, wheel_after = wheel_before;
         const auto pane = GetParent(view.control(3,10)); GetScrollInfo(pane, SB_VERT, &wheel_before);
@@ -2227,6 +2429,7 @@ int main(int argc,char* argv[]) {
         require(view.text(6,14) == "Caja recibida" && view.text(6,4).starts_with("✓ Correcto\n\n"), "Modified compiler lost its explanation or checked old output");
         std::cout << "PASS Real original and modified C++ executions, integrated checking and independent editors\n" << std::flush;
 
+        view.click(6,12); // Only explicit reset starts another assessed attempt.
         view.replace(6,10,message_code(modified,"Zona inicial","Zona segura"));
         require(view.text(6,4).empty(), "Editing retained the preceding correct verdict");
         view.run(6);
@@ -2243,7 +2446,7 @@ int main(int argc,char* argv[]) {
         const auto original_draft = original.initial_code + "// borrador original QA\n";
         const auto modified_draft = changed_source + "// borrador de modificación QA\n";
         view.replace(3,10,original_draft);
-        require(!descendant(view.view,id(6,10)),"Changing the prerequisite retained the dependent editor's obsolete access");
+        require(descendant(view.view,id(6,10)),"Editing a completed prerequisite revoked the dependent editor");
         view.run(3);
         view.replace(6,10,modified_draft); view.run(6);
         auto saved = view.saved();
@@ -2258,9 +2461,9 @@ int main(int argc,char* argv[]) {
                 "Closing/saving after only moving the selection lost the current cursor");
         view.reopen();
         require(view.page() == 4 && view.text(3,10) == original_draft && view.text(6,10) == modified_draft, "Compiler drafts or bookmark changed on reopen");
-        require(view.text(3,4).empty() && view.text(6,4).empty(), "A persisted execution verdict was reused without a fresh run");
+        require(view.text(3,4).starts_with("✓ Correcto") && view.text(6,4).starts_with("✓ Correcto"), "Reopening lost the independently captured compiler achievements");
         view.select_page(3); view.next();
-        require(view.text(6,10) == modified_draft && view.text(6,4).empty(), "Page transition reused a console verdict or lost a draft");
+        require(view.text(6,10) == modified_draft && view.text(6,4).starts_with("✓ Correcto"), "Page transition lost a compiler achievement or draft");
         view.solve(7); view.non_overlapping_rows(); view.next();
         std::cout << "PASS Compilation diagnostics, edit/reset invalidation, targeted reviews and persistent independent drafts\n" << std::flush;
 
@@ -2269,7 +2472,7 @@ int main(int argc,char* argv[]) {
         view.replace(6,10,message_code(independent,"Caja recibida","Zona segura")); view.run(6);
         require(view.text(6,14) == "Zona segura" && view.text(6,4) == "✓ Correcto", "Page 6 did not keep its independent target");
         view.reopen();
-        require(view.page() == 5 && view.text(6,10).find("Zona segura") != std::string::npos && view.text(6,4).empty(), "Final reopen lost position/source or reused a verdict");
+        require(view.page() == 5 && view.text(6,10).find("Zona segura") != std::string::npos && view.text(6,4)=="✓ Correcto", "Final reopen lost position/source or the completed objective");
         view.non_overlapping_rows();
         view.close();
         std::cout << "PASS Complete six-page native lesson route, final independent output and layout bounds\n" << std::flush;
@@ -2379,14 +2582,14 @@ int main(int argc,char* argv[]) {
         require(references.text(8,1) == references.lesson.pages[5].blocks[8].code,
                 "The unlocked reference did not retain its exact original code");
         references.reopen();
-        require(current_reference() && references.text(6,4).empty(),
-                "Reopening lost a sealed completion or revived a current compiler verdict");
+        require(current_reference() && references.text(6,4).starts_with("✓ Correcto"),
+                "Reopening lost a sealed completion or its approved feedback");
         references.replace(6,10,accepted + "// edición después del acierto\n");
-        require(!current_reference(),"Editing kept an obsolete reference completion available");
+        require(current_reference(),"Editing revoked a completed objective's reference");
         SendMessageW(references.control(6,10),WM_UNDO,0,0);
         pump(references.host);
-        require(references.text(6,10) == accepted && !current_reference(),
-                "Undo either lost source history or revived a discarded completion ticket");
+        require(references.text(6,10) == accepted && current_reference(),
+                "Undo lost source history or revoked an accepted completion");
         references.run(6); require(current_reference(),"A new correct run did not restore its own reference");
         references.select_page(4); references.run(3); references.next();
         require(!previous_reference() && current_reference(),"The original Zona inicial editor unlocked the Caja recibida reference");
@@ -2395,8 +2598,8 @@ int main(int argc,char* argv[]) {
         references.run(6); references.next();
         require(previous_reference() && current_reference(),"A previous-page correct compiler run did not unlock only its linked references");
         references.reopen();
-        require(previous_reference() && current_reference() && references.text(6,4).empty(),
-                "Cross-page completion proofs did not reopen independently of current output verdicts");
+        require(previous_reference() && current_reference() && references.text(6,4).starts_with("✓ Correcto"),
+                "Cross-page completion proofs did not reopen with approved feedback");
         references.click(6,12);
         require(previous_reference() && !current_reference(),"Reset of one editor affected another activity's reference");
         references.non_overlapping_rows();
@@ -2628,10 +2831,10 @@ int main(int argc,char* argv[]) {
         require(lesson_page_state(dependencies.view).can_next,"Fresh correct output did not update the next-page prerequisite");
         const auto prerequisite_editor = dependencies.control(6,10);
         dependencies.replace(6,10,prerequisite_source + "// cambio QA\n");
-        require(!lesson_page_state(dependencies.view).can_next,"Source editing did not revoke forward access");
+        require(lesson_page_state(dependencies.view).can_next,"Source editing revoked a completed prerequisite");
         SendMessageW(prerequisite_editor,WM_UNDO,0,0); pump(dependencies.host);
-        require(dependencies.text(6,10) == prerequisite_source && !lesson_page_state(dependencies.view).can_next,
-                "Undo resurrected a discarded prerequisite receipt");
+        require(dependencies.text(6,10) == prerequisite_source && lesson_page_state(dependencies.view).can_next,
+                "Undo changed a completed prerequisite's achievement");
         dependencies.run(6); dependencies.next();
         require(descendant(dependencies.view,id(0,0)) && descendant(dependencies.view,id(6,10)),
                 "A completed prerequisite did not expose its references and dependent editor");
@@ -2639,8 +2842,8 @@ int main(int argc,char* argv[]) {
         dependencies.replace(6,10,dependent_source); dependencies.run(6);
         require(descendant(dependencies.view,id(8,1)),"The dependent activity could not unlock its own reference");
         dependencies.reopen();
-        require(dependencies.page() == 5 && dependencies.text(6,4).empty() && dependencies.text(6,14).empty(),
-                "Completed dependencies either lost the bookmark or revived an old console/verdict");
+        require(dependencies.page() == 5 && dependencies.text(6,4).starts_with("✓ Correcto") && dependencies.text(6,14).empty(),
+                "Completed dependencies lost the bookmark/achievement or revived an old console");
         dependencies.select_page(4); dependencies.click(6,12);
         require(!lesson_page_state(dependencies.view).can_next,"Reset retained an obsolete prerequisite");
         // Simulate an already-stored later bookmark without claiming completion.
@@ -2705,18 +2908,20 @@ int main(int argc,char* argv[]) {
         require(local_dependencies.text(6,4).starts_with("✓ Correcto"),"The same-page dependent editor cannot execute its preserved draft");
         const auto dependent_editor = local_dependencies.control(6,10);
         local_dependencies.replace(3,10,original_source + "// revocación\n");
+        require(local_dependencies.control(6,10)==dependent_editor,"Editing revoked a completed prerequisite before reset");
+        local_dependencies.click(3,12);
         require(local_dependencies.control(3,10) == original_editor && !IsWindow(dependent_editor)
                 && !descendant(local_dependencies.view,id(6,10)) && descendant(local_dependencies.view,id(6,18)),
                 "Revocation retained the dependent controls or rebuilt an unrelated editor");
         SendMessageW(original_editor,WM_UNDO,0,0); pump(local_dependencies.host);
         require(!descendant(local_dependencies.view,id(6,10)),"Undo reused a previous prerequisite achievement");
         local_dependencies.run(3);
-        require(local_dependencies.text(6,10) == same_page_draft && local_dependencies.text(6,4).empty(),
-                "Revealing a same-page editor lost its saved source or restored a stale verdict");
+        require(local_dependencies.text(6,10) == same_page_draft && local_dependencies.text(6,4).starts_with("✓ Correcto"),
+                "Revealing a same-page editor lost its independent draft or achievement");
         local_dependencies.replace(6,10,same_page_draft + "// edición que debe capturarse\n");
         const auto last_dependent_source = local_dependencies.text(6,10);
         local_dependencies.click(6,11);
-        local_dependencies.replace(3,10,original_source);
+        local_dependencies.click(3,12);
         require(!descendant(local_dependencies.view,id(6,10)),"A running dependent editor remained available after revocation");
         const auto hidden_state = local_dependencies.saved();
         require(state::get_draft(hidden_state,curriculum::draft_key("programming",local_dependencies.lesson,

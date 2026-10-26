@@ -22,6 +22,7 @@
 #include "core/attempt_ledger.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/cpp_runner.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
 
@@ -292,7 +293,7 @@ struct LessonView {
     struct ConsoleFocus { HWND editor=nullptr;CHARRANGE selection{};bool native_selection=false; };
     std::map<HWND,ConsoleFocus> icon_focus;
     std::map<HWND,bool> answer_disabled_readonly;
-    std::set<HWND> pending_answer_viewports;
+    std::map<HWND,bool> pending_answer_viewports;
     bool syncing_answer_viewport=false;
     std::map<HWND,HWND> choice_labels;
     std::optional<std::size_t> selected_puzzle;
@@ -307,6 +308,7 @@ struct LessonView {
     std::uint64_t request_id = 0;
     std::optional<std::size_t> running_block;
     std::string running_input;
+    windows::CppRunRequest running_program;
     windows::CppRunRequest::Action running_action=windows::CppRunRequest::Action::compile_run;
     struct MathResult { std::size_t block; std::uint64_t revision; std::string reply,error; };
     std::jthread math_worker;
@@ -338,6 +340,10 @@ struct LessonView {
         state::validate_lesson_state(data, lesson,route);
         state::prepare_lesson_state(data, lesson);
         page = state::current_page(data, lesson);
+        if(lesson.compiler_puzzles_required)for(std::size_t prior=0;prior<page;++prior)
+            if(std::ranges::any_of(lesson.pages[prior].blocks,[&](const auto& activity){
+                return activity.type==BlockType::cpp_compiler&&activity.output_check&&!windows::compiler_puzzle_completed(data,lesson,activity);
+            })){page=prior;break;}
         if (no_student_state) {
             // Initial UI bookkeeping is not a student edit. Closing an untouched
             // first page must not make an otherwise empty profile unimportable.
@@ -631,14 +637,14 @@ struct LessonView {
             // siblings remain part of the same narration script and bookmark.
             if (!target || source.empty() || (!fullscreen_block&&!(GetWindowLongPtrW(target,GWL_STYLE) & WS_VISIBLE))) return;
             const auto& current = block(index); const auto& vm = controls[index];
-            // A compiler stays editable and does not persist a puzzle answer.
-            // Its fresh verdict nevertheless owns the same listening boundary
-            // as other feedback, including the incorrect-feedback stop.
             const bool compiler_feedback=is_feedback&&current.type==BlockType::cpp_compiler;
+            const bool compiler_gate=lesson.compiler_puzzles_required&&current.type==BlockType::cpp_compiler&&current.output_check;
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
-                is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback,
-                compiler_feedback?vm.feedback_correct:vm.response.correct});
+                is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback||compiler_gate,
+                compiler_gate?windows::compiler_puzzle_completed(data,lesson,current):compiler_feedback?vm.feedback_correct:vm.response.correct});
+            result.back().anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id
+                +"/part/"+std::to_string(GetDlgCtrlID(target)-control_id(index,0));
         };
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index); const auto& vm = controls[index];
@@ -675,6 +681,81 @@ struct LessonView {
         return result;
     }
 
+    std::vector<LessonReadingArchive> retired_reading_archives() const {
+        if(import_open||!pane||!IsWindow(pane))return {};
+        std::vector<LessonReadingArchive> archives;
+        for(const auto& saved:lesson.state_layout.retirement_history){
+            auto historical=lesson;historical.pages=saved.pages;historical.state_layout.current=saved.current;
+            historical.compiler_puzzles_required=saved.compiler_puzzles_required;
+            historical.reference_after=saved.reference_after;historical.activity_after=saved.activity_after;
+            if(page>=historical.pages.size())continue;
+            const auto page_id=historical.pages[page].stable_id;
+            auto order=saved.current[page].id;for(const auto& id:saved.current[page].blocks)order+=','+id;
+            LessonReadingArchive archived;archived.page_identity=route+'/'+lesson.id+"/state-layout-v1/"+lesson.state_layout.lineage+'/'+state::sha256(order);
+            auto& result=archived.regions;const auto proofs=completion_snapshot(historical);
+            const auto available=[&](std::size_t index,const curriculum::Block& current){
+                if(historical.compiler_puzzles_required)for(std::size_t prior=0;prior<index;++prior){const auto& candidate=historical.pages[page].blocks[prior];
+                    if(candidate.type==BlockType::cpp_compiler&&candidate.output_check&&!windows::compiler_puzzle_completed(data,historical,candidate))return false;}
+                if(const auto dependency=curriculum::reference_activity(historical,current)){
+                    const auto& owner=historical.pages[dependency->page].blocks[dependency->block];
+                    const auto found=proofs.find(owner.stable_id);if(found==proofs.end()||!found->second)return false;
+                }
+                for(const auto& prerequisite:curriculum::activity_prerequisites(historical,current)){
+                    const auto& owner=historical.pages[prerequisite.page].blocks[prerequisite.block];
+                    const auto found=proofs.find(owner.stable_id);if(found==proofs.end()||!found->second)return false;
+                }
+                return true;
+            };
+            const auto emit=[&](std::size_t index,const curriculum::Block& current,int part,std::string text,bool passive=false){
+                if(text.empty())return;
+                LessonReadingRegion region;region.block_index=index;region.source_text=std::move(text);region.passive_label=passive;
+                const auto prefix=lesson.id+'/'+lesson.locale+'/'+page_id+'/'+current.stable_id;
+                region.key=prefix+'/'+std::to_string(control_id(index,part));region.anchor=prefix+"/part/"+std::to_string(part);
+                if(curriculum::retired_block(lesson,current.stable_id))if(const auto next=curriculum::active_block_successor(lesson,current.stable_id))
+                    region.retired_successor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[next->page].stable_id+'/'+lesson.pages[next->page].blocks[next->block].stable_id+"/part/";
+                result.push_back(std::move(region));
+            };
+            if(page==0&&find_item(lesson_heading_id))result.push_back({lesson.id+'/'+lesson.locale+'/'+page_id+"/title",lesson.title,nullptr,std::numeric_limits<std::size_t>::max(),false,false,false,true});
+            for(std::size_t index=0;index<historical.pages[page].blocks.size();++index){const auto& current=historical.pages[page].blocks[index];
+                if(!available(index,current))continue;
+                if(current.type==BlockType::note)emit(index,current,19,ui("Nota","Note","Note"));
+                emit(index,current,0,current.type==BlockType::heading||current.type==BlockType::paragraph||current.type==BlockType::note?current.text:current.question);
+                for(std::size_t option=0;option<current.options.size();++option)emit(index,current,21+static_cast<int>(option)*2,current.options[option]);
+                emit(index,current,37,secondary_instruction(current.type));
+                if(current.type!=BlockType::multiple_choice&&(current.type==BlockType::code||current.type==BlockType::cpp_compiler||exercise(current.type))&&current.type!=BlockType::math_puzzle){
+                    auto code_language=current.language;if(code_language.empty()||code_language=="cpp"||code_language=="c++")code_language=ui("C más más","C plus plus","C plus plus");else if(code_language=="cmake")code_language="CMake";
+                    emit(index,current,16,current.type==BlockType::cpp_compiler?ui("Editor de código C más más.","C plus plus code editor.","Éditeur de code C plus plus.")
+                        :current.type==BlockType::code?ui("Ejemplo de código ","Example of ","Exemple de code ")+code_language+ui("."," code.",".")
+                        :ui("Ejercicio de código ","Code exercise in ","Exercice de code ")+code_language+".",true);
+                }
+                const auto response=state::get_response(data,curriculum::exercise_key(historical,current));
+                std::string prior_feedback;bool correct=false;
+                if(current.type==BlockType::cpp_compiler&&windows::compiler_puzzle_completed(data,historical,current)){
+                    const auto stored=windows::compiler_puzzle_feedback(data,historical,current);const auto body=stored.find_first_of("\r\n");
+                    prior_feedback=verdict_text(true);if(body!=std::string::npos)prior_feedback+=stored.substr(body);correct=true;
+                }else if(response&&response->correct){prior_feedback=verdict_text(true)+(current.explanation.empty()?"":"\n"+current.explanation);correct=true;}
+                else if(response&&exercise(current.type)&&state::response_reviewed(*response,current)){
+                    const auto review=curriculum::incorrect_feedback(current,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
+                    prior_feedback=verdict_text(false)+'\n'+(review.empty()?default_review():review);
+                }
+                if(!prior_feedback.empty()){
+                    const auto verdict=verdict_text(correct);
+                    if(prior_feedback.starts_with(verdict)){
+                        auto explanation=prior_feedback.substr(verdict.size());
+                        while(!explanation.empty()&&(explanation.front()=='\n'||explanation.front()=='\r'))explanation.erase(explanation.begin());
+                        prior_feedback=(correct?"✓ ":"✗ ")+verdict+(explanation.empty()?"":"\n\n"+explanation);
+                    }
+                    emit(index,current,4,std::move(prior_feedback));result.back().feedback=true;result.back().correct=correct;result.back().is_exercise=true;result.back().solved=correct;
+                }
+            }
+            archives.push_back(std::move(archived));
+        }
+        return archives;
+    }
+    std::vector<LessonReadingRegion> retired_reading_regions() const {
+        auto archives=retired_reading_archives();return archives.empty()?std::vector<LessonReadingRegion>{}:std::move(archives.back().regions);
+    }
+
     bool has_references(const curriculum::Block& activity) const {
         return std::ranges::any_of(lesson.reference_after,[&](const auto& relation) { return relation.activity == activity.stable_id; })
             || std::ranges::any_of(lesson.activity_after,[&](const auto& relation) {
@@ -708,14 +789,14 @@ struct LessonView {
         return state::sha256(objective);
     }
     using CompletionSnapshot = std::map<std::string,bool>;
-    CompletionSnapshot completion_snapshot() const {
+    CompletionSnapshot completion_snapshot(const curriculum::Lesson& source) const {
         // Validation guarantees that dependencies precede their targets.
         // Evaluate each node once in that order; recursive DAG walks become
         // exponential when several later editors share earlier prerequisites.
         std::map<std::string,const std::vector<std::string>*> requirements;
-        for (const auto& relation : lesson.activity_after) requirements.emplace(relation.activity,&relation.prerequisites);
+        for (const auto& relation : source.activity_after) requirements.emplace(relation.activity,&relation.prerequisites);
         CompletionSnapshot result;
-        for (const auto& candidate : lesson.pages) for (const auto& current : candidate.blocks) {
+        for (const auto& candidate : source.pages) for (const auto& current : candidate.blocks) {
             if (current.type != BlockType::cpp_compiler) continue;
             bool available = true;
             if (const auto relation = requirements.find(current.stable_id); relation != requirements.end())
@@ -724,11 +805,12 @@ struct LessonView {
                     if (found == result.end() || !found->second) { available = false; break; }
                 }
             const auto receipt = state::string_value(data,"native_windows",reference_key(current));
-            result[current.stable_id] = available && current.output_check && !receipt.empty()
-                && receipt == reference_seal(current);
+            result[current.stable_id] = available && current.output_check &&
+                (windows::compiler_puzzle_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current)));
         }
         return result;
     }
+    CompletionSnapshot completion_snapshot() const { return completion_snapshot(lesson); }
     bool activity_available(const curriculum::Block& activity,const CompletionSnapshot& proofs) const {
         for (const auto& position : curriculum::activity_prerequisites(lesson,activity)) {
             const auto& prerequisite = lesson.pages[position.page].blocks[position.block];
@@ -745,6 +827,10 @@ struct LessonView {
         return found != proofs.end() && found->second;
     }
     bool reference_available(const curriculum::Block& reference) const {
+        if(lesson.compiler_puzzles_required)for(const auto& prior:lesson.pages.at(page).blocks){
+            if(&prior==&reference)break;
+            if(prior.type==BlockType::cpp_compiler&&prior.output_check&&!windows::compiler_puzzle_completed(data,lesson,prior))return false;
+        }
         const auto dependency = curriculum::reference_activity(lesson,reference);
         return !dependency || activity_completed(lesson.pages[dependency->page].blocks[dependency->block]);
     }
@@ -969,25 +1055,52 @@ struct LessonView {
         if(GetFocus()!=snapshot.editor)SetFocus(snapshot.editor);
         if(selection&&snapshot.native_selection)SendMessageW(snapshot.editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&snapshot.selection));
     }
-    void queue_answer_viewport(HWND answer) {
+    void queue_answer_viewport(HWND answer,bool final_edit=false) {
         if(updating||laying_out||syncing_answer_viewport||!answer||
-            std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer;}))return;
+            std::ranges::none_of(controls,[answer,final_edit](const auto& vm){return vm.answer==answer
+                ||(final_edit&&(vm.source==answer||vm.input==answer));}))return;
         // EN_VSCROLL is raised before native caret scrolling is complete.
         // Coalesce selection/scroll notifications and inspect its final state.
-        if(pending_answer_viewports.insert(answer).second&&
+        const auto [pending,inserted]=pending_answer_viewports.try_emplace(answer,final_edit);
+        pending->second=pending->second||final_edit;
+        if(inserted&&
             !PostMessageW(window,answer_viewport_message,reinterpret_cast<WPARAM>(answer),0))
             pending_answer_viewports.erase(answer);
     }
     void sync_answer_viewport(HWND answer) {
-        if(!pending_answer_viewports.erase(answer))return;
+        const auto pending=pending_answer_viewports.find(answer);
+        if(pending==pending_answer_viewports.end())return;
+        const bool final_edit=pending->second;
+        pending_answer_viewports.erase(pending);
         if(updating||laying_out||syncing_answer_viewport||!IsWindow(answer)||
-            std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer;}))return;
+            std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer||vm.source==answer||vm.input==answer;}))return;
         syncing_answer_viewport=true;
         struct SyncGuard { bool& value; ~SyncGuard(){value=false;} } guard{syncing_answer_viewport};
+        if(final_edit&&std::ranges::any_of(controls,[answer](const auto& vm){return vm.answer==answer;})){
+            // Assisted edits and history format while frozen. Only now can an
+            // autoheight answer measure its final lines. Reposition following
+            // rows if that height changed; cursor-only events stay lightweight.
+            const auto body=std::ranges::find_if(rows,[answer](const auto& row){return row.cells.size()==1&&row.cells[0]==answer;});
+            if(body!=rows.end()){
+                const auto fitted=update_answer_scrollbars(answer,16,0,16,true);
+                auto expected=std::max(px(body->logical_height),fitted);
+                if(body->size_to_text)expected=std::max(expected,body->requested_height);
+                if(body->max_logical_height)expected=std::min(expected,px(body->max_logical_height));
+                RECT bounds{};GetWindowRect(answer,&bounds);
+                if(bounds.bottom-bounds.top!=expected){reflow();return;}
+            }
+        }
         // Home/End and selection moves change no text, so EN_CHANGE does not
         // reflow their answer. Clear a hidden offset only in an axis whose
         // complete document fits; retain native scrolling for real overflow.
-        (void)update_answer_scrollbars(answer);
+        const auto owner=std::ranges::find_if(controls,[answer](const auto& vm){return vm.source==answer||vm.input==answer;});
+        if(owner!=controls.end()){
+            // A CodeEditor commits text and syntax inside TOM Freeze. Its
+            // final layout notification is queued until native line geometry
+            // exists; measuring during EN_CHANGE sees the previous document.
+            const bool source=owner->source==answer;
+            (void)update_answer_scrollbars(answer,source?16:0,source?16:0,source?16:0);
+        }else (void)update_answer_scrollbars(answer);
     }
     int update_answer_scrollbars(HWND answer,int top_padding=16,int right_padding=0,int bottom_padding=16,
                                  bool fit_height=false,int left_padding=-1,const POINT* restored_offset=nullptr) {
@@ -1365,6 +1478,7 @@ struct LessonView {
         SetWindowTextW(pane,wide(ui("Contenido de la lección","Lesson content","Contenu de la leçon")).c_str());
         attach_gestures(pane);
         reader_theme::apply(pane,laboratory()?reader_theme::Surface::screen:reader_theme::Surface::canvas);
+        reader_theme::set_scrollbar_frame_hidden(pane,true);
         if(route!="programming")editing_bar = std::make_unique<EditingBar>(window,[this](HWND focused) -> CodeEditor* {
             if (import_open || updating) return nullptr;
             for (std::size_t index = 0; index < controls.size(); ++index) {
@@ -1491,7 +1605,9 @@ struct LessonView {
     void project_changed(std::size_t index,bool source_changed) {
         if(updating)return;auto& vm=controls.at(index);
         if(source_changed){++vm.revision;clear_reference_completion(index);if(running_block==index)worker.request_stop();
-            feedback(index,"",false);vm.console_channels={};const auto before=updating;updating=true;
+            windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),program_snapshot(index));
+            if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index,"",false);
+            vm.console_channels={};const auto before=updating;updating=true;
             set_rich_text(vm.console,ui("El programa cambió. Ejecuta de nuevo para obtener una salida actual.",
                 "The program changed. Run it again to obtain current output.","Le programme a changé. Exécute-le à nouveau pour obtenir une sortie actuelle."));updating=before;}
         if(source_changed&&block(index).cmake&&vm.status)set_rich_text(vm.status,ui(
@@ -1509,9 +1625,10 @@ struct LessonView {
         KillTimer(window, save_timer);
         if (!dirty) return;
         capture_page();
-        // Same owner and historical groups as Android. Compiler activities do
-        // not manufacture exercise progress or require a separate Finish click.
+        // Historical groups retain ownership; opted-in compiler objectives use
+        // their captured execution proofs rather than an editable answer flag.
         const auto complete=curriculum::catalog_lesson_page_progress(data,lesson,[&](const auto& current){
+            if(current.type==BlockType::cpp_compiler)return windows::compiler_puzzle_completed(data,lesson,current);
             const auto identity=curriculum::exercise_key(lesson,current);
             const auto response=state::get_response(data,identity);
             return response&&response->correct&&(current.type!=BlockType::math_puzzle||verified_math.contains(identity));
@@ -1836,6 +1953,8 @@ struct LessonView {
         const auto proofs = completion_snapshot();
         for (const auto& item : candidate.blocks) {
             if (item.type == BlockType::cpp_compiler && !activity_available(item,proofs)) return false;
+            if(lesson.compiler_puzzles_required&&item.type==BlockType::cpp_compiler&&item.output_check
+                &&!windows::compiler_puzzle_completed(data,lesson,item))return false;
             if (!exercise(item.type)) continue;
             if(item.type==BlockType::math_puzzle&&!verified_math.contains(curriculum::exercise_key(lesson,item)))return false;
             const auto response = state::get_response(data, curriculum::exercise_key(lesson, item));
@@ -1844,6 +1963,10 @@ struct LessonView {
         return true;
     }
     bool can_enter(std::size_t index) const {
+        if(lesson.compiler_puzzles_required)for(std::size_t prior=0;prior<index;++prior)
+            if(std::ranges::any_of(lesson.pages[prior].blocks,[&](const auto& activity){
+                return activity.type==BlockType::cpp_compiler&&activity.output_check&&!windows::compiler_puzzle_completed(data,lesson,activity);
+            }))return false;
         const auto proofs = completion_snapshot();
         return std::ranges::all_of(lesson.pages.at(index).blocks,[&](const auto& item) {
             // A same-page prerequisite must remain reachable so the student
@@ -1972,7 +2095,12 @@ struct LessonView {
         // MathPuzzleRenderer owns 12dp inside its card and a separate 24dp
         // bottomMargin. The contour below closes after only the inner 12dp.
         rows.back().padding_before=12;rows.back().padding_after=mathematical?36:24;
-        if (vm.response.correct) {
+        if(block(index).type==BlockType::cpp_compiler&&windows::compiler_puzzle_completed(data,lesson,block(index))){
+            const auto restored=windows::compiler_puzzle_feedback(data,lesson,block(index));
+            const auto body=restored.find_first_of("\r\n");
+            auto text=verdict_text(true);if(body!=std::string::npos)text+=restored.substr(body);
+            feedback(index,text,true,true);
+        } else if (vm.response.correct) {
             auto explanation = block(index).explanation;
             feedback(index, verdict_text(true) + (explanation.empty() ? "" : "\n" + explanation), true, true);
         } else if (exercise(block(index).type) && state::response_reviewed(vm.response, block(index))) {
@@ -2067,7 +2195,7 @@ struct LessonView {
             }
             rows.back().toolbar=true;
             if(!laboratory()){rows.back().column_gap=0;rows.back().horizontal_inset=14;}
-            if(laboratory())rows.back().padding_after=0;
+            rows.back().padding_after=0;
             for(const auto item:rows.back().cells)reader_theme::apply(item,laboratory()?reader_theme::Surface::compiler_header:reader_theme::Surface::card_header);
             toolbar_caption(caption,"</> C++");
             const auto saved = state::get_draft(data, draft_key(index), current.initial_code, current.standard_input.value_or(""));
@@ -2151,7 +2279,13 @@ struct LessonView {
             SendMessageW(vm.console,EM_SETTARGETDEVICE,0,1);
             rows.push_back({{vm.console}, {0}, 72, true,0,240});rows.back().horizontal_inset=16;rows.back().padding_after=0;
             reader_theme::set_text_color(vm.console,RGB(121,226,157));
-            create_feedback(index);refresh_project_actions(index); return;
+            create_feedback(index);refresh_project_actions(index);
+            if(current.output_check&&vm.status&&!windows::compiler_puzzle_completed(data,lesson,current)){
+                const auto count=windows::compiler_puzzle_case_count(data,lesson,current);
+                if(count)set_rich_text(vm.status,ui("Casos comprobados: ","Checked cases: ","Cas vérifiés : ")
+                    +std::to_string(count)+ui(" de "," of "," sur ")+std::to_string(current.output_check->cases.size())+".");
+            }
+            return;
         }
         if(current.type==BlockType::inline_fill_code||current.type==BlockType::drag_fill_code){
             vm.fill=std::make_unique<CppFillView>(pane,current,vm.response.raw_json,
@@ -2476,6 +2610,14 @@ struct LessonView {
             int height = row.size_to_text ? std::max(px(row.logical_height), row.requested_height) : px(row.logical_height);
             height+=readonly_nonclient_height;
             height=std::max(height,control_height);
+            if(fixed){
+                // The pinned toolbar and its RichEdit/button cells share one
+                // measured height. At enlarged text sizes its host needs more
+                // space than the ordinary 48dp row; leaving shorter cells here
+                // creates an otherwise empty band before the editor body.
+                RECT header_area{};GetClientRect(fullscreen_header,&header_area);
+                height=std::max(height,static_cast<int>(header_area.bottom));
+            }
             // Android's empty verdict/status TextViews are gone until they
             // own text. RichEdit still requests a blank line for an empty
             // document; do not turn that native request into visible spacing.
@@ -2802,7 +2944,9 @@ struct LessonView {
                 ++vm.revision;
                 clear_reference_completion(index);
                 if (running_block == index) { worker.request_stop(); }
-                capture_draft(index); feedback(index, "", false);
+                capture_draft(index);
+                windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),program_snapshot(index));
+                if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index, "", false);
                 vm.console_channels = {};
                 updating = true; set_rich_text(vm.console,ui("El programa cambió. Ejecuta de nuevo para obtener una salida actual.",
                     "The program changed. Run it again to obtain current output.","Le programme a changé. Exécute-le à nouveau pour obtenir une sortie actuelle."));
@@ -2819,8 +2963,9 @@ struct LessonView {
         request.request_id = ++request_id; request.revision = vm.revision;
         if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&!block(index).output_check)action=windows::CppRunRequest::Action::execute;
         request.action=action;running_action=action;
-        running_block = index; running_input = request.stdin_utf8;refresh_project_actions(index);
-        EnableWindow(vm.compile, FALSE); feedback(index, "", false);
+        running_block = index; running_input = request.stdin_utf8;running_program=request;refresh_project_actions(index);
+        EnableWindow(vm.compile, FALSE);
+        if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index, "", false);
         if(laboratory()){laboratory_status=LaboratoryStatus::running;refresh_laboratory_status();}
         updating = true;set_rich_text(vm.console,"");updating = false;
         if(block(index).cmake&&vm.status)set_rich_text(vm.status,action==windows::CppRunRequest::Action::configure?ui("Configurando y generando el proyecto…","Configuring and generating the project…","Configuration et génération du projet…")
@@ -2915,7 +3060,7 @@ struct LessonView {
             ||(cmake&&result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded())) { vm.console_channels[2] = output; preferred_channel = 2; }
         else if (!result->execution.succeeded()) { vm.console_channels[1] = output; preferred_channel = 1; }
         console_present(index,preferred_channel);
-        if (block(index).output_check&&executed) {
+        if (block(index).output_check&&executed&&!windows::compiler_puzzle_completed(data,lesson,block(index))) {
             curriculum::FreshExecution fresh;
             fresh.source_revision = result->revision;
             fresh.compilation_succeeded = result->compilation.succeeded(); fresh.execution_succeeded = result->execution.succeeded();
@@ -2927,12 +3072,15 @@ struct LessonView {
                 const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct;
                 auto text = verdict_text(correct);
                 if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
-                feedback(index, text, correct, true);
-                if (hooks.feedback_changed) hooks.feedback_changed(window,index,correct);
-                if (correct && has_references(block(index))) {
+                const bool objective_completed=correct&&windows::record_compiler_puzzle_case(data,lesson,block(index),running_program,fresh,text);
+                if(!correct||objective_completed){feedback(index,text,objective_completed,true);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
+                else if(vm.status)set_rich_text(vm.status,ui("Caso correcto. Casos comprobados: ","Case passed. Checked cases: ","Cas correct. Cas vérifiés : ")
+                    +std::to_string(windows::compiler_puzzle_case_count(data,lesson,block(index)))+ui(" de "," of "," sur ")
+                    +std::to_string(block(index).output_check->cases.size())+".");
+                if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
-                    mark_dirty(); flush(); refresh_references();
                 }
+                if(correct){mark_dirty();flush();refresh_references();}
             }
         }
         reflow();
@@ -3092,6 +3240,7 @@ struct LessonView {
             return;
         }
         if (notification == EN_CHANGE) { edit_changed(sender); return; }
+        if(notification==CodeEditor::layout_ready_notification){queue_answer_viewport(sender,true);return;}
         if(notification==EN_VSCROLL||notification==EN_HSCROLL){queue_answer_viewport(sender);return;}
         if(notification==EN_SETFOCUS)for(std::size_t i=0;i<controls.size();++i)
             if(sender==controls[i].answer||sender==find_item(control_id(i,3)))selected_puzzle=i;
@@ -3180,7 +3329,9 @@ struct LessonView {
         case ActionType::select_all_console:SetFocus(vm.console);SendMessageW(vm.console,EM_SETSEL,0,-1);break;
         case ActionType::reset:
             if (running_block == action.block) cancel_run();
-            if(vm.project){vm.project->reset();capture_draft(action.block);mark_dirty();break;}
+            windows::reset_compiler_puzzle(data,lesson,block(action.block));
+            clear_reference_completion(action.block);feedback(action.block,"",false);mark_dirty();
+            if(vm.project){vm.project->reset();capture_draft(action.block);mark_dirty();refresh_references();break;}
             updating = true;
             vm.source_editor->reset(predefined_document(block(action.block).initial_code));
             updating = false;
@@ -3192,7 +3343,7 @@ struct LessonView {
                 laboratory_status=LaboratoryStatus::ready;refresh_laboratory_status();data.preferences["native_windows"]["cpp_laboratory_wrap"]=false;apply_wrap(vm.source);
                 const auto wrap=find_item(control_id(action.block,35));icon_buttons[wrap]=Icon::wrap_off;label_radio(wrap,ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));InvalidateRect(wrap,nullptr,FALSE);
             }
-            EnableWindow(vm.compile, TRUE); mark_dirty(); break;
+            EnableWindow(vm.compile, TRUE); mark_dirty(); refresh_references();break;
         case ActionType::tab: SetFocus(vm.source); vm.source_editor->insert_tab(); break;
         }
     }
@@ -3344,7 +3495,10 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             if (lparam) *reinterpret_cast<LessonPageState*>(lparam) = view->page_state(); return 1;
         case lesson_page_navigate_message: return !view->import_open && view->change_page(static_cast<std::size_t>(wparam));
         case lesson_reading_regions_message:
-            if (lparam) *reinterpret_cast<std::vector<LessonReadingRegion>*>(lparam) = view->reading_regions(static_cast<int>(wparam)); return 1;
+            if(lparam){
+                if(wparam==4)*reinterpret_cast<std::vector<LessonReadingArchive>*>(lparam)=view->retired_reading_archives();
+                else *reinterpret_cast<std::vector<LessonReadingRegion>*>(lparam)=wparam==3?view->retired_reading_regions():view->reading_regions(static_cast<int>(wparam));
+            }return 1;
         case lesson_view_hooks_message:
             if (lparam) view->hooks = *reinterpret_cast<LessonViewHooks*>(lparam);
             for(auto& controls:view->controls)if(controls.math)controls.math->set_expression_request(view->hooks.math_editor_request);
@@ -3485,6 +3639,14 @@ std::vector<LessonReadingRegion> pre_caption_lesson_reading_regions(HWND window)
 std::vector<LessonReadingRegion> legacy_lesson_reading_regions(HWND window){
     std::vector<LessonReadingRegion> result;
     if(window)SendMessageW(window,lesson_reading_regions_message,1,reinterpret_cast<LPARAM>(&result));return result;
+}
+std::vector<LessonReadingRegion> retired_lesson_reading_regions(HWND window){
+    std::vector<LessonReadingRegion> result;
+    if(window)SendMessageW(window,lesson_reading_regions_message,3,reinterpret_cast<LPARAM>(&result));return result;
+}
+std::vector<LessonReadingArchive> retired_lesson_reading_archives(HWND window){
+    std::vector<LessonReadingArchive> result;
+    if(window)SendMessageW(window,lesson_reading_regions_message,4,reinterpret_cast<LPARAM>(&result));return result;
 }
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks) {
     if (window) SendMessageW(window,lesson_view_hooks_message,0,reinterpret_cast<LPARAM>(&hooks));

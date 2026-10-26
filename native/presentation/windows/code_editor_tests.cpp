@@ -7,6 +7,7 @@
 #include <richedit.h>
 #include <richole.h>
 #include <shlobj.h>
+#include <tom.h>
 
 #include <array>
 #include <cstring>
@@ -20,9 +21,21 @@
 
 namespace {
 using namespace lgaed::windows;
+void record_clipboard_failure(const char* stage,DWORD error);
 
 void require(bool condition, std::string_view message) {
     if (!condition) throw std::runtime_error(std::string(message));
+}
+
+std::string codepoints(std::wstring_view text) {
+    constexpr char hexadecimal[]="0123456789ABCDEF";
+    std::string result;
+    for(const auto value:text) {
+        result+="U+";
+        for(int shift=12;shift>=0;shift-=4)result+=hexadecimal[(static_cast<unsigned>(value)>>shift)&15];
+        result+=' ';
+    }
+    return result;
 }
 
 struct OleSession {
@@ -181,10 +194,68 @@ struct ClipboardHandle {
                 format == CF_DSPMETAFILEPICT ? CF_METAFILEPICT : format;
             copy = OleDuplicateData(handle, static_cast<CLIPFORMAT>(type), GMEM_MOVEABLE);
         }
-        require(copy != nullptr, "Snapshot the complete original clipboard before testing paste");
+        if(!copy){record_clipboard_failure("duplicate clipboard handle",GetLastError());
+            throw std::runtime_error("Snapshot the complete original clipboard before testing paste");}
         return ClipboardHandle(format, copy);
     }
 };
+
+template<class Handle> class ClipboardSnapshot {
+    std::vector<Handle> originals_;
+public:
+    explicit ClipboardSnapshot(std::vector<Handle> originals):originals_(std::move(originals)){}
+    [[nodiscard]] std::size_t size()const{return originals_.size();}
+    [[nodiscard]] std::vector<Handle> duplicate()const{
+        std::vector<Handle> copies;copies.reserve(originals_.size());
+        for(const auto& original:originals_)copies.push_back(original.duplicate());
+        return copies;
+    }
+};
+template<class Handle,class Publish>
+void publish_clipboard_copies(std::vector<Handle>& copies,const Publish& publish){
+    for(auto& copy:copies){publish(copy.format,copy.handle);copy.handle=nullptr;}
+}
+struct ClipboardRecoveryGate {
+    bool aborted=false,pending=false;
+    void fail(){aborted=true;pending=true;}
+    void restored(){pending=false;}
+    [[nodiscard]] bool can_publish()const{return !aborted&&!pending;}
+};
+ClipboardRecoveryGate clipboard_recovery;
+std::unique_ptr<const ClipboardSnapshot<ClipboardHandle>> clipboard_master_snapshot;
+HWND clipboard_recovery_owner=nullptr;
+HWND ensure_clipboard_recovery_owner(){
+    if(!IsWindow(clipboard_recovery_owner)){
+        clipboard_recovery_owner=CreateWindowExW(0,L"STATIC",L"Clipboard recovery owner",0,0,0,0,0,
+            HWND_MESSAGE,nullptr,GetModuleHandleW(nullptr),nullptr);
+        require(clipboard_recovery_owner!=nullptr,"Create an independent clipboard recovery owner");
+    }
+    return clipboard_recovery_owner;
+}
+bool owns_clipboard_recovery(HWND current,HWND published,HWND recovery){
+    return published&&(current==published||current==recovery);
+}
+bool clipboard_restore_failed = false;
+struct ClipboardDiagnostic {const char* stage="none";DWORD error=ERROR_SUCCESS;} clipboard_diagnostic;
+void record_clipboard_failure(const char* stage,DWORD error){
+    clipboard_diagnostic={stage,error};
+}
+void report_clipboard_recovery(std::size_t formats){
+    const auto open=GetOpenClipboardWindow(),owner=GetClipboardOwner();DWORD open_process=0,owner_process=0;
+    if(open)GetWindowThreadProcessId(open,&open_process);
+    if(owner)GetWindowThreadProcessId(owner,&owner_process);
+    std::cerr<<"Clipboard writes stopped; original snapshot "<<(clipboard_master_snapshot?"retained in memory":"not yet captured")
+        <<". stage="<<clipboard_diagnostic.stage
+        <<", error="<<clipboard_diagnostic.error<<", open="<<static_cast<void*>(open)<<", open_pid="<<open_process
+        <<", owner="<<static_cast<void*>(owner)<<", owner_pid="<<owner_process<<", formats="<<formats<<'\n';
+}
+void clipboard_retry_wait(DWORD milliseconds){
+    // OLE delayed-rendering and clipboard consumers can need this STA to
+    // dispatch messages before they release their clipboard lock.
+    MSG message{};
+    while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}
+    MsgWaitForMultipleObjects(0,nullptr,FALSE,milliseconds,QS_ALLINPUT);
+}
 
 struct OpenClipboardScope {
     explicit OpenClipboardScope(HWND owner) {
@@ -192,22 +263,32 @@ struct OpenClipboardScope {
         // consumers. Retry acquisition before inspecting or changing any data.
         for(unsigned attempt=0;attempt<25;++attempt){
             if(OpenClipboard(owner))return;
-            Sleep(10);
+            record_clipboard_failure("OpenClipboard",GetLastError());
+            clipboard_retry_wait(10);
         }
         require(false,"Open the native clipboard for the isolated paste test after bounded retry");
     }
-    ~OpenClipboardScope() { CloseClipboard(); }
+    ~OpenClipboardScope() {
+        bool reported=false;
+        while(!CloseClipboard()){
+            record_clipboard_failure("CloseClipboard",GetLastError());
+            clipboard_recovery.aborted=true;clipboard_restore_failed=true;
+            if(!reported){report_clipboard_recovery(clipboard_master_snapshot?clipboard_master_snapshot->size():0);reported=true;}
+            clipboard_retry_wait(50);
+        }
+    }
 };
 
-bool clipboard_restore_failed = false;
 struct ClipboardScope {
-    HWND owner;
     HWND published_owner = nullptr;
-    std::vector<ClipboardHandle> saved;
+    std::unique_ptr<const ClipboardSnapshot<ClipboardHandle>> saved;
     DWORD saved_sequence = 0;
     bool changed = false;
-    explicit ClipboardScope(HWND window) : owner(window) {
+    explicit ClipboardScope(HWND) {
+        require(clipboard_recovery.can_publish(),"Clipboard tests are stopped after a failed restore");
+        const auto owner=ensure_clipboard_recovery_owner();
         OpenClipboardScope opened(owner);
+        std::vector<ClipboardHandle> captured;
         UINT format = 0;
         for (;;) {
             SetLastError(ERROR_SUCCESS);
@@ -221,15 +302,20 @@ struct ClipboardScope {
             const auto handle = GetClipboardData(format);
             require(handle != nullptr, "Materialize every original clipboard format before replacing it");
             ClipboardHandle borrowed(format, handle);
-            try { saved.push_back(borrowed.duplicate()); }
+            try { captured.push_back(borrowed.duplicate()); }
             catch (...) { borrowed.handle = nullptr; throw; }
             borrowed.handle = nullptr;
         }
+        saved=std::make_unique<const ClipboardSnapshot<ClipboardHandle>>(std::move(captured));
+        if(!clipboard_master_snapshot)
+            clipboard_master_snapshot=std::make_unique<const ClipboardSnapshot<ClipboardHandle>>(saved->duplicate());
         saved_sequence = GetClipboardSequenceNumber();
     }
     void publish(const std::vector<ClipboardBlob>& payload) {
+        require(clipboard_recovery.can_publish(),"Clipboard writes are stopped while its snapshot is protected");
         std::vector<ClipboardHandle> pending;
         for (const auto& item : payload) pending.emplace_back(item.format, global_bytes(item.bytes));
+        const auto owner=ensure_clipboard_recovery_owner();
         OpenClipboardScope opened(owner);
         require(GetClipboardSequenceNumber() == saved_sequence,
             "Clipboard changed after the snapshot; preserve the newer copy");
@@ -242,6 +328,7 @@ struct ClipboardScope {
         }
     }
     void publish_ole(IDataObject* data) {
+        require(clipboard_recovery.can_publish(),"OLE clipboard writes are stopped while its snapshot is protected");
         require(data != nullptr && GetClipboardSequenceNumber() == saved_sequence,
             "Clipboard changed after the snapshot; preserve the newer OLE copy");
         const auto result = OleSetClipboard(data);
@@ -256,26 +343,54 @@ struct ClipboardScope {
     }
     bool restore() noexcept {
         if (!changed) return true;
-        // Retain our copies until the entire restore succeeds, including when
-        // another clipboard consumer temporarily has it open.
-        for (unsigned attempt = 0; attempt != 10; ++attempt) {
+        bool recovered_failure=false;ULONGLONG reported=0;
+        for (;;) {
+          for(unsigned attempt=0;attempt<10;++attempt){
             try {
-                OpenClipboardScope opened(owner);
-                if (!published_owner || GetClipboardOwner() != published_owner) { changed = false; return true; }
-                require(EmptyClipboard() != FALSE, "Restore the original clipboard");
-                for (const auto& item : saved) {
-                    auto copy = item.duplicate();
-                    require(SetClipboardData(copy.format, copy.handle) != nullptr, "Restore an original clipboard format");
-                    copy.handle = nullptr;
+                // Prepare every replacement before clearing anything. These
+                // copies may be consumed by SetClipboardData; the immutable
+                // snapshot and process-wide original remain owned here.
+                record_clipboard_failure("duplicate snapshot",ERROR_SUCCESS);
+                auto copies=saved->duplicate();
+                const auto recovery_owner=ensure_clipboard_recovery_owner();
+                OpenClipboardScope opened(recovery_owner);
+                if(!owns_clipboard_recovery(GetClipboardOwner(),published_owner,recovery_owner)){
+                    record_clipboard_failure("clipboard owner changed; preserving newer data",ERROR_SUCCESS);
+                    throw std::runtime_error("Clipboard ownership changed during recovery");
                 }
+                record_clipboard_failure("EmptyClipboard during restore",ERROR_SUCCESS);
+                if(!EmptyClipboard()){
+                    record_clipboard_failure("EmptyClipboard during restore",GetLastError());
+                    throw std::runtime_error("Restore the original clipboard");
+                }
+                // A partial restore now belongs to this host, rather than
+                // OLE's previous hidden publisher. Retry it as our own data.
+                published_owner=recovery_owner;
+                publish_clipboard_copies(copies,[](UINT format,HANDLE handle){
+                    record_clipboard_failure("SetClipboardData during restore",ERROR_SUCCESS);
+                    if(!SetClipboardData(format,handle)){
+                        record_clipboard_failure("SetClipboardData during restore",GetLastError());
+                        throw std::runtime_error("Restore an original clipboard format");
+                    }
+                });
                 changed = false;
-                return true;
-            } catch (...) { Sleep(20); }
+                clipboard_recovery.restored();
+                return !recovered_failure;
+            } catch (...) {
+                clipboard_restore_failed=true;clipboard_recovery.fail();recovered_failure=true;
+                const auto now=GetTickCount64();
+                if(!reported||now-reported>=5000){report_clipboard_recovery(saved->size());reported=now;}
+                // Never return/destroy this scope with an unrestored snapshot.
+                // A blocked process retains every original handle in memory
+                // and cannot advance to another clipboard test or write.
+                clipboard_retry_wait(50);
+            }
+          }
+          clipboard_retry_wait(250);
         }
-        return false;
     }
     ~ClipboardScope() {
-        if (!restore()) { clipboard_restore_failed = true; std::cerr << "FAIL restore original clipboard\n"; }
+        if (!restore()) std::cerr << "FAIL clipboard restore required recovery; original snapshot retained until restored\n";
     }
 };
 
@@ -290,15 +405,29 @@ void paste_shortcut(HWND edit, bool control_v) {
     auto keys = saved.original;
     for (const auto key : {VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_SHIFT, VK_LSHIFT, VK_RSHIFT,
             VK_MENU, VK_LMENU, VK_RMENU}) keys[key] = 0;
-    keys[control_v ? VK_CONTROL : VK_SHIFT] = 0x80;
+    const auto modifier=static_cast<UINT>(control_v?VK_CONTROL:VK_SHIFT);
+    const auto left_modifier=static_cast<UINT>(control_v?VK_LCONTROL:VK_LSHIFT);
+    const auto key=static_cast<UINT>(control_v?'V':VK_INSERT);
+    const auto layout=GetKeyboardLayout(0);
+    const auto modifier_scan=MapVirtualKeyExW(modifier,MAPVK_VK_TO_VSC,layout);
+    const auto key_scan=MapVirtualKeyExW(key,MAPVK_VK_TO_VSC,layout);
+    keys[modifier]=keys[left_modifier]=0x80;
     require(SetKeyboardState(keys.data()) != FALSE, "Set paste modifiers on this test thread only");
     SetFocus(edit);
-    MSG message{edit, WM_KEYDOWN, static_cast<WPARAM>(control_v ? 'V' : VK_INSERT), 1};
+    SendMessageW(edit,WM_KEYDOWN,modifier,static_cast<LPARAM>((modifier_scan<<16)|1));
+    keys[key]|=0x80;
+    require(SetKeyboardState(keys.data())!=FALSE,"Press the paste key on this test thread");
+    MSG message{edit, WM_KEYDOWN,key,static_cast<LPARAM>((key_scan<<16)|1)};
     TranslateMessage(&message);
     DispatchMessageW(&message);
     MSG character{};
     while (PeekMessageW(&character, edit, WM_CHAR, WM_CHAR, PM_REMOVE)) DispatchMessageW(&character);
-    SendMessageW(edit, WM_KEYUP, message.wParam, 1);
+    keys[key]&=0x7F;
+    require(SetKeyboardState(keys.data())!=FALSE,"Release the paste key on this test thread");
+    SendMessageW(edit,WM_KEYUP,key,static_cast<LPARAM>((key_scan<<16)|0xC0000001u));
+    keys[modifier]=keys[left_modifier]=0;
+    require(SetKeyboardState(keys.data())!=FALSE,"Release native paste modifiers on this test thread");
+    SendMessageW(edit,WM_KEYUP,modifier,static_cast<LPARAM>((modifier_scan<<16)|0xC0000001u));
 }
 
 CHARRANGE selected_range(HWND edit) {
@@ -339,8 +468,12 @@ void require_local_paste_format(HWND edit, LONG start, LONG end, const CHARFORMA
 
 struct ChangeProbe {
     bool streaming = false;
+    unsigned streams = 0, replacements = 0;
     unsigned notifications = 0;
     unsigned notifications_during_stream = 0;
+    unsigned notifications_without_freeze = 0;
+    unsigned updates = 0;
+    bool last_update_frozen = false;
     bool callback_failed = false;
     EditorDocument observed;
     std::string visible;
@@ -350,7 +483,9 @@ LRESULT CALLBACK stream_probe(HWND window, UINT message, WPARAM wparam, LPARAM l
     UINT_PTR, DWORD_PTR data) {
     auto& probe = *reinterpret_cast<ChangeProbe*>(data);
     if (message == WM_NCDESTROY) RemoveWindowSubclass(window, stream_probe, 2);
+    if(message==EM_REPLACESEL)++probe.replacements;
     if (message != EM_STREAMIN) return DefSubclassProc(window, message, wparam, lparam);
+    ++probe.streams;
     const auto previous = probe.streaming;
     probe.streaming = true;
     const auto result = DefSubclassProc(window, message, wparam, lparam);
@@ -359,6 +494,20 @@ LRESULT CALLBACK stream_probe(HWND window, UINT message, WPARAM wparam, LPARAM l
 }
 
 LRESULT CALLBACK host_proc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
+    if(message==WM_COMMAND&&HIWORD(wparam)==CodeEditor::layout_ready_notification&&lparam){
+        const auto control=reinterpret_cast<HWND>(lparam);
+        if(const auto probe=reinterpret_cast<ChangeProbe*>(GetPropW(control,L"lgaed.test.change-probe"))){
+            try{
+                ComOwner<ITextDocument> document;ITextDocument* text_document=nullptr;
+                require(SUCCEEDED(native_ole(control)->QueryInterface(__uuidof(ITextDocument),
+                    reinterpret_cast<void**>(&text_document))),"Observe final native layout readiness");
+                document.reset(text_document);LONG frozen=0;
+                require(SUCCEEDED(document->Freeze(&frozen)),"Inspect layout notification freeze nesting");
+                probe->last_update_frozen=frozen>1;++probe->updates;
+                document->Unfreeze(&frozen);
+            }catch(...){probe->callback_failed=true;}
+        }
+    }
     if (message == WM_COMMAND && HIWORD(wparam) == EN_CHANGE && lparam) {
         const auto control = reinterpret_cast<HWND>(lparam);
         const auto probe = reinterpret_cast<ChangeProbe*>(GetPropW(control, L"lgaed.test.change-probe"));
@@ -370,6 +519,15 @@ LRESULT CALLBACK host_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
                 editor->capture_change();
                 if (probe) {
                     ++probe->notifications;
+                    ComOwner<ITextDocument> document;
+                    ITextDocument* text_document=nullptr;
+                    require(SUCCEEDED(native_ole(control)->QueryInterface(__uuidof(ITextDocument),
+                        reinterpret_cast<void**>(&text_document))),"Observe native document paint freezing");
+                    document.reset(text_document);
+                    LONG frozen=0;
+                    require(SUCCEEDED(document->Freeze(&frozen)),"Inspect current native freeze nesting");
+                    if(frozen<2)++probe->notifications_without_freeze;
+                    document->Unfreeze(&frozen);
                     probe->observed = editor->document();
                     probe->visible = lgaed::presentation::edit_text(control);
                     lgaed::presentation::style_cpp(control);
@@ -428,6 +586,33 @@ struct Fixture {
     }
 };
 
+bool quote_key(Fixture& field,wchar_t quote,bool deliver_character=true) {
+    KeyboardScope original;
+    const auto layout=GetKeyboardLayout(0);
+    const auto mapping=VkKeyScanExW(quote,layout);
+    if(mapping==-1) { if(deliver_character)field.character(quote);return false; }
+    auto keys=original.original;
+    for(const auto key:{VK_CONTROL,VK_LCONTROL,VK_RCONTROL,VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_MENU,VK_LMENU,VK_RMENU})keys[key]=0;
+    const auto modifiers=static_cast<unsigned>(static_cast<unsigned short>(mapping)>>8);
+    if(modifiers&1)keys[VK_SHIFT]=keys[VK_LSHIFT]=0x80;
+    if(modifiers&2)keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
+    if(modifiers&4)keys[VK_MENU]=keys[VK_LMENU]=0x80;
+    const auto key=static_cast<UINT>(static_cast<unsigned short>(mapping)&0xFF);
+    const auto scan=MapVirtualKeyExW(key,MAPVK_VK_TO_VSC,layout);
+    keys[key]|=0x80;
+    require(SetKeyboardState(keys.data())!=FALSE,"Prepare this test thread's quote key");
+    const MSG down{field.edit,WM_KEYDOWN,key,static_cast<LPARAM>((scan<<16)|1)};
+    const bool handled=CodeEditor::handle_key_message(down);
+    // Non-dead layouts already deliver a literal WM_CHAR. Never fabricate an
+    // incomplete native WM_DEADCHAR sequence in an unassisted control.
+    if(!handled&&deliver_character)field.character(quote);
+    keys[key]&=0x7F;
+    require(SetKeyboardState(keys.data())!=FALSE,"Release this test thread's quote key");
+    const MSG up{field.edit,WM_KEYUP,key,static_cast<LPARAM>((scan<<16)|0xC0000001u)};
+    (void)CodeEditor::handle_key_message(up);
+    return handled;
+}
+
 void require_pasted_document(Fixture& field, const CHARFORMAT2W& format, std::string_view inserted = "pegado") {
     const auto expected = "A" + std::string(inserted) + "B";
     const auto end = static_cast<LONG>(1 + inserted.size());
@@ -471,7 +656,11 @@ void require_unchanged(Fixture& field, const EditorDocument& expected, bool can_
 
 } // namespace
 
-int main() {
+int main(int argc,char** argv) {
+    const bool dead_quotes_only=argc==2&&std::string_view(argv[1])=="--dead-quotes";
+    const bool quote_tests_only=argc==2&&std::string_view(argv[1])=="--quote-tests";
+    const bool clipboard_recovery_only=argc==2&&std::string_view(argv[1])=="--clipboard-recovery";
+    if(argc>1&&!dead_quotes_only&&!quote_tests_only&&!clipboard_recovery_only)return 2;
     OleSession ole;
     if (FAILED(ole.result)) { std::cerr << "Cannot initialize native OLE paste tests\n"; return 1; }
     const auto rich_edit = LoadLibraryW(L"Msftedit.dll");
@@ -483,7 +672,12 @@ int main() {
     if (!RegisterClassW(&type)) { FreeLibrary(rich_edit); return 1; }
     unsigned passed = 0;
     unsigned failed = 0;
+    unsigned skipped = 0;
     const auto test = [&](std::string_view name, const std::function<void()>& action) {
+        if(dead_quotes_only&&name!="Actual keyboard-layout dead quotes cannot compose the next vowel into an accent")return;
+        if(quote_tests_only&&name!="Actual keyboard-layout dead quotes cannot compose the next vowel into an accent"&&
+                name!="Dead-key quotes pair immediately without a Space and retain ordinary quoted text")return;
+        if(clipboard_recovery_only&&name!="Clipboard recovery keeps immutable originals after partial publication and blocks later writes")return;
         try {
             action();
             ++passed;
@@ -493,8 +687,49 @@ int main() {
             std::cerr << "FAIL " << name << ": " << error.what() << '\n';
         }
     };
+    const auto clipboard_test=[&](std::string_view name,const std::function<void()>& action){
+        if(dead_quotes_only||quote_tests_only||clipboard_recovery_only)return;
+        if(clipboard_recovery.aborted){++skipped;std::cerr<<"SKIP "<<name<<": clipboard recovery stopped subsequent writes\n";return;}
+        test(name,[&]{try{action();}catch(...){
+            clipboard_recovery.aborted=true;
+            report_clipboard_recovery(clipboard_master_snapshot?clipboard_master_snapshot->size():0);
+            throw;
+        }});
+    };
 
-    test("OLE clipboard paste prefers plain text over explicit RTF and retains local formatting and history", [] {
+    test("Clipboard recovery keeps immutable originals after partial publication and blocks later writes",[]{
+        // Synthetic handle tokens only: this regression never opens, reads or
+        // writes the desktop clipboard or stores a user's data.
+        struct FakeHandle {
+            UINT format;HANDLE handle;
+            [[nodiscard]] FakeHandle duplicate()const{return *this;}
+        };
+        const ClipboardSnapshot<FakeHandle> master(std::vector<FakeHandle>{
+            {1,reinterpret_cast<HANDLE>(INT_PTR{11})},{2,reinterpret_cast<HANDLE>(INT_PTR{22})},
+            {3,reinterpret_cast<HANDLE>(INT_PTR{33})}});
+        ClipboardRecoveryGate gate;
+        auto first=master.duplicate();unsigned writes=0;bool injected=false;
+        try{publish_clipboard_copies(first,[&](UINT,HANDLE){if(++writes==2)throw std::runtime_error("Injected partial restore");});}
+        catch(const std::runtime_error&){injected=true;gate.fail();}
+        require(injected&&!first[0].handle&&first[1].handle&&gate.pending&&!gate.can_publish(),
+            "A partial restore consumed an original or allowed another clipboard write");
+        auto retry=master.duplicate();
+        require(retry.size()==3&&retry[0].handle==reinterpret_cast<HANDLE>(INT_PTR{11})&&
+                retry[1].handle==reinterpret_cast<HANDLE>(INT_PTR{22})&&retry[2].handle==reinterpret_cast<HANDLE>(INT_PTR{33}),
+            "A failed publication released the immutable snapshot needed for retry");
+        publish_clipboard_copies(retry,[](UINT,HANDLE){});gate.restored();
+        require(!gate.pending&&!gate.can_publish()&&master.duplicate()[0].handle==reinterpret_cast<HANDLE>(INT_PTR{11}),
+            "Recovery discarded its master snapshot or resumed clipboard tests after a restore failure");
+        const auto recovery_owner=ensure_clipboard_recovery_owner();
+        const auto fixture_owner=CreateWindowExW(0,L"STATIC",L"Temporary recovery fixture",0,0,0,0,0,
+            HWND_MESSAGE,nullptr,GetModuleHandleW(nullptr),nullptr);
+        require(fixture_owner!=nullptr,"Create a disposable message-only fixture owner");
+        DestroyWindow(fixture_owner);
+        require(IsWindow(recovery_owner)&&owns_clipboard_recovery(recovery_owner,fixture_owner,recovery_owner),
+            "Destroying a fixture invalidated the independent recovery owner");
+    });
+
+    clipboard_test("OLE clipboard paste prefers plain text over explicit RTF and retains local formatting and history", [] {
         for (const bool unicode : {true, false}) for (const bool multiline : {false, true}) {
             std::cout << "QA OLE paste unicode=" << unicode << " multiline=" << multiline << '\n';
             Fixture field({"AXXB", {}, 1, 3}, multiline, {}, true, nullptr, false, false);
@@ -508,7 +743,7 @@ int main() {
         }
     });
 
-    test("Clipboard and keyboard paste preserve selected text undo and the field style", [] {
+    clipboard_test("Clipboard and keyboard paste preserve selected text undo and the field style", [] {
         for (const auto route : {0, 1, 2, 3}) {
             std::cout << "QA clipboard paste route=" << route << '\n';
             Fixture field({"AXXB", {}, 1, 3}, true, {}, true, nullptr, false, false);
@@ -524,7 +759,7 @@ int main() {
         }
     });
 
-    test("Image-only native and OLE clipboard pastes leave text selection and redo untouched", [] {
+    clipboard_test("Image-only native and OLE clipboard pastes leave text selection and redo untouched", [] {
         Fixture field({"AXXB", {}, 1, 3}, true, {}, true, nullptr, false, false);
         field.character(L'x');
         field.adapter->undo();
@@ -548,7 +783,7 @@ int main() {
         require(field.adapter->document().text == "AxB", "Rejected images must not erase the earlier redo operation");
     });
 
-    test("Disabled and read-only editors decline text and RTF through every user paste entry point", [] {
+    clipboard_test("Disabled and read-only editors decline text and RTF through every user paste entry point", [] {
         for (const bool readonly : {false, true}) {
             Fixture field({"AXXB", {}, 1, 3}, true, {}, true, nullptr, false, false);
             field.character(L'x'); field.adapter->undo();
@@ -570,7 +805,7 @@ int main() {
         }
     });
 
-    test("Themed stdin RichEdit without CodeEditor accepts plain paste and rejects image objects", [] {
+    clipboard_test("Themed stdin RichEdit without CodeEditor accepts plain paste and rejects image objects", [] {
         Fixture owner;
         const auto input = CreateWindowExW(0, MSFTEDIT_CLASS, L"AXXB",
             WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL, 0, 0, 300, 80, owner.host,
@@ -623,7 +858,7 @@ int main() {
         require(clipboard.restore(), "Restore original clipboard after standalone stdin test");
     });
 
-    test("OLE clipboard ownership and every prior text representation restore after a failed operation", [] {
+    clipboard_test("OLE clipboard ownership and every prior text representation restore after a failed operation", [] {
         Fixture owner;
         ClipboardScope original(owner.host); const auto payload = styled_payload(); original.publish(payload);
         bool reached_failure = false;
@@ -633,7 +868,7 @@ int main() {
             reached_failure = true;
             throw std::runtime_error("Deliberate failure after publishing owned OLE data");
         } catch (const std::runtime_error&) {}
-        require(reached_failure && !clipboard_restore_failed && GetClipboardOwner() == owner.host,
+        require(reached_failure && !clipboard_restore_failed && GetClipboardOwner() == clipboard_recovery_owner,
             "An exception while owning OLE clipboard data failed to restore the previous native owner");
         {
             OpenClipboardScope opened(owner.host);
@@ -852,6 +1087,135 @@ int main() {
         }
     });
 
+    test("Dead-key quotes pair immediately without a Space and retain ordinary quoted text", [] {
+        for(const bool multiline:{false,true})for(const auto quote:{L'\'',L'"'}) {
+            Fixture field({},multiline);
+            (void)quote_key(field,quote);
+            const auto pair=std::string(2,static_cast<char>(quote));
+            require(field.adapter->document().text==pair&&field.adapter->document().selection_start==1,
+                "A pretranslated dead-key quote still waits for Space instead of pairing immediately");
+            field.character(L'a');
+            (void)quote_key(field,quote);
+            const auto complete=std::string(1,static_cast<char>(quote))+"a"+static_cast<char>(quote);
+            require(field.adapter->document().text==complete&&field.adapter->document().selection_start==3,
+                "The closing dead-key quote must skip its existing pair without duplicating it");
+            field.adapter->undo();require(field.adapter->document().text==pair,"Dead-key pairing lost the letter's one-step Undo");
+            field.adapter->undo();require(field.adapter->document().text.empty(),"The initial dead-key pair must undo as one edit");
+            field.adapter->redo();require(field.adapter->document().text==pair,"Redo must restore the same immediate pair");
+            field.adapter->reset({"abc",{},0,3});
+            (void)quote_key(field,quote);
+            require(field.adapter->document().text==std::string(1,static_cast<char>(quote))+"abc"+static_cast<char>(quote)&&
+                field.adapter->document().selection_start==1&&field.adapter->document().selection_end==4,
+                "Dead-key quotes must wrap and retain the current selection like parentheses");
+        }
+        Fixture comment({"// comentario ",{},14,14});
+        (void)quote_key(comment,L'"');
+        require(comment.adapter->document().text=="// comentario \"","A dead-key quote inside a comment acquired an unwanted pair");
+        Fixture plain({},true,{},false);
+        require(!quote_key(plain,L'\'',false)&&plain.adapter->document().text.empty(),
+            "A plain stdin field was intercepted by programming quote handling");
+    });
+
+    test("Actual keyboard-layout dead quotes cannot compose the next vowel into an accent", [] {
+        KeyboardScope original_keyboard;
+        const auto layout=GetKeyboardLayout(0);
+        const auto space_scan=MapVirtualKeyExW(VK_SPACE,MAPVK_VK_TO_VSC,layout);
+        const auto a_scan=MapVirtualKeyExW(L'A',MAPVK_VK_TO_VSC,layout);
+        std::array<BYTE,256> released{};
+        const auto clear=[&] {
+            std::array<wchar_t,8> discarded{};
+            ToUnicodeEx(VK_SPACE,space_scan,released.data(),discarded.data(),static_cast<int>(discarded.size()),0,layout);
+        };
+        struct Cleanup { std::function<void()> action;~Cleanup(){action();} } cleanup{clear};
+        unsigned dead_quotes=0;
+        for(const auto quote:{L'\'',L'"'}) {
+            clear();
+            Fixture field;
+            ShowWindow(field.host,SW_SHOWNOACTIVATE);
+            SetFocus(field.edit);
+            require(GetFocus()==field.edit,"The keyboard regression requires the real editor caret");
+            UpdateWindow(field.host);
+            const auto mapping=VkKeyScanExW(quote,layout);
+            if(mapping==-1)continue;
+            auto modifiers=released;
+            const auto flags=static_cast<unsigned>(static_cast<unsigned short>(mapping)>>8);
+            if(flags&1)modifiers[VK_SHIFT]=0x80;
+            if(flags&2)modifiers[VK_CONTROL]=0x80;
+            if(flags&4)modifiers[VK_MENU]=0x80;
+            modifiers[VK_LSHIFT]=modifiers[VK_SHIFT];
+            modifiers[VK_LCONTROL]=modifiers[VK_CONTROL];
+            modifiers[VK_LMENU]=modifiers[VK_MENU];
+            const auto key=static_cast<UINT>(static_cast<unsigned short>(mapping)&0xFF);
+            const auto scan=MapVirtualKeyExW(key,MAPVK_VK_TO_VSC,layout);
+            std::array<wchar_t,8> translated{};
+            const auto count=ToUnicodeEx(key,scan,modifiers.data(),translated.data(),static_cast<int>(translated.size()),4,layout);
+            if(count>=0||translated.front()!=quote) { clear();continue; }
+            ++dead_quotes;
+            std::string trace;
+            const auto preview_a=[&] {
+                std::array<wchar_t,8> preview{};
+                const auto length=ToUnicodeEx(L'A',a_scan,released.data(),preview.data(),static_cast<int>(preview.size()),4,layout);
+                return std::to_string(length)+":"+codepoints(std::wstring_view(preview.data(),length<0?1:static_cast<std::size_t>(length)));
+            };
+            const auto physical_key=[&](UINT virtual_key,UINT scan_code,std::array<BYTE,256> key_state) {
+                key_state[virtual_key]|=0x80;
+                require(SetKeyboardState(key_state.data())!=FALSE,"Set only this test thread's key modifiers");
+                MSG message{field.edit,WM_KEYDOWN,virtual_key,static_cast<LPARAM>((scan_code<<16)|1)};
+                const bool handled=CodeEditor::handle_key_message(message);
+                if(!handled)TranslateMessage(&message);
+                trace+=" key="+std::to_string(virtual_key)+" translated-preview="+preview_a();
+                std::array<BYTE,256> actual_keys{};GetKeyboardState(actual_keys.data());
+                std::array<wchar_t,8> key_preview{};
+                const auto key_count=ToUnicodeEx(virtual_key,scan_code,actual_keys.data(),key_preview.data(),static_cast<int>(key_preview.size()),4,GetKeyboardLayout(0));
+                trace+=" key-preview="+std::to_string(key_count)+":"+codepoints(std::wstring_view(key_preview.data(),key_count<0?1:static_cast<std::size_t>(key_count)))+
+                    " map="+std::to_string(MapVirtualKeyExW(virtual_key,MAPVK_VK_TO_CHAR,GetKeyboardLayout(0)));
+                if(!handled)DispatchMessageW(&message);
+                trace+=" down-text="+codepoints(lgaed::presentation::wide(lgaed::presentation::edit_text(field.edit)));
+                MSG character{};
+                while(PeekMessageW(&character,field.edit,WM_CHAR,WM_DEADCHAR,PM_REMOVE)) {
+                    trace+=" message="+std::to_string(character.message)+":"+codepoints(std::wstring(1,static_cast<wchar_t>(character.wParam)))+
+                        " before="+preview_a();
+                    DispatchMessageW(&character);
+                    trace+=" after="+preview_a()+" char-text="+codepoints(lgaed::presentation::wide(lgaed::presentation::edit_text(field.edit)));
+                }
+                key_state[virtual_key]&=0x7F;
+                require(SetKeyboardState(key_state.data())!=FALSE,"Release only this test thread's physical key");
+                MSG key_up{field.edit,WM_KEYUP,virtual_key,static_cast<LPARAM>((scan_code<<16)|0xC0000001u)};
+                if(!CodeEditor::handle_key_message(key_up))DispatchMessageW(&key_up);
+                trace+=" up-text="+codepoints(lgaed::presentation::wide(lgaed::presentation::edit_text(field.edit)));
+            };
+            physical_key(L'A',a_scan,released);
+            require(field.adapter->document().text=="a","Fresh real keyboard baseline is contaminated: "+
+                codepoints(lgaed::presentation::wide(field.adapter->document().text))+trace);
+            field.adapter->reset({});trace.clear();
+            physical_key(key,scan,modifiers);
+            require(field.adapter->document().text==std::string(2,static_cast<char>(quote)),
+                "The actual active-layout quote did not appear before another key was pressed");
+            physical_key(L'A',a_scan,released);
+            require(field.adapter->document().text==std::string(1,static_cast<char>(quote))+"a"+static_cast<char>(quote),
+                "Typing the next vowel changed the literal content or duplicated its quotes: quote="+
+                    std::to_string(static_cast<unsigned>(quote))+" text='"+field.adapter->document().text+
+                    "' native='"+lgaed::presentation::edit_text(field.edit)+"' selection="+
+                    std::to_string(field.adapter->document().selection_start)+":"+
+                    std::to_string(field.adapter->document().selection_end)+" codepoints="+
+                    codepoints(lgaed::presentation::wide(field.adapter->document().text))+trace);
+        }
+        require(GetKeyboardLayout(0)==layout,"The code editor changed the active keyboard layout");
+        std::cout<<"QA native dead-quote key cycles on the current layout: "<<dead_quotes<<'\n';
+    });
+
+    test("Locked code editors cannot mutate through custom quotes Backspace or indentation", [] {
+        for(const bool readonly:{false,true}) {
+            Fixture field({"()",{},1,1});
+            if(readonly)SendMessageW(field.edit,EM_SETREADONLY,TRUE,0);else EnableWindow(field.edit,FALSE);
+            (void)quote_key(field,L'"');
+            field.character(L'\'');field.key(VK_BACK,L'\b');field.key(VK_TAB,L'\t');
+            require(field.adapter->document().text=="()"&&field.adapter->document().selection_start==1&&
+                    !SendMessageW(field.edit,EM_CANUNDO,0,0),
+                "A custom edit bypassed the field's disabled/read-only lock");
+        }
+    });
+
     test("Deleting an empty assisted pair is one reversible transaction in either input kind", [] {
         for(const auto multiline:{false,true})for(const auto opening:{L'(',L'[',L'{',L'"',L'\''}) {
             Fixture field({},multiline);field.character(opening);
@@ -884,6 +1248,88 @@ int main() {
         Fixture manual({"    value;",{},10,10});manual.key(VK_RETURN,L'\r');manual.key(VK_BACK,L'\b');
         require(manual.adapter->document().text=="    value;\n   "&&manual.adapter->document().indentation_starts.empty(),
             "Copying manual indentation fabricated a tab unit");
+    });
+
+    test("Enter follows real code braces through trailing comments and spaced closing delimiters", [] {
+        for(const std::string source:{"    if (ready) { // comentario {",
+                "    if (ready) { /* comentario } */"}) {
+            auto original=predefined_code_document(source);
+            original.selection_start=original.selection_end=static_cast<std::int64_t>(source.size());
+            Fixture field(original);field.key(VK_RETURN,L'\r');
+            require(field.adapter->document().text==source+"\n    \t",
+                "A trailing comment hid the actual opening brace from intelligent indentation");
+            field.adapter->undo();require(field.adapter->document().text==source&&
+                    field.adapter->document().indentation_starts==original.indentation_starts,
+                "Undo did not restore the exact commented source and indentation origin");
+        }
+        const std::string source="    if (ready) {   }";
+        auto document=predefined_code_document(source);document.selection_start=document.selection_end=17;
+        Fixture pair(document);pair.key(VK_RETURN,L'\r');
+        require(pair.adapter->document().text=="    if (ready) { \n    \t\n    }",
+            "Whitespace before an existing brace prevented its split onto the matching indentation");
+        pair.adapter->undo();require(pair.adapter->document().text==source,"Split-brace Undo changed authored padding");
+    });
+
+    test("Comments and string contents cannot invent block indentation or auto pairs", [] {
+        for(const std::string source:{"    // comentario {","    /* comentario {", "    const auto value = \"{\";"}) {
+            Fixture field({source,{},static_cast<std::int64_t>(source.size()),static_cast<std::int64_t>(source.size())});
+            field.key(VK_RETURN,L'\r');
+            require(field.adapter->document().text==source+"\n    ","A brace inside a comment or string created a false block level");
+        }
+        for(const std::string source:{"    const auto text = \"{", "    const auto text = R\"tag(first\n    {"}) {
+            auto document=predefined_code_document(source);document.selection_start=document.selection_end=static_cast<std::int64_t>(source.size());
+            Fixture field(document);field.key(VK_RETURN,L'\r');field.character(L'(');
+            require(field.adapter->document().text==source+"\n(","Enter or pairing inserted characters into unfinished literal data");
+            require(document.indentation_starts==std::vector<std::int64_t>{0},
+                "A raw-string content line was falsely seeded as predefined indentation");
+        }
+        const std::string raw="    const auto text = R\"tag(first\n    second)tag\";";
+        auto document=predefined_code_document(raw);document.selection_start=document.selection_end=static_cast<std::int64_t>(raw.size());
+        Fixture finished(document);finished.key(VK_RETURN,L'\r');
+        require(finished.adapter->document().text==raw+"\n    ","A completed raw literal leaked its lexical state into later code");
+        Fixture raw_close({"R\"(text)\"",{},8,8});raw_close.character(L'"');
+        require(raw_close.adapter->document().text=="R\"(text)\""&&raw_close.adapter->document().selection_start==9,
+            "The existing quote of a raw-string close was duplicated instead of overtyped");
+        const std::string numeric="auto n = 0xAB'CD; call(";
+        Fixture digits({numeric,{},static_cast<std::int64_t>(numeric.size()),static_cast<std::int64_t>(numeric.size())});digits.key(VK_RETURN,L'\r');
+        require(digits.adapter->document().text=="auto n = 0xAB'CD; call(\n\t",
+            "A numeric digit separator was misread as a character-literal opener");
+    });
+
+    test("Parenthesized continuations keep one stable level and align their closing delimiter", [] {
+        for(const auto delimiters:{std::pair{L'(',L')'},std::pair{L'[',L']'}}) {
+            const auto opening=static_cast<char>(delimiters.first),closing=static_cast<char>(delimiters.second);
+            const std::string source="    call"+std::string(1,opening)+"first,";
+            auto document=predefined_code_document(source);document.selection_start=document.selection_end=static_cast<std::int64_t>(source.size());
+            Fixture field(document);field.key(VK_RETURN,L'\r');field.character(L'x');field.key(VK_RETURN,L'\r');
+            require(field.adapter->document().text==source+"\n    \tx\n    \t",
+                "Each continuation Enter added another indentation level instead of following its opening line");
+            field.character(delimiters.second);
+            require(field.adapter->document().text==source+"\n    \tx\n    "+closing,
+                "A closing continuation delimiter did not align with its original opening line");
+            field.adapter->undo();require(field.adapter->document().text==source+"\n    \tx\n    \t",
+                "Closing-delimiter alignment must undo as one complete edit");
+        }
+        auto pair=predefined_code_document("    call()");pair.selection_start=pair.selection_end=9;
+        Fixture empty(pair);empty.key(VK_RETURN,L'\r');
+        require(empty.adapter->document().text=="    call(\n    \t\n    )",
+            "Enter inside an empty continuation pair did not place its close on its own aligned line");
+    });
+
+    test("Closing braces align to their matching opening even after mixed or excessive indentation", [] {
+        const std::string prefix="    if (ready) {\n";
+        for(const bool existing:{false,true}) {
+            const auto source=prefix+" \t\t    "+(existing?"}":"");
+            auto document=predefined_code_document(source);document.selection_start=document.selection_end=static_cast<std::int64_t>(prefix.size()+7);
+            Fixture field(document);field.character(L'}');
+            require(field.adapter->document().text==prefix+"    }"&&field.adapter->document().selection_start==static_cast<std::int64_t>(prefix.size()+5),
+                "A closing brace merely subtracted one level or duplicated an existing close instead of matching its opener");
+            require(field.adapter->document().indentation_starts==std::vector<std::int64_t>({0,static_cast<std::int64_t>(prefix.size())}),
+                "Aligned closing indentation lost the opening line's proven origin");
+            field.adapter->undo();require(field.adapter->document().text==source&&
+                    field.adapter->document().indentation_starts==document.indentation_starts,
+                "Undo of intelligent dedentation failed to restore exact manual whitespace and origins");
+        }
     });
 
     test("Closing brace dedents a logical indentation while prediction disables only autoindent", [] {
@@ -1012,14 +1458,18 @@ int main() {
         } saved;
         BYTE keys[256]{};
         GetKeyboardState(keys);
-        keys[VK_CONTROL] |= 0x80;
+        keys[VK_CONTROL]=keys[VK_LCONTROL]=0x80;
         require(SetKeyboardState(keys) != FALSE, "Set test thread control modifier");
+        SendMessageW(field.edit,WM_KEYDOWN,VK_CONTROL,1);
         field.key(L'Z', static_cast<wchar_t>(0x1A));
         require(field.adapter->document().text == "    x" &&
             field.adapter->document().indentation_starts == std::vector<std::int64_t>{0},
             "Ctrl Z restores predefined identity");
         field.key(L'Y', static_cast<wchar_t>(0x19));
         require(field.adapter->document().text == "x", "Ctrl Y repeats complete deletion");
+        keys[VK_CONTROL]=keys[VK_LCONTROL]=0;
+        require(SetKeyboardState(keys)!=FALSE,"Release the test thread's control modifier");
+        SendMessageW(field.edit,WM_KEYUP,VK_CONTROL,static_cast<LPARAM>(0xC0000001u));
     });
 
     test("Prediction data keeps literal characters and ordinary Tab navigation", [] {
@@ -1097,7 +1547,7 @@ int main() {
         }
     });
 
-    test("Snapshot notifications let the parent read and recolor only after the stream completes", [] {
+    test("Snapshot notifications let the parent read and recolor only after the edit completes", [] {
         const std::string source = "\r\n    std::cout << \"Zona inicial\";\r\n    return 0;\r\n";
         auto original = predefined_code_document(source);
         original.selection_start = original.selection_end = 6;
@@ -1133,6 +1583,73 @@ int main() {
         field.adapter->reset(original);
         require(probe.notifications == 9 && probe.notifications_during_stream == 0,
             "Owner-driven reset is silent even after editing and undo");
+    });
+
+    test("Backspace and history edit one native range while parent formatting stays paint-frozen", [] {
+        const std::string source="\r\n    std::cout << \"Zona inicial 🧪\";\r\n    return 0;\r\n";
+        auto original=predefined_code_document(source);original.selection_start=original.selection_end=6;
+        ChangeProbe probe;Fixture field(original,true,{},true,&probe);
+        const auto initial_streams=probe.streams;
+        require(initial_streams>0,"The explicit initial document must use the protected plain-text loading path");
+        const auto events=SendMessageW(field.edit,EM_GETEVENTMASK,0,0)|static_cast<LRESULT>(ENM_SELCHANGE);
+        SendMessageW(field.edit,EM_SETEVENTMASK,0,events);
+        const auto previous_updates=probe.updates;
+        field.cursor(5);field.key(VK_BACK,L'\b');
+        const auto edited=field.adapter->document();
+        require(probe.streams==initial_streams&&probe.replacements==1&&probe.notifications==1,
+            "Backspace still re-streams the entire source instead of editing one native range and notifying once");
+        require(probe.notifications_without_freeze==0&&!probe.callback_failed,
+            "The parent can paint an intermediate Backspace state before its syntax formatting finishes");
+        require(probe.updates>previous_updates&&!probe.last_update_frozen,
+            "The owner received no final layout-ready notification after Backspace unfroze the native document");
+        field.adapter->undo();
+        require(field.adapter->document().text==source&&field.adapter->document().indentation_starts==original.indentation_starts,
+            "Incremental Undo lost the exact original CRLF representation or indentation origin");
+        field.adapter->redo();
+        require(field.adapter->document().text==edited.text&&field.adapter->document().selection_start==edited.selection_start,
+            "Incremental Redo lost the same text and insertion position");
+        require(probe.streams==initial_streams&&probe.replacements==3&&probe.notifications==3&&
+                probe.notifications_without_freeze==0&&probe.notifications_during_stream==0&&!probe.callback_failed,
+            "History replay reloaded the control or exposed a partially formatted state");
+        require(probe.updates==previous_updates+3&&!probe.last_update_frozen,
+            "Undo/Redo left the owner's final viewport measurements inside the native Freeze transaction");
+        require(SendMessageW(field.edit,EM_GETEVENTMASK,0,0)==events,
+            "Atomic editing failed to restore the exact selection/change notification mask");
+        field.adapter->reset(original);
+        require(probe.streams==initial_streams+1&&probe.notifications==3,
+            "Explicit Reset must retain its independent silent plain-text load");
+    });
+
+    test("New lines reveal the live caret and Undo retains the prior viewport", [] {
+        std::string source;
+        for(unsigned index=0;index<35;++index)source+="    value;\n";
+        source+="    if (ready) {}";
+        auto document=predefined_code_document(source);
+        document.selection_start=document.selection_end=static_cast<std::int64_t>(source.size()-1);
+        Fixture field(document);
+        ShowWindow(field.host,SW_SHOWNOACTIVATE);
+        SetFocus(field.edit);
+        require(GetFocus()==field.edit,"The Enter regression requires the real editor caret");
+        UpdateWindow(field.host);
+        SendMessageW(field.edit,EM_SCROLLCARET,0,0);
+        POINT before{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+        require(before.y>0,"The live native caret must scroll to the last source line before typing Enter");
+        field.key(VK_RETURN,L'\r');
+        const auto inserted=field.adapter->document();
+        POINT revealed{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&revealed));
+        POINT caret{};SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&caret),
+            static_cast<LPARAM>(inserted.selection_start));
+        RECT client{};GetClientRect(field.edit,&client);
+        require(caret.y>=client.top&&caret.y<client.bottom,
+            "An indented Enter left the real caret below the editor viewport: y="+std::to_string(caret.y)+
+                " client="+std::to_string(client.top)+":"+std::to_string(client.bottom)+" cp="+
+                std::to_string(inserted.selection_start)+" before-scroll="+std::to_string(before.y));
+        field.adapter->undo();
+        POINT restored{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&restored));
+        require(field.adapter->document().text==source&&restored.y==before.y,
+            "Revealing the new line overwrote the viewport saved for Undo: before="+std::to_string(before.y)+
+                " revealed="+std::to_string(revealed.y)+" restored="+std::to_string(restored.y)+
+                " source-equal="+std::to_string(field.adapter->document().text==source));
     });
 
     test("A snapshot load exception restores notification masking and edit capture", [] {
@@ -1224,6 +1741,11 @@ int main() {
         multi.adapter->redo();require(multi.adapter->document().text=="x\ny","A multiline snippet did not redo as one transaction");
     });
     if (clipboard_restore_failed) ++failed;
+    if(skipped)std::cerr<<"Clipboard groups skipped after failure: "<<skipped<<'\n';
+    // All changed scopes have restored before reaching here. Until then their
+    // recovery loop and the immutable master keep this process/snapshot alive.
+    clipboard_master_snapshot.reset();
+    if(clipboard_recovery_owner)DestroyWindow(clipboard_recovery_owner);
     UnregisterClassW(type.lpszClassName, type.hInstance);
     FreeLibrary(rich_edit);
     std::cout << "Native code editor: " << passed << " passed, " << failed << " failed.\n";

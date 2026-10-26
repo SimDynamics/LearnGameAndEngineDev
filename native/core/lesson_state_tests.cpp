@@ -1,5 +1,6 @@
 #include "core/lesson_state.hpp"
 #include "core/lesson.hpp"
+#include "core/retirement_test_fixture.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -96,6 +97,60 @@ void add_revision(const std::filesystem::path& root) {
     append_be(bytes, 1, 4); append_text(bytes, "main.cpp"); append_be(bytes, 1, 4);
     append_text(bytes, "main.cpp"); append_text(bytes, make_indentation_metadata("    return 0;\n", {0}));
     text_file(root / "files" / "cpp_project_history" / key / (sha256(bytes) + ".revision"), bytes);
+}
+void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::filesystem::path& base) {
+    using namespace lgaed::curriculum;
+    const std::vector<std::string> retiring{"ejecucion_original_consigna","ejecucion_original_editor"};
+    const auto retired = lgaed::test::retire_lesson(before,retiring);
+    const auto old_position = stable_block_position(before,retiring[1]);
+    require(old_position.has_value(),"Historical compiler fixture is absent");
+    const auto& old_editor = before.pages[old_position->page].blocks[old_position->block];
+    const auto& archived_editor = retired.retired_blocks.at(1);
+    const auto old_key = draft_key("programming",before,old_editor);
+    require(old_key == draft_key("programming",retired,archived_editor),"Archived compiler draft key changed");
+    StateData original;
+    prepare_lesson_state(original,before);
+    save_current_page(original,before,old_position->page);
+    Draft draft{old_editor.initial_code + "// borrador historico independiente\n", " \t\n", "", 5, 5};
+    put_draft(original,old_key,draft);
+    put_response(original,exercise_key(before,old_editor),{"historial conservado",true});
+    original.preferences["native_windows"]["reference-proof/v1/es/" + old_key] = sha256("historical opaque proof");
+    StateStore store(base/"retired-compiler-profile");
+    require(store.load().preferences.empty(),"Retirement QA profile must begin empty");
+    store.save(original);
+    auto migrated = store.load(); validate_lesson_state(migrated,retired);
+    prepare_lesson_state(migrated,retired);
+    for (const auto& [domain, values] : original.preferences) for (const auto& [key, value] : values)
+        require(migrated.preferences.at(domain).at(key) == value,"Retirement overwrote existing student data");
+    require(get_draft(migrated,old_key,"").source == draft.source && get_draft(migrated,old_key,"").input == draft.input,
+        "Retired compiler lost its draft or significant stdin");
+    require(current_page(migrated,retired) == old_position->page,
+        "Retired compiler changed the historical page bookmark");
+    store.save(migrated); const auto reopened = store.load(); validate_lesson_state(reopened,retired);
+    require(reopened == migrated,"Retirement state did not survive normal persistence/reopening");
+    auto downgraded = reopened; const auto downgrade_before = downgraded;
+    rejects([&]{prepare_lesson_state(downgraded,before);});
+    require(downgraded == downgrade_before,"Rejecting a removed retirement archive modified stored data");
+    auto rewritten_lesson = retired;
+    rewritten_lesson.state_layout.retired.at(0).sha256 = std::string(64,'0');
+    auto rewritten = reopened; const auto rewrite_before = rewritten;
+    rejects([&]{prepare_lesson_state(rewritten,rewritten_lesson);});
+    require(rewritten == rewrite_before,"Rejecting an archived snapshot change modified stored data");
+    for(const bool remove:{false,true}) {
+        auto changed_history=retired;
+        if(remove)changed_history.state_layout.retirement_history.clear();
+        else changed_history.state_layout.retirement_history.at(0).sha256=std::string(64,'0');
+        auto saved=reopened;const auto saved_before=saved;
+        rejects([&]{prepare_lesson_state(saved,changed_history);});
+        require(saved==saved_before,"Rejecting changed or removed historical reading provenance modified student data");
+    }
+    for (const auto language : {"en","fr"}) {
+        const auto translated = lgaed::windows::load_lesson(std::filesystem::path(lgaed::build::source_root)/
+            "app/src/main/assets/content"/language/"programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json",language);
+        auto changed_language = reopened; prepare_lesson_state(changed_language,translated);
+        require(changed_language == reopened,"Changing to an untouched translation rewrote Spanish retirement state");
+    }
+    ++groups;
 }
 }
 int main(int argc, char** argv) {
@@ -350,6 +405,7 @@ int main(int argc, char** argv) {
 
         const auto real_lesson = lgaed::windows::load_lesson(std::filesystem::path(lgaed::build::source_root) /
             L"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        retirement_state_tests(real_lesson,base);
         require(real_lesson.state_layout.version == 2 && real_lesson.pages.size() == 6, "Expected existing U1L2 v2 contract");
         const lgaed::curriculum::Block* prediction = nullptr;
         const lgaed::curriculum::Block* conceptual = nullptr;

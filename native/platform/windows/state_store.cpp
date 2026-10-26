@@ -399,10 +399,63 @@ JsonArray addition_records(const curriculum::StateLayout& layout) {
     }
     return result;
 }
+JsonArray retirement_records(const curriculum::StateLayout& layout) {
+    JsonArray result;
+    for (const auto& retired : layout.retired) {
+        JsonArray row;
+        for (const auto* field : {&retired.id,&retired.page,&retired.next,&retired.sha256})
+            row.Append(JsonValue::CreateStringValue(wide(*field)));
+        result.Append(row);
+    }
+    return result;
+}
+std::string retirement_key(const curriculum::Lesson& lesson) {
+    return "lesson_" + lesson.id + "_state_retired_v2_" + lesson.locale;
+}
+std::optional<std::string> retirement_state_update(const StateData& data, const curriculum::Lesson& lesson) {
+    const auto& layout = lesson.state_layout;
+    const auto key = retirement_key(lesson);
+    const auto current = retirement_records(layout);
+    if (find(data,"learning_progress",key)) {
+        if (layout.version != 2) throw std::runtime_error("Falta el archivo historico de actividades retiradas.");
+        const auto raw = string_value(data,"learning_progress",key);
+        if (raw.empty()) throw std::runtime_error("El archivo de actividades retiradas no es valido.");
+        const auto previous = JsonArray::Parse(wide(raw));
+        if (previous.Size() > current.Size()) throw std::runtime_error("Se retiraron identidades del archivo historico.");
+        for (std::uint32_t index = 0; index < previous.Size(); ++index)
+            if (previous.GetAt(index).Stringify() != current.GetAt(index).Stringify())
+                throw std::runtime_error("Cambio el contrato de una actividad retirada.");
+        if (previous.Size() == current.Size()) return {};
+    } else if (!current.Size()) return {};
+    return utf8(current.Stringify());
+}
+std::string retirement_history_key(const curriculum::Lesson& lesson) {
+    return "lesson_"+lesson.id+"_state_retirement_history_v2_"+lesson.locale;
+}
+std::optional<std::string> retirement_history_state_update(const StateData& data,const curriculum::Lesson& lesson) {
+    const auto key=retirement_history_key(lesson);JsonArray current;
+    for(const auto& snapshot:lesson.state_layout.retirement_history)
+        current.Append(JsonValue::CreateStringValue(wide(snapshot.sha256)));
+    if(find(data,"learning_progress",key)) {
+        if(lesson.state_layout.version!=2)throw std::runtime_error("Falta el historial de lectura de las actividades retiradas.");
+        const auto raw=string_value(data,"learning_progress",key);
+        if(raw.empty())throw std::runtime_error("El historial de lectura retirado no es valido.");
+        const auto previous=JsonArray::Parse(wide(raw));
+        if(previous.Size()>current.Size())throw std::runtime_error("Se elimino una presentacion historica retirada.");
+        for(std::uint32_t index=0;index<previous.Size();++index)
+            if(previous.GetAt(index).Stringify()!=current.GetAt(index).Stringify())
+                throw std::runtime_error("Cambio una presentacion historica retirada.");
+        if(previous.Size()==current.Size())return {};
+    } else if(!current.Size())return {};
+    return utf8(current.Stringify());
+}
 }
 void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try {
     windows::ensure_winrt_apartment();
     const auto& layout = lesson.state_layout; const auto base = "lesson_" + lesson.id;
+    // Validate the archive before any lineage/adoption writes can take place.
+    const auto retirement_update = retirement_state_update(data,lesson);
+    const auto retirement_history_update = retirement_history_state_update(data,lesson);
     const auto old_pin_key = base + "_state_lineage_v1";
     const bool has_old_pin = find(data, "learning_progress", old_pin_key) != nullptr;
     const auto old_pin = string_value(data, "learning_progress", old_pin_key);
@@ -439,10 +492,14 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
                     throw std::runtime_error("Cambio la propiedad de una actividad nueva.");
             if (previous.Size() != current.Size()) data.preferences["learning_progress"][additions_key] = utf8(current.Stringify());
         }
+        if (retirement_update) data.preferences["learning_progress"][retirement_key(lesson)] = *retirement_update;
+        if (retirement_history_update) data.preferences["learning_progress"][retirement_history_key(lesson)] = *retirement_history_update;
         return;
     }
     if (find(data, "learning_progress", pages_key) || find(data, "learning_progress", blocks_key) ||
-        (layout.version == 2 && find(data, "learning_progress", additions_key)))
+        (layout.version == 2 && (find(data, "learning_progress", additions_key) ||
+                               find(data,"learning_progress",retirement_key(lesson)) ||
+                               find(data,"learning_progress",retirement_history_key(lesson)))))
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
     std::vector<std::string> pages, blocks;
     const bool started = bool_value(data, base + "_started");
@@ -464,6 +521,8 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
         prefs[additions_key] = utf8(addition_records(layout).Stringify());
         if (adopt) prefs[base + "_state_v1_owner_locale"] = lesson.locale;
     }
+    if (retirement_update) prefs[retirement_key(lesson)] = *retirement_update;
+    if (retirement_history_update) prefs[retirement_history_key(lesson)] = *retirement_history_update;
     if (started && !find(data, "learning_progress", base + "_page")) prefs[base + "_page"] = std::int64_t{0};
 } catch (const winrt::hresult_error&) {
     throw std::runtime_error("Los metadatos del progreso no son compatibles; no se usan direcciones visibles.");
@@ -472,7 +531,11 @@ void validate_lesson_state(const StateData& data, const curriculum::Lesson& less
     auto metadata = data;
     prepare_lesson_state(metadata, lesson);
     (void)current_page(metadata, lesson);
-    for (const auto& page : lesson.pages) for (const auto& block : page.blocks) {
+    std::vector<const curriculum::Block*> preserved_blocks;
+    for (const auto& page : lesson.pages) for (const auto& block : page.blocks) preserved_blocks.push_back(&block);
+    for (const auto& block : lesson.retired_blocks) preserved_blocks.push_back(&block);
+    for (const auto* preserved : preserved_blocks) {
+        const auto& block = *preserved;
         if (block.type == curriculum::BlockType::cpp_compiler) {
             (void)get_draft(data, curriculum::draft_key(route_id, lesson, block),
                             block.initial_code, block.standard_input.value_or(""));

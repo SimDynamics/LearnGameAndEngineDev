@@ -18,6 +18,18 @@
 namespace {
 void check(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
 struct Window { HWND value; ~Window() { if (value) DestroyWindow(value); } };
+struct FormatVisibilityProbe {
+    unsigned hidden=0,redraw_disabled=0;
+    static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR value){
+        auto& self=*reinterpret_cast<FormatVisibilityProbe*>(value);
+        if(message==WM_SETREDRAW&&!wp)++self.redraw_disabled;
+        if(message==WM_STYLECHANGED&&wp==static_cast<WPARAM>(GWL_STYLE)&&lp){
+            const auto& style=*reinterpret_cast<const STYLESTRUCT*>(lp);
+            if((style.styleOld&WS_VISIBLE)&&!(style.styleNew&WS_VISIBLE))++self.hidden;
+        }
+        return DefSubclassProc(window,message,wp,lp);
+    }
+};
 struct HintGestureProbe {
     std::vector<UINT> messages;
     bool consume=false;
@@ -54,6 +66,27 @@ int main() {
         Window editor{CreateWindowExW(0, MSFTEDIT_CLASS, L"", WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
             0, 0, 500, 300, parent.value, nullptr, GetModuleHandleW(nullptr), nullptr)};
         check(editor.value != nullptr, "Cannot create real RichEdit");
+        {
+            Window live{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|ES_MULTILINE,
+                0,0,320,120,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            check(live.value!=nullptr,"Create the live syntax formatting fixture");
+            reader_theme::apply(live.value,reader_theme::Surface::card);
+            set_rich_text(live.value,"int n = 2;\nstd::cout << \"texto\\n\";",{},true);
+            CHARRANGE selected{4,5};SendMessageW(live.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            const auto original_text=edit_text(live.value);
+            const auto original_events=SendMessageW(live.value,EM_GETEVENTMASK,0,0);
+            FormatVisibilityProbe probe;
+            check(SetWindowSubclass(live.value,FormatVisibilityProbe::proc,9918,reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,
+                "Observe actual visibility during repeated syntax passes");
+            for(int repeat=0;repeat<16;++repeat)style_cpp(live.value);
+            CHARRANGE after{};SendMessageW(live.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+            check(probe.hidden==0&&probe.redraw_disabled==0&&(GetWindowLongPtrW(live.value,GWL_STYLE)&WS_VISIBLE),
+                "A syntax pass temporarily hid the editor while typing");
+            check(edit_text(live.value)==original_text&&after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&
+                SendMessageW(live.value,EM_GETEVENTMASK,0,0)==original_events,
+                "Atomic syntax formatting changed text, selection or native notifications");
+            RemoveWindowSubclass(live.value,FormatVisibilityProbe::proc,9918);
+        }
         {
             Window hinted{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|ES_MULTILINE,
                 0,0,360,90,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
@@ -305,7 +338,6 @@ int main() {
             const bool high_contrast=reader_theme::palette(editor.value).high_contrast;
             const auto identifier_ink=high_contrast?base:RGB(171,141,227);
             const auto string_ink=high_contrast?base:RGB(122,195,141);
-            const auto literal_ink=high_contrast?base:RGB(224,151,109);
             const auto check_range=[&](std::wstring_view context,std::size_t offset,std::size_t count,COLORREF ink){
                 const auto visible=wide(edit_text(editor.value));const auto start=visible.find(context);
                 check(start!=visible.npos&&offset+count<=context.size(),"The technical-character regression lost its source context");
@@ -318,10 +350,10 @@ int main() {
                 {"\\n representa un salto de línea",0,"bold"},{"letra n",1,"italic"}}};
             set_rich_text(editor.value,lesson,emphasis);
             check(edit_text(editor.value)==lesson,"Character highlighting changed Unicode text or narration offsets");
-            check_range(LR"(\n representa)",0,1,base);check_range(LR"(\n representa)",1,1,identifier_ink);
-            check_range(L"la letra n, pero",0,9,base);check_range(L"la letra n, pero",9,1,identifier_ink);
+            check_range(LR"(\n representa)",0,2,string_ink);
+            check_range(L"la letra n, pero",0,9,base);check_range(L"la letra n, pero",9,1,string_ink);
             check_range(L"la letra n, pero",10,6,base);
-            check_range(L"la letra n: juntas",9,1,identifier_ink);check_range(L"la letra n: juntas",10,8,base);
+            check_range(L"la letra n: juntas",9,1,string_ink);check_range(L"la letra n: juntas",10,8,base);
             const auto visible=wide(lesson);
             const auto named_style=character(editor.value,static_cast<LONG>(visible.find(L"letra n")+6));
             check(named_style.yHeight==270&&std::wstring(named_style.szFaceName)==L"Roboto"&&(named_style.dwEffects&CFE_ITALIC)
@@ -332,12 +364,24 @@ int main() {
                 check_range(text,0,letter,base);check_range(text,letter,1,identifier_ink);
                 if(letter+1<text.size())check_range(text,letter+1,text.size()-letter-1,base);
             }
+            set_rich_text(editor.value,"La letra n se escribe literalmente; su nombre es independiente.");
+            check_range(L"La letra n se",9,1,identifier_ink);
             const std::string escapes=R"(\n \t \r \0 \a \b \f \v)";
             set_rich_text(editor.value,escapes);
             for(const auto token:{LR"(\n)",LR"(\t)",LR"(\r)",LR"(\a)",LR"(\b)",LR"(\f)",LR"(\v)"}){
-                check_range(token,0,1,base);check_range(token,1,1,identifier_ink);
+                check_range(token,0,2,string_ink);
             }
-            check_range(LR"(\0)",0,1,base);check_range(LR"(\0)",1,1,literal_ink);
+            check_range(LR"(\0)",0,2,string_ink);
+            set_rich_text(editor.value,R"text(Dentro del literal, `\n` produce un salto. No escribas barras invertidas visibles ni letras n en lugar de los saltos. La variable `n` cuenta líneas.)text");
+            check_range(LR"(\n produce)",0,2,string_ink);
+            check_range(L"letras n en",7,1,string_ink);
+            check_range(L"variable n cuenta",9,1,identifier_ink);
+            set_rich_text(editor.value,R"text(En el escape, la letra `n` representa el salto; la variable `n` permanece independiente. En `// comentario` el marcador pertenece al comentario, y en el literal "// texto" pertenece a la cadena.)text");
+            check_range(L"la letra n representa",9,1,string_ink);
+            check_range(L"variable n permanece",9,1,identifier_ink);
+            const auto comment_ink=high_contrast?base:RGB(172,172,172);
+            check_range(L"// comentario",0,std::wstring_view(L"// comentario").size(),comment_ink);
+            check_range(LR"("// texto")",0,std::wstring_view(LR"("// texto")").size(),string_ink);
             const std::string isolated=R"text(Los símbolos \" y \\ son escapes técnicos; se leen por separado.)text";
             set_rich_text(editor.value,isolated);
             check(edit_text(editor.value)==isolated,"Isolated escaped symbols changed the original narration text");

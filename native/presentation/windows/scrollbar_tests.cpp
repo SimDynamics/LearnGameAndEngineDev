@@ -43,6 +43,43 @@ struct Field {
     }
     ~Field(){if(host)DestroyWindow(host);}
 };
+struct HiddenFrameProbe {
+    unsigned exposed_frames=0;
+    static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR value){
+        auto& self=*reinterpret_cast<HiddenFrameProbe*>(value);
+        if((message==WM_NCPAINT||message==WM_SIZE)&&(GetWindowLongPtrW(window,GWL_STYLE)&WS_VSCROLL))++self.exposed_frames;
+        return DefSubclassProc(window,message,wp,lp);
+    }
+};
+void hidden_viewport_frame(HWND host){
+    const auto viewport=CreateWindowExW(0,L"STATIC",L"Page viewport",WS_CHILD|WS_VISIBLE,
+        10,10,440,260,host,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(viewport!=nullptr,"Create the actual custom page viewport");
+    reader_theme::apply(viewport,reader_theme::Surface::canvas);
+    HiddenFrameProbe probe;
+    check(SetWindowSubclass(viewport,HiddenFrameProbe::proc,9919,reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,
+        "Observe native frame layout and painting before default processing");
+    SCROLLINFO initial{sizeof(initial),SIF_RANGE|SIF_PAGE|SIF_POS,0,1200,100,20};
+    SetScrollInfo(viewport,SB_VERT,&initial,FALSE);ShowScrollBar(viewport,SB_VERT,FALSE);
+    check(probe.exposed_frames>0,"The baseline did not reproduce SetScrollInfo's transient scrollbar layout");
+    probe.exposed_frames=0;
+    reader_theme::set_scrollbar_frame_hidden(viewport,true);
+    RECT before{};GetClientRect(viewport,&before);
+    for(int cycle=0;cycle<12;++cycle){
+        SCROLLINFO requested{sizeof(requested),SIF_RANGE|SIF_PAGE|SIF_POS,0,1300+cycle*20,
+            static_cast<UINT>(100+cycle%3),cycle*30};
+        SetScrollInfo(viewport,SB_VERT,&requested,FALSE);
+        const auto actual=scroll(viewport,SB_VERT);
+        check(actual.nMin==requested.nMin&&actual.nMax==requested.nMax&&actual.nPage==requested.nPage&&actual.nPos==requested.nPos,
+            "Suppressing a viewport frame changed its native range, page or position");
+        ShowScrollBar(viewport,SB_VERT,FALSE);
+        RECT after{};GetClientRect(viewport,&after);
+        check(EqualRect(&before,&after)!=FALSE,"A hidden page scrollbar briefly reserved client width");
+    }
+    check(probe.exposed_frames==0,"A page scrollbar reached native painting before being hidden");
+    DestroyWindow(viewport);
+    std::cout<<"PASS page scrollbar: reproduced synchronous native frame, suppressed before paint, full client width and native scroll metadata preserved\n";
+}
 void paint_without_mutating_native_state(Field& value){
     const auto content=text(value.field);const auto style=GetWindowLongPtrW(value.field,GWL_STYLE);
     const auto vertical=scroll(value.field,SB_VERT),horizontal=scroll(value.field,SB_HORZ);
@@ -122,7 +159,7 @@ int main(){const auto module=LoadLibraryW(L"Msftedit.dll");if(!module)return 2;
         SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         int baseline_wheel=0;
         {Field baseline(false);baseline_wheel=native_wheel_delta(baseline.field);}
-        Field value;slider_colors_and_native_state(value.host);switch_colors_and_native_state(value.host);std::cout<<"Actual scrollbar DPI="<<GetDpiForWindow(value.field)<<'\n';paint_without_mutating_native_state(value);
+        Field value;hidden_viewport_frame(value.host);slider_colors_and_native_state(value.host);switch_colors_and_native_state(value.host);std::cout<<"Actual scrollbar DPI="<<GetDpiForWindow(value.field)<<'\n';paint_without_mutating_native_state(value);
         // A directly sent WM_MOUSEWHEEL can be ignored by RichEdit when this
         // isolated host is inactive. Compare the same actual unstyled control;
         // physical wheel routing is also exercised in the application UI QA.

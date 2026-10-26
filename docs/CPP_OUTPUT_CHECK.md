@@ -76,6 +76,24 @@ El guardado de entrada comparte el códec de texto escapado del código fuente, 
 
 El antiguo serializador podía añadir cuatro espacios después de un LF final. Cuando una huella previa demuestra el original, la reparación exacta queda persistida. No hay menú de revisión ni recorte general de entradas. Work confirmó que los cuatro espacios de su prueba `Leo\n2\n    ` eran un defecto: ese caso concreto se corrige manualmente a `Leo\n2\n`, sin quitar el salto final ni cambiar otros datos. La intención del currículo no permite deducir la intención de cualquier borrador personal. Si aparece otro caso ambiguo, hay que indicar su ubicación y consultar a Work sobre la consigna, sin añadir decisiones al lector ni eliminar datos por su forma. Los guardados nuevos registran la huella del texto exacto introducido, incluidos espacios deliberados, tabuladores y saltos. El código fuente conserva sus huellas y marcas de tabulación anteriores; las reparaciones demostradas también se guardan definitivamente. Todo este formato es privado; Work no añade metadatos a las lecciones.
 
+## Acreditación y avance en Windows
+
+En Windows, el primer acierto completo de un `cpp_compiler` con `outputCheck` se conserva hasta pulsar **Reiniciar código**. Editar, deshacer, cambiar Entrada, volver a compilar o producir después un diagnóstico no revoca ese logro ni sustituye su retroalimentación por «Incorrecto». La consola sigue mostrando cada ejecución real y el editor permanece disponible. La reapertura conserva el acierto y el borrador actual de forma independiente.
+
+La acreditación conserva el objetivo y una instantánea del programa que lo resolvió, con una prueba por cada entrada/objetivo declarado. Un antiguo `correct=true`, una predicción, un marcador de página o una salida sin ejecución satisfactoria no equivalen a esa prueba. Si hay varios casos, deben comprobarse todos con el mismo programa. Cambiar sólo Entrada o elegir otro ejecutable del mismo proyecto conserva los casos ya comprobados; editar las fuentes o la configuración antes de completar el conjunto los invalida y Undo no los recupera. Los errores técnicos siguen siendo diagnósticos y no consumen corazones.
+
+La lección puede activar el contrato de avance con la propiedad raíz opcional:
+
+```json
+"compilerPuzzlesRequired": true
+```
+
+Su valor predeterminado es `false` para mantener compatible el recorrido publicado. Work activa esta propiedad junto con el retiro compatible de las tres ejecuciones originales redundantes de U1; así el cambio no convierte esas repeticiones en barreras nuevas. No se modifican automáticamente los assets ni se inventan criterios para los compiladores sin `outputCheck`: los ejercicios de diagnóstico necesitan un contrato evaluable propio.
+
+Al activar el contrato, cada compilador activo con `outputCheck` forma parte del progreso de su grupo histórico y debe quedar resuelto para continuar, saltar hacia delante o finalizar. En la misma página, el contenido posterior se habilita al resolver el editor anterior. Un marcador posterior vuelve al primer objetivo anterior pendiente, conservando sus datos. El lector se detiene en la consigna/editor pendiente; lee el error y se detiene, o lee el acierto y su explicación antes de continuar. Una pausa manual permanece pausada y los desplazamientos del audio no acreditan fragmentos que no se escucharon.
+
+El prototipo general sigue libre. Los bloques retirados conservan sus datos históricos y no crean controles, audio ni obligaciones activas. El contrato de Windows no cambia las reglas de ejecución o conservación Android descritas en los apartados anteriores.
+
 ## Actividad integrada
 
 `programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`, página 5, bloque 3, declara la última modificación que ya solicitan sus instrucciones y muestra su referencia en la página 6: `Caja recibida` (español), `Box received` (inglés) o `Boîte reçue` (francés), sin salto final ni comillas. No se deduce el esperado de la predicción del programa inicial ni se cambia esa respuesta. El programa original y la primera modificación siguen disponibles para editar, ejecutar, comparar y reiniciar; esta comprobación no exige completar una etapa previa ni bloquea otra ejecución. Cada laboratorio utiliza la modalidad de sus propios metadatos; la ausencia de `outputCheck` conserva la exploración libre.

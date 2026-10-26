@@ -304,7 +304,11 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     result.version = static_cast<int>(integer(metadata.GetNamedValue(L"version"), 2));
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
-    else allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial"}, true);
+    else {
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory"});
+        for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
+            require(metadata.HasKey(field),"Incomplete state-layout contract");
+    }
     result.origin = read_pages(array(metadata, "origin"), &result.signatures);
     result.current = read_pages(array(metadata, "current"), nullptr);
     require(result.current.size() == pages.Size(), "State map does not match visible pages");
@@ -352,8 +356,38 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     std::set<std::string> origin_pages, current_pages, current_blocks;
     for (const auto& page : result.origin) origin_pages.insert(page.id);
     for (const auto& page : result.current) { current_pages.insert(page.id); current_blocks.insert(page.blocks.begin(), page.blocks.end()); }
-    require(current_pages == origin_pages && current_blocks.size() == result.signatures.size(), "State map loses historical identities");
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
+    std::map<std::string, std::string> successors;
+    if (metadata.HasKey(L"retired")) {
+        require(result.version == 2, "Retirement requires state layout v2");
+        const auto archive = array(metadata,"retired");
+        require(archive.Size() <= 100000 && (!archive.Size() || result.locale == "es"),
+                "Retirement is currently authorized only for Spanish");
+        for (const auto& value : archive) {
+            const auto item = value.GetObject(); allowed_keys(item,{"id","page","next","block"},true);
+            StateRetirement retired; retired.id = text(item,"id"); retired.page = text(item,"page"); retired.next = text(item,"next");
+            require(result.signatures.contains(retired.id) && !current_blocks.contains(retired.id) &&
+                    successors.emplace(retired.id,retired.next).second,"Unknown, duplicated or active retired identity");
+            require(origin_pages.contains(retired.page),"Unknown retired activity page");
+            require((retired.next.empty() || (valid_id(retired.next) && result.signatures.contains(retired.next))) &&
+                    retired.next != retired.id,"Invalid retired activity successor");
+            const auto block = item.GetNamedObject(L"block"); const auto type = text(block,"type");
+            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler",
+                    "Only compiler activities and their presentation blocks can be retired");
+            require(state_fingerprint(block) == result.signatures.at(retired.id),"A retired response/code contract changed");
+            retired.raw_json = utf8(block.Stringify()); retired.sha256 = fingerprint(block);
+            result.retired.push_back(std::move(retired));
+        }
+        for (const auto& [identity, next] : successors) {
+            (void)next; std::set<std::string> seen; auto candidate = identity;
+            while (successors.contains(candidate)) {
+                require(seen.insert(candidate).second,"Cyclic retired activity successors");
+                candidate = successors.at(candidate);
+            }
+        }
+    }
+    require(current_pages == origin_pages && current_blocks.size() + result.retired.size() == result.signatures.size(),
+            "State map loses historical identities");
     std::map<std::string, std::string> editorial;
     if (result.version == 2) {
         std::map<std::string, std::set<std::string>> seen;
@@ -373,6 +407,76 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto id = result.current[p].blocks[b]; const auto block = blocks.GetAt(static_cast<unsigned>(b)).GetObject();
             require(state_fingerprint(block) == result.signatures.at(id), "State-bearing block changed without a compatible map");
             if (editorial.contains(id)) require(fingerprint(block) == editorial.at(id), "Stale editorial fingerprint");
+        }
+    }
+    for (const auto& retired : result.retired)
+        if (editorial.contains(retired.id)) require(retired.sha256 == editorial.at(retired.id),"Stale retired editorial fingerprint");
+    if (metadata.HasKey(L"retirementHistory")) {
+        const auto history = array(metadata,"retirementHistory"); require(history.Size() <= 100000,"Too many retirement reading snapshots");
+        std::vector<std::string> covered;
+        std::map<std::string,JsonObject> shells;
+        for (std::size_t p=0;p<result.current.size();++p) {
+            auto shell=JsonObject::Parse(pages.GetAt(static_cast<unsigned>(p)).Stringify());shell.Remove(L"blocks");
+            shells.emplace(result.current[p].id,shell);
+        }
+        for (const auto& value : history) {
+            const auto item=value.GetObject();
+            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter"},true);
+            StateRetirementHistory snapshot;
+            snapshot.retired=strings(array(item,"retired"),true,false);
+            std::set<std::string> unique;
+            for (const auto& id:snapshot.retired) {
+                require(successors.contains(id)&&unique.insert(id).second,"Unknown or duplicated reading-history retirement");
+                covered.push_back(id);
+            }
+            const auto required=item.GetNamedValue(L"compilerPuzzlesRequired");
+            require(required.ValueType()==JsonValueType::Boolean,"Historical compiler flow must be boolean");
+            snapshot.compiler_puzzles_required=required.GetBoolean();
+            snapshot.current=read_pages(array(item,"current"),nullptr);
+            const auto historical_pages=array(item,"pages");
+            require(snapshot.current.size()==result.current.size()&&historical_pages.Size()==snapshot.current.size(),"Historical reading page count changed");
+            std::set<std::string> snapshot_pages;
+            for(std::size_t p=0;p<snapshot.current.size();++p) {
+                const auto& record=snapshot.current[p];snapshot_pages.insert(record.id);
+                require(shells.contains(record.id),"Unknown historical reading page");
+                const auto page=historical_pages.GetAt(static_cast<unsigned>(p)).GetObject();
+                const auto blocks=array(page,"blocks");require(blocks.Size()==record.blocks.size(),"Historical reading block ownership changed");
+                auto shell=JsonObject::Parse(page.Stringify());shell.Remove(L"blocks");
+                require(fingerprint(shell)==fingerprint(shells.at(record.id)),"Historical reading page metadata changed");
+                for(std::size_t b=0;b<record.blocks.size();++b) {
+                    const auto& id=record.blocks[b];
+                    require(result.signatures.contains(id)&&state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject())==result.signatures.at(id),
+                            "Historical reading snapshot changed an activity contract");
+                }
+            }
+            require(snapshot_pages==origin_pages,"Historical reading page identities changed");
+            for(const auto& link:array(item,"referenceAfter")) {
+                const auto object=link.GetObject();allowed_keys(object,{"activity","blocks"},true);
+                snapshot.reference_after.push_back({text(object,"activity"),strings(array(object,"blocks"),true,false)});
+            }
+            for(const auto& link:array(item,"activityAfter")) {
+                const auto object=link.GetObject();allowed_keys(object,{"activity","requires"},true);
+                snapshot.activity_after.push_back({text(object,"activity"),strings(array(object,"requires"),true,false)});
+            }
+            snapshot.raw_json=utf8(item.Stringify());snapshot.sha256=fingerprint(item);
+            result.retirement_history.push_back(std::move(snapshot));
+        }
+        require(covered.size()<=result.retired.size(),"Reading history exceeds the retired identity archive");
+        std::set<std::string> covered_once;
+        for(std::size_t index=0;index<covered.size();++index)
+            require(covered_once.insert(covered[index]).second&&covered[index]==result.retired[result.retired.size()-covered.size()+index].id,
+                    "Reading retirement batches must own an exact suffix of archived identities");
+        auto active=current_blocks;
+        std::set<std::string> addition_ids;for(const auto& addition:result.additions)addition_ids.insert(addition.id);
+        for(auto item=result.retirement_history.rbegin();item!=result.retirement_history.rend();++item) {
+            auto expected=active;for(const auto& id:item->retired)require(expected.insert(id).second,"An archived reading batch is still active");
+            std::set<std::string> before;for(const auto& page:item->current)before.insert(page.blocks.begin(),page.blocks.end());
+            // A later v2 addition has no payload in an earlier presentation.
+            // Original identities and the batch being retired cannot disappear.
+            for(const auto& id:item->retired)require(before.contains(id),"Reading history lost its own retirement batch");
+            for(const auto& id:before)require(expected.contains(id),"Reading history revived an already retired identity");
+            for(const auto& id:expected)require(before.contains(id)||addition_ids.contains(id),"Reading history lost an original identity");
+            active=std::move(before);
         }
     }
     return result;
@@ -518,7 +622,7 @@ Block read_block(const JsonObject& value,std::string_view original) {
     return result;
 }
 void resolve_addresses(Lesson& lesson) {
-    const auto& layout = lesson.state_layout;
+    auto& layout = lesson.state_layout;
     std::map<std::string, StateAddress> addresses;
     for (std::size_t p = 0; p < layout.origin.size(); ++p)
         for (std::size_t b = 0; b < layout.origin[p].blocks.size(); ++b)
@@ -533,6 +637,31 @@ void resolve_addresses(Lesson& lesson) {
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
         }
+    }
+    for (const auto& retired : layout.retired) {
+        auto block = read_block(JsonObject::Parse(winrt::to_hstring(retired.raw_json)),retired.raw_json);
+        block.stable_id = retired.id; block.address = addresses.at(retired.id);
+        lesson.retired_blocks.push_back(std::move(block));
+    }
+    for (auto& snapshot : layout.retirement_history) {
+        const auto archived=JsonObject::Parse(winrt::to_hstring(snapshot.raw_json));
+        const auto pages=array(archived,"pages");
+        for(std::size_t p=0;p<snapshot.current.size();++p) {
+            const auto page_source=pages.GetAt(static_cast<unsigned>(p)).GetObject();
+            Page page;page.stable_id=snapshot.current[p].id;page.narration_language=explicit_narration_language(page_source);
+            if(!page.narration_language)page.narration_language=lesson.narration_language;
+            const auto blocks=array(page_source,"blocks");
+            for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
+                const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
+                auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
+                block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));
+            }
+            snapshot.pages.push_back(std::move(page));
+        }
+        Lesson previous;previous.id=lesson.id;previous.title=lesson.title;previous.locale=lesson.locale;
+        previous.state_layout.version=2;previous.pages=snapshot.pages;previous.compiler_puzzles_required=snapshot.compiler_puzzles_required;
+        previous.reference_after=snapshot.reference_after;previous.activity_after=snapshot.activity_after;
+        validate_reference_relationships(previous);validate_activity_relationships(previous);
     }
 }
 }
@@ -549,6 +678,11 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         require(source.size() <= 32 * 1024 * 1024, "Lesson file too large");
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
         Lesson lesson; lesson.id = text(root, "id"); lesson.title = text(root, "title"); lesson.locale = expected_locale;
+        if (root.HasKey(L"compilerPuzzlesRequired")) {
+            const auto required = root.GetNamedValue(L"compilerPuzzlesRequired");
+            require(required.ValueType() == JsonValueType::Boolean,"compilerPuzzlesRequired must be boolean");
+            lesson.compiler_puzzles_required = required.GetBoolean();
+        }
         lesson.narration_language = explicit_narration_language(root);
         require(!lesson.id.empty() && !lesson.title.empty(), "Lesson identity/title missing"); lesson.raw_json = source;
         const auto pages = array(root, "pages"); require(pages.Size() > 0 && pages.Size() <= 2048, "Invalid page count");
@@ -614,6 +748,11 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
         Lesson lesson; lesson.id = text(root,"id"); lesson.title = text(root,"title");
         lesson.locale = expected_locale; lesson.raw_json = source;
+        if (root.HasKey(L"compilerPuzzlesRequired")) {
+            const auto required = root.GetNamedValue(L"compilerPuzzlesRequired");
+            require(required.ValueType() == JsonValueType::Boolean,"compilerPuzzlesRequired must be boolean");
+            lesson.compiler_puzzles_required = required.GetBoolean();
+        }
         require(!lesson.id.empty() && !lesson.title.empty(),"Lesson identity/title missing");
         const auto pages = array(root,"pages");
         require(pages.Size() > 0 && pages.Size() <= 2048,"Invalid page count");
@@ -633,8 +772,17 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                 const auto block = blocks.GetAt(b).GetObject();
                 const auto raw = original.text(original_blocks[b]);
                 if (text(block,"type") == "cpp_compiler") {
-                    Block compiler; compiler.type = BlockType::cpp_compiler; compiler.raw_json = raw;
-                    page.blocks.push_back(std::move(compiler));
+                    if((lesson.compiler_puzzles_required||!lesson.state_layout.retirement_history.empty())&&block.HasKey(L"outputCheck")) {
+                        // Required compiler progress needs the whole authored
+                        // objective and build inputs to verify captured proofs.
+                        page.blocks.push_back(read_block(block,raw));
+                    } else {
+                        // Keep the legacy read-only projection compatible with
+                        // future/free compiler payloads; it never executes or
+                        // credits them as an output puzzle.
+                        Block metadata;metadata.type=BlockType::cpp_compiler;metadata.raw_json=raw;
+                        page.blocks.push_back(std::move(metadata));
+                    }
                 } else {
                     // Progress needs answer contracts and historical addresses,
                     // not the runtime renderer's editorial presentation fields.

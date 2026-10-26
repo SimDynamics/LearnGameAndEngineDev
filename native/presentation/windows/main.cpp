@@ -4,6 +4,7 @@
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/catalog_view.hpp"
 #include "presentation/windows/settings_view.hpp"
 #include "presentation/windows/audio_course_view.hpp"
@@ -583,6 +584,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
             const auto dialog=auxiliary?target:target==window?window:nullptr;
             if(target==window&&!auxiliary&&state.reader&&state.reader->dispatch_shortcut(message))continue;
             if(lgaed::presentation::dispatch_lesson_enter(message))continue;
+            if(lgaed::windows::CodeEditor::handle_key_message(message))continue;
             if (!dialog||!IsDialogMessageW(dialog,&message)) {
                 TranslateMessage(&message);
                 DispatchMessageW(&message);

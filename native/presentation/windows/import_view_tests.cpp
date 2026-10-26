@@ -366,8 +366,10 @@ void assert_restored(View& view, const ExportFixture& exported, bool original_ex
             continue;
         }
         require(edit_text(view.control(index, 10)) == visual_lf(expected.source), "Source displayed the wrong independent editor draft");
-        require(edit_text(view.control(index, 4)).empty() && edit_text(view.control(index, 14)).empty(),
-            "An imported compiler state revived a stale verdict or console output");
+        const auto feedback=edit_text(view.control(index,4));
+        require((original_executed&&position==0?feedback.starts_with("✓ Correcto"):feedback.empty())
+                &&edit_text(view.control(index,14)).empty(),
+            "Import/reopen confused an opaque cached response with a freshly completed compiler objective or restored stale console output");
     }
 }
 
@@ -451,8 +453,8 @@ int main() {
         require(hashes(exported.folder) == changed_hashes, "Native lesson reopen changed the Android source export");
         std::cout << "PASS Real page-five restoration, independent legacy/JSON-v1 drafts, exact whitespace and unsubmitted answers\n" << std::flush;
 
-        // A cached correct compiler response is still preserved as source
-        // state, while its visible verdict above remained empty on reopen.
+        // Imported cached correctness remains opaque. Only the real native
+        // execution below may create the persistent completed objective.
         const auto before_run = view.saved();
         const auto cached = state::get_response(before_run, curriculum::exercise_key(view.lesson,
             view.lesson.pages[4].blocks[exported.editors[1]]));
@@ -470,7 +472,7 @@ int main() {
             "Fresh execution failed to unlock the exact imported dependent draft or recreated its original editor");
         view.reopen(); assert_restored(view, exported,true);
         require(hashes(exported.folder) == changed_hashes, "Compiling the imported source changed the original export");
-        std::cout << "PASS Imported C++ compiles freshly; cached correctness never becomes a persisted execution verdict\n"
+        std::cout << "PASS Imported C++ compiles freshly; native completion survives reopen while opaque cached correctness stays unverified\n"
             << "Native import UI integration: 6 groups passed\n";
         return 0;
     } catch (const std::exception& error) {

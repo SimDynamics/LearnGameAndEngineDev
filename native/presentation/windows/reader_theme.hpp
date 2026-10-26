@@ -49,6 +49,10 @@ void paint_scrollbars(HWND window,HDC window_dc);
 // SetScrollInfo can redraw the native frame without sending WM_NCPAINT.
 // Call after changing a custom viewport's range; no scroll state is changed.
 void refresh_scrollbars(HWND window);
+// A custom viewport can keep USER's scroll range for keyboard/accessibility
+// while drawing no native scrollbar frame. Suppress its frame before native
+// nonclient layout/painting; hiding it after SetScrollInfo is visibly too late.
+void set_scrollbar_frame_hidden(HWND window,bool vertical,bool horizontal = false);
 [[nodiscard]] bool control_color(UINT message, WPARAM wparam, LPARAM lparam, LRESULT& result);
 [[nodiscard]] bool draw_button(const DRAWITEMSTRUCT& item);
 // Source-over completion tint, calibrated to the existing Android catalogue.

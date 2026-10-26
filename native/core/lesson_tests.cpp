@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/retirement_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
@@ -91,6 +92,118 @@ void narration_metadata_tests(const Lesson& real_lesson) {
         explicit_language.raw_json.find(explicit_language.pages[0].blocks[0].raw_json) != std::string::npos,
         "Explicit narration metadata changed asset language, state ownership, fingerprints, or original block text");
 }
+void retirement_contract_tests(const Lesson& first) {
+    using namespace winrt::Windows::Data::Json;
+    using lgaed::windows::parse_lesson_json;
+    const std::vector<std::pair<std::string,std::vector<std::string>>> plans{
+        {"lesson_primer_programa_y_salida.json",{"ejecucion_original_consigna","ejecucion_original_editor"}},
+        {"lesson_texto_secuencia_y_formato.json",{"ejecucion_original_texto_secuencia_y_formato_consigna","ejecucion_original_texto_secuencia_y_formato_editor"}},
+        {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"}}};
+    std::size_t useful = 0;
+    for (const auto& [filename, ids] : plans) {
+        const auto before = lgaed::windows::load_lesson(first.source_path.parent_path()/filename);
+        const auto after = lgaed::test::retire_lesson(before,ids);
+        check(after.retired_blocks.size() == 2 && after.state_layout.retired.size() == 2,
+            "Retired U1 instructions/editor lost their complete archive");
+        check(after.compiler_puzzles_required && after.state_layout.lineage == before.state_layout.lineage &&
+                after.state_layout.legacy_lineage == before.state_layout.legacy_lineage &&
+                after.state_layout.signatures == before.state_layout.signatures,
+            "Retirement changed the family, original address or activity contract");
+        check(after.state_layout.retirement_history.size()==1,"Retirement lost its previous reading presentation");
+        const auto& history=after.state_layout.retirement_history.front();
+        const auto old_root=JsonObject::Parse(winrt::to_hstring(before.raw_json));
+        const auto old_snapshot=JsonObject::Parse(winrt::to_hstring(history.raw_json));
+        check(history.pages.size()==before.pages.size()&&history.current.size()==before.state_layout.current.size()&&
+                history.compiler_puzzles_required==before.compiler_puzzles_required&&
+                old_snapshot.GetNamedArray(L"pages").Stringify()==old_root.GetNamedArray(L"pages").Stringify()&&
+                old_snapshot.GetNamedArray(L"current").Stringify()==old_root.GetNamedObject(L"stateLayout").GetNamedArray(L"current").Stringify()&&
+                old_snapshot.GetNamedArray(L"activityAfter").Stringify()==old_root.GetNamedArray(L"activityAfter").Stringify(),
+            "Retirement reading archive lost original wording, identity order, hidden-editor dependencies or flow");
+        for(std::size_t p=0;p<history.pages.size();++p)for(std::size_t b=0;b<history.pages[p].blocks.size();++b)
+            check(history.pages[p].blocks[b].stable_id==before.pages[p].blocks[b].stable_id&&
+                    history.pages[p].blocks[b].text==before.pages[p].blocks[b].text&&
+                    history.pages[p].blocks[b].question==before.pages[p].blocks[b].question,
+                "Historical reading payloads were replaced with the active text");
+        for (const auto& page : after.pages) for (const auto& block : page.blocks) {
+            const auto position = stable_block_position(before,block.stable_id);
+            check(position.has_value(),"Retirement manufactured a new active identity");
+            const auto& old = before.pages[position->page].blocks[position->block];
+            check(exercise_key(before,old) == exercise_key(after,block) &&
+                    draft_key("programming",before,old) == draft_key("programming",after,block),
+                "A useful activity moved to a different saved response or draft slot");
+            if (block.type == BlockType::cpp_compiler) ++useful;
+        }
+        for (const auto& archived : after.retired_blocks) {
+            const auto position = stable_block_position(before,archived.stable_id);
+            check(position.has_value() && retired_block(after,archived.stable_id) &&
+                    !stable_block_position(after,archived.stable_id),"Archived identity is still an active exercise");
+            const auto& old = before.pages[position->page].blocks[position->block];
+            check(JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify() ==
+                    JsonObject::Parse(winrt::to_hstring(archived.raw_json)).Stringify() &&
+                    draft_key("programming",before,old) == draft_key("programming",after,archived),
+                "An archived compiler contract or original draft address changed");
+            check(active_block_successor(after,archived.stable_id).has_value(),
+                "Reader bookmark inside a retired block has no active destination");
+        }
+        const auto progress = lgaed::windows::parse_lesson_progress_metadata(after.raw_json);
+        check(progress.compiler_puzzles_required && progress.retired_blocks.size() == 2,
+            "Catalog metadata lost explicit mandatory-flow or retired activity ownership");
+        for (const auto& page : progress.pages) for (const auto& block : page.blocks)
+            if (block.type == BlockType::cpp_compiler) check(block.output_check.has_value(),
+                "Catalog discarded a compiler's actual authored completion objective");
+        auto damaged = JsonObject::Parse(winrt::to_hstring(after.raw_json));
+        auto retired = damaged.GetNamedObject(L"stateLayout").GetNamedArray(L"retired");
+        auto editor = retired.GetAt(1).GetObject().GetNamedObject(L"block");
+        editor.Insert(L"initialCode",JsonValue::CreateStringValue(L"int changed;"));
+        rejects([&]{(void)parse_lesson_json(winrt::to_string(damaged.Stringify()));},
+            "Retirement bypassed the original compiler-source contract");
+        for (const auto invalid : {"null","1",R"("true")","[]","{}"})
+            rejects([&]{(void)parse_lesson_json(root_property(after.raw_json,"compilerPuzzlesRequired",invalid));},
+                "Mandatory compiler-flow flag accepted a nonboolean value");
+        auto invalid_graph=JsonObject::Parse(winrt::to_hstring(after.raw_json));
+        auto previous=invalid_graph.GetNamedObject(L"stateLayout").GetNamedArray(L"retirementHistory").GetAt(0).GetObject();
+        JsonArray unknown;unknown.Append(JsonValue::CreateStringValue(L"unrelated_activity"));
+        previous.GetNamedArray(L"activityAfter").GetAt(0).GetObject().Insert(L"requires",unknown);
+        rejects([&]{(void)parse_lesson_json(winrt::to_string(invalid_graph.Stringify()));},
+            "A historical reading relationship referenced an unrelated activity");
+        auto old_archive=JsonObject::Parse(winrt::to_hstring(after.raw_json));old_archive.GetNamedObject(L"stateLayout").Remove(L"retirementHistory");
+        check(parse_lesson_json(winrt::to_string(old_archive.Stringify())).retired_blocks.size()==2,
+            "Older compatible retired archives unexpectedly require invented reading provenance");
+        auto added_root=JsonObject::Parse(winrt::to_hstring(after.raw_json));
+        auto added_layout=added_root.GetNamedObject(L"stateLayout");
+        constexpr auto added_id=L"qa_addition_after_retirement";
+        std::size_t reserved=after.state_layout.origin.size();
+        for(const auto& [locale,family]:after.state_layout.family){(void)locale;reserved=std::max(reserved,family.origin.size());}
+        for(const auto& addition:after.state_layout.additions)reserved=std::max(reserved,addition.storage.page+1);
+        JsonObject addition,storage;
+        addition.Insert(L"id",JsonValue::CreateStringValue(added_id));
+        addition.Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(
+            after.state_layout.signatures.at(after.retired_blocks.front().stable_id))));
+        storage.Insert(L"page",JsonValue::CreateNumberValue(static_cast<double>(reserved)));
+        storage.Insert(L"block",JsonValue::CreateNumberValue(0));addition.Insert(L"storage",storage);
+        addition.Insert(L"progressPage",JsonValue::CreateStringValue(winrt::to_hstring(after.state_layout.current.front().id)));
+        added_layout.GetNamedArray(L"additions").Append(addition);
+        added_layout.GetNamedArray(L"current").GetAt(0).GetObject().GetNamedArray(L"blocks").Append(JsonValue::CreateStringValue(added_id));
+        added_root.GetNamedArray(L"pages").GetAt(0).GetObject().GetNamedArray(L"blocks").Append(
+            JsonObject::Parse(winrt::to_hstring(after.retired_blocks.front().raw_json)));
+        const auto added=parse_lesson_json(winrt::to_string(added_root.Stringify()));
+        const auto added_position=stable_block_position(added,"qa_addition_after_retirement");
+        check(added_position&&added.pages[added_position->page].blocks[added_position->block].address.page==reserved&&
+                added.state_layout.retirement_history.front().sha256==history.sha256,
+            "A later v2 addition was rejected or rewrote the previous reading presentation");
+        auto missing_original=JsonObject::Parse(added_root.Stringify());
+        auto missing_snapshot=missing_original.GetNamedObject(L"stateLayout").GetNamedArray(L"retirementHistory").GetAt(0).GetObject();
+        missing_snapshot.GetNamedArray(L"pages").GetAt(0).GetObject().GetNamedArray(L"blocks").RemoveAt(0);
+        missing_snapshot.GetNamedArray(L"current").GetAt(0).GetObject().GetNamedArray(L"blocks").RemoveAt(0);
+        rejects([&]{(void)parse_lesson_json(winrt::to_string(missing_original.Stringify()));},
+            "An original reading identity was incorrectly treated as a later addition");
+    }
+    check(useful == 6,"U1 retirement lost an independent useful compiler activity");
+    const auto final = lgaed::windows::load_lesson(first.source_path.parent_path()/"lesson_resolver_probar_y_recuperar.json");
+    for (const auto& page : final.pages) for (const auto& block : page.blocks) if (block.type == BlockType::cpp_compiler) ++useful;
+    check(useful == 8,"The eight useful U1 compiler practices were not preserved");
+    std::cout << "Retired U1 compiler contracts, original slots, active bookmarks and eight useful editors: PASS\n";
+}
 }
 int main() {
     try {
@@ -99,6 +212,7 @@ int main() {
         const auto path = root / "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
         const auto lesson = lgaed::windows::load_lesson(path);
         narration_metadata_tests(lesson);
+        retirement_contract_tests(lesson);
         {
             const auto reviewed=parse_lesson_json(R"({"id":"reviews","title":"Reviews","pages":[{"blocks":[{"type":"multiple_choice","question":"Q","options":["A","B","C"],"correctIndex":1,"explanation":"Success","reviewFeedback":["Review A","Review B","Review C"]}]}]})");
             const auto& choice=reviewed.pages[0].blocks[0];

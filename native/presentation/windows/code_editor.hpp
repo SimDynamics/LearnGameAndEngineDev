@@ -25,6 +25,9 @@ struct EditorDocument {
 
 class CodeEditor {
 public:
+    // WM_COMMAND notification after an adapter edit and its formatting have
+    // finished native layout. Distinct from RichEdit's repaint EN_UPDATE.
+    static constexpr WORD layout_ready_notification=0x7F01;
     CodeEditor(HWND rich_edit, EditorDocument document, bool multiline,
         std::function<void()> submit = {}, bool code_assistance = true,
         bool auto_indent = true, bool line_numbers = true);
@@ -43,6 +46,10 @@ public:
     // Single-character pairs retain the same assistance as physical typing.
     // Single-line fields reject line breaks without invoking their submit action.
     [[nodiscard]] bool insert_shortcut(std::string_view text);
+    // Run before IsDialogMessage/TranslateMessage. Literal programming quotes
+    // on international keyboards must not start native dead-key composition.
+    // Returns true only for a handled key pulse in this adapter's own field.
+    [[nodiscard]] static bool handle_key_message(const MSG& message);
     void undo();
     void redo();
 private:

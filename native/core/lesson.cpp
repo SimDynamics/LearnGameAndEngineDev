@@ -180,6 +180,36 @@ std::optional<StatePosition> stable_block_position(const Lesson& lesson, std::st
             if (lesson.pages[page].blocks[block].stable_id == identity) return StatePosition{page,block};
     return {};
 }
+bool retired_block(const Lesson& lesson, std::string_view identity) {
+    return std::ranges::any_of(lesson.state_layout.retired,
+        [&](const auto& item) { return item.id == identity; });
+}
+std::optional<StatePosition> active_block_successor(const Lesson& lesson, std::string_view identity) {
+    if (auto active = stable_block_position(lesson,identity)) return active;
+    const StateRetirement* retired = nullptr;
+    auto candidate = std::string(identity);
+    for (std::size_t count = 0; count < lesson.state_layout.retired.size(); ++count) {
+        const auto found = std::ranges::find_if(lesson.state_layout.retired,
+            [&](const auto& item) { return item.id == candidate; });
+        if (found == lesson.state_layout.retired.end()) break;
+        if (!retired) retired = &*found;
+        candidate = found->next;
+        if (auto active = stable_block_position(lesson,candidate)) return active;
+        if (candidate.empty()) break;
+    }
+    if (!retired) return {};
+    for (std::size_t page = 0; page < lesson.pages.size(); ++page) {
+        if (lesson.pages[page].stable_id != retired->page) continue;
+        // A final archived block falls back to the preceding active content.
+        if (!lesson.pages[page].blocks.empty()) return StatePosition{page,lesson.pages[page].blocks.size()-1};
+        for (auto next = page + 1; next < lesson.pages.size(); ++next)
+            if (!lesson.pages[next].blocks.empty()) return StatePosition{next,0};
+        for (auto prior = page; prior > 0; --prior)
+            if (!lesson.pages[prior-1].blocks.empty()) return StatePosition{prior-1,lesson.pages[prior-1].blocks.size()-1};
+        break;
+    }
+    return {};
+}
 void validate_reference_relationships(const Lesson& lesson) {
     if (lesson.reference_after.empty()) return;
     if (!lesson.state_layout.version) throw std::invalid_argument("Reference relationships require stable state-layout identities");

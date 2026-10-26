@@ -406,7 +406,19 @@ struct Brushes {
     }
 };
 LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
-    if(message==WM_NCDESTROY){RemoveWindowSubclass(window,scroll_subclass,scroll_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    constexpr wchar_t hidden_frame_property[]=L"lgaed.scrollbar-frame-hidden";
+    if(message==WM_NCDESTROY){RemovePropW(window,hidden_frame_property);RemoveWindowSubclass(window,scroll_subclass,scroll_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    const auto hidden=reinterpret_cast<ULONG_PTR>(GetPropW(window,hidden_frame_property));
+    const auto mask=(hidden&1?WS_VSCROLL:0)|(hidden&2?WS_HSCROLL:0);
+    if(mask&&message==WM_STYLECHANGING&&wp==static_cast<WPARAM>(GWL_STYLE)&&lp)
+        reinterpret_cast<STYLESTRUCT*>(lp)->styleNew&=~mask;
+    if(mask&&(message==WM_NCCALCSIZE||message==WM_NCPAINT)) {
+        // SetScrollInfo can add WS_*SCROLL and send WM_NCPAINT synchronously,
+        // even with redraw=FALSE, before the caller can hide the scrollbar.
+        // Clear only explicitly hidden axes before USER reserves/paints them.
+        const auto style=GetWindowLongPtrW(window,GWL_STYLE);
+        if(style&mask)SetWindowLongPtrW(window,GWL_STYLE,style&~static_cast<LONG_PTR>(mask));
+    }
     const auto result=DefSubclassProc(window,message,wp,lp);
     // Painting follows native processing, including a native thumb's tracking
     // notifications. There is no timer, input interception or parallel offset.
@@ -551,7 +563,9 @@ void paint_scrollbars(HWND window,HDC dc){
     const auto scale=[&](int value){return std::max(1,MulDiv(value,dpi,96));};
     const auto fill=[&](RECT bounds,COLORREF ink){const auto handle=CreateSolidBrush(ink);if(handle){FillRect(dc,&bounds,handle);DeleteObject(handle);}};
     RECT vertical{},horizontal{};bool has_vertical=false,has_horizontal=false;
+    const auto hidden=reinterpret_cast<ULONG_PTR>(GetPropW(window,L"lgaed.scrollbar-frame-hidden"));
     for(const bool sideways:{false,true}){
+        if(hidden&(sideways?2:1))continue;
         SCROLLBARINFO info{};info.cbSize=sizeof(info);
         if(!GetScrollBarInfo(window,sideways?OBJID_HSCROLL:OBJID_VSCROLL,&info)||
             (info.rgstate[0]&(STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN)))continue;
@@ -588,6 +602,15 @@ void refresh_scrollbars(HWND window){
     // Once they acquire a range, retain the same nonclient paint hook too.
     SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
     if(const auto dc=GetWindowDC(window)){paint_scrollbars(window,dc);ReleaseDC(window,dc);}
+}
+void set_scrollbar_frame_hidden(HWND window,bool vertical,bool horizontal){
+    if(!IsWindow(window))return;
+    const ULONG_PTR hidden=(vertical?1:0)|(horizontal?2:0);
+    if(hidden)SetPropW(window,L"lgaed.scrollbar-frame-hidden",reinterpret_cast<HANDLE>(hidden));
+    else RemovePropW(window,L"lgaed.scrollbar-frame-hidden");
+    SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
+    if(vertical)ShowScrollBar(window,SB_VERT,FALSE);
+    if(horizontal)ShowScrollBar(window,SB_HORZ,FALSE);
 }
 void apply(HWND window, Surface surface) {
     if (!window) return;

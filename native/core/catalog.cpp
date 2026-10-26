@@ -103,10 +103,12 @@ CatalogProgress catalog_lesson_page_progress(const state::StateData& data,const 
     if (started_value && !std::holds_alternative<bool>(*started_value))
         throw std::runtime_error("El estado de inicio de la lección no es válido.");
     const bool started = started_value && std::get<bool>(*started_value);
-    const auto is_exercise = [](BlockType type) {
+    const auto is_exercise = [&](const Block& block) {
+        const auto type=block.type;
         return type == BlockType::multiple_choice || type == BlockType::fill_code ||
             type == BlockType::output_prediction || type == BlockType::order_code ||
-            type == BlockType::drag_fill_code || type == BlockType::inline_fill_code || type == BlockType::math_puzzle;
+            type == BlockType::drag_fill_code || type == BlockType::inline_fill_code || type == BlockType::math_puzzle
+            || (lesson.compiler_puzzles_required&&type==BlockType::cpp_compiler&&block.output_check);
     };
     struct Group { std::string id; std::vector<const Block*> blocks; };
     std::vector<Group> groups;
@@ -124,7 +126,10 @@ CatalogProgress catalog_lesson_page_progress(const state::StateData& data,const 
                 if (addition.progress_page == original.id) ids.push_back(addition.id);
             for (const auto& id : ids) {
                 const auto found = displayed.find(id);
-                if (found == displayed.end()) throw std::runtime_error("Falta un bloque del grupo histórico de progreso.");
+                if (found == displayed.end()) {
+                    if(retired_block(lesson,id))continue;
+                    throw std::runtime_error("Falta un bloque del grupo histórico de progreso.");
+                }
                 group.blocks.push_back(found->second);
             }
             groups.push_back(std::move(group));
@@ -148,11 +153,11 @@ CatalogProgress catalog_lesson_page_progress(const state::StateData& data,const 
     const auto current_page = std::min(state::saved_page(data,lesson.id),lesson.pages.size()-1);
     for (std::size_t index = 0; index < groups.size(); ++index) {
         const auto& group = groups[index];
-        const bool has_exercise = std::ranges::any_of(group.blocks,[&](const auto* block) { return is_exercise(block->type); });
+        const bool has_exercise = std::ranges::any_of(group.blocks,[&](const auto* block) { return is_exercise(*block); });
         bool completed = false;
         if (has_exercise) {
             completed = std::ranges::all_of(group.blocks,[&](const auto* block) {
-                return !is_exercise(block->type) || (correct && correct(*block));
+                return !is_exercise(*block) || (correct && correct(*block));
             });
         } else if (layout.version) {
             completed = started && (group.blocks.empty() ? read_pages.contains(group.id) :
@@ -211,6 +216,8 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
             } else if (domain == "native_windows") {
                 for (const auto& id : scope.lessons) {
                     if (key.starts_with("scroll/" + id + '/')) matches = true;
+                    for(const auto locale:{"es","en","fr"})
+                        if(key.starts_with(std::string("compiler-puzzle/v1/")+locale+'/'+id+'/'))matches=true;
                     if (key.starts_with("reference-proof/v1/")) for (const auto route : {"programming","math_physics"})
                         for (const auto locale : {"es","en","fr"})
                             if (key.starts_with(std::string("reference-proof/v1/") + locale + '/' + route + '/' + id + '/')) matches = true;

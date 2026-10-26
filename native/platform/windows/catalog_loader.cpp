@@ -1,6 +1,7 @@
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
 #include <winrt/Windows.Data.Json.h>
@@ -88,6 +89,7 @@ CatalogProgress lesson_progress(const CatalogEntry& entry,const state::StateData
     state::prepare_lesson_state(metadata,*lesson);
     bool pending = false;
     auto result = catalog_lesson_page_progress(metadata,*lesson,[&](const Block& block) {
+        if(block.type==BlockType::cpp_compiler)return compiler_puzzle_completed(data,*lesson,block);
         const auto saved = state::get_response(data,exercise_key(*lesson,block));
         if (!saved || !saved->correct) return false;
         if (block.type != BlockType::math_puzzle) return true;

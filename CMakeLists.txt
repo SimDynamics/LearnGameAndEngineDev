@@ -79,7 +79,8 @@ add_library(lgaed_platform_windows STATIC
     native/platform/windows/state_store.cpp
     native/platform/windows/android_import.cpp
     native/platform/windows/cpp_project_history.cpp
-    native/platform/windows/cpp_runner.cpp)
+    native/platform/windows/cpp_runner.cpp
+    native/platform/windows/compiler_completion.cpp)
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
@@ -490,6 +491,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.lesson_texto_secuencia PROPERTIES TIMEOUT 150)
     add_test(NAME native.lesson_texto_restauracion COMMAND lgaed_lesson_view_tests --texto-restauracion)
     set_tests_properties(native.lesson_texto_restauracion PROPERTIES TIMEOUT 150)
+    add_test(NAME native.compiler_puzzles COMMAND lgaed_lesson_view_tests --compiler-puzzles)
+    set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 150)
     add_executable(lgaed_programming_composition_tests native/presentation/windows/programming_composition_tests.cpp)
     target_link_libraries(lgaed_programming_composition_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_programming_composition_tests lgaed_narration_runtime)

@@ -2,6 +2,7 @@
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "native_build_config.hpp"
 
 #include <iostream>
@@ -35,6 +36,46 @@ void page_progress_matches_android_without_crediting_unanswered_puzzles() {
         "A lesson flag credited an unanswered exercise in page progress");
     check(catalog_lesson_page_progress(data,lesson,[](const Block&) { return true; }).completed == 3,
         "A verified exercise did not complete its original page");
+}
+void compiler_puzzles_keep_captured_success_until_explicit_reset() {
+    using namespace lgaed;using namespace curriculum;
+    auto lesson=windows::parse_lesson_json(R"({"id":"qa_compiler_completion","title":"QA","compilerPuzzlesRequired":true,"pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"original","initialStandardInput":"1","outputCheck":{"cases":[{"standardInput":"1","outputs":["2"]},{"standardInput":"2","outputs":["4"]}]}}]}]})");
+    const auto& block=lesson.pages[0].blocks[0];state::StateData data;
+    state::put_response(data,exercise_key(lesson,block),state::Response{"",true});
+    data.preferences["learning_progress"]["lesson_"+lesson.id+"_started"]=true;
+    data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=true;
+    const auto progress=[&]{return catalog_lesson_page_progress(data,lesson,[&](const Block& item){return windows::compiler_puzzle_completed(data,lesson,item);});};
+    check(!windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==0,
+        "An old correct flag or completed page manufactured a compiler execution proof");
+    windows::CppRunRequest captured;captured.revision=7;captured.source_utf8="same captured program";
+    FreshExecution execution{7,true,true,0,"1","2"};
+    auto stale=execution;stale.source_revision=6;
+    check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,stale,"Correcto"),"A stale result accredited a compiler objective");
+    check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto")&&windows::compiler_puzzle_case_count(data,lesson,block)==1,
+        "One input completed a two-case compiler puzzle");
+    auto edited=captured;edited.source_utf8+=" changed";
+    windows::invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
+    windows::invalidate_compiler_puzzle_attempt(data,lesson,block,captured);
+    check(windows::compiler_puzzle_case_count(data,lesson,block)==0,"Undo resurrected an invalidated partial execution proof");
+    check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto"),"The first case completed both inputs");
+    captured.stdin_utf8="2";windows::invalidate_compiler_puzzle_attempt(data,lesson,block,captured);
+    check(windows::compiler_puzzle_case_count(data,lesson,block)==1,"Changing only input discarded an unchanged program's independent case");
+    execution.standard_input="2";execution.standard_output="4";
+    check(windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto\nExplicación comprobada.")&&progress().completed==1,
+        "Both actual matching cases did not complete the opted-in compiler page");
+    windows::invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
+    auto failed=execution;failed.standard_output="wrong";failed.compilation_succeeded=false;
+    check(windows::record_compiler_puzzle_case(data,lesson,block,edited,failed,"Incorrecto")
+        &&windows::compiler_puzzle_feedback(data,lesson,block)=="Correcto\nExplicación comprobada.",
+        "Editing or compiling again downgraded a captured completed objective");
+    const auto restored=state::decode(state::encode(data));
+    check(windows::compiler_puzzle_completed(restored,lesson,block),"Reopening discarded a real completed compiler objective");
+    auto changed=lesson;changed.pages[0].blocks[0].output_check->cases[0].outputs={"another goal"};
+    check(!windows::compiler_puzzle_completed(data,changed,changed.pages[0].blocks[0]),"A changed objective reused another contract's receipt");
+    const auto before=data.preferences.at("learning_progress");
+    windows::reset_compiler_puzzle(data,lesson,block);
+    check(!windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==0&&data.preferences.at("learning_progress")==before,
+        "Reset retained the compiler achievement or altered independent answers");
 }
 void stable_progress_groups_survive_splits_reordering_and_new_activities() {
     using namespace lgaed;
@@ -132,6 +173,7 @@ int main() {
     using namespace curriculum;
     try {
         page_progress_matches_android_without_crediting_unanswered_puzzles();
+        compiler_puzzles_keep_captured_success_until_explicit_reset();
         stable_progress_groups_survive_splits_reordering_and_new_activities();
         unit_percentage_weights_lessons_like_android_and_keeps_completion_counts();
         catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads();
