@@ -1,4 +1,5 @@
 #include "platform/windows/cpp_runner.hpp"
+#include "core/lesson.hpp"
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
 
@@ -71,6 +72,70 @@ int main() {
             std::cerr << "FAIL " << name << ": " << error.what() << '\n';
         }
     };
+
+    test("Windows output comparison accepts binary LF and CRT CRLF without changing raw output or the shared exact contract", [] {
+        using namespace lgaed::curriculum;
+        OutputCheck check; check.cases.push_back({" \n",{"Resumen\nZona Oeste"},"La secuencia coincide."});
+        FreshExecution execution; execution.source_revision = 7; execution.exit_code = 0; execution.compilation_succeeded = execution.execution_succeeded = true;
+        execution.standard_input = " \n";
+        for (const auto output : {"Resumen\nZona Oeste","Resumen\r\nZona Oeste"}) {
+            execution.standard_output = output;
+            const auto result = evaluate_cpp_output_check(check,execution,7);
+            require(result.verdict == OutputVerdict::correct && result.feedback == "La secuencia coincide.",
+                "A valid LF or native text-mode CRLF output was rejected");
+            require(execution.standard_output == output && execution.standard_input == " \n"
+                    && check.cases[0].outputs[0] == "Resumen\nZona Oeste" && check.cases[0].standard_input == " \n",
+                "The Windows comparison changed captured output, authored goals or stdin");
+        }
+        require(evaluate_output_check(check,execution,7).verdict == OutputVerdict::incorrect,
+            "The shared exact curriculum evaluator was changed to normalize native output");
+    });
+
+    test("Windows line-ending alternatives preserve spaces final newlines and explicit carriage returns", [] {
+        using namespace lgaed::curriculum;
+        OutputCheck check; check.cases.push_back({"",{"A\nB"}});
+        FreshExecution execution; execution.source_revision = 7; execution.exit_code = 0; execution.compilation_succeeded = execution.execution_succeeded = true;
+        for (const auto output : {" A\r\nB","A \r\nB","A\r\nB ","A\r\nB\r\n","A\nB\n","A\rB","A\r\r\nB"}) {
+            execution.standard_output = output;
+            require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::incorrect,
+                "Native line-ending comparison hid significant whitespace, a final newline or a deliberate CR");
+        }
+        check.cases[0].outputs = {"A\nB\n"}; execution.standard_output = "A\r\nB\r\n";
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::correct,"A required final CRT newline was rejected");
+        execution.standard_output = "A\r\nB";
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::incorrect,"A missing final newline was accepted");
+        for (const auto explicit_goal : {"A\r\nB","A\rB"}) {
+            check.cases[0].outputs = {explicit_goal}; execution.standard_output = explicit_goal;
+            require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::correct,"An exact explicit-CR goal was rejected");
+            execution.standard_output = "A\r\r\nB";
+            require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::incorrect,"An explicit-CR goal accepted an extra CR");
+            execution.standard_output = "A\nB";
+            require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::incorrect,"An explicit-CR goal was silently normalized");
+        }
+    });
+
+    test("Windows comparison keeps exact feedback priority stdin matching and unavailable execution guards", [] {
+        using namespace lgaed::curriculum;
+        OutputCheck check; check.cases.push_back({"entrada\n",{"A\nB"},"",{{{"X\nY"},"Falta el mensaje correcto."}}});
+        FreshExecution execution; execution.source_revision = 7; execution.exit_code = 0; execution.compilation_succeeded = execution.execution_succeeded = true;
+        execution.standard_input = "entrada\n"; execution.standard_output = "X\r\nY";
+        require(evaluate_cpp_output_check(check,execution,7).feedback == "Falta el mensaje correcto.","Native CRLF lost its authored review feedback");
+        check.cases[0].review_feedback.push_back({{"X\r\nY"},"Regla exacta explícita."});
+        require(evaluate_cpp_output_check(check,execution,7).feedback == "Regla exacta explícita.","A fallback overrode exact review feedback");
+        execution.standard_output = "A\r\nB";
+        check.cases[0].review_feedback.push_back({{"A\r\nB"},"Regla exacta anterior al objetivo nativo."});
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::correct,"A valid native goal was masked by incorrect feedback");
+        require(evaluate_cpp_output_check(check,execution,8).verdict == OutputVerdict::unavailable,"A stale native output became a current result");
+        execution.standard_input = "entrada\r\n";
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::unavailable,"The Windows adapter normalized stdin");
+        execution.standard_input = "entrada\n";
+        execution.exit_code = 1;
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::unavailable,"A failed native execution became an answer");
+        execution.exit_code = 0; execution.compilation_succeeded = false;
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::unavailable,"A compilation failure became an answer");
+        execution.compilation_succeeded = true; execution.execution_succeeded = false;
+        require(evaluate_cpp_output_check(check,execution,7).verdict == OutputVerdict::unavailable,"An incomplete native execution became an answer");
+    });
 
     test("Original and changed lessons use independent fresh real executables", [&] {
         const auto first_request = request(program("Zona inicial"));

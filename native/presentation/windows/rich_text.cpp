@@ -182,6 +182,11 @@ public:
         if(menu)*menu=nullptr;return E_NOTIMPL;
     }
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
+        // Paste Special fixes its requested format before QueryAcceptData runs;
+        // changing that explicit RTF format there can leave the paste empty.
+        // Negotiate from zero through the same native paste path, whose callback
+        // selects Unicode/ANSI text and retains native selection/Undo handling.
+        if(message==EM_PASTESPECIAL)return DefSubclassProc(edit,WM_PASTE,0,0);
         if(message==WM_NCDESTROY){
             auto* self=reinterpret_cast<PlainTextInput*>(raw);self->window=nullptr;
             RemoveWindowSubclass(edit,proc,plain_input_subclass_id);

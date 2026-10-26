@@ -377,7 +377,9 @@ int main() {
         check(edit_text(editor.value) == original, "RichEdit did not preserve exact indentation, spaces or final LF");
         set_edit_text(editor.value, "{\\rtf1 This is C++ text, not RTF.}\n");
         check(edit_text(editor.value) == "{\\rtf1 This is C++ text, not RTF.}\n", "Code was interpreted as RTF");
-        set_edit_text(editor.value, original);
+        // Display-only code uses the original monospace face in production.
+        // Do not measure a narrow, pixel-rounded space inherited from prose.
+        set_rich_text(editor.value, original, {}, true);
         PARAFORMAT2 tabs{}; tabs.cbSize = sizeof(tabs); tabs.dwMask = PFM_TABSTOPS;
         tabs.cTabCount = 1; tabs.rgxTabs[0] = 720;
         SendMessageW(editor.value, EM_SETPARAFORMAT, 0, reinterpret_cast<LPARAM>(&tabs));
@@ -403,9 +405,16 @@ int main() {
         const auto normal_width=next_before.x-space_before.x,compact_width=next_after.x-space_after.x;
         // MSFTEDIT may return tomUndefined for GetScaling even when it draws
         // the requested scale. Assert real advances, not format metadata.
-        check(normal_width>compact_width&&std::abs(compact_width-normal_width*.8)<=1&&
+        const auto space_format=character(editor.value,8);
+        const bool compact_geometry=normal_width>compact_width&&std::abs(compact_width-normal_width*.8)<=1&&
             second_before.x-first_before.x==second_after.x-first_after.x&&
-            character(editor.value,8).yHeight==syntax_before.yHeight&&first_after.y==first_before.y,
+            space_format.yHeight==syntax_before.yHeight&&first_after.y==first_before.y;
+        if(!compact_geometry)std::cerr<<"Compact-space geometry: width="<<normal_width<<" -> "<<compact_width
+            <<", first advance="<<second_before.x-first_before.x<<" -> "<<second_after.x-first_after.x
+            <<", y="<<first_before.y<<" -> "<<first_after.y<<", height="<<syntax_before.yHeight
+            <<"/"<<space_format.yHeight<<", font="<<utf8(syntax_before.szFaceName)<<"/"<<utf8(space_format.szFaceName)
+            <<", DPI="<<GetDpiForWindow(editor.value)<<'\n';
+        check(compact_geometry,
             "Display-only code spaces did not narrow their actual native advance independently of other characters");
         compact_code_spaces(editor.value);
         POINTL space_again{},next_again{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_again),8);

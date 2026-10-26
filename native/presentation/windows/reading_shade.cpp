@@ -32,11 +32,13 @@ struct Transaction {
         CHARRANGE current{};SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
         if(current.cpMin!=selection.cpMin||current.cpMax!=selection.cpMax)
             SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
-        POINT offset{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
-        if(offset.x!=scroll.x||offset.y!=scroll.y)SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         SendMessageW(window,EM_SETMODIFY,modified,0);
         if(document){long count=0;if(suspend)document->Undo(tomResume,&count);if(frozen)document->Unfreeze(&count);document->Release();}
         if(redraw){SendMessageW(window,WM_SETREDRAW,TRUE,0);InvalidateRect(window,nullptr,FALSE);}
+        // Unfreeze can reflow the native document and round its scroll offset
+        // to a line boundary. Restore the viewport after that deferred layout.
+        POINT offset{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+        if(offset.x!=scroll.x||offset.y!=scroll.y)SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         // No whole-control invalidation on TOM: only changed ranges are dirty.
         // Suppress selection/scroll notifications until the batch is complete.
         SendMessageW(window,EM_SETEVENTMASK,0,events);

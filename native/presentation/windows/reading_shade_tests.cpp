@@ -180,13 +180,27 @@ int main() {
         SendMessageW(field.edit,EM_SETEVENTMASK,0,ENM_CHANGE | ENM_SELCHANGE | ENM_REQUESTRESIZE);
         const auto events = SendMessageW(field.edit,EM_GETEVENTMASK,0,0), modified = SendMessageW(field.edit,EM_GETMODIFY,0,0);
         RECT before_rect{}; GetWindowRect(field.edit,&before_rect);
-        { ReadingShade shade(field.edit,current); shade.read_through(0); shade.read_through(25); shade.read_through(5); }
+        std::string geometry_trace; bool stable_viewport = true;
+        const auto record_viewport = [&](const char* stage) {
+            POINT scroll{}; RECT bounds{};
+            SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll)); GetWindowRect(field.edit,&bounds);
+            stable_viewport = stable_viewport && scroll.x == before_scroll.x && scroll.y == before_scroll.y && EqualRect(&bounds,&before_rect);
+            geometry_trace += std::string("\n  ") + stage + ": scroll=" + std::to_string(scroll.x) + "," + std::to_string(scroll.y)
+                + " rect=" + std::to_string(bounds.left) + "," + std::to_string(bounds.top) + ","
+                + std::to_string(bounds.right) + "," + std::to_string(bounds.bottom);
+        };
+        record_viewport("before construction");
+        { ReadingShade shade(field.edit,current); record_viewport("after construction");
+          shade.read_through(0); record_viewport("after read 0");
+          shade.read_through(25); record_viewport("after read 25");
+          shade.read_through(5); record_viewport("after read 5"); }
+        record_viewport("after destruction");
         CHARRANGE after_selection{}; POINT after_scroll{}; RECT after_rect{};
         SendMessageW(field.edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after_selection));
         SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after_scroll)); GetWindowRect(field.edit,&after_rect);
         require(selected.cpMin == after_selection.cpMin && selected.cpMax == after_selection.cpMax,"Shading moved the existing text selection");
-        require(before_scroll.x == after_scroll.x && before_scroll.y == after_scroll.y && EqualRect(&before_rect,&after_rect),
-                "Shading changed scroll or component dimensions");
+        require(stable_viewport && before_scroll.x == after_scroll.x && before_scroll.y == after_scroll.y && EqualRect(&before_rect,&after_rect),
+                ("Shading changed scroll or component dimensions" + geometry_trace).c_str());
         require(events == SendMessageW(field.edit,EM_GETEVENTMASK,0,0) && modified == SendMessageW(field.edit,EM_GETMODIFY,0,0),
                 "Shading changed edit events or the document modified state");
         require(edit_text(field.edit) == current && SendMessageW(field.edit,EM_UNDO,0,0) && edit_text(field.edit) == source,

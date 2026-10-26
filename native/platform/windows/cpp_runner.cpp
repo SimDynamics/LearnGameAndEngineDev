@@ -1,4 +1,5 @@
 #include "platform/windows/cpp_runner.hpp"
+#include "core/lesson.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
@@ -502,6 +503,29 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
 }
 
 } // namespace
+
+curriculum::OutputEvaluation evaluate_cpp_output_check(const curriculum::OutputCheck& check,
+    const curriculum::FreshExecution& execution,std::uint64_t current_revision) {
+    const auto exact = curriculum::evaluate_output_check(check,execution,current_revision);
+    if (exact.verdict != curriculum::OutputVerdict::incorrect) return exact;
+    auto native_check = check;
+    bool changed = false;
+    const auto text_mode = [&](std::string& output) {
+        // An authored CR is an explicit byte objective, never a line-ending
+        // convention. Only LF-only goals get the additional CRT spelling.
+        if (output.find('\r') != output.npos || output.find('\n') == output.npos) return;
+        std::string native; native.reserve(output.size());
+        for (const auto character : output) { if (character == '\n') native += '\r'; native += character; }
+        output = std::move(native); changed = true;
+    };
+    for (auto& item : native_check.cases) {
+        for (auto& output : item.outputs) text_mode(output);
+        for (auto& feedback : item.review_feedback) for (auto& output : feedback.outputs) text_mode(output);
+    }
+    if (!changed) return exact;
+    const auto native = curriculum::evaluate_output_check(native_check,execution,current_revision);
+    return native.verdict == curriculum::OutputVerdict::correct || exact.feedback.empty() ? native : exact;
+}
 
 CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
     ensure_winrt_apartment();if(!request.cmake)return {};validate_request_project(request);const auto workspace=cmake_workspace(request);const auto mutex=project_mutex(workspace);std::unique_lock<std::timed_mutex> lock(*mutex,std::try_to_lock);

@@ -87,8 +87,9 @@ std::vector<ClipboardBlob> image_payload() {
     return {std::move(dib)};
 }
 
-// A real IDataObject exercises RichEdit's import/acceptance path without
-// interactive dragging or a replacement implementation of the editor.
+// Publish this real IDataObject through OLE's clipboard, then exercise the
+// user's native paste path. IRichEditOle::ImportDataObject is a trusted
+// programmatic import API; it bypasses QueryAcceptData and read-only input.
 class TransferData final : public IDataObject {
     LONG references_ = 1;
     std::vector<ClipboardBlob> formats_;
@@ -187,7 +188,13 @@ struct ClipboardHandle {
 
 struct OpenClipboardScope {
     explicit OpenClipboardScope(HWND owner) {
-        require(OpenClipboard(owner) != FALSE, "Open the native clipboard for the isolated paste test");
+        // Clipboard ownership notifications briefly overlap other desktop
+        // consumers. Retry acquisition before inspecting or changing any data.
+        for(unsigned attempt=0;attempt<25;++attempt){
+            if(OpenClipboard(owner))return;
+            Sleep(10);
+        }
+        require(false,"Open the native clipboard for the isolated paste test after bounded retry");
     }
     ~OpenClipboardScope() { CloseClipboard(); }
 };
@@ -195,6 +202,7 @@ struct OpenClipboardScope {
 bool clipboard_restore_failed = false;
 struct ClipboardScope {
     HWND owner;
+    HWND published_owner = nullptr;
     std::vector<ClipboardHandle> saved;
     DWORD saved_sequence = 0;
     bool changed = false;
@@ -227,10 +235,24 @@ struct ClipboardScope {
             "Clipboard changed after the snapshot; preserve the newer copy");
         require(EmptyClipboard() != FALSE, "Prepare the native paste source");
         changed = true;
+        published_owner = owner;
         for (auto& item : pending) {
             require(SetClipboardData(item.format, item.handle) != nullptr, "Publish each native clipboard representation");
             item.handle = nullptr;
         }
+    }
+    void publish_ole(IDataObject* data) {
+        require(data != nullptr && GetClipboardSequenceNumber() == saved_sequence,
+            "Clipboard changed after the snapshot; preserve the newer OLE copy");
+        const auto result = OleSetClipboard(data);
+        // OLE deliberately owns delayed-rendered data through its own hidden
+        // window, rather than this test's host. Track that exact owned window
+        // so cleanup also runs on failure and never overwrites another copy.
+        const auto current = GetClipboardOwner(); DWORD process = 0;
+        if (current) GetWindowThreadProcessId(current,&process);
+        if (process == GetCurrentProcessId()) published_owner = current;
+        changed = SUCCEEDED(result) || GetClipboardSequenceNumber() != saved_sequence;
+        require(result == S_OK && published_owner != nullptr,"Publish native OLE clipboard data under this test process's ownership");
     }
     bool restore() noexcept {
         if (!changed) return true;
@@ -239,7 +261,7 @@ struct ClipboardScope {
         for (unsigned attempt = 0; attempt != 10; ++attempt) {
             try {
                 OpenClipboardScope opened(owner);
-                if (GetClipboardOwner() != owner) { changed = false; return true; }
+                if (!published_owner || GetClipboardOwner() != published_owner) { changed = false; return true; }
                 require(EmptyClipboard() != FALSE, "Restore the original clipboard");
                 for (const auto& item : saved) {
                     auto copy = item.duplicate();
@@ -308,7 +330,11 @@ void require_local_paste_format(HWND edit, LONG start, LONG end, const CHARFORMA
         actual.yHeight == expected.yHeight && actual.crTextColor == expected.crTextColor &&
         std::wstring_view(actual.szFaceName) == expected.szFaceName &&
         !(actual.dwEffects & (CFE_AUTOCOLOR | CFE_BOLD | CFE_ITALIC | CFE_UNDERLINE)),
-        "Paste imported the external font, size, color or emphasis instead of the field's local style");
+        "Paste imported the external font, size, color or emphasis instead of the field's local style: actual(mask/effects/height/color/face)="
+        + std::to_string(actual.dwMask) + "/" + std::to_string(actual.dwEffects) + "/" + std::to_string(actual.yHeight)
+        + "/" + std::to_string(actual.crTextColor) + "/" + lgaed::presentation::utf8(actual.szFaceName)
+        + " expected(mask/effects/height/color/face)=" + std::to_string(expected.dwMask) + "/" + std::to_string(expected.dwEffects)
+        + "/" + std::to_string(expected.yHeight) + "/" + std::to_string(expected.crTextColor) + "/" + lgaed::presentation::utf8(expected.szFaceName));
 }
 
 struct ChangeProbe {
@@ -407,7 +433,11 @@ void require_pasted_document(Fixture& field, const CHARFORMAT2W& format, std::st
     const auto end = static_cast<LONG>(1 + inserted.size());
     auto document = field.adapter->document();
     require(document.text == expected && document.selection_start == end && document.selection_end == end,
-        "Native paste must replace only the selected text and place its caret after the insertion");
+        "Native paste must replace only the selected text and place its caret after the insertion: document='" + document.text
+        + "' selection=" + std::to_string(document.selection_start) + ":" + std::to_string(document.selection_end)
+        + " visible='" + lgaed::presentation::edit_text(field.edit) + "' native-selection="
+        + std::to_string(selected_range(field.edit).cpMin) + ":" + std::to_string(selected_range(field.edit).cpMax)
+        + " expected='" + expected + "' selection=" + std::to_string(end) + ":" + std::to_string(end));
     require_local_paste_format(field.edit, 1, end, format);
     require(SendMessageW(field.edit, EM_CANUNDO, 0, 0) != 0, "Paste must create a real editor undo transaction");
     field.adapter->undo();
@@ -426,7 +456,13 @@ void require_unchanged(Fixture& field, const EditorDocument& expected, bool can_
     const auto actual = field.adapter->document();
     require(actual.text == expected.text && actual.selection_start == expected.selection_start &&
         actual.selection_end == expected.selection_end && actual.indentation_starts == expected.indentation_starts,
-        "Declined paste must retain text, selection and indentation identity");
+        "Declined paste must retain text, selection and indentation identity: document='" + actual.text
+        + "' selection=" + std::to_string(actual.selection_start) + ":" + std::to_string(actual.selection_end)
+        + " visible='" + lgaed::presentation::edit_text(field.edit) + "' native-selection="
+        + std::to_string(selected_range(field.edit).cpMin) + ":" + std::to_string(selected_range(field.edit).cpMax)
+        + " expected='" + expected.text + "' selection=" + std::to_string(expected.selection_start)
+        + ":" + std::to_string(expected.selection_end) + " indentation-count(actual/expected)="
+        + std::to_string(actual.indentation_starts.size()) + "/" + std::to_string(expected.indentation_starts.size()));
     require((SendMessageW(field.edit, EM_CANUNDO, 0, 0) != 0) == can_undo &&
         (SendMessageW(field.edit, EM_CANREDO, 0, 0) != 0) == can_redo,
         "Declined paste must preserve the current undo and redo branches");
@@ -458,20 +494,23 @@ int main() {
         }
     };
 
-    test("OLE import prefers plain text over explicit RTF and retains local formatting and history", [] {
+    test("OLE clipboard paste prefers plain text over explicit RTF and retains local formatting and history", [] {
         for (const bool unicode : {true, false}) for (const bool multiline : {false, true}) {
+            std::cout << "QA OLE paste unicode=" << unicode << " multiline=" << multiline << '\n';
             Fixture field({"AXXB", {}, 1, 3}, multiline, {}, true, nullptr, false, false);
             const auto format = local_paste_format(field.edit);
             field.cursor(1, 3);
             ComOwner<TransferData> data(new TransferData(styled_payload(unicode)));
-            const auto result = native_ole(field.edit)->ImportDataObject(data.get(), static_cast<CLIPFORMAT>(rtf_format()), nullptr);
-            require(result == S_OK, "Real RichEdit import must accept the available text representation");
+            ClipboardScope clipboard(field.host); clipboard.publish_ole(data.get());
+            SendMessageW(field.edit,EM_PASTESPECIAL,rtf_format(),0);
             require_pasted_document(field, format, unicode ? "pegado" : "ansi");
+            require(clipboard.restore(),"Restore the original clipboard after OLE paste");
         }
     });
 
     test("Clipboard and keyboard paste preserve selected text undo and the field style", [] {
         for (const auto route : {0, 1, 2, 3}) {
+            std::cout << "QA clipboard paste route=" << route << '\n';
             Fixture field({"AXXB", {}, 1, 3}, true, {}, true, nullptr, false, false);
             const auto format = local_paste_format(field.edit);
             field.cursor(1, 3);
@@ -485,7 +524,7 @@ int main() {
         }
     });
 
-    test("Image-only clipboard and OLE imports leave text selection and redo untouched", [] {
+    test("Image-only native and OLE clipboard pastes leave text selection and redo untouched", [] {
         Fixture field({"AXXB", {}, 1, 3}, true, {}, true, nullptr, false, false);
         field.character(L'x');
         field.adapter->undo();
@@ -497,15 +536,19 @@ int main() {
         require_unchanged(field, before, false, true);
         SendMessageW(field.edit, EM_PASTESPECIAL, CF_DIB, 0);
         require_unchanged(field, before, false, true);
-        ComOwner<TransferData> image(new TransferData(image_payload()));
-        native_ole(field.edit)->ImportDataObject(image.get(), CF_DIB, nullptr);
-        require_unchanged(field, before, false, true);
+        require(clipboard.restore(), "Restore original clipboard after rejected image");
+        {
+            ComOwner<TransferData> image(new TransferData(image_payload()));
+            ClipboardScope ole_clipboard(field.host); ole_clipboard.publish_ole(image.get());
+            SendMessageW(field.edit,EM_PASTESPECIAL,CF_DIB,0);
+            require_unchanged(field, before, false, true);
+            require(ole_clipboard.restore(),"Restore original clipboard after rejected OLE image");
+        }
         field.adapter->redo();
         require(field.adapter->document().text == "AxB", "Rejected images must not erase the earlier redo operation");
-        require(clipboard.restore(), "Restore original clipboard after rejected image");
     });
 
-    test("Disabled and read-only editors decline text and RTF paste through every entry point", [] {
+    test("Disabled and read-only editors decline text and RTF through every user paste entry point", [] {
         for (const bool readonly : {false, true}) {
             Fixture field({"AXXB", {}, 1, 3}, true, {}, true, nullptr, false, false);
             field.character(L'x'); field.adapter->undo();
@@ -518,10 +561,12 @@ int main() {
             require_unchanged(field, before, false, true);
             SendMessageW(field.edit, EM_PASTESPECIAL, rtf_format(), 0);
             require_unchanged(field, before, false, true);
-            ComOwner<TransferData> data(new TransferData(styled_payload()));
-            native_ole(field.edit)->ImportDataObject(data.get(), static_cast<CLIPFORMAT>(rtf_format()), nullptr);
-            require_unchanged(field, before, false, true);
             require(clipboard.restore(), "Restore original clipboard after locked-field paste");
+            ComOwner<TransferData> data(new TransferData(styled_payload()));
+            ClipboardScope ole_clipboard(field.host); ole_clipboard.publish_ole(data.get());
+            SendMessageW(field.edit,EM_PASTESPECIAL,rtf_format(),0);
+            require_unchanged(field, before, false, true);
+            require(ole_clipboard.restore(),"Restore original clipboard after locked-field OLE paste");
         }
     });
 
@@ -540,13 +585,19 @@ int main() {
         ClipboardScope clipboard(owner.host);
         clipboard.publish(styled_payload());
         SendMessageW(input, EM_PASTESPECIAL, rtf_format(), 0);
-        require(lgaed::presentation::edit_text(input) == "ApegadoB", "The theme must install text-only paste without CodeEditor");
+        require(lgaed::presentation::edit_text(input) == "ApegadoB", "The theme must install text-only paste without CodeEditor: actual='"
+            + lgaed::presentation::edit_text(input) + "' expected='ApegadoB' selection=" + std::to_string(selected_range(input).cpMin)
+            + ":" + std::to_string(selected_range(input).cpMax));
         require_local_paste_format(input, 1, 7, format);
         const auto selection = selected_range(input);
         const auto can_undo = SendMessageW(input, EM_CANUNDO, 0, 0);
         require(can_undo != 0, "The standalone input must retain native RichEdit undo");
         ComOwner<TransferData> image(new TransferData(image_payload()));
-        native_ole(input)->ImportDataObject(image.get(), CF_DIB, nullptr);
+        {
+            ClipboardScope image_clipboard(owner.host); image_clipboard.publish_ole(image.get());
+            SendMessageW(input,EM_PASTESPECIAL,CF_DIB,0);
+            require(image_clipboard.restore(),"Restore the styled clipboard after rejected standalone OLE image");
+        }
         const auto after = selected_range(input);
         require(lgaed::presentation::edit_text(input) == "ApegadoB" && after.cpMin == selection.cpMin &&
             after.cpMax == selection.cpMax && SendMessageW(input, EM_CANUNDO, 0, 0) == can_undo &&
@@ -570,6 +621,31 @@ int main() {
         require(lgaed::presentation::edit_text(input)=="pegado" && native_ole(input)->GetObjectCount()==0,
             "Redoing a paste into a hinted answer must preserve text and reject embedded objects");
         require(clipboard.restore(), "Restore original clipboard after standalone stdin test");
+    });
+
+    test("OLE clipboard ownership and every prior text representation restore after a failed operation", [] {
+        Fixture owner;
+        ClipboardScope original(owner.host); const auto payload = styled_payload(); original.publish(payload);
+        bool reached_failure = false;
+        try {
+            ClipboardScope nested(owner.host);
+            ComOwner<TransferData> image(new TransferData(image_payload())); nested.publish_ole(image.get());
+            reached_failure = true;
+            throw std::runtime_error("Deliberate failure after publishing owned OLE data");
+        } catch (const std::runtime_error&) {}
+        require(reached_failure && !clipboard_restore_failed && GetClipboardOwner() == owner.host,
+            "An exception while owning OLE clipboard data failed to restore the previous native owner");
+        {
+            OpenClipboardScope opened(owner.host);
+            for (const auto& item : payload) {
+                const auto data = static_cast<HGLOBAL>(GetClipboardData(item.format));
+                require(data && GlobalSize(data) >= item.bytes.size(),"The failed OLE operation lost a prior clipboard representation");
+                const auto bytes = GlobalLock(data); require(bytes != nullptr,"Read the restored prior clipboard representation");
+                const bool matches = std::memcmp(bytes,item.bytes.data(),item.bytes.size()) == 0; GlobalUnlock(data);
+                require(matches,"The failed OLE operation changed prior Unicode, ANSI or RTF clipboard bytes");
+            }
+        }
+        require(original.restore(),"Restore the user's original clipboard after the controlled OLE failure regression");
     });
 
     test("Predefined indentation has origin and preserves source LF tabs and literals", [] {

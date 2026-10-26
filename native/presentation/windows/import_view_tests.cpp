@@ -329,7 +329,7 @@ void no_pending_transaction(const View& view) {
         require(!file.path().filename().wstring().ends_with(L".pending"), "Failed import left an unpublished transaction");
 }
 
-void assert_restored(View& view, const ExportFixture& exported) {
+void assert_restored(View& view, const ExportFixture& exported, bool original_executed = false) {
     require(view.page() == 4, "The lesson did not restore the historical page-five bookmark");
     const auto data = view.saved();
     const auto& prediction = view.lesson.pages[4].blocks[exported.prediction];
@@ -354,8 +354,18 @@ void assert_restored(View& view, const ExportFixture& exported) {
             state::indentation_units(expected.source, expected.indentation_json), "Imported indentation origin was not retained");
         require(restored.selection_start == expected.selection_start && restored.selection_end == expected.selection_end,
             "Imported UTF16 source selection changed during display/save");
-        require(edit_text(view.control(index, 10)) == visual_lf(expected.source), "Source displayed the wrong independent editor draft");
         require(!descendant(view.view, block_id(index, 15)), "An imported hidden input invented a curricular stdin field");
+        if (position == 1 && !original_executed) {
+            require(!descendant(view.view,block_id(index,10)) && !descendant(view.view,block_id(index,11))
+                    && !descendant(view.view,block_id(index,4)) && !descendant(view.view,block_id(index,14))
+                    && descendant(view.view,block_id(index,18)),
+                "An imported bookmark or opaque compiler verdict exposed a dependent editor before its original execution");
+            require(std::ranges::none_of(lesson_reading_regions(view.view),[&](const auto& region) {
+                return region.block_index == index;
+            }),"The reader exposed the blocked imported compiler draft before its prerequisite");
+            continue;
+        }
+        require(edit_text(view.control(index, 10)) == visual_lf(expected.source), "Source displayed the wrong independent editor draft");
         require(edit_text(view.control(index, 4)).empty() && edit_text(view.control(index, 14)).empty(),
             "An imported compiler state revived a stale verdict or console output");
     }
@@ -448,13 +458,17 @@ int main() {
             view.lesson.pages[4].blocks[exported.editors[1]]));
         require(cached && cached->correct && cached->answer == "Resultado antiguo", "Opaque historical compiler state was discarded");
         const auto original = exported.editors[0];
+        const auto original_source = view.control(original,10);
         const auto compile = view.control(original, 11);
         view.click(block_id(original, 11));
         wait_for(view.host, [&] { return IsWindowEnabled(compile) && edit_text(view.control(original, 14)) != "Compilando…"; },
             "A freshly imported real source could not compile and execute");
-        require(edit_text(view.control(original, 14)) == "Zona inicial" && edit_text(view.control(original, 4)) == "✓ Correcto",
+        require(edit_text(view.control(original, 14)) == "Zona inicial" && edit_text(view.control(original, 4)).starts_with("✓ Correcto"),
             "A fresh imported source did not produce/check its real output");
-        view.reopen(); assert_restored(view, exported);
+        require(view.control(original,10) == original_source && descendant(view.view,block_id(exported.editors[1],10))
+                && edit_text(view.control(exported.editors[1],10)) == visual_lf(exported.drafts[1].source),
+            "Fresh execution failed to unlock the exact imported dependent draft or recreated its original editor");
+        view.reopen(); assert_restored(view, exported,true);
         require(hashes(exported.folder) == changed_hashes, "Compiling the imported source changed the original export");
         std::cout << "PASS Imported C++ compiles freshly; cached correctness never becomes a persisted execution verdict\n"
             << "Native import UI integration: 6 groups passed\n";

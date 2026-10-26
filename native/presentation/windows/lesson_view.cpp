@@ -2922,7 +2922,7 @@ struct LessonView {
             fresh.exit_code = result->execution.exit_code ? static_cast<int>(*result->execution.exit_code) : -1;
             fresh.standard_input = running_input; fresh.standard_output = result->execution.stdout_bytes;
             fresh.executable=result->executable;
-            auto evaluation = curriculum::evaluate_output_check(*block(index).output_check, fresh, vm.revision);
+            auto evaluation = windows::evaluate_cpp_output_check(*block(index).output_check, fresh, vm.revision);
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct;
                 auto text = verdict_text(correct);

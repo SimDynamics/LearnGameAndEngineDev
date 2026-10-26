@@ -9,6 +9,12 @@
 #include <stop_token>
 #include <string>
 
+namespace lgaed::curriculum {
+struct OutputCheck;
+struct FreshExecution;
+struct OutputEvaluation;
+}
+
 namespace lgaed::windows {
 
 enum class CppPhaseStatus {
@@ -69,5 +75,11 @@ struct CppProjectAvailability {
 // request/revision results. This is bounded execution, not a security sandbox.
 [[nodiscard]] CppRunResult run_cpp(const CppRunRequest& request,
     std::stop_token stop = {});
+
+// Keep capture and the shared curriculum evaluator byte-exact. At the Windows
+// boundary, also accept CRT text-mode CRLF for authored LF-only output goals.
+// Explicit CR, spaces and the presence of a final newline remain significant.
+[[nodiscard]] curriculum::OutputEvaluation evaluate_cpp_output_check(
+    const curriculum::OutputCheck&, const curriculum::FreshExecution&, std::uint64_t current_revision);
 
 } // namespace lgaed::windows
