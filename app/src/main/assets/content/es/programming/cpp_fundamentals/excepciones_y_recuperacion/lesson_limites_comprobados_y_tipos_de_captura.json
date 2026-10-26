@@ -10,13 +10,19 @@
         },
         {
           "type": "paragraph",
-          "text": "std::vector::at comprueba el índice y, en un entorno estándar con soporte de excepciones, lanza std::out_of_range si el índice no está dentro del tamaño. El acceso con [] exige que el índice sea válido; no ofrece esa misma promesa de excepción recuperable. No ejecutes [] fuera del rango para intentar predecir su salida. Las guardas previas siguen siendo útiles cuando un dato externo puede rechazarse de forma normal.",
+          "text": "std::vector::at comprueba el índice. Con un vector de tamaño dos se pueden consultar las posiciones cero y uno; consultar la posición dos mediante at lanza std::out_of_range en vez de proporcionar un elemento (Köppe et al., 2023).\n\nEl acceso con [] exige un índice válido y no promete esa misma excepción recuperable. No se puede asignar una salida portable a un acceso con [] fuera del rango. Cuando el dato puede rechazarse de forma normal, comprobar previamente sus límites sigue siendo una decisión útil.",
           "emphasis": [
             {
-              "text": "std::vector::at"
+              "text": "std::vector::at",
+              "style": "bold"
             },
             {
-              "text": "índice sea válido"
+              "text": "lanza std::out_of_range",
+              "style": "bold"
+            },
+            {
+              "text": "exige un índice válido",
+              "style": "bold"
             }
           ]
         },
@@ -64,10 +70,19 @@
         },
         {
           "type": "paragraph",
-          "text": "std::invalid_argument y std::out_of_range son tipos distintos. Un catch de uno no captura automáticamente el otro. La biblioteca también ofrece std::exception, un tipo más general que permite tratar esas excepciones estándar. Incluye <exception> cuando lo uses. Si tienes tratamientos específico y general, escribe el específico primero; un tratamiento general anterior puede recibir los fallos que querías distinguir.",
+          "text": "std::invalid_argument y std::out_of_range son tipos distintos: capturar uno de ellos no captura automáticamente el otro. Ambos pertenecen al conjunto de excepciones estándar que puede recibir una captura de std::exception, cuyo tipo se declara en <exception> (Köppe et al., 2023).\n\nLos catch asociados a un try se examinan en su orden escrito. Coloca primero el tratamiento específico y después el general. Así un error de rango puede recibir su mensaje propio, mientras que las otras excepciones estándar llegan al tratamiento general (Köppe et al., 2023).",
           "emphasis": [
             {
-              "text": "específico primero"
+              "text": "tipos distintos",
+              "style": "bold"
+            },
+            {
+              "text": "orden escrito",
+              "style": "bold"
+            },
+            {
+              "text": "primero el tratamiento específico",
+              "style": "bold"
             }
           ]
         },
@@ -115,7 +130,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Las excepciones estándar ofrecen what() para consultar un diagnóstico textual. El texto de un error de rango puede diferir entre bibliotecas; no necesitas memorizar una frase específica para identificar el tipo de fallo. Conserva un mensaje de dominio estable y usa el diagnóstico adicional para investigar. No clasifiques tipos examinando palabras de what(): la captura ya utiliza el tipo del objeto."
+          "text": "what() permite consultar el diagnóstico textual de una excepción estándar (Stroustrup, 2024). Ese texto ayuda a investigar el fallo, pero la frase generada por at no es una salida fija que este programa pueda prometer para todas las bibliotecas (Köppe et al., 2023).\n\nDefine por separado un mensaje estable del programa, como Indice invalido. La selección de catch se realiza por el tipo de la excepción; no necesita buscar palabras dentro de what(). En la actividad de diagnóstico se conservarán el mensaje estable en std::cout y el detalle adicional en std::cerr.",
+          "emphasis": [
+            {
+              "text": "diagnóstico textual",
+              "style": "bold"
+            },
+            {
+              "text": "mensaje estable",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "por el tipo de la excepción",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -131,14 +161,27 @@
         },
         {
           "type": "note",
-          "text": "Usa el compilador predeterminado Clang 23 para practicar throw/catch; el alternativo Clang 21 no admite esta práctica. Los datos se preparan en el código; cambia los valores indicados antes de ejecutar."
+          "text": "Las dos actividades siguientes tienen proyectos independientes. La primera construye el recorrido de tres índices con un mensaje estable por intento; la segunda añade el diagnóstico de biblioteca sin cambiar ese mensaje. No hace falta reemplazar ni restaurar un borrador para pasar de un objetivo al otro."
         },
         {
           "type": "paragraph",
           "text": "Construye una prueba que recorra los índices 0, 1 y 2 de un vector con los datos `{2,9}`. Para cada índice, el `try` obtiene el dato mediante `at` y lo muestra; el `catch` de `out_of_range` muestra `Indice invalido`. Después del tratamiento de cada intento, muestra `:Fin` y un salto de línea. El mismo programa debe comprobar las dos posiciones válidas y la posición que queda fuera del vector.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser `2:Fin`, `9:Fin` e `Indice invalido:Fin`, en ese orden, sin espacios añadidos y con salto al final de cada una. Conserva `at`: no sustituyas el acceso comprobado por `[]` fuera de rango. El diagnóstico adicional de biblioteca tiene su propia actividad después de este intento.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Para cada índice",
+              "style": "bold"
+            },
+            {
+              "text": "Después del tratamiento de cada intento",
+              "style": "bold"
+            },
+            {
+              "text": "Conserva `at`",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -166,7 +209,24 @@
           "text": "Este editor independiente prepara el índice 2 y conserva una bandera para el diagnóstico adicional. Cambia sólo `mostrarDiagnostico` a `true` para consultar `error.what()` en `std::cerr`. Pulsa Compilar, ejecutar y comprobar. La salida estable debe seguir siendo `Indice invalido:Fin`, sin salto final.\n\nAbre la consola de errores de ejecución y comprueba que contiene un diagnóstico adicional. No compares esa frase con un texto fijo: puede cambiar entre bibliotecas. La comprobación automática revisa únicamente la salida estable; para esta actividad también debes observar por separado el canal de errores. No modifiques el índice ni el vector durante este intento.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Cambia sólo `mostrarDiagnostico` a `true`",
+              "style": "bold"
+            },
+            {
+              "text": "la salida estable",
+              "style": "bold"
+            },
+            {
+              "text": "únicamente la salida estable",
+              "style": "bold"
+            },
+            {
+              "text": "observar por separado el canal de errores",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -191,15 +251,39 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Solución de referencia del laboratorio"
+          "text": "Referencias de los accesos comprobados"
         },
         {
           "type": "note",
-          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+          "text": "Compara estas referencias después de construir y probar los accesos. El primer fragmento aísla un índice válido; el programa siguiente reúne las tres posiciones solicitadas. La última referencia pertenece al diagnóstico adicional. Se aceptan otras implementaciones que cumplan cada objetivo y su formato.",
+          "emphasis": [
+            {
+              "text": "después de construir y probar",
+              "style": "bold"
+            },
+            {
+              "text": "tres posiciones solicitadas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Con datos {2,9}, los índices 0,1,2 deben producir respectivamente 2:Fin, 9:Fin e Indice invalido:Fin en la parte estable de la salida. Se usa at y se captura out_of_range; no se provoca un acceso inválido con []. Al habilitar el diagnóstico adicional, el texto de what() puede variar y no sustituye ni cambia la expectativa estable. Fin debe seguir alcanzándose después del tratamiento."
+          "text": "Con datos {2,9}, los índices 0, 1 y 2 producen 2:Fin, 9:Fin e Indice invalido:Fin, respectivamente, con un salto después de cada intento. El programa usa at y trata std::out_of_range; no sustituye la consulta comprobada por [] fuera del rango.\n\nEl primer ejemplo siguiente muestra un único índice válido y no incluye el recorrido ni el salto exigidos al constructor. La referencia posterior de tres intentos sí corresponde a su objetivo completo. En el proyecto de diagnóstico se conserva el mensaje estable y se observa por separado what() en el canal de errores.",
+          "emphasis": [
+            {
+              "text": "con un salto después de cada intento",
+              "style": "bold"
+            },
+            {
+              "text": "objetivo completo",
+              "style": "bold"
+            },
+            {
+              "text": "por separado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -208,7 +292,21 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia anterior muestra el acceso a un índice con el diagnóstico adicional desactivado. La siguiente reúne las tres posiciones en una sola ejecución. La captura se selecciona por el tipo out_of_range, sin clasificar las palabras de what(). En la actividad independiente de diagnóstico, std::cerr conserva ese detalle y std::cout mantiene el mensaje de dominio."
+          "text": "La referencia anterior consulta un índice válido con el diagnóstico desactivado. El programa siguiente coloca try/catch dentro de cada vuelta para reunir las tres posiciones en una ejecución. Cuando at rechaza el índice dos, el catch escribe el mensaje del programa; después se alcanza :Fin y su salto.\n\nEn la actividad independiente de diagnóstico, std::cerr añade el detalle de what() y std::cout conserva Indice invalido:Fin, sin salto final. La frase de la biblioteca no sustituye la respuesta estable de ese objetivo.",
+          "emphasis": [
+            {
+              "text": "dentro de cada vuelta",
+              "style": "bold"
+            },
+            {
+              "text": "se alcanza :Fin",
+              "style": "bold"
+            },
+            {
+              "text": "sin salto final",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -224,6 +322,623 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{true};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "b78a2dbb9ef6b28ec5d5ace4cdcfcf38e6b74596df9f27a8e2ae8aa19f367977"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1c02f693a079d8273d6575583594c3407fc677a626f7bc1c581358be15633071"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "8a2b1bff99a4ecf00d78b6d4833b2d40f0ceeeba23e4f04bdc7aba04f9c66f3e"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "826032dabf4f00a414060f9475546e33f76b67aaf76879151eefa67f2e0c97c8"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "af795be1b062ccd18bf61ba6081f983bb28953b2fdbdd8977957d134b2a3400f"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "d3988549fece9824a37c7e39a6ed5e5145c1969b22b22e8a891b001fd547c7eb"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "21abb03b6342fb879852047fd28bd9c766a18c924fa5dbe7b5fc8d88f6be3ccb"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "041c7fa49981125c075f3a0df1ba8024bb063ab3c70e27e74dcc4ef03c9c8206"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0008",
+            "sha256": "616ac6c792bf7756179c49f4b0f1e48f386b5c830238c2ca01d4f171cea15e95"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "dfd1d2d977bec08ec26834f90134a35ae068158ec1e7773c719a5c41dda1585f"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "f65d3a94985767e8f82d673be7ff5dbcb0b0d07fb5b84103b2affaea838867d6"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "cd43a2ef147d41c6ed24e84ac570b5718f8cc2f177024269b20a8e2cdbaa4420"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007",
+          "block_0002_0008"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "b64810b1799d17b173266aec633227ff6f2c3afa463c5ef06b547af07f514d05",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "43efa9ec300cc35c4184a0013d8a99a970f705aea647e5c548245102e3f80756"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "87605612b10a80a5958272887002e3680eda94445a2147fce213a6a34d399961"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "72b4ba67352fdc2c4608e5e798b39c5b29835dd67befd38202fb7d69d7da4100"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "490521b630a2877f64503acead3de00cdd26b3fb93baf9f0121315ea2c2ad1c6"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "bd613bb77759b9735679a7aa14908af9576e7d27759e03391e7990c8da2dd375"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "aea2f6261c5630ccf05d97052fb969f6ca42bbc2008c01ce5d53e586e6977245"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "27b6712627488c663846deaee0710f9771fea83834b5e3fe9065c764a69db930"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "aa6522ec9e3be79c1882a2aa5c457e9a564d887ab459029fab7159812f933a68"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "847708130eb4261b46f7fc48c1fc11b0a7c86d5bc8aae61d119d42ad17c33000"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "065388a619b20dcba9f903d81e24ef1293981b8ad3591ceaf2ac6884deabeeb3",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "b78a2dbb9ef6b28ec5d5ace4cdcfcf38e6b74596df9f27a8e2ae8aa19f367977"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1c02f693a079d8273d6575583594c3407fc677a626f7bc1c581358be15633071"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8a2b1bff99a4ecf00d78b6d4833b2d40f0ceeeba23e4f04bdc7aba04f9c66f3e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "826032dabf4f00a414060f9475546e33f76b67aaf76879151eefa67f2e0c97c8"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "af795be1b062ccd18bf61ba6081f983bb28953b2fdbdd8977957d134b2a3400f"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "d3988549fece9824a37c7e39a6ed5e5145c1969b22b22e8a891b001fd547c7eb"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "21abb03b6342fb879852047fd28bd9c766a18c924fa5dbe7b5fc8d88f6be3ccb"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "041c7fa49981125c075f3a0df1ba8024bb063ab3c70e27e74dcc4ef03c9c8206"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0008",
+                "sha256": "616ac6c792bf7756179c49f4b0f1e48f386b5c830238c2ca01d4f171cea15e95"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "dfd1d2d977bec08ec26834f90134a35ae068158ec1e7773c719a5c41dda1585f"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "f65d3a94985767e8f82d673be7ff5dbcb0b0d07fb5b84103b2affaea838867d6"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "cd43a2ef147d41c6ed24e84ac570b5718f8cc2f177024269b20a8e2cdbaa4420"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "8b47f46911c1d09c81fda94c334725c8275f23fccf3bed73bfceec29dae2ecd4",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "f330c35df17badc411623c55c83398e5deb50d894ecde36db2c28a11c1763984"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "5fe8fa0b24f7b55de81a8d714aac1be46534e59728426a96125f381f6c37dba1"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "d95e022706b69e11fe1c8225bc273bcc8502dc3b6872c87f730743e7fa9a023a"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "f33388471877560ce781d288aebaf7c82e348500d083d3818d2321952468d3b8"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "ca72fddec822d75637a6270b4005e27589af37a029e3c2fa41d294a0bf8ac8c3"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "98746b6ed323b940808cf879afb9262f6a17a4d865b5c9aef17c0e374ccda326"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "c594bfd214f6277fbce2050abf2490a5758166473397ef36bb87a50c16105ecc"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "e35cc9d405c40971d97e76f805b81bcba72aaca5156333358b36d4ad0bae7518"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "4f73955d7f681b5b825298d0643edeabb910a87ba85fefd202b82126184a3450"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "2561c168b181b92bd09b4bb5f8a9977c4b576f252e462385253a2e76c37ca95f",
+        "afterSha256": "56436215e25f861613eb730b7bcf755a7a17aa85ff2e86e7ae806394b8d8f839"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "e463fa297b6920d70bc1146ea00c3ede8dd6a883664246b02ea77e1ddb9fb76c",
+        "afterSha256": "5ac95e6d303e5595d2e7d8819f9d2eede093cf5216eacad2a5df8cecbfe8d95c"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "374d5b872a820d4dfa38d90c17d1977181fd0f6addca95e4d2654197c1e571ce",
+        "afterSha256": "83e4157fa915ff7bf37192a6f656890541ea64924b867676be18d0e8714e9bd5"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "ce248208e4ae2fa5315d7a0be1ffc62d7e99b19a7481fbb71cb5b6f33484dfb1",
+        "afterSha256": "bc90a040344fa47bc7cdbf5394b383e45d3b7efe2b68dbd4b93982bc136f880a"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "fae907d622d91386c80df615422229f0bcf17adb8f93c55dfdf4f96381a7d3dd",
+        "afterSha256": "aa0f4df48e60c53be76943210d06074906ef973d3ce07b5d6a3580d2fa8d0b16"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "89f0f6f997c82b08aa2410f997192bc5dab0139dc7efcdf94fa62c267135dd50",
+        "afterSha256": "44bf447ef18aad28ec7212c8b3802b3ad56e7b30985b12e80e077779a50248f3"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "826064520b77ea2b8189d925343a3a0984301d500f3ee74e5c94d80d271c5c86",
+        "afterSha256": "a8e80838eabd4289b6094f08d60dbb1524b8e2a8ec1deee9e7013b5293700dfa"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "025b8ca374994c636a6af2f1a54c5e4b6ced456f2157bd5dcffdc2a328833d43",
+        "afterSha256": "ca2efa3e0b9068196825e5f4e6112a1313cb64313373362a712d92b1ee661171"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "22b4048e1d447fd690c14b515f125274488ca0a62d77f911fb0cd69c43c5e700",
+        "afterSha256": "ae65e2cd50e0da3626338d70c217d5289f3f102a1a7a424c7225b60a019fc41d"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "819e751d2429a9d0164b8a63b04defc078a63d12292d494a543e0959b3c9e147",
+        "afterSha256": "cfaa9dbf23c473a7c30d8690c100eda50a6e851a600ba73e874425b043dfec10"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0005",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005"
+      ]
+    },
+    {
+      "activity": "block_0002_0008",
+      "blocks": [
+        "block_0003_0006",
+        "block_0003_0007"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0002_0008",
+      "requires": [
+        "block_0002_0005"
       ]
     }
   ]

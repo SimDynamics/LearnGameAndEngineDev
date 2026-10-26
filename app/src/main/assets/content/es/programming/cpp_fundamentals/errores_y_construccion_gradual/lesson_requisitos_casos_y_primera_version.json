@@ -10,16 +10,39 @@
         },
         {
           "type": "paragraph",
-          "text": "El encargo «calcula cuánto tarda un pedido» deja decisiones pendientes. ¿Cuántas piezas puede tener? ¿Qué unidad usa el resultado? ¿Hay preparación inicial? ¿Se acepta un pedido vacío? Si decides esas reglas mientras corriges código, puedes cambiar lo que significaba resolver el problema sin advertirlo. Un requisito preciso permite distinguir un resultado correcto de uno incorrecto.",
+          "text": "El encargo «calcula cuánto tarda un pedido» deja decisiones pendientes: cuántas piezas admite, en qué unidad se expresa el resultado, si hay preparación inicial y qué ocurre con un pedido vacío. Precisar lo que debe hacer el programa permite comprobar después si resuelve ese problema (Stroustrup, 2024).\n\nSi esas reglas cambian mientras se corrige el código, una salida podría parecer correcta sólo porque también cambió la expectativa. El requisito proporciona una referencia para comparar, no una descripción de cómo escribir la función.",
           "emphasis": [
             {
-              "text": "requisito"
+              "text": "lo que debe hacer el programa",
+              "style": "bold"
+            },
+            {
+              "text": "requisito",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Nuestro microtaller estima minutos: acepta entre 0 y 10 piezas. Un pedido vacío tarda 0 minutos; un pedido no vacío necesita 3 minutos de preparación y 2 por pieza. La estimación no modifica pedidos ni muestra mensajes. Los datos se fijan en el código en estos laboratorios; no son entrada interactiva. Más adelante separaremos también lectura y procesamiento de datos."
+          "text": "El microtaller de esta lección estima minutos y admite de 0 a 10 piezas, incluidos los extremos. El pedido vacío tarda 0 minutos. Un pedido no vacío necesita una preparación de 3 minutos y 2 minutos por cada pieza.\n\nLa función de estimación recibe la cantidad y devuelve el tiempo. No modifica el pedido ni imprime mensajes: main utiliza ese resultado para presentarlo.",
+          "emphasis": [
+            {
+              "text": "de 0 a 10 piezas",
+              "style": "bold"
+            },
+            {
+              "text": "pedido vacío",
+              "style": "bold"
+            },
+            {
+              "text": "preparación de 3 minutos",
+              "style": "bold"
+            },
+            {
+              "text": "2 minutos por cada pieza",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -31,7 +54,12 @@
             "Para 4 piezas devuelve 11 minutos y no cambia el pedido."
           ],
           "correctIndex": 2,
-          "explanation": "El resultado 3+2*4 y la ausencia de modificación forman una promesa concreta."
+          "explanation": "El resultado 3+2*4 y la ausencia de modificación forman una promesa concreta.",
+          "reviewFeedback": [
+            "Ese inciso describe recursos de implementación. Examina si permite comprobar qué resultado debe obtenerse para ese pedido.",
+            "Organizar funciones es una decisión de diseño. Examina si el inciso define también el comportamiento solicitado.",
+            "Relaciona el resultado prometido con el pedido y con los datos que deben conservarse."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -43,7 +71,12 @@
             "Un ejemplo aceptado, sin definir qué pasa fuera de ese ejemplo."
           ],
           "correctIndex": 0,
-          "explanation": "Una categoría vaga no permite escoger pruebas ni evaluar un resultado."
+          "explanation": "Una categoría vaga no permite escoger pruebas ni evaluar un resultado.",
+          "reviewFeedback": [
+            "La condición de aceptación debe poder aplicarse también al valor de frontera.",
+            "Revisa si cambiar el nombre concreta qué cantidades admite el requisito.",
+            "Un ejemplo comprueba un caso; revisa si define el límite para las demás cantidades."
+          ]
         }
       ]
     },
@@ -51,11 +84,25 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Casos manuales que preceden al programa"
+          "text": "Elegir casos antes de implementar"
         },
         {
           "type": "paragraph",
-          "text": "Calcula antes los resultados para 0,1,4 y 10 piezas. El cero activa una regla distinta: no hay preparación. Uno comprueba el primer pedido real. Cuatro comprueba un caso normal. Diez comprueba la frontera superior. La operación 3+2*piezas es segura en este dominio pequeño; no estamos ofreciendo una función para multiplicar cualquier int."
+          "text": "Los casos 0, 1, 4 y 10 comprueban decisiones distintas del requisito. El cero activa la regla del pedido vacío; uno representa el primer pedido no vacío; cuatro es un caso interior, y diez pertenece a la frontera superior admitida. Las preguntas aplican la regla a esos casos sin depender de una salida producida por el programa.\n\nEl cálculo 3+2*piezas permanece pequeño en este dominio. Ese límite no constituye una promesa para cualquier valor representable por int.",
+          "emphasis": [
+            {
+              "text": "decisiones distintas",
+              "style": "bold"
+            },
+            {
+              "text": "frontera superior",
+              "style": "bold"
+            },
+            {
+              "text": "en este dominio",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -67,7 +114,12 @@
             "3, porque siempre se suma la preparación."
           ],
           "correctIndex": 0,
-          "explanation": "El caso vacío tiene una regla explícita y debe probarse por separado."
+          "explanation": "El caso vacío tiene una regla explícita y debe probarse por separado.",
+          "reviewFeedback": [
+            "Identifica qué regla se aplica cuando no se aporta ninguna pieza.",
+            "Distingue la cantidad de piezas del coste por pieza antes de calcular.",
+            "Comprueba si el requisito aplica la preparación a todos los pedidos o distingue el vacío."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -79,11 +131,30 @@
             "13 minutos."
           ],
           "correctIndex": 0,
-          "explanation": "Hay preparación de 3 minutos y 20 minutos por las piezas."
+          "explanation": "Hay preparación de 3 minutos y 20 minutos por las piezas.",
+          "reviewFeedback": [
+            "Separa la preparación de la contribución de todas las piezas.",
+            "Revisa si has incluido todas las partes del tiempo exigido para un pedido no vacío.",
+            "Relaciona diez piezas con el coste por pieza, además de la preparación."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Una primera versión puede suponer datos válidos si lo declara claramente y si las llamadas del prototipo respetan esa restricción. No confundas un prototipo limitado con una versión terminada. Construimos primero la regla válida y después añadimos validación y una política de error explícitas."
+          "text": "Una primera versión puede resolver una parte limitada del problema para comprobar su diseño. Sus límites deben quedar explícitos, y los casos utilizados tienen que respetarlos (Stroustrup, 2024).\n\nAquí se construye primero la estimación para datos válidos. La validación y la política de error se incorporarán como responsabilidades explícitas en las lecciones siguientes. El prototipo no se presenta como una función que ya rechaza cualquier dato no admitido.",
+          "emphasis": [
+            {
+              "text": "límites deben quedar explícitos",
+              "style": "bold"
+            },
+            {
+              "text": "datos válidos",
+              "style": "bold"
+            },
+            {
+              "text": "prototipo",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -100,7 +171,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La función tiene una sola responsabilidad: estimar para datos de su dominio. main usa dos llamadas y presenta resultados. Esta separación permite probar el cálculo sin copiar su regla dentro de cada salida. La siguiente actividad cambia las entradas: predice usando el requisito, no ejecutando primero."
+          "text": "estimar calcula dentro de su dominio y main presenta sus resultados. Separar esas responsabilidades permite utilizar la misma regla desde llamadas distintas, en vez de copiarla dentro de cada salida (Stroustrup, 2024).\n\nEl siguiente puzzle cambia los pedidos del ejemplo. Predice su salida usando el requisito antes de ejecutar.",
+          "emphasis": [
+            {
+              "text": "Separar esas responsabilidades",
+              "style": "bold"
+            },
+            {
+              "text": "misma regla",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -136,7 +217,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora se propone permitir hasta 12 piezas manteniendo los mismos tiempos. La ampliación afecta al dominio y a sus pruebas; no obliga a cambiar la fórmula de los pedidos no vacíos. Otra propuesta, cobrar preparación también por el pedido vacío, sí cambia una salida que antes era correcta. El puzzle siguiente distingue el cambio de dominio del cambio en la estimación del pedido vacío."
+          "text": "Permitir hasta 12 piezas manteniendo los tiempos cambia el dominio y las pruebas de frontera, pero no la regla de los pedidos no vacíos. En cambio, añadir preparación al pedido vacío modifica una salida antes correcta.\n\nEl puzzle distingue esas dos decisiones. En los editores posteriores, cada actividad conserva un requisito definido y sus propios casos.",
+          "emphasis": [
+            {
+              "text": "dominio",
+              "style": "bold"
+            },
+            {
+              "text": "modifica una salida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -152,10 +243,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye `estimar` para el requisito original: recibe piezas entre 0 y 10, devuelve 0 para el pedido vacío y usa 3 minutos de preparación más 2 por pieza en los demás casos. Mantén el cálculo separado de la salida. En main muestra los casos 0, 2, 7 y 10, en ese orden, con el formato `piezas=minutos` y un salto de línea por caso.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser `0=0`, `2=7`, `7=17` y `10=23`, sin espacios y con salto final en las cuatro. Esta actividad conserva un único requisito. La variante de preparación utiliza su propio editor después de este intento. La validación de datos se desarrolla más adelante; aquí todas las llamadas cumplen el dominio.",
+          "text": "Reconstruye estimar para el requisito original: recibe piezas entre 0 y 10, devuelve 0 para el pedido vacío y usa 3 minutos de preparación más 2 por pieza en los demás casos. Mantén el cálculo separado de la salida.\n\nEn main muestra los casos 0, 2, 7 y 10, en ese orden, con el formato piezas=minutos. Las cuatro líneas deben ser 0=0, 2=7, 7=17 y 10=23, sin espacios y con un salto al final de cada línea.\n\nPulsa «Compilar, ejecutar y comprobar». Todas las llamadas de esta actividad respetan el dominio. Después se construye la variante de preparación en otro editor.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "requisito original",
+              "style": "bold"
+            },
+            {
+              "text": "en ese orden",
+              "style": "bold"
+            },
+            {
+              "text": "un salto al final de cada línea",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -180,10 +284,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor la variante que usa 4 minutos de preparación para pedidos no vacíos y 2 por pieza. El dominio sigue siendo 0 a 10 y el pedido vacío sigue tardando 0. Muestra los mismos cuatro casos, en el mismo formato piezas=minutos, una línea por caso.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas esperadas son 0=0, 2=8, 7=18 y 10=24, con salto al final de cada una. Cambia la regla de cálculo, no escribas esos resultados como mensajes fijos. El editor anterior conserva la estimación original.",
+          "text": "Construye en este editor la variante que utiliza 4 minutos de preparación para pedidos no vacíos y 2 por pieza. El dominio sigue siendo 0 a 10 y el pedido vacío conserva 0 minutos.\n\nMuestra los mismos cuatro casos en el formato piezas=minutos, una línea por caso: 0=0, 2=8, 7=18 y 10=24. Cada línea termina con un salto. Cambia la regla del cálculo para obtenerlos; no los escribas como mensajes fijos.\n\nPulsa «Compilar, ejecutar y comprobar». Esta construcción tiene su propio borrador y no exige volver al editor anterior.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "4 minutos de preparación",
+              "style": "bold"
+            },
+            {
+              "text": "pedido vacío conserva 0 minutos",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -208,7 +321,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Solución de referencia del laboratorio"
+          "text": "Referencia de la primera construcción"
         },
         {
           "type": "note",
@@ -216,7 +329,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Una solución correcta devuelve 0 para el pedido vacío y 3+2*piezas para los pedidos no vacíos del dominio 0 a 10. Para 0,2,7,10, los resultados son 0,7,17,23 minutos. Al cambiar únicamente la preparación de 3 a 4, deben ser 0,8,18,24: el cero se conserva. Se admiten otras implementaciones que mantengan el cálculo separado de la presentación y produzcan el formato solicitado en cada actividad."
+          "text": "La primera estimación devuelve 0 para el pedido vacío y 3+2*piezas para los demás valores de 0 a 10. Sus cuatro llamadas producen 0, 7, 17 y 23 minutos.\n\nEn la variante cambia sólo la preparación de los pedidos no vacíos: esos resultados pasan a 0, 8, 18 y 24. El cero conserva su regla. Ambas construcciones mantienen el cálculo separado de la presentación y respetan el formato pedido.",
+          "emphasis": [
+            {
+              "text": "El cero conserva su regla",
+              "style": "bold"
+            },
+            {
+              "text": "cálculo separado de la presentación",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -236,6 +359,736 @@
           "language": "cpp",
           "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{4};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "8cb2dee9344564a4289c6ce5c5ffc83ba814e3b6a8ad7370c14f49300208ea05"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "3652b0c0ff5850263715844cd6a1fb8c4a84f8c5f02b08fd7f5f6e5da63d5fec"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "02b2db85ea516721991adaa0dfec27a59896da93941c70e6acb179e2006ca68c"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "09459445c2548ea15be51ccc7a1117029d80b3d7da4ecf08ed808ce757337a52"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "b82e4ba91e8643269571fa10feff3827360bc866295fce8055841bb1a16dfc21"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "76f1ecf082cd7a7d1d50b95401f3336aa339e5e6c7ba744994e9d7ea884ab474"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "d3453d5abfaaf63af09ea85c8476e3a8e475dcd19cb8e1f90bf2c498a6f7b871"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "5b0a40323de126d97db084ae1a0236fc444f26435a7bd3e9f4f64ddab54a2d2c"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "88b29f30cf0b493df9ba60019172d7ee30b25dc48d4481027114e4a57eb22942"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "80a50b876294710aa7d64731c636e146e4882c645277788460c7c79e7cef7b9a"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "b437070bb1ef0ce1586a8de93616142e648afb17863ec752473f45dd905f34a7"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "fb63f33fd87984caeec2e2a3a860c8c9774ab54098a1ebdad512c281e86bc469"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "8b87c256c6a49042917c4573470409f664a5b72aee798ef463423ed01b7fd298",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "36f6f38b980b81c2ec3b2e1d44e6a84b12ebf6531927d7ba010de67f6587295c"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "e5bcf768b0b344586973f44feff1d591e1523bf5ec11c4271a297b28598faa5a"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "f62919dc426a8ccf2b34b4162d334068575fcf682360c8df600a8dca2b67a1d6"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "666078e7cc4b77a710a0f18139e0f596af1707ca2e230494e301145d702d9c9d"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "60c332421fbb54a90b1e0211987d1039bba8f4f0f69266587a9677b92d364253"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "76f1ecf082cd7a7d1d50b95401f3336aa339e5e6c7ba744994e9d7ea884ab474"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "d3453d5abfaaf63af09ea85c8476e3a8e475dcd19cb8e1f90bf2c498a6f7b871"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "96dc3fc10842a90500cc57ec6eaa19fc6ed151ed48a6fef490d8d3b524e17bdc"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "403c3367b05644b0b835ab53a5060024ea01a037fcdafbece455ab0dac85702c"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "af0e12aac02940d94d4bc809cf8a4382e17e9e462ad50df9a93e183149afad66"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "0d98f5e334ca32a4816cd94185e3fc8248cb42f8d354576a8767572a9782438d",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "8cb2dee9344564a4289c6ce5c5ffc83ba814e3b6a8ad7370c14f49300208ea05"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "3652b0c0ff5850263715844cd6a1fb8c4a84f8c5f02b08fd7f5f6e5da63d5fec"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "02b2db85ea516721991adaa0dfec27a59896da93941c70e6acb179e2006ca68c"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "09459445c2548ea15be51ccc7a1117029d80b3d7da4ecf08ed808ce757337a52"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "b82e4ba91e8643269571fa10feff3827360bc866295fce8055841bb1a16dfc21"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "76f1ecf082cd7a7d1d50b95401f3336aa339e5e6c7ba744994e9d7ea884ab474"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "d3453d5abfaaf63af09ea85c8476e3a8e475dcd19cb8e1f90bf2c498a6f7b871"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "5b0a40323de126d97db084ae1a0236fc444f26435a7bd3e9f4f64ddab54a2d2c"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "88b29f30cf0b493df9ba60019172d7ee30b25dc48d4481027114e4a57eb22942"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "80a50b876294710aa7d64731c636e146e4882c645277788460c7c79e7cef7b9a"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "b437070bb1ef0ce1586a8de93616142e648afb17863ec752473f45dd905f34a7"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "fb63f33fd87984caeec2e2a3a860c8c9774ab54098a1ebdad512c281e86bc469"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "f5e6b1427bfbfd15e7408451997076bdb182d7bff96bc542f71f4d43e4d746b6",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "dafa360f5cbc809ade4844259e80cf8134e2ddf4aa73de215e8b3dce708e4db7"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "dc2888e4d066532680a6b2b36a56bf97be312ad24c32155e7417520123cff7e6"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "06d9922ff2e5e75504b5ffecaf1d32aac565e871bc01b08bfd218dfe8af77a6e"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "666078e7cc4b77a710a0f18139e0f596af1707ca2e230494e301145d702d9c9d"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "3c64264e1619c4442509a64b7cedc78ec3b252d91539186c562fe87f4059c070"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "76f1ecf082cd7a7d1d50b95401f3336aa339e5e6c7ba744994e9d7ea884ab474"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "d3453d5abfaaf63af09ea85c8476e3a8e475dcd19cb8e1f90bf2c498a6f7b871"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "24bba29bd6cea263713a09c3484e590eb0bf66c323450fa843ecba963260383e"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "8e7f53a3e950708fd5efc0b6a305a0888fe7eab4c416478cbe0dabbfbe0068fa"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "0dd5ba2020aa3bc5a348f9b54eafecb062c378b44ab30fb89f2a691cd4649174"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "aee11ec3eaa08ec1b8035aeb672a9fa6ae75ab688ee9ba2ca8189d86870c201e",
+        "afterSha256": "21c1addb820443de24bc1b2c401f8803e00e88ddccbc8a68fddc0e35d7e953b5"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "2ba4dbea3ad15b96bd618e4906d7c3de666e2b8cb1f75f19c6bd6e1cfe5d2d02",
+        "afterSha256": "39a91fab127d673704d1b1adcc3f4a9ff0e351ba40244e3648b2781b1252102a"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "06adc8d3ec1242c4205ab1a3455e9d4a8cad557a48c972b4f281b2dfd39425e0",
+        "afterSha256": "965f287dde09195403c2ca8b330d6d5dfd2fccb8b5d178a38e0e1fabc42603b5"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "5b5a810b11e2bce1fa499a4ca01b6fd43e521268c14dd98e746850f23b91f8dd",
+        "afterSha256": "9f365b6a7928df7df2d89bdb6cbfa9061f14c6c976781c3b3e24a8d7eeffde66"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "cb7d17a7255d101329515524584da00f1693ce9e52932b5aa90712afec9c7aed",
+        "afterSha256": "08e25b022f197700d5dce831dad6b4d4caf693eaefc53beb91ffac673323782f"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "4f898912631403c519f7a09dd4bba5e9ef4964af324e7a11e71ab06bccfe90ef",
+        "afterSha256": "0457c921f2b41d962c6c9f1230d6deaf2e26eb90c602c38d7cf7e63b864ea6b4"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "8e8ee2c765ed4d39a3c4b5164dd45e38ab009f1742f5f6ba61a9f4a9e201c6e7",
+        "afterSha256": "c6d4ae6ece36d87b60b4c0321ed3acd1a52f63f86f5ac75b6aa98ba6551e8fc1"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "32b2935f3ff67fcd468e45343052c1a693e3fcda16bffa021cf5145e1dd056b1",
+        "afterSha256": "18c030844302c03aeb3a007c522428af6e11055f67fc01bf762532c521618871"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "d0e3d1c033d56b9a05488abcb3c5e12756458c11ca983c24cc76844c0a584706",
+        "afterSha256": "045e71be5a684be82f80c03f70f748d0c3334e8acd7d44d37e67d8f3ceef6656"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "549f20378690680991e793e7c1b0c4d244768e184b2a1c230d15792c8f1793c3",
+        "afterSha256": "12f31fe148902de1f0161ffa687cde220327f39e6a4bd16e6b7c28223b49eb3b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d5522c850b83286a6a85aa6444ca6d2c4b1ed7f77aae316226cbcf7f043f30e0",
+        "afterSha256": "6216fcf3e4058dc04837df7f2b6079e3af0a878f58b701bb0a2866ec5443980b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f41399b0c6d3a9a15107cd7292c570afb8f884fd53adf688c317f681a2f03868",
+        "afterSha256": "78c0e319802bc74d0846a7558583cee51e58d5c25d2e8850abed9d31ced2591d"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "5d143ec4a622df9167b30c6ab42fb0dd2c1c685799ba6bfa96a554f7e0364b41",
+        "afterSha256": "c9b51ea099e628428fd082b824ed3a31df25621db0988f8ca22a3ca3c9878b39"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "826064520b77ea2b8189d925343a3a0984301d500f3ee74e5c94d80d271c5c86",
+        "afterSha256": "e463659a1c906b16079b67f765e36fa653f2bc98481121edc245a6d923b08d7d"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "80bb671ef320f98a7b919474e7cb18b611479052bee19317380abe16843f55b9",
+        "afterSha256": "9f25104c44d8df3797908c9ac8a145bb58e1f34ba32e73d5c737f3530296c182"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "21c1addb820443de24bc1b2c401f8803e00e88ddccbc8a68fddc0e35d7e953b5",
+        "afterSha256": "8fff7f5fc87db02d670b68bea12e620437ab5f5c897e651600b35a2459c9784a"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0004",
+      "blocks": [
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "block_0003_0007",
+      "blocks": [
+        "block_0004_0004",
+        "block_0004_0005",
+        "block_0004_0006"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0003_0007",
+      "requires": [
+        "block_0003_0004"
       ]
     }
   ]

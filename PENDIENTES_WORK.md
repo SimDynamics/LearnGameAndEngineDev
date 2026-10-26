@@ -2,7 +2,7 @@
 
 Uso interno de Work. Este archivo no contiene pedidos activos ni es un canal de encargos para Codex. Consultar `PENDIENTES_RECURSOS_CURRICULARES.md` para las capacidades pendientes y su aceptación. No crear `ACTUALIZACIONES_CODEX.md`.
 
-Continuidad curricular: Programación 1 ES sigue abierto. Prioridad U1: aplicar el plan de retirada de tres ejecuciones redundantes cuando Codex habilite la conservación compatible; integrar y aceptar obligatoriedad, pausa del lector y coloreado contextual según el registro único. U6L1–L14 ya están guardadas; quedan su aceptación completa y la revisión U6L15–L20. Antes de reanudar, leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt`; conservar todo lo acreditado, sin reconstruir ni repetir pruebas técnicas ajenas al encargo.
+Continuidad curricular: Programación 1 ES sigue abierto. Revisiones U6–U8 guardadas; quedan aceptación visual y escucha Windows. Evidencias en `out/qa/funciones-cierre-es-a49b48f/`, `u7-revision-es-a49b48f/` y `u8-revision-es-a49b48f/`; continuar por U9 sin reconstruir ni recompilar programas intactos. En U1 queda integrar retiro de repeticiones, obligatoriedad, lector y color; U8L3 requiere comprobación del diagnóstico adicional, según registro único. Antes de reanudar, leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt`; conservar todo lo acreditado.
 
 ## Base conservada
 

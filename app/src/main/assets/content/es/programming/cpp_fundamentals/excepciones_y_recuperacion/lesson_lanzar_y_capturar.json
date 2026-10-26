@@ -10,19 +10,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Una señal como -1 permite separar error de resultado válido si todos los llamadores la comprueban. Otra política usa excepciones: cuando una función detecta que no puede cumplir su contrato, lanza un objeto con throw en lugar de retornar normalmente. El código que conoce cómo tratar el fallo puede capturarlo en un catch asociado a un bloque try. El mecanismo separa detección y tratamiento, pero todavía tenemos que decidir qué significa recuperar.",
+          "text": "La política de devolver una señal como -1 exige que el llamador la distinga de los resultados válidos. Las excepciones ofrecen otra forma de informar un fallo: una función ejecuta throw en vez de retornar normalmente, y un tratamiento compatible puede capturarlo mediante catch asociado a un bloque try (Stroustrup, 2024).\n\nLa detección y el tratamiento quedan separados. La función que detecta un argumento no admitido no necesita decidir también cómo presentarlo al usuario o si se abandona una operación más amplia. Esa política corresponde al contexto que trata el fallo (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "excepciones"
+              "text": "excepciones",
+              "style": "bold"
             },
             {
-              "text": "detección y tratamiento"
+              "text": "en vez de retornar normalmente",
+              "style": "bold"
+            },
+            {
+              "text": "detección y el tratamiento",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "std::invalid_argument, de <stdexcept>, es un tipo de excepción de la biblioteca para un argumento no válido. std::invalid_argument{\"Cantidad invalida\"} construye un objeto con un diagnóstico. No es una función de la biblioteca de apoyo del libro. Los tipos de biblioteca permiten usar esta idea antes de diseñar clases propias. En las predicciones mostramos mensajes fijos del catch; no dependemos de un texto interno específico del compilador."
+          "text": "std::invalid_argument es un tipo de excepción de la biblioteca estándar para informar un argumento inválido. Se declara en <stdexcept>. La expresión std::invalid_argument{\"Cantidad invalida\"} construye un objeto de ese tipo con un texto descriptivo (Working Draft: Programming Languages — C++, s. f., sección [invalid.argument]).\n\nEl tipo del objeto permite reconocer el fallo en el catch. En los ejemplos siguientes, el tratamiento imprime un mensaje fijo elegido por el programa; la salida pedida no es un diagnóstico del compilador.",
+          "emphasis": [
+            {
+              "text": "tipo de excepción",
+              "style": "bold"
+            },
+            {
+              "text": "construye un objeto",
+              "style": "bold"
+            },
+            {
+              "text": "mensaje fijo",
+              "style": "bold"
+            },
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "code",
@@ -31,7 +55,21 @@
         },
         {
           "type": "paragraph",
-          "text": "La llamada válida devuelve 7, se imprime ese resultado y el catch se omite. Si se lanza la excepción dentro del try, se omiten las instrucciones posteriores de ese try hasta encontrar un tratamiento compatible. La referencia const del catch permite consultar el objeto sin modificarlo. El nombre error no obliga a imprimirlo; aquí usamos un mensaje de nuestro dominio."
+          "text": "En la llamada válida del ejemplo, estimar devuelve 7 y se imprime ese resultado. No se ha lanzado ninguna excepción, por lo que se omite el catch.\n\nSi la llamada ejecuta throw, no se obtiene el valor normal ni se alcanzan las instrucciones posteriores de ese try. Se busca un tratamiento compatible (Stroustrup, 2024). La declaración const std::invalid_argument& error permite tratar el objeto de excepción mediante una referencia de sólo lectura; aquí el cuerpo muestra el mensaje del dominio sin utilizar ese nombre.",
+          "emphasis": [
+            {
+              "text": "se omite el catch",
+              "style": "bold"
+            },
+            {
+              "text": "no se obtiene el valor normal",
+              "style": "bold"
+            },
+            {
+              "text": "referencia de sólo lectura",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -73,7 +111,12 @@
             "Una transferencia excepcional; no existe un resultado normal de esa llamada."
           ],
           "correctIndex": 2,
-          "explanation": "throw no proporciona el valor de retorno que la llamada prometía en el camino normal."
+          "explanation": "throw no proporciona el valor de retorno que la llamada prometía en el camino normal.",
+          "reviewFeedback": [
+            "Revisa si throw modifica el objeto que se utilizó como argumento o informa que la operación no puede continuar normalmente.",
+            "Un valor de retorno necesita un camino normal que lo proporcione. Sigue qué instrucción se ejecuta en este caso.",
+            "Distingue la transferencia excepcional del resultado prometido para un dato válido."
+          ]
         },
         {
           "type": "fill_code",
@@ -96,7 +139,21 @@
         },
         {
           "type": "paragraph",
-          "text": "El catch debe reconocer el tipo lanzado o un tipo de excepción más general apropiado. Si ninguna función llamadora captura una excepción que abandona main, el programa termina mediante el mecanismo de terminación de C++. No uses esa terminación como estrategia de recuperación. Los laboratorios del curso capturan los fallos que provocamos de forma deliberada."
+          "text": "El tratamiento debe ser compatible con el tipo de la excepción lanzada. En estos ejemplos, el throw y el catch usan std::invalid_argument. Una excepción sin tratamiento puede terminar el programa; ese desenlace no equivale a recuperar la operación fallida (Stroustrup, 2024).\n\nLas prácticas provocan rechazos mediante throw y los capturan de forma deliberada. El programa decide qué se ejecuta después del tratamiento: capturar una excepción no vuelve automáticamente al punto que falló.",
+          "emphasis": [
+            {
+              "text": "compatible con el tipo",
+              "style": "bold"
+            },
+            {
+              "text": "no equivale a recuperar",
+              "style": "bold"
+            },
+            {
+              "text": "después del tratamiento",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -119,7 +176,12 @@
             "Se reejecuta automáticamente la llamada fallida con el mismo dato."
           ],
           "correctIndex": 0,
-          "explanation": "Capturar no reintenta la instrucción que falló. La continuación debe estar diseñada por el programa."
+          "explanation": "Capturar no reintenta la instrucción que falló. La continuación debe estar diseñada por el programa.",
+          "reviewFeedback": [
+            "Localiza la instrucción siguiente al tratamiento que terminó normalmente.",
+            "Revisa si existe alguna instrucción que vuelva al inicio del programa.",
+            "Busca si el código contiene un recorrido que solicite otra llamada; catch por sí solo no lo crea."
+          ]
         }
       ]
     },
@@ -131,14 +193,33 @@
         },
         {
           "type": "note",
-          "text": "Usa el compilador predeterminado Clang 23 para practicar throw/catch; el alternativo Clang 21 no admite esta práctica. Los datos se preparan en el código; cambia los valores indicados antes de ejecutar."
+          "text": "Esta práctica utiliza tres casos dentro del mismo programa. Conserva la política de estimar: un pedido vacío es válido, los pedidos de 1 a 10 usan la estimación y los demás argumentos provocan invalid_argument. Las instrucciones de la actividad definen qué se muestra en cada camino.",
+          "emphasis": [
+            {
+              "text": "tres casos dentro del mismo programa",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye una única prueba que recorra los dos caminos de `estimar`. Añade una función `probar(int piezas)`: dentro de su `try`, muestra `Antes`, llama a `estimar` y, sólo si vuelve normalmente, muestra los minutos y `Despues`. El `catch` de `invalid_argument` muestra `Invalido`. Después del `try/catch`, muestra `:Fin` y un salto de línea. Llama a `probar` desde `main` para 0, 3 y 11, en ese orden. No cambies los datos entre ejecuciones: los tres casos pertenecen a esta misma comprobación.\n\nPulsa Compilar, ejecutar y comprobar. La salida debe tener tres líneas, sin espacios: `Antes0Despues:Fin`, `Antes9Despues:Fin` y `AntesInvalido:Fin`, cada una terminada con un salto de línea. Si difiere, revisa qué instrucciones se alcanzan antes de la llamada, después de ella y después del tratamiento. No provoques división entre cero, accesos inválidos con `[]` ni desbordamientos.",
+          "text": "Conserva la regla de estimar y construye probar(int piezas). Dentro de su try, muestra Antes y llama a estimar. Sólo si la llamada vuelve normalmente, muestra los minutos y Despues. El catch de invalid_argument muestra Invalido. Después del try/catch, muestra :Fin y un salto de línea.\n\nDesde main llama a probar con 0, 3 y 11, en ese orden. Las tres líneas, sin espacios, deben ser Antes0Despues:Fin, Antes9Despues:Fin y AntesInvalido:Fin. Cada línea termina con un salto. Los tres casos pertenecen a la misma comprobación; no cambies las cantidades entre ejecuciones.\n\nPulsa «Compilar, ejecutar y comprobar». Si la salida difiere, sigue qué se alcanza antes de la llamada, después de un retorno normal y después del tratamiento. Los rechazos de esta actividad se provocan con throw: no mediante división entre cero, accesos inválidos con [] ni desbordamientos.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "construye probar(int piezas)",
+              "style": "bold"
+            },
+            {
+              "text": "Sólo si la llamada vuelve normalmente",
+              "style": "bold"
+            },
+            {
+              "text": "Cada línea termina con un salto",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -163,7 +244,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Solución de referencia del laboratorio"
+          "text": "Referencia de los dos caminos de la llamada"
         },
         {
           "type": "note",
@@ -171,7 +252,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Con los mensajes concatenados de esta referencia, 0 produce Antes0Despues:Fin, 3 produce Antes9Despues:Fin y 11 produce AntesInvalido:Fin. Antes se conserva porque se escribió antes de la llamada; Despues y el resultado normal faltan si la llamada lanza. Fin se conserva fuera del try/catch. Otras implementaciones son válidas si conservan esas etapas y producen el formato solicitado por la actividad."
+          "text": "Para 0 se muestra Antes0Despues:Fin; para 3, Antes9Despues:Fin; y para 11, AntesInvalido:Fin. Antes se conserva porque se escribió antes de la llamada. Si la función lanza, no se muestran ni el resultado normal ni Despues.\n\nFin queda fuera del try/catch y se alcanza en los tres casos. Otra implementación es válida si conserva esas etapas, la regla del cálculo y el formato solicitado.",
+          "emphasis": [
+            {
+              "text": "antes de la llamada",
+              "style": "bold"
+            },
+            {
+              "text": "fuera del try/catch",
+              "style": "bold"
+            },
+            {
+              "text": "en los tres casos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -180,13 +275,644 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo anterior desarrolla una llamada con tres piezas. La construcción de la actividad reúne los tres casos en llamadas independientes a probar, como muestra la referencia siguiente. Capturar permite alcanzar Fin; no reintenta la llamada ni vuelve al interior del try abandonado."
+          "text": "El ejemplo anterior ilustra una llamada con tres piezas. La referencia siguiente construye probar y reúne los tres casos en llamadas independientes.\n\nCapturar permite continuar después del tratamiento; no vuelve al interior del try abandonado ni reintenta estimar. Si se necesitara un nuevo intento, el programa tendría que expresarlo con su propio control de flujo (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "llamadas independientes",
+              "style": "bold"
+            },
+            {
+              "text": "no vuelve al interior del try abandonado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid probar(int piezas) {\n    try {\n        std::cout << \"Antes\";\n        int minutos{estimar(piezas)};\n        std::cout << minutos << \"Despues\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Invalido\";\n    }\n    std::cout << \":Fin\\n\";\n}\n\nint main() {\n    probar(0);\n    probar(3);\n    probar(11);\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "9d96702a3c27884ead3cdf0f56788137b57149d8e1f7ad246ae5a002535d13da"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "f2ff42b8b502ffba986cb6de00b850a252a01016866dba4e8b418ae32fb3eefa"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "b6468bf67a314f06dbd047933e9df164ead8799c302524bc7e81ec461e96fa10"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "aceec62b65037e07310668971ac0f1db093b6fe828536a93d01668f52b08bfda"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "48a7d90d5a35eaf355e1cfcb68b9c850df6f5aa8d2bb3e32180740eddf1c2962"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "24f2806325882033970f2f8fee47304dfc68d882b1063c1071b4569698e9066f"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "01a7882b2e511e6162687c6130be1bf92df09c84eeafafb4a84ba6d7a76c39e6"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "371b70113eab24a56cf9c6caf62e42baabf55d60e2104fb40aabd513b21578d7"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "a1a22b675f7ef5b575e3fee4a4a85feff5835cec807f099fe298066e9aca7ee6"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "dfcfffe7c4b8a474a25bda5919f868543c6550fb1d72b1c304b695f97b2190b2"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "88bda14afcc2f49acf6535ba4a72c53a2c8d498a8cc14f0a97f2bc070f5994e9",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "13c2b2fec4bb5cdef74fae0eedc4e76131d610fb8967e2ff2a9144c2285d1cf5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "e198fbb67e065a78c7408995919b1972b7ba502de41d64c940bb84920cf9ab05"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "2f8dbd43ed9a822878390385124cbd8ee36c02501a4feb45c6bf57481ae2da79"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "2c751589c7e7c6260ff83f68740a71d4d85bbc0419b0d64c97ae266ee2ab6390"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "63ed4149ac48ceffe7c46588a8768ab0a0c133e58f9443983fe5415f851c0b50"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "a35029ea7ea3ccf88b546427ba12539c0d26c83effacdb93c12768fe1774ceb4"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "2cac03b1163822195dc55035191ca9698667774306a433453482d0b210572f02"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "8c8e2b62809e886ce0060870e5153ba90d1daa70ff2443a56f407d0f31517735"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "30db9fcc09c71dc82657df9ff4d4bea2ea024d5ab52678637a015039e6fbcf2e"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "a7323c3d43b97dd1de61b8dede46cf51e5cc60a3988e7dc7957f3e011c2df5b2",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "9d96702a3c27884ead3cdf0f56788137b57149d8e1f7ad246ae5a002535d13da"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "f2ff42b8b502ffba986cb6de00b850a252a01016866dba4e8b418ae32fb3eefa"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "b6468bf67a314f06dbd047933e9df164ead8799c302524bc7e81ec461e96fa10"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "aceec62b65037e07310668971ac0f1db093b6fe828536a93d01668f52b08bfda"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "48a7d90d5a35eaf355e1cfcb68b9c850df6f5aa8d2bb3e32180740eddf1c2962"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "24f2806325882033970f2f8fee47304dfc68d882b1063c1071b4569698e9066f"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "01a7882b2e511e6162687c6130be1bf92df09c84eeafafb4a84ba6d7a76c39e6"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "371b70113eab24a56cf9c6caf62e42baabf55d60e2104fb40aabd513b21578d7"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "a1a22b675f7ef5b575e3fee4a4a85feff5835cec807f099fe298066e9aca7ee6"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "dfcfffe7c4b8a474a25bda5919f868543c6550fb1d72b1c304b695f97b2190b2"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "d4cbc464d848f398e48ab63d948dbbeb4eef8ef7e43856cc606dfb5d006ad478",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "ab39e1b488ec7698e22558e2c0551bac198caf2a525fef273d26cf9076480bd2"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "161327b7cf18bb3479fe9f815dae3a4243449009ed76154e1fc15493702bdc77"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "0fcd1b899c61c2222bd66fcd11cc5826b012acfcd213d78b3a567f870fdfa082"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "0efca25ee391f9d5f3781b8f82dcf387931d16459c57859022772f80d8074840"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "0f370fb6908b03668314ac79634d9cf13d077cc987b14d4a7411f391f0984abe"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "3cb092f961b9d622f5133edb41532007dbf382c2c20e7724750b78a196254e55"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ac5696ce087e3164a7bce5afbff87c90715fc3275c55b5688250d90af24465c8"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "b03fd5ea685957e43417f05415d8c936f982e1efca07842c35801d44c85addaf"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "315ea3fd737b76a1472923a29a01326bd5bb24f2e91dec4b0947a7323256319d"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "cd88ee9eb391555c67c008ae7ecbea6fef52eecc5ad2350aa63a7c7354dcddbd",
+        "afterSha256": "d7433f7b96047fb82960663de0e9ead9fe844a6e84b4842397e2edcb95c0da3d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "ca68890b0f57373f487519f0cf403852e3aef205addfe832be85a72ee65abb28",
+        "afterSha256": "333e294c2d050758814ac94a516ba8c581b72933d13e9d6da41720c143c53197"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "ee4cf0db8bebbd7af79fa5cd651141db1d8acc724a300fe40eb6b7ca08225e99",
+        "afterSha256": "54b783cc24da3a2c0fa64007635b1b9c90f3213ce797eaadb7c3f2b180a064ce"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "cf3182f0cbd3fc4a57deaa14a8b215a86f9a6d01c3c46fcb23d039568550b90e",
+        "afterSha256": "c6adbd5bb3b0e8d7b8dddd88ac75acdb7a1a5c268642636054db187f22c20b15"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a3ced94541fe12991915711b01ec7ad1b9683c7acd3e5302e92316b6819c8682",
+        "afterSha256": "9163d59609210d847045e7ec12fb2a4145481437589fbce86a31a355eb896753"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "8ac3c8903c7cb495ccda1dfaccca9b39d11c71ffbfea5c850bd7c6e52ca240c1",
+        "afterSha256": "2189ed8c1409f6c414a5af7b251740448b52b1ca54910e19ca50c442d23e8f3e"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "ce248208e4ae2fa5315d7a0be1ffc62d7e99b19a7481fbb71cb5b6f33484dfb1",
+        "afterSha256": "a6bac340f2519755b956c0429007c6b6fa6e4e3b55253c6691c72df8fd8e1965"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f0fb69b6e242920bd37e3ccad51c999cd36c5b886f39550724eb84548653ec1f",
+        "afterSha256": "4da77ef50d2697ae7fa12aa691042d29c13fb3200e24315d376bb21f4ee24b41"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "826064520b77ea2b8189d925343a3a0984301d500f3ee74e5c94d80d271c5c86",
+        "afterSha256": "5d44cc75e40074998e1369006ccda9b104537716eb2622c892676c0327c75343"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "8a9f87a7f57c9e283d4772fa3da9f37bfab0693a7bc1325b9b4ebd45876d30a2",
+        "afterSha256": "d68a0b6e30218e67a8866f8232a0dae6e19df5ff0bd704bfe48a8bb922ea9844"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "28e2759d84ecd807662649545d6a89e45ff65d8df8aca0b0ffd43d0161358549",
+        "afterSha256": "788b32b96590988d7cbc019146142cb349c67d0c9ca5f1a28e59f054d6a00f5e"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0003",
+      "blocks": [
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0004_0005"
       ]
     }
   ]

@@ -10,7 +10,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Una función recursiva se llama directa o indirectamente a sí misma. Para usarla aquí, necesitamos un caso base que devuelva un resultado sin otra llamada y un paso que acerque los datos a ese caso. El dominio debe hacer posible ese progreso. El siguiente cálculo recibe pendientes entre 0 y 8."
+          "text": "Una función recursiva se llama directa o indirectamente a sí misma (Stroustrup, 2024). En los problemas de esta lección distinguiremos un caso base, que devuelve un resultado sin otra llamada, y un paso recursivo, que reduce el problema hasta alcanzar ese caso.\n\nEl dominio debe permitir ese progreso: no basta con escribir una llamada con un número menor. El siguiente cálculo recibe pendientes entre cero y ocho.",
+          "emphasis": [
+            {
+              "text": "caso base",
+              "style": "bold"
+            },
+            {
+              "text": "paso recursivo",
+              "style": "bold"
+            },
+            {
+              "text": "El dominio debe permitir ese progreso",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -19,7 +33,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La llamada con 3 espera 1 más el resultado de la llamada con 2; ésta espera el resultado de la llamada con 1; y la llamada con 0 devuelve 0 sin continuar. Después se completan los resultados pendientes: 1, 2 y 3. Cada llamada tiene su propio parámetro. Que el nombre sea el mismo no hace que todos los pendientes sean un único objeto."
+          "text": "La llamada con tres espera uno más el resultado de la llamada con dos; ésta espera el resultado de la llamada con uno; y la llamada con cero devuelve cero sin continuar. Después se completan los resultados pendientes: uno, dos y tres.\n\nCada llamada tiene su propio parámetro. Que el nombre sea el mismo no hace que todos los pendientes sean un único objeto; las llamadas anteriores conservan el contexto que necesitan para continuar (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Cada llamada tiene su propio parámetro",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -52,7 +72,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Para tope igual a 3, piensa en suma_hasta(3) como 3 + suma_hasta(2), no como una sustitución de todos los parámetros por el último valor. Cada llamada conserva lo necesario para completar su propia suma al recibir el resultado de la siguiente. El resultado máximo de este dominio es 36 y hay como máximo 9 llamadas activas."
+          "text": "Para tope igual a tres, piensa en suma_hasta(3) como 3 + suma_hasta(2), no como una sustitución de todos los parámetros por el último valor. Cada llamada conserva lo necesario para completar su propia suma al recibir el resultado de la siguiente (Stroustrup, 2024).\n\nEn el dominio de cero a ocho, el resultado máximo es treinta y seis. Al empezar con ocho hay como máximo nueve llamadas activas de suma_hasta: una para cada argumento desde ocho hasta cero.",
+          "emphasis": [
+            {
+              "text": "nueve llamadas activas de suma_hasta",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -75,7 +101,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Se puede representar esta suma con un acumulador y un bucle. La versión iterativa avanza el contador hacia el límite; la recursiva reduce el argumento hacia cero. Las dos necesitan un dominio, un estado inicial adecuado y una justificación de terminación. Para este problema lineal, ambas son fáciles de contrastar."
+          "text": "Se puede representar esta suma con un acumulador y un bucle. La versión iterativa avanza el contador hacia el límite; la recursiva reduce el argumento hacia cero.\n\nLas dos necesitan un dominio, un estado inicial adecuado y una justificación de terminación. La comparación comprobará los valores devueltos frente a la misma suma, aunque los pasos internos sean diferentes.",
+          "emphasis": [
+            {
+              "text": "valores devueltos frente a la misma suma",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -103,11 +135,17 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Laboratorio: comparar base, interior y extremo"
+          "text": "Práctica guiada: comparar la suma con el mismo dato"
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial utiliza tope tres. El programa debe mostrar el resultado iterativo y el recursivo, separados por un espacio: `6 6`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Conserva la validación y los pasos que acercan cada versión a su caso final. Otros datos y una alteración de la base se observan después en actividades propias."
+          "text": "El programa inicial está completo y utiliza tope igual a tres. Observa cómo llama a las dos funciones y conserva por separado sus resultados: debe mostrar `6 6`, con un espacio entre los valores.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Esta actividad comprueba el caso inicial. Los casos base, los extremos y el efecto de cambiar la base tienen actividades propias a continuación.",
+          "emphasis": [
+            {
+              "text": "conserva por separado sus resultados",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -223,7 +261,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Explicar la terminación antes de ejecutar"
+          "text": "Reconocer qué hace terminar la recursión"
         },
         {
           "type": "multiple_choice",
@@ -249,7 +287,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de aceptar una función recursiva, identifica el caso base, la medida que progresa, el dominio y el resultado que se conserva al volver. No pruebes una variante que repita indefinidamente la misma llamada. Este patrón volverá en problemas que pueden resolverse por partes, junto con la elección de una estructura adecuada."
+          "text": "Antes de aceptar una función recursiva, identifica el caso base, el dato que progresa hacia él, el dominio y el resultado que cada llamada debe devolver. No pruebes una variante que repita indefinidamente la misma llamada.\n\nTerminar y calcular correctamente son obligaciones distintas. Una base equivocada puede detener la recursión y, aun así, introducir un error en todos los resultados posteriores.",
+          "emphasis": [
+            {
+              "text": "Terminar y calcular correctamente son obligaciones distintas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
@@ -265,7 +309,13 @@
         },
         {
           "type": "note",
-          "text": "Compara esta referencia con el programa que construiste y ejecutaste. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+          "text": "Esta referencia compara las ejecuciones guiadas de la suma. El programa de esas actividades ya estaba completo: el objetivo era observar la base, los otros datos y una base alterada, no construirlo desde cero. La construcción independiente comienza en la página siguiente.",
+          "emphasis": [
+            {
+              "text": "ejecuciones guiadas de la suma",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -290,15 +340,66 @@
         },
         {
           "type": "paragraph",
-          "text": "Una mesa dispone de fichas y forma parejas completas: cada pareja necesita dos fichas; una ficha sobrante no cuenta como pareja. El dato permitido es un int entre 0 y 12. Construye int parejas_recursivas(int fichas), que devuelve cuántas parejas completas se pueden formar. Su resultado debe depender del argumento y no de una respuesta escrita para un solo caso."
+          "text": "Una mesa dispone de fichas y forma parejas completas: cada pareja necesita dos fichas; una ficha sobrante no cuenta como pareja. El dato permitido es un int entre cero y doce.\n\nConstruye int parejas_recursivas(int fichas), que devuelve cuántas parejas completas se pueden formar. Su resultado debe depender del argumento, no de una respuesta escrita para un solo caso.",
+          "emphasis": [
+            {
+              "text": "parejas completas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Su resultado debe depender del argumento",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La función calcula sin imprimir y recibe fichas por valor, sin cambiar el objeto del llamador. Elige qué cantidades ya puedes resolver sin otra llamada, cómo reducir un caso pendiente a uno menor y cómo completar su resultado al volver. En esta función utiliza recursión; no sustituyas el trabajo por una división ni por un bucle. La comparación iterativa vendrá después del intento."
+          "text": "La función calcula sin imprimir y recibe fichas por valor, sin cambiar el objeto del llamador. Elige qué cantidades ya puedes resolver sin otra llamada, cómo reducir un caso pendiente a uno menor y cómo completar su resultado al volver.\n\nEn esta función utiliza recursión; no sustituyas el trabajo por una división ni por un bucle. La comparación iterativa vendrá después del intento.",
+          "emphasis": [
+            {
+              "text": "calcula sin imprimir",
+              "style": "bold"
+            },
+            {
+              "text": "utiliza recursión",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En main declara fichas con el valor inicial 7. Valida el dominio antes de llamar: un dato inválido muestra solamente Fuera del dominio y no llega a parejas_recursivas. Un dato válido muestra Parejas:R;Fichas:F, sin espacios ni salto final, donde R es el resultado calculado y F es el dato original conservado. Coloca la definición antes de main o declara correctamente su interfaz antes de la llamada."
+          "text": "En main declara fichas con el valor inicial siete. Valida el dominio antes de llamar: un dato inválido muestra solamente Fuera del dominio y no llega a parejas_recursivas.\n\nUn dato válido muestra `Parejas:R;Fichas:F`, sin espacios ni salto final, donde R es el resultado calculado y F es el dato original conservado. Coloca la definición antes de main o declara correctamente su interfaz antes de la llamada.",
+          "emphasis": [
+            {
+              "text": "Valida el dominio antes de llamar",
+              "style": "bold"
+            },
+            {
+              "text": "sin espacios ni salto final",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el caso inicial: `Parejas:3;Fichas:7`, sin salto final. El dato de main debe conservarse. Los casos cero, impar, par, extremo y rechazo se prueban después con un mismo programa.",
+          "emphasis": [
+            {
+              "text": "El dato de main debe conservarse",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "text": "Antes de ejecutar, revisa el argumento de cada posible llamada recursiva: debe permanecer en el dominio, ser menor cuando se continúa y alcanzar un caso que regrese sin otra llamada. No ejecutes variantes que repitan indefinidamente la llamada. La referencia aparece después del intento.",
+          "emphasis": [
+            {
+              "text": "Antes de ejecutar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -314,14 +415,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "paragraph",
-          "text": "Pulsa «Compilar, ejecutar y comprobar» para el caso inicial: `Parejas:3;Fichas:7`, sin salto final. El dato de `main` debe conservarse. Los casos cero, impar, par, extremo y rechazo se prueban después con un mismo programa."
-        },
-        {
-          "type": "note",
-          "text": "Antes de ejecutar, revisa el argumento de cada posible llamada recursiva: debe permanecer en el dominio, ser menor cuando se continúa y alcanzar un caso que regrese sin otra llamada. No ejecutes variantes que repitan indefinidamente la llamada. La referencia aparece después del intento."
         }
       ]
     },
@@ -346,7 +439,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: resultado correcto en todo 0..12; bases que cubran los restos que puede alcanzar tu paso; progreso dentro del dominio y término finito; resultado combinado según el número de parejas; parámetro por valor, sin salida en la función; validación anterior a la llamada y formato exacto en main. La referencia devuelve como máximo seis. Puedes expresar las bases con una condición o con varios caminos; otra implementación recursiva equivalente es válida si justificas esas mismas obligaciones."
+          "text": "Criterios: resultado correcto en todo el dominio de cero a doce; bases que cubran los restos alcanzables; progreso dentro del dominio y término finito; resultado combinado según el número de parejas; parámetro por valor, sin salida en la función; validación anterior a la llamada y formato exacto en main.\n\nLa referencia devuelve como máximo seis. Puedes expresar las bases con una condición o con varios caminos: otra implementación recursiva equivalente es válida si cumple esas mismas obligaciones.",
+          "emphasis": [
+            {
+              "text": "bases que cubran los restos alcanzables",
+              "style": "bold"
+            },
+            {
+              "text": "otra implementación recursiva equivalente es válida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -422,7 +525,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de tu construcción, esta comparación guiada cuenta las mismas parejas con un bucle. pendientes es un local de la función iterativa: puede reducirse sin cambiar el argumento original de main. El contador comienza sin parejas formadas y aumenta al retirar las fichas de una pareja completa. Las dos funciones tienen la misma precondición, 0..12."
+          "text": "Después de tu construcción, esta comparación guiada cuenta las mismas parejas con un bucle. pendientes es un local de la función iterativa: puede reducirse sin cambiar el argumento original de main. El contador comienza sin parejas formadas y aumenta al retirar las fichas de una pareja completa.\n\nLas dos funciones tienen la misma precondición: fichas está entre cero y doce. El ejemplo mostrado utiliza ocho fichas; la actividad que sigue permite contrastar las dos implementaciones con cada dato válido.",
+          "emphasis": [
+            {
+              "text": "Las dos funciones tienen la misma precondición",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -431,7 +540,131 @@
         },
         {
           "type": "paragraph",
-          "text": "La comparación produce 4:4:8. Prueba ambas con los casos previstos antes y con los demás valores de 0..12. Relaciona cada respuesta con las fichas necesarias para formar esas parejas y con el resto que no alcanza para otra. Que dos funciones coincidan no basta si ambas calculan mal el problema. En la versión iterativa, pendientes también debe terminar en cero o uno; cuando eso ocurre, el bucle ya no entra."
+          "text": "El ejemplo produce `4:4:8`: cuatro parejas según cada versión y ocho fichas originales. Que dos funciones coincidan no basta si ambas calculan mal el problema. El resultado esperado también debe corresponder al número de parejas completas que permite formar el dato.\n\nEn la versión iterativa, pendientes termina en cero o uno; entonces el bucle ya no entra. La versión recursiva debe alcanzar una base que represente esos mismos restos. Comprueba esa relación en el editor que sigue, sin regresar a las actividades anteriores.",
+          "emphasis": [
+            {
+              "text": "Que dos funciones coincidan no basta si ambas calculan mal el problema",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Comparar ambos métodos con todos los datos del dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee fichas y muestra `recursivas:iterativas:fichas`, sin espacios ni salto final. Comprueba cada entero desde cero hasta doce variando sólo Entrada, sin modificar las funciones. Comprueba también -1 y 13: se rechazan antes de calcular.\n\nPulsa «Compilar, ejecutar y comprobar». En cada aceptación, ambos conteos deben coincidir con el número de parejas completas; la última parte conserva el dato original.",
+          "emphasis": [
+            {
+              "text": "variando sólo Entrada",
+              "style": "bold"
+            },
+            {
+              "text": "sin modificar las funciones",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n",
+          "initialStandardInput": "0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0:0:0"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "0:0:1"
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "1:1:2"
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "1:1:3"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "2:2:4"
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "2:2:5"
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "3:3:6"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "3:3:7"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "4:4:8"
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "4:4:9"
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "5:5:10"
+                ]
+              },
+              {
+                "standardInput": "11",
+                "outputs": [
+                  "5:5:11"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "6:6:12"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "output_prediction",
@@ -458,7 +691,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Otra mesa forma grupos completos de tres fichas. Una o dos fichas sobrantes no forman otro grupo. Conserva el dominio 0..12 y construye int grupos_recursivos(int fichas): devuelve cuántos grupos completos de tres pueden formarse, sin imprimir ni cambiar el objeto del llamador. Elige de nuevo los casos directos, la llamada que reduce el problema y la combinación del resultado. La función debe utilizar recursión, sin sustituirla por división o por un bucle."
+          "text": "Otra mesa forma grupos completos de tres fichas. Una o dos fichas sobrantes no forman otro grupo. Conserva el dominio de cero a doce y construye int grupos_recursivos(int fichas): devuelve cuántos grupos completos pueden formarse, sin imprimir ni cambiar el objeto del llamador.\n\nElige de nuevo los casos directos, la llamada que reduce el problema y la combinación del resultado. La función debe utilizar recursión, sin sustituirla por división o por un bucle.",
+          "emphasis": [
+            {
+              "text": "grupos completos de tres fichas",
+              "style": "bold"
+            },
+            {
+              "text": "sin imprimir ni cambiar el objeto del llamador",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -842,7 +1085,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: contar grupos completos en todo 0..12; cubrir todos los restos alcanzables; justificar un descenso válido y finito; combinar el resultado de acuerdo con tres fichas por grupo; conservar el argumento original; función sin salida y validación anterior a la llamada; formato solicitado. Una implementación recursiva equivalente, con bases expresadas de otra manera, también puede cumplir el contrato."
+          "text": "Criterios: contar grupos completos en todo el dominio de cero a doce; cubrir todos los restos alcanzables; un descenso válido y finito; combinar el resultado de acuerdo con tres fichas por grupo; conservar el argumento original; función sin salida y validación anterior a la llamada; formato solicitado.\n\nUna implementación recursiva equivalente, con bases expresadas de otra manera, también puede cumplir el contrato.",
+          "emphasis": [
+            {
+              "text": "cubrir todos los restos alcanzables",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -976,6 +1225,25 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Referencia posterior: dos preguntas sobre el mismo dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada función recibe su propia copia de fichas y reduce únicamente ese parámetro. Las dos llamadas de main parten del mismo dato: la primera no consume las fichas que recibirá la segunda.\n\nUna posibilidad es contar una pareja por cada reducción de dos y un grupo por cada reducción de tres. Las bases cubren, respectivamente, los restos menores que dos y menores que tres. Para seis fichas se obtienen tres parejas, dos grupos y el dato original seis: `3:2:6`.",
+          "emphasis": [
+            {
+              "text": "la primera no consume las fichas que recibirá la segunda",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n"
         }
       ]
     }
@@ -1421,9 +1689,9 @@
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003",
-          "block_0006_0004",
           "block_0006_0005",
-          "block_0006_0006"
+          "block_0006_0006",
+          "block_0006_0004"
         ]
       },
       {
@@ -1447,6 +1715,9 @@
           "block_0008_0001",
           "block_0008_0002",
           "block_0008_0003",
+          "comparar_parejas_titulo",
+          "comparar_parejas_consigna",
+          "comparar_parejas_editor",
           "block_0008_0004",
           "block_0008_0005"
         ]
@@ -1478,7 +1749,10 @@
           "block_0010_0009",
           "block_0010_0010",
           "block_0010_0011",
-          "block_0010_0012"
+          "block_0010_0012",
+          "dos_conteos_referencia_titulo",
+          "dos_conteos_referencia_explicacion",
+          "dos_conteos_referencia_codigo"
         ]
       }
     ],
@@ -2460,7 +2734,62 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "comparar_parejas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 0
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "comparar_parejas_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 1
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "comparar_parejas_editor",
+        "sha256": "e43fba426dd15044f236aebc0c51c70f9e46001314c7a0b5245600d640eda761",
+        "storage": {
+          "page": 11,
+          "block": 2
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "dos_conteos_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 3
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "dos_conteos_referencia_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 4
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "dos_conteos_referencia_codigo",
+        "sha256": "6193750667b07144224f63c93c85a1f611a9e5de3d601c9cafa59e02e2dda515",
+        "storage": {
+          "page": 11,
+          "block": 5
+        },
+        "progressPage": "page_0010"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0009_0002",
@@ -2476,7 +2805,178 @@
         "id": "block_0005_0002",
         "beforeSha256": "13c8fbeca0d4f6bec45f27b54a73e0ee995cb699f166ce7f80616a87c6eccdc1",
         "afterSha256": "bb546eb707091fae350182db47cd4c2175afe400061226c8e36dfb2c4646e060"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "391dbce4de1a256b3e15a39e5aa0585b14bbfbab8ea50f50c61657fe176fed37",
+        "afterSha256": "a27ae052bb4c4400150b6ba8cf872f4004337831d4dc26c65d73c82969339f9f"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "562f13fa3236b28a8d2f80a3d167f0fa9d4dfcea428f45120bef30bc744ddb66",
+        "afterSha256": "f0c9a246e6ce214b0340557625ad7d65fa2abfced4d53e1f2c4c7db1c3c16a39"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "02da62bf52f7630f5d81e5ed25e0e39304bd36685902bb2fe614abdf73a842eb",
+        "afterSha256": "96ddbdc2d8e26b5f56226c87ce90479e5131d234cc90f567e1c69987a0da46cb"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b98ffce52e2250525332d187b79eb2d1685b429a9fc39fc8a64e1147593f6822",
+        "afterSha256": "79db5cecd0980feca81387292318d0b2ca16918cb7ed63b7d30a968d55f1b02b"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "4d552c35ebe74782a6514b3a0e79d5b6f92a64e66449c6ac127b77abc9cbb2e0",
+        "afterSha256": "e9c45abb1f68b702964dc8c76dcec2b639f6ea9767621b317eac1ae47a36058a"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "4a607fc67f09228f80f63ef744ed99eba6518be82eb586abcfaacdb70de8e20d",
+        "afterSha256": "e83708869999c4faa359e6fa2d455eb80f741d6c91d478ac3210c08a3dd35002"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "96274d842e0729189b9773391711457d0c548b570500ef3696da548fd938b486",
+        "afterSha256": "943443d0698e6d85ca9d7ec03dd63f257d880aa11c5460f2bfd1454d8da9b168"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "91c362ab68653c47d4a0a9f1cf81312bf22caf82ce31ccaa10b8f7e7fd320abe",
+        "afterSha256": "dac600c5676bd2696f0a4bf3e9961bce55948cb02ff8cdbe0b6d26011440f3dd"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c0dbaf1b9986876017f17c8e40dff58ca52bf8c3464dfc3d8dc9fc06e58cc3a0",
+        "afterSha256": "d273d660695d8a53c010ace3d6e7ec213a931a916ae1cf602f3000a8c9a43fbd"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "9834376714877db483753b6caf276f1379feb2c5fd0bd9b587629d50f51c0e5f",
+        "afterSha256": "283b317db3bda21c80f780dbaea7dd3b87c0911e3a5e858e5332b5d309dc7c8a"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "863e458329cdf2905c39ef1c4f1b4ba782209909d3f294d3873700d965822142",
+        "afterSha256": "4c747bcd26e23029920fb6cd14cfc9603683db9e555a785379c7f99b1e6e2333"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "b812999341966cbe282886448886bae7ab9459a0b8732847581a7935f022b53e",
+        "afterSha256": "f7d25fd580c5a3abc8a145d3dbc3ca5395452990353e0a82980e200645c2221f"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "a8a874896cb1af746ae558f17b02a1a6c2cce9b3e8b3e54cafa8e63342c1d461",
+        "afterSha256": "6f9214e3c090d6c671ec30394c28ff6d3610e45ff48a1ee7015a16e58f37e6ae"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "03a8045cc455af4c6288e806d014f5bfa995fa9b8fc5991f8ce0bb06cdfbcf4b",
+        "afterSha256": "4f8446ebb9d0fc329e41b617c56638b4146d1592a7d87c9e0ae91d615acda768"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "839661dda15170332f7dc4a10a55bea3f8f7d92a486214f261e251dacf16f461",
+        "afterSha256": "07d23635e08bbbf45adb6fea9db36981d605e5e5ba51577f0dc8008c58af8e3e"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "dc16df2fc5cfd70d2fe4041211f7053c6d956934dda4062926b6fb10fea6eb6a",
+        "afterSha256": "cfe56eef038bff393d22e2031cd4f878f4700196c230aa05e5cdcf392c8b6e05"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "c20243400a45d00b44e4486ec30279aa749594ec2df0c134c7630ff1a70b9c0f",
+        "afterSha256": "68bfe922660d8aa86ff62526d7816d517aa63e3efcc76f851123b41f31f2eb94"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "e873cd56d92e8ea0d6ba592eca3c8d0a6d912df645b7f5a20a6055f104a5d818",
+        "afterSha256": "be1034d359c4d7f7a8d625321610a94544780509424bba5bc5860fcabe978084"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "ccb2f5ab3c3721a67360fcfe14033792dca601041da8128ca63bb5a5253ca7ac",
+        "afterSha256": "37eb71ef5b3d369025b400d9f4eaf8abe6b21db673469b45a47e6a4b767b9d7e"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "283b317db3bda21c80f780dbaea7dd3b87c0911e3a5e858e5332b5d309dc7c8a",
+        "afterSha256": "544097b38ffa1bc47138c73481755ab0865d0a3bcb5dd86df5364c7dc3180424"
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0010",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004"
+      ]
+    },
+    {
+      "activity": "block_0006_0004",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002",
+        "block_0007_0003",
+        "block_0007_0004",
+        "block_0007_0005",
+        "block_0008_0000",
+        "block_0008_0001",
+        "block_0008_0002",
+        "block_0008_0003"
+      ]
+    },
+    {
+      "activity": "block_0009_0003",
+      "blocks": [
+        "block_0010_0000",
+        "block_0010_0001",
+        "block_0010_0002",
+        "block_0010_0003",
+        "block_0010_0004"
+      ]
+    },
+    {
+      "activity": "block_0010_0012",
+      "blocks": [
+        "dos_conteos_referencia_titulo",
+        "dos_conteos_referencia_explicacion",
+        "dos_conteos_referencia_codigo"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0008",
+      "requires": [
+        "block_0006_0004"
+      ]
+    },
+    {
+      "activity": "comparar_parejas_editor",
+      "requires": [
+        "block_0006_0004"
+      ]
+    },
+    {
+      "activity": "block_0010_0009",
+      "requires": [
+        "block_0009_0003"
+      ]
+    },
+    {
+      "activity": "block_0010_0012",
+      "requires": [
+        "block_0009_0003"
+      ]
+    }
+  ]
 }

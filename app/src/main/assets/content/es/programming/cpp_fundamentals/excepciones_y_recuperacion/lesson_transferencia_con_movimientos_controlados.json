@@ -10,17 +10,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Un mensajero ocupa una casilla de un tablero de 3 por 3, con coordenadas x e y entre 0 y 2. Las órdenes son enteros: 1 aumenta x, 2 disminuye x, 3 aumenta y y 4 disminuye y. Una orden distinta es un argumento inválido. Un movimiento que sale del tablero es un fallo de rango. Ambos rechazos deben conservar la posición anterior y permitir procesar la siguiente orden. No necesitamos una interfaz gráfica para comprobar estas reglas."
+          "text": "Un mensajero ocupa una casilla de un tablero de 3 por 3. Sus coordenadas x e y están entre 0 y 2. Las órdenes son enteros: 1 aumenta x, 2 disminuye x, 3 aumenta y y 4 disminuye y.\n\nUna orden distinta es un argumento inválido. Una propuesta que sale del tablero es un fallo de rango. Ambos rechazos deben conservar la posición anterior y permitir procesar la siguiente orden. Los registros de coordenadas permitirán comprobarlo.",
+          "emphasis": [
+            {
+              "text": "conservar la posición anterior",
+              "style": "bold"
+            },
+            {
+              "text": "procesar la siguiente orden",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La función mover recibe una orden y referencias a x e y. Calcula primero una posición propuesta local; comprueba la orden y los límites antes de modificar las referencias. Tras un movimiento aceptado, copia la propuesta al estado real. La precondición exige que x e y designen dos objetos distintos y que sus valores iniciales estén entre 0 y 2. Dos objetos pueden contener ambos cero y cumplirla; dos referencias al mismo objeto no representan coordenadas independientes y quedan fuera del contrato. El llamador debe preparar ese estado; no se pide detectar referencias compartidas dentro de mover. Todos los valores y cambios de esta práctica son pequeños.",
+          "text": "mover recibe una orden y referencias a x e y. Calcula primero una posición propuesta local; comprueba la orden y los límites antes de modificar las referencias. Sólo copia la propuesta al estado real cuando acepta el movimiento.\n\nLa precondición exige que x e y designen dos objetos distintos y que sus valores iniciales estén entre 0 y 2. Dos objetos diferentes que contienen cero cumplen la condición. Dos referencias al mismo objeto no representan coordenadas independientes y quedan fuera del contrato.\n\nEl llamador prepara esas dos coordenadas. No se exige detectar referencias compartidas dentro de mover. Los incrementos y decrementos de esta práctica mantienen pequeñas las propuestas.",
           "emphasis": [
             {
-              "text": "posición propuesta local"
+              "text": "posición propuesta local",
+              "style": "bold"
             },
             {
-              "text": "antes de modificar las referencias"
+              "text": "antes de modificar las referencias",
+              "style": "bold"
+            },
+            {
+              "text": "dos objetos distintos",
+              "style": "bold"
             }
           ]
         },
@@ -34,7 +50,12 @@
             "Calcular y validar en variables locales; sólo después asignar a x e y."
           ],
           "correctIndex": 2,
-          "explanation": "Validar antes de modificar conserva la posición anterior en el camino fallido."
+          "explanation": "Validar antes de modificar conserva la posición anterior en el camino fallido.",
+          "reviewFeedback": [
+            "Sigue qué valor tendría x si la comprobación falla después de modificarlo. ¿Qué instrucción de tu propuesta volvería a asignar el valor anterior?",
+            "El contrato distingue aceptar una propuesta de rechazarla. Comprueba si cambiarla silenciosamente a otra casilla conserva esa decisión.",
+            "Revisa qué objetos reciben las primeras asignaciones y cuáles representan la posición que debe conservarse."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -58,14 +79,29 @@
         },
         {
           "type": "note",
-          "text": "Usa el compilador predeterminado Clang 23 para practicar throw/catch; el alternativo Clang 21 no admite esta práctica. Los datos se preparan en el código; cambia los valores indicados antes de ejecutar."
+          "text": "Los datos de las pruebas se preparan en main. Una sesión comienza con sus propias coordenadas y procesa todas sus órdenes; la siguiente sesión vuelve a comenzar desde (0,0). No se cambia el programa entre las dos llamadas de esa batería.",
+          "emphasis": [
+            {
+              "text": "sus propias coordenadas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Implementa `void mover(int orden, int& x, int& y)` con las reglas del tablero de 3 por 3. Usa `invalid_argument` para una orden desconocida y `out_of_range` para una propuesta fuera del tablero. Valida la propuesta antes de cambiar x o y. Conserva la precondición de coordenadas iniciales entre 0 y 2 y referencias a objetos distintos.\n\nConstruye una función de prueba que empiece cada sesión en (0,0), procese todas sus órdenes y capture por intento. Presenta A para una aceptación, O para orden desconocida o L para límite; inmediatamente después muestra las coordenadas como x,y y un punto y coma. Termina cada sesión con un salto de línea. Desde main prueba `{1,3,3,3,9,2}` y después `{9,1}`.\n\nPulsa Compilar, ejecutar y comprobar. La primera línea debe ser `A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;` y la segunda, `O0,0;A1,0;`, ambas con salto final. El estado de cada rechazo debe conservar las dos coordenadas anteriores y permitir una orden válida posterior.",
+          "text": "Implementa void mover(int orden, int& x, int& y) con el tablero de 3 por 3. Usa std::invalid_argument para una orden desconocida y std::out_of_range para una propuesta fuera del tablero. Conserva la precondición de posición inicial válida y referencias a objetos distintos. Valida la propuesta antes de asignar x o y.\n\nConstruye una función de prueba que inicie cada sesión en (0,0), recorra todas las órdenes y capture por intento. Muestra A al aceptar, O al rechazar una orden desconocida o L al rechazar por límite. Inmediatamente después muestra x,y y un punto y coma. Cada sesión termina con un salto de línea.\n\nDesde main prueba {1,3,3,3,9,2} y después {9,1}. La primera línea debe ser A1,0;A1,1;A1,2;L1,2;O1,2;A0,2; y la segunda O0,0;A1,0;, ambas con su salto final.\n\nPulsa Compilar, ejecutar y comprobar. Cada rechazo debe conservar ambas coordenadas y permitir una orden válida posterior.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "capture por intento",
+              "style": "bold"
+            },
+            {
+              "text": "Cada sesión termina con un salto de línea",
+              "style": "bold"
+            },
+            {
+              "text": "conservar ambas coordenadas",
+              "style": "bold"
             }
           ]
         },
@@ -90,10 +126,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente corresponde a otro requisito: el tablero tiene 4 por 4 posiciones, con coordenadas de 0 a 3. Construye mover conservando las clases de órdenes, los dos tipos de excepción y la actualización sólo después de validar. Usa la secuencia `{1,1,1,1,9,3}` desde (0,0). Presenta cada intento con el mismo formato A/O/L, x,y y punto y coma, y termina la sesión con un salto de línea.\n\nPulsa Compilar, ejecutar y comprobar. La salida debe ser `A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;` y su salto final. La ampliación admite la coordenada 3 y conserva el rechazo de 4 y de la orden desconocida. El editor anterior mantiene su requisito de 3 por 3.",
+          "text": "Este editor corresponde a otro requisito: el tablero tiene 4 por 4 posiciones y las coordenadas admitidas van de 0 a 3. Construye mover conservando las órdenes, los dos tipos de excepción y la actualización sólo después de validar. Las dos referencias siguen designando objetos distintos.\n\nUsa {1,1,1,1,9,3} desde (0,0). Presenta cada intento con A/O/L, x,y y punto y coma. La salida debe ser A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;, seguida de un salto de línea. La ampliación admite la coordenada 3 y conserva el rechazo de 4 y de la orden desconocida.\n\nPulsa Compilar, ejecutar y comprobar. Este intento conserva su propio borrador; el editor anterior mantiene el tablero de 3 por 3.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "de 0 a 3",
+              "style": "bold"
+            },
+            {
+              "text": "actualización sólo después de validar",
+              "style": "bold"
             }
           ]
         },
@@ -145,11 +186,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Las dos actividades anteriores corresponden a requisitos separados. En el tablero de 4 por 4 cambia la frontera permitida y se conservan el rechazo de la orden desconocida y la posibilidad de continuar. Los puzzles de esta página recuperan el seguimiento de posiciones sin pedir modificar otra vez esos editores."
+          "text": "Los dos editores corresponden a requisitos separados. En el tablero de 4 por 4 cambia la frontera permitida; se conservan el rechazo de órdenes desconocidas y la continuación después del fallo. El puzzle de posiciones de esta página vuelve al contrato de 3 por 3 mostrado en su código. No requiere modificar ninguno de los editores."
         },
         {
           "type": "note",
-          "text": "Una función puede detectar un argumento inválido y lanzar una excepción, mientras el llamador decide cómo tratar el fallo. Recuperarse exige además que los datos queden en un estado válido y predecible para la siguiente operación (Stroustrup, 2024, secciones 4.6 y 6.7). En el tablero, validar una propuesta local antes de asignar evita conservar un movimiento rechazado. En estas prácticas usa el compilador predeterminado Clang 23, que admite excepciones; el alternativo Clang 21 no admite esta práctica."
+          "text": "Una función puede detectar un argumento inválido y lanzar una excepción mientras un llamador decide cómo tratarla. Poder capturar el error no basta para continuar: las operaciones siguientes necesitan un estado válido (Stroustrup, 2024).\n\nEn este tablero se consigue validando la propuesta antes de asignarla a las coordenadas. La captura informa del rechazo; la organización de mover es la que evita guardar una posición rechazada.",
+          "emphasis": [
+            {
+              "text": "un estado válido",
+              "style": "bold"
+            },
+            {
+              "text": "antes de asignarla",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -157,15 +208,35 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Solución de referencia del laboratorio"
+          "text": "Referencias de las sesiones de movimiento"
         },
         {
           "type": "note",
-          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+          "text": "Contrasta estas referencias después de construir cada intento. La versión breve muestra una sesión para seguir sus posiciones; la siguiente reúne las dos sesiones originales y el formato completo, incluido el salto final. La ampliación a 4 por 4 tiene después una referencia propia.",
+          "emphasis": [
+            {
+              "text": "después de construir cada intento",
+              "style": "bold"
+            },
+            {
+              "text": "formato completo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. La llamada cumple la precondición de posición inicial dentro de 0 a 2 y referencias a objetos distintos. Los valores de x e y pueden ser iguales; lo que debe ser distinto es su objeto de almacenamiento. Las promesas siguientes corresponden a llamadas que cumplen ambas condiciones. Una orden desconocida lanza invalid_argument; una propuesta fuera del tablero lanza out_of_range. Sólo se asignan x e y después de validar. Para {1,3,3,3,9,2}, las posiciones son (1,0),(1,1),(1,2),(1,2),(1,2),(0,2), con estados A,A,A,L,O,A: A aceptado, L límite, O orden desconocida. Desde (0,0), {9,1} debe conservar primero (0,0) y avanzar después a (1,0). Se admiten otras implementaciones que distingan ambos rechazos, conserven cada estado y produzcan el formato solicitado."
+          "text": "La llamada original parte de dos objetos distintos, ambos dentro de 0..2. Sus valores pueden ser iguales: lo que debe ser distinto es el objeto al que se refiere cada parámetro. Las promesas siguientes corresponden a llamadas que cumplen esa precondición.\n\nUna orden desconocida lanza std::invalid_argument; una propuesta fuera del tablero lanza std::out_of_range. Sólo después de validar se asignan x e y. Para {1,3,3,3,9,2}, se obtienen (1,0), (1,1), (1,2), (1,2), (1,2) y (0,2), con estados A,A,A,L,O,A.\n\nDesde (0,0), {9,1} conserva primero (0,0) y avanza después a (1,0). Otras implementaciones son válidas si distinguen esos rechazos, conservan cada estado y producen el formato solicitado.",
+          "emphasis": [
+            {
+              "text": "dos objetos distintos",
+              "style": "bold"
+            },
+            {
+              "text": "Sólo después de validar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -174,7 +245,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Las propuestas de la primera sesión son (1,0),(1,1),(1,2),(1,3) y, después del rechazo desconocido, (0,2). La propuesta (1,3) se rechaza en el tablero de 3 por 3 y nunca se copia al estado real; la orden 9 no tiene una propuesta válida. El try está dentro del recorrido para tratar cada intento. Las referencias siguientes reúnen la comprobación original y la ampliación en programas independientes."
+          "text": "En la primera sesión, la propuesta (1,3) supera el tablero y nunca se copia al estado real. La orden 9 no tiene una propuesta aceptable. El siguiente intento todavía parte de (1,2) y puede moverse a (0,2).\n\nLa función probar mantiene un tratamiento por orden: su try está dentro del recorrido. Cada nueva llamada a probar crea sus propias coordenadas iniciales. La referencia completa reúne las dos sesiones sin reemplazar el requisito original.",
+          "emphasis": [
+            {
+              "text": "nunca se copia al estado real",
+              "style": "bold"
+            },
+            {
+              "text": "tratamiento por orden",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -190,6 +271,599 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 3.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 3 || siguienteY < 0 || siguienteY > 3) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "49a9e054c45b9d4b5052ce449dd0335046cea52aa3452ac74200aff9714d93be"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "d5f6f33302b04c86759029a0bc162f48aa5009f378f686efde34055638bd739e"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "9a7624b55afa94bb71f587e1254adff581850a1523cd3ac171fc8949dd4709d9"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "3666ec7997680cc805d742145759fe24721c95f62f84be58d41b80e3b7740b3b"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "911b62e918d2d3ae993a540c10d60f75d415766157b0e10775ca35f9b0594e3b"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "53c7be7b8cc4df3d338a292a591181a02d22d173ca1f87e8662a4f2dad61d1ac"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "e847a668c95e94bbc0eaa08e1ee8b06f7a72f5bd306336c2dd696ec1b054beb8"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "ffb3bc3b8bbac6a0626601061d1477f1255160ab97b925339b3f716d5be6d334"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "70408cff9990bf2878edb9fdfa4cfa69adadf92c50376fb083a2f6a1e4fd4676"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "a236eee9eeec8158e6f787faa992ef3043aaf55567112960b58cd27a67fdc0c0",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "fa106b898a72f430f1b16dedfb7d61bfc29df161a32054ce97da3ce5612aa440"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "063699459fd1da7798a7babb51bac5439875bdee858cb3fecbc32ad68e4dbfb2"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "74d7a733ad71b0880967064dddd77d48af5577e2393352691ea8f47597019349"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "be43c27d7250b39af3a6b19307a3c9cf712a7b63f4dc5edcd6f971d7e40d9b67"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "c4a609d0ca9fa7bea078201bcac9ddec766bfbf151e53d66f7dd867cc4b91297"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "8777835101bba97b0201c0db5b3a68e91527d10d51086c93325af04cbc4a96af"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "89503db1f8cce64d94cc3a0f33d1c63c2bfffb37ff5cd515ac6b879a8265fa8b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "49a9e054c45b9d4b5052ce449dd0335046cea52aa3452ac74200aff9714d93be"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "d5f6f33302b04c86759029a0bc162f48aa5009f378f686efde34055638bd739e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "9a7624b55afa94bb71f587e1254adff581850a1523cd3ac171fc8949dd4709d9"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "3666ec7997680cc805d742145759fe24721c95f62f84be58d41b80e3b7740b3b"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "911b62e918d2d3ae993a540c10d60f75d415766157b0e10775ca35f9b0594e3b"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "53c7be7b8cc4df3d338a292a591181a02d22d173ca1f87e8662a4f2dad61d1ac"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "e847a668c95e94bbc0eaa08e1ee8b06f7a72f5bd306336c2dd696ec1b054beb8"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "ffb3bc3b8bbac6a0626601061d1477f1255160ab97b925339b3f716d5be6d334"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "70408cff9990bf2878edb9fdfa4cfa69adadf92c50376fb083a2f6a1e4fd4676"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "5feffd0b18847436b85dfca685e7148a8444d206cb85792de7c650fcd0053516",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b8c5fac6a06d766ae7150ca541e186eaf6a7aa01333ff8913543ab845f819dda"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "a7693231d3c1c61ebf90a330448fb6481cdac8a1da75d876e0ca6573dd44af70"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "551a3dcd7e6f717cb320800e1c89101548a29e42be1224ff6fcf438ea5821031"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "c3260ebed07c154e889630a53a9d8ba394058a1b251d9d2a9d4a241e4670747e"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "11949ce8be5a51b3907c95227539f36089eb9342d622546b9af64666838b9f1b"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "949d4f37a22d9e05693198c5a91179a1afba01eece487b1c1e168c1d101d39dd"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8d4c22145ab9b8b6dc4b1e6130dc79151259db6dd9ca826f2bb3fc7bbc59536a",
+        "afterSha256": "078b439e478bdd7a04cbfdd7fbe22ed604d2e0a07e1394d2274e6f904773475c"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "2802a2d140c300a7b03b57f37bc9240838dfb8eafe454bb4c112a760361f1026",
+        "afterSha256": "e0da34b365989da92d4a943e80769e5bc19b146f8916fe21cb43878d660623da"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "93c527ffc9b6bcff081724673cafba697ac532b01aea3096529bd0fcc4ae8639",
+        "afterSha256": "faaca6785a375b5dac9e5ccd563c6a8b4a943e758827ee0160f73650cf8e29f0"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "ce248208e4ae2fa5315d7a0be1ffc62d7e99b19a7481fbb71cb5b6f33484dfb1",
+        "afterSha256": "007d417b24472a5a4430dd6bd1146595e8f4ab84e93d004c5a6a801ba374e293"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "9056bebeb40243a443a55cb17ccc54f926e4c3da603b2d7de62002d61f78d177",
+        "afterSha256": "4c318ed12e13aa10a654dc1297dff01d8a4aed1bcf8c464396dabcd935505eaa"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "50e88caff4333ac9dab55c696049b70c9f6082e99f28388edc6a20a4700ac18a",
+        "afterSha256": "2eb27042f540cb948c45ed0fd3642ada20096a5252c9c13cd1f50f20265b4338"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2a136fe770a1b0cb1b0a4a96fa92ffe390f6b1245e6b8bce649d5090d0c96382",
+        "afterSha256": "099303637e683c9d49b72475f1135cf560f55cdd81c98cdf838234dd64475e03"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "771f66feeedd24d53f53a675c9f7f9a962719849d52a9d84cb88b93997b88e84",
+        "afterSha256": "3b6979dba7affb1a7099709475362d2d80c0f198eb054e51a5186fa4bbbc11e9"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "826064520b77ea2b8189d925343a3a0984301d500f3ee74e5c94d80d271c5c86",
+        "afterSha256": "049022a7da9fcfa8009b802bb10b2586bba1ce5e0c166db34dc341ee42a24ab3"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "025b8ca374994c636a6af2f1a54c5e4b6ced456f2157bd5dcffdc2a328833d43",
+        "afterSha256": "52bf53beb44ca5937c537dc889df2d280914f7d8b4e2d3fc6cd409aacf2b681c"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "12bcf79bf2fe03cd0d2b38781cdb38ce8ac801b411ffc66a000aec0ab1511c8b",
+        "afterSha256": "8a4fa85620e78b8c7fd2e89dd8adba7ea839be9d329bd68e7c822140ace57ddb"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "b22636fdc023d5324a434811b981fb997b101115bc782d1e2cbdf879a6743c9f",
+        "afterSha256": "9a2375f9c03626790f285edd84e77efa99743abb04218fd0f4df8aa374234bc5"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0001_0003",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005"
+      ]
+    },
+    {
+      "activity": "block_0001_0006",
+      "blocks": [
+        "block_0003_0006",
+        "block_0003_0007"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0001_0006",
+      "requires": [
+        "block_0001_0003"
       ]
     }
   ]
