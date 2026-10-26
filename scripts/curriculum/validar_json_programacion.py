@@ -1028,6 +1028,24 @@ SEQUENCE_EDITORIAL_REVISIONS = {
     ('programas_y_ejecucion/lesson_primer_programa_y_salida.json', 5, 4, 'output_prediction', 'explanation'): ('2406d5a896fb0e0e871515a0456c6dc4762a02a78b26905184384763e5e35fd1', '8397553636b05c72a59949a90221785f4f29315bc2222e72e1e7329d9bb3bd33'),
 }
 
+# CPP_VALIDACION_EDITORIAL_RETIRO_U1: cuatro revisiones comprobadas contra
+# d1933ed. Además del origen, tipo y campo, fijan el ID propio del ejercicio.
+# No reemplazan las transiciones APA anteriores de esas mismas coordenadas.
+RETIREMENT_EDITORIAL_REVISIONS = {
+    ('programas_y_ejecucion/lesson_primer_programa_y_salida.json', 5, 4, 'output_prediction', 'question', 'prediccion_zona_inicial'): (
+        '3e7fa5f573c566bc17a7308398d90ee0a849aa6cb849bb89f9a2d5d643b7b01c',
+        'a1299f5fcc562260414ac9136337d77199cb18e4d362eec976c201ed34a2e43f'),
+    ('programas_y_ejecucion/lesson_texto_secuencia_y_formato.json', 7, 4, 'output_prediction', 'question', 'prediccion_informe_inicial'): (
+        '7f48db3071af57952889a2c2680f14dba906231d495638855feb71c4bf23c53a',
+        'aac3dd2c9535276b6513a0adc2736bf5a5c84bc956dfa180fda9543813c524cd'),
+    ('programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json', 4, 6, 'output_prediction', 'question', 'prediccion_revision_inicial'): (
+        'daf9bb92af0fb387f61efc5a0062adf550c1bdffd15ab2a4be5b5b3f6b874d34',
+        'cb36f39faab36ecb05dcf50b3f0a7a2509e1d541caa43a812a7bc5174bb80d00'),
+    ('programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json', 4, 6, 'output_prediction', 'explanation', 'prediccion_revision_inicial'): (
+        'ba4e030990f073ec920b75f627c1595317a7c58d2d12a6dc946744af32acfb11',
+        '0f7908a8cedad6bd6e7ed1a8b9162c6d05752373b614a85b93b1d55b7b2e1761'),
+}
+
 
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
@@ -1080,7 +1098,9 @@ def restore_approved_editorial_fields(location, old, current):
     result = current
     for field in ("question", "explanation"):
         key = location + (old.get("type"), field)
-        transitions = (APPROVED_EDITORIAL_REVISIONS.get(key), SEQUENCE_EDITORIAL_REVISIONS.get(key))
+        exercise_id = old.get("id") if isinstance(old.get("id"), str) else None
+        transitions = (APPROVED_EDITORIAL_REVISIONS.get(key), SEQUENCE_EDITORIAL_REVISIONS.get(key),
+                       RETIREMENT_EDITORIAL_REVISIONS.get(key + (exercise_id,)))
         before, after = old.get(field), current.get(field)
         if not isinstance(before, str) or not isinstance(after, str):
             continue

@@ -130,7 +130,7 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/code_gutter.cpp
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid)
+    lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme)
 add_executable(lgaed_smo_compile native/tools/smo_compile.cpp)
 target_link_libraries(lgaed_smo_compile PRIVATE lgaed_presentation_windows)
 set_target_properties(lgaed_smo_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -174,6 +174,18 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    set(LGAED_RETIREMENT_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u1-d1933ed")
+    set(LGAED_RETIREMENT_FIXTURES
+        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_primer_programa_y_salida.json"
+        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_texto_secuencia_y_formato.json"
+        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_fuente_compilacion_y_diagnostico.json")
+    add_custom_command(OUTPUT ${LGAED_RETIREMENT_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/retirement_fixture_source.py"
+            --output-dir "${LGAED_RETIREMENT_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/retirement_fixture_source.py"
+        COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
+        VERBATIM)
+    add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
     add_executable(lgaed_smo_lazy_task_tests native/presentation/windows/smo_lazy_task_tests.cpp)
     target_link_libraries(lgaed_smo_lazy_task_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.smo_lazy_task COMMAND lgaed_smo_lazy_task_tests)
@@ -237,6 +249,8 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_settings_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_settings_view_tests lgaed_narration_runtime)
     add_test(NAME native.settings_view COMMAND lgaed_settings_view_tests --case controls)
+    add_test(NAME native.settings_save_failure COMMAND lgaed_settings_view_tests --case save-failure)
+    set_tests_properties(native.settings_save_failure PROPERTIES TIMEOUT 30)
     add_test(NAME native.narration_licenses COMMAND lgaed_settings_view_tests --case licenses)
     set_tests_properties(native.settings_view native.narration_licenses PROPERTIES TIMEOUT 40)
     add_executable(lgaed_lesson_composition_tests native/presentation/windows/lesson_composition_tests.cpp)
@@ -261,6 +275,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 360)
     add_test(NAME native.dependent_puzzle_reader COMMAND lgaed_lesson_reader_tests --dependent-puzzles)
     set_tests_properties(native.dependent_puzzle_reader PROPERTIES TIMEOUT 150)
+    add_test(NAME native.integrated_u1_reader COMMAND lgaed_lesson_reader_tests --integrated-u1)
+    set_tests_properties(native.integrated_u1_reader PROPERTIES TIMEOUT 150)
     add_executable(lgaed_math_puzzle_view_tests native/presentation/windows/math_puzzle_view_tests.cpp)
     target_link_libraries(lgaed_math_puzzle_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_math_puzzle_view_tests lgaed_narration_runtime)
@@ -434,7 +450,9 @@ if(BUILD_TESTING)
     add_executable(lgaed_catalog_view_tests native/presentation/windows/catalog_view_tests.cpp)
     target_link_libraries(lgaed_catalog_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.catalog_view COMMAND lgaed_catalog_view_tests)
-    set_tests_properties(native.catalog_view PROPERTIES TIMEOUT 40)
+    # Traverses complete catalogues/progress in three languages and a live
+    # lesson; allow headroom alongside the Debug playback/math integrations.
+    set_tests_properties(native.catalog_view PROPERTIES TIMEOUT 90)
     add_executable(lgaed_narration_state_tests native/core/narration_state_tests.cpp)
     target_link_libraries(lgaed_narration_state_tests PRIVATE lgaed_core)
     add_test(NAME native.narration_state COMMAND lgaed_narration_state_tests)
@@ -473,7 +491,7 @@ if(BUILD_TESTING)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
-    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 ole32 oleaut32 comctl32 uuid)
+    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
     add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
     add_executable(lgaed_code_editor_tests native/presentation/windows/code_editor_tests.cpp)
     target_link_libraries(lgaed_code_editor_tests PRIVATE lgaed_presentation_windows)
@@ -513,6 +531,10 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_import_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.import_view COMMAND lgaed_import_view_tests)
     set_tests_properties(native.import_view PROPERTIES TIMEOUT 180)
+    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
+            lgaed_lesson_reader_tests lgaed_lesson_view_tests lgaed_import_view_tests)
+        add_dependencies(${fixture_consumer} lgaed_retirement_fixtures)
+    endforeach()
 endif()
 
 install(TARGETS LearnGameAndEngineDev lgaed_cpp_tool_host RUNTIME DESTINATION bin)

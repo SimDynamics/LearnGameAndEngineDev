@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace lgaed::presentation {
@@ -33,6 +34,7 @@ namespace {
 constexpr wchar_t class_name[]=L"LearnGameAndEngineDev.SettingsView";
 constexpr UINT close_message=WM_APP+222;
 constexpr UINT refresh_language_message=WM_APP+224;
+constexpr UINT save_error_message=WM_APP+225;
 enum {back=5100,ui_language,content_language,enabled,engine,language,voice,rate,advance,controls,
     auto_lesson,auto_unit,auto_course,swipe_finish,code_wrap,reset,use_global,save_flow,swipe_navigation};
 enum {text_scale=5120,text_preview,text_inherit,save_appearance,wrap_overwrite,global_color,programming_color,math_color,
@@ -258,11 +260,17 @@ struct Settings {
     std::vector<RECT> default_cards;
     std::size_t card_begin=0;
     bool laying_out=false;
+    std::string pending_error;
+    bool showing_error=false;
     windows::NarrationStorageSnapshot storage;
     std::size_t kokoro_rows_begin=0,kokoro_rows_end=0,selected_voice_index=0;
     explicit Settings(SettingsAccess value):access(std::move(value)){}
     ~Settings(){if(preview_font)DeleteObject(preview_font);for(auto font:fonts)DeleteObject(font);}
     int px(int v)const{return MulDiv(v,static_cast<int>(GetDpiForWindow(window)),96);}
+    void queue_error(std::string_view message){
+        if(showing_error||!pending_error.empty())return;
+        pending_error=message;PostMessageW(window,save_error_message,0,0);
+    }
     std::string tr(const char* es,const char* en,const char* fr)const{return locale=="en"?en:locale=="fr"?fr:es;}
     HWND item(const wchar_t* cls,std::string text,int id,int y,int height,DWORD style=0,int size=16,bool bold=false){
         const auto instance=reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(window,GWLP_HINSTANCE));
@@ -782,7 +790,7 @@ struct Settings {
         if(id>=global_color_reset&&id<=math_color_reset){const auto index=static_cast<std::size_t>(id-global_color_reset);
             if(std::ranges::any_of(default_inputs[index],[](const auto& text){const auto value=rgb_number(text);return !value||*value>255;})){show_settings_notice(window,tr("Escribe tres valores RGB de 0 a 255.","Enter three RGB values from 0 to 255.","Saisissez trois valeurs RVB de 0 à 255."));return;}
             colors[index]=default_colors[index];for(int channel=0;channel<3;++channel)color_inputs[index][channel]=std::to_string(rgb_channel(colors[index],channel));refresh_appearance();return;}
-        if(id==text_inherit){inherits_scale=original_inherits_scale=checked;access.update([&](auto& data){appearance::save_course_text_scale(data,access.course_id,checked,scale_draft);});refresh_appearance();if(access.changed)access.changed();return;}
+        if(id==text_inherit){access.update([&](auto& data){appearance::save_course_text_scale(data,access.course_id,checked,scale_draft);});inherits_scale=original_inherits_scale=checked;refresh_appearance();if(access.changed)access.changed();return;}
         if(id==wrap_overwrite){wrap_allowed=original_wrap_allowed=checked;access.update([&](auto& data){appearance::save_wrap_overwrite(data,access.course_id,checked);});refresh_appearance();if(access.changed)access.changed();return;}
         if(id==programming_color_overwrite||id==math_color_overwrite){color_overwrite[id-programming_color_overwrite]=checked;refresh_appearance();return;}
         if(id==reset_math_wrap_exceptions){
@@ -850,7 +858,25 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     case WM_DPICHANGED_AFTERPARENT:self->refresh_fonts();return 0;
     case WM_ERASEBKGND:self->paint_background(reinterpret_cast<HDC>(wp));return 1;
     case WM_PRINTCLIENT:self->paint_background(reinterpret_cast<HDC>(wp));return 0;
-    case WM_COMMAND:self->change(LOWORD(wp),HIWORD(wp));return 0;
+    case WM_COMMAND:if(!self->showing_error&&self->pending_error.empty())self->change(LOWORD(wp),HIWORD(wp));return 0;
+    case save_error_message:{
+        if(self->showing_error||self->pending_error.empty())return 0;
+        const auto text=wide(std::exchange(self->pending_error,{}));self->showing_error=true;
+        // Trackbar notifications are synchronous and may arrive from its
+        // native pointer/IsDialogMessage stack. Finish that stack, then cancel
+        // tracking before entering the modal dialog's nested message loop.
+        const auto captured=GetCapture();
+        if(captured&&(captured==window||IsChild(window,captured))){SendMessageW(captured,WM_CANCELMODE,0,0);if(GetCapture()==captured)ReleaseCapture();}
+        MessageBoxW(GetAncestor(window,GA_ROOT),text.c_str(),L"Opciones",MB_OK|MB_ICONERROR);
+        // Closing an owner during a nested loop also destroys its child view.
+        // Resolve the attachment again before touching any Settings members.
+        if(IsWindow(window)&&reinterpret_cast<Settings*>(GetWindowLongPtrW(window,GWLP_USERDATA))==self){
+            self->showing_error=false;
+            if(const auto checkbox=GetDlgItem(window,text_inherit))SendMessageW(checkbox,BM_SETCHECK,self->inherits_scale?BST_CHECKED:BST_UNCHECKED,0);
+            self->refresh_appearance();
+        }
+        return 0;
+    }
     case close_message:if(self->appearance_dirty()&&self->access.unsaved_discarded)self->access.unsaved_discarded(self->tr("Saliste sin guardar los cambios de color.","You left without saving the colour changes.","Vous avez quitté sans enregistrer les modifications de couleur."));if(self->access.close)self->access.close();return 0;
     case refresh_language_message:self->refresh_language();return 0;
     case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);
@@ -882,7 +908,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         }
         if(item.CtlID==back){FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::catalog_card));auto bounds=item.rcItem;InflateRect(&bounds,-self->px(18),-self->px(8));draw_icon(item.hDC,bounds,Icon::back,reader_theme::accent_ink(window,reader_theme::palette(window).card));return TRUE;}return reader_theme::draw_button(item);}
     case WM_MOUSEWHEEL:self->scroll-=GET_WHEEL_DELTA_WPARAM(wp)*self->px(48)/WHEEL_DELTA;self->layout(false);return 0;
-    case WM_HSCROLL:if(lp&&!IsWindowEnabled(reinterpret_cast<HWND>(lp)))return 0;
+    case WM_HSCROLL:if(self->showing_error||!self->pending_error.empty()||(lp&&!IsWindowEnabled(reinterpret_cast<HWND>(lp))))return 0;
     if(lp&&!self->binding){const auto slider=reinterpret_cast<HWND>(lp);const int id=GetDlgCtrlID(slider);
         if(id>=rgb_slider_first&&id<rgb_slider_first+9){const int offset=id-rgb_slider_first,index=offset/3,channel=offset%3,value=static_cast<int>(SendMessageW(slider,TBM_GETPOS,0,0));
             self->colors[index]=rgb_with_channel(self->colors[index],channel,value);self->color_inputs[index][channel]=std::to_string(value);self->refresh_appearance();return 0;}}
@@ -893,13 +919,16 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         self->refresh_storage_detail(bytes);self->layout();
         if(self->access.changed)self->access.changed();return 0;}
     if(lp&&!self->binding&&reinterpret_cast<HWND>(lp)==GetDlgItem(window,text_scale)){
-        self->scale_draft=self->original_scale=std::clamp(static_cast<int>(SendMessageW(reinterpret_cast<HWND>(lp),TBM_GETPOS,0,0)),75,150);self->access.update([&](auto& data){if(self->access.scope==SettingsScope::lesson)appearance::save_course_text_scale(data,self->access.course_id,self->inherits_scale,self->scale_draft);else appearance::save_global_text_scale(data,self->scale_draft);});self->refresh_appearance();if(self->access.changed)self->access.changed();return 0;}break;
+        const auto scale=std::clamp(static_cast<int>(SendMessageW(reinterpret_cast<HWND>(lp),TBM_GETPOS,0,0)),75,150);self->access.update([&](auto& data){if(self->access.scope==SettingsScope::lesson)appearance::save_course_text_scale(data,self->access.course_id,self->inherits_scale,scale);else appearance::save_global_text_scale(data,scale);});self->scale_draft=self->original_scale=scale;self->refresh_appearance();if(self->access.changed)self->access.changed();return 0;}break;
     case WM_VSCROLL:{SCROLLINFO info{sizeof(info),SIF_TRACKPOS};GetScrollInfo(window,SB_VERT,&info);switch(LOWORD(wp)){case SB_LINEUP:self->scroll-=self->px(32);break;case SB_LINEDOWN:self->scroll+=self->px(32);break;case SB_PAGEUP:self->scroll-=self->px(240);break;case SB_PAGEDOWN:self->scroll+=self->px(240);break;case SB_THUMBTRACK:self->scroll=info.nTrackPos;break;default:break;}self->layout(false);return 0;}
     case WM_LBUTTONDOWN:self->drag={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};self->dragging=true;SetCapture(window);return 0;
     case WM_MOUSEMOVE:if(self->dragging&&(wp&MK_LBUTTON)){self->scroll+=self->drag.y-GET_Y_LPARAM(lp);self->drag.y=GET_Y_LPARAM(lp);self->layout(false);}return 0;
     case WM_LBUTTONUP:case WM_CAPTURECHANGED:self->dragging=false;if(GetCapture()==window)ReleaseCapture();return 0;
     case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);delete self;break;
-    default:break;}}catch(const std::exception& error){MessageBoxW(window,wide(error.what()).c_str(),L"Opciones",MB_OK|MB_ICONERROR);}
+    default:break;}}catch(const std::exception& error){
+        if(IsWindow(window)&&reinterpret_cast<Settings*>(GetWindowLongPtrW(window,GWLP_USERDATA))==self)self->queue_error(error.what());
+        return 0;
+    }
     return DefWindowProcW(window,message,wp,lp);
 }
 }

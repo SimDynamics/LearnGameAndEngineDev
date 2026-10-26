@@ -4,6 +4,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "core/retirement_test_fixture.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
@@ -262,7 +263,9 @@ struct View {
         content(std::filesystem::path(build::source_root) / L"app/src/main/assets/content") {
         require(!std::filesystem::exists(environment.paths.root), "An import UI test cannot reuse a real profile");
         initialize_profile_directories(environment.paths);
-        lesson = windows::load_lesson(content / L"es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        // The legacy export contracts retain the exact published two-editor
+        // presentation; current retirement import is verified separately.
+        lesson = test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");supplied_model=true;
         if(supplied){lesson=std::move(*supplied);supplied_model=true;}
         host = CreateWindowExW(WS_EX_CONTROLPARENT, L"LgaedImportViewTests", L"Native Android import QA",
             WS_OVERLAPPEDWINDOW, 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
@@ -407,6 +410,65 @@ void imported_stdout_success_does_not_accredit_a_new_runtime_stderr_goal() {
     std::cout<<"PASS actual Android import of old stdout correctness: added stderr goal remains pending, draft/opaque response/export preserved, fresh partial evaluation and reopen\n";
 }
 
+void imported_pre_retirement_state_opens_current_asset() {
+    const auto published=test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
+    const auto current=windows::load_lesson(published.source_path);
+    require(current.compiler_puzzles_required&&current.retired_blocks.size()==2,"The import integration test requires the current retired asset");
+    View view(current);ExportFixture exported(view.environment.paths.projects/L"exportacion anterior al retiro",published);
+    const auto untouched=hashes(exported.folder);
+    view.click(104);view.path(exported.folder);view.click(203);
+    require(IsWindowEnabled(view.control(205)),"The current asset rejected a compatible published pre-retirement export");
+    view.click(205);require(view.summary().starts_with("Importación completada"),"The current asset did not import the historical U1 data");view.click(206);
+    const auto goal=curriculum::stable_block_position(current,"block_0004_0002");
+    require(goal.has_value(),"The integrated useful modification lost its stable identity");
+    const auto& active=current.pages[goal->page].blocks[goal->block];
+    const auto archived=std::ranges::find(current.retired_blocks,std::string("ejecucion_original_editor"),&curriculum::Block::stable_id);
+    require(archived!=current.retired_blocks.end(),"The current asset lost the historical compiler archive");
+    const auto archived_key=curriculum::draft_key("programming",current,*archived);
+    const auto active_key=curriculum::draft_key("programming",current,active);
+    std::optional<std::string> edited_source;
+    const auto preserved=[&]{const auto data=view.saved();
+        const auto active_draft=state::get_draft(data,active_key,"");
+        require(view.page()==goal->page&&!curriculum::stable_block_position(current,archived->stable_id)
+            &&state::get_draft(data,archived_key,"").source==exported.drafts[0].source
+            &&state::get_draft(data,archived_key,"").input==exported.drafts[0].input
+            &&(edited_source?visual_lf(active_draft.source)==*edited_source:active_draft.source==exported.drafts[1].source)
+            &&active_draft.input==exported.drafts[1].input,
+            "Importing into the integrated asset lost independent archived/active sources or inputs");
+        require(hashes(exported.folder)==untouched,"The current-asset import rewrote its historical source export");
+        struct Probe{bool leaked=false;} probe;
+        EnumChildWindows(view.view,[](HWND window,LPARAM context)->BOOL{auto& probe=*reinterpret_cast<Probe*>(context);
+            if(window_text(window).find("versión original")!=std::string::npos)probe.leaked=true;return !probe.leaked;
+        },reinterpret_cast<LPARAM>(&probe));
+        require(!probe.leaked,"The archived original draft leaked into a current native/accessibility control");};
+    preserved();
+    require(edit_text(view.control(goal->block,10))==visual_lf(exported.drafts[1].source)
+        &&edit_text(view.control(goal->block,4)).empty()
+        &&!windows::compiler_puzzle_completed(view.saved(),current,active),
+        "An old opaque compiler verdict accredited the current mandatory modification");
+    view.reopen();preserved();
+    // The export deliberately contains a lone CR immediately after a //
+    // comment to test exact historical preservation. MSVC treats that Mac
+    // newline as part of the comment and loses the following #include. Make
+    // an explicit source edit before asking the real compiler for new proof;
+    // importing must never silently rewrite that historical draft.
+    auto solution=active.initial_code;const auto literal=solution.find("Zona inicial");
+    require(literal!=solution.npos,"The imported current compiler lost its authored initial literal");
+    solution.replace(literal,std::string("Zona inicial").size(),"Caja recibida");edited_source=solution;
+    const auto replacement=wide(solution);const auto source=view.control(goal->block,10);
+    SendMessageW(source,EM_SETSEL,0,-1);SendMessageW(source,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(replacement.c_str()));pump(view.host);
+    preserved();view.click(block_id(goal->block,11));
+    wait_for(view.host,[&]{return IsWindowEnabled(view.control(goal->block,11));},"The integrated imported modification did not execute");
+    require(edit_text(view.control(goal->block,14))=="Caja recibida"&&edit_text(view.control(goal->block,4)).starts_with("✓ Correcto")
+        &&windows::compiler_puzzle_completed(view.saved(),current,active),
+        "A fresh real execution failed to accredit the useful current compiler after import: stdout="
+        +edit_text(view.control(goal->block,14))+"; feedback="+edit_text(view.control(goal->block,4))
+        +"; status="+edit_text(view.control(goal->block,34)));
+    view.reopen();preserved();require(edit_text(view.control(goal->block,4)).starts_with("✓ Correcto"),
+        "The imported current objective lost its persistent fresh success");
+    std::cout<<"PASS published export to integrated U1: archived and active drafts preserved, retired HWND absent, opaque success uncredited and fresh current execution retained\n";
+}
+
 } // namespace
 
 int main() {
@@ -416,6 +478,7 @@ int main() {
     if (!RegisterClassW(&host)) return 2;
     try {
         imported_stdout_success_does_not_accredit_a_new_runtime_stderr_goal();
+        imported_pre_retirement_state_opens_current_asset();
         View view;
         ExportFixture exported(view.environment.paths.projects / L"exportación & revisión", view.lesson);
         const auto initial_hashes = hashes(exported.folder);

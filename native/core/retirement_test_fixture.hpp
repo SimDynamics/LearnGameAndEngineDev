@@ -2,14 +2,42 @@
 // QA-only application of Work's explicit U1 retirement plan. No asset is written.
 #include "core/lesson.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/state_store.hpp"
+#include "native_build_config.hpp"
 
+#include <array>
+#include <algorithm>
 #include <set>
 #include <span>
 #include <stdexcept>
+#include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
 namespace lgaed::test {
+// Immutable inputs for migration tests, exported from the locally verified
+// d1933edf703e19ae0569ae60849b037c48edb687 Git objects by the test-fixture target.
+// Integrated-asset tests deliberately load the active curriculum separately.
+inline curriculum::Lesson load_pre_retirement_lesson(std::string_view filename) {
+    constexpr std::array<std::pair<std::string_view,std::string_view>,3> sources{{
+        {"lesson_primer_programa_y_salida.json","72165efd0d74dc0374a9df2e4d020db32d1664ad89c6bd972f8452b8d6c7c71d"},
+        {"lesson_texto_secuencia_y_formato.json","026dd83ea21a79a6a7b44107f8be6a3b4838ea7d36f0ecc55d05ddb39d3ed53d"},
+        {"lesson_fuente_compilacion_y_diagnostico.json","eacd78eacf76f9ad68984c3d0eaba45b3c989e74bacf138b94292ecb9c37849d"}
+    }};
+    const auto source=std::ranges::find(sources,filename,[](const auto& item){return item.first;});
+    if(source==sources.end())throw std::runtime_error("Unknown pre-retirement QA source");
+    std::array<wchar_t,32768> executable{};
+    const auto count=GetModuleFileNameW(nullptr,executable.data(),static_cast<DWORD>(executable.size()));
+    if(!count||count>=executable.size())throw std::runtime_error("Cannot resolve pre-retirement QA fixture directory");
+    const auto path=std::filesystem::path(std::wstring_view(executable.data(),count)).parent_path()
+        /"test-fixtures/u1-d1933ed"/filename;
+    if(state::sha256(state::read_bytes(path))!=source->second)
+        throw std::runtime_error("Pre-retirement QA source differs from its pinned d1933ed Git bytes");
+    auto result=windows::load_lesson(path);
+    result.source_path=std::filesystem::path(build::source_root)
+        /"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion"/filename;
+    return result;
+}
 inline std::string retire_lesson_json(const curriculum::Lesson& source,
         std::span<const std::string> identities, bool required = true) {
     using namespace winrt::Windows::Data::Json;

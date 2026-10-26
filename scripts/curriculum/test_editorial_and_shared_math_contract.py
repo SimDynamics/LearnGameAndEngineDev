@@ -312,5 +312,112 @@ class ReviewedV2EditorialContractTest(unittest.TestCase):
                         state_layout.align_for_previous_validation(previous, changed)
 
 
+class RetirementEditorialContractTest(unittest.TestCase):
+    """The four reviewed retirement edits keep immutable exercise owners."""
+
+    cases = (
+        ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 5, 4,
+         "prediccion_zona_inicial", "question",
+         "3e7fa5f573c566bc17a7308398d90ee0a849aa6cb849bb89f9a2d5d643b7b01c",
+         "a1299f5fcc562260414ac9136337d77199cb18e4d362eec976c201ed34a2e43f"),
+        ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 7, 4,
+         "prediccion_informe_inicial", "question",
+         "7f48db3071af57952889a2c2680f14dba906231d495638855feb71c4bf23c53a",
+         "aac3dd2c9535276b6513a0adc2736bf5a5c84bc956dfa180fda9543813c524cd"),
+        ("programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json", 4, 6,
+         "prediccion_revision_inicial", "question",
+         "daf9bb92af0fb387f61efc5a0062adf550c1bdffd15ab2a4be5b5b3f6b874d34",
+         "cb36f39faab36ecb05dcf50b3f0a7a2509e1d541caa43a812a7bc5174bb80d00"),
+        ("programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json", 4, 6,
+         "prediccion_revision_inicial", "explanation",
+         "ba4e030990f073ec920b75f627c1595317a7c58d2d12a6dc946744af32acfb11",
+         "0f7908a8cedad6bd6e7ed1a8b9162c6d05752373b614a85b93b1d55b7b2e1761"),
+    )
+
+    def fixtures(self):
+        for lesson, page, block, identity, field, before_hash, after_hash in self.cases:
+            previous = historical_lesson("d1933ed", lesson)
+            current = contract.load(contract.CONTENT / lesson)
+            aligned = state_layout.align_for_previous_validation(previous, current)
+            position = next(position for position, origin in state_layout.validate(previous).items()
+                            if origin == (page - 1, block - 1))
+            pn, bn = position
+            old = previous["pages"][pn]["blocks"][bn]
+            new = aligned["pages"][pn]["blocks"][bn]
+            self.assertEqual(identity, old["id"])
+            self.assertEqual(identity, new["id"])
+            self.assertEqual((before_hash, after_hash), (digest(old[field]), digest(new[field])))
+            yield (lesson, page, block), field, previous, current, old, new
+
+    def preserved(self, location, old, new):
+        lesson, page, block = location
+        relative = (contract.CONTENT / lesson).relative_to(contract.ROOT).as_posix()
+        return contract.preserves_previous_exercise(relative, page - 1, block - 1, old, new)
+
+    def test_only_four_pinned_edits_pass_against_the_real_pre_retirement_tree(self):
+        self.assertEqual(4, len(contract.RETIREMENT_EDITORIAL_REVISIONS))
+        self.assertEqual(29, len(contract.APPROVED_EDITORIAL_REVISIONS))
+        for location, _, previous, current, old, new in self.fixtures():
+            with self.subTest(location=location):
+                state_layout.validate_transition(previous, current)
+                self.assertEqual(2, current["stateLayout"]["version"])
+                self.assertTrue(self.preserved(location, old, new))
+                self.assertEqual(old["code"], new["code"])
+                self.assertEqual(old["answers"], new["answers"])
+                self.assertEqual("exact", old["outputComparison"])
+                self.assertEqual(old["outputComparison"], new["outputComparison"])
+
+    def test_pinned_text_does_not_license_technical_changes_or_other_owners(self):
+        for location, _, _, _, old, new in self.fixtures():
+            for field in new.keys() - {"reviewFeedback"}:
+                changed = copy.deepcopy(new)
+                changed[field] = "UNAPPROVED CHANGE"
+                with self.subTest(location=location, field=field):
+                    self.assertFalse(self.preserved(location, old, changed))
+            self.assertFalse(self.preserved(location, old, dict(new, addedTechnicalField="UNAPPROVED")))
+            self.assertFalse(self.preserved((location[0], location[1] + 1, location[2]), old, new))
+            self.assertFalse(self.preserved((location[0], location[1], location[2] + 1), old, new))
+            self.assertFalse(self.preserved(("programas_y_ejecucion/lesson_otro_programa.json", *location[1:]), old, new))
+            # Matching text and coordinates are insufficient for another owner,
+            # including when both copied blocks carry the same replacement ID.
+            self.assertFalse(self.preserved(location, dict(old, id="other_owner"), dict(new, id="other_owner")))
+            self.assertFalse(self.preserved(location, dict(old, type="fill_code"), dict(new, type="fill_code")))
+            no_id_before, no_id_after = dict(old), dict(new)
+            del no_id_before["id"]
+            del no_id_after["id"]
+            self.assertFalse(self.preserved(location, no_id_before, no_id_after))
+
+    def test_both_text_hashes_and_their_direction_remain_exact(self):
+        for location, field, _, _, old, new in self.fixtures():
+            with self.subTest(location=location, field=field):
+                self.assertFalse(self.preserved(location, dict(old, **{field: old[field] + " "}), new))
+                self.assertFalse(self.preserved(location, old, dict(new, **{field: new[field] + " "})))
+                self.assertFalse(self.preserved(location, new, old))
+                # The same before/after phrases in the other editorial field
+                # do not inherit this field's authorization.
+                other = "explanation" if field == "question" else "question"
+                moved_old, moved_new = dict(old), dict(old)
+                moved_old[other], moved_new[other] = old[field], new[field]
+                self.assertFalse(self.preserved(location, moved_old, moved_new))
+
+    def test_editorial_approval_cannot_rewrite_origin_family_or_retirement_history(self):
+        for location, _, previous, current, _, _ in self.fixtures():
+            for target in ("origin", "family", "editorial", "retired", "retirementHistory"):
+                changed = copy.deepcopy(current)
+                if target == "origin":
+                    changed["stateLayout"]["origin"][0]["blocks"][0]["sha256"] = "0" * 64
+                elif target == "family":
+                    changed["stateLayout"]["family"]["es"]["sha256"] = "0" * 64
+                elif target == "editorial":
+                    changed["stateLayout"]["editorial"] = []
+                elif target == "retired":
+                    changed["stateLayout"]["retired"][-1]["block"]["initialCode"] = "UNAPPROVED SOURCE"
+                else:
+                    changed["stateLayout"]["retirementHistory"][0]["pages"][0]["blocks"][0]["text"] = "UNAPPROVED HISTORY"
+                with self.subTest(location=location, target=target):
+                    with self.assertRaises(state_layout.LayoutError):
+                        state_layout.align_for_previous_validation(previous, changed)
+
+
 if __name__ == "__main__":
     unittest.main()

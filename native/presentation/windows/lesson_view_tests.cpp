@@ -143,7 +143,10 @@ struct Fixture {
         content(std::filesystem::path(build::source_root) / "app/src/main/assets/content") {
         require(!std::filesystem::exists(environment.paths.root), "QA instance unexpectedly already exists");
         initialize_profile_directories(environment.paths);
-        lesson = windows::load_lesson(content / "es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        // Fixed-coordinate regressions describe the verified published UI.
+        // Integrated-asset cases below supply their current model explicitly.
+        lesson = test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
+        supplied_model = true;
         if (load_model) { lesson = load_model(lesson); supplied_model = true; }
         state::StateStore seed_store(environment.paths.root); initial_data=seed_store.load();
         // Spanish expectations below are explicit test choices, independent of
@@ -1927,48 +1930,37 @@ void text_sequence_lesson_all_pages() {
                 }
             }
             if (page == 6) {
-                require(fixture.lesson.activity_after.size() == 2 && fixture.lesson.reference_after.size() == 1,
-                    "The actual text/sequence fixture lost its authored prerequisite/reference relationships");
-                const auto original = fixture.control(3,10);
-                const auto hidden_from_reader = [&](std::size_t block) {
-                    return std::ranges::none_of(lesson_reading_regions(fixture.view),[&](const auto& region) {
-                        return region.block_index == block;
-                    });
-                };
-                require(!descendant(fixture.view,id(5,10)) && !descendant(fixture.view,id(8,10))
-                        && hidden_from_reader(5) && hidden_from_reader(8) && !navigate_lesson_view(fixture.view,7),
-                    "A solved prediction exposed an unexecuted dependent compiler or bypassed its gate");
-                fixture.run(3);
-                const bool original_valid=fixture.text(3,14)=="Resumen\nZona Oeste" && fixture.text(3,4).starts_with("✓ Correcto")
-                    && fixture.control(3,10)==original && descendant(fixture.view,id(5,10))
-                    && !descendant(fixture.view,id(8,10)) && hidden_from_reader(8);
-                if(!original_valid)std::cerr<<"QA original report: stdout='"<<fixture.text(3,14)<<"', feedback='"<<fixture.text(3,4)
-                    <<"', first available="<<(descendant(fixture.view,id(5,10))!=nullptr)
-                    <<", second available="<<(descendant(fixture.view,id(8,10))!=nullptr)
-                    <<", reader hidden="<<hidden_from_reader(8)<<", stable editor="<<(fixture.control(3,10)==original)<<'\n';
-                require(original_valid,
-                    "The actual original execution failed or unlocked the wrong text/sequence compiler");
-                const auto first_construction = fixture.control(5,10);
-                fixture.run(5);
-                require(fixture.text(5,4).starts_with("✗ Incorrecto") && !descendant(fixture.view,id(8,10)),
-                    "The unchanged original output falsely completed the independent report construction");
-                const auto one_literal = fixture.lesson.pages[7].blocks[2].code;
-                fixture.replace(5,10,one_literal + "esto no compila\n"); fixture.run(5);
-                require(fixture.text(5,4).empty() && !descendant(fixture.view,id(8,10)),
-                    "A compilation diagnostic falsely unlocked the final report compiler");
-                fixture.replace(5,10,one_literal); fixture.run(5);
-                require(fixture.text(5,14) == "Informe\nZona Este\nFin" && fixture.text(5,4).starts_with("✓ Correcto")
-                        && fixture.control(3,10) == original && fixture.control(5,10) == first_construction,
-                    "The authored one-literal reference failed or recreating controls lost an independent editor");
-                const auto three_instructions = fixture.lesson.pages[7].blocks[3].code;
-                fixture.replace(8,10,three_instructions); fixture.run(8);
-                require(fixture.text(8,14) == "Informe\nZona Este\nFin" && fixture.text(8,4).starts_with("✓ Correcto")
-                        && fixture.text(3,10) == fixture.lesson.pages[6].blocks[3].initial_code
-                        && fixture.text(5,10) == one_literal,
-                    "The authored three-instruction reference failed or changed an independent compiler draft");
-                for (const auto index : {std::size_t{3},std::size_t{5},std::size_t{8}})
-                    require(descendant(fixture.view,id(index,10)) && descendant(fixture.view,id(index,11)),
-                        "Completing the real prerequisites lost an independent compiler editor/action");
+                const auto first=curriculum::stable_block_position(fixture.lesson,"block_0006_0002");
+                const auto second=curriculum::stable_block_position(fixture.lesson,"block_0006_0006");
+                require(first&&second&&first->page==page&&second->page==page
+                    &&fixture.lesson.compiler_puzzles_required&&fixture.lesson.activity_after.size()==1
+                    &&fixture.lesson.retired_blocks.size()==2,"The integrated report page lost its two useful required objectives");
+                const auto first_editor=fixture.control(first->block,10);
+                const auto hidden_from_reader=[&](std::size_t index){return std::ranges::none_of(lesson_reading_regions(fixture.view),
+                    [&](const auto& region){return region.block_index==index;});};
+                require(!descendant(fixture.view,id(second->block,10))&&hidden_from_reader(second->block)
+                    &&!navigate_lesson_view(fixture.view,7),"An old prediction exposed the later report construction");
+                fixture.run(first->block);
+                require(fixture.text(first->block,4).starts_with("✗ Incorrecto")&&!descendant(fixture.view,id(second->block,10)),
+                    "Executing the unchanged displayed report falsely completed its construction");
+                const auto one_literal=fixture.lesson.pages[7].blocks[2].code;
+                fixture.replace(first->block,10,one_literal+"esto no compila\n");fixture.run(first->block);
+                require(fixture.text(first->block,4).empty()&&!descendant(fixture.view,id(second->block,10)),
+                    "A compile failure falsely completed the current report objective");
+                fixture.replace(first->block,10,one_literal);fixture.run(first->block);
+                require(fixture.text(first->block,14)=="Informe\nZona Este\nFin"&&fixture.text(first->block,4).starts_with("✓ Correcto")
+                    &&fixture.control(first->block,10)==first_editor&&descendant(fixture.view,id(second->block,10)),
+                    "The useful one-literal construction failed or lost its independent editor");
+                const auto second_editor=fixture.control(second->block,10);
+                fixture.run(second->block);
+                require(fixture.text(second->block,4).starts_with("✗ Incorrecto"),"The second useful construction inherited another compiler's success");
+                const auto three_instructions=fixture.lesson.pages[7].blocks[3].code;
+                fixture.replace(second->block,10,three_instructions);fixture.run(second->block);
+                require(fixture.text(second->block,14)=="Informe\nZona Este\nFin"&&fixture.text(second->block,4).starts_with("✓ Correcto")
+                    &&fixture.control(second->block,10)==second_editor&&fixture.text(first->block,10)==one_literal,
+                    "The useful three-instruction construction changed another draft or lost its own editor");
+                require(!curriculum::stable_block_position(fixture.lesson,"ejecucion_original_texto_secuencia_y_formato_editor"),
+                    "Current report navigation reactivated its retired redundant editor");
             } else if (page == 7) {
                 require(fixture.text(2,1) == fixture.lesson.pages[7].blocks[2].code
                         && fixture.text(3,1) == fixture.lesson.pages[7].blocks[3].code,
@@ -1990,28 +1982,29 @@ void text_sequence_lesson_all_pages() {
         fixture.select_page(7); verify_page(fixture,7);
         require(fixture.lesson.raw_json == original_json,"Opening/navigating the regression lesson changed authored content");
     }
-    // An old bookmark may name any page, even when previous answers are absent.
-    // Recreate that condition in new isolated profiles without smoke-test mode.
-    for (std::size_t page = 0; page < 8; ++page) {
-        Fixture restored([&](state::StateData& data,const curriculum::Lesson& lesson) {
-            state::prepare_lesson_state(data,lesson); state::save_current_page(data,lesson,page);
-            for (const auto index : {std::size_t{5},std::size_t{8}}) {
-                state::Draft draft; draft.source = lesson.pages[6].blocks[index].initial_code + "// borrador QA bloqueado\n";
-                state::put_draft(data,curriculum::draft_key("programming",lesson,lesson.pages[6].blocks[index]),draft);
+    // Current mandatory objectives redirect a later old bookmark to the first
+    // pending useful compiler, retaining each historical draft independently.
+    for(std::size_t requested=0;requested<8;++requested){
+        Fixture restored([&](state::StateData& data,const curriculum::Lesson& lesson){
+            state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,requested);
+            for(const auto identity:{"block_0006_0002","block_0006_0006"}){
+                const auto at=curriculum::stable_block_position(lesson,identity);require(at.has_value(),"A useful report compiler lost its stable identity");
+                const auto& compiler=lesson.pages[at->page].blocks[at->block];state::Draft draft;
+                draft.source=compiler.initial_code+"// borrador QA bloqueado\n";
+                state::put_draft(data,curriculum::draft_key("programming",lesson,compiler),draft);
             }
         },load);
-        verify_page(restored,page); restored.reopen(); verify_page(restored,page);
-        if (page == 6) require(!descendant(restored.view,id(5,10)) && !descendant(restored.view,id(8,10)),
-            "An old experiment bookmark exposed dependent compiler drafts without their prerequisites");
-        if (page == 7) require(!descendant(restored.view,id(2,1)) && !descendant(restored.view,id(3,1))
-                && std::ranges::all_of(lesson_reading_regions(restored.view),[](const auto& region) {
-                    return region.block_index == std::numeric_limits<std::size_t>::max();
-                }),"An old comparison bookmark exposed or narrated unearned report references");
-        const auto saved = restored.saved();
-        for (const auto index : {std::size_t{5},std::size_t{8}})
-            require(state::get_draft(saved,curriculum::draft_key("programming",restored.lesson,restored.lesson.pages[6].blocks[index]),"").source
-                    == restored.lesson.pages[6].blocks[index].initial_code + "// borrador QA bloqueado\n",
-                "Restoring an old bookmark discarded an independent blocked compiler draft");
+        const auto expected=std::min(requested,std::size_t{6});
+        verify_page(restored,expected);restored.reopen();verify_page(restored,expected);
+        const auto later=curriculum::stable_block_position(restored.lesson,"block_0006_0006");
+        if(requested>=6)require(!descendant(restored.view,id(later->block,10))&&!navigate_lesson_view(restored.view,7),
+            "A restored comparison bookmark bypassed its useful required construction");
+        const auto saved=restored.saved();
+        for(const auto identity:{"block_0006_0002","block_0006_0006"}){
+            const auto at=curriculum::stable_block_position(restored.lesson,identity);const auto& compiler=restored.lesson.pages[at->page].blocks[at->block];
+            require(state::get_draft(saved,curriculum::draft_key("programming",restored.lesson,compiler),"").source
+                ==compiler.initial_code+"// borrador QA bloqueado\n","Restoring a bookmark discarded a current independent report draft");
+        }
     }
     std::cout << "PASS actual text/sequence lesson: fresh opening, eight-page gated navigation, RichEdit selection, narration targets, independent editors and every restored bookmark\n";
 }
@@ -2022,6 +2015,9 @@ void text_sequence_application_restoration() {
     require(std::filesystem::is_regular_file(executable),"Build the actual application beside the lesson tests before restoration QA");
     const auto lesson = windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json");
+    const auto first=curriculum::stable_block_position(lesson,"block_0006_0002");
+    const auto second=curriculum::stable_block_position(lesson,"block_0006_0006");
+    require(first&&second&&first->page==second->page,"The restoration regression lost its two current useful compilers");
     const auto shell_for = [](DWORD process_id) {
         struct Search { DWORD process_id; HWND shell = nullptr; } search{process_id};
         EnumWindows([](HWND window,LPARAM context)->BOOL {
@@ -2058,7 +2054,7 @@ void text_sequence_application_restoration() {
             preferences["catalog/locale"] = std::string("es"); preferences["catalog/route"] = std::string("programming");
             preferences["catalog/course"] = std::string("cpp_fundamentals");
             preferences["catalog/unit"] = std::string("cpp_fundamentals__programas_y_ejecucion"); preferences["navigation/lesson"] = lesson.id;
-            for (const auto index : {std::size_t{5},std::size_t{8}}) {
+            for (const auto index : {first->block,second->block}) {
                 state::Draft draft; draft.source = lesson.pages[6].blocks[index].initial_code + "// borrador QA bloqueado\n";
                 state::put_draft(data,curriculum::draft_key("programming",lesson,lesson.pages[6].blocks[index]),draft);
             }
@@ -2095,10 +2091,11 @@ void text_sequence_application_restoration() {
         require(view && descendant_class(view,L"LearnGameAndEngineDev.ReaderBar"),
             "Automatic restoration did not create the real lesson and its narration reader");
         if(page==0)require(caption(descendant(view,990)) == lesson.title,"Automatic restoration opened a different lesson");
-        const auto page_label = std::to_string(page + 1) + " de 8";
+        const auto expected_page=std::min(page,first->page);
+        const auto page_label = std::to_string(expected_page + 1) + " de 8";
         require(caption(descendant(view,105)).find(page_label) != std::string::npos,
-            "Automatic restoration selected a different page bookmark");
-        if (page == 6) require(!descendant(view,id(5,10)) && !descendant(view,id(8,10)),
+            "Automatic restoration failed to resolve a bookmark to its pending current objective");
+        if (page >= first->page) require(descendant(view,id(first->block,10)) && !descendant(view,id(second->block,10)),
             "The actual executable exposed blocked compiler drafts from an old experiment bookmark");
         if (page == 7) require(!descendant(view,id(2,1)) && !descendant(view,id(3,1)),
             "The actual executable exposed unearned report references from an old comparison bookmark");
@@ -2120,9 +2117,9 @@ void text_sequence_application_restoration() {
         require(GetExitCodeProcess(child.hProcess,&exit_code) && exit_code == 0,"The isolated application did not exit successfully");
         state::StateStore reader(environment.paths.root); const auto saved = reader.load();
         require(state::string_value(saved,"native_windows","navigation/lesson")==lesson.id
-                && state::current_page(saved,lesson)==page,
+                && state::current_page(saved,lesson)==expected_page,
             "Normal application restoration/close changed the active lesson or its page bookmark");
-        for (const auto index : {std::size_t{5},std::size_t{8}})
+        for (const auto index : {first->block,second->block})
             require(state::get_draft(saved,curriculum::draft_key("programming",lesson,lesson.pages[6].blocks[index]),"").source
                     == lesson.pages[6].blocks[index].initial_code + "// borrador QA bloqueado\n",
                 "Normal application restoration/close discarded an independent blocked compiler draft");
@@ -2147,7 +2144,7 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
                 state::put_draft(data,curriculum::draft_key("programming",lesson,block),draft);
                 state::put_response(data,curriculum::exercise_key(lesson,block),state::Response{"",true});
             }
-        },[&](const curriculum::Lesson&){return windows::load_lesson(path);});
+        },[&](const curriculum::Lesson&){return test::load_pre_retirement_lesson(plan.file);});
         require(f.page()==plan.page,"The original U1 page bookmark changed before retirement");
         const auto original=f.lesson;
         const auto retired_editor=std::ranges::find(original.pages[plan.page].blocks,std::string(plan.editor),&curriculum::Block::stable_id);
@@ -2191,6 +2188,76 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
     for(const auto& p:final_lesson.lesson.pages)for(const auto& block:p.blocks)if(block.type==BlockType::cpp_compiler)++useful_editors;
     require(useful_editors==8,"The three retirement plans did not retain exactly the eight useful U1 editors");
     std::cout<<"PASS three actual U1 retirement plans: old bookmarks, archived and independent active drafts, native/narration exclusion and all eight useful editors\n";
+}
+void integrated_u1_compilers_require_all_eight_real_executions() {
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
+    std::size_t completed=0;
+    for(const auto filename:{"lesson_primer_programa_y_salida.json","lesson_texto_secuencia_y_formato.json",
+            "lesson_fuente_compilacion_y_diagnostico.json","lesson_resolver_probar_y_recuperar.json"}){
+        Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+            state::prepare_lesson_state(data,lesson);bool marked=false;
+            // Submitted prior quiz progress isolates the compiler requirement;
+            // opaque compiler correctness must never substitute native proof.
+            for(std::size_t p=0;p<lesson.pages.size();++p)for(const auto& block:lesson.pages[p].blocks){
+                if(block.type==BlockType::cpp_compiler&&!marked){state::save_current_page(data,lesson,p);marked=true;}
+                if(block.type==BlockType::heading||block.type==BlockType::paragraph||block.type==BlockType::note||block.type==BlockType::code)continue;
+                state::Response old;old.correct=true;old.answer="progreso QA anterior";
+                if(block.correct_index)old.selected=static_cast<std::int64_t>(*block.correct_index);
+                old.order.assign(block.correct_order.begin(),block.correct_order.end());
+                if(block.type==BlockType::output_prediction||block.type==BlockType::fill_code)old.answer=block.answers.at(0);
+                if(block.type==BlockType::inline_fill_code||block.type==BlockType::drag_fill_code){
+                    winrt::Windows::Data::Json::JsonObject submitted;winrt::Windows::Data::Json::JsonArray values;
+                    if(block.type==BlockType::inline_fill_code){for(const auto& answer:block.answers)
+                        values.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(answer)));}
+                    else for(const auto slot:block.correct_order)
+                        values.Append(winrt::Windows::Data::Json::JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                    submitted.Insert(block.type==BlockType::inline_fill_code?L"answers":L"slots",values);old.raw_json=winrt::to_string(submitted.Stringify());
+                }
+                state::put_response(data,curriculum::exercise_key(lesson,block),old);
+            }
+        },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);});
+        require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");
+        std::vector<curriculum::StatePosition> compilers;
+        for(std::size_t p=0;p<f.lesson.pages.size();++p)for(std::size_t b=0;b<f.lesson.pages[p].blocks.size();++b)
+            if(f.lesson.pages[p].blocks[b].type==BlockType::cpp_compiler)compilers.push_back({p,b});
+        require(compilers.size()==2,"Integrated U1 lost useful practice or retained a redundant compiler");
+        for(const auto position:compilers){
+            const auto& compiler=f.lesson.pages[position.page].blocks[position.block];
+            require(compiler.output_check&&!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+                "Opaque old compiler correctness accredited an integrated objective");
+            if(f.page()!=position.page){require(navigate_lesson_view(f.view,position.page),"A completed earlier objective failed to unlock the next useful page");pump(f.host);}
+            require(descendant(f.view,id(position.block,10))&&!lesson_page_state(f.view).can_next,
+                "A current useful compiler was hidden or its own pending goal did not block advancement");
+            f.run(position.block);
+            require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),"An unchanged initial program falsely completed the requested construction/repair");
+            std::string solution;
+            if(compiler.stable_id=="block_0006_0002"||compiler.stable_id=="block_0006_0006"){
+                const auto reference=curriculum::stable_block_position(f.lesson,compiler.stable_id=="block_0006_0002"?"block_0007_0002":"block_0007_0003");
+                require(reference.has_value(),"The report construction lost its authored reference program");
+                solution=f.lesson.pages[reference->page].blocks[reference->block].code;
+            }else if(compiler.stable_id=="block_0003_0008"){
+                solution=compiler.initial_code;const std::string line="std::cout << \"Revision inicial\"\n";
+                const auto missing=solution.find(line);require(missing!=solution.npos,"The independent repair no longer contains its intended missing semicolon");
+                solution.insert(missing+line.size()-1,";");
+            }else for(const auto& relation:f.lesson.reference_after)if(relation.activity==compiler.stable_id)
+                for(const auto& identity:relation.blocks){const auto reference=curriculum::stable_block_position(f.lesson,identity);
+                    const auto& block=f.lesson.pages[reference->page].blocks[reference->block];
+                    if(block.type==BlockType::code&&block.code.find("int main")!=std::string::npos){solution=block.code;break;}}
+            require(!solution.empty(),"A current useful compiler has no verified authored solution in this QA plan");
+            f.replace(position.block,10,solution);f.run(position.block);
+            require(f.text(position.block,4).starts_with("✓ Correcto")&&windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
+                "A fresh current reference execution did not complete its own required objective");
+            ++completed;f.reopen();require(f.text(position.block,10)==solution&&f.text(position.block,4).starts_with("✓ Correcto"),
+                "Reopening an integrated useful objective lost its independent source or persistent success");
+        }
+        const auto first=compilers.front(),last=compilers.back();
+        require(navigate_lesson_view(f.view,first.page),"Backward navigation to reset the first useful compiler failed");pump(f.host);f.click(first.block,12);
+        require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[first.page].blocks[first.block])
+            &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[last.page].blocks[last.block])
+            &&!lesson_page_state(f.view).can_next,"Reset erased another useful objective or failed to restore the first requirement");
+    }
+    require(completed==8,"The integrated U1 acceptance did not execute all eight useful compiler objectives");
+    std::cout<<"PASS all eight integrated useful U1 compilers: mandatory gate, independent real execution, authored solutions, opaque history, reopen and scoped Reset\n";
 }
 void retired_reading_regions_are_empty_during_import_and_return_after_cancel() {
     // A presentation-only retirement on a copy of page zero exercises the
@@ -2527,7 +2594,7 @@ int main(int argc,char* argv[]) {
         if(restoration_only){text_sequence_application_restoration();return 0;}
         if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
-        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();compiler_puzzle_completion_and_navigation();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
         runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();

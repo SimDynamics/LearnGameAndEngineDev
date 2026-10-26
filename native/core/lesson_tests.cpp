@@ -101,7 +101,7 @@ void retirement_contract_tests(const Lesson& first) {
         {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"}}};
     std::size_t useful = 0;
     for (const auto& [filename, ids] : plans) {
-        const auto before = lgaed::windows::load_lesson(first.source_path.parent_path()/filename);
+        const auto before = lgaed::test::load_pre_retirement_lesson(filename);
         const auto after = lgaed::test::retire_lesson(before,ids);
         check(after.retired_blocks.size() == 2 && after.state_layout.retired.size() == 2,
             "Retired U1 instructions/editor lost their complete archive");
@@ -204,6 +204,51 @@ void retirement_contract_tests(const Lesson& first) {
     check(useful == 8,"The eight useful U1 compiler practices were not preserved");
     std::cout << "Retired U1 compiler contracts, original slots, active bookmarks and eight useful editors: PASS\n";
 }
+void integrated_retirement_contract_tests() {
+    using namespace winrt::Windows::Data::Json;
+    const auto folder=std::filesystem::path(lgaed::build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
+    const std::array<std::pair<const char*,std::array<std::string,2>>,3> plans{{
+        {"lesson_primer_programa_y_salida.json",{"ejecucion_original_consigna","ejecucion_original_editor"}},
+        {"lesson_texto_secuencia_y_formato.json",{"ejecucion_original_texto_secuencia_y_formato_consigna","ejecucion_original_texto_secuencia_y_formato_editor"}},
+        {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"}}
+    }};
+    std::size_t useful=0;
+    for(const auto& [filename,ids]:plans){
+        const auto before=lgaed::test::load_pre_retirement_lesson(filename);
+        const auto current=lgaed::windows::load_lesson(folder/filename);
+        check(current.compiler_puzzles_required&&current.retired_blocks.size()==2&&current.state_layout.retirement_history.size()==1,
+            "The integrated U1 asset lost mandatory objectives or its two archived identities");
+        check(current.state_layout.lineage==before.state_layout.lineage&&current.state_layout.legacy_lineage==before.state_layout.legacy_lineage
+            &&current.state_layout.signatures==before.state_layout.signatures,
+            "Integrated retirement changed historical state ownership");
+        const auto archived=JsonObject::Parse(winrt::to_hstring(current.state_layout.retirement_history.front().raw_json));
+        const auto historical=JsonObject::Parse(winrt::to_hstring(before.raw_json));
+        check(archived.GetNamedArray(L"pages").Stringify()==historical.GetNamedArray(L"pages").Stringify()
+            &&archived.GetNamedArray(L"current").Stringify()==historical.GetNamedObject(L"stateLayout").GetNamedArray(L"current").Stringify(),
+            "The integrated archive differs from its independently pinned d1933ed presentation");
+        rejects([&]{(void)lgaed::test::retire_lesson(current,ids);},"An integrated asset could silently retire the same identities twice");
+        for(const auto& identity:ids)check(retired_block(current,identity)&&!stable_block_position(current,identity)
+            &&active_block_successor(current,identity).has_value(),"An integrated retired identity remained active or lost its successor");
+        for(const auto& page:current.pages)for(const auto& block:page.blocks){
+            const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an active identity");
+            const auto& old=before.pages[origin->page].blocks[origin->block];
+            check(exercise_key(current,block)==exercise_key(before,old)&&draft_key("programming",current,block)==draft_key("programming",before,old),
+                "An integrated active block lost its historical response or draft slot");
+            if(block.type==BlockType::cpp_compiler){++useful;check(block.output_check.has_value()
+                &&reference_objective_frame(current,block)==reference_objective_frame(before,old),
+                "A useful integrated compiler changed its program, answer or fresh-execution objective");}
+        }
+        for(const auto& relation:current.activity_after)for(const auto& required:relation.prerequisites)
+            check(!retired_block(current,required),"A current useful activity still requires a retired execution");
+    }
+    const auto last=lgaed::windows::load_lesson(folder/"lesson_resolver_probar_y_recuperar.json");
+    check(last.compiler_puzzles_required,"The two final useful U1 compiler objectives stopped being mandatory");
+    for(const auto& page:last.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
+        ++useful;check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");}
+    check(useful==8,"Current U1 no longer contains exactly eight useful mandatory compilers");
+    std::cout<<"Integrated U1 assets: exact d1933ed archive, original slots, eight mandatory useful objectives and no second retirement: PASS\n";
+}
 void standard_error_objective_tests(const Lesson& real_lesson) {
     using lgaed::windows::parse_lesson_json;
     using winrt::Windows::Data::Json::JsonObject;
@@ -304,9 +349,11 @@ int main() {
         using lgaed::windows::parse_lesson_json;
         const auto root = std::filesystem::path(lgaed::build::source_root);
         const auto path = root / "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
-        const auto lesson = lgaed::windows::load_lesson(path);
+        // Exact published input for migration/legacy-coordinate regressions.
+        const auto lesson = lgaed::test::load_pre_retirement_lesson(path.filename().string());
         narration_metadata_tests(lesson);
         retirement_contract_tests(lesson);
+        integrated_retirement_contract_tests();
         standard_error_objective_tests(lesson);
         {
             const auto reviewed=parse_lesson_json(R"({"id":"reviews","title":"Reviews","pages":[{"blocks":[{"type":"multiple_choice","question":"Q","options":["A","B","C"],"correctIndex":1,"explanation":"Success","reviewFeedback":["Review A","Review B","Review C"]}]}]})");

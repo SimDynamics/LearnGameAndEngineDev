@@ -38,6 +38,10 @@ HWND child(HWND parent,int id){struct Search{int id;HWND result=nullptr;} value{
     auto& search=*reinterpret_cast<Search*>(arg);if(GetDlgCtrlID(item)==search.id){search.result=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&value));
     check(value.result!=nullptr,"Missing actual lesson control "+std::to_string(id));return value.result;
 }
+curriculum::StatePosition identity_position(const curriculum::Lesson& lesson,std::string_view identity){
+    const auto position=curriculum::stable_block_position(lesson,identity);
+    check(position.has_value(),"Missing authored reader identity "+std::string(identity));return *position;
+}
 COLORREF color(HWND target,LONG offset){CHARRANGE before{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
     CHARRANGE range{offset,offset+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));CHARFORMAT2W format{};format.cbSize=sizeof(format);
     SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return format.crTextColor;
@@ -292,19 +296,79 @@ void independent_feedback_does_not_complete_a_pending_compiler(const std::shared
         "Completing the compiler failed to reveal its own protected puzzle");
     std::cout<<"PASS independent real feedback: complete incorrect/correct explanations, manual pause and no false page completion across a required compiler\n";
 }
+void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend){
+    auto lesson=windows::load_lesson(std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+    const auto prediction=identity_position(lesson,"block_0004_0003"),compiler=identity_position(lesson,"block_0004_0002"),
+        following=identity_position(lesson,"block_0004_0004");
+    check(lesson.compiler_puzzles_required&&curriculum::retired_block(lesson,"ejecucion_original_editor")
+        &&!curriculum::stable_block_position(lesson,"ejecucion_original_editor"),
+        "The current authored reader fixture must retain the original only in its archive");
+    const auto& predicted=lesson.pages[prediction.page].blocks[prediction.block];
+    const auto& goal=lesson.pages[compiler.page].blocks[compiler.block];
+    const auto original_output=predicted.answers.at(0),expected=goal.output_check->cases.at(0).outputs.at(0),
+        reviewed_wrong=goal.output_check->cases.at(0).review_feedback.at(0).outputs.at(0);
+    auto correct_code=goal.initial_code;const auto literal=correct_code.find('"'+original_output+'"');
+    check(literal!=std::string::npos,"The integrated compiler lost its authored initial output literal");
+    auto wrong_code=correct_code;wrong_code.replace(literal+1,original_output.size(),reviewed_wrong);
+    correct_code.replace(literal+1,original_output.size(),expected);
+    Fixture f(backend,false,true,true,"es",lesson,false,compiler.page);
+    check(lesson_page_state(f.view).index==compiler.page,"The current useful compiler did not restore its own page");
+    f.answer(predicted.answers.at(0),prediction.block);f.reader->restart();f.reader->pause();
+    check(f.snapshot().heard_through==0,"A pre-answered current prediction invented listening credit");
+    f.edit_program(wrong_code,compiler.block);f.ready();f.run_program(compiler.block);
+    const auto wrong=f.snapshot();
+    check(wrong.segments[wrong.index].feedback&&!wrong.segments[wrong.index].correct&&wrong.segments[wrong.index].block==compiler.block
+        &&std::ranges::none_of(wrong.segments,[&](const auto& part){return part.block==following.block;}),
+        "The integrated wrong goal failed to select its own guide or exposed the following puzzle");
+    f.reader->toggle();wait([&]{const auto current=f.snapshot();return !current.playing&&!current.allocated
+        &&current.segments[current.index].feedback&&current.segments[current.index].block==compiler.block;},
+        "current compiler guide is heard and stops for a retry");
+    check(!f.snapshot().finished,"The current compiler's wrong guide completed its page");
+    f.reader->seek_seconds(-1);f.reader->toggle();wait([&]{const auto current=f.snapshot();return current.playing
+        &&current.segments[current.index].feedback&&!current.segments[current.index].correct;},"current wrong guide replays");f.reader->pause();
+    f.edit_program(correct_code,compiler.block);f.ready();f.run_program(compiler.block);const auto correct=f.snapshot();
+    const auto earlier=std::ranges::find_if(correct.segments,[&](const auto& part){return part.block==prediction.block&&part.feedback&&part.correct;});
+    check(earlier!=correct.segments.end()&&correct.segments[correct.index].block==compiler.block
+        &&correct.segments[correct.index].feedback&&correct.segments[correct.index].correct&&correct.offset==0,
+        "The useful compiler did not take fresh feedback priority over the pre-answered prediction");
+    const auto unheard_edge=static_cast<std::int64_t>(earlier-correct.segments.begin());
+    f.reader->toggle();wait([&]{const auto current=f.snapshot();return current.playing
+        &&current.segments[current.index].block==following.block&&current.offset>150;},
+        "the integrated correct explanation is heard before the following puzzle");
+    f.reader->pause();const auto paused=f.snapshot();check(paused.heard_through<=unheard_edge,
+        "The current useful compiler credited its earlier unheard prediction feedback");
+    f.reader.reset();f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto restored=f.snapshot();
+    check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset
+        &&restored.heard_through==paused.heard_through&&!restored.playing&&!restored.allocated,
+        "The integrated reader lost its exact paused position after retiring the redundant editor");
+    f.edit_program(wrong_code,compiler.block);f.ready();const auto before_repeat=f.snapshot();f.run_program(compiler.block);const auto repeated=f.snapshot();
+    check(repeated.key==before_repeat.key&&repeated.index==before_repeat.index&&repeated.offset==before_repeat.offset
+        &&std::ranges::any_of(repeated.segments,[&](const auto& part){return part.block==compiler.block&&part.feedback&&part.correct;}),
+        "A later compilation revoked the useful compiler's persistent achievement or moved its reader position");
+    f.reader->pause();SendMessageW(child(f.view,1012+static_cast<int>(compiler.block)*100),BM_CLICK,0,0);f.ready();
+    const auto retained_prediction=state::get_response(read_lesson_state(f.view),curriculum::exercise_key(lesson,predicted));
+    check(std::ranges::none_of(f.snapshot().segments,[&](const auto& part){return part.block==following.block;})
+        &&retained_prediction&&retained_prediction->correct,
+        "Explicit compiler Reset lost the prediction answer or retained unavailable later narration");
+    std::cout<<"PASS current integrated U1 reader: archived original absent, useful compiler required, native wrong/correct feedback, exact released restore, sticky achievement and scoped Reset\n";
+}
 }
 
 int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
     const bool dependencies_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
-    if(argc>1&&!stderr_only&&!dependencies_only)return 2;
+    const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
+    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        if(integrated_only){integrated_u1_reader_flow(backend);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
         dependent_puzzle_reader_bookmarks(backend);
         independent_feedback_does_not_complete_a_pending_compiler(backend);
+        integrated_u1_reader_flow(backend);
         {
             Fixture f(backend,true);KeyboardStateScope keyboard;ReaderCommandProbe probe(f.reader->bar());
             const auto edit=child(f.view,1102),play=GetDlgItem(f.reader->bar(),6504);SetFocus(edit);
@@ -650,28 +714,38 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             }
             std::cout<<"PASS exact old order-code and caption-free script migration: real paused/final offsets, removed-fragment provenance and the same three page slots\n";
         }
-        for(const bool revised_prose:{false,true}){
-            auto authored=windows::load_lesson(std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
-            Fixture f(backend,false,true,true,"es",authored,false,4);
-            if(revised_prose)f.answer(authored.pages[4].blocks[1].answers.at(0));
-            const auto old=f.snapshot();const auto old_regions=lesson_reading_regions(f.view);const auto old_page=lesson_page_state(f.view);const auto archived=std::ranges::find_if(old.segments,[](const auto& part){return part.block==3&&!part.feedback;});
+        for(const int scenario:{0,1,2}){
+            const bool revised_prose=scenario==1,integrated=scenario==2;
+            auto authored=test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
+            const auto prediction=identity_position(authored,"block_0004_0003");
+            const auto retiring_editor=identity_position(authored,"ejecucion_original_editor");
+            Fixture f(backend,false,true,true,"es",authored,false,retiring_editor.page);
+            if(revised_prose||integrated)f.answer(authored.pages[prediction.page].blocks[prediction.block].answers.at(0),prediction.block);
+            const auto old=f.snapshot();const auto old_regions=lesson_reading_regions(f.view);const auto old_page=lesson_page_state(f.view);const auto archived=std::ranges::find_if(old.segments,[&](const auto& part){return part.block==retiring_editor.block&&!part.feedback;});
             check(archived!=old.segments.end(),"The real old compiler script has no removable editor anchor");
             check(std::ranges::none_of(old_regions,[](const auto& region){return region.key.find("/block_0004_0002/")!=std::string::npos;}),
                 "The real pending original failed to hide its dependent compiler in the published lesson");
             const auto old_index=static_cast<std::size_t>(archived-old.segments.begin());
             f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush old retirement QA view");DestroyWindow(f.view);f.view=nullptr;
             const std::array<std::string,2> retiring{"ejecucion_original_consigna","ejecucion_original_editor"};
-            auto active=test::retire_lesson(authored,retiring);
+            auto active=integrated?windows::load_lesson(authored.source_path):test::retire_lesson(authored,retiring);
             if(revised_prose){
                 // Presentation changes are supplied as a separate loaded-model
                 // copy, as Work's validated integration will do. Historical
                 // narration must use archived payloads, not today's prose.
-                active.pages[4].blocks[1].question="Predice primero el mensaje del programa que vas a modificar. No ejecutes antes de responder.";
-                active.pages[4].blocks[2].text="Ahora construye el mensaje solicitado en este editor independiente.";
+                const auto current_prediction=identity_position(active,"block_0004_0003");
+                const auto current_heading=identity_position(active,"modificar_mensaje_titulo");
+                active.pages[current_prediction.page].blocks[current_prediction.block].question="Predice primero el mensaje del programa que vas a modificar. No ejecutes antes de responder.";
+                active.pages[current_heading.page].blocks[current_heading.block].text="Ahora construye el mensaje solicitado en este editor independiente.";
             }
+            const auto successor=curriculum::active_block_successor(active,"ejecucion_original_editor");
+            check(successor.has_value(),"The retired compiler lost its active reading successor");
             {
                 state::StateStore store(f.environment.paths.root);auto data=store.load();
-                auto history=narration::begin({},old.key,"retirement-qa-owner",{static_cast<std::int64_t>(old_index),123,0,false},{},old_page.narration_page_identity);
+                auto history=narration::begin({},"other-paused","paused-owner",{0,100,0,false},{},"other-page-a");
+                history=narration::begin(std::move(history),"other-finished","finished-owner",{0,200,0,false},{},"other-page-b");
+                history=narration::checkpoint(std::move(history),"other-finished","finished-owner",{0,200,0,true});
+                history=narration::begin(std::move(history),old.key,"retirement-qa-owner",{static_cast<std::int64_t>(old_index),123,0,false},{},old_page.narration_page_identity);
                 narration::write_history(data,history);store.save(data);
             }
             f.view=create_lesson_view(f.host,f.environment,std::move(active));MoveWindow(f.view,0,0,980,720,TRUE);
@@ -690,13 +764,15 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto migrated=f.snapshot();
             check(migrated.key!=old.key&&migrated.offset==0&&!migrated.finished&&!migrated.playing&&migrated.heard_through==0,
                 "Retiring an editor invented playback, listening credit or a timing offset");
-            check(migrated.segments[migrated.index].block==2&&std::ranges::none_of(migrated.segments,[](const auto& part){
+            check(migrated.segments[migrated.index].block==successor->block&&std::ranges::none_of(migrated.segments,[](const auto& part){
                 return part.region.find("ejecucion_original_")!=std::string::npos;}),
                 "An archived editor bookmark failed to land on the active successor or retained retired narration");
             const auto history=narration::read_history(read_lesson_state(f.view));
-            check(history.entries.size()==1&&history.entries.front().key==migrated.key&&history.entries.front().page==lesson_page_state(f.view).narration_page_identity,
+            check(history.entries.size()==3&&history.entries.front().key==migrated.key&&history.entries.front().page==lesson_page_state(f.view).narration_page_identity
+                &&history.entries[1].key=="other-finished"&&history.entries[1].position.finished&&history.entries[1].position.milliseconds==200
+                &&history.entries[2].key=="other-paused"&&history.entries[2].position.milliseconds==100,
                 "Retirement created parallel narration history or retained the obsolete page identity");
-            std::cout<<"PASS real retired compiler bookmark"<<(revised_prose?" with revised active prose":"")<<": exact old identity/script, active successor, no retired narration, preserved bounded history and no invented timing\n";
+            std::cout<<"PASS real retired compiler bookmark"<<(integrated?" with integrated assets":revised_prose?" with revised active prose":"")<<": exact old identity/script, active successor, no retired narration, preserved three page slots and no invented timing\n";
         }
         {
             auto required=compiler_model(true);required.pages[0].blocks[1].initial_code=compiler_source("Mal");
@@ -785,31 +861,39 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             std::cout<<"PASS real compiler output verdicts: technical word shading, released pause/exact resume, heard-feedback continuation, wrong stop/replay, corrected source and bounded history\n";
         }
         {
-            // Reproduce the authored P1/U1/L2/P5 ordering: an already solved
+            // Preserve the verified pre-retirement P1/U1/L2/P5 ordering: an already solved
             // prediction precedes two independently checked C++ editors.
             // Only the saved page of this owned QA profile is seeded; no
-            // authored text, expected output, answer or dependency is changed.
-            auto authored=windows::load_lesson(std::filesystem::path(build::source_root)/
-                "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
-            const auto& page=authored.pages.at(4);const auto prediction=page.blocks.at(1).answers.at(0);
-            auto corrected_source=page.blocks.at(6).initial_code;
-            const auto original_output=page.blocks.at(3).output_check->cases.at(0).outputs.at(0);
-            const auto expected_output=page.blocks.at(6).output_check->cases.at(0).outputs.at(0);
-            const auto reviewed_wrong_output=page.blocks.at(6).output_check->cases.at(0).review_feedback.at(0).outputs.at(0);
+            // historical text, expected output, answer or dependency is changed.
+            // The integrated one-editor page is exercised separately below.
+            auto authored=test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
+            const auto predicted=identity_position(authored,"block_0004_0003");
+            const auto original=identity_position(authored,"ejecucion_original_editor");
+            const auto modification=identity_position(authored,"block_0004_0002");
+            const auto instruction=identity_position(authored,"block_0004_0001");
+            const auto following=identity_position(authored,"block_0004_0004");
+            check(predicted.page==original.page&&original.page==modification.page&&modification.page==following.page,
+                "The historical reader fixture no longer has its declared same-page activity sequence");
+            const auto display_page=predicted.page;
+            const auto& page=authored.pages.at(display_page);const auto prediction=page.blocks.at(predicted.block).answers.at(0);
+            auto corrected_source=page.blocks.at(modification.block).initial_code;
+            const auto original_output=page.blocks.at(original.block).output_check->cases.at(0).outputs.at(0);
+            const auto expected_output=page.blocks.at(modification.block).output_check->cases.at(0).outputs.at(0);
+            const auto reviewed_wrong_output=page.blocks.at(modification.block).output_check->cases.at(0).review_feedback.at(0).outputs.at(0);
             const auto literal=corrected_source.find('"'+original_output+'"');check(literal!=std::string::npos,"The authored P5 compiler fixture lost its original literal");
             auto reviewed_wrong_source=corrected_source;reviewed_wrong_source.replace(literal+1,original_output.size(),reviewed_wrong_output);
             corrected_source.replace(literal+1,original_output.size(),expected_output);
-            Fixture f(backend,false,true,true,"es",std::move(authored),false,4);
-            check(lesson_page_state(f.view).index==4,"The actual authored P5 was not restored in its independent QA profile");
-            f.answer(prediction);f.reader->restart();f.reader->pause();
+            Fixture f(backend,false,true,true,"es",std::move(authored),false,display_page);
+            check(lesson_page_state(f.view).index==display_page,"The actual authored P5 was not restored in its independent QA profile");
+            f.answer(prediction,predicted.block);f.reader->restart();f.reader->pause();
             check(f.snapshot().heard_through==0,"Restart falsely preserved earlier solved-prediction listening credit");
-            f.run_program(3);const auto correct=f.snapshot();
-            const auto earlier=std::ranges::find_if(correct.segments,[](const auto& part){return part.block==1&&part.feedback&&part.correct;});
-            check(earlier!=correct.segments.end()&&correct.segments[correct.index].block==3&&correct.segments[correct.index].feedback&&
+            f.run_program(original.block);const auto correct=f.snapshot();
+            const auto earlier=std::ranges::find_if(correct.segments,[&](const auto& part){return part.block==predicted.block&&part.feedback&&part.correct;});
+            check(earlier!=correct.segments.end()&&correct.segments[correct.index].block==original.block&&correct.segments[correct.index].feedback&&
                 correct.segments[correct.index].correct&&correct.offset==0&&correct.heard_through==0,
                 "The fresh original compiler check did not take priority independently of the unheard solved prediction");
             const auto unheard_edge=static_cast<std::int64_t>(earlier-correct.segments.begin());
-            f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==5&&value.offset>150;},
+            f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==instruction.block&&value.offset>150;},
                 "authored P5 compiler feedback continues through Modificar into its following instructions despite an unheard solved prefix");
             f.reader->pause();const auto continued=f.snapshot();
             check(continued.heard_through<=unheard_edge,"Prioritized compiler continuation credited the skipped solved prediction as heard");
@@ -819,47 +903,47 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 "Reopening a prioritized position changed its exact pause, credited earlier feedback or created another bookmark");
             f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==restored.index&&value.offset>=restored.offset;},
                 "restored priority resumes the exact real instruction recording");f.reader->pause();
-            f.edit_program(reviewed_wrong_source,6);f.ready();f.run_program(6);const auto wrong=f.snapshot();
-            check(wrong.segments[wrong.index].block==6&&wrong.segments[wrong.index].feedback&&!wrong.segments[wrong.index].correct,
+            f.edit_program(reviewed_wrong_source,modification.block);f.ready();f.run_program(modification.block);const auto wrong=f.snapshot();
+            check(wrong.segments[wrong.index].block==modification.block&&wrong.segments[wrong.index].feedback&&!wrong.segments[wrong.index].correct,
                 "The authored second editor reused the original editor's correct verdict");
-            f.reader->toggle();wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&value.segments[value.index].block==6&&value.segments[value.index].feedback;},
+            f.reader->toggle();wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&value.segments[value.index].block==modification.block&&value.segments[value.index].feedback;},
                 "authored incorrect compiler feedback stops before the following unsolved multiple choice");
             const auto guide_end=f.snapshot();double guide_duration=0;auto guide_start=guide_end.index;
-            for(std::size_t i=0;i<guide_end.segments.size();++i)if(guide_end.segments[i].block==6&&guide_end.segments[i].feedback){
+            for(std::size_t i=0;i<guide_end.segments.size();++i)if(guide_end.segments[i].block==modification.block&&guide_end.segments[i].feedback){
                 guide_start=std::min(guide_start,i);guide_duration+=guide_end.segments[i].duration_ms;}
             const auto leave_seconds=static_cast<int>(std::ceil(guide_duration/1000.))+1;
             f.reader->seek_seconds(-leave_seconds);const auto outside=f.snapshot();
             check(outside.index<guide_start&&!outside.allocated&&outside.heard_through<=unheard_edge,
                 "Rewinding across the incorrect guide's beginning failed to return to original page text without false hearing");
             f.reader->seek_seconds(leave_seconds);const auto returned=f.snapshot();
-            check(returned.segments[returned.index].block==6&&returned.segments[returned.index].feedback&&!returned.segments[returned.index].correct&&
+            check(returned.segments[returned.index].block==modification.block&&returned.segments[returned.index].feedback&&!returned.segments[returned.index].correct&&
                 returned.heard_through==outside.heard_through&&!returned.allocated&&!returned.finished,
                 "Returning to the incorrect guide lost the other correct block's original permission or escaped its own stop");
-            f.reader->seek_seconds(-1);f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==6&&value.segments[value.index].feedback;},
+            f.reader->seek_seconds(-1);f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==modification.block&&value.segments[value.index].feedback;},
                 "authored incorrect compiler feedback replays after actual rewind");f.reader->pause();
-            f.edit_program(corrected_source,6);f.ready();f.run_program(6);const auto corrected=f.snapshot();
-            check(corrected.segments[corrected.index].block==6&&corrected.segments[corrected.index].feedback&&corrected.segments[corrected.index].correct&&corrected.offset==0,
+            f.edit_program(corrected_source,modification.block);f.ready();f.run_program(modification.block);const auto corrected=f.snapshot();
+            check(corrected.segments[corrected.index].block==modification.block&&corrected.segments[corrected.index].feedback&&corrected.segments[corrected.index].correct&&corrected.offset==0,
                 "Correcting the actual second editor did not select its own fresh correct feedback");
             const auto recording=corrected.segments[corrected.index].recording;
-            f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.waiting_gate&&!value.playing&&!value.allocated&&value.segments[value.index].block==7;},
+            f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.waiting_gate&&!value.playing&&!value.allocated&&value.segments[value.index].block==following.block;},
                 "correct second-editor feedback continues normally and stops at the actual later unsolved puzzle");
             check(f.snapshot().heard_through<=unheard_edge&&!f.snapshot().finished,"Continuation invented prefix listening or crossed an unsolved later puzzle");
-            const auto before_repeat=f.snapshot();f.run_program(6);const auto repeated=f.snapshot();
+            const auto before_repeat=f.snapshot();f.run_program(modification.block);const auto repeated=f.snapshot();
             check(repeated.key==before_repeat.key&&repeated.index==before_repeat.index&&repeated.offset==before_repeat.offset
                     &&repeated.waiting_gate==before_repeat.waiting_gate&&repeated.heard_through==before_repeat.heard_through
                     &&repeated.segments[repeated.index].recording==before_repeat.segments[before_repeat.index].recording
-                    &&std::ranges::any_of(repeated.segments,[&](const auto& part){return part.block==6&&part.feedback&&part.correct&&part.recording==recording;}),
+                    &&std::ranges::any_of(repeated.segments,[&](const auto& part){return part.block==modification.block&&part.feedback&&part.correct&&part.recording==recording;}),
                 "Recompiling an approved editor changed its pending narration position, granted listening credit or lost its compatible recording");
             f.reader->seek_seconds(-1);const auto back=f.snapshot();
             check(back.index<repeated.index||back.offset<repeated.offset,"Prioritized compiler rewind did not move the real paused position");
             f.reader->seek_seconds(60);const auto sought=f.snapshot();
-            check(sought.segments[sought.index].block==7&&!sought.finished&&sought.heard_through==repeated.heard_through&&!sought.allocated,
+            check(sought.segments[sought.index].block==following.block&&!sought.finished&&sought.heard_through==repeated.heard_through&&!sought.allocated,
                 "Prioritized manual forward invented hearing, allocated paused audio or bypassed the later unanswered puzzle");
             f.reader->restart();f.reader->pause();f.reader->seek_seconds(60);const auto restarted=f.snapshot();
-            check(restarted.segments[restarted.index].block==1&&restarted.segments[restarted.index].feedback&&restarted.heard_through==0&&!restarted.finished,
+            check(restarted.segments[restarted.index].block==predicted.block&&restarted.segments[restarted.index].feedback&&restarted.heard_through==0&&!restarted.finished,
                 "Restart kept answer priority instead of restoring the ordinary first unheard-feedback boundary");
             check(narration::read_history(read_lesson_state(f.view)).entries.size()<=3,"Answer priority introduced a parallel narration history");
-            std::cout<<"PASS authored P1/U1/L2/P5: unheard solved prediction, fresh real C++ priority/continuation, exact released restore, wrong replay, later puzzle bounds and cache-preserving seeks without false hearing\n";
+            std::cout<<"PASS pinned historical P1/U1/L2/P5: unheard solved prediction, fresh real C++ priority/continuation, exact released restore, wrong replay, later puzzle bounds and cache-preserving seeks without false hearing\n";
         }
         {
             // Restart removes the explicit answer priority. Ordinary page

@@ -515,7 +515,17 @@ void refresh_catalog_view(HWND window) {
     auto* self = view(window); if (!self) return;
     auto location = self->page.location;
     location.locale = state::string_value(self->load_state(),"native_windows","content_language",location.locale);
-    self->render(location);
+    const auto previous=self->page.location;
+    const auto selection=SendMessageW(self->list,LB_GETCURSEL,0,0),top=SendMessageW(self->list,LB_GETTOPINDEX,0,0);
+    const auto scroll=card_list_scroll_offset(self->list);
+    // Refresh is a read, including while the catalogue is hidden behind a live
+    // lesson. Saving here invalidates that lesson's optimistic StateStore and
+    // makes the very next live Settings change look like an external writer.
+    self->render(location,false);
+    if(location==previous){
+        SendMessageW(self->list,LB_SETCURSEL,selection,0);SendMessageW(self->list,LB_SETTOPINDEX,top,0);
+        set_card_list_scroll_offset(self->list,scroll);self->update_selection();
+    }
 }
 void navigate_catalog_home(HWND window) { auto location = catalog_location(window); location.route.clear(); location.course.clear(); location.unit.clear(); navigate_catalog(window,location); }
 bool navigate_catalog_back(HWND window){

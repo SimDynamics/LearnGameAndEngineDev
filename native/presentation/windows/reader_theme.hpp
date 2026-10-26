@@ -41,6 +41,8 @@ void set_accent(HWND,std::optional<COLORREF> accent);
 [[nodiscard]] HBRUSH brush(Surface surface);
 // Only the supplied HWND is themed. Existing characters, spans and editing
 // state are untouched; apply before formatting rich text or code.
+// RichEdit keeps native scroll/input semantics; its visual-style scrollbar
+// animation yields to our nonclient skin outside Windows high contrast.
 void apply(HWND window, Surface surface);
 // Repaint only the actual system scrollbar rectangles in window coordinates.
 // Native hit testing, scroll positions, messages and accessibility stay owned

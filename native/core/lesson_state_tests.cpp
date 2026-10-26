@@ -128,6 +128,11 @@ void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::
         "Retired compiler changed the historical page bookmark");
     store.save(migrated); const auto reopened = store.load(); validate_lesson_state(reopened,retired);
     require(reopened == migrated,"Retirement state did not survive normal persistence/reopening");
+    const auto integrated=lgaed::windows::load_lesson(before.source_path);
+    require(integrated.compiler_puzzles_required&&integrated.retired_blocks.size()==2,
+        "The active Spanish asset has not integrated the expected retirement");
+    auto current=reopened;validate_lesson_state(current,integrated);prepare_lesson_state(current,integrated);
+    require(current==reopened,"Opening the integrated asset rewrote the preserved migration data");
     auto downgraded = reopened; const auto downgrade_before = downgraded;
     rejects([&]{prepare_lesson_state(downgraded,before);});
     require(downgraded == downgrade_before,"Rejecting a removed retirement archive modified stored data");
@@ -403,8 +408,7 @@ int main(int argc, char** argv) {
         escaped_source.preferences["cpp_lesson_drafts"][std::string(key) + "/sourceEncoding"] = std::string{};
         rejects([&] { (void)get_draft(escaped_source, key, ""); }); ++groups;
 
-        const auto real_lesson = lgaed::windows::load_lesson(std::filesystem::path(lgaed::build::source_root) /
-            L"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        const auto real_lesson = lgaed::test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
         retirement_state_tests(real_lesson,base);
         require(real_lesson.state_layout.version == 2 && real_lesson.pages.size() == 6, "Expected existing U1L2 v2 contract");
         const lgaed::curriculum::Block* prediction = nullptr;

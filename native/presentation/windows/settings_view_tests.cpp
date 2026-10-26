@@ -503,6 +503,47 @@ void slider_pointer_tests(){
     check(SendMessageW(disabled,TBM_GETPOS,0,0)==disabled_value&&inherited.data==seed&&GetCapture()!=disabled,"A raw pointer press bypassed a disabled inherited Settings control");
     std::cout<<"PASS Settings real pointer endpoints/midpoint/native drag and keyboard; live scale callbacks, deferred RGB Save, disabled inheritance and protected data\n";
 }
+struct SaveFailureAction {HWND slider=nullptr,owner=nullptr;bool pointer_active=false,synchronous=false,captured=false,found=false;int dialogs=0;};
+SaveFailureAction* save_failure_action=nullptr;
+void CALLBACK save_failure_timer(HWND,UINT,UINT_PTR,DWORD){
+    if(!save_failure_action)return;
+    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{
+        wchar_t name[32]{};GetClassNameW(candidate,name,32);
+        if(std::wstring_view(name)==L"#32770"&&native_text(candidate)==L"Opciones"){*reinterpret_cast<HWND*>(raw)=candidate;return FALSE;}return TRUE;
+    },reinterpret_cast<LPARAM>(&dialog));
+    if(!dialog)return;
+    auto& action=*save_failure_action;action.found=true;++action.dialogs;
+    action.synchronous=action.synchronous||action.pointer_active;action.captured=action.captured||GetCapture()==action.slider;
+    if(action.dialogs==1)SendMessageW(GetParent(action.slider),WM_HSCROLL,MAKEWPARAM(TB_THUMBTRACK,130),reinterpret_cast<LPARAM>(action.slider));
+    // Exercise the same Escape dismissal that follows a failed live slider save.
+    SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);
+}
+void save_failure_tests(){
+    using namespace lgaed;using namespace presentation;
+    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");appearance::save_global_text_scale(seed,100);
+    const auto host=CreateWindowExW(0,L"STATIC",L"Settings save-failure QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(host!=nullptr,"Cannot create the isolated save-failure host");
+    SettingsAccess access;access.read=[&]{return seed;};int writes=0;
+    access.update=[&](const auto&){++writes;throw std::runtime_error("El perfil cambio en otra instancia; vuelve a abrirlo antes de guardar.");};
+    const auto view=create_settings_view(host,std::move(access));MoveWindow(view,0,0,960,700,TRUE);ShowWindow(host,SW_SHOW);SetForegroundWindow(host);pump();
+    const auto slider=GetDlgItem(view,5120);reveal_control(view,slider);RECT channel{},thumb{};SendMessageW(slider,TBM_GETCHANNELRECT,0,reinterpret_cast<LPARAM>(&channel));SendMessageW(slider,TBM_GETTHUMBRECT,0,reinterpret_cast<LPARAM>(&thumb));
+    SaveFailureAction action{slider,host};save_failure_action=&action;const auto timer=SetTimer(nullptr,0,20,save_failure_timer);check(timer!=0,"Cannot dismiss the genuine failed-save dialog");
+    action.pointer_active=true;SendMessageW(slider,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(channel.right,(thumb.top+thumb.bottom)/2));action.pointer_active=false;
+    // Notifications queued during one failed gesture must share one notice.
+    for(int value:{145,140,135}){SendMessageW(slider,TBM_SETPOS,TRUE,value);SendMessageW(view,WM_HSCROLL,MAKEWPARAM(TB_THUMBTRACK,value),reinterpret_cast<LPARAM>(slider));}
+    SendMessageW(slider,WM_LBUTTONUP,0,MAKELPARAM(channel.right,(thumb.top+thumb.bottom)/2));pump();
+    const bool alive=IsWindow(view)&&IsWindowEnabled(host);const auto shown_scale=SendMessageW(slider,TBM_GETPOS,0,0);
+    KillTimer(nullptr,timer);save_failure_action=nullptr;DestroyWindow(view);DestroyWindow(host);
+    std::cout<<"METRIC Settings save failure synchronous="<<action.synchronous<<" capture="<<action.captured<<" dialogs="<<action.dialogs<<" writes="<<writes<<'\n';
+    check(action.found&&writes>0,"A failed slider save did not present its actual error");
+    check(!action.synchronous,"A failed live save entered MessageBox while the native slider pointer callback was still active");
+    check(!action.captured,"The failed-save dialog retained slider capture");
+    check(action.dialogs==1,"One failed slider gesture presented duplicate error dialogs");
+    check(writes==1,"Notifications during a pending/visible save error retried the same failed gesture");
+    check(alive&&shown_scale==100,"Dismissing a failed save lost the Settings window or left the rejected scale displayed");
+    check(appearance::global_text_scale(seed)==100,"A rejected save changed persisted preferences");
+    std::cout<<"PASS Settings failed live save: deferred single error, released native capture, Escape dismissal and preserved preferences\n";
+}
 ComboMetrics combo_metrics(HWND combo,const char* phase){
     ComboMetrics value;RECT bounds{},client{};GetWindowRect(combo,&bounds);GetClientRect(combo,&client);
     COMBOBOXINFO info{sizeof(info)};check(GetComboBoxInfo(combo,&info)!=FALSE,"Cannot inspect native combo selection rectangle");
@@ -858,7 +899,7 @@ int main(int argc,char** argv){
     try{
         std::cout<<std::unitbuf;
         std::string_view selected="all";
-        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls]");selected=argv[2];check(selected=="licenses"||selected=="controls","Unknown Settings test case; expected licenses or controls");}
+        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure","Unknown Settings test case; expected licenses, controls or save-failure");}
         const auto dpi_set=SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         check(dpi_set||GetAwarenessFromDpiAwarenessContext(GetThreadDpiAwarenessContext())==DPI_AWARENESS_PER_MONITOR_AWARE,
             "Settings visual QA must use the application's actual per-monitor DPI context");
@@ -870,6 +911,7 @@ int main(int argc,char** argv){
         std::cout<<"METRIC settings Common Controls: "<<common_version.dwMajorVersion<<'.'<<common_version.dwMinorVersion<<'\n';
         INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES|ICC_BAR_CLASSES};
         check(InitCommonControlsEx(&common)!=FALSE,"The declared settings controls could not be registered");
+        if(selected=="save-failure"){run_case("save_failure",save_failure_tests);return 0;}
         state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["native_windows"]["content_language"]=std::string("fr");
         data.preferences["lesson_narration_settings"]["language"]=std::string("en-US");
@@ -916,6 +958,7 @@ int main(int argc,char** argv){
         run_case("DPI_notice",settings_dpi_notice_tests);
         run_case("RGB",rgb_options_tests);
         run_case("slider_pointer",slider_pointer_tests);
+        run_case("save_failure",save_failure_tests);
         run_case("visual_metrics",visual_metrics_tests);
         run_case("attempts_owned",attempts_and_owned_settings_tests);
         run_case("owned_Escape",owned_settings_escape_tests);

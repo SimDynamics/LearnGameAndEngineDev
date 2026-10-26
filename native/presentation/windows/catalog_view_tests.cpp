@@ -1,7 +1,9 @@
 #include "presentation/windows/catalog_view.hpp"
+#include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/card_list.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/catalog_loader.hpp"
+#include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 
@@ -351,6 +353,27 @@ int main() {
         {
             state::StateStore store(environment.paths.root); const auto data = store.load();
             check(state::saved_page(data,"cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida") == 3,"Catalog refresh reset lesson position");
+        }
+        {
+            // A hidden catalogue is refreshed after each live Settings change.
+            // It shares the profile with the still-alive lesson's StateStore.
+            const auto lesson=windows::load_lesson(root/L"es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json","es");
+            const auto reader=create_lesson_view(host,environment,lesson);check(flush_lesson_view(reader),"Cannot flush the concurrent reader fixture");
+            const auto reader_before=read_lesson_state(reader);state::StateStore saved(environment.paths.root);const auto persisted=saved.load();
+            list=GetDlgItem(view,4105);SendMessageW(list,LB_SETCURSEL,2,0);set_card_list_scroll_offset(list,px(view,60));
+            const auto location=catalog_location(view);const auto selection=SendMessageW(list,LB_GETCURSEL,0,0);const auto scroll=card_list_scroll_offset(list);
+            refresh_catalog_view(view);pump();
+            check(catalog_location(view)==location&&SendMessageW(list,LB_GETCURSEL,0,0)==selection&&card_list_scroll_offset(list)==scroll,
+                "Refreshing a hidden catalogue reset its live location, selection or scroll");
+            state::StateStore after(environment.paths.root);check(after.load()==persisted,"Refreshing a catalogue wrote the lesson's shared profile");
+            update_lesson_preferences(reader,[](auto& data){data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{120};});
+            check(state::integer_value(read_lesson_state(reader),"lesson_text_size_settings","global_scale")==120,
+                "A catalogue refresh invalidated the live lesson store before the next Settings save");
+            check(read_lesson_state(reader).preferences["learning_progress"]==reader_before.preferences.at("learning_progress"),"A catalogue refresh or subsequent setting changed progress");
+            state::StateStore other(environment.paths.root);auto external=other.load();external.preferences["native_windows"]["external_writer"]=true;other.save(external);
+            bool rejected=false;try{update_lesson_preferences(reader,[](auto& data){data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{125};});}catch(const std::exception&){rejected=true;}
+            state::StateStore verify(environment.paths.root);check(rejected&&verify.load()==external,"The catalogue fix bypassed rejection of a real stale external writer");
+            DestroyWindow(reader);
         }
         DestroyWindow(view); DestroyWindow(host); UnregisterClassW(type.lpszClassName,type.hInstance);
         std::cout << "Native catalog: real home/actions, indices, keyboard/card ownership, mouse wheel/drag, list restoration, profile state and independent UI language: PASS\n";

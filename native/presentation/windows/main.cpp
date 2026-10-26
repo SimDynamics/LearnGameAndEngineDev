@@ -218,7 +218,12 @@ void open_settings(HWND window,WindowState& state){
     using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_RESTORE);SetForegroundWindow(state.settings);return;}
     if(state.lesson&&!flush_lesson_view(state.lesson))return;
     SettingsAccess access;access.read=[&state]{return preferences(state);};access.update=[&state](const PreferencesMutation& change){update_preferences(state,change);};
-    access.changed=[window,&state]{update_audio_context(state,true);if(state.reader)state.reader->settings_changed();PostMessageW(window,application_language_message,0,0);};access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
+    const auto initial_preferences=preferences(state);
+    access.changed=[window,&state,previous_ui=interface_language(initial_preferences),previous_content=lgaed::state::string_value(initial_preferences,"native_windows","content_language","es")]()mutable{
+        update_audio_context(state,true);if(state.reader)state.reader->settings_changed();
+        const auto data=preferences(state);const auto ui=interface_language(data),content=lgaed::state::string_value(data,"native_windows","content_language","es");
+        if(ui!=previous_ui||content!=previous_content){previous_ui=ui;previous_content=content;PostMessageW(window,application_language_message,0,0);}
+    };access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
     access.unsaved_discarded=[window](std::string_view message){show_settings_notice(window,message);};
     access.storage_snapshot=[&state]{const auto data=preferences(state);const auto raw=lgaed::state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",-1);return lgaed::windows::narration_storage_snapshot(state.environment.paths.cache/L"kokoro",raw<0?std::numeric_limits<std::uint64_t>::max():static_cast<std::uint64_t>(raw));};
     access.open_licenses=[window,&state]{(void)open_narration_licenses(state.settings?state.settings:window,interface_language(preferences(state)));};

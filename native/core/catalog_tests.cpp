@@ -3,6 +3,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "core/retirement_test_fixture.hpp"
 #include "native_build_config.hpp"
 
 #include <winrt/Windows.Data.Json.h>
@@ -46,7 +47,7 @@ void dependent_puzzles_keep_historical_progress_without_granting_execution_proof
     using winrt::Windows::Data::Json::JsonValue;
     const auto path = std::filesystem::path(build::source_root) /
         "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
-    const auto original = windows::load_lesson(path);
+    const auto original = test::load_pre_retirement_lesson(path.filename().string());
     auto root = JsonObject::Parse(winrt::to_hstring(original.raw_json));
     root.Insert(L"activityAfter",JsonValue::Parse(LR"([{"activity":"block_0004_0004","requires":["ejecucion_original_editor","block_0004_0002"]}])"));
     const auto projected = windows::parse_lesson_progress_metadata(winrt::to_string(root.Stringify()));

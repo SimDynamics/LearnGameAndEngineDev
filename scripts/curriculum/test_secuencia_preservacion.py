@@ -1,12 +1,14 @@
 """Las correcciones de navegación no autorizan cambios de respuesta ni fuente."""
 
 import copy
+from functools import lru_cache
 import json
 import subprocess
 import unittest
 
 import validar_json_programacion as contract
 import stable_state_layout as state_layout
+import retirement_fixture_source as retirement_fixtures
 
 
 BASELINE = 'dd6787d190fcb707a8e935abeadda64584d773d9'
@@ -19,11 +21,31 @@ def old_lesson(lesson):
         ['git', 'show', BASELINE + ':' + relative], cwd=contract.ROOT))
 
 
+@lru_cache(maxsize=32)
+def published_source(lesson):
+    """The reviewed sequence before retirement, never today's live asset.
+
+    The three U1 files also have independent exact-byte SHA-256 pins. Other
+    routes are addressed by path in that same full immutable local commit.
+    No network lookup or fallback to a different presentation is permitted.
+    """
+    prefix = 'programas_y_ejecucion/'
+    if lesson.startswith(prefix) and lesson[len(prefix):] in retirement_fixtures.FIXTURE_SHA256:
+        return retirement_fixtures.historical_bytes(lesson[len(prefix):])
+    relative = (contract.CONTENT / lesson).relative_to(contract.ROOT).as_posix()
+    return subprocess.check_output(
+        ['git', 'show', retirement_fixtures.BASELINE_COMMIT + ':' + relative], cwd=contract.ROOT)
+
+
+def published_lesson(lesson):
+    return json.loads(published_source(lesson))
+
+
 class SequencePreservationTest(unittest.TestCase):
     def cases(self):
         for lesson, page, block, kind, field in contract.SEQUENCE_EDITORIAL_REVISIONS:
             before = old_lesson(lesson)['pages'][page - 1]['blocks'][block - 1]
-            current = contract.load(contract.CONTENT / lesson)
+            current = published_lesson(lesson)
             after = state_layout.original_projection(current)['pages'][page - 1]['blocks'][block - 1]
             self.assertEqual(kind, before['type'])
             yield lesson, page, block, field, before, after
@@ -54,7 +76,7 @@ class SequencePreservationTest(unittest.TestCase):
         lesson = 'programas_y_ejecucion/lesson_primer_programa_y_salida.json'
         before_document = old_lesson(lesson)
         before = before_document['pages'][4]['blocks'][2]
-        current = contract.load(contract.CONTENT / lesson)
+        current = published_lesson(lesson)
         after = state_layout.original_projection(current)['pages'][4]['blocks'][2]
         relative = (contract.CONTENT / lesson).relative_to(contract.ROOT).as_posix()
         return relative, before_document, before, after
@@ -82,7 +104,10 @@ class SequencePreservationTest(unittest.TestCase):
         relative = (contract.CONTENT / lesson).relative_to(contract.ROOT).as_posix()
         previous = json.loads(subprocess.check_output(
             ['git', 'show', LAYOUT_BASELINE + ':' + relative], cwd=contract.ROOT))
-        current = contract.load(contract.CONTENT / lesson)
+        # Reordering and retirement are two real published transitions, not
+        # one invented archive claiming that the much older layout was its
+        # immediate predecessor.
+        current = published_lesson(lesson)
         self.assertEqual(2, current['stateLayout']['version'])
         state_layout.validate_transition(previous, current)
         positions = state_layout.validate(current)
@@ -126,6 +151,14 @@ class SequencePreservationTest(unittest.TestCase):
         self.assertEqual(['Zona inicial'], original['outputCheck']['cases'][0]['outputs'])
         self.assertEqual(['Caja recibida'], construction['outputCheck']['cases'][0]['outputs'])
         self.assertNotEqual(positions[original_slot], positions[inverse[4, 2]])
+        integrated = contract.load(contract.CONTENT / lesson)
+        state_layout.validate_transition(current, integrated)
+        self.assertEqual(current['pages'], integrated['stateLayout']['retirementHistory'][0]['pages'])
+        self.assertEqual(current['stateLayout']['current'],
+                         integrated['stateLayout']['retirementHistory'][0]['current'])
+        self.assertNotIn(original_id, self.visible_state_blocks(integrated))
+        archived = next(item for item in integrated['stateLayout']['retired'] if item['id'] == original_id)
+        self.assertEqual(original, archived['block'])
 
     def reviewed_routes(self):
         """Historical identities survive prose edits and changes of visible position."""
@@ -183,7 +216,7 @@ class SequencePreservationTest(unittest.TestCase):
         self.assertEqual(9, len({lesson for lesson, *_ in routes}))
         for lesson, prediction_identity, prediction_id, editor_identity in routes:
             with self.subTest(lesson=lesson, prediction=prediction_identity):
-                document = contract.load(contract.CONTENT / lesson)
+                document = published_lesson(lesson)
                 blocks = self.visible_state_blocks(document)
                 prediction_page, prediction_position, prediction = blocks[prediction_identity]
                 editor_page, editor_position, editor = blocks[editor_identity]
@@ -210,7 +243,7 @@ class SequencePreservationTest(unittest.TestCase):
                                                                   modification_goals):
             lesson, prediction_identity, _, original_identity = route
             with self.subTest(lesson=lesson):
-                document = contract.load(contract.CONTENT / lesson)
+                document = published_lesson(lesson)
                 blocks = self.visible_state_blocks(document)
                 prediction_page, prediction_position, prediction = blocks[prediction_identity]
                 original_page, original_position, original = blocks[original_identity]
@@ -238,6 +271,47 @@ class SequencePreservationTest(unittest.TestCase):
                                     'The original run must not reuse the historical editing draft.')
                 self.assertIn(original_identity,
                               {addition['id'] for addition in document['stateLayout']['additions']})
+
+    def test_current_routes_preserve_predictions_before_useful_editors_and_archive_redundant_runs(self):
+        useful_editors = {
+            'ejecucion_original_editor': 'block_0004_0002',
+            'ejecucion_original_texto_secuencia_y_formato_editor': 'block_0006_0002',
+            'ejecucion_original_fuente_compilacion_y_diagnostico_editor': 'block_0003_0003',
+        }
+        routes = self.reviewed_routes()
+        self.assertEqual(10, len(routes))
+        for lesson, prediction_identity, prediction_id, old_editor_identity in routes:
+            with self.subTest(lesson=lesson, prediction=prediction_identity):
+                document = contract.load(contract.CONTENT / lesson)
+                previous = published_lesson(lesson)
+                state_layout.validate_transition(previous, document)
+                blocks = self.visible_state_blocks(document)
+                old_blocks = self.visible_state_blocks(previous)
+                editor_identity = useful_editors.get(old_editor_identity, old_editor_identity)
+                prediction_page, prediction_position, prediction = blocks[prediction_identity]
+                editor_page, editor_position, editor = blocks[editor_identity]
+                self.assertEqual(prediction_id, prediction.get('id'))
+                self.assertEqual('cpp_compiler', editor['type'])
+                self.assertEqual(prediction_page, editor_page)
+                self.assertLess(prediction_position, editor_position)
+                self.assertEqual(editor_position, next(index for index, block in
+                    enumerate(document['pages'][editor_page]['blocks']) if block['type'] == 'cpp_compiler'))
+                for identity in (prediction_identity, editor_identity):
+                    self.assertEqual(state_layout.state_payload(old_blocks[identity][2]),
+                                     state_layout.state_payload(blocks[identity][2]))
+                self.assertEqual(previous['stateLayout']['origin'], document['stateLayout']['origin'])
+                self.assertEqual(previous['stateLayout']['family'], document['stateLayout']['family'])
+                if old_editor_identity in useful_editors:
+                    self.assertTrue(document['compilerPuzzlesRequired'])
+                    self.assertNotIn(old_editor_identity, blocks)
+                    archived = next(item for item in document['stateLayout']['retired']
+                                    if item['id'] == old_editor_identity)
+                    self.assertEqual(old_blocks[old_editor_identity][2], archived['block'])
+                    self.assertEqual(previous['pages'], document['stateLayout']['retirementHistory'][0]['pages'])
+                    self.assertEqual(previous['stateLayout']['current'],
+                                     document['stateLayout']['retirementHistory'][0]['current'])
+                    self.assertTrue(set(prediction['answers']).isdisjoint(editor['outputCheck']['cases'][0]['outputs']),
+                                    'The useful editor must retain its distinct construction goal.')
 
 
 if __name__ == '__main__':

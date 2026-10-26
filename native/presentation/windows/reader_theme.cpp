@@ -7,6 +7,7 @@
 #include <commctrl.h>
 #include <windowsx.h>
 #include <oleacc.h>
+#include <uxtheme.h>
 
 #include <algorithm>
 #include <array>
@@ -27,6 +28,8 @@ constexpr wchar_t premium_property[] = L"LGAED.ReaderPremiumButton";
 constexpr wchar_t switch_property[] = L"LGAED.ReaderSwitchButton";
 constexpr wchar_t accent_property[] = L"LGAED.ReaderAccent";
 constexpr wchar_t text_property[] = L"LGAED.ReaderTextColor";
+constexpr wchar_t scroll_paint_pending_property[] = L"LGAED.ReaderScrollbarPaintPending";
+constexpr wchar_t scroll_theme_policy_property[] = L"LGAED.ReaderScrollbarThemePolicy";
 constexpr UINT_PTR radio_subclass_id = 0x4C475244;
 constexpr UINT_PTR combo_subclass_id = 0x4C47434F;
 constexpr UINT_PTR scroll_subclass_id = 0x4C475342;
@@ -405,9 +408,42 @@ struct Brushes {
         return handles[index];
     }
 };
+UINT scroll_paint_message(){
+    static const UINT message=RegisterWindowMessageW(L"LGAED.ReaderTheme.ScrollbarPaint");
+    return message;
+}
+void sync_scrollbar_theme(HWND window){
+    if(!applied(window)||!rich_edit(window))return;
+    const bool native=palette(window).high_contrast;
+    const ULONG_PTR wanted=native?2:1;
+    const auto previous=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_theme_policy_property));
+    if(previous==wanted)return;
+    // SetWindowTheme sends WM_THEMECHANGED synchronously. Publish the policy
+    // first so its nested nonclient paint cannot enter this transition again.
+    if(!SetPropW(window,scroll_theme_policy_property,reinterpret_cast<HANDLE>(wanted)))return;
+    if(native&&!previous)return;
+    // RichEdit already uses our source and scrollbar skin. Its visual-style
+    // hover animation otherwise paints a second, light scrollbar over it even
+    // after the native tracking loop has finished. Keep USER's actual bars,
+    // hit testing and accessibility; restore Windows styling in high contrast.
+    if(FAILED(SetWindowTheme(window,native?nullptr:L"",native?nullptr:L""))){
+        if(previous)SetPropW(window,scroll_theme_policy_property,reinterpret_cast<HANDLE>(previous));
+        else RemovePropW(window,scroll_theme_policy_property);
+    }
+}
+void queue_scrollbar_paint(HWND window){
+    if(!IsWindow(window)||!applied(window)||palette(window).high_contrast||GetPropW(window,scroll_paint_pending_property))return;
+    const auto message=scroll_paint_message();if(!message)return;
+    if(SetPropW(window,scroll_paint_pending_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)))&&
+        !PostMessageW(window,message,0,0))RemovePropW(window,scroll_paint_pending_property);
+}
 LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
     constexpr wchar_t hidden_frame_property[]=L"lgaed.scrollbar-frame-hidden";
-    if(message==WM_NCDESTROY){RemovePropW(window,hidden_frame_property);RemoveWindowSubclass(window,scroll_subclass,scroll_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    if(message==WM_NCDESTROY){RemovePropW(window,hidden_frame_property);RemovePropW(window,scroll_paint_pending_property);RemovePropW(window,scroll_theme_policy_property);RemoveWindowSubclass(window,scroll_subclass,scroll_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    if(const auto repaint=scroll_paint_message();repaint&&message==repaint){
+        if(RemovePropW(window,scroll_paint_pending_property))refresh_scrollbars(window);
+        return 0;
+    }
     const auto hidden=reinterpret_cast<ULONG_PTR>(GetPropW(window,hidden_frame_property));
     const auto mask=(hidden&1?WS_VSCROLL:0)|(hidden&2?WS_HSCROLL:0);
     if(mask&&message==WM_STYLECHANGING&&wp==static_cast<WPARAM>(GWL_STYLE)&&lp)
@@ -420,11 +456,17 @@ LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UI
         if(style&mask)SetWindowLongPtrW(window,GWL_STYLE,style&~static_cast<LONG_PTR>(mask));
     }
     const auto result=DefSubclassProc(window,message,wp,lp);
-    // Painting follows native processing, including a native thumb's tracking
-    // notifications. There is no timer, input interception or parallel offset.
+    // During native thumb tracking USER paints again after our nested scroll
+    // callback returns. A window message reaches the same modal loop after
+    // that paint; coalesce it per HWND instead of polling or changing input.
+    if((message==WM_HSCROLL||message==WM_VSCROLL)&&!lp)queue_scrollbar_paint(window);
+    // USER also redraws the scrollbar when updating/leaving the cursor's hot
+    // state and releasing capture, without WM_NCPAINT or a nonclient mouse-up. Repaint
+    // after those callbacks too, before the native message returns.
+    // There is no timer, input interception or parallel scroll position.
     if(message==WM_NCPAINT||message==WM_PAINT||message==WM_SIZE||message==WM_VSCROLL||message==WM_HSCROLL||
-        message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL||message==WM_NCMOUSEMOVE||message==WM_NCLBUTTONUP||
-        message==WM_NCLBUTTONDOWN||message==WM_THEMECHANGED||message==WM_SETTINGCHANGE||
+        message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL||message==WM_NCMOUSEMOVE||message==WM_NCMOUSELEAVE||message==WM_NCLBUTTONUP||
+        message==WM_NCLBUTTONDOWN||message==WM_SETCURSOR||message==WM_CAPTURECHANGED||message==WM_THEMECHANGED||message==WM_SETTINGCHANGE||
         message==WM_STYLECHANGED||message==WM_DPICHANGED_AFTERPARENT||message==WM_SETFONT||
         message==EM_SETSCROLLPOS||message==EM_LINESCROLL||message==EM_SETTARGETDEVICE||
         message==LB_ADDSTRING||message==LB_DELETESTRING||message==LB_RESETCONTENT||
@@ -601,6 +643,7 @@ void refresh_scrollbars(HWND window){
     // Empty custom viewports can lose WS_*SCROLL before apply() runs.
     // Once they acquire a range, retain the same nonclient paint hook too.
     SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
+    sync_scrollbar_theme(window);
     if(const auto dc=GetWindowDC(window)){paint_scrollbars(window,dc);ReleaseDC(window,dc);}
 }
 void set_scrollbar_frame_hidden(HWND window,bool vertical,bool horizontal){
@@ -621,6 +664,7 @@ void apply(HWND window, Surface surface) {
     if((GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))||rich_edit(window))
         SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
     if (rich_edit(window)) {
+        sync_scrollbar_theme(window);
         SendMessageW(window, EM_SETBKGNDCOLOR, 0, background(window));
         if(!(GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY))use_plain_text_input(window);
     }

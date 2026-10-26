@@ -2,9 +2,12 @@
 from copy import deepcopy
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import stable_state_layout as layout
+import retirement_fixture_source as fixtures
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +23,10 @@ PLANS = (
 
 
 def source(filename):
+    return fixtures.load_historical_json(filename)
+
+
+def integrated_source(filename):
     return layout.load(CONTENT / "es" / UNIT / filename)
 
 
@@ -44,6 +51,92 @@ def retired(source, identities):
 
 
 class RetiredStateLayoutTest(unittest.TestCase):
+    def test_pinned_history_is_exact_independent_and_never_falls_back_to_live_assets(self):
+        for filename, _ in PLANS:
+            payload = fixtures.historical_bytes(filename)
+            fixtures._verify_bytes(filename, payload)
+            with self.subTest(filename=filename), self.assertRaisesRegex(RuntimeError, "SHA-256 mismatch"):
+                fixtures._verify_bytes(filename, payload + b"\n")
+            historical = source(filename)
+            historical["pages"][0]["blocks"][0]["text"] = "Changed only inside this test"
+            self.assertNotEqual(historical, source(filename))
+        with self.assertRaisesRegex(ValueError, "Unknown historical"):
+            fixtures.historical_bytes("../lesson_not_a_fixture.json")
+        fixtures.historical_bytes.cache_clear()
+        try:
+            with patch.object(fixtures.subprocess, "check_output", side_effect=OSError("Git unavailable")):
+                with self.assertRaisesRegex(RuntimeError, "No network retrieval or fallback"):
+                    source(PLANS[0][0])
+        finally:
+            fixtures.historical_bytes.cache_clear()
+
+    def test_fixture_export_is_exact_repeatable_and_verifies_inputs_before_writing(self):
+        qa = ROOT / "out" / "qa"
+        qa.mkdir(parents=True, exist_ok=True)
+        with TemporaryDirectory(prefix="retirement-source-", dir=qa) as temporary:
+            destination = Path(temporary) / "fixtures"
+            fixtures.export_fixtures(destination)
+            self.assertEqual(set(fixtures.FIXTURE_SHA256), {path.name for path in destination.iterdir()})
+            times = {}
+            for filename in fixtures.FIXTURE_SHA256:
+                target = destination / filename
+                self.assertEqual(fixtures.historical_bytes(filename), target.read_bytes())
+                times[filename] = target.stat().st_mtime_ns
+            fixtures.export_fixtures(destination)
+            self.assertEqual(times, {name: (destination / name).stat().st_mtime_ns for name in times})
+            # Missing historical input is a hard failure, never a fixture made
+            # from today's assets or a partially populated destination.
+            missing = Path(temporary) / "must-not-exist"
+            with patch.object(fixtures, "historical_bytes", side_effect=RuntimeError("Missing pinned input")):
+                with self.assertRaisesRegex(RuntimeError, "Missing pinned input"):
+                    fixtures.export_fixtures(missing)
+            self.assertFalse(missing.exists())
+
+    def test_current_assets_already_retire_the_originals_and_preserve_the_published_migration(self):
+        useful_compilers = 0
+        for filename, identities in PLANS:
+            before, after = source(filename), integrated_source(filename)
+            original = deepcopy(after)
+            layout.validate_transition(before, after)
+            self.assertEqual(original, after)
+            self.assertTrue(after["compilerPuzzlesRequired"])
+            for field in ("origin", "family", "additions"):
+                self.assertEqual(before["stateLayout"][field], after["stateLayout"][field])
+            published, current = layout._all_blocks(before), layout._all_blocks(after)
+            self.assertEqual(published.keys(), current.keys())
+            for identity in published:
+                self.assertEqual(layout.state_payload(published[identity]), layout.state_payload(current[identity]))
+            self.assertEqual(list(identities), [row["id"] for row in after["stateLayout"]["retired"]])
+            for record in after["stateLayout"]["retired"]:
+                self.assertEqual(published[record["id"]], record["block"])
+            history = after["stateLayout"]["retirementHistory"]
+            self.assertEqual(1, len(history))
+            self.assertEqual(before["pages"], history[0]["pages"])
+            self.assertEqual(before["stateLayout"]["current"], history[0]["current"])
+            self.assertEqual(before.get("activityAfter", []), history[0]["activityAfter"])
+            self.assertEqual(before.get("referenceAfter", []), history[0]["referenceAfter"])
+            self.assertFalse(history[0]["compilerPuzzlesRequired"])
+            self.assertTrue(set(identities).isdisjoint(layout._blocks(after)))
+            with self.assertRaisesRegex(layout.LayoutError, "Only active identities"):
+                retired(after, identities)
+            useful_compilers += sum(block.get("type") == "cpp_compiler" for block in layout._blocks(after).values())
+            members, languages = [after], ["es"]
+            for language in before["stateLayout"]["family"]:
+                if language != "es":
+                    languages.append(language)
+                    members.append(layout.load(CONTENT / language / UNIT / filename))
+            layout.check_localized_family(members, languages)
+        self.assertEqual(6, useful_compilers)
+        for path in (CONTENT / "es" / UNIT).glob("lesson_*.json"):
+            if path.name in {plan[0] for plan in PLANS}:
+                continue
+            current = layout.load(path)
+            count = sum(block.get("type") == "cpp_compiler" for page in current["pages"] for block in page["blocks"])
+            if count:
+                self.assertTrue(current["compilerPuzzlesRequired"])
+            useful_compilers += count
+        self.assertEqual(8, useful_compilers)
+
     def test_three_real_retirements_preserve_every_contract_and_historical_slot(self):
         useful_compilers = 0
         for filename, identities in PLANS:
