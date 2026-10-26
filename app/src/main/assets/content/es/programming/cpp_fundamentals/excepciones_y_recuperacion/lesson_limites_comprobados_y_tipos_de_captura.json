@@ -130,7 +130,7 @@
         },
         {
           "type": "paragraph",
-          "text": "what() permite consultar el diagnóstico textual de una excepción estándar (Stroustrup, 2024). Ese texto ayuda a investigar el fallo, pero la frase generada por at no es una salida fija que este programa pueda prometer para todas las bibliotecas (Köppe et al., 2023).\n\nDefine por separado un mensaje estable del programa, como Indice invalido. La selección de catch se realiza por el tipo de la excepción; no necesita buscar palabras dentro de what(). En la actividad de diagnóstico se conservarán el mensaje estable en std::cout y el detalle adicional en std::cerr.",
+          "text": "what() permite consultar el diagnóstico textual de una excepción estándar (Stroustrup, 2024). Ese texto ayuda a investigar el fallo, pero la frase generada por at no es una salida fija que este programa pueda prometer para todas las bibliotecas (Köppe et al., 2023).\n\nDefine por separado un mensaje estable del programa, como Indice invalido. La selección de catch se realiza por el tipo de la excepción; no necesita buscar palabras dentro de what(). En la actividad de diagnóstico se conservarán el mensaje estable en std::cout y el detalle adicional en std::cerr.\n\nstd::cout envía la salida al canal estándar stdout; std::cerr envía su texto al canal estándar de errores stderr (Köppe et al., 2023). Separarlos permite conservar el mensaje del programa sin mezclarlo con el detalle del diagnóstico. En este ejemplo, escribir en std::cerr no lanza otra excepción ni significa que el programa haya terminado con un error: el catch trata el acceso rechazado y permite continuar.",
           "emphasis": [
             {
               "text": "diagnóstico textual",
@@ -143,6 +143,10 @@
             },
             {
               "text": "por el tipo de la excepción",
+              "style": "bold"
+            },
+            {
+              "text": "canal estándar de errores stderr",
               "style": "bold"
             }
           ]
@@ -206,22 +210,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente prepara el índice 2 y conserva una bandera para el diagnóstico adicional. Cambia sólo `mostrarDiagnostico` a `true` para consultar `error.what()` en `std::cerr`. Pulsa Compilar, ejecutar y comprobar. La salida estable debe seguir siendo `Indice invalido:Fin`, sin salto final.\n\nAbre la consola de errores de ejecución y comprueba que contiene un diagnóstico adicional. No compares esa frase con un texto fijo: puede cambiar entre bibliotecas. La comprobación automática revisa únicamente la salida estable; para esta actividad también debes observar por separado el canal de errores. No modifiques el índice ni el vector durante este intento.",
+          "text": "Este editor independiente prepara el índice 2 y conserva una bandera para el diagnóstico adicional. Cambia sólo `mostrarDiagnostico` a `true` y pulsa Compilar, ejecutar y comprobar. El objetivo reúne dos condiciones de la misma ejecución: conservar `Indice invalido:Fin` en std::cout, sin salto final, y aportar información de `error.what()` en std::cerr.\n\nObserva el detalle en la consola de errores de ejecución. No se exige una frase concreta, porque puede variar entre bibliotecas. Si coincide la salida estable pero falta el diagnóstico adicional, la actividad permanece pendiente. No modifiques el índice ni el vector durante este intento.",
           "emphasis": [
             {
               "text": "Cambia sólo `mostrarDiagnostico` a `true`",
               "style": "bold"
             },
             {
-              "text": "la salida estable",
+              "text": "dos condiciones de la misma ejecución",
               "style": "bold"
             },
             {
-              "text": "únicamente la salida estable",
-              "style": "bold"
-            },
-            {
-              "text": "observar por separado el canal de errores",
+              "text": "la actividad permanece pendiente",
               "style": "bold"
             },
             {
@@ -240,7 +240,8 @@
                 "outputs": [
                   "Indice invalido:Fin"
                 ],
-                "explanation": "La salida de dominio se conserva. La comprobación no evalúa el texto de what(): observa también su diagnóstico en el canal de errores de ejecución."
+                "explanation": "La ejecución conserva Indice invalido:Fin y aporta el diagnóstico adicional en std::cerr. Se comprueban ambos canales de esa ejecución; no se exige una frase concreta de what(), porque la biblioteca puede variar.",
+                "standardError": "nonBlank"
               }
             ]
           }
@@ -911,6 +912,26 @@
         "id": "block_0003_0004",
         "beforeSha256": "819e751d2429a9d0164b8a63b04defc078a63d12292d494a543e0959b3c9e147",
         "afterSha256": "cfaa9dbf23c473a7c30d8690c100eda50a6e851a600ba73e874425b043dfec10"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "44bf447ef18aad28ec7212c8b3802b3ad56e7b30985b12e80e077779a50248f3",
+        "afterSha256": "facc168e05ab846e8850a66ddb145f0e17646f5273a88810b9c4f57d74dbcd1a"
+      },
+      {
+        "id": "block_0002_0008",
+        "beforeSha256": "a96a4536a19c5caf7c74050265acfbf36ae998f41915cde0e200b2b178291b4a",
+        "afterSha256": "e044e0f7fd932e66b5d7050160405f6c45a94d1d91a3a31983913340938a6b7e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "83e4157fa915ff7bf37192a6f656890541ea64924b867676be18d0e8714e9bd5",
+        "afterSha256": "c25ae3a4b38d0390f1394adb847d0d7c5c66c197cbe8b164dd840868995e4964"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "c25ae3a4b38d0390f1394adb847d0d7c5c66c197cbe8b164dd840868995e4964",
+        "afterSha256": "5ce37c5156b422b621a79fb6dc475e909b08741dc70193790f46746d957e38b0"
       }
     ]
   },
@@ -941,5 +962,6 @@
         "block_0002_0005"
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true
 }
