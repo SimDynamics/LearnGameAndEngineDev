@@ -299,6 +299,52 @@ int main() {
         {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
             const auto base=reader_theme::foreground(editor.value);
+            const auto green=reader_theme::palette(editor.value).high_contrast?base:RGB(122,195,141);
+            const std::string prose="El código fuente de C++ se ejecuta. C++20 mantiene el nombre.";
+            set_rich_text(editor.value,prose);
+            check(edit_text(editor.value)==prose,"Formatting the curricular language name rewrote the original narration text");
+            const auto visible=wide(prose);
+            for(const auto name:{L"C++",L"C++20"}) {
+                const auto position=visible.find(name);
+                check(position!=visible.npos,"Missing curricular C++ regression token");
+                for(auto i=position;i<position+std::wstring_view(name).size();++i){
+                    const auto ink=character(editor.value,static_cast<LONG>(i));
+                    check(ink.crTextColor==base&&(ink.dwEffects&CFE_BOLD)&&
+                        std::wstring_view(ink.szFaceName)==L"Roboto",
+                        "C++ in curricular prose should be bold in the ordinary text color, not syntax ink");
+                }
+            }
+            const auto surrounding=character(editor.value,static_cast<LONG>(visible.find(L"fuente")));
+            check(surrounding.crTextColor==base&&!(surrounding.dwEffects&CFE_BOLD),
+                "Language name emphasis leaked into surrounding prose");
+            set_rich_text(editor.value,"Aprende `C++` sin alterar los bloques.");
+            const auto inline_at=wide(edit_text(editor.value)).find(L"C++");
+            check(inline_at!=std::wstring::npos&&
+                (character(editor.value,static_cast<LONG>(inline_at)).dwEffects&CFE_BOLD)&&
+                character(editor.value,static_cast<LONG>(inline_at)).crTextColor==base&&
+                std::wstring_view(character(editor.value,static_cast<LONG>(inline_at)).szFaceName)==L"Roboto",
+                "A standalone inline language label stayed purple or monospace instead of bold prose");
+            const std::array<lgaed::curriculum::Emphasis,1> italic{{{"C++",0,"italic"}}};
+            set_rich_text(editor.value,"C++ es un lenguaje.",italic);
+            const auto emphasized=character(editor.value,0);
+            check((emphasized.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&emphasized.crTextColor==base,
+                "Curricular C++ emphasis must preserve both automatic bold and authored italics");
+            set_rich_text(editor.value,R"code(En std::cout << "C++"; queda el literal de salida.)code");
+            const auto string_at=wide(edit_text(editor.value)).find(L"C++");
+            check(string_at!=std::wstring::npos&&
+                character(editor.value,static_cast<LONG>(string_at)).crTextColor==green&&
+                !(character(editor.value,static_cast<LONG>(string_at)).dwEffects&CFE_BOLD),
+                "A real C++ output string was mistaken for a bold language name");
+            set_rich_text(editor.value,R"code(std::cout << "C++";)code",{},true);
+            const auto code_at=wide(edit_text(editor.value)).find(L"C++");
+            check(code_at!=std::wstring::npos&&
+                character(editor.value,static_cast<LONG>(code_at)).crTextColor==green&&
+                !(character(editor.value,static_cast<LONG>(code_at)).dwEffects&CFE_BOLD),
+                "An actual code block lost its original string highlighting");
+        }
+        {
+            reader_theme::apply(editor.value,reader_theme::Surface::canvas);
+            const auto base=reader_theme::foreground(editor.value);
             const auto string_ink=reader_theme::palette(editor.value).high_contrast?base:RGB(122,195,141);
             const auto check_ink=[&](std::wstring_view token,COLORREF ink){
                 const auto visible=wide(edit_text(editor.value));const auto begin=visible.find(token);
