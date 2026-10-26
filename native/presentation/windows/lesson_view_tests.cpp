@@ -1972,6 +1972,16 @@ void text_sequence_lesson_all_pages() {
                 require(fixture.text(2,1) == fixture.lesson.pages[7].blocks[2].code
                         && fixture.text(3,1) == fixture.lesson.pages[7].blocks[3].code,
                     "The completed compiler chain failed to reveal its exact authored comparison references");
+                // Android LessonActivity.addCode() assigns 8dp top/24dp
+                // bottom margins outside each card. RichEdit's 16dp bottom
+                // fill is inside the first card and must not swallow the gap.
+                RECT first_body{},next_header{};
+                GetWindowRect(fixture.control(2,1),&first_body);
+                GetWindowRect(fixture.control(3,16),&next_header);
+                const auto dpi=static_cast<int>(GetDpiForWindow(fixture.view));
+                const int expected=MulDiv(16+24+8,dpi,96);
+                require(std::abs(next_header.top-first_body.bottom-expected)<=1,
+                    "Two adjacent authored C++ references lost Android's separate card margins");
             }
             if (page + 1 < 8) fixture.next();
         }

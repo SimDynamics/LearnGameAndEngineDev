@@ -1218,6 +1218,9 @@ struct LessonView {
         }
         rows.back().simulated_card=index*2+(response?1:0);rows.back().card_header=true;
         rows.back().column_gap=0;
+        // Android addCode() gives standalone reference cards an external 8dp
+        // top margin. Do not apply it to the exercise/answer toolbars.
+        if(current.type==BlockType::code)rows.back().padding_before=8;
         for(const auto item:rows.back().cells)reader_theme::apply(item,reader_theme::Surface::card_header);
         toolbar_caption(caption,"</> "+code_language);
     }
@@ -2658,7 +2661,14 @@ struct LessonView {
                 (block(block_index).type==BlockType::fill_code||block(block_index).type==BlockType::output_prediction);
             const bool answer_body=separate_response&&row.cells.front()==controls[block_index].answer;
             const int card_bottom=row.card_end?(answer_body?0:16):0;
-            const int card_margin=row.card_end&&separate_response?(answer_body?18:readonly_body?32:0):0;
+            // The 16dp card_bottom is inside the painted card; Android's
+            // addCode() has a further 24dp external bottom margin. Combined
+            // with the next reference's 8dp top margin, adjacent code cards
+            // retain a 32dp gap without altering their source or syntax ink.
+            const bool standalone_reference=row.card_end&&block_index<controls.size()
+                &&block(block_index).type==BlockType::code;
+            const int card_margin=standalone_reference?24
+                :row.card_end&&separate_response?(answer_body?18:readonly_body?32:0):0;
             if(row.simulated_card&&!fixed){
                 if(row.card_header){card_surfaces[*row.simulated_card]=simulated_card_surfaces.size();
                     simulated_card_surfaces.push_back({{left,top,left+width,top+height},top+height});}
