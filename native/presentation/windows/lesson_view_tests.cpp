@@ -2479,6 +2479,113 @@ void integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtim
     require(state::sha256(state::read_bytes(path))==asset_hash,"The integrated diagnostic QA modified an authored lesson asset");
     std::cout<<"PASS current integrated U8L3: real independent constructor, false/true MSVC executions, exact stable stdout, separate variable stderr, historical proof isolation, build rejection, reader/reference gates, reopen, sticky success and scoped Reset\n";
 }
+void u11_editorial_preserves_prediction_and_compiler_history() {
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json";
+    const auto source_hash=state::sha256(state::read_bytes(path));
+    const auto published=windows::load_lesson(path);
+    const auto prediction=curriculum::stable_block_position(published,"block_0001_0001");
+    const auto goal=curriculum::stable_block_position(published,"block_0004_0003");
+    const auto reference=curriculum::stable_block_position(published,"block_0007_0001");
+    require(prediction&&prediction->page==1&&prediction->block==1&&goal&&goal->page==4&&goal->block==3&&reference,
+        "The audited U11L1 editorial identities or historical positions changed");
+    const auto& question=published.pages[1].blocks[1];
+    const auto& compiler=published.pages[4].blocks[3];
+    require(question.type==BlockType::output_prediction&&compiler.output_check&&compiler.output_check->cases.size()==1,
+        "The U11L1 fixture no longer contains the prediction and one six-report objective");
+    const auto explanation=compiler.output_check->cases[0].explanation;
+    require(!explanation.empty(),"The U11L1 reviewed success explanation is absent");
+    auto visible_question=question.question;std::erase(visible_question,'`');
+    require(visible_question.find("\\t")!=std::string::npos&&visible_question.find("\\n")!=std::string::npos&&
+        visible_question.find("\\\\t")==std::string::npos&&visible_question.find("\\\\n")==std::string::npos&&
+        question.code.find("\\tbrisa\\npuente")!=std::string::npos,
+        "U11L1 authored escapes disagree: the question and source need exactly one visible backslash per escape");
+    for(const std::string mode:{"correct","incorrect","draft"}) {
+        std::string historical;
+        Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
+            state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,1);
+            const auto& block=lesson.pages[1].blocks[1];state::Response answer;
+            answer.answer=mode=="correct"?block.answers.at(0):mode=="incorrect"?"QA_RESPUESTA_DISTINTA":"1:<bri";
+            answer.correct=mode=="correct";answer.raw_json=R"({"incorrectAttempts":5,"opaque":{"caret":7,"selection":"escape"}})";
+            if(mode=="incorrect")state::mark_response_reviewed(answer,block);
+            const auto key=curriculum::exercise_key(lesson,block);state::put_response(data,key,answer);
+            historical=state::string_value(data,"learning_progress",key);
+            const auto& other=lesson.pages[1].blocks[3];state::Response choice;choice.correct=true;choice.selected=static_cast<std::int64_t>(*other.correct_index);
+            state::put_response(data,curriculum::exercise_key(lesson,other),choice);
+        },[&](const curriculum::Lesson&){return published;});
+        const auto preserved=[&]{require(state::string_value(f.saved(),"learning_progress",curriculum::exercise_key(f.lesson,f.lesson.pages[1].blocks[1]))==historical,
+            "Restoring the revised U11L1 question changed a saved answer, review, attempts or opaque metadata");};
+        std::string anchor;
+        for(unsigned reopen=0;reopen<2;++reopen) {
+            require(f.page()==1&&f.text(1,0)==visible_question&&f.text(1,1)==question.code,
+                "U11L1 native question/source changed the authored escapes or saved page");
+            const auto shown=f.text(1,0);
+            require(shown.find("\\\\t")==std::string::npos&&shown.find("\\\\n")==std::string::npos,
+                "U11L1 RichEdit displayed two backslashes where the C++ source has one");
+            bool found=false;
+            for(const auto& region:lesson_reading_regions(f.view))if(region.target==f.control(1,0)) {
+                found=true;require(region.source_text==question.question&&region.is_exercise&&region.solved==(mode=="correct"),
+                    "The revised question lost its original narration source or historical completion boundary");
+                if(anchor.empty())anchor=region.key;else require(region.key==anchor,"Reopening U11L1 changed the question's stable reader key");
+            }
+            require(found&&lesson_page_state(f.view).can_next==(mode=="correct"),"The revised U11L1 prediction changed its reader/page completion gate");
+            const auto feedback=f.text(1,4);
+            require(mode=="draft"?feedback.empty():feedback.starts_with(mode=="correct"?"✓ Correcto":"✗ Incorrecto"),
+                "The revised U11L1 question lost an old verdict or turned an unsubmitted draft into feedback");
+            preserved();if(!reopen)f.reopen();
+        }
+    }
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,4);
+        const auto& other=lesson.pages[4].blocks[2];state::Response answer;answer.correct=true;answer.selected=static_cast<std::int64_t>(*other.correct_index);
+        state::put_response(data,curriculum::exercise_key(lesson,other),answer);
+    },[&](const curriculum::Lesson&){
+        auto old=published;
+        // Prior to this editorial addition the same one-case objective had no
+        // explanation. Only that presentation field is removed from this QA
+        // model; all current source, oracles, addresses and dependencies remain.
+        old.pages[4].blocks[3].output_check->cases[0].explanation.clear();return old;
+    });
+    const auto initial=f.lesson.pages[4].blocks[3].initial_code;
+    const auto solution=published.pages[reference->page].blocks[reference->block].code;
+    const auto old_objective=curriculum::reference_objective_frame(f.lesson,f.lesson.pages[4].blocks[3]);
+    require(!solution.empty()&&!lesson_page_state(f.view).can_next&&f.text(3,4).empty(),"The pending U11L1 objective revealed a success explanation before execution");
+    f.run(3);
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[3])&&f.text(3,4).find(explanation)==std::string::npos,
+        "The initial incomplete U11L1 program was credited or exposed the new success explanation");
+    f.replace(3,10,solution);f.run(3);const auto old_feedback=f.text(3,4);
+    require(old_feedback=="✓ Correcto"&&f.text(3,14)==compiler.output_check->cases[0].outputs[0]&&lesson_page_state(f.view).can_next,
+        "The real historical six-report objective did not complete without its later editorial explanation");
+    state::Preferences proofs;const auto old_saved=f.saved();
+    for(const auto& [key,value]:old_saved.preferences.at("native_windows"))if(key.starts_with("compiler-puzzle/v1/"))proofs.emplace(key,value);
+    require(!proofs.empty(),"The real U11L1 execution did not capture its historical compiler proof");
+    f.close();f.lesson.pages[4].blocks[3].output_check->cases[0].explanation=explanation;f.open();
+    require(curriculum::reference_objective_frame(f.lesson,f.lesson.pages[4].blocks[3])==old_objective&&
+        windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[3])&&f.text(3,4)==old_feedback&&f.text(3,10)==solution&&lesson_page_state(f.view).can_next,
+        "Adding only the U11L1 explanation revoked its previous success, draft or historical feedback");
+    f.run(3);
+    require(f.text(3,4)==old_feedback,"Recompiling a completed objective rewrote its historical feedback without Reset");
+    for(const auto& [key,value]:proofs){const auto data=f.saved();const auto found=state::find(data,"native_windows",key);require(found&&*found==value,"The editorial change rewrote a captured U11L1 compiler proof");}
+    f.click(3,12);
+    require(f.text(3,4).empty()&&f.text(3,10)==initial&&!lesson_page_state(f.view).can_next&&
+        std::ranges::none_of(lesson_reading_regions(f.view),[&](const auto& region){return region.feedback&&region.source_text.find(explanation)!=std::string::npos;}),
+        "Reset retained the old objective or exposed its new success-only explanation");
+    f.replace(3,10,solution);f.run(3);const auto complete=f.text(3,4);
+    require(complete=="✓ Correcto\n\n"+explanation&&f.text(3,14)==compiler.output_check->cases[0].outputs[0]&&lesson_page_state(f.view).can_next,
+        "A fresh current U11L1 success did not display its exact reviewed explanation and stdout");
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[&](const auto& region){return region.target==f.control(3,4)&&region.feedback&&region.correct&&region.solved&&region.source_text==complete;}),
+        "The freshly earned U11L1 success explanation was not exposed to the result reader");
+    f.reopen();require(f.text(3,4)==complete&&f.text(3,10)==solution&&f.text(3,14).empty()&&lesson_page_state(f.view).can_next,
+        "The current U11L1 explanation/proof failed to persist or replayed stale console output");
+    f.next();require(f.page()==5&&descendant(f.view,id(2,1)),"The completed U11L1 objective did not release its own reference code");
+    f.select_page(4);f.replace(3,10,"int main(){}\n");f.run(3);
+    require(f.text(3,4)==complete&&f.text(3,14).find(compiler.output_check->cases[0].outputs[0])==std::string::npos&&lesson_page_state(f.view).can_next,
+        "A later independent U11L1 edit/recompilation revoked the sticky correct explanation");
+    f.reopen();require(f.text(3,4)==complete&&f.text(3,10)=="int main(){}\n","Reopening lost U11L1's later draft or persistent current explanation");
+    f.click(3,12);require(f.text(3,4).empty()&&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,5),
+        "Only Reset must revoke the completed U11L1 objective and close its references");
+    require(state::sha256(state::read_bytes(path))==source_hash,"U11L1 editorial QA modified the authored lesson asset");
+    std::cout<<"PASS current U11L1 editorial: literal escapes/source/reading, three prior prediction states, real six-report MSVC objective, historical feedback/proofs, new success-only explanation, reader/reference gates, sticky/reopen and Reset\n";
+}
 void use_stable_dependency_fixture_layout(curriculum::Lesson& model) {
     model.state_layout.version=1;model.state_layout.locale="es";
     model.state_layout.lineage=state::sha256(model.id+"/dependent-fixture-v1");model.state_layout.legacy_lineage=model.state_layout.lineage;
@@ -2684,11 +2791,12 @@ int main(int argc,char* argv[]) {
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
     const bool compiler_puzzles_only=argc==2&&std::string_view(argv[1])=="--compiler-puzzles";
+    const bool u11_editorial_only=argc==2&&std::string_view(argv[1])=="--u11-editorial";
     const bool stderr_objective_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
     const bool dependent_puzzles_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool editor_overflow_only=argc==2&&std::string_view(argv[1])=="--editor-overflow";
     const bool answer_overflow_only=argc==2&&std::string_view(argv[1])=="--answer-overflow";
-    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only)return 2;
+    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -2699,6 +2807,7 @@ int main(int argc,char* argv[]) {
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}
         if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
+        if(u11_editorial_only){u11_editorial_preserves_prediction_and_compiler_history();return 0;}
         if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
         if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();compiler_puzzle_completion_and_navigation();return 0;}

@@ -1047,6 +1047,17 @@ RETIREMENT_EDITORIAL_REVISIONS = {
 }
 
 
+# CPP_VALIDACION_EDITORIAL_U11L1: precisión de los escapes visibles en la
+# pregunta española. La actividad histórica no tiene ID propio; el origen
+# estable es block_0001_0001. No amplía las revisiones APA anteriores.
+U11_QUESTION_EDITORIAL_REVISIONS = {
+    ('texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json',
+     2, 2, 'output_prediction', 'question', None): (
+        '5c5e64db87dbf931030218aa78252bc0a030589e3caa563ab561728525cd94e6',
+        'ea7b37861cd558227733f8d151dabcaccbe3c65c0f3b593f33c66eb99a13f207'),
+}
+
+
 # CPP_COMPROBACION_STDERR_POR_OBJETIVO: la explicación de acierto revisada
 # pertenece sólo al editor histórico block_0002_0008 de U8L3, caso cero.
 # Las coordenadas recibidas son las de origen, verificadas por stateLayout.
@@ -1069,6 +1080,17 @@ def _approved_stderr_explanation(relative, pn, bn, index, before, after):
     ) == STDERR_EDITORIAL_REVISION[4:]
 
 
+# CPP_VALIDACION_EDITORIAL_U11L1: only the first success explanation is added.
+# These are stable_state_layout's canonical framing digests of the whole case
+# producing six reports, including its exact input/output and comparison.
+U11_COMPILER_EXPLANATION_REVISION = (
+    'app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json',
+    4, 3,
+    '692e125a7d8b75cdf3abe9c2fddcb1ad462ffc93a6d261cce761a43a45bd747a',
+    'b27ec986ffb0d8f18c2b84772251abd95f9d49e5e01fe391f54245ad1ccf16b5',
+)
+
+
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
@@ -1088,6 +1110,15 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
                         and after.get('standardError') == 'nonBlank':
                     del after['standardError']
             base = dict(base, outputCheck=projected)
+    if ((relative, pn, bn) == U11_COMPILER_EXPLANATION_REVISION[:3]
+            and old.get('type') == current.get('type') == 'cpp_compiler'
+            and 'id' not in old and 'id' not in current
+            and isinstance(old.get('outputCheck'), dict) and isinstance(current.get('outputCheck'), dict)
+            and (_state_layout.fingerprint(old['outputCheck']), _state_layout.fingerprint(current['outputCheck']))
+            == U11_COMPILER_EXPLANATION_REVISION[3:]):
+        # Restore only this fully verified outputCheck. Everything outside it
+        # still passes through the unchanged strict legacy-preservation guard.
+        base = dict(base, outputCheck=old['outputCheck'])
     if (relative, pn, bn) == (
         'app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json', 4, 2
     ) and 'outputCheck' in old and 'outputCheck' in current:
@@ -1125,7 +1156,9 @@ def restore_approved_editorial_fields(location, old, current):
         key = location + (old.get("type"), field)
         exercise_id = old.get("id") if isinstance(old.get("id"), str) else None
         transitions = (APPROVED_EDITORIAL_REVISIONS.get(key), SEQUENCE_EDITORIAL_REVISIONS.get(key),
-                       RETIREMENT_EDITORIAL_REVISIONS.get(key + (exercise_id,)))
+                       RETIREMENT_EDITORIAL_REVISIONS.get(key + (exercise_id,)),
+                       U11_QUESTION_EDITORIAL_REVISIONS.get(key + (None,))
+                       if "id" not in old and "id" not in current else None)
         before, after = old.get(field), current.get(field)
         if not isinstance(before, str) or not isinstance(after, str):
             continue
