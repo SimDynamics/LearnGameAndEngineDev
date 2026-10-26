@@ -10,11 +10,21 @@
         },
         {
           "type": "paragraph",
-          "text": "La media aritmética es la suma de los valores dividida por la cantidad de valores. El denominador no es el último índice: un vector de cuatro elementos tiene tamaño cuatro y último índice tres. Tampoco es la cantidad de valores distintos; cada observación cuenta, aunque repita una magnitud."
+          "text": "La media aritmética es la suma de los valores dividida por la cantidad de valores (Stroustrup, 2024). El denominador no es el último índice: un vector de cuatro elementos tiene tamaño cuatro y último índice tres. Tampoco es la cantidad de valores distintos; cada observación cuenta, aunque repita una magnitud.",
+          "emphasis": [
+            {
+              "text": "suma de los valores dividida por la cantidad de valores"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Primero comprobamos si existen datos. Si la colección está vacía no definimos su media mediante esta fórmula, porque el denominador sería cero. Presentamos una respuesta de ausencia. Para conservar fracciones convertimos las cantidades a double antes de dividir."
+          "text": "Primero comprobamos si existen datos. Si la colección está vacía no definimos su media mediante esta fórmula, porque el denominador sería cero. Presentamos una respuesta de ausencia. Convertimos las cantidades a double antes de dividir para obtener un cociente de coma flotante, en vez de una división entera que descarta la parte fraccionaria (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "antes de dividir"
+            }
+          ]
         },
         {
           "type": "code",
@@ -123,7 +133,12 @@
         },
         {
           "type": "paragraph",
-          "text": "size() devuelve un tamaño sin signo. No mezclaremos una suma negativa int directamente con ese tamaño para un cociente entero: las conversiones entre tipos podrían cambiar el significado del cálculo. Convertir expresamente ambas cantidades a double en esta fórmula deja clara la representación deseada."
+          "text": "size() devuelve un entero sin signo. En un cociente entero que lo combine con una suma int negativa, las conversiones pueden transformar esa suma en un entero sin signo y perder su significado negativo (Köppe et al., 2023).\n\nConvertir expresamente ambas cantidades a double antes de esta división evita esa mezcla y expresa que se necesita un cociente que admita fracciones.",
+          "emphasis": [
+            {
+              "text": "ambas cantidades a double antes de esta división"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -363,7 +378,965 @@
             ]
           },
           "initialStandardInput": "3 1 4 7"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: calcular la media de los elegidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el recorrido de selección, suma y cantidad cambian juntas únicamente cuando valor > 2. Con los datos {1, 4, 7}, el uno no participa: los elegidos suman once y son dos, por lo que su media es 5.5. Dividir por los tres elementos del origen respondería una pregunta diferente.\n\nSi no se elige ningún dato, cantidad conserva el cero y se muestra Sin elegidos antes de dividir. La suma se representa como double desde el inicio; así, el cociente de esta referencia conserva la parte fraccionaria.",
+          "emphasis": [
+            {
+              "text": "suma y cantidad cambian juntas"
+            },
+            {
+              "text": "antes de dividir"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    double suma{0.0};\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor > 2) {\n            suma += valor;\n            ++cantidad;\n        }\n    }\n    if (cantidad == 0) {\n        std::cout << \"Sin elegidos\";\n    } else {\n        std::cout << \"Media elegidos: \" << suma / cantidad;\n    }\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "8f3eb70b3759ba0982ead93eb6b2cc39346cc8b0fbfa378b5d06d043ff4450e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "e1fa7a56ad8f1c4e81776f386ae1e400046d9d31a51cc364f1d8c24eb8670726"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "2b45087e302957f73e4177d14ce886282197e7bf52d1eebb21810f6a9bfbcc91"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "498d797076519c7163192aa953869d5f22fcbd8f2c13cb9c7a9e5e0637454622"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "0ef625159471bd7aec15c706e30a1b28133471137c507dbc486efa240b772155"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "55ab92f0f5dc1c1118f799111bb9f20595e35e1407e49940561fd3c8115d6bb6"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "6a35347fcd5233e34aaeddd660d1f276aa9fc9e99444f91a47f58eaef7ab00e3"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "f44ff1689b2ca8b7e6d898e52831efecf9a1eba95c8d943ac69289e8f01884f7"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "8948447cd4ee30d22091f88978f7287dac166af1212844fcd069138ec7fd1872"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "060d97cb53523b73809124b8deb8550727871e9dae27b3d5e681ed00809c54cf"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "29d7ada91de178e2b2732ac588b71c3e3a1c3ce1f1956c111547ba70e7d675ea"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "d4b1564b4c2660740824459568ce0e713fb32eb69bc6748152f5488a99dfbaa0"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "5a7d7743e83a31e9f996ecba561899329e8793d12c1035a9eb407902e60bcf2b"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "de38df2d2548acd33c06c72ac139dee3be518e5947e55e8bf2f74261f52061d3"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "3a8e8dec6d3b609395dd99cffe46c55e7de169308e223e75dfc2fa323ff05f91"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "e372d8343bd9bb4f9be8dc98da9761b3b53a496a3546b6937fd625e5bd3863f3"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "57bbd092a9dd7f7da90b72bed92605ee66e418d4e482c256d6b07d2abb8fa5b3"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "70d970494bd1b0e8f7305d61ceffe04e411b6ba5fede5c23b4190a2a7a3a25f2"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0010",
+            "sha256": "a7ee1735b250c9814c4b6e3713d959b456e7838a2b526a9eb6fc0d596401c989"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009",
+          "block_0007_0010",
+          "media_elegidos_referencia_titulo",
+          "media_elegidos_referencia_explicacion",
+          "media_elegidos_referencia_programa"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "c61669bed232c1dac817352f9eb90b6b6c11ae5c9e46b5445bb26809c8a0285c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "2e829dc7f06a1d443f5fbdc043b9438eb92284cf037a71aa142bdc5b023c1523"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "e1fa7a56ad8f1c4e81776f386ae1e400046d9d31a51cc364f1d8c24eb8670726"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "55d0b21f33a0667ef765a04b29dd15e172ad239e868eb554a6f10aad87d9a1a1"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "498d797076519c7163192aa953869d5f22fcbd8f2c13cb9c7a9e5e0637454622"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0f646952477531cf9c328627dbca99ce486e1368c76b48a9bf0b6f909608bb69"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "4255c1168c2d7f93aa83e748f1f9ffa8057663b570b9c87637fad3326711700c"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "eb1b35ad6891daf2c14635a3fb8b89c335bd556872c4ec02283269e8a6f8b50a"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "f44ff1689b2ca8b7e6d898e52831efecf9a1eba95c8d943ac69289e8f01884f7"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "dc07c806d927c0a2398b17fafbe944459da8a4ee34bf4a0b9ba4d8e3cb357afb"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "060d97cb53523b73809124b8deb8550727871e9dae27b3d5e681ed00809c54cf"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "a16b1f2bfeb851a7bb0bf90a86cd00f240c8dab33c623638207b6e3cd22c6807"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "b1c5f9d329759382d1f650e497e309c1cf5193908a51b90e51cc2b8b633add77"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "29df161117890bd470fd73cc49b4f548606f6b4b33278f506a41e0d22a3e9623"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a6961421b7ac31a200af0958e64525cdf2767808b1fb0914b83b30bb6832f358"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "76a8aec006248662ecd4455cd7f0113976653342a10176576d3752a83c7383e0"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "e372d8343bd9bb4f9be8dc98da9761b3b53a496a3546b6937fd625e5bd3863f3"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5f28a69f7da373a435508fccc0f104e83acb80ae40a32094aad00cec4c8dafa3"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "de4a035cf4029f4719b236d41348e552979a2e8d75450129f43ab4f0610e349c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "8f3eb70b3759ba0982ead93eb6b2cc39346cc8b0fbfa378b5d06d043ff4450e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "e1fa7a56ad8f1c4e81776f386ae1e400046d9d31a51cc364f1d8c24eb8670726"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "2b45087e302957f73e4177d14ce886282197e7bf52d1eebb21810f6a9bfbcc91"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "498d797076519c7163192aa953869d5f22fcbd8f2c13cb9c7a9e5e0637454622"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0ef625159471bd7aec15c706e30a1b28133471137c507dbc486efa240b772155"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "55ab92f0f5dc1c1118f799111bb9f20595e35e1407e49940561fd3c8115d6bb6"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "6a35347fcd5233e34aaeddd660d1f276aa9fc9e99444f91a47f58eaef7ab00e3"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "f44ff1689b2ca8b7e6d898e52831efecf9a1eba95c8d943ac69289e8f01884f7"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "8948447cd4ee30d22091f88978f7287dac166af1212844fcd069138ec7fd1872"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "060d97cb53523b73809124b8deb8550727871e9dae27b3d5e681ed00809c54cf"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "29d7ada91de178e2b2732ac588b71c3e3a1c3ce1f1956c111547ba70e7d675ea"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "d4b1564b4c2660740824459568ce0e713fb32eb69bc6748152f5488a99dfbaa0"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "5a7d7743e83a31e9f996ecba561899329e8793d12c1035a9eb407902e60bcf2b"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "de38df2d2548acd33c06c72ac139dee3be518e5947e55e8bf2f74261f52061d3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "3a8e8dec6d3b609395dd99cffe46c55e7de169308e223e75dfc2fa323ff05f91"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "e372d8343bd9bb4f9be8dc98da9761b3b53a496a3546b6937fd625e5bd3863f3"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "57bbd092a9dd7f7da90b72bed92605ee66e418d4e482c256d6b07d2abb8fa5b3"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "70d970494bd1b0e8f7305d61ceffe04e411b6ba5fede5c23b4190a2a7a3a25f2"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0010",
+                "sha256": "a7ee1735b250c9814c4b6e3713d959b456e7838a2b526a9eb6fc0d596401c989"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "a19566725498715593324e35e9173ac9f02f93ddfb74c8ad863a5111753d6d10",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "5b88f34cf354f3359dad81041554b7f2540dede35f5b40217da068e66b451a48"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "e1fa7a56ad8f1c4e81776f386ae1e400046d9d31a51cc364f1d8c24eb8670726"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "e31edb032db8c81e6c97dab2eba655c10143be6142d7c456423f9dc5e633edc7"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "498d797076519c7163192aa953869d5f22fcbd8f2c13cb9c7a9e5e0637454622"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "ccd575740d4bde1ed8a56f52e6075b1a6935cc8c142f15da9dab59405e20cd5b"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "f800d60cdef27be1dbed57cca342e7d5ca32b1ecf7e7609dd54bfda1e55f2a68"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "20ceb54085ac15920d9b51315b88276511926045ac65f1339abd1dee2bfeaa14"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "f44ff1689b2ca8b7e6d898e52831efecf9a1eba95c8d943ac69289e8f01884f7"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "0903cc049f94725feaed74df15c3f50a56d23e4df99836103596b1042a7954e7"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "060d97cb53523b73809124b8deb8550727871e9dae27b3d5e681ed00809c54cf"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "4b7f6a8f33277b7a78052c8d2670a95280a1938e0d15f92b1a32d5dfd43e56e9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e17beaf5dc2cdcc7ff3b8b0795af5146374a94bbafe7efa718ef3ad65df9bd92"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "14d2e11deb6e5f8f45131bf911da3c35243bc2392c2004a12f0a0d66c69a4b7e"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "fc7aecd7a99d1c098c89a72c31af289eb4cc3c44bfd94db1239de46a45ee132f"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "e79c19486edbe221d0ef4ab92ac457431d2d692d32f45b08d15886b590e004e1"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "e372d8343bd9bb4f9be8dc98da9761b3b53a496a3546b6937fd625e5bd3863f3"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1aed387f678164846e9209d11da8af0cc0e9c8c8868c4437ae66e5e5e09968b4"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "media_elegidos_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "media_elegidos_referencia_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "media_elegidos_referencia_programa",
+        "sha256": "ea645ba284cf6bab426ca322c0ad67bb455491479b44e16dd5c1372b0d3b1557",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0961c0c3673248cdd2d46fb8d0e8bb7ac16ead4ada8295f0b92090f1d37a00ae",
+        "afterSha256": "d0105f93fff2b9045c00f27ce9fc8ee6b2d20dc7b3e8175f594a821bfafec395"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "037927caf0e1106bac3da983150c7284ed6cd1cc72bf040432300a8303721650",
+        "afterSha256": "4956a5cfc368e8fb67caa3b54644866c1b46ca3d381e495e1d31503fe977a570"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "b09492038fc18231ac4af07a2ae1358b90564b12f4f6ed18992e61ba98c0a97d",
+        "afterSha256": "e3fb9544f6a786aa78ac859cb1a9f5d08dd265aacaaf1506cf086f24e4f28a6e"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0007_0010",
+      "blocks": [
+        "media_elegidos_referencia_titulo",
+        "media_elegidos_referencia_explicacion",
+        "media_elegidos_referencia_programa"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0007",
+      "requires": [
+        "block_0006_0002"
+      ]
+    },
+    {
+      "activity": "block_0007_0010",
+      "requires": [
+        "block_0007_0007"
       ]
     }
   ]

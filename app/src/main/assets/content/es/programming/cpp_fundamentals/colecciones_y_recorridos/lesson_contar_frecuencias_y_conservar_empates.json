@@ -42,7 +42,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Para agrupar apariciones iguales, ordenaremos una copia. Así los iguales quedan juntos y el original conserva el orden de observación. La tabla seguirá el orden ascendente de los valores, pero la línea del original seguirá su propio orden. Es una decisión de presentación explícita, no una eliminación de repetidos."
+          "text": "Para agrupar apariciones iguales, ordenaremos una copia. std::sort organiza los elementos según su valor; con el orden ascendente usado aquí, los iguales quedan juntos (Köppe et al., 2023, sección [sort]).\n\nEl original conserva el orden de observación. La tabla seguirá el orden ascendente de los valores, pero la línea del original seguirá su propio orden. Es una decisión de presentación explícita, no una eliminación de repetidos.",
+          "emphasis": [
+            {
+              "text": "ordenaremos una copia",
+              "style": "bold"
+            },
+            {
+              "text": "no una eliminación de repetidos",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -536,11 +546,19 @@
         },
         {
           "type": "note",
-          "text": "La frecuencia máxima en secuencias numéricas y de texto se estudia en los ejercicios de apoyo (Stroustrup, 2024, cap. 3, ejercicios 15–16, p. 81). Los contratos, datos, presentaciones y construcciones de esta lección son propios y hacen explícita su política de empates. La operación de ordenación se contrastó con el borrador HTML vigente (Working Draft: Programming Languages — C++, s. f., sección [alg.sorting], sort), que no es una reproducción literal de C++23. Aquí se usan sort sobre el rango completo, comparaciones y recorridos ya enseñados.",
+          "text": "Un valor que alcanza la mayor frecuencia se denomina moda (Stroustrup, 2024, p. 81). Es una comparación de cantidades de apariciones, no de la magnitud de los valores.\n\nEn {1, 1, 5, 9}, el máximo numérico es 9, pero el valor más frecuente es 1: aparece dos veces. El 9 aparece sólo una vez. Mantén esa diferencia al relacionar las comparaciones del siguiente puzzle.",
           "emphasis": [
             {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
+              "text": "moda",
+              "style": "bold"
+            },
+            {
+              "text": "cantidades de apariciones",
+              "style": "bold"
+            },
+            {
+              "text": "máximo numérico es 9",
+              "style": "bold"
             }
           ]
         },
@@ -671,6 +689,27 @@
             ]
           },
           "initialStandardInput": "6 4 1 4 2 1 2"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: conservar todos los máximos numéricos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia ordenada permite recorrer cada grupo una sola vez. Los candidatos se deciden comparando frecuencias: con {4, 1, 4, 2, 1, 2}, los grupos de uno, dos y cuatro tienen dos observaciones cada uno y los tres permanecen en mayores. No se elige cuatro por ser el valor de mayor magnitud.\n\nUna frecuencia mayor reemplaza los candidatos anteriores; una igualdad añade otro candidato sin borrar los empatados. Con {1, 1, 5, 9}, el grupo de unos alcanza dos y los otros grupos, de frecuencia uno, no lo igualan. En vacío no comienza ningún grupo: maxima sigue en cero y mayores queda vacío. suma cuenta observaciones mediante sus frecuencias; no suma los valores de los datos.",
+          "emphasis": [
+            {
+              "text": "comparando frecuencias"
+            },
+            {
+              "text": "sin borrar los empatados"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio{0};\n    std::size_t distintos{0};\n    std::size_t suma{0};\n    std::size_t maxima{0};\n    std::vector<int> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<int>{};\n            mayores.push_back(ordenados[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenados[inicio]);\n        }\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (int valor : mayores) { std::cout << \"[\" << valor << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }
@@ -1077,7 +1116,10 @@
           "block_0007_0007",
           "block_0007_0008",
           "block_0007_0009",
-          "block_0007_0010"
+          "block_0007_0010",
+          "frecuencias_numericas_referencia_titulo",
+          "frecuencias_numericas_referencia_explicacion",
+          "frecuencias_numericas_referencia_programa"
         ]
       }
     ],
@@ -1930,6 +1972,33 @@
           "block": 3
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "frecuencias_numericas_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "frecuencias_numericas_referencia_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "frecuencias_numericas_referencia_programa",
+        "sha256": "57566d5d5c8203b6fe42c8ee1897eba0d6eb002a8024e35c82f90611d676467d",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1942,7 +2011,77 @@
         "id": "block_0006_0008",
         "beforeSha256": "78ee96d0045dd2752d18b419a2c763ea09915a2c15bc454ceb2fe3885064a8a8",
         "afterSha256": "8dc26a184a72119949745bc8f7d4e4fd1c8a33b87da2b380ea3d894824f9b237"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "f6f46834721653c68fa346d427d613cd07396fd99cfe80be19066e47e443a260",
+        "afterSha256": "1cb0a86a52103ddf3b6ea9f4d51cde8c3a3d56f65ba817510f96518e844c694d"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "8ad3fdbe5f34118d112096241268efddb9846ca098183776c0ffa330d0477b83",
+        "afterSha256": "4c2e9f38883ac53cfef3f6e49c54b53d15946162500b0b0ae7807d6ebc81b50e"
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0005",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003"
+      ]
+    },
+    {
+      "activity": "block_0005_0005",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003"
+      ]
+    },
+    {
+      "activity": "block_0007_0010",
+      "blocks": [
+        "frecuencias_numericas_referencia_titulo",
+        "frecuencias_numericas_referencia_explicacion",
+        "frecuencias_numericas_referencia_programa"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0003_0009",
+      "requires": [
+        "block_0002_0005"
+      ]
+    },
+    {
+      "activity": "block_0005_0005",
+      "requires": [
+        "block_0003_0009"
+      ]
+    },
+    {
+      "activity": "recuperacion_entrada_editor",
+      "requires": [
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "block_0006_0009",
+      "requires": [
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "block_0007_0010",
+      "requires": [
+        "block_0005_0005"
+      ]
+    }
+  ]
 }
