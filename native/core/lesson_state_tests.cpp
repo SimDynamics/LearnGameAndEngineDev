@@ -1,9 +1,11 @@
 #include "core/lesson_state.hpp"
 #include "core/lesson.hpp"
+#include "core/catalog.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/catalog_loader.hpp"
 #include "native_build_config.hpp"
 
 #include <windows.h>
@@ -14,6 +16,8 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 using namespace lgaed::state;
 namespace {
@@ -157,6 +161,191 @@ void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::
     }
     ++groups;
 }
+void refined_order_state_tests(const std::filesystem::path& base) {
+    using namespace lgaed::curriculum;
+    const auto original = lgaed::windows::parse_lesson_json(R"json({"id":"qa_order_lines","title":"Ordenar sin perder estado","pages":[{"blocks":[{"type":"order_code","id":"order","question":"Ordena las líneas.","fragments":["    return 0;\n}","#include <iostream>\nint main() {\n    std::cout << \"Paso\\n\";"],"correctOrder":[1,0],"explanation":"Conserva el programa."}]}]})json");
+    const auto& old_block = original.pages[0].blocks[0];
+    auto refined = original;
+    auto& block = refined.pages[0].blocks[0];
+    OrderRefinement contract;
+    contract.id = block.stable_id;contract.raw_json = block.raw_json;
+    contract.original_fragments = block.fragments;contract.original_correct_order = block.correct_order;
+    contract.groups = {{0,1},{2,3,4}};
+    block.fragments = {"    return 0;", "}", "#include <iostream>", "int main() {", "    std::cout << \"Paso\\n\";"};
+    block.correct_order = {2,3,4,0,1};
+    contract.representation_signature = sha256(order_representation_frame(block));
+    block.order_refinement = contract;
+    const auto key = exercise_key(original,old_block);
+    const auto sidecar = response_storage_key(refined,block);
+    require(key == exercise_key(refined,block) && key != sidecar,"Refinement changed the activity identity or reused its legacy storage");
+    StateData empty;const auto empty_before=empty;
+    require(!get_response(empty,refined,block) && empty==empty_before,"An empty order invented a response or wrote migration state");
+    for (const auto mode : {"empty", "draft", "wrong", "correct"}) {
+        StateData saved;
+        Response old;old.raw_json=R"({"incorrectAttempts":4,"opaque":{"cursor":7},"answer":"unchanged"})";
+        old.answer="unchanged";old.correct=std::string_view(mode)=="correct";
+        if(std::string_view(mode)!="empty")old.order=old.correct?std::vector<std::int64_t>{1,0}:std::vector<std::int64_t>{0,1};
+        if(std::string_view(mode)=="wrong")mark_response_reviewed(old,old_block);
+        put_response(saved,key,old);
+        const auto legacy_json=string_value(saved,"learning_progress",key);const auto before=saved;
+        const auto projected=get_response(saved,refined,block);
+        require(projected && projected->correct==old.correct && projected->answer==old.answer && saved==before,
+            "Reading the refined order changed the stored answer or its prior verdict");
+        const auto expected=old.order.empty()?std::vector<std::int64_t>{}:old.correct?std::vector<std::int64_t>{2,3,4,0,1}:std::vector<std::int64_t>{0,1,2,3,4};
+        require(projected->order==expected,"Historical groups were not expanded in their exact attempted sequence");
+        require(response_reviewed(*projected,block)==(std::string_view(mode)=="wrong"),
+            "A draft was promoted to a reviewed answer or a previous review was lost");
+        validate_lesson_state(saved,refined);
+        const auto export_root=base/(std::string("order-export-")+mode);
+        export_preferences(export_root,saved);
+        const auto source_hash=sha256(read_bytes(export_root/"shared_prefs/learning_progress.xml"));
+        const auto preview=inspect_android_export(export_root);
+        validate_lesson_state(preview.data,refined);
+        require(get_response(preview.data,refined,block)->order==expected &&
+            string_value(preview.data,"learning_progress",key)==legacy_json,
+            "Importing a historical order changed its JSON or projected sequence");
+        commit_android_import(preview,base/(std::string("order-profile-")+mode));
+        StateStore store(base/(std::string("order-profile-")+mode));auto reopened=store.load();
+        require(sha256(read_bytes(export_root/"shared_prefs/learning_progress.xml"))==source_hash,
+            "Order refinement modified an Android source export");
+        auto changed=*get_response(reopened,refined,block);
+        changed.order={0,2,1,3,4};changed.correct=false;mark_response_reviewed(changed,block);
+        put_response(reopened,refined,block,changed);
+        require(string_value(reopened,"learning_progress",key)==legacy_json &&
+            get_response(reopened,refined,block)->order==changed.order &&
+            get_response(reopened,refined,block)->raw_json.find("\"incorrectAttempts\":4")!=std::string::npos &&
+            get_response(reopened,refined,block)->raw_json.find("\"cursor\":7")!=std::string::npos,
+            "Editing separate lines overwrote the grouped original or discarded opaque attempt metadata");
+        store.save(reopened);reopened=store.load();validate_lesson_state(reopened,refined);
+        require(get_response(reopened,refined,block)->order==changed.order &&
+            response_reviewed(*get_response(reopened,refined,block),block),"Refined attempt/review did not survive reopening");
+        const auto sidecar_export=base/(std::string("order-sidecar-export-")+mode);
+        export_preferences(sidecar_export,reopened);
+        const auto sidecar_import=inspect_android_export(sidecar_export);
+        validate_lesson_state(sidecar_import.data,refined);
+        require(get_response(sidecar_import.data,refined,block)->order==changed.order&&
+            string_value(sidecar_import.data,"learning_progress",key)==legacy_json,
+            "Importing a saved line sidecar lost its independent composition or overwrote the original");
+        auto translated=original;translated.locale="fr";
+        require(get_response(reopened,translated,translated.pages[0].blocks[0])->order==old.order &&
+            get_response(reopened,translated,translated.pages[0].blocks[0])->correct==old.correct,
+            "Editing Spanish lines changed the unchanged translation's grouped answer");
+        put_response(reopened,refined,block,{});
+        require(get_response(reopened,refined,block)->order.empty() && !get_response(reopened,refined,block)->correct &&
+            string_value(reopened,"learning_progress",key)==legacy_json,
+            "Reset did not clear only the refined composition");
+        auto malformed=reopened;auto duplicate=changed;duplicate.order={0,0,2,3,4};
+        // Deliberately bypass the writing API to simulate corrupt imported data.
+        put_response(malformed,sidecar,duplicate);const auto corrupt_before=malformed;
+        rejects([&]{validate_lesson_state(malformed,refined);});
+        require(malformed==corrupt_before,"Rejecting a corrupt refinement changed student data");
+        auto foreign=refined;foreign.pages[0].blocks[0].fragments[0]+=" changed";
+        rejects([&]{(void)get_response(reopened,foreign,foreign.pages[0].blocks[0]);});
+        ++groups;
+    }
+    auto different_locale=refined;different_locale.locale="en";
+    require(response_storage_key(different_locale,different_locale.pages[0].blocks[0])!=sidecar,
+        "Refined state sidecars do not distinguish locale");
+    std::cout<<"PASS grouped-to-line order: empty/draft/reviewed/solved projections, immutable original JSON, Android import, opaque attempts, independent locale, sidecar/reopen/reset and corrupt-state rejection\n";
+}
+void all_authored_refined_orders_preserve_state(const std::filesystem::path& base) {
+    using namespace lgaed::curriculum;
+    using namespace winrt::Windows::Data::Json;
+    const auto fixtures=std::filesystem::path(lgaed::build::cpp_tool_host).parent_path().parent_path()/"test-fixtures/order-lines";
+    const auto bytes=read_bytes(fixtures/"manifest.json");
+    const auto manifest=JsonObject::Parse(winrt::to_hstring(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
+    const auto entries=manifest.GetNamedArray(L"entries");
+    require(entries.Size()==14,"The audited refinement corpus must retain all fourteen activities");
+    std::size_t old_pieces=0,new_pieces=0;
+    for(const auto& value:entries) {
+        const auto entry=value.GetObject();
+        const auto old_path=fixtures/winrt::to_string(entry.GetNamedString(L"old"));
+        const auto current_path=fixtures/winrt::to_string(entry.GetNamedString(L"refined"));
+        const auto original=lgaed::windows::load_lesson(old_path);
+        const auto current=lgaed::windows::load_lesson(current_path);
+        const auto position=stable_block_position(current,winrt::to_string(entry.GetNamedString(L"stableId")));
+        require(position.has_value(),"The authored refinement lost its stable activity");
+        const auto& block=current.pages[position->page].blocks[position->block];
+        require(block.order_refinement.has_value(),"The authored order has no compatible refinement projection");
+        const auto old_position=stable_block_position(original,block.stable_id);
+        const auto& old_block=old_position?original.pages[old_position->page].blocks[old_position->block]
+            :original.pages[block.address.page].blocks[block.address.block];
+        old_pieces+=old_block.fragments.size();new_pieces+=block.fragments.size();
+        const auto key=exercise_key(original,old_block);
+        StateData data;Response solved;solved.correct=true;
+        for(const auto piece:old_block.correct_order)solved.order.push_back(static_cast<std::int64_t>(piece));
+        solved.raw_json=R"({"incorrectAttempts":3,"opaque":{"selection":23}})";
+        put_response(data,key,solved);const auto raw=string_value(data,"learning_progress",key);
+        const auto before=data;const auto projected=get_response(data,current,block);
+        require(projected&&projected->correct&&data==before,"Refining an authored solved puzzle rewrote its prior state");
+        std::vector<std::int64_t> expected;for(const auto piece:block.correct_order)expected.push_back(static_cast<std::int64_t>(piece));
+        require(projected->order==expected,"An authored solved order was assigned to a different line sequence");
+        validate_lesson_state(data,current);prepare_lesson_state(data,current);
+        const auto pin="lesson_"+current.id+"_state_order_refinements_v1_es";
+        require(find(data,"learning_progress",pin),"Published order refinements were not pinned to their source/representation");
+        if(old_pieces==4) {
+            const auto catalog_root=base/"order-catalog";
+            const auto unit=current.id.substr(0,current.id.rfind("__"));
+            const auto relative=std::filesystem::path(winrt::to_string(entry.GetNamedString(L"path")));
+            text_file(catalog_root/"es/programming/courses.json",R"([{"id":"cpp_fundamentals","title":"QA","number":1}])");
+            text_file(catalog_root/"es/programming/cpp_fundamentals/course_cpp_fundamentals.json",
+                "{\"id\":\"cpp_fundamentals\",\"title\":\"QA\",\"units\":[{\"id\":\""+unit+"\",\"title\":\"QA\",\"number\":1}]}");
+            text_file(catalog_root/"es/programming/cpp_fundamentals"/relative.parent_path()/("unit_"+relative.parent_path().string()+".json"),
+                "{\"courseId\":\"cpp_fundamentals\",\"unitId\":\""+unit+"\",\"title\":\"QA\",\"lessons\":[{\"id\":\""+current.id+"\",\"title\":\"QA\",\"number\":1}]}");
+            text_file(catalog_root/"es/programming/cpp_fundamentals"/relative,current.raw_json);
+            CatalogLocation location{"es","programming","cpp_fundamentals",unit,{}};
+            const auto card=lgaed::windows::load_catalog(catalog_root,location).entries.at(0);
+            auto shown=data;save_current_page(shown,current,position->page);
+            for(const auto& sibling:current.pages[position->page].blocks)if(sibling.type==BlockType::multiple_choice) {
+                Response answer;answer.correct=true;answer.selected=static_cast<std::int64_t>(*sibling.correct_index);
+                put_response(shown,current,sibling,answer);
+            }
+            const auto completed=lgaed::windows::catalog_entry_progress(catalog_root,location,card,shown);
+            auto changed=*projected;changed.correct=false;std::swap(changed.order.front(),changed.order.back());
+            put_response(shown,current,block,changed);
+            const auto pending=lgaed::windows::catalog_entry_progress(catalog_root,location,card,shown);
+            require(completed.completed==pending.completed+1,"Catalog credited the old grouped success over a newer pending line response");
+            reset_catalog_progress(shown,{{},{},{current.id}});
+            require(lgaed::windows::catalog_entry_progress(catalog_root,location,card,shown).completed==0,
+                "Catalog retained a refined achievement after explicit scope reset");
+        }
+        for(const auto change:{"remove","snapshot","representation"}) {
+            auto bad=current;
+            if(std::string_view(change)=="remove")bad.state_layout.order_refinements.clear();
+            else if(std::string_view(change)=="snapshot")bad.state_layout.order_refinements[0].sha256=std::string(64,'0');
+            else bad.state_layout.order_refinements[0].representation_signature=std::string(64,'0');
+            auto retained=data;const auto prior=retained;
+            rejects([&]{prepare_lesson_state(retained,bad);});
+            require(retained==prior,"Rejecting a removed/changed order projection modified progress");
+        }
+        const auto export_root=base/("authored-order-export-"+std::to_string(old_pieces));
+        // Import the original grouped answer, rather than Windows' new sidecar.
+        export_preferences(export_root,before);
+        const auto preview=inspect_android_export(export_root);
+        validate_lesson_state(preview.data,current);
+        require(get_response(preview.data,current,block)->order==expected&&
+            string_value(preview.data,"learning_progress",key)==raw,"An authored grouped import lost its exact response or correct line expansion");
+        auto edited=*projected;edited.correct=false;
+        std::swap(edited.order.front(),edited.order.back());put_response(data,current,block,edited);
+        for(const auto locale:{"en","fr"}) {
+            const auto translated=lgaed::windows::load_lesson(fixtures/winrt::to_string(entry.GetNamedString(winrt::to_hstring(locale))),locale);
+            auto switched=data;prepare_lesson_state(switched,translated);
+            require(string_value(switched,"learning_progress",key)==raw,"Switching translation replaced the original grouped response");
+        }
+        const auto sidecar=response_storage_key(current,block);
+        data.preferences["learning_progress"]["order-lines/v1/es/"+std::string(64,'0')+"/exercise_other_page_0_block_0"]=std::string("outside scope");
+        const auto invalid_sidecar="order-lines/v1/de/"+std::string(64,'0')+'/'+key;
+        data.preferences["learning_progress"][invalid_sidecar]=std::string("unknown metadata");
+        reset_catalog_progress(data,{{},{},{current.id}});
+        require(!find(data,"learning_progress",sidecar)&&!find(data,"learning_progress",key)&&find(data,"learning_progress",pin)&&
+            find(data,"learning_progress",invalid_sidecar)&&
+            find(data,"learning_progress","order-lines/v1/es/"+std::string(64,'0')+"/exercise_other_page_0_block_0"),
+            "Reset scope retained a refined achievement or erased unrelated/unknown state/provenance");
+        ++groups;
+    }
+    require(old_pieces==65&&new_pieces==124,"The authored order corpus no longer covers the complete 65-to-124 refinement");
+    std::cout<<"PASS fourteen authored order projections (65 to124), grouped import, unchanged translations, append-only runtime provenance and scoped course/unit reset\n";
+}
 }
 int main(int argc, char** argv) {
     try {
@@ -165,6 +354,8 @@ int main(int argc, char** argv) {
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
+        refined_order_state_tests(base);
+        all_authored_refined_orders_preserve_state(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");
         initial.preferences["types"]["français_élève"] = std::string("cœur, niño, std::cout, 𝑥");

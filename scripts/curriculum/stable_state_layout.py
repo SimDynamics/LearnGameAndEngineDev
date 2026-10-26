@@ -24,7 +24,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
@@ -141,6 +141,75 @@ def state_payload(block: dict) -> dict:
 
 def state_fingerprint(block: dict) -> str:
     return fingerprint(state_payload(block))
+
+
+def order_line_expansion(block: dict) -> tuple[list[str], list[list[int]], list[int]]:
+    """Derive independent source lines without changing any code token.
+
+    Blank lines and original separators remain in the immutable snapshot. A
+    written backslash-n in a C++ string is never a line separator. The one
+    compact curricular if statement has three exact, character-preserving cuts.
+    """
+    require(type(block) is dict and block.get("type") == "order_code", "Expected an order_code snapshot")
+    fragments, order = block.get("fragments"), block.get("correctOrder")
+    require(type(fragments) is list and 0 < len(fragments) <= 100_000
+            and all(type(fragment) is str and fragment for fragment in fragments), "Malformed original order fragments")
+    require(type(order) is list and len(order) == len(fragments)
+            and all(type(index) is int for index in order)
+            and sorted(order) == list(range(len(fragments))), "Malformed original correct order")
+    program = "\n".join(fragments[index] for index in order)
+    require("\\\n" not in program and "\\\r\n" not in program,
+            "Order line refinement does not support semantic backslash line continuations")
+    cursor = 0
+    while (cursor := program.find('R"', cursor)) != -1:
+        opening = program.find("(", cursor + 2, cursor + 19)
+        delimiter = program[cursor + 2:opening] if opening != -1 else ""
+        if opening == -1 or len(delimiter) > 16 or any(
+                ord(char) < 33 or ord(char) > 126 or char in "()\\" for char in delimiter):
+            cursor += 2
+            continue
+        closing = program.find(")" + delimiter + '"', opening + 1)
+        require(closing != -1 and "\n" not in program[cursor:closing],
+                "Order line refinement does not support multiline or incomplete raw string literals")
+        cursor = closing + len(delimiter) + 2
+    lines, groups = [], []
+    for fragment in fragments:
+        if fragment == "if (validar(candidata)) { tabla = candidata; }":
+            parts = ["if (validar(candidata)) {", " tabla = candidata;", " }"]
+        else:
+            parts = fragment.replace("\r\n", "\n").split("\n")
+        require(not any("\r" in part for part in parts), "Unsupported bare carriage return in order fragments")
+        pieces = [part for part in parts if part.strip(" \t")]
+        require(pieces, "An original fragment must contain a nonempty code line")
+        groups.append(list(range(len(lines), len(lines) + len(pieces))))
+        lines.extend(pieces)
+    require(len(lines) <= 100_000, "Too many refined order lines")
+    return lines, groups, [index for group in order for index in groups[group]]
+
+
+def order_contract_projection(block: dict, original: dict, *, allow_original: bool = False) -> dict:
+    """Validate the displayed refinement and recover only its old array contract."""
+    lines, _, order = order_line_expansion(original)
+    require(block.get("type") == "order_code", "An order refinement belongs to order_code")
+    require(type(block.get("correctOrder")) is list and all(type(index) is int for index in block["correctOrder"]),
+            "Refined order indices must be integers")
+    if allow_original and block.get("fragments") == original["fragments"] and block.get("correctOrder") == original["correctOrder"]:
+        return block
+    require(block.get("fragments") == lines and block.get("correctOrder") == order,
+            "Refined fragments and correct order must be the exact expansion of their original groups")
+    projected = deepcopy(block)
+    projected["fragments"] = deepcopy(original["fragments"])
+    projected["correctOrder"] = deepcopy(original["correctOrder"])
+    return projected
+
+
+def _order_refinements(document: dict) -> dict[str, dict]:
+    return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("orderRefinements", [])}
+
+
+def _historical_order_contract(document: dict, identity: str, block: dict, *, allow_original: bool = False) -> dict:
+    original = _order_refinements(document).get(identity)
+    return order_contract_projection(block, original, allow_original=allow_original) if original is not None else block
 
 
 def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
@@ -277,6 +346,19 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         added_slots.add(position)
         storage[identity] = position
         digests[identity] = _digest(addition["sha256"])
+    refinements = meta.get("orderRefinements", [])
+    require(type(refinements) is list and len(refinements) <= 100_000, "Malformed order refinements")
+    require(not refinements or meta["locale"] == "es", "Order refinements are currently authorized only for Spanish")
+    refined = {}
+    for item in refinements:
+        require(type(item) is dict and set(item) == {"id", "block"}, "An order refinement needs its identity and original block")
+        identity = _identity(item["id"])
+        require(identity in storage and identity not in refined, "Unknown or repeated order refinement identity")
+        original = item["block"]
+        lines, _, order = order_line_expansion(original)
+        require(lines != original["fragments"] or order != original["correctOrder"], "An order refinement must split its original presentation")
+        require(state_fingerprint(original) == digests[identity], "The order snapshot does not match its immutable response contract")
+        refined[identity] = original
     current = meta["current"]
     require(type(current) is list and len(current) == len(pages) == len(page_ids),
             "This extension preserves historical pages")
@@ -293,11 +375,14 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(document.get("id") == MATH_LABEL_LESSON and meta["locale"] == "es"
                         and identity == MATH_LABEL_IDENTITY,
                         "The reviewed mathematical label belongs to its original Spanish activity")
-            require(state_fingerprint(pages[p]["blocks"][b]) == digests[identity],
+            block = pages[p]["blocks"][b]
+            projected = order_contract_projection(block, refined[identity]) if identity in refined else block
+            require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
             seen_blocks.append(identity)
             mapping[p, b] = storage[identity]
     require(len(set(seen_pages)) == len(seen_pages) and set(seen_pages) == set(page_ids), "Page identities changed")
+    require(refined.keys() <= set(seen_blocks), "Order refinements must remain active under their existing identities")
     retired = meta.get("retired", [])
     require(type(retired) is list and len(retired) <= 100_000, "Malformed retired activity archive")
     require(not retired or meta["locale"] == "es", "Retirement is currently authorized only for Spanish")
@@ -344,6 +429,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     actual = _all_blocks(document)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
+    for identity, original in refined.items():
+        require(fingerprint(original) in chains.get(identity, [])
+                and chains[identity][-1] == fingerprint(actual[identity]),
+                "An order refinement needs the full published snapshot and current editorial proof")
     for identity, block in actual.items():
         if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
             require(chains.get(identity) == [MATH_LABEL_BEFORE, MATH_LABEL_AFTER],
@@ -574,7 +663,8 @@ def _validate_retirement_history(document: dict) -> None:
             for block_id, block in zip(record["blocks"], page.get("blocks", [])):
                 _identity(block_id)
                 require(block_id in available and block_id not in seen_blocks, "Unknown or repeated historical reading block")
-                require(state_fingerprint(block) == state_fingerprint(available[block_id]),
+                require(state_fingerprint(_historical_order_contract(document, block_id, block, allow_original=True))
+                        == state_fingerprint(_historical_order_contract(document, block_id, available[block_id])),
                         "Historical reading snapshot changed a response/code contract")
                 seen_blocks.add(block_id)
         historical = {"pages": pages, "stateLayout": {"current": current},
@@ -611,6 +701,34 @@ def _transition_metadata(document: dict) -> dict:
     # of an immutable origin. All other lesson metadata remains protected.
     return {k: v for k, v in document.items()
             if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | FLOW_FIELDS}
+
+
+def refine_order_lines(document: dict, identity: str) -> dict:
+    """Prepare a compatible line presentation; never open student preferences.
+
+    Bootstrap an unmapped lesson with prepare_v2 and its published language
+    family first. The original arrays, prose and all separators remain archived.
+    """
+    validate(document)
+    require(document.get("stateLayout", {}).get("version") == 2,
+            "Prepare the published language family as stateLayout v2 before refining order lines")
+    _identity(identity)
+    blocks = _blocks(document)
+    require(identity in blocks, "An order refinement needs an existing active identity")
+    if identity in _order_refinements(document):
+        return deepcopy(document)
+    original = blocks[identity]
+    lines, _, order = order_line_expansion(original)
+    require(lines != original["fragments"] or order != original["correctOrder"],
+            "An order refinement must split its original presentation")
+    result = deepcopy(document)
+    actual = _blocks(result)[identity]
+    actual["fragments"], actual["correctOrder"] = lines, order
+    result["stateLayout"].setdefault("orderRefinements", []).append({"id": identity, "block": deepcopy(original)})
+    result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": fingerprint(original),
+                                            "afterSha256": fingerprint(actual)})
+    validate_transition(document, result)
+    return result
 
 
 def reorder(document: dict, plan: list[dict], additions: list[dict] | None = None) -> dict:
@@ -729,6 +847,13 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(retired[:len(old_retired)] == old_retired,
             "Retired activity archives are append-only and cannot be restored or rewritten")
     before, after = _all_blocks(baseline), _all_blocks(current)
+    old_refinements = old_meta.get("orderRefinements", []) if old_v2 else []
+    refinements = meta.get("orderRefinements", [])
+    require(refinements[:len(old_refinements)] == old_refinements,
+            "Published order refinements are append-only and cannot be removed or replaced")
+    for item in refinements[len(old_refinements):]:
+        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
+                "A new order refinement must preserve its complete published block")
     _preserve_compiler_channel_requirements(before, after)
     old_positions = {identity: (record["id"], index, record["blocks"])
                      for record in old_meta["current"] for index, identity in enumerate(record["blocks"])}
@@ -769,7 +894,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         owners.setdefault(fingerprint(block), set()).add(identity)
     for identity, block in before.items():
         actual = after[identity]
-        require(state_fingerprint(block) == state_fingerprint(actual),
+        require(state_fingerprint(_historical_order_contract(baseline, identity, block))
+                == state_fingerprint(_historical_order_contract(current, identity, actual)),
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
             serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
@@ -855,6 +981,9 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     validate_transition(previous, current)
     old = prepare(previous)
     blocks = _all_blocks(current)
+    old_refinements = _order_refinements(old)
+    blocks = {identity: _historical_order_contract(current, identity, block)
+              if identity not in old_refinements else block for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
     result["pages"] = [{**deepcopy(page_by_id[record["id"]]),
@@ -873,6 +1002,7 @@ def original_projection(document: dict) -> dict:
         return document
     validate(document)
     blocks = _all_blocks(document)
+    blocks = {identity: _historical_order_contract(document, identity, block) for identity, block in blocks.items()}
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
@@ -1116,7 +1246,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -1125,6 +1255,7 @@ def main() -> None:
     parser.add_argument("--locale", choices=sorted(LOCALES), help="Use v2 and read all published language assets from Git")
     parser.add_argument("--additions", type=Path,
                         help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
+    parser.add_argument("--identity", help="Existing stable order_code identity for refine-order-lines")
     args = parser.parse_args()
     try:
         if args.action == "check-tree":
@@ -1156,6 +1287,11 @@ def main() -> None:
         elif args.action == "reorder":
             require(args.plan is not None, "reorder requires --plan")
             result = reorder(source, load(args.plan), load(args.additions) if args.additions else None)
+        elif args.action == "refine-order-lines":
+            require(args.identity is not None and args.plan is None and args.additions is None,
+                    "refine-order-lines requires --identity without a move/addition plan")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = refine_order_lines(baseline, args.identity)
         else:
             validate(source)
             validate_transition(previous, source)

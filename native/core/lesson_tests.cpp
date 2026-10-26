@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <stdexcept>
 
 namespace {
@@ -21,6 +22,179 @@ template<class Action> void rejects(Action&& action, const char* message) {
 void replace_once(std::string& text, std::string_view old_value, std::string_view new_value) {
     const auto index = text.find(old_value); check(index != text.npos, "Test fixture target missing");
     text.replace(index, old_value.size(), new_value);
+}
+void independently_movable_order_lines_preserve_the_original_contract() {
+    using namespace winrt::Windows::Data::Json;
+    using lgaed::windows::parse_lesson_json;
+    const auto directory = std::filesystem::path(lgaed::build::cpp_tool_host).parent_path().parent_path()/"test-fixtures/order-lines";
+    const auto bytes = lgaed::state::read_bytes(directory/"manifest.json");
+    const auto manifest = JsonObject::Parse(winrt::to_hstring(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
+    check(manifest.GetNamedString(L"baseline") == L"aa230c6575210c2154e59dee60ff87cdeb8e615b", "Ordering fixtures lost their immutable published source");
+    const auto entries = manifest.GetNamedArray(L"entries");
+    check(entries.Size() == 14, "Ordering fixtures omitted an affected activity");
+    std::size_t original_count = 0, line_count = 0, empty_lines = 0, identical_closings = 0, historical_grouped = 0;
+    const auto escapes = [](const std::vector<std::string>& values) {
+        std::size_t count = 0;
+        for (const auto& text : values) for (std::size_t at = 0; (at = text.find("\\n",at)) != text.npos; at += 2) ++count;
+        return count;
+    };
+    for (const auto& value : entries) {
+        const auto entry = value.GetObject();
+        const auto old_path = directory/winrt::to_string(entry.GetNamedString(L"old"));
+        const auto current_path = directory/winrt::to_string(entry.GetNamedString(L"refined"));
+        check(lgaed::state::sha256(lgaed::state::read_bytes(old_path)) == winrt::to_string(entry.GetNamedString(L"oldSha256")),
+            "Ordering migration fixture differs from its pinned Git bytes");
+        const auto before = lgaed::windows::load_lesson(old_path);
+        const auto current = lgaed::windows::load_lesson(current_path);
+        const auto metadata = lgaed::windows::load_lesson_progress_metadata(current_path);
+        const auto stable_id = winrt::to_string(entry.GetNamedString(L"stableId"));
+        const auto position = stable_block_position(current,stable_id);
+        check(position.has_value(), "Refined ordering lost its historical identity");
+        const auto& block = current.pages[position->page].blocks[position->block];
+        check(block.order_refinement.has_value(), "Ordering provenance did not reach the native block model");
+        const auto& refinement = *block.order_refinement;
+        const auto old_position = stable_block_position(before,stable_id);
+        const auto& old = old_position ? before.pages[old_position->page].blocks[old_position->block]
+            : before.pages[block.address.page].blocks[block.address.block];
+        check(old.fragments == refinement.original_fragments && old.correct_order == refinement.original_correct_order &&
+            exercise_key(before,old) == exercise_key(current,block), "Refining an ordering changed its original answer or response address");
+        const auto projected = stable_block_position(metadata,stable_id);
+        check(projected && metadata.pages[projected->page].blocks[projected->block].order_refinement &&
+            metadata.pages[projected->page].blocks[projected->block].fragments == block.fragments &&
+            exercise_key(metadata,metadata.pages[projected->page].blocks[projected->block]) == exercise_key(current,block),
+            "Catalog progress lost the refined representation or historical response address");
+        check(refinement.groups.size() == old.fragments.size() && refinement.original_fragments.size() == static_cast<std::size_t>(entry.GetNamedNumber(L"oldPieces")) &&
+            block.fragments.size() == static_cast<std::size_t>(entry.GetNamedNumber(L"newPieces")), "Refinement omitted an original group or real line");
+        check(refinement.representation_signature == lgaed::state::sha256(order_representation_frame(block)),
+            "Refined composition identity differs from the original fragment representation frame");
+        std::vector<std::size_t> expanded;
+        for (const auto group : old.correct_order) expanded.insert(expanded.end(),refinement.groups[group].begin(),refinement.groups[group].end());
+        check(expanded == block.correct_order && evaluate_order(block,expanded).correct, "Refining groups changed the canonical reconstructed program");
+        check(escapes(old.fragments) == escapes(block.fragments), "A written newline escape was split into another movable line");
+        for (const auto& line : block.fragments)
+            check(line.find('\n') == line.npos && line.find_first_not_of(" \t\r\f\v") != line.npos,
+                "A grouped or decorative empty fragment remained an evaluated card");
+        for (const auto& fragment : old.fragments) {
+            for (std::size_t start = 0; start < fragment.size();) {
+                const auto end = fragment.find('\n',start);
+                const auto line = std::string_view(fragment).substr(start,(end == fragment.npos ? fragment.size() : end)-start);
+                if (line.find_first_not_of(" \t\r\f\v") == line.npos) ++empty_lines;
+                if (end == fragment.npos) break;
+                start = end + 1;
+            }
+        }
+        for (const auto& history : current.state_layout.retirement_history) for (const auto& page : history.pages) for (const auto& archived : page.blocks)
+            if (archived.stable_id == stable_id && archived.fragments == old.fragments) {
+                check(!archived.order_refinement && archived.correct_order == old.correct_order,
+                    "An older reading snapshot was silently changed from groups to lines");
+                ++historical_grouped;
+            }
+        auto duplicate = expanded; duplicate.back() = duplicate.front();
+        check(!evaluate_order(block,duplicate).correct, "A repeated physical card was accepted because its text matched");
+        auto missing = expanded; missing.pop_back();
+        check(!evaluate_order(block,missing).correct, "An omitted line completed the ordering");
+        auto outside = expanded; outside.back() = block.fragments.size();
+        check(!evaluate_order(block,outside).correct, "An out-of-range line completed the ordering");
+        bool checked_closings = false;
+        for (std::size_t left = 0; left < expanded.size() && !checked_closings; ++left)
+            for (std::size_t right = left + 1; right < expanded.size(); ++right)
+                if (block.fragments[expanded[left]] == "}" && block.fragments[expanded[left]] == block.fragments[expanded[right]]) {
+                    auto equivalent = expanded; std::swap(equivalent[left],equivalent[right]);
+                    check(evaluate_order(block,equivalent).correct, "Identical closing lines were treated as different answers");
+                    auto different = block; different.fragments[equivalent[left]] = " }";
+                    check(!evaluate_order(different,equivalent).correct, "Ordering equivalence normalized a changed indentation");
+                    ++identical_closings; checked_closings = true; break;
+                }
+        if (original_count == 0) {
+            for (const auto change : {"source","order","id","duplicate","snapshot","snapshot-prose","proof","origin","extra","missing","empty","type"}) {
+                const auto root = JsonObject::Parse(winrt::to_hstring(current.raw_json));
+                const auto puzzle = root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
+                const auto layout = root.GetNamedObject(L"stateLayout");
+                const auto records = layout.GetNamedArray(L"orderRefinements");
+                const auto record = records.GetAt(0).GetObject();
+                if (std::string_view(change) == "source") puzzle.GetNamedArray(L"fragments").SetAt(0,JsonValue::CreateStringValue(L"changed source"));
+                else if (std::string_view(change) == "order") {const auto order = puzzle.GetNamedArray(L"correctOrder");const auto first = order.GetAt(0);order.SetAt(0,order.GetAt(1));order.SetAt(1,first);}
+                else if (std::string_view(change) == "id") record.Insert(L"id",JsonValue::CreateStringValue(L"missing"));
+                else if (std::string_view(change) == "duplicate") records.Append(JsonObject::Parse(record.Stringify()));
+                else if (std::string_view(change) == "snapshot") record.GetNamedObject(L"block").GetNamedArray(L"fragments").SetAt(0,JsonValue::CreateStringValue(L"changed snapshot"));
+                else if (std::string_view(change) == "snapshot-prose") record.GetNamedObject(L"block").Insert(L"question",JsonValue::CreateStringValue(L"invented original wording"));
+                else if (std::string_view(change) == "proof") layout.GetNamedArray(L"editorial").RemoveAtEnd();
+                else if (std::string_view(change) == "origin") layout.GetNamedArray(L"origin").GetAt(static_cast<unsigned>(block.address.page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(block.address.block)).GetObject().Insert(L"sha256",JsonValue::CreateStringValue(L"0000000000000000000000000000000000000000000000000000000000000000"));
+                else if (std::string_view(change) == "extra") record.Insert(L"groups",JsonArray{});
+                else if (std::string_view(change) == "missing") layout.Remove(L"orderRefinements");
+                else if (std::string_view(change) == "empty") layout.Insert(L"orderRefinements",JsonArray{});
+                else puzzle.Insert(L"type",JsonValue::CreateStringValue(L"paragraph"));
+                const auto invalid = winrt::to_string(root.Stringify());
+                rejects([&] { (void)parse_lesson_json(invalid); }, "An unverified ordering refinement passed the native loader");
+                rejects([&] { (void)lgaed::windows::parse_lesson_progress_metadata(invalid); }, "An unverified ordering refinement passed the catalog loader");
+            }
+        }
+        original_count += old.fragments.size(); line_count += block.fragments.size();
+    }
+    check(original_count == 65 && line_count == 124 && empty_lines == 8 && identical_closings == 2 && historical_grouped >= 2,
+        "Ordering census, identical closing lines or grouped historical reading provenance changed");
+    const auto edge_fixture = [](std::string_view original, std::string_view original_hash,
+            std::string_view refined_lines = R"lines(["std::cout << \"\\n\";","return 0;"])lines",
+            std::string_view refined_hash = "c5a31ad817dbc6a12830d5c69482a58a1e986eb6fce91469c75fc38252108a23") {
+        // Golden canonical hashes are independent of the native splitter. Each
+        // malformed original still owns a valid signature, so rejection must
+        // inspect the split contract rather than stop at an unrelated hash.
+        auto root = JsonObject::Parse(LR"({"id":"order_lines_edge","title":"Ordering edges","pages":[{"blocks":[{"type":"order_code","fragments":["std::cout << \"\\n\";","return 0;"],"correctOrder":[0,1]}]}],"stateLayout":{"version":2,"locale":"es","origin":[],"current":[{"id":"page","blocks":["block"]}],"family":{"es":{"sha256":"0000000000000000000000000000000000000000000000000000000000000000","origin":[]}},"additions":[],"editorial":[],"orderRefinements":[]}})");
+        const auto puzzle=root.GetNamedArray(L"pages").GetAt(0).GetObject().GetNamedArray(L"blocks").GetAt(0).GetObject();
+        const auto lines=JsonArray::Parse(winrt::to_hstring(refined_lines));JsonArray order;
+        for(unsigned index=0;index<lines.Size();++index)order.Append(JsonValue::CreateNumberValue(index));
+        puzzle.Insert(L"fragments",lines);puzzle.Insert(L"correctOrder",order);
+        auto origin = JsonArray::Parse(LR"([{"id":"page","blocks":[{"id":"block","sha256":""}]}])");
+        origin.GetAt(0).GetObject().GetNamedArray(L"blocks").GetAt(0).GetObject().Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(original_hash)));
+        const auto layout = root.GetNamedObject(L"stateLayout");
+        layout.Insert(L"origin",origin);layout.GetNamedObject(L"family").GetNamedObject(L"es").Insert(L"origin",origin);
+        const auto snapshot = JsonObject::Parse(LR"({"type":"order_code","fragments":[],"correctOrder":[0]})");
+        snapshot.GetNamedArray(L"fragments").Append(JsonValue::CreateStringValue(winrt::to_hstring(original)));
+        const auto record = JsonObject::Parse(LR"({"id":"block"})");record.Insert(L"block",snapshot);
+        layout.GetNamedArray(L"orderRefinements").Append(record);
+        const auto proof = JsonObject::Parse(LR"({"id":"block","beforeSha256":"","afterSha256":"c5a31ad817dbc6a12830d5c69482a58a1e986eb6fce91469c75fc38252108a23"})");
+        proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(original_hash)));
+        proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(refined_hash)));
+        layout.GetNamedArray(L"editorial").Append(proof);
+        return winrt::to_string(root.Stringify());
+    };
+    const auto crlf = parse_lesson_json(edge_fixture("std::cout << \"\\n\";\r\nreturn 0;",
+        "d3c20f94afc015dc82eb38f647849f15a05af8d2070f270e0c4370dc267800ad"));
+    check(crlf.pages[0].blocks[0].fragments == std::vector<std::string>{"std::cout << \"\\n\";","return 0;"} &&
+        crlf.pages[0].blocks[0].order_refinement->original_fragments[0] == "std::cout << \"\\n\";\r\nreturn 0;",
+        "CRLF refinement changed a written escape or discarded original separators");
+    for (const auto& [original,hash] : std::vector<std::pair<std::string,std::string>>{
+            {"A\rB","12cd99df22bedbddb2181e081ac488bbda76023332159a6de1ca402393b0c36f"},
+            {"","63b8871f92f911a0c96d8b81ecb282f7314626c49ab715fc643e7a06c9fa8a76"},
+            {" \t\n\t","53de842e12adeef8e22118b784da5610d4e29b199f33dd6f5a6b13bfe5cccfa6"}}) {
+        const auto invalid = edge_fixture(original,hash);
+        rejects([&] { (void)parse_lesson_json(invalid); }, "A bare CR, empty or decorative original card acquired a new representation");
+        rejects([&] { (void)lgaed::windows::parse_lesson_progress_metadata(invalid); }, "Malformed original order lines passed the metadata projection");
+    }
+    struct SemanticEdge {std::string_view original, before_hash, refined_lines, after_hash;};
+    for(const auto& edge:std::vector<SemanticEdge>{
+            {"R\"(uno\n\ndos)\"\nreturn 0;","6afc8387d72ae1879dd9631944e664046702ec40944d1896a8e766e95fc0f3c2",
+                R"lines(["R\"(uno","dos)\"","return 0;"])lines","3f745333b5ffba4da2a4bfe06b033b494fb50e82cc09cc31cdf500fb80826b38"},
+            {"u8R\"tag(uno\n\ndos)tag\"\nreturn 0;","8d64815b6f271d60f8f95709a845bb68bbf89584fcf74080ef94fb527c713962",
+                R"lines(["u8R\"tag(uno","dos)tag\"","return 0;"])lines","6085cea034695360e372e9b4d65e354d07ef027aea833ca06f291d95eaa69a31"},
+            {"#define SALUDO \\\n    \"Hola\"\nreturn 0;","f3e86f21ff58e3f037db17978ca5a0d1b79529799a052aabde5294960db352d6",
+                R"lines(["#define SALUDO \\","    \"Hola\"","return 0;"])lines","45ebe68c520c47ca9925e9edc1884553f5c82a5c01b832d6a1955455a11a6a9a"},
+            {"#define SALUDO \\\r\n    \"Hola\"\r\nreturn 0;","1b605f9b99a3afbeb9f44aa7c181f2e270758fe6b3fb7041ed61e2b0eec9646a",
+                R"lines(["#define SALUDO \\","    \"Hola\"","return 0;"])lines","45ebe68c520c47ca9925e9edc1884553f5c82a5c01b832d6a1955455a11a6a9a"},
+            {"R\"(uno\nreturn 0;","90543095eeb0ec807fd40e22cd7706e6ad31c615feb971af9c72222066a91f09",
+                R"lines(["R\"(uno","return 0;"])lines","654398cc6a4d961b7fa89fda30401f8117cde9ff4fb9daa14c147b1d1b901474"}}) {
+        const auto invalid=edge_fixture(edge.original,edge.before_hash,edge.refined_lines,edge.after_hash);
+        // Both snapshots and current arrays have matching golden hashes. These
+        // negatives would pass the old blank-line-dropping expansion itself.
+        rejects([&] { (void)parse_lesson_json(invalid); },"Refinement changed a multiline raw literal or line continuation");
+        rejects([&] { (void)lgaed::windows::parse_lesson_progress_metadata(invalid); },"Catalog accepted a semantic source change during line refinement");
+    }
+    const auto raw_single=parse_lesson_json(edge_fixture("u8R\"tag(uno\\ndos)tag\"\nreturn 0;",
+        "a78be23711475d58b30f448eef097f0b938428bdbf0a6b66ab878caef3c137f3",
+        R"lines(["u8R\"tag(uno\\ndos)tag\"","return 0;"])lines","dd9f4329eaa34dcdad83f9fea9ff1f8f0ec07af5523e28a2ca72c17beedf64bb"));
+    check(raw_single.pages[0].blocks[0].fragments==std::vector<std::string>{"u8R\"tag(uno\\ndos)tag\"","return 0;"},
+        "A single-line raw literal containing a written escape was changed or unnecessarily disabled");
+    std::cout << "PASS all 14 ordering refinements: 65 groups to 124 real lines, 8 archived blank lines, original response keys, catalog metadata, grouped reading archives, exact duplicate-line equivalence and negative provenance/source guards\n";
 }
 void reviewed_matching_label_preserves_historical_contract() {
     using namespace winrt::Windows::Data::Json;
@@ -401,6 +575,7 @@ int main() {
         // Exact published input for migration/legacy-coordinate regressions.
         const auto lesson = lgaed::test::load_pre_retirement_lesson(path.filename().string());
         narration_metadata_tests(lesson);
+        independently_movable_order_lines_preserve_the_original_contract();
         reviewed_matching_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();

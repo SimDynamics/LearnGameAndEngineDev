@@ -725,7 +725,7 @@ struct LessonView {
                         :current.type==BlockType::code?ui("Ejemplo de código ","Example of ","Exemple de code ")+code_language+ui("."," code.",".")
                         :ui("Ejercicio de código ","Code exercise in ","Exercice de code ")+code_language+".",true);
                 }
-                const auto response=state::get_response(data,curriculum::exercise_key(historical,current));
+                const auto response=state::get_response(data,historical,current);
                 std::string prior_feedback;bool correct=false;
                 if(current.type==BlockType::cpp_compiler&&windows::compiler_puzzle_completed(data,historical,current)){
                     const auto stored=windows::compiler_puzzle_feedback(data,historical,current);const auto body=stored.find_first_of("\r\n");
@@ -1653,12 +1653,12 @@ struct LessonView {
         const auto complete=curriculum::catalog_lesson_page_progress(data,lesson,[&](const auto& current){
             if(current.type==BlockType::cpp_compiler)return windows::compiler_puzzle_completed(data,lesson,current);
             const auto identity=curriculum::exercise_key(lesson,current);
-            const auto response=state::get_response(data,identity);
+            const auto response=state::get_response(data,lesson,current);
             return response&&response->correct&&(current.type!=BlockType::math_puzzle||verified_math.contains(identity));
         });
         const bool pending_math=std::ranges::any_of(lesson.pages,[&](const auto& p){return std::ranges::any_of(p.blocks,[&](const auto& current){
             if(current.type!=BlockType::math_puzzle)return false;
-            const auto identity=curriculum::exercise_key(lesson,current);const auto response=state::get_response(data,identity);
+            const auto identity=curriculum::exercise_key(lesson,current);const auto response=state::get_response(data,lesson,current);
             return response&&response->correct&&!verified_math.contains(identity);
         });});
         if(!pending_math)data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=complete.total>0&&complete.completed==complete.total;
@@ -1855,7 +1855,7 @@ struct LessonView {
         auto& vm=controls[index];++vm.revision;capture_composition(index);
         if(vm.order_view)vm.order_started=true;
         vm.response.correct=false;state::clear_response_review(vm.response);
-        state::put_response(data,key(index),vm.response);mark_dirty();feedback(index,"",false);sync_quiz_controls(index);
+        state::put_response(data, lesson, block(index), vm.response);mark_dirty();feedback(index,"",false);sync_quiz_controls(index);
         reflow();notify_content();
     }
     void check_math(std::size_t index){
@@ -1863,7 +1863,7 @@ struct LessonView {
             "Mathematical checking is unavailable.","La vérification mathématique est indisponible."),false);return;}
         if(!may_evaluate())return;
         cancel_math();auto& vm=controls.at(index);capture_composition(index);
-        state::put_response(data,key(index),vm.response);mark_dirty();flush();
+        state::put_response(data, lesson, block(index), vm.response);mark_dirty();flush();
         const auto revision=vm.revision;const auto raw=block(index).raw_json,answers=vm.math->answers_json(),locale=lesson.locale;
         auto evaluate=hooks.validate_math;checking_math=index;
         EnableWindow(find_item(control_id(index,3)),FALSE);
@@ -1892,7 +1892,7 @@ struct LessonView {
         auto saved=JsonObject::Parse(winrt::to_hstring(vm.response.raw_json));
         if(reply.HasKey(L"contentFingerprint"))saved.Insert(L"contentFingerprint",reply.GetNamedValue(L"contentFingerprint"));
         vm.response.raw_json=winrt::to_string(saved.Stringify());
-        state::mark_response_reviewed(vm.response,block(index));state::put_response(data,key(index),vm.response);mark_dirty();flush();
+        state::mark_response_reviewed(vm.response,block(index));state::put_response(data, lesson, block(index), vm.response);mark_dirty();flush();
         feedback(index,text,vm.response.correct);sync_quiz_controls(index);
         if(hooks.feedback_changed)hooks.feedback_changed(window,index,vm.response.correct);
     }
@@ -1980,7 +1980,7 @@ struct LessonView {
                 &&!windows::compiler_puzzle_completed(data,lesson,item))return false;
             if (!exercise(item.type)) continue;
             if(item.type==BlockType::math_puzzle&&!verified_math.contains(curriculum::exercise_key(lesson,item)))return false;
-            const auto response = state::get_response(data, curriculum::exercise_key(lesson, item));
+            const auto response = state::get_response(data, lesson, item);
             if (!response || !response->correct) return false;
         }
         return true;
@@ -2153,7 +2153,7 @@ struct LessonView {
             return;
         }
         if (exercise(current.type))
-            if (const auto saved = state::get_response(data, key(index))) vm.response = *saved;
+            if (const auto saved = state::get_response(data, lesson, current)) vm.response = *saved;
         if(current.type==BlockType::math_puzzle&&!verified_math.contains(key(index)))vm.response.correct=false;
         if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, RichTextRole::heading); return; }
         if (current.type == BlockType::note) text_row(ui("Nota","Note","Note"),control_id(index,19),false,{},RichTextRole::heading);
@@ -2905,7 +2905,7 @@ struct LessonView {
             if (!vm.order.empty()) std::iota(vm.order.begin(), vm.order.end(), 0);
             updating = false;
             if (!vm.order.empty()) refresh_order(index);
-            state::put_response(data, key(index), vm.response); mark_dirty(); flush();
+            state::put_response(data, lesson, block(index), vm.response); mark_dirty(); flush();
             feedback(index, "", false); sync_quiz_controls(index);
     }
     void check_answer(std::size_t index) {
@@ -2941,7 +2941,7 @@ struct LessonView {
         if(!result.correct&&vm.order_view)vm.order_view->restart_tap_sequence();
         record_attempt(index,result.correct);
         state::mark_response_reviewed(vm.response, current);
-        state::put_response(data, key(index), vm.response); mark_dirty(); flush();
+        state::put_response(data, lesson, block(index), vm.response); mark_dirty(); flush();
         auto text = verdict_text(result.correct);
         if (!result.feedback.empty()) text += "\n" + result.feedback;
         else if (!result.correct) text += '\n' + default_review();
@@ -2960,7 +2960,7 @@ struct LessonView {
                 vm.answer_editor->capture_change(); vm.response.answer = vm.answer_editor->document().text;
                 if (before == vm.response.answer) return;
                 vm.response.correct = false; state::clear_response_review(vm.response);
-                state::put_response(data, key(index), vm.response);
+                state::put_response(data, lesson, block(index), vm.response);
                 feedback(index, "", false);sync_quiz_controls(index);mark_dirty(); return;
             }
             if (sender == vm.source || sender == vm.input) {
@@ -3318,7 +3318,7 @@ struct LessonView {
             vm.response.selected = static_cast<std::int64_t>(action.option); vm.response.correct = false;
             state::clear_response_review(vm.response);
             for (std::size_t i = 0; i < vm.choices.size(); ++i) SendMessageW(vm.choices[i], BM_SETCHECK, i == action.option ? BST_CHECKED : BST_UNCHECKED, 0);
-            state::put_response(data, key(action.block), vm.response); feedback(action.block, "", false);sync_quiz_controls(action.block);mark_dirty(); break;
+            state::put_response(data, lesson, block(action.block), vm.response); feedback(action.block, "", false);sync_quiz_controls(action.block);mark_dirty(); break;
         case ActionType::move_up: case ActionType::move_down: {
             if (vm.response.correct) break;
             const auto destination = action.type == ActionType::move_up ? action.option - 1 : action.option + 1;
@@ -3326,7 +3326,7 @@ struct LessonView {
             std::swap(vm.order[action.option], vm.order[destination]);
             vm.response.order.assign(vm.order.begin(), vm.order.end()); vm.response.correct = false;
             state::clear_response_review(vm.response);
-            state::put_response(data, key(action.block), vm.response); mark_dirty();
+            state::put_response(data, lesson, block(action.block), vm.response); mark_dirty();
             feedback(action.block, "", false); refresh_order(action.block); break;
         }
         case ActionType::run: run(action.block); break;

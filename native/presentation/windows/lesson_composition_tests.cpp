@@ -2,6 +2,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "core/view_preferences.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/narration_worker.hpp"
 #include "platform/windows/state_store.hpp"
@@ -12,7 +13,9 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <functional>
 #include <array>
+#include <algorithm>
 #include <iostream>
+#include <numeric>
 #include <stdexcept>
 
 namespace {
@@ -29,6 +32,123 @@ constexpr std::string_view content=R"json({"id":"qa_native_composition","title":
 {"blocks":[{"type":"math_puzzle","schemaVersion":1,"prompt":"Completa la medida.","responses":[{"id":"number","type":"math_numeric_input","label":"Medida","unit":"cm","validator":{"type":"numeric","expected":6}}],"feedback":{"correct":"La medida es seis centímetros.","incorrect":"Revisa la medida."}}]},
 {"blocks":[{"type":"inline_fill_code","question":"Completa la salida.","template":"std::cout [] [];","answers":["<<","\"Listo\""],"explanation":"Conserva el mensaje."}]},
 {"blocks":[{"type":"drag_fill_code","question":"Coloca la función.","template":"int []() { return 0[] }","choices":["main",";","Main"],"correctOrder":[0,1],"explanation":"La función devuelve cero."}]}]})json";
+void refined_ordering_composition_tests(HWND host){
+    using namespace winrt::Windows::Data::Json;
+    const auto directory=std::filesystem::path(build::cpp_tool_host).parent_path().parent_path()/"test-fixtures/order-lines";
+    const auto bytes=state::read_bytes(directory/"manifest.json");
+    const auto manifest=JsonObject::Parse(wide(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
+    JsonObject entry;
+    for(const auto& item:manifest.GetNamedArray(L"entries"))if(item.GetObject().GetNamedString(L"path")==L"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json")entry=item.GetObject();
+    check(entry.HasKey(L"refined"),"The native ordering UI fixture was not exported");
+    const auto original=windows::load_lesson(directory/winrt::to_string(entry.GetNamedString(L"old")));
+    auto lesson=windows::load_lesson(directory/winrt::to_string(entry.GetNamedString(L"refined")));
+    const auto position=curriculum::stable_block_position(lesson,"block_0004_0002");
+    check(position&&position->page==4&&position->block==2,"The real ordering UI fixture changed its historical page");
+    const auto& block=lesson.pages[4].blocks[2];const auto& old=original.pages[4].blocks[2];
+    check(block.order_refinement&&block.fragments.size()==6&&old.fragments.size()==4&&block.id=="orden_mensajes",
+        "The UI test lost its actual six independent source lines");
+    // Prerequisite execution is covered by the integrated compiler tests. This
+    // projection isolates composition using the fully parsed real lesson, with
+    // all pages, source contracts, state maps and historical addresses retained.
+    lesson.activity_after.clear();lesson.compiler_puzzles_required=false;
+    constexpr int order_id=1205,check_id=1203,feedback_id=1204,reset_id=1212;
+    const auto visible_order=[&](HWND view,std::size_t count){
+        const auto container=child(view,order_id);std::vector<std::pair<LONG,std::size_t>> rows;
+        for(std::size_t index=0;index<count;++index){const auto row=GetDlgItem(container,100+static_cast<int>(index));
+            check(row!=nullptr,"A source line was not an independent native card");RECT rect{};GetWindowRect(row,&rect);rows.emplace_back(rect.top,index);}
+        std::ranges::sort(rows);std::vector<std::size_t> result;for(const auto& row:rows)result.push_back(row.second);return result;
+    };
+    const auto tap=[](HWND row){SendMessageW(row,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(12,8));SendMessageW(row,WM_LBUTTONUP,0,MAKELPARAM(12,8));pump();};
+    const auto ink=[](HWND row,LONG offset){SendMessageW(row,EM_SETSEL,offset,offset+1);CHARFORMAT2W format{};format.cbSize=sizeof(format);
+        SendMessageW(row,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(row,EM_SETSEL,0,0);return format.crTextColor;};
+    for(const std::string mode:{"correct","incorrect","draft"}){
+        auto environment=resolve_windows_environment({ProfileId::Codex,L"order-lines-ui-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64())+L"-"+wide(mode),false});initialize_profile_directories(environment.paths);
+        const auto key=curriculum::exercise_key(original,old);state::Response response;
+        response.raw_json=R"({"incorrectAttempts":4,"opaque":{"caret":7,"selection":"return"}})";
+        response.correct=mode=="correct";
+        if(response.correct)response.order.assign(old.correct_order.begin(),old.correct_order.end());
+        else response.order=mode=="incorrect"?std::vector<std::int64_t>{3,1,2,0}:std::vector<std::int64_t>{1,0,2,3};
+        if(mode=="incorrect")state::mark_response_reviewed(response,old);
+        std::string historical;
+        {state::StateStore store(environment.paths.root);auto data=store.load();state::prepare_lesson_state(data,original);
+            state::save_current_page(data,original,4);state::put_response(data,key,response);
+            // The other exercise on the same real page is independent. Its
+            // native accepted answers isolate the ordering's page-level gate.
+            const auto& previous=original.pages[4].blocks[1];JsonArray answers;for(const auto& answer:previous.answers)answers.Append(JsonValue::CreateStringValue(wide(answer)));
+            JsonObject raw;raw.Insert(L"answers",answers);state::Response completed;completed.correct=true;completed.raw_json=winrt::to_string(raw.Stringify());
+            state::put_response(data,curriculum::exercise_key(original,previous),completed);historical=state::string_value(data,"learning_progress",key);store.save(data);}
+        std::vector<std::size_t> expected;
+        for(const auto group:response.order)for(const auto line:block.order_refinement->groups[static_cast<std::size_t>(group)])expected.push_back(line);
+        struct OwnedView{HWND window=nullptr;~OwnedView(){if(window)DestroyWindow(window);}} owner;
+        auto& view=owner.window;
+        const auto unchanged=[&](const state::StateData& data){check(state::string_value(data,"learning_progress",key)==historical,
+            "Opening, editing, checking or resetting refined cards overwrote the grouped historical response");};
+        const auto open=[&]{view=create_lesson_view(host,environment,lesson);MoveWindow(view,0,0,960,690,TRUE);pump();
+            check(lesson_page_state(view).index==4,"A refined composition lost its saved lesson page");unchanged(read_lesson_state(view));};
+        const auto close=[&]{check(flush_lesson_view(view),"Cannot persist the independent ordering composition");DestroyWindow(view);view=nullptr;pump();};
+        const auto row=[&](std::size_t index){return GetDlgItem(child(view,order_id),100+static_cast<int>(index));};
+        const auto current=[&]{const auto saved=state::get_response(read_lesson_state(view),lesson,block);check(saved.has_value(),"The refined composition response disappeared");return *saved;};
+        std::string question_key;
+        const auto readable=[&](bool correct){bool prompt=false;for(const auto& region:lesson_reading_regions(view)){
+            check(!IsChild(child(view,order_id),region.target),"The ordering reader began revealing source cards instead of the existing prompt");
+            if(region.block_index==2&&region.source_text==block.question){prompt=true;check(region.is_exercise&&region.solved==correct,"The ordering reader lost its current completion boundary");
+                if(question_key.empty())question_key=region.key;else check(question_key==region.key,"Ordering edits changed its stable reader key");}}
+            check(prompt,"The refined ordering prompt disappeared from live reading regions");};
+        open();check(visible_order(view,6)==expected&&current().correct==response.correct,"Opening refined cards reset an old correct, incorrect or partial arrangement");
+        check(lesson_page_state(view).can_next==response.correct,"The projected ordering granted or removed completion");readable(response.correct);
+        if(mode=="draft")check(edit_text(child(view,feedback_id)).empty(),"An unsubmitted old arrangement acquired incorrect feedback");
+        else check(edit_text(child(view,feedback_id)).find(response.correct?"Correcto":"✗")!=std::string::npos,"The old ordering verdict was not restored");
+        close();open();check(visible_order(view,6)==expected&&current().correct==response.correct,"Reopening lost the projected historical arrangement");
+        SendMessageW(child(view,reset_id),BM_CLICK,0,0);pump();std::vector<std::size_t> initial(6);std::iota(initial.begin(),initial.end(),0);
+        check(visible_order(view,6)==initial&&edit_text(child(view,feedback_id)).empty(),"Explicit Reset did not clear only the refined ordering");
+        // Exercise every source row through the real accessible keyboard path.
+        // In particular include/main and return/closing brace cannot move as a group.
+        for(std::size_t index=0;index<6;++index){const auto before=visible_order(view,6);auto moved=before;
+            const auto from=static_cast<std::size_t>(std::ranges::find(before,index)-before.begin());const auto to=from+1<before.size()?from+1:from-1;
+            moved.erase(moved.begin()+from);moved.insert(moved.begin()+to,index);
+            SendMessageW(row(index),WM_SYSKEYDOWN,to>from?VK_DOWN:VK_UP,0);pump();
+            check(visible_order(view,6)==moved,"An individual include/main/return/brace source line moved together with another card");
+            SendMessageW(row(index),WM_SYSKEYDOWN,to>from?VK_UP:VK_DOWN,0);pump();check(visible_order(view,6)==before,"Reversing a single-line keyboard move changed another group");}
+        const auto origin=row(3),destination=row(4);RECT a{},b{};GetWindowRect(origin,&a);GetWindowRect(destination,&b);
+        SendMessageW(origin,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(12,8));const auto ready=GetTickCount64()+20;while(GetTickCount64()<ready)Sleep(1);
+        SendMessageW(origin,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(12,b.top-a.top+8));SendMessageW(origin,WM_LBUTTONUP,0,MAKELPARAM(12,b.top-a.top+8));pump();
+        check(visible_order(view,6)==std::vector<std::size_t>{0,1,2,4,3,5},"Dragging include could not separate it from main");
+        SendMessageW(child(view,reset_id),BM_CLICK,0,0);pump();for(const auto index:{5,4,3,2,1,0})tap(row(static_cast<std::size_t>(index)));
+        check(visible_order(view,6)==std::vector<std::size_t>{5,4,3,2,1,0},"Native taps did not arrange independent source lines");
+        SendMessageW(child(view,check_id),BM_CLICK,0,0);pump();const auto wrong_feedback=edit_text(child(view,feedback_id));
+        check(!current().correct&&wrong_feedback.starts_with("✗")&&!lesson_page_state(view).can_next,"An incorrect reconstructed program was credited");readable(false);unchanged(read_lesson_state(view));
+        close();open();check(visible_order(view,6)==std::vector<std::size_t>{5,4,3,2,1,0}&&edit_text(child(view,feedback_id))==wrong_feedback,
+            "An incorrect new line arrangement or its reviewed feedback did not persist");
+        SendMessageW(child(view,reset_id),BM_CLICK,0,0);pump();close();open();
+        check(visible_order(view,6)==initial&&edit_text(child(view,feedback_id)).empty()&&!IsWindowEnabled(child(view,check_id)),"Reset revived an old grouped verdict on reopen");
+        for(const auto index:block.correct_order)tap(row(index));SendMessageW(child(view,check_id),BM_CLICK,0,0);pump();
+        check(current().correct&&edit_text(child(view,feedback_id)).starts_with("✓ Correcto")&&lesson_page_state(view).can_next,"The correct six-line reconstruction was rejected");readable(true);
+        const auto include_ink=ink(row(3),0),return_ink=ink(row(1),4);
+        check(reader_theme::palette(view).high_contrast||(include_ink==RGB(92,156,231)&&return_ink==RGB(231,155,186)),"Independent line cards lost their C++ syntax colors");
+        update_lesson_preferences(view,[](state::StateData& data){appearance::save_global_text_scale(data,150);appearance::save_course_wrap(data,"cpp_fundamentals",true);});pump();
+        for(std::size_t index=0;index<6;++index){int numerator=0,denominator=0;SendMessageW(row(index),EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            check(numerator*100==denominator*150&&denominator>0&&edit_text(row(index))==block.fragments[index],"Zoom or wrapping changed an independent line's original source");}
+        check(ink(row(3),0)==include_ink&&ink(row(1),4)==return_ink,"Zoom replaced original syntax formatting");
+        SendMessageW(row(3),WM_SYSKEYDOWN,VK_DOWN,0);tap(row(4));check(visible_order(view,6)==block.correct_order&&current().correct,"A completed ordering remained editable without Reset");
+        unchanged(read_lesson_state(view));close();open();check(current().correct&&visible_order(view,6)==block.correct_order,"The correct refined achievement did not persist");close();
+        state::StateStore store(environment.paths.root);const auto saved=store.load();unchanged(saved);
+        // A translated exercise has its own untouched grouped source. Remove
+        // only the independently seeded Spanish inline answer from this QA copy:
+        // that different literal is unrelated to the ordering migration.
+        auto translated=windows::load_lesson(directory/winrt::to_string(entry.GetNamedString(L"en")),"en");translated.activity_after.clear();translated.compiler_puzzles_required=false;
+        const auto& translated_block=translated.pages[4].blocks[2];auto translation_data=saved;
+        translation_data.preferences["learning_progress"].erase(curriculum::exercise_key(original,original.pages[4].blocks[1]));
+        auto translated_environment=resolve_windows_environment({ProfileId::Codex,L"order-lines-ui-en-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64())+L"-"+wide(mode),false});initialize_profile_directories(translated_environment.paths);
+        {state::StateStore translated_store(translated_environment.paths.root);(void)translated_store.load();translated_store.save(translation_data);}
+        view=create_lesson_view(host,translated_environment,translated);MoveWindow(view,0,0,960,690,TRUE);pump();
+        std::vector<std::size_t> grouped;for(const auto index:response.order)grouped.push_back(static_cast<std::size_t>(index));
+        check(lesson_page_state(view).index==4&&visible_order(view,4)==grouped,"A preserved translation received Spanish line indices instead of its original grouped attempt");
+        for(std::size_t index=0;index<4;++index)check(edit_text(GetDlgItem(child(view,order_id),100+static_cast<int>(index)))==translated_block.fragments[index],"The original translated source was rewritten during Spanish refinement");
+        unchanged(read_lesson_state(view));close();
+    }
+    std::cout<<"PASS actual U1L3 ordering UI: old correct/incorrect/draft, six individual keyboard rows, include/main drag, native taps, wrong/correct/Reset/reopen, original JSON, syntax/zoom/wrap/reader and four-group English preservation\n";
+}
 void pedido_editorial_state_tests(HWND host,const std::shared_ptr<windows::NarrationWorker>& backend){
     using namespace winrt::Windows::Data::Json;
     const auto bytes=state::read_bytes(std::filesystem::path(build::source_root)/
@@ -122,6 +242,7 @@ int main(){
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Lesson composition QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host!=nullptr,"Cannot create composition QA host");
+        refined_ordering_composition_tests(host);
         pedido_editorial_state_tests(host,backend);
         LessonViewHooks hooks;hooks.validate_math=[backend](std::string_view b,std::string_view a,std::string_view lang,std::stop_token stop){return backend->validate_math(b,a,lang,stop);};
         auto open=[&]{view=create_lesson_view(host,environment,lesson);set_lesson_view_hooks(view,hooks);MoveWindow(view,0,0,960,690,TRUE);pump();};

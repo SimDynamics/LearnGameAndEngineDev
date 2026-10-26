@@ -204,6 +204,102 @@ std::string state_fingerprint(const JsonObject& original) {
     }
     return fingerprint(value);
 }
+struct ExpandedOrder {
+    OrderRefinement record;
+    Block block;
+};
+void validate_order_line_semantics(const OrderRefinement& record) {
+    std::string program;
+    bool first = true;
+    for (const auto index : record.original_correct_order) {
+        if (!first) program += '\n';
+        first = false; program += record.original_fragments[index];
+    }
+    // Translation-phase splicing and multiline raw-literal bodies give physical
+    // blank lines semantic meaning. Keep their grouped source until a dedicated
+    // representation can preserve those separators in every arrangement.
+    require(program.find("\\\n") == program.npos && program.find("\\\r\n") == program.npos,
+        "Ordering line continuations need a semantic-preserving refinement contract");
+    std::size_t cursor = 0;
+    while ((cursor = program.find("R\"",cursor)) != program.npos) {
+        const auto opening = std::string_view(program).substr(cursor + 2,17).find('(');
+        const auto open = opening == std::string_view::npos ? program.npos : cursor + 2 + opening;
+        const auto delimiter = std::string_view(program).substr(cursor + 2,
+            (open == program.npos ? program.size() : open) - cursor - 2);
+        const bool valid = open != program.npos && delimiter.size() <= 16 &&
+            std::ranges::all_of(delimiter,[](unsigned char character) {
+                return character >= 33 && character <= 126 && character != '(' && character != ')' && character != '\\';
+            });
+        if (!valid) { cursor += 2; continue; }
+        const auto terminator = ")" + std::string(delimiter) + '"';
+        const auto closing = program.find(terminator,open + 1);
+        require(closing != program.npos, "An unterminated raw literal cannot be refined into source lines");
+        require(std::string_view(program).substr(cursor,closing-cursor).find('\n') == std::string_view::npos,
+            "Multiline raw literals need a semantic-preserving refinement contract");
+        cursor = closing + terminator.size();
+    }
+}
+ExpandedOrder expand_order(const JsonObject& snapshot, std::string_view identity) {
+    require(text(snapshot,"type") == "order_code", "An order refinement needs its original ordering block");
+    ExpandedOrder result;
+    auto& record = result.record;
+    record.id = identity; record.raw_json = utf8(snapshot.Stringify()); record.sha256 = fingerprint(snapshot);
+    record.original_fragments = strings(array(snapshot,"fragments"),true);
+    require(record.original_fragments.size() <= 100000, "Too many original order fragments");
+    record.groups.resize(record.original_fragments.size());
+    std::set<std::size_t> seen;
+    for (const auto& item : array(snapshot,"correctOrder")) {
+        const auto index = integer(item);
+        require(index < record.original_fragments.size() && seen.insert(index).second, "Invalid original order permutation");
+        record.original_correct_order.push_back(index);
+    }
+    require(seen.size() == record.original_fragments.size(), "The original ordering needs every fragment");
+    validate_order_line_semantics(record);
+    result.block.type = BlockType::order_code;
+    const auto append = [&](std::size_t group, std::string_view line) {
+        require(line.find('\r') == line.npos, "Unsupported bare carriage return in order fragments");
+        if (line.find_first_not_of(" \t") == line.npos) return;
+        require(result.block.fragments.size() < 100000, "Too many refined order lines");
+        record.groups[group].push_back(result.block.fragments.size());
+        result.block.fragments.emplace_back(line);
+    };
+    for (std::size_t group = 0; group < record.original_fragments.size(); ++group) {
+        const auto& fragment = record.original_fragments[group];
+        // This reviewed compact statement has no original LF. Keep every byte,
+        // including the spaces starting the assignment and final closing line.
+        if (fragment == "if (validar(candidata)) { tabla = candidata; }") {
+            append(group,"if (validar(candidata)) {");
+            append(group," tabla = candidata;");
+            append(group," }");
+            continue;
+        }
+        std::size_t start = 0;
+        while (start < fragment.size()) {
+            const auto end = fragment.find('\n',start);
+            auto line = std::string_view(fragment).substr(start,(end == fragment.npos ? fragment.size() : end) - start);
+            if (end != fragment.npos && !line.empty() && line.back() == '\r') line.remove_suffix(1);
+            append(group,line);
+            if (end == fragment.npos) break;
+            start = end + 1;
+        }
+        require(!record.groups[group].empty(), "An original fragment must contain a nonempty code line");
+    }
+    require(!result.block.fragments.empty(), "An ordering refinement cannot contain only blank lines");
+    for (const auto group : record.original_correct_order)
+        result.block.correct_order.insert(result.block.correct_order.end(),record.groups[group].begin(),record.groups[group].end());
+    require(result.block.fragments != record.original_fragments || result.block.correct_order != record.original_correct_order,
+        "An ordering refinement must actually split its original representation");
+    record.representation_signature = sha256(order_representation_frame(result.block));
+    return result;
+}
+JsonObject expanded_order_json(const JsonObject& snapshot, const Block& expanded) {
+    auto value = JsonObject::Parse(snapshot.Stringify());
+    JsonArray fragments, order;
+    for (const auto& fragment : expanded.fragments) fragments.Append(JsonValue::CreateStringValue(key(fragment)));
+    for (const auto index : expanded.correct_order) order.Append(JsonValue::CreateNumberValue(static_cast<double>(index)));
+    value.Insert(L"fragments",fragments); value.Insert(L"correctOrder",order);
+    return value;
+}
 std::vector<StatePage> read_pages(const JsonArray& values, std::map<std::string, std::string>* signatures) {
     require(values.Size() > 0 && values.Size() <= 2048, "Invalid state page count");
     std::vector<StatePage> result;
@@ -331,7 +427,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -383,6 +479,25 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for (const auto& page : result.origin) origin_pages.insert(page.id);
     for (const auto& page : result.current) { current_pages.insert(page.id); current_blocks.insert(page.blocks.begin(), page.blocks.end()); }
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
+    std::map<std::string,std::string> refined_order_signatures;
+    if (metadata.HasKey(L"orderRefinements")) {
+        require(result.version == 2, "Ordering refinements require state layout v2");
+        const auto records = array(metadata,"orderRefinements");
+        require(records.Size() <= 100000 && (!records.Size() || locale == "es"),
+            "Ordering refinements are currently authorized only for Spanish");
+        for (const auto& value : records) {
+            const auto item = value.GetObject(); allowed_keys(item,{"id","block"},true);
+            const auto id = text(item,"id");
+            require(valid_id(id) && current_blocks.contains(id) && !refined_order_signatures.contains(id),
+                "Unknown, inactive or duplicated ordering refinement identity");
+            const auto snapshot = item.GetNamedObject(L"block");
+            require(state_fingerprint(snapshot) == result.signatures.at(id),
+                "An ordering refinement changed its original response contract");
+            auto expanded = expand_order(snapshot,id);
+            refined_order_signatures.emplace(id,state_fingerprint(expanded_order_json(snapshot,expanded.block)));
+            result.order_refinements.push_back(std::move(expanded.record));
+        }
+    }
     std::map<std::string, std::string> successors;
     if (metadata.HasKey(L"retired")) {
         require(result.version == 2, "Retirement requires state layout v2");
@@ -426,6 +541,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             seen[id].insert(after); editorial[id] = after;
         }
     }
+    for (const auto& refinement : result.order_refinements)
+        require(editorial.contains(refinement.id) && seen.at(refinement.id).contains(refinement.sha256),
+            "An ordering refinement needs its complete original published editorial provenance");
     for (std::size_t p = 0; p < result.current.size(); ++p) {
         const auto blocks = array(pages.GetAt(static_cast<unsigned>(p)).GetObject(), "blocks");
         require(blocks.Size() == result.current[p].blocks.size(), "State map block count differs");
@@ -437,7 +555,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(editorial.contains(id) && editorial.at(id) == math_label_after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(math_label_before)),
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
-            require(state_fingerprint(block) == result.signatures.at(id), "State-bearing block changed without a compatible map");
+            const auto expected = refined_order_signatures.contains(id) ? refined_order_signatures.at(id) : result.signatures.at(id);
+            require(state_fingerprint(block) == expected, "State-bearing block changed without a compatible map");
             if (editorial.contains(id)) require(fingerprint(block) == editorial.at(id), "Stale editorial fingerprint");
         }
     }
@@ -477,7 +596,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(fingerprint(shell)==fingerprint(shells.at(record.id)),"Historical reading page metadata changed");
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
-                    require(result.signatures.contains(id)&&state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject())==result.signatures.at(id),
+                    const auto digest = state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject());
+                    require(result.signatures.contains(id) && (digest == result.signatures.at(id) ||
+                            (refined_order_signatures.contains(id) && digest == refined_order_signatures.at(id))),
                             "Historical reading snapshot changed an activity contract");
                 }
             }
@@ -684,6 +805,8 @@ void read_relationships(const JsonObject& root, Lesson& lesson) {
 void resolve_addresses(Lesson& lesson) {
     auto& layout = lesson.state_layout;
     std::map<std::string, StateAddress> addresses;
+    std::map<std::string,const OrderRefinement*> refinements;
+    for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
     for (std::size_t p = 0; p < layout.origin.size(); ++p)
         for (std::size_t b = 0; b < layout.origin[p].blocks.size(); ++b)
             addresses.emplace(layout.origin[p].blocks[b], StateAddress{p, b, {}, layout.origin[p].id});
@@ -696,6 +819,11 @@ void resolve_addresses(Lesson& lesson) {
             auto& block = page.blocks[b];
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
+            if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end()) {
+                require(block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature,
+                    "An ordering refinement belongs to another visible representation");
+                block.order_refinement = *refinement->second;
+            }
         }
     }
     for (const auto& retired : layout.retired) {
@@ -714,6 +842,12 @@ void resolve_addresses(Lesson& lesson) {
             for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
                 auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
+                // A reading snapshot made before the split retains grouped
+                // cards and their original response. Only an already-refined
+                // snapshot uses the later composition representation.
+                if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end() &&
+                    block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature)
+                    block.order_refinement = *refinement->second;
                 block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));
             }
             snapshot.pages.push_back(std::move(page));

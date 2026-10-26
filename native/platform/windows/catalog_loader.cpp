@@ -90,7 +90,7 @@ CatalogProgress lesson_progress(const CatalogEntry& entry,const state::StateData
     bool pending = false;
     auto result = catalog_lesson_page_progress(metadata,*lesson,[&](const Block& block) {
         if(block.type==BlockType::cpp_compiler)return compiler_puzzle_completed(data,*lesson,block);
-        const auto saved = state::get_response(data,exercise_key(*lesson,block));
+        const auto saved = state::get_response(data,*lesson,block);
         if (!saved || !saved->correct) return false;
         if (block.type != BlockType::math_puzzle) return true;
         if (!math_correct) { pending = true; return false; }

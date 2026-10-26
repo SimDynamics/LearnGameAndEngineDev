@@ -65,6 +65,14 @@ struct OutputCheck {
     TextComparison input_comparison = TextComparison::exact;
     std::vector<OutputCase> cases;
 };
+// One historical grouped ordering refined into independently movable lines.
+// The complete original block remains provenance, never another active puzzle.
+struct OrderRefinement {
+    std::string id, raw_json, sha256, representation_signature;
+    std::vector<std::string> original_fragments;
+    std::vector<std::size_t> original_correct_order;
+    std::vector<std::vector<std::size_t>> groups;
+};
 struct Block {
     BlockType type{};
     std::string stable_id, id, text, question, code, initial_code, language;
@@ -77,6 +85,7 @@ struct Block {
     std::vector<std::vector<std::string>> answer_alternatives;
     std::optional<std::size_t> correct_index;
     std::vector<std::size_t> correct_order;
+    std::optional<OrderRefinement> order_refinement;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
@@ -121,6 +130,7 @@ struct StateLayout {
     std::string raw_json;
     std::vector<StateRetirement> retired;
     std::vector<StateRetirementHistory> retirement_history;
+    std::vector<OrderRefinement> order_refinements;
 };
 struct Lesson {
     std::string id, title, locale, raw_json;
@@ -149,6 +159,9 @@ void validate_activity_relationships(const Lesson&);
 // Deterministic framing of the authored objective, independent of prose or an
 // imported exercise response. The platform hashes this with the executed draft.
 [[nodiscard]] std::string reference_objective_frame(const Lesson&, const Block& activity);
+// Fragments and their canonical permutation only; prose and view placement do
+// not change an ordering draft's representation. The platform hashes this frame.
+[[nodiscard]] std::string order_representation_frame(const Block&);
 
 // These keys deliberately retain the Android lesson identity and original slots.
 [[nodiscard]] std::string exercise_key(const Lesson&, const Block&);

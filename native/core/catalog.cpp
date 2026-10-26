@@ -188,6 +188,19 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
         for (auto item = values.begin(); item != values.end();) {
             const auto& key = item->first; bool matches = false;
             if (domain == "learning_progress") {
+                auto response_key=std::string_view(key);
+                if(response_key.starts_with("order-lines/v1/")) {
+                    response_key.remove_prefix(15);
+                    const auto locale_end=response_key.find('/');
+                    const auto locale=response_key.substr(0,locale_end);
+                    if(locale_end==response_key.npos||(locale!="es"&&locale!="en"&&locale!="fr"))response_key={};
+                    else {
+                        response_key.remove_prefix(locale_end+1);
+                        if(response_key.size()<65||response_key[64]!='/'||
+                            !std::ranges::all_of(response_key.substr(0,64),[](char c){return(c>='0'&&c<='9')||(c>='a'&&c<='f');}))response_key={};
+                        else response_key.remove_prefix(65);
+                    }
+                }
                 for (const auto& id : scope.lessons) {
                     const auto base = "lesson_" + id;
                     if (key == base + "_page" || key == base + "_started" || key == base + "_completed") matches = true;
@@ -198,8 +211,8 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
                             if (!coverage->empty()) { coverage->clear(); ++erased; }
                         }
                     const auto prefix = "exercise_" + id;
-                    if (!key.starts_with(prefix)) continue;
-                    auto tail = std::string_view(key).substr(prefix.size());
+                    if (!response_key.starts_with(prefix)) continue;
+                    auto tail = response_key.substr(prefix.size());
                     if (tail.starts_with("_state_v2_")) {
                         tail.remove_prefix(10);
                         if (tail.size() < 64 || !std::ranges::all_of(tail.substr(0,64),[](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); })) continue;

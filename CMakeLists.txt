@@ -186,6 +186,15 @@ if(BUILD_TESTING)
         COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
         VERBATIM)
     add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
+    set(LGAED_ORDER_LINE_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/order-lines")
+    add_custom_command(OUTPUT "${LGAED_ORDER_LINE_FIXTURE_DIR}/manifest.json"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/order_line_fixture_source.py"
+            --output-dir "${LGAED_ORDER_LINE_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/order_line_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        COMMENT "Verifying immutable order-line migration fixtures from local aa230c"
+        VERBATIM)
+    add_custom_target(lgaed_order_line_fixtures DEPENDS "${LGAED_ORDER_LINE_FIXTURE_DIR}/manifest.json")
     add_executable(lgaed_smo_lazy_task_tests native/presentation/windows/smo_lazy_task_tests.cpp)
     target_link_libraries(lgaed_smo_lazy_task_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.smo_lazy_task COMMAND lgaed_smo_lazy_task_tests)
@@ -534,6 +543,12 @@ if(BUILD_TESTING)
     foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
             lgaed_lesson_reader_tests lgaed_lesson_view_tests lgaed_import_view_tests)
         add_dependencies(${fixture_consumer} lgaed_retirement_fixtures)
+    endforeach()
+    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_lesson_state_tests lgaed_state_tests
+            lgaed_lesson_composition_tests)
+        if(TARGET ${fixture_consumer})
+            add_dependencies(${fixture_consumer} lgaed_order_line_fixtures)
+        endif()
     endforeach()
 endif()
 

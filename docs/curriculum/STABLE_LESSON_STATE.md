@@ -170,6 +170,38 @@ huella de respuesta anterior sólo para el bloque revisado completo; la vista y
 el lector reciben el rótulo nuevo. Cualquier otro cambio sigue necesitando su
 contrato propio. Esta excepción Windows no cambia el motor Android conservado.
 
+## Piezas independientes de una línea en Windows
+
+`refine_order_lines(documento_v2, identidad_estable)` prepara la presentación
+de un `order_code` español como líneas independientes. Para un documento aún
+sin mapa, primero se usa `prepare_v2` con los tres idiomas publicados; no se
+regenera un origen existente. La opción CLI equivalente es `refine-order-lines`
+con `--identity`, `--locale es`, `--base-ref` publicado y `--output` nuevo.
+
+La extensión opcional `stateLayout.orderRefinements` contiene entradas
+`{"id": "identidad_estable", "block": bloque_original_completo}`. El bloque
+original queda íntegro, incluidas sangría, líneas vacías y separadores. Se
+verifica contra su firma histórica y la procedencia editorial antes/después.
+Los fragmentos actuales deben ser exactamente las líneas no vacías del original;
+`correctOrder` debe ser la expansión de sus grupos. No se divide el escape
+escrito `\n` dentro de un literal. Sólo el fragmento compacto exacto
+`if (validar(candidata)) { tabla = candidata; }` tiene tres cortes explícitos;
+sus espacios originales se conservan al principio de las dos últimas piezas.
+Un refinamiento publicado no se elimina ni se reemplaza.
+Se rechazan las continuaciones físicas con barra inversa y los literales crudos
+multilínea: su separación requiere un contrato adicional para no cambiar el
+programa. Los literales crudos de una sola línea conservan sus caracteres.
+
+Windows proyecta los intentos anteriores por grupos, conserva los metadatos y
+guarda las respuestas de la representación nueva en una clave separada por
+idioma y firma de representación. La respuesta histórica permanece intacta para
+las traducciones conservadas. Un acierto sólo se mantiene si la secuencia de
+textos sigue siendo correcta. Intercambiar piezas de texto idéntico es válido;
+omitir o repetir índices no lo es. Los consumidores de estado deben usar las
+sobrecargas con `Lesson` y `Block`, no interpretar la respuesta histórica como
+si ya tuviera el nuevo número de piezas. El soporte corresponde a Windows;
+las pruebas JVM o de Android anteriores conservan su alcance propio.
+
 ## Procedimiento v2 para Work
 
 Usar el SHA publicado verificado, no un commit que ya contenga el mapa que se

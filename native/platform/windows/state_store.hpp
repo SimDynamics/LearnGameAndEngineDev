@@ -24,6 +24,12 @@ private:
 
 [[nodiscard]] std::optional<Response> get_response(const StateData&, std::string_view exercise_key);
 void put_response(StateData&, std::string_view exercise_key, const Response&);
+// Order-line refinements read a projection of the old response until edited.
+// New compositions use a locale/representation sidecar; the historical JSON
+// and its untranslated grouped version are never rewritten.
+[[nodiscard]] std::string response_storage_key(const curriculum::Lesson&, const curriculum::Block&);
+[[nodiscard]] std::optional<Response> get_response(const StateData&, const curriculum::Lesson&, const curriculum::Block&);
+void put_response(StateData&, const curriculum::Lesson&, const curriculum::Block&, const Response&);
 [[nodiscard]] bool response_reviewed(const Response&, const curriculum::Block&);
 void mark_response_reviewed(Response&, const curriculum::Block&);
 void clear_response_review(Response&) noexcept;

@@ -439,13 +439,31 @@ AnswerEvaluation evaluate_choice(const Block& block, std::size_t option) {
 }
 AnswerEvaluation evaluate_order(const Block& block, std::span<const std::size_t> order) {
     if (block.type != BlockType::order_code) throw std::invalid_argument("Invalid order answer");
-    if (order.size() != block.fragments.size()) return verdict(block, false);
+    if (order.size() != block.fragments.size() || block.correct_order.size() != block.fragments.size()) return verdict(block, false);
     auto seen = std::vector<bool>(order.size());
     for (const auto index : order) {
         if (index >= order.size() || seen[index]) return verdict(block, false);
         seen[index] = true;
     }
-    return verdict(block, std::ranges::equal(order, block.correct_order));
+    // Equal closing lines remain interchangeable, but every physical card must
+    // occur exactly once. No whitespace/literal/source normalization is applied.
+    std::fill(seen.begin(), seen.end(), false);
+    for (std::size_t i = 0; i < order.size(); ++i) {
+        const auto expected = block.correct_order[i];
+        if (expected >= order.size() || seen[expected]) return verdict(block, false);
+        seen[expected] = true;
+        if (block.fragments[order[i]] != block.fragments[expected]) return verdict(block, false);
+    }
+    return verdict(block, true);
+}
+std::string order_representation_frame(const Block& block) {
+    if (block.type != BlockType::order_code) throw std::invalid_argument("Invalid order representation");
+    std::string result = "order-representation-v1/" + std::to_string(block.fragments.size()) + '[';
+    for (const auto& fragment : block.fragments) result += std::to_string(fragment.size()) + ':' + fragment;
+    result += "]/" + std::to_string(block.correct_order.size()) + '[';
+    for (const auto index : block.correct_order) result += std::to_string(index) + ';';
+    result += ']';
+    return result;
 }
 AnswerEvaluation evaluate_hole_answers(const Block& block,std::span<const std::string> answers) {
     if (block.type != BlockType::inline_fill_code) throw std::invalid_argument("Invalid inline fill answer");
