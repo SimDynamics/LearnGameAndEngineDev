@@ -56,7 +56,7 @@ Protege los tipos, identificadores, código, respuestas, opciones y reglas de
 evaluación. Se excluyen campos editoriales concretos de texto o retroalimentación
 según `state_payload`; el validador curricular existente sigue decidiendo qué
 revisiones editoriales están autorizadas. Los puzzles matemáticos mantienen la
-huella de su payload completo. No se deben editar ni recalcular los hashes de
+huella de su payload completo, con la excepción exacta descrita abajo. No se deben editar ni recalcular los hashes de
 origen para hacer pasar una modificación incompatible.
 
 Una lección sin `stateLayout` conserva el comportamiento posicional anterior.
@@ -152,7 +152,23 @@ relaciona cada bloque con su identidad anterior y registra hashes completos ante
 y después. La puerta exige una cadena continua, conserva las pruebas anteriores
 y contrasta el resultado con el archivo publicado. La firma de estado del bloque
 debe permanecer igual. El validador curricular sigue autorizando las revisiones:
-no se flexibilizan respuestas, código ni huellas matemáticas.
+no se flexibilizan respuestas ni código.
+
+### Corrección exacta de un rótulo matemático en Windows
+
+`CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO` admite exclusivamente en
+U9L13, `block_0007_0001`, respuesta `contratos`, origen `construccion`, el cambio
+de «Construcción que termina normalmente» a «Construcción desde código y unidades
+que termina normalmente». Work utiliza `prepare_v2` con la familia publicada y
+el documento anterior, conservando `origin`, `family` y las direcciones; el helper
+añade la prueba editorial completa. No hay que añadir un campo al puzzle.
+
+La autorización contrasta el bloque completo antes/después. Pares, validadores,
+IDs, otros textos y orden de claves JSON se conservan. El cargador Windows exige
+su identidad, idioma español y prueba exacta. El puente matemático conserva la
+huella de respuesta anterior sólo para el bloque revisado completo; la vista y
+el lector reciben el rótulo nuevo. Cualquier otro cambio sigue necesitando su
+contrato propio. Esta excepción Windows no cambia el motor Android conservado.
 
 ## Procedimiento v2 para Work
 

@@ -7,6 +7,7 @@ from fractions import Fraction
 import json
 import math
 from pathlib import Path
+import subprocess
 import unittest
 
 from test_worker import ROOT, Worker
@@ -293,6 +294,68 @@ class WindowsMathBridgeTest(unittest.TestCase):
         reordered = {"prompt":legacy["prompt"],"type":legacy["type"],"responses":legacy["responses"]}
         changed = self.worker.ask("validate_math",blockJson=json.dumps(reordered,ensure_ascii=False),responsesJson=json.dumps(answers),language="es")
         self.assertNotEqual(expected,changed["contentFingerprint"],"A sorted-key replacement silently changed Android's historical hash contract")
+
+    def test_08b_exact_pedido_label_revision_preserves_response_identity_only(self):
+        # Freeze the published source, independently of Work's later integration.
+        path = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json")
+        lesson = json.loads(subprocess.check_output(
+            ["git", "show", "cbd9a38c19ff1f02068296f7e6cb9049e2c64212:" + path], cwd=ROOT))
+        legacy = lesson["pages"][7]["blocks"][1]
+        self.assertEqual("construccion", legacy["responses"][0]["sources"][0]["id"])
+        self.assertEqual("Construcción que termina normalmente", legacy["responses"][0]["sources"][0]["label"])
+        revised = copy.deepcopy(legacy)
+        revised["responses"][0]["sources"][0]["label"] = "Construcción desde código y unidades que termina normalmente"
+        def serialized(block):
+            return json.dumps(block, ensure_ascii=False, separators=(",", ":"))
+        def golden(block):
+            return hashlib.sha256(serialized(block).replace("/", "\\/").encode("utf-8")).hexdigest()
+        old_hash = "978c6526c69d056658f4ee8455eaa4c37f5e87d97d9feebd5ecf93bac352ed13"
+        self.assertEqual(old_hash, golden(legacy))
+        self.assertEqual("5a55c3f981833aabcc7f047765a3db66d1f9e6993bf69a14d69e8ae08c190095", golden(revised))
+        answers = {"contratos": known_answer(legacy["responses"][0]["validator"])}
+        incorrect = copy.deepcopy(answers)
+        pairs = incorrect["contratos"]["pairs"]
+        pairs["construccion"], pairs["transicion"] = pairs["transicion"], pairs["construccion"]
+        partial = copy.deepcopy(answers)
+        del partial["contratos"]["pairs"]["construccion"]
+        for submitted, correct in ((answers, True), (incorrect, False), (partial, False)):
+            for block in (legacy, revised):
+                before = copy.deepcopy(block)
+                state = copy.deepcopy(submitted)
+                result = self.worker.ask("validate_math", blockJson=serialized(block),
+                                         responsesJson=serialized(submitted), language="es")
+                self.assertEqual(correct, result["correct"])
+                self.assertEqual(old_hash, result["contentFingerprint"])
+                self.assertEqual(state, submitted, "Validation rewrote a saved matching selection")
+                self.assertEqual(before, block, "Fingerprint compatibility rewrote the visible source")
+        described = self.worker.ask("describe_math", blockJson=serialized(revised), language="es")
+        self.assertEqual(revised["responses"][0]["sources"], described["responses"][0]["config"]["sources"])
+        mutations = []
+        changed = copy.deepcopy(revised)
+        changed["responses"][0]["sources"][0]["label"] += " extra"
+        mutations.append(changed)
+        changed = copy.deepcopy(revised)
+        changed["id"] += "_other"
+        mutations.append(changed)
+        changed = copy.deepcopy(revised)
+        expected = changed["responses"][0]["validator"]["expected"]
+        expected["construccion"], expected["transicion"] = expected["transicion"], expected["construccion"]
+        mutations.append(changed)
+        changed = copy.deepcopy(revised)
+        changed["responses"][0]["targets"][0]["label"] += " extra"
+        mutations.append(changed)
+        changed = copy.deepcopy(revised)
+        changed["feedback"]["incorrect"] += " extra"
+        mutations.append(changed)
+        # Android intentionally treats the complete source key order as historical.
+        mutations.append({"id": revised["id"], **{key: value for key, value in revised.items() if key != "id"}})
+        for changed in mutations:
+            result = self.worker.ask("validate_math", blockJson=serialized(changed),
+                                     responsesJson=serialized(answers), language="es")
+            self.assertEqual(golden(changed), result["contentFingerprint"])
+            self.assertNotEqual(old_hash, result["contentFingerprint"],
+                                "The approved label licensed an unrelated content/answer/order change")
 
     def test_09_all_authored_euclidean_drawings_use_the_original_layout(self):
         def representations(value):

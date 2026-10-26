@@ -161,6 +161,22 @@ void canonical(const IJsonValue& value, std::string& output, unsigned depth = 0)
     }
 }
 std::string fingerprint(const IJsonValue& value) { std::string framing; canonical(value, framing); return sha256(framing); }
+// CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO: full block digests, not a
+// blanket exemption for matching labels. Keep in sync with stable_state_layout.
+constexpr std::string_view math_label_before = "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d";
+constexpr std::string_view math_label_after = "20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b";
+constexpr std::string_view math_label_lesson = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos";
+constexpr std::string_view math_label_identity = "block_0007_0001";
+constexpr auto math_label_puzzle = L"cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__reglas_de_los_caminos_publicos";
+void reject_unmapped_reviewed_math(const JsonArray& pages) {
+    for (const auto& page : pages) for (const auto& item : array(page.GetObject(),"blocks")) {
+        const auto block = item.GetObject();
+        // Unmapped math may contain exact fractional/large source numbers;
+        // avoid applying the integer-only state-layout digest to those puzzles.
+        require(text(block,"type") != "math_puzzle" || block.GetNamedString(L"id",L"") != math_label_puzzle || fingerprint(block) != math_label_after,
+            "The reviewed mathematical label requires its published v2 identity and proof");
+    }
+}
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
     const auto type = text(value, "type");
@@ -181,6 +197,10 @@ std::string state_fingerprint(const JsonObject& original) {
                 object.Remove(L"standardError");
             }
         }
+    } else if (type == "math_puzzle" && fingerprint(value) == math_label_after) {
+        value.GetNamedArray(L"responses").GetAt(0).GetObject().GetNamedArray(L"sources").GetAt(0).GetObject()
+            .Insert(L"label", JsonValue::CreateStringValue(L"Construcción que termina normalmente"));
+        require(fingerprint(value) == math_label_before, "Invalid reviewed mathematical label");
     }
     return fingerprint(value);
 }
@@ -304,7 +324,7 @@ private:
         return cursor;
     }
 };
-StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale) {
+StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
     result.version = static_cast<int>(integer(metadata.GetNamedValue(L"version"), 2));
@@ -395,8 +415,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(current_pages == origin_pages && current_blocks.size() + result.retired.size() == result.signatures.size(),
             "State map loses historical identities");
     std::map<std::string, std::string> editorial;
+    std::map<std::string, std::set<std::string>> seen;
     if (result.version == 2) {
-        std::map<std::string, std::set<std::string>> seen;
         for (const auto& value : array(metadata, "editorial")) {
             const auto change = value.GetObject(); allowed_keys(change, {"id", "beforeSha256", "afterSha256"}, true);
             const auto id = text(change, "id"), before = text(change, "beforeSha256"), after = text(change, "afterSha256");
@@ -411,6 +431,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         require(blocks.Size() == result.current[p].blocks.size(), "State map block count differs");
         for (std::size_t b = 0; b < result.current[p].blocks.size(); ++b) {
             const auto id = result.current[p].blocks[b]; const auto block = blocks.GetAt(static_cast<unsigned>(b)).GetObject();
+            if (text(block,"type") == "math_puzzle" && fingerprint(block) == math_label_after) {
+                require(result.version == 2 && locale == "es" && lesson_id == math_label_lesson && id == math_label_identity,
+                    "The reviewed mathematical label belongs to its original Spanish activity");
+                require(editorial.contains(id) && editorial.at(id) == math_label_after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(math_label_before)),
+                    "The reviewed mathematical label needs its exact published editorial proof");
+            }
             require(state_fingerprint(block) == result.signatures.at(id), "State-bearing block changed without a compatible map");
             if (editorial.contains(id)) require(fingerprint(block) == editorial.at(id), "Stale editorial fingerprint");
         }
@@ -722,8 +748,8 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         const auto pages = array(root, "pages"); require(pages.Size() > 0 && pages.Size() <= 2048, "Invalid page count");
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
-            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale);
-        }
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id);
+        } else reject_unmapped_reviewed_math(pages);
         read_relationships(root,lesson);
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
@@ -771,8 +797,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         require(pages.Size() > 0 && pages.Size() <= 2048,"Invalid page count");
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
-            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale);
-        }
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id);
+        } else reject_unmapped_reviewed_math(pages);
         read_relationships(root,lesson);
         // The catalog keeps its historical read-only progress projection, but
         // dependency sources need their real objectives even in lessons that

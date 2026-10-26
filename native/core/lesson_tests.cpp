@@ -22,6 +22,55 @@ void replace_once(std::string& text, std::string_view old_value, std::string_vie
     const auto index = text.find(old_value); check(index != text.npos, "Test fixture target missing");
     text.replace(index, old_value.size(), new_value);
 }
+void reviewed_matching_label_preserves_historical_contract() {
+    using namespace winrt::Windows::Data::Json;
+    using lgaed::windows::parse_lesson_json;
+    const auto root = std::filesystem::path(lgaed::build::source_root);
+    const auto lesson = lgaed::windows::load_lesson(root / "app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json");
+    const auto document = JsonObject::Parse(winrt::to_hstring(lesson.raw_json));
+    const auto block = document.GetNamedArray(L"pages").GetAt(7).GetObject().GetNamedArray(L"blocks").GetAt(1).GetObject();
+    const auto source = block.GetNamedArray(L"responses").GetAt(0).GetObject().GetNamedArray(L"sources").GetAt(0).GetObject();
+    constexpr auto revised = L"Construcción desde código y unidades que termina normalmente";
+    if (source.GetNamedString(L"label") != revised) {
+        source.Insert(L"label",JsonValue::CreateStringValue(revised));
+        document.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Append(JsonObject::Parse(LR"({"id":"block_0007_0001","beforeSha256":"ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d","afterSha256":"20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"})"));
+    }
+    const auto raw = winrt::to_string(document.Stringify());
+    const auto current = parse_lesson_json(raw);
+    const auto metadata = lgaed::windows::parse_lesson_progress_metadata(raw);
+    check(current.state_layout.signatures == lesson.state_layout.signatures && current.state_layout.lineage == lesson.state_layout.lineage &&
+        current.state_layout.raw_json.find("ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d") != std::string::npos,
+        "Reviewed matching label regenerated its origin or state family");
+    check(exercise_key(current,current.pages[7].blocks[1]) == exercise_key(lesson,lesson.pages[7].blocks[1]) &&
+        exercise_key(metadata,metadata.pages[7].blocks[1]) == exercise_key(lesson,lesson.pages[7].blocks[1]),
+        "Reviewed matching label moved saved answers or metadata progress");
+    check(current.pages[7].blocks[1].raw_json.find("desde código y unidades") != std::string::npos,
+        "Historical state compatibility hid the corrected matching label");
+    for (const auto change : {"pair", "label", "feedback", "identity", "lesson", "proof", "origin", "unmapped", "v1"}) {
+        const auto bad = JsonObject::Parse(winrt::to_hstring(raw));
+        const auto puzzle = bad.GetNamedArray(L"pages").GetAt(7).GetObject().GetNamedArray(L"blocks").GetAt(1).GetObject();
+        const auto response = puzzle.GetNamedArray(L"responses").GetAt(0).GetObject();
+        if (std::string_view(change) == "pair") response.GetNamedObject(L"validator").GetNamedObject(L"expected").Insert(L"construccion",JsonValue::CreateStringValue(L"valor_completo"));
+        else if (std::string_view(change) == "label") response.GetNamedArray(L"sources").GetAt(0).GetObject().Insert(L"label",JsonValue::CreateStringValue(L"Other label"));
+        else if (std::string_view(change) == "feedback") puzzle.GetNamedObject(L"feedback").Insert(L"correct",JsonValue::CreateStringValue(L"Other feedback"));
+        else if (std::string_view(change) == "identity") puzzle.Insert(L"id",JsonValue::CreateStringValue(L"other_puzzle"));
+        else if (std::string_view(change) == "lesson") bad.Insert(L"id",JsonValue::CreateStringValue(L"other_lesson"));
+        else if (std::string_view(change) == "proof") bad.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").RemoveAtEnd();
+        else if (std::string_view(change) == "unmapped") bad.Remove(L"stateLayout");
+        else if (std::string_view(change) == "v1") {
+            const auto original = bad.GetNamedObject(L"stateLayout");
+            auto v1 = JsonObject();v1.Insert(L"version",JsonValue::CreateNumberValue(1));
+            v1.Insert(L"origin",original.GetNamedArray(L"origin"));v1.Insert(L"current",original.GetNamedArray(L"current"));
+            bad.Insert(L"stateLayout",v1);
+        }
+        else bad.GetNamedObject(L"stateLayout").GetNamedArray(L"origin").GetAt(7).GetObject().GetNamedArray(L"blocks").GetAt(1).GetObject()
+            .Insert(L"sha256",JsonValue::CreateStringValue(L"20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"));
+        const auto invalid = winrt::to_string(bad.Stringify());
+        rejects([&] { (void)parse_lesson_json(invalid); },"Unapproved mathematical change passed the runtime loader");
+        rejects([&] { (void)lgaed::windows::parse_lesson_progress_metadata(invalid); },"Unapproved mathematical change passed catalog metadata");
+    }
+    std::cout << "PASS exact matching label revision, preserved state/metadata addresses and negative response/provenance guards\n";
+}
 std::string root_property(std::string_view source, std::string_view name, std::string_view value) {
     // Replace a property through the JSON object, including when Work has already
     // integrated it. Appending another root key would make negative fixtures ambiguous.
@@ -352,6 +401,7 @@ int main() {
         // Exact published input for migration/legacy-coordinate regressions.
         const auto lesson = lgaed::test::load_pre_retirement_lesson(path.filename().string());
         narration_metadata_tests(lesson);
+        reviewed_matching_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();
         standard_error_objective_tests(lesson);

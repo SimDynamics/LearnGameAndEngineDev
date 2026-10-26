@@ -88,11 +88,31 @@ def fingerprint(value: object) -> str:
     return digest.hexdigest()
 
 
+MATH_LABEL_LESSON = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos"
+MATH_LABEL_IDENTITY = "block_0007_0001"
+MATH_LABEL_BEFORE = "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d"
+MATH_LABEL_AFTER = "20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"
+
+
+def historical_math_payload(block: dict) -> dict:
+    """One reviewed label revision; every other mathematical byte stays protected.
+
+    The full block digest includes puzzle/response/source IDs, matching pairs,
+    validators and feedback. This is not a general exemption for display labels.
+    """
+    if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
+        result = deepcopy(block)
+        result["responses"][0]["sources"][0]["label"] = "Construcción que termina normalmente"
+        require(fingerprint(result) == MATH_LABEL_BEFORE, "Invalid reviewed mathematics revision")
+        return result
+    return block
+
+
 def state_payload(block: dict) -> dict:
     """Only explicit editorial fields may vary without changing a response contract.
 
     The existing curricular validator still decides which wording changes are
-    authorized. Mathematics retains its exact content-fingerprint contract.
+    authorized. Mathematics retains its exact contract except one reviewed label.
     """
     kind = block.get("type")
     if kind in {"heading", "paragraph", "note"}:
@@ -116,7 +136,7 @@ def state_payload(block: dict) -> dict:
                         # native completion proofs hash the additional objective.
                         case.pop("standardError")
         return payload
-    return block
+    return historical_math_payload(block)
 
 
 def state_fingerprint(block: dict) -> str:
@@ -269,6 +289,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         for b, identity in enumerate(record["blocks"]):
             identity = _identity(identity)
             require(identity in storage, "Unknown block identity")
+            if pages[p]["blocks"][b].get("type") == "math_puzzle" and fingerprint(pages[p]["blocks"][b]) == MATH_LABEL_AFTER:
+                require(document.get("id") == MATH_LABEL_LESSON and meta["locale"] == "es"
+                        and identity == MATH_LABEL_IDENTITY,
+                        "The reviewed mathematical label belongs to its original Spanish activity")
             require(state_fingerprint(pages[p]["blocks"][b]) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
             seen_blocks.append(identity)
@@ -320,6 +344,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     actual = _all_blocks(document)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
+    for identity, block in actual.items():
+        if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
+            require(chains.get(identity) == [MATH_LABEL_BEFORE, MATH_LABEL_AFTER],
+                    "The reviewed mathematical label needs its exact published editorial proof")
     return mapping
 
 
@@ -384,6 +412,11 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
 
 def _validate_state_layout(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     pages = _pages(document)
+    meta = document.get("stateLayout")
+    if type(meta) is not dict or meta.get("version") != 2:
+        require(not any(block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER
+                        for page in pages for block in page.get("blocks", [])),
+                "The reviewed mathematical label requires its published v2 identity and proof")
     if "stateLayout" not in document:
         return {(p, b): (p, b) for p, page in enumerate(pages) for b in range(len(page.get("blocks", [])))}
     meta = document["stateLayout"]
@@ -740,7 +773,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
             serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-            require(serialize(block) == serialize(actual),
+            require(serialize(historical_math_payload(block)) == serialize(historical_math_payload(actual)),
                     "Mathematical payloads must preserve their historical JSON key order and values")
         old_hash, new_hash = fingerprint(block), fingerprint(actual)
         proofs = appended.get(identity, [])

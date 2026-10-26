@@ -2372,6 +2372,113 @@ void runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_cha
         "Only explicit Reset must revoke the completed runtime-channel objective");
     std::cout<<"PASS runtime stderr: legacy stdout proof preserved, current two-channel goal, partial reader/reference gates, build rejection, reopen, sticky success and explicit reset\n";
 }
+void integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics() {
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/excepciones_y_recuperacion/lesson_limites_comprobados_y_tipos_de_captura.json";
+    const auto asset_hash=state::sha256(state::read_bytes(path));
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);
+        // Earlier quiz answers isolate both real compiler objectives. No
+        // compiler proof is seeded: each independent project must execute.
+        for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+            if(block.type!=BlockType::output_prediction&&block.type!=BlockType::multiple_choice)continue;
+            state::Response answer;answer.correct=true;
+            if(block.type==BlockType::output_prediction)answer.answer=block.answers.at(0);
+            else answer.selected=static_cast<std::int64_t>(*block.correct_index);
+            state::put_response(data,curriculum::exercise_key(lesson,block),answer);
+        }
+        state::save_current_page(data,lesson,2);
+    },[&](const curriculum::Lesson&){
+        auto model=windows::load_lesson(path);
+        const auto diagnostic=curriculum::stable_block_position(model,"block_0002_0008");
+        require(diagnostic&&diagnostic->page==2&&diagnostic->block==8&&model.compiler_puzzles_required,
+            "The current U8L3 diagnostic objective lost its stable identity or required status");
+        auto& goal=model.pages[2].blocks[8];
+        require(goal.output_check&&goal.output_check->cases.size()==1
+            &&goal.output_check->cases[0].standard_error==curriculum::StandardErrorExpectation::non_blank
+            &&goal.output_check->cases[0].outputs==std::vector<std::string>{"Indice invalido:Fin"},
+            "The integrated U8L3 objective must require its actual stable stdout and runtime stderr");
+        // Reproduce the earlier stdout-only proof at the same real storage
+        // address, then reopen with the strengthened current authored goal.
+        goal.output_check->cases[0].standard_error=curriculum::StandardErrorExpectation::ignored;
+        return model;
+    });
+    require(f.page()==2&&!descendant(f.view,id(8,10)),
+        "The diagnostic editor escaped its independent constructor prerequisite");
+    const auto reference=curriculum::stable_block_position(f.lesson,"block_0003_0005");
+    require(reference&&f.lesson.pages[reference->page].blocks[reference->block].type==BlockType::code,
+        "The integrated U8L3 constructor lost its authored reference program");
+    const auto constructor_source=f.lesson.pages[reference->page].blocks[reference->block].code;
+    f.replace(5,10,constructor_source);f.run(5);
+    require(windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[2].blocks[5])
+        &&descendant(f.view,id(8,10)),"The real independent constructor failed to unlock the diagnostic editor");
+    const auto original_source=f.lesson.pages[2].blocks[8].initial_code;
+    f.run(8);
+    const auto legacy=f.saved();
+    require(f.text(8,14)=="Indice invalido:Fin"&&windows::compiler_puzzle_completed(legacy,f.lesson,f.lesson.pages[2].blocks[8]),
+        "The real original U8L3 stdout-only execution failed to produce its historical proof");
+    state::Preferences history;
+    for(const auto& [key,value]:legacy.preferences.at("native_windows"))
+        if(key.starts_with("compiler-puzzle/v1/"))history.emplace(key,value);
+    require(!history.empty(),"The actual compiler executions did not publish historical proofs");
+    f.close();f.lesson.pages[2].blocks[8].output_check->cases[0].standard_error=curriculum::StandardErrorExpectation::non_blank;f.open();
+    const auto retained=[&]{const auto data=f.saved();for(const auto& [key,value]:history){
+        const auto found=state::find(data,"native_windows",key);
+        require(found&&*found==value,"Strengthening the integrated U8L3 objective erased historical compiler proof data");}};
+    retained();
+    require(f.page()==2&&f.text(8,10)==original_source&&f.text(8,4).empty()
+        &&!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[2].blocks[8])
+        &&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,3),
+        "The older stdout-only proof completed the integrated two-channel goal or unlocked its references");
+    f.run(8);
+    require(f.text(8,14)=="Indice invalido:Fin"&&f.text(8,4).find("falta el diagnóstico solicitado en stderr")!=std::string::npos
+        &&!lesson_page_state(f.view).can_next,"The actual false flag failed to retain a partial stdout result");
+    SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(8,79),BN_CLICKED),0);pump(f.host);
+    // Empty channels have no selectable menu item; console_present falls back
+    // to the existing stdout rather than displaying an empty alternative.
+    require(f.text(8,14)=="Indice invalido:Fin",
+        "The false flag fabricated a selectable runtime library diagnostic: "+f.text(8,14));
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){
+        return region.block_index==8&&region.is_exercise&&!region.solved;}),
+        "The integrated partial result released the diagnostic reader boundary");
+    retained();f.reopen();
+    require(f.text(8,10)==original_source&&f.text(8,14).empty()&&!lesson_page_state(f.view).can_next,
+        "Reopening the integrated partial attempt lost its draft or restored stale console output");
+    f.replace(8,10,"#error QA_U8L3_BUILD_DIAGNOSTIC\nint main(){}\n");f.run(8);
+    require(f.text(8,4).empty()&&f.text(8,14).find("QA_U8L3_BUILD_DIAGNOSTIC")!=std::string::npos
+        &&!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[2].blocks[8])
+        &&!lesson_page_state(f.view).can_next,"Actual build diagnostics accredited a successful U8L3 runtime observation");
+    auto enabled=original_source;const auto flag=enabled.find("mostrarDiagnostico{false}");
+    require(flag!=enabled.npos,"The authored U8L3 diagnostic flag changed unexpectedly");
+    enabled.replace(flag,std::string_view("mostrarDiagnostico{false}").size(),"mostrarDiagnostico{true}");
+    retained();f.replace(8,10,enabled);f.run(8);
+    const auto complete=f.text(8,4);
+    require(complete=="✓ Correcto\n\n"+f.lesson.pages[2].blocks[8].output_check->cases[0].explanation
+        &&f.text(8,14)=="Indice invalido:Fin"&&lesson_page_state(f.view).can_next,
+        "The authored true flag failed to complete both channels with the current success explanation");
+    SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(8,79),BN_CLICKED),0);pump(f.host);
+    require(!f.text(8,14).empty()&&f.text(8,14)!="Indice invalido:Fin",
+        "The real rejected vector index did not preserve its separate runtime stderr channel");
+    retained();f.reopen();
+    require(f.text(8,10)==enabled&&f.text(8,4)==complete&&f.text(8,14).empty()&&lesson_page_state(f.view).can_next,
+        "The current U8L3 achievement or independent draft failed to persist without replaying stale output");
+    f.next();
+    require(f.page()==3&&descendant(f.view,id(6,0))&&descendant(f.view,id(7,1))
+        &&std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==7;}),
+        "The actual completed diagnostic did not release its own reference code and narration");
+    f.select_page(2);f.replace(8,10,original_source);f.run(8);
+    require(f.text(8,4)==complete&&f.text(8,14)=="Indice invalido:Fin"&&lesson_page_state(f.view).can_next,
+        "Recompiling with the false flag revoked the sticky integrated U8L3 achievement");
+    retained();f.reopen();
+    require(f.text(8,4)==complete&&f.text(8,10)==original_source,
+        "The integrated achievement did not survive reopening with a later independent edit");
+    f.click(8,12);
+    require(f.text(8,4).empty()&&!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[2].blocks[8])
+        &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[2].blocks[5])
+        &&f.text(5,10)==constructor_source&&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,3),
+        "Reset failed to revoke only the diagnostic objective and preserve its independent constructor");
+    require(state::sha256(state::read_bytes(path))==asset_hash,"The integrated diagnostic QA modified an authored lesson asset");
+    std::cout<<"PASS current integrated U8L3: real independent constructor, false/true MSVC executions, exact stable stdout, separate variable stderr, historical proof isolation, build rejection, reader/reference gates, reopen, sticky success and scoped Reset\n";
+}
 void use_stable_dependency_fixture_layout(curriculum::Lesson& model) {
     model.state_layout.version=1;model.state_layout.locale="es";
     model.state_layout.lineage=state::sha256(model.id+"/dependent-fixture-v1");model.state_layout.legacy_lineage=model.state_layout.lineage;
@@ -2592,12 +2699,13 @@ int main(int argc,char* argv[]) {
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}
         if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
-        if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();return 0;}
+        if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
-        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();compiler_puzzle_completion_and_navigation();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
         runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();
+        integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();
         long_prediction_cards_keep_independent_bounds();
         long_lesson_bands_keep_independent_hit_targets();
         initial_readonly_source_layout();

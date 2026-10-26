@@ -9,6 +9,7 @@
 #include <commctrl.h>
 #include <richedit.h>
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <functional>
 #include <array>
 #include <iostream>
@@ -28,6 +29,84 @@ constexpr std::string_view content=R"json({"id":"qa_native_composition","title":
 {"blocks":[{"type":"math_puzzle","schemaVersion":1,"prompt":"Completa la medida.","responses":[{"id":"number","type":"math_numeric_input","label":"Medida","unit":"cm","validator":{"type":"numeric","expected":6}}],"feedback":{"correct":"La medida es seis centímetros.","incorrect":"Revisa la medida."}}]},
 {"blocks":[{"type":"inline_fill_code","question":"Completa la salida.","template":"std::cout [] [];","answers":["<<","\"Listo\""],"explanation":"Conserva el mensaje."}]},
 {"blocks":[{"type":"drag_fill_code","question":"Coloca la función.","template":"int []() { return 0[] }","choices":["main",";","Main"],"correctOrder":[0,1],"explanation":"La función devuelve cero."}]}]})json";
+void pedido_editorial_state_tests(HWND host,const std::shared_ptr<windows::NarrationWorker>& backend){
+    using namespace winrt::Windows::Data::Json;
+    const auto bytes=state::read_bytes(std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json");
+    std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
+    const std::string before_label="Construcción que termina normalmente",after_label="Construcción desde código y unidades que termina normalmente";
+    const auto old_at=source.find(before_label);
+    if(old_at!=source.npos){
+        source.replace(old_at,before_label.size(),after_label);
+        // Append the full-block proof without reserializing mathematical JSON:
+        // Android's historical response fingerprint keeps insertion order.
+        const auto editorial=source.find("\"editorial\": [");
+        check(editorial!=source.npos,"Pedido fixture has no published editorial manifest");
+        const auto end=source.find(']',editorial);
+        check(end!=source.npos,"Pedido fixture has no editorial array terminator");
+        const auto count=JsonObject::Parse(wide(source)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Size();
+        source.insert(end,(count?",":"")+std::string(R"({"id":"block_0007_0001","beforeSha256":"ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d","afterSha256":"20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"})"));
+    }
+    auto lesson=windows::parse_lesson_json(source,"es");
+    const auto position=curriculum::stable_block_position(lesson,"block_0007_0001");
+    check(position&&position->page==7&&position->block==1,"Pedido matching historical position changed");
+    const auto& block=lesson.pages[position->page].blocks[position->block];
+    const auto key=curriculum::exercise_key(lesson,block);
+    check(block.raw_json.find(after_label)!=std::string::npos,"Pedido fixture omitted the exact revised label");
+    // This regression exercises the matching state independently of its already
+    // covered compiler prerequisites. All block/family/storage metadata stays.
+    lesson.activity_after.clear();lesson.compiler_puzzles_required=false;
+    constexpr auto correct_answers=R"({"contratos":{"type":"matching","pairs":{"construccion":"objeto_valido","valor_invalido":"rechazo_construccion","transicion":"nuevo_estado","operacion_rechazada":"sin_cambios","consulta":"consulta_lectura","tipo_incorrecto":"tipo","asignacion":"valor_completo"}}})";
+    std::string previous_reading_key;
+    for(const bool correct:{false,true}){
+        auto environment=resolve_windows_environment({ProfileId::Codex,L"pedido-label-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            std::to_wstring(GetTickCount64())+(correct?L"-correct":L"-incorrect"),false});
+        initialize_profile_directories(environment.paths);
+        auto answers=JsonObject::Parse(wide(correct_answers));
+        if(!correct){const auto pairs=answers.GetNamedObject(L"contratos").GetNamedObject(L"pairs");
+            pairs.Insert(L"construccion",JsonValue::CreateStringValue(L"nuevo_estado"));
+            pairs.Insert(L"transicion",JsonValue::CreateStringValue(L"objeto_valido"));}
+        const auto reply=JsonObject::Parse(wide(backend->validate_math(block.raw_json,winrt::to_string(answers.Stringify()),"es")));
+        check(reply.GetNamedBoolean(L"evaluable")&&reply.GetNamedBoolean(L"correct")==correct&&
+            reply.GetNamedString(L"contentFingerprint")==L"978c6526c69d056658f4ee8455eaa4c37f5e87d97d9feebd5ecf93bac352ed13",
+            "The revised matching did not retain its original Android response fingerprint");
+        auto raw=JsonObject::Parse(reply.Stringify());raw.Insert(L"responses",answers);
+        raw.Insert(L"incorrectAttempts",JsonValue::CreateNumberValue(4));
+        raw.Insert(L"opaque",JsonObject::Parse(LR"({"selection":"construccion","caret":19})"));
+        state::Response response;response.correct=correct;response.raw_json=winrt::to_string(raw.Stringify());
+        if(!correct)state::mark_response_reviewed(response,block);
+        {state::StateStore store(environment.paths.root);auto seed=store.load();state::prepare_lesson_state(seed,lesson);
+            state::save_current_page(seed,lesson,position->page);state::put_response(seed,key,response);store.save(seed);}
+        LessonViewHooks hooks;hooks.validate_math=[backend](auto b,auto a,auto locale,std::stop_token stop){return backend->validate_math(b,a,locale,stop);};
+        for(unsigned reopen=0;reopen<2;++reopen){
+            struct Owner{HWND window=nullptr;~Owner(){if(window)DestroyWindow(window);}} owner;
+            owner.window=create_lesson_view(host,environment,lesson,hooks);MoveWindow(owner.window,0,0,960,690,TRUE);pump();
+            check(lesson_page_state(owner.window).index==position->page,"Reopening the revised matching lost its saved page");
+            wait([&]{return edit_text(child(owner.window,1104)).find(correct?"Correcto":"✗")!=std::string::npos;});
+            const auto saved=state::get_response(read_lesson_state(owner.window),key);
+            check(saved&&saved->correct==correct,"An old matching verdict was lost or incorrectly promoted on revision");
+            const auto retained=JsonObject::Parse(wide(saved->raw_json));
+            check(retained.GetNamedObject(L"responses").Stringify()==answers.Stringify()&&retained.GetNamedNumber(L"incorrectAttempts")==4&&
+                retained.GetNamedObject(L"opaque").GetNamedString(L"selection")==L"construccion",
+                "Reopening the revised matching changed selections, attempts or opaque imported state");
+            std::string reading_key;bool old_spoken=false;
+            for(const auto& region:lesson_reading_regions(owner.window)){
+                if(region.source_text==after_label){reading_key=region.key;check(edit_text(region.target)==after_label,"The corrected matching label was not visibly rendered");}
+                old_spoken=old_spoken||region.source_text==before_label;
+            }
+            // Mathematical regions already carry their semantic component in
+            // key; the optional anchor field belongs to programming controls.
+            check(reading_key==lesson.id+"/es/"+lesson.pages[position->page].stable_id+
+                "/block_0007_0001/contratos/source/construccion"&&!old_spoken,
+                "Reading retained the old ambiguous matching label or lost its semantic source key");
+            if(previous_reading_key.empty())previous_reading_key=reading_key;
+            else check(reading_key==previous_reading_key,"Reopening changed the matching card's stable reading key");
+            check(flush_lesson_view(owner.window),"Cannot persist revised matching QA state");
+            DestroyWindow(owner.window);owner.window=nullptr;pump();
+        }
+    }
+    std::cout<<"PASS exact pedido label: legacy correct/incorrect fingerprint, matching pairs, attempts, opaque import state, saved page, visible/narratable label and stable reading key on reopen\n";
+}
 }
 int main(){
     using namespace lgaed;using namespace presentation;
@@ -43,6 +122,7 @@ int main(){
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Lesson composition QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host!=nullptr,"Cannot create composition QA host");
+        pedido_editorial_state_tests(host,backend);
         LessonViewHooks hooks;hooks.validate_math=[backend](std::string_view b,std::string_view a,std::string_view lang,std::stop_token stop){return backend->validate_math(b,a,lang,stop);};
         auto open=[&]{view=create_lesson_view(host,environment,lesson);set_lesson_view_hooks(view,hooks);MoveWindow(view,0,0,960,690,TRUE);pump();};
         auto close=[&]{check(flush_lesson_view(view),"Cannot persist composition draft");DestroyWindow(view);view=nullptr;pump();};

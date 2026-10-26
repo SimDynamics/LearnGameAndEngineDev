@@ -1047,6 +1047,28 @@ RETIREMENT_EDITORIAL_REVISIONS = {
 }
 
 
+# CPP_COMPROBACION_STDERR_POR_OBJETIVO: la explicación de acierto revisada
+# pertenece sólo al editor histórico block_0002_0008 de U8L3, caso cero.
+# Las coordenadas recibidas son las de origen, verificadas por stateLayout.
+STDERR_EDITORIAL_REVISION = (
+    'app/src/main/assets/content/es/programming/cpp_fundamentals/excepciones_y_recuperacion/lesson_limites_comprobados_y_tipos_de_captura.json',
+    2, 8, 0,
+    'ff5fd32c054a7359cf7de5af485139da50eb0fa0100ce0733354cb39c68c7f1b',
+    'fe30c15ffa1de1660093c32432c9efb7c90fac1b95901f216144d467b3be852f',
+)
+
+
+def _approved_stderr_explanation(relative, pn, bn, index, before, after):
+    if (relative, pn, bn, index) != STDERR_EDITORIAL_REVISION[:4] \
+            or after.get('standardError') != 'nonBlank':
+        return False
+    previous, revised = before.get('explanation'), after.get('explanation')
+    return isinstance(previous, str) and isinstance(revised, str) and (
+        hashlib.sha256(previous.encode('utf-8')).hexdigest(),
+        hashlib.sha256(revised.encode('utf-8')).hexdigest(),
+    ) == STDERR_EDITORIAL_REVISION[4:]
+
+
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
@@ -1058,7 +1080,10 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
         cases = base['outputCheck'].get('cases')
         if isinstance(previous_cases, list) and isinstance(cases, list) and len(previous_cases) == len(cases):
             projected = copy.deepcopy(base['outputCheck'])
-            for before, after in zip(previous_cases, projected['cases']):
+            for index, (before, after) in enumerate(zip(previous_cases, projected['cases'])):
+                if isinstance(before, dict) and isinstance(after, dict) \
+                        and _approved_stderr_explanation(relative, pn, bn, index, before, after):
+                    after['explanation'] = before['explanation']
                 if isinstance(before, dict) and isinstance(after, dict) and 'standardError' not in before \
                         and after.get('standardError') == 'nonBlank':
                     del after['standardError']
@@ -1127,6 +1152,11 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
     location = (lesson_path, pn + 1, bn + 1)
+    if (location == ("datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json", 8, 2)
+            and old.get("type") == "math_puzzle"
+            and _state_layout.fingerprint(old) == _state_layout.MATH_LABEL_BEFORE
+            and _state_layout.fingerprint(current) == _state_layout.MATH_LABEL_AFTER):
+        return _state_layout.historical_math_payload(current) == old
     current = restore_approved_editorial_fields(location, old, current)
     if current == old:
         return True

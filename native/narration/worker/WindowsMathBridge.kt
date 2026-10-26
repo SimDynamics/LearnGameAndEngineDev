@@ -8,6 +8,18 @@ import kotlin.math.*
 
 /** A platform boundary around the original Android-independent parser and evaluators. */
 internal object WindowsMathBridge {
+    /** CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO: one reviewed label,
+     * not a new response contract. These are Android's complete, insertion-order
+     * fingerprints; every other field and key order remains significant. The
+     * original JSON still supplies the visible labels, narration and validator. */
+    private fun compatibleContentFingerprint(block: lgaed.narration.androidjson.JSONObject): String {
+        val fingerprint = MathPuzzleState.fingerprint(block)
+        return if (block.optString("id") ==
+            "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__reglas_de_los_caminos_publicos" &&
+            fingerprint == "5a55c3f981833aabcc7f047765a3db66d1f9e6993bf69a14d69e8ae08c190095")
+            "978c6526c69d056658f4ee8455eaa4c37f5e87d97d9feebd5ecf93bac352ed13"
+        else fingerprint
+    }
     private data class NativeTextSelection(val path: List<MathCursorStep>,val start: Int,val end: Int)
     private data class EditorSession(val model: MathExpressionModel,
         var template: MathExpression.Sequence? = null, var revision: Long = 0,
@@ -471,7 +483,7 @@ internal object WindowsMathBridge {
         }
         val originalBlock = if(request.has("blockJson")) request.getString("blockJson")
             else lgaed.narration.androidjson.JSONObject(originalRequest).getJSONObject("block").toString()
-        val fingerprint = MathPuzzleState.fingerprint(lgaed.narration.androidjson.JSONObject(originalBlock))
+        val fingerprint = compatibleContentFingerprint(lgaed.narration.androidjson.JSONObject(originalBlock))
         return JSONObject().put("correct",correct).put("evaluable",evaluable).put("contentFingerprint",fingerprint)
             .put("feedback",feedback).put("feedbackKind",if (!evaluable) "error" else if (correct) "correct" else "incorrect")
             .put("results",JSONArray(results.map { (response,result) ->
