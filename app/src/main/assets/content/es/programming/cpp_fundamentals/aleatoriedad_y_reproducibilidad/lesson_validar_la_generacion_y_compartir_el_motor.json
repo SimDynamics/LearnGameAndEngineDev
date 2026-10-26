@@ -10,19 +10,45 @@
         },
         {
           "type": "paragraph",
-          "text": "El constructor de uniform_int_distribution<int> exige minimo <= maximo. No debemos construir una distribución con límites invertidos para comprobar después si falla: ya habríamos incumplido su precondición. No hay que prometer una excepción automática de ese constructor. Valida los datos antes de construirlo.",
+          "text": "El constructor de uniform_int_distribution<int> exige minimo <= maximo. Es una precondición: quien solicita construir la distribución debe cumplirla antes de llamar al constructor (Köppe et al., 2023).\n\nConstruir con límites invertidos y comprobar después si falla llega demasiado tarde. El contrato de la biblioteca no promete una excepción automática para ese caso. La función que prepara la generación debe validar los datos antes de construir la distribución.",
           "emphasis": [
             {
-              "text": "minimo <= maximo"
+              "text": "precondición",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "precondición"
+              "text": "antes de llamar al constructor",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "validar los datos",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "En nuestros servicios aceptaremos límites entre -12 y 12. Ese dominio pertenece al ejercicio; no es el intervalo máximo de la biblioteca. Las comparaciones bastan para comprobarlo. No restamos primero los extremos para decidir si el intervalo es válido: con datos generales esa resta podría no ser representable."
+          "text": "En el servicio de esta actividad se aceptan límites entre -12 y 12. Ese dominio pertenece al ejercicio; no es el intervalo máximo que admite la biblioteca. Un intervalo puede estar ordenado y, aun así, quedar fuera del dominio del servicio.\n\nBasta comparar cada extremo con esos límites y comparar minimo con maximo. Así no hace falta restarlos para decidir la validez: con argumentos generales, una resta de enteros con signo podría quedar fuera del rango representable (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "dominio del servicio",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cada extremo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no hace falta restarlos",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -33,7 +59,12 @@
             "Construirla primero y confiar en que lance invalid_argument automáticamente."
           ],
           "correctIndex": 0,
-          "explanation": "La validez del intervalo es una responsabilidad previa del llamador o del servicio que lo construye."
+          "explanation": "La validez del intervalo es una responsabilidad previa del llamador o del servicio que lo construye.",
+          "reviewFeedback": [
+            "Relaciona la precondición del constructor con el momento en que ya deben estar comprobados los límites.",
+            "Revisa si la distribución puede utilizarse válidamente antes de haber establecido el orden de sus límites.",
+            "Distingue una excepción que decide lanzar el servicio de una garantía que realmente ofrece el constructor de la biblioteca."
+          ]
         }
       ]
     },
@@ -41,11 +72,28 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Un rechazo no consume el motor"
+          "text": "Rechazar los argumentos antes de obtener datos"
         },
         {
           "type": "paragraph",
-          "text": "Recupera detección y tratamiento: obtener recibe el motor por referencia, valida el intervalo y sólo después usa la distribución. Un rechazo de sus argumentos ocurre antes de consumir valores. En std::mt19937, == compara estados capaces de producir la misma secuencia futura; no compara sólo el número de semilla recordado por nosotros."
+          "text": "La función obtener recibe el motor por referencia, comprueba el intervalo y sólo después construye y utiliza la distribución. Si rechaza los argumentos en esa comprobación previa, no ha solicitado ningún dato al motor.\n\nPara std::mt19937, == permite comparar si dos motores producirían la misma secuencia mediante las sucesivas llamadas directas a cada uno (Köppe et al., 2023). Esa comparación permite investigar el punto alcanzado; no se limita a comparar la semilla que se recuerde haber utilizado.",
+          "emphasis": [
+            {
+              "text": "comprobación previa",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "misma secuencia",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "punto alcanzado",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "code",
@@ -54,7 +102,24 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia guiada muestra Rechazado:1: la validación lanza antes de construir la distribución. El catch trata el rechazo sin fingir que se obtuvo un dato. Copiar el motor conservó su estado actual en otro objeto."
+          "text": "El ejemplo guiado muestra Rechazado:1. La validación lanza antes de construir la distribución, y el catch presenta el rechazo sin afirmar que se obtuvo un dato.\n\nLa copia guardado conserva en otro objeto el estado que tenía el motor antes de la llamada. Compararlo después permite comprobar que este rechazo previo no consumió valores.",
+          "emphasis": [
+            {
+              "text": "antes de construir la distribución",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "antes de la llamada",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no consumió valores",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -76,7 +141,24 @@
         },
         {
           "type": "paragraph",
-          "text": "std::mt19937 copia = motor; copia el estado al que llegó motor, que puede estar lejos de su comienzo. Después son objetos separados. Un parámetro por valor recibe otra copia; una referencia modificable permite continuar el motor del llamador. No escogeremos esa forma sólo para evitar escribir un tipo: cambia el contrato del experimento."
+          "text": "std::mt19937 copia = motor; crea otro motor que compara igual al original y permite continuar desde ese punto de su secuencia (Köppe et al., 2023). Copia el estado actual, que puede incluir obtenciones anteriores; no vuelve automáticamente a la semilla inicial.\n\nDespués son objetos separados. Un parámetro por valor recibe una copia; una referencia modificable da acceso al motor del llamador (Stroustrup, 2024). Por eso elegir entre std::mt19937 y std::mt19937& cambia qué objeto puede avanzar durante la llamada.",
+          "emphasis": [
+            {
+              "text": "estado actual",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "objetos separados",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "qué objeto puede avanzar",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -97,7 +179,12 @@
             "std::mt19937& motor: la obtención puede modificar el objeto de main."
           ],
           "correctIndex": 2,
-          "explanation": "Generar requiere poder avanzar estado. Por valor se conserva el motor del llamador; const no permite ese avance."
+          "explanation": "Generar requiere poder avanzar estado. Por valor se conserva el motor del llamador; const no permite ese avance.",
+          "reviewFeedback": [
+            "Relaciona const con una operación que necesita modificar el estado del motor para avanzar.",
+            "Sigue sobre qué objeto actúa la función cuando su parámetro recibe una copia del argumento.",
+            "Comprueba que la referencia permite continuar sobre el motor que conserva main entre llamadas."
+          ]
         }
       ]
     },
@@ -109,7 +196,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Nuestro generador de colecciones validará cantidad 0..20 y el intervalo completo. Cero datos es una solicitud válida si la configuración lo es: devuelve un vector vacío y no consume el motor. No usaremos cantidad=0 como permiso para aceptar límites invertidos. Esta política mantiene la misma definición de configuración válida."
+          "text": "El generador de colecciones de esta actividad aceptará cantidad entre cero y veinte y exigirá también que el intervalo completo sea válido. Una cantidad cero no elimina las condiciones sobre minimo y maximo.\n\nCon una configuración válida, cero datos significa devolver un vector vacío sin solicitar valores al motor. El estado que se conserva es el actual, aunque ya hubiera avanzado antes. Esta política distingue una muestra vacía válida de una configuración que debe rechazarse.",
+          "emphasis": [
+            {
+              "text": "Una cantidad cero no elimina las condiciones",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "estado que se conserva es el actual",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "muestra vacía válida",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -131,14 +235,53 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa generar: recibe std::mt19937& motor, int cantidad, int minimo e int maximo y devuelve vector<int>. Acepta cantidad entre cero y veinte, ambos límites entre -12 y 12 y minimo <= maximo. Rechaza con invalid_argument antes de construir la distribución o consumir el motor. Con datos válidos devuelve exactamente cantidad enteros del intervalo, en orden de obtención; cero produce vacío."
+          "text": "Implementa generar con los parámetros std::mt19937& motor, int cantidad, int minimo e int maximo y resultado vector<int>. Acepta cantidad entre cero y veinte, ambos límites entre -12 y 12 y minimo <= maximo.\n\nSi los argumentos no cumplen esas condiciones, lanza std::invalid_argument antes de construir la distribución o solicitar valores al motor. Con argumentos válidos, devuelve exactamente cantidad enteros del intervalo, en el orden de obtención. Cero produce un vector vacío y conserva el estado del motor recibido.",
+          "emphasis": [
+            {
+              "text": "antes de construir la distribución",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "exactamente cantidad enteros",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "en el orden de obtención",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(cantidad,minimo,maximo). Cada llamada crea motor con semilla 191 y conserva una copia antes de generar. Si acepta, obtiene la primera muestra con esos argumentos, copia el motor alcanzado y compara sendas continuaciones de tres datos desde el original y la copia, con los mismos límites. Comprueba además cantidad y rango de los vectores. Después prueba cero obtenciones sin consumo y el rechazo del intervalo 5..2 sin consumir; no construyas esa distribución inválida.\n\nPara una configuración válida muestra en una línea Cantidad:N;Rango:B;Continuacion:B;Vacio:N:B;Rechazo:B. Si los argumentos iniciales son inválidos, captura antes de producir datos y muestra Configuracion rechazada:B, comparando el motor con su copia previa. Termina cada prueba con salto. En main usa (4,-2,5), (0,-12,12), (1,-12,12), (20,-12,12), (3,-12,-12), (3,12,12), (3,5,2), (3,-13,12), (3,-12,13), (-1,-12,12) y (21,-12,12), en ese orden. Pulsa Compilar, ejecutar y comprobar: las seis primeras configuraciones son válidas y las cinco últimas se rechazan. Todos los bools de las propiedades pedidas deben ser uno.",
+          "text": "Construye probar(cantidad, minimo, maximo). Cada llamada prepara un motor con semilla 191 y conserva una copia de su estado antes de utilizar generar.\n\nSi la configuración es válida, obtiene la primera muestra con esos argumentos. Copia el motor alcanzado y obtiene dos continuaciones de tres datos: una desde el motor original y otra desde la copia, con los mismos límites. Continuacion:B debe comprobar que los vectores de continuación coinciden y que los dos motores comparan iguales después de producirlos. Comprueba también el tamaño de la primera muestra y el rango de los datos obtenidos.\n\nDespués solicita cero datos con límites válidos y comprueba tamaño cero y conservación del motor actual. Prueba también el rechazo del intervalo 5..2 antes de usar el motor; no construyas una distribución con esos límites invertidos.\n\nPara una configuración válida muestra Cantidad:N;Rango:B;Continuacion:B;Vacio:N:B;Rechazo:B en una sola línea. Cantidad consulta el tamaño de la primera muestra; Rango comprueba los datos de la primera muestra y de la continuación obtenida desde el motor original. La otra continuación se compara con ésta en Continuacion. Vacio presenta el tamaño de esa muestra y si conserva el motor; Rechazo indica si el intento con límites invertidos conserva su estado.\n\nSi los argumentos iniciales son inválidos, captura el rechazo antes de producir datos y muestra Configuracion rechazada:B, comparando el motor con su copia previa. Termina cada prueba con un salto.\n\nEn main reúne estas once configuraciones, en este orden: (4,-2,5), (0,-12,12), (1,-12,12), (20,-12,12), (3,-12,-12), (3,12,12), (3,5,2), (3,-13,12), (3,-12,13), (-1,-12,12) y (21,-12,12). Las seis primeras son válidas y las cinco últimas se rechazan. Todos los bools de las propiedades comprobadas deben ser uno. Pulsa Compilar, ejecutar y comprobar para verificar la batería en una sola ejecución.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "los vectores de continuación coinciden",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "los dos motores comparan iguales",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "motor actual",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "once configuraciones",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "una sola ejecución",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -163,7 +306,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia y criterios después del intento"
+          "text": "Comparar la continuación y la batería completa"
         },
         {
           "type": "code",
@@ -172,11 +315,50 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validación completa antes de obtener valores, parámetro por referencia, cantidad y rango correctos, rechazo sin consumo y vacío sin consumo. Las líneas son Continuacion:1, Vacio:0:1 y Rechazo:1. Ambos lotes posteriores comienzan con motores copiados del mismo punto y construyen su distribución de la misma forma. No afirmamos que reconstruir una distribución entre lotes equivalga siempre a conservarla; para repetir hay que mantener también esa decisión."
+          "text": "Este primer programa muestra una comprobación parcial: Continuacion:1, Vacio:0:1 y Rechazo:1, en líneas distintas. La primera línea comprueba el tamaño cuatro de la muestra inicial y la igualdad de las dos continuaciones. El ejemplo no presenta todavía las once configuraciones ni todos los campos de la batería.\n\nLos dos lotes de continuación parten de motores copiados del mismo punto. Cada llamada a generar construye una distribución nueva con los mismos parámetros. La reproducción conserva también esa decisión: aquí no se está afirmando que reconstruir una distribución equivalga siempre a conservar el estado que pudiera tener otra.\n\nLa referencia completa que sigue reúne todas las configuraciones y sus informes. Su campo Continuacion compara tanto los vectores como los motores alcanzados; las otras comprobaciones distinguen cantidad, rango, vacío y rechazo previo.",
+          "emphasis": [
+            {
+              "text": "comprobación parcial",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "mismo punto",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "referencia completa",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tanto los vectores como los motores",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La batería reúne las fronteras -12 y 12, intervalos de un único valor, cantidades cero, uno y veinte y vecinos inválidos. Un intervalo degenerado fija el valor obtenido, pero no un número de avances internos del motor. La conservación comprobada se refiere al rechazo previo de argumentos; no promete restauración automática ante cualquier fallo posterior a una obtención."
+          "text": "La batería incluye las fronteras -12 y 12, intervalos de un único valor, cantidades cero, uno y veinte y los vecinos inválidos elegidos. Un intervalo de un único valor fija el dato obtenido, pero no obliga a realizar un número concreto de llamadas internas al motor (Köppe et al., 2023).\n\nLa conservación comprobada corresponde al rechazo de los argumentos antes de obtener datos. Ese requisito no promete restaurar automáticamente el motor ante cualquier fallo que ocurra después de haber solicitado un valor.",
+          "emphasis": [
+            {
+              "text": "las fronteras -12 y 12",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "número concreto de llamadas internas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "antes de obtener datos",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "heading",
@@ -204,7 +386,12 @@
             "Que el motor vuelva a su semilla inicial aunque ya hubiera avanzado."
           ],
           "correctIndex": 1,
-          "explanation": "Ausencia de llamadas conserva el estado actual; no equivale a reiniciarlo."
+          "explanation": "Ausencia de llamadas conserva el estado actual; no equivale a reiniciarlo.",
+          "reviewFeedback": [
+            "Relaciona una solicitud de cero datos con las llamadas que realmente necesita hacer generar.",
+            "Distingue conservar el estado actual de preparar otra vez el comienzo del motor.",
+            "Sigue qué valor tenía el motor antes de la solicitud: no confundir ausencia de obtenciones con reinicio."
+          ]
         },
         {
           "type": "math_puzzle",
@@ -280,14 +467,963 @@
         },
         {
           "type": "note",
-          "text": "La distribución entera requiere límites válidos; la copia del motor conserva su estado para comparar continuaciones en el mismo entorno (Stroustrup, 2024, sección 4.7.5; Working Draft: Programming Languages — C++, s. f., secciones [rand.dist.uni.int] y [rand.req.eng]). La comparación de muestras no exige que procedimientos diferentes produzcan siempre valores distintos.",
+          "text": "Construir una distribución entera exige límites ordenados; copiar un motor conserva un punto desde el que comparar continuaciones (Köppe et al., 2023). Recibirlo por referencia permite que la función utilice el objeto que mantiene el llamador (Stroustrup, 2024).\n\nLa comparación se realiza dentro del mismo entorno y con el mismo procedimiento. No exige que procedimientos distintos produzcan siempre datos diferentes ni que una coincidencia aislada pruebe que ambos se ejecutaron de la misma manera.",
           "emphasis": [
             {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
+              "text": "un punto desde el que comparar continuaciones",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "el objeto que mantiene el llamador",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "mismo procedimiento",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el motor que conserva el llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa comprueba las muestras y también el motor que conserva el llamador. Antes de generar datos, crea un motor testigo como copia del mismo punto inicial. El testigo obtiene sus datos mediante los bucles de main: no utiliza la función generar que se está comprobando. Cada tramo prepara su propia distribución, igual que una llamada a generar.\n\nCorrige únicamente la forma en que generar recibe el motor y conserva todo el resto del programa. El objetivo es que la función utilice el motor del llamador y lo deje en el mismo punto que el testigo después de cada tramo. Pulsa Compilar, ejecutar y comprobar: Muestra, Motor, Continuacion y Motor final deben mostrar uno, cada rótulo en su línea y con salto final.",
+          "emphasis": [
+            {
+              "text": "motor que conserva el llamador",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no utiliza la función generar",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "únicamente la forma en que generar recibe el motor",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "mismo punto que el testigo",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937 motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Muestra:1\nMotor:1\nContinuacion:1\nMotor final:1\n"
+                ],
+                "explanation": "La función y el testigo parten de la misma preparación y siguen el mismo procedimiento. Las muestras coinciden y el motor del llamador queda en el punto que alcanzó el testigo después de cada tramo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Recibir el motor por referencia permite que las obtenciones de generar actúen sobre el objeto del llamador. Recibirlo por valor prepara una copia para esa llamada (Stroustrup, 2024).\n\nLa comparación con el testigo añade una observación que faltaba en el informe anterior. Una coincidencia de muestras no demuestra por sí sola que se haya utilizado el motor correcto. Aquí se comparan los vectores completos y también los motores después de cada tramo, sin imponer una lista de números ni contar avances internos.",
+          "emphasis": [
+            {
+              "text": "por referencia",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "por valor",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "también los motores",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "dcba4ffacb68eb348a2a3fcd1b8529646ea409c1e1226e487978eab45b0facb0"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "25a3b3682e049c88dee370ae59f0e1bf905ed74eba6d66099a91c6a78cf2bf83"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "36c461918427abf313c59c4f034bc82ec6b9ff1109a5b6026a0295a242073933"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1260553ebf73d2781eff0859468d57f5f15c300ad7c37d7d12c1218cecaf6c6d"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "280251b9ba271676229ca7da515b49f49a108a7b03df634b84593c4913f037d8"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "307ca7e449aaa3b359c4e052ed2b4342cb09a6d0af845120b5d48fed9863c77a"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "f5b26fcbbc3c0c4f2ebc14a31739a036b7b0812d8757b22faea384736937bbb6"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "8546b9995763b047d5f41843b618795b1225424645dd56388404dd01d8ddfa2d"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "cf232c6fa5a8bea709b6f92e284828e37e0f329dcebd7b33cc21b34d06b7865e"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "f330ad498d296fbb008db08fb59b45810d18b5a6a23a59f91d4acf2e1e07eb8b"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "4fa09163b2ad38b6aa7b1df6e4400bc0b3d4d1038e0fbf3d4c2a22e912be6d47"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "verificar_motor_del_llamador",
+          "consigna_reparar_motor_compartido",
+          "reparar_motor_compartido",
+          "razonamiento_motor_compartido",
+          "referencia_motor_compartido"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "7925de56d6bfd33e982ecd455b80a81a325e06aa3b1546d549a66677f3adc616",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "37e65a8eedabb7986dfaa275f266b988c29779e8b7a7bec6078cfd288515e3a2"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "379046d4f2385d6dea7b1883350d1424eef9b5aafbe375c6c0acd51a2887f3bc"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "b958e45432fcd494ec106c24fc03f05800d4817c183b2f16d75e442585cb5ed6"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "b85d27ec51f67eaa6d81b5d4a8f1e159e656cee2fbe4965a8ce0ca282d0560a3"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "0a04e00ecd199f68a8c8e9c7d63339ab58271d24ebd8f8422785daadd9771224"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "81d4a712b15f60bcdf9421b6e2a0229e66ce9d6e8dd2ef745060315c83ac78bd"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7c771f0198fc27b99f850edd6d9c53985d70c9d2a4c10de20724b41f225f6aa8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "a58c13e0afb3968de73a7e3ff5774f771bf3abac3628e0f25a71aeabf2440e25"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "94f9758a45ee5824cf4a0246eaacce96f179417453f2e9820fb1376a60ac2ef7"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "f2f75023b5886c769649aee216d92ea1149703e48cc8a8803cf326671304bee0",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "dcba4ffacb68eb348a2a3fcd1b8529646ea409c1e1226e487978eab45b0facb0"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "25a3b3682e049c88dee370ae59f0e1bf905ed74eba6d66099a91c6a78cf2bf83"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "36c461918427abf313c59c4f034bc82ec6b9ff1109a5b6026a0295a242073933"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1260553ebf73d2781eff0859468d57f5f15c300ad7c37d7d12c1218cecaf6c6d"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "280251b9ba271676229ca7da515b49f49a108a7b03df634b84593c4913f037d8"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "307ca7e449aaa3b359c4e052ed2b4342cb09a6d0af845120b5d48fed9863c77a"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "f5b26fcbbc3c0c4f2ebc14a31739a036b7b0812d8757b22faea384736937bbb6"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "8546b9995763b047d5f41843b618795b1225424645dd56388404dd01d8ddfa2d"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "cf232c6fa5a8bea709b6f92e284828e37e0f329dcebd7b33cc21b34d06b7865e"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "f330ad498d296fbb008db08fb59b45810d18b5a6a23a59f91d4acf2e1e07eb8b"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "4fa09163b2ad38b6aa7b1df6e4400bc0b3d4d1038e0fbf3d4c2a22e912be6d47"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "9ea05e0f2015edf6548f44cae5d876918e8f398d87aea22ba43353ac4b1439aa",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "015c431793aaee24aeaf63259e168274e4c2baac4dee93753b845eaebf07646f"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "75f0741c8df08ddd6922a7aac3e9e6c7e13763079d650f391e218a86ae395b38"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "43aae833d1a1276eb6c82ec94ba1bc7e4beed0bfee63bd8d24b322fb2a3de05d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "4c58502af6a07041c1e886ce2d6de5400cda5a24d2a7c8d9500a39a34ea39c1e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "d09f66c64f96e044baa8673b2d2db6bf04ccef4f5b57eb5ecf3f27fa1322ac34"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "7c1d68b450332af2a719053d5a32f15dc267b9504fb4e7e9db8e78ecd829c1ea"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "6493cbc5e15da1573b5567ca0ae578dea4482b36d84d789f4af932e6c7cacba9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "e7086247122c7fa18026ee027df4720843c1dfbbad2cead6b92631b2a6ade5c2"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "b6633134e2177d8e71cfd393add322c96213db586d156adcbac411b19af1c210"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "verificar_motor_del_llamador",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "consigna_reparar_motor_compartido",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "reparar_motor_compartido",
+        "sha256": "843a27b65c8f99aa488a03d58874937a28001296d204f24ce1a6399edea6243c",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "razonamiento_motor_compartido",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "referencia_motor_compartido",
+        "sha256": "790fde1c6a782d46cae8661f302ec9c79167ca3b505bca5fb93598f63bc8d5d8",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "a4598efc2ea227af2a059a28313297f77d2147cc885d3b16c0319ee73ae58d73",
+        "afterSha256": "9a2331bd082265d5c6068707502c1526ce0cf432080617efe68322fd747cd7fe"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f2f424db0347a9293a858c6915e2f2327c0ccfd6c2ce10486337a5e69d42324e",
+        "afterSha256": "6f694d3569509028fdff5b9c69f86b6aea268a09866bac0dcb0149eff64ca82c"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "7f0e9b5f5cb7664317533984a36bcb911f35dd02773af0abde187aab2c7189d6",
+        "afterSha256": "981be6d0ff95ea29afc094660f0caef9513e088fff068400c4b28c0efe9a3acb"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "e7e16acd97b76e7366416527b27c77d377343a86c9f9eb238b596688e05968cb",
+        "afterSha256": "580760b8f10125fcef7a5712ce43b41dd861b165cc88d45d4cdb82e72c8c21b0"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "bdf17fadedcc707328f134f09cc58769d02aae5b43873eceb5315ee068e9cb06",
+        "afterSha256": "d90aeaa9255eb9cc5fa499d70e96e733f4dfcebca89b5e7685d9268c4c9f5204"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "5b20ea48e93bd71a2e971703aebae4468e082d4724295c1f1de4e2e4f0ddd23e",
+        "afterSha256": "ef3558127e671cf378c332cc85c45285fcec21d667b6e04dea7f3b7c875de739"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "782f345cca0cbdc91ba69a803afe65f824fe75f5bde15168b8fe81415cf834df",
+        "afterSha256": "6249aef2068b0393c639d44dff03a95fd29c5e4ebeb0454da0eb39b6a7501d72"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "10b3839d2378cfc4f7f20ab10050befc87d839e015b1d3b6a210d7a21538064e",
+        "afterSha256": "aa396b37fa043445b3c70e2b20bb7e60aad0b813dac85c90ba7aad9d387d5ce9"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "aa5ef1325e09b6c72d4717e9a0ac994ed126c39beb3fa67ac9744f0338968679",
+        "afterSha256": "dc09eeb8d5b42203951c8c0d8a3ec60e6d9047fc660cedfd561b9b74b30dfe14"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "17a89ce7e770942fab357142cf8a86dacd5ba2343515174e2781a9499b3c2b7e",
+        "afterSha256": "72ec78c13637e8b755100745dd68b543eff6f9ae7237f846cdb1ebd0acf1a8b4"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5bf0a1fe91d29ab698d097d7d01958067a229bcc409ac913ea51000be8dba377",
+        "afterSha256": "ae6194899111f7d53424b7814a6c0f3cb806a93d08db677ca647eed46b51c69f"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "4ed01b68585438b5ad7c283393b9240bfd22da4eb9775996793d4da104943b88",
+        "afterSha256": "be7b2c38afa8b0d7212b8dd1636228a78d81a1ccbb7b9877d2442db750132ad8"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "8e19c993718ab9c7ffbe203cbc6ec61e16312c9613fac442e9063dc130a64900",
+        "afterSha256": "9fe1fa05942d2de773cf1599b31aa509512aca4154a8b7ce7490145667887bbc"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "4084fab0f90befd1c20f15c333cc6e891ed8bb7c8a17fb92f133012bcdcef6c3",
+        "afterSha256": "92d44850b777fc64f9ffa9fcc8dd535418c8a9f89eeb515c34483bbbd151359d"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "a302f321b666792f93fc65cb7c1297518fd4512ae131d3a84f6a8e42e71a702d",
+        "afterSha256": "3123bc57e4d0e8ac1a92e1458645dd52d39928277f8796c1ef7ee19f1cff6c7d"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "37290c1fa7b6bd2047ea36b3167bc470837a45906c34ef043032d5e29887487f",
+        "afterSha256": "f4b675604123de5325b6346d40a125757c50174935c087a1f0a812208bd152d3"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ae6194899111f7d53424b7814a6c0f3cb806a93d08db677ca647eed46b51c69f",
+        "afterSha256": "41f79da24a6d4128641eebd57e2007e26c6b557db84ae1e1fc8fa18a5b73591f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "41f79da24a6d4128641eebd57e2007e26c6b557db84ae1e1fc8fa18a5b73591f",
+        "afterSha256": "8bad6cdc4c32071afb7f588d18eeed9ad0e482e0fd5d3f2b7968a06b10729b7c"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004",
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "reparar_motor_compartido",
+      "blocks": [
+        "razonamiento_motor_compartido",
+        "referencia_motor_compartido"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "reparar_motor_compartido",
+      "requires": [
+        "block_0004_0003"
       ]
     }
   ]

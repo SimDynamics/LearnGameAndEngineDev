@@ -10,16 +10,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Un taller dispone de identificadores de participantes y quiere elegir tres para una actividad. Cada participante puede aparecer como máximo una vez. Obtener tres enteros de un intervalo no garantiza ese requisito: el generador permite repetir. El histograma anterior cuenta esas repeticiones; ahora cambia el contrato de producción. Seleccionar sin reemplazo significa que un candidato elegido deja de estar disponible durante esa selección.",
+          "text": "Un taller dispone de identificadores de participantes y quiere elegir tres para una actividad. Cada participante puede aparecer como máximo una vez. Obtener tres enteros de un intervalo permite repeticiones; por eso, cantidad de datos y cantidad de valores distintos son requisitos diferentes (Stroustrup, 2024).\n\nEl histograma anterior contaba repeticiones. Aquí cambia el objetivo: un candidato elegido deja de estar disponible durante esa selección. Este procedimiento se llama selección sin reposición.",
           "emphasis": [
             {
-              "text": "Seleccionar sin reemplazo"
+              "text": "cantidad de datos y cantidad de valores distintos",
+              "style": "bold"
+            },
+            {
+              "text": "selección sin reposición",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Trabajaremos con un vector de como máximo diez identificadores int, todos diferentes y entre cero y nueve. Su orden inicial forma parte de la configuración. Pediremos una cantidad entre cero y el número de candidatos. El resultado debe contener exactamente esa cantidad, sin repetidos, en el orden en que se obtuvieron. Cada resultado debe pertenecer al vector original, que se conserva con sus valores y su orden. Cero es un identificador válido."
+          "text": "Usa un vector de como máximo diez identificadores `int`, todos diferentes y entre cero y nueve. Su orden inicial forma parte de la configuración. La cantidad solicitada puede ir de cero al número de candidatos, incluidos ambos extremos.\n\nEl resultado debe contener exactamente esa cantidad de identificadores, sin repetidos, en el orden de obtención. Todos deben pertenecer al vector original, que se conserva con sus valores y su orden. Cero es un identificador válido: no significa que falte un participante.",
+          "emphasis": [
+            {
+              "text": "exactamente esa cantidad de identificadores",
+              "style": "bold"
+            },
+            {
+              "text": "Cero es un identificador válido",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -31,23 +46,43 @@
             "Está garantizado si todos los datos pertenecen al intervalo permitido."
           ],
           "correctIndex": 0,
-          "explanation": "Eliminar repeticiones después no garantiza la cantidad solicitada. Debemos controlar qué candidatos siguen disponibles."
+          "explanation": "Eliminar repeticiones después no garantiza la cantidad solicitada. Es necesario controlar qué candidatos siguen disponibles.",
+          "reviewFeedback": [
+            "Revisa si la colección conserva exactamente la cantidad solicitada después de eliminar repeticiones.",
+            "Distingue la cantidad de datos generados de la cantidad de identificadores diferentes que quedan.",
+            "Pertenecer al intervalo verifica el dominio de cada dato; revisa qué garantiza sobre las repeticiones."
+          ]
         },
         {
           "type": "multiple_choice",
           "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__validar_tambien_cantidad_cero",
-          "question": "Recibes candidatos {2,2} y cantidad cero. Nuestro contrato exige identificadores diferentes incluso para no elegir ninguno. ¿Qué corresponde?",
+          "question": "Recibes candidatos {2,2} y cantidad cero. El contrato de esta actividad exige identificadores diferentes incluso para no elegir ninguno. ¿Qué corresponde?",
           "options": [
             "Devolver vacío y aceptar automáticamente esa configuración.",
             "Rechazar los candidatos antes de utilizar el motor.",
             "Aceptar la configuración eliminando antes una de las dos copias."
           ],
           "correctIndex": 1,
-          "explanation": "Cero no elimina los requisitos de validez del vector. El rechazo ocurre antes de obtener datos."
+          "explanation": "Cero no elimina los requisitos de validez del vector. El rechazo ocurre antes de obtener datos.",
+          "reviewFeedback": [
+            "Revisa qué requisitos se aplican al vector antes de decidir cuántos elementos devolver.",
+            "Comprueba el contrato de validez de los candidatos antes de utilizar el motor.",
+            "Eliminar un dato modificaría la configuración recibida; revisa si esa reparación forma parte del contrato."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Reintentar cada vez que aparezca un identificador ya elegido puede tardar una cantidad indeterminada de intentos. En esta tarea elegiremos únicamente entre candidatos disponibles y haremos una extracción por cada elemento solicitado. Eso describe el recorrido de nuestro programa; no fija cuántas llamadas internas hará la distribución al motor para obtener cada índice."
+          "text": "Reintentar cada vez que aparezca un identificador ya elegido no fija de antemano cuántos intentos harán falta. Elegir sólo entre candidatos disponibles permite realizar una extracción por cada elemento solicitado.\n\nUna extracción es un paso de este procedimiento; no equivale necesariamente a una única llamada al motor. El algoritmo con que una distribución transforma sus resultados depende de la implementación de la biblioteca (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "una extracción por cada elemento solicitado",
+              "style": "bold"
+            },
+            {
+              "text": "no equivale necesariamente a una única llamada al motor",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -59,16 +94,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Una copia de trabajo permite conservar el original. Mantendremos un contador restantes: sólo los índices desde cero hasta restantes-1 representan candidatos disponibles. Esa parte inicial se llama aquí prefijo activo. El vector completo conserva su tamaño; las posiciones desde restantes hasta el final quedan fuera de la selección. Usaremos copias, contadores y accesos a elementos ya conocidos.",
+          "text": "Una copia de trabajo permite conservar el vector original. El contador `restantes` indica cuántos candidatos continúan disponibles. Sólo las posiciones desde cero hasta `restantes-1` pertenecen a ese conjunto: esta parte inicial se llama prefijo activo.\n\nEl vector completo conserva su tamaño. Las posiciones desde `restantes` hasta el final quedan fuera de la selección, aunque todavía almacenen valores. Cuando `restantes` vale cero, el prefijo está vacío y no hay un índice disponible que se pueda elegir.",
           "emphasis": [
             {
-              "text": "prefijo activo"
+              "text": "prefijo activo",
+              "style": "bold"
+            },
+            {
+              "text": "El vector completo conserva su tamaño",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Por ejemplo, trabajo={6,1,8,3} y restantes=2 representan únicamente seis y uno disponibles. Ocho y tres siguen almacenados, pero están fuera del prefijo. El intervalo de índices para elegir es 0..1, inclusivo; no es el intervalo de identificadores. Antes de construir uniform_int_distribution<int>{0,restantes-1} debe estar demostrado que restantes es positivo."
+          "text": "Por ejemplo, `trabajo={6,1,8,3}` y `restantes=2` representan únicamente los identificadores seis y uno disponibles. Ocho y tres siguen almacenados, pero están fuera del prefijo. El intervalo de índices para elegir es 0..1, inclusivo; no es un intervalo de identificadores.\n\nUna `uniform_int_distribution<int>` incluye los dos extremos de su intervalo y exige que el inferior no sea mayor que el superior (Köppe et al., 2023). Antes de construir `uniform_int_distribution<int>{0,restantes-1}`, debe estar demostrado que `restantes` es positivo.",
+          "emphasis": [
+            {
+              "text": "no es un intervalo de identificadores",
+              "style": "bold"
+            },
+            {
+              "text": "`restantes` es positivo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -80,15 +130,44 @@
             "Dos, que ocupa esa posición del prefijo activo."
           ],
           "correctIndex": 2,
-          "explanation": "El índice identifica una posición disponible. Su elemento es el candidato elegido; las posiciones de la cola no están disponibles."
+          "explanation": "El índice identifica una posición disponible. Su elemento es el candidato elegido; las posiciones de la cola no están disponibles.",
+          "reviewFeedback": [
+            "El número obtenido se usa como posición; consulta qué elemento está almacenado en ella.",
+            "Distingue el tamaño almacenado del prefijo que sigue disponible.",
+            "Localiza la posición indicada dentro del prefijo activo."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Para retirar una elección sin desplazar toda la colección, conserva primero su identificador. El último elemento activo puede ocupar el hueco que deja; después reduce restantes en uno. La antigua posición final queda fuera del prefijo. Si elegiste otra posición, el valor que había al final sigue disponible en el hueco; si elegiste el último activo, sólo queda retirado ese candidato. La cola puede contener copias repetidas y no tiene significado como lista de disponibles. Decide cómo expresar ese orden con asignaciones separadas y accesos justificados."
+          "text": "El procedimiento de permutación elige una posición al azar dentro del prefijo activo, intercambia su elemento con el último disponible y acorta el prefijo (Durstenfeld, 1964). Aquí interesa conservar por separado los ID elegidos, en vez de construir una permutación completa.\n\nPara retirar una elección, guarda primero su identificador en el resultado. Después copia el último candidato activo sobre la posición elegida y reduce `restantes` en uno. Esa antigua posición final queda fuera del prefijo. Si las dos posiciones eran diferentes, el candidato del final sigue disponible en el hueco. Si elegiste el último activo, copiarlo sobre sí mismo y reducir `restantes` retira justamente ese candidato.\n\nLa copia no vuelve a admitir al ID elegido. Al reducir `restantes`, ese ID queda fuera del prefijo; cuando las posiciones son diferentes, el candidato del final ocupa el hueco y continúa disponible. La cola puede contener valores repetidos; no representa ni la lista de disponibles ni la secuencia de elegidos. Esta última se conserva en el resultado. Expresa esas acciones en ese orden, con asignaciones separadas y accesos justificados.",
+          "emphasis": [
+            {
+              "text": "guarda primero su identificador",
+              "style": "bold"
+            },
+            {
+              "text": "reduce `restantes` en uno",
+              "style": "bold"
+            },
+            {
+              "text": "no vuelve a admitir al ID elegido",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Al principio el prefijo contiene todos los candidatos distintos. Cada extracción retira exactamente uno y conserva los demás en el prefijo, aunque cambie su orden de trabajo. Por eso pedir como máximo el tamaño inicial permite terminar tras la cantidad solicitada de extracciones, sin buscar repetidos para volver a intentarlo. No ordenaremos el resultado: su orden es el de obtención."
+          "text": "Al principio el prefijo contiene todos los candidatos distintos. Cada extracción retira exactamente uno y conserva los demás en el prefijo, aunque cambie su orden de trabajo. Por eso, pedir como máximo el tamaño inicial permite terminar tras la cantidad solicitada de extracciones, sin volver a intentar valores repetidos.\n\nEl orden de trabajo puede cambiar; el vector original permanece intacto. El resultado tampoco se ordena: conserva el orden en que se obtuvieron sus elementos.",
+          "emphasis": [
+            {
+              "text": "retira exactamente uno",
+              "style": "bold"
+            },
+            {
+              "text": "El resultado tampoco se ordena",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -100,7 +179,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye seleccionar(std::mt19937& motor, const std::vector<int>& candidatos, int cantidad), con retorno vector<int>. Acepta como máximo diez candidatos diferentes de 0..9 y cantidad de cero al tamaño, incluidos. Rechaza cualquier incumplimiento con invalid_argument antes de usar el motor. Valida también candidatos y cantidad cuando se piden cero elementos; una configuración válida de cantidad cero devuelve vacío sin construir una distribución ni obtener datos.\n\nSólo convierte el tamaño a int después de comprobar que no supera diez. Usa una copia de trabajo, el prefijo activo y exactamente cantidad extracciones. Cada vuelta elige una posición disponible, conserva su identificador y lo retira del prefijo. seleccionar no imprime ni cambia candidatos."
+          "text": "Construye `seleccionar(std::mt19937& motor, const std::vector<int>& candidatos, int cantidad)`, con retorno `vector<int>`. Acepta como máximo diez candidatos diferentes de 0..9 y cantidad de cero al tamaño, incluidos. Rechaza cualquier incumplimiento con `invalid_argument` antes de usar el motor. Valida también candidatos y cantidad cuando se piden cero elementos; una configuración válida de cantidad cero devuelve vacío sin construir una distribución ni obtener datos.\n\nSólo convierte el tamaño a `int` después de comprobar que no supera diez. Usa una copia de trabajo, el prefijo activo y exactamente cantidad extracciones. Cada vuelta elige una posición disponible, conserva su identificador y lo retira del prefijo. `seleccionar` no imprime ni cambia candidatos.",
+          "emphasis": [
+            {
+              "text": "antes de usar el motor",
+              "style": "bold"
+            },
+            {
+              "text": "cantidad cero",
+              "style": "bold"
+            },
+            {
+              "text": "no imprime ni cambia candidatos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -121,14 +214,35 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(candidatos,cantidad). Cada prueba crea motor con semilla 701, guarda una copia de candidatos y otra del estado inicial. Si acepta, compara la selección con otra llamada desde una copia del mismo comienzo. Después copia el estado alcanzado y compara continuaciones de dos elecciones desde ambas copias; con menos de dos candidatos elige sólo los disponibles. Comprueba cantidad, pertenencia, unicidad y conservación del original.\n\nComprueba además una solicitud válida de cantidad cero sin consumo. Por separado intenta candidatos {2,2} con cantidad cero: la lista repetida se rechaza antes de usar el motor. En una línea muestra Cantidad:N;Propiedades:B;Original:B;Reproduccion:B;Continuacion:B;Vacio:N:B;Rechazo:B. Si la configuración inicial es inválida, muestra Configuracion rechazada:B;Original:B, comparando estado y datos con sus copias iniciales. Termina cada prueba con un salto."
+          "text": "Construye `probar(candidatos,cantidad)`. Cada prueba crea un motor con semilla 701 y guarda una copia de candidatos y otra del estado inicial. Si acepta la configuración, compara la selección con otra llamada desde una copia del mismo comienzo. Reproduccion debe comprobar tanto los vectores obtenidos como los estados finales de ambos motores. Guarda ese indicador antes de continuar. Copiar un motor permite recuperar su estado para repetir el mismo procedimiento (Köppe et al., 2023).\n\nDespués copia el estado alcanzado. Desde el motor y desde esa copia, realiza una selección adicional de dos candidatos; si el vector original tiene menos de dos, selecciona sólo los que contiene. Continuacion compara los dos resultados y los dos estados finales. Cada llamada dispone de todos los candidatos originales: no continúa retirando elementos de la copia de trabajo de la llamada anterior. Comprueba también cantidad, pertenencia, unicidad y conservación del original.\n\nComprueba además una solicitud válida de cantidad cero sin consumo. Por separado intenta candidatos {2,2} con cantidad cero: la lista repetida se rechaza antes de usar el motor. En una línea muestra Cantidad:N;Propiedades:B;Original:B;Reproduccion:B;Continuacion:B;Vacio:N:B;Rechazo:B. Si la configuración inicial es inválida, muestra Configuracion rechazada:B;Original:B, comparando estado y datos con sus copias iniciales. Termina cada prueba con un salto de línea.",
+          "emphasis": [
+            {
+              "text": "Reproduccion",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Continuacion",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cantidad cero sin consumo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Reúne en main estas parejas de candidatos y cantidad, en orden: {6,1,8,3,0} con 3; vacío con 0; {0} con 0 y con 1; {9,2,5} con 1 y con 3; todos los ID 0..9 con 10; {0,3,8,1,6} con 3; vacío con 1; {-1} con 0; {10} con 0; {2,2} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {9,2,5} con -1 y con 4. Pulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas y conservan cantidades 3,0,0,1,1,3,10,3; las siete restantes se rechazan. Todos los indicadores pedidos son verdaderos. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
+          "text": "Reúne en main estas parejas de candidatos y cantidad, en orden: {6,1,8,3,0} con 3; vacío con 0; {0} con 0 y con 1; {9,2,5} con 1 y con 3; todos los ID 0..9 con 10; {0,3,8,1,6} con 3; vacío con 1; {-1} con 0; {10} con 0; {2,2} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {9,2,5} con -1 y con 4. Pulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas y conservan cantidades 3,0,0,1,1,3,10,3; las siete `restantes` se rechazan. Todos los indicadores pedidos son verdaderos. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Todos los indicadores pedidos son verdaderos",
+              "style": "bold"
+            },
+            {
+              "text": "No imprimas esos indicadores como constantes",
+              "style": "bold"
             }
           ]
         },
@@ -149,7 +263,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas se reúnen en una sola ejecución. Con cantidad igual al tamaño todos los ID aparecen exactamente una vez; con un único candidato sólo puede elegirse ese ID. Reordenar candidatos puede cambiar el resultado: la reproducción compara dos ejecuciones con el mismo orden nuevo, sin imponer igualdad con un experimento de configuración distinta."
+          "text": "Las pruebas se reúnen en una sola ejecución. Con cantidad igual al tamaño todos los ID aparecen exactamente una vez; con un único candidato sólo puede elegirse ese ID. Reordenar candidatos puede cambiar el resultado: la reproducción compara dos ejecuciones con el mismo orden nuevo, sin imponer igualdad con un experimento de configuración distinta.",
+          "emphasis": [
+            {
+              "text": "todos los ID aparecen exactamente una vez",
+              "style": "bold"
+            },
+            {
+              "text": "mismo orden nuevo",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -161,7 +285,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia usa semilla 733, candidatos {9,4,1,7,0} y cuatro elecciones. Cambian los datos del intento; se conservan los contratos. seleccion_correcta comprueba las propiedades sin conocer qué identificadores obtendrá la distribución. Las comparaciones entre vectores respetan tamaño, valores y orden."
+          "text": "Esta referencia usa semilla 733, candidatos {9,4,1,7,0} y cuatro elecciones. Cambian los datos del intento; se conservan los contratos. `seleccion_correcta` comprueba las propiedades sin conocer qué identificadores obtendrá la distribución. Las comparaciones entre vectores respetan tamaño, valores y orden.",
+          "emphasis": [
+            {
+              "text": "propiedades",
+              "style": "bold"
+            },
+            {
+              "text": "tamaño, valores y orden",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -170,19 +304,55 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo inicial imprime siete líneas para una configuración válida. La batería siguiente reúne cada configuración en una línea sin reducir sus comprobaciones. Reproduccion compara resultados y estados desde el mismo comienzo; Continuacion compara copias del mismo punto ya alcanzado. Cero elementos y un rechazo previo conservan el motor."
+          "text": "El ejemplo inicial imprime siete líneas para una configuración válida. La batería siguiente reúne cada configuración en una línea sin reducir sus comprobaciones. Reproduccion compara resultados y estados desde el mismo comienzo; Continuacion compara copias del mismo punto ya alcanzado. Cero elementos y un rechazo previo conservan el motor.",
+          "emphasis": [
+            {
+              "text": "resultados y estados",
+              "style": "bold"
+            },
+            {
+              "text": "mismo punto ya alcanzado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validación completa antes de consumir el motor; original intacto; cantidad exacta, pertenencia y unicidad; copia del elegido anterior al reemplazo; intervalo de índices sólo dentro del prefijo positivo; ninguna obtención en el caso cero. Con cantidad igual al tamaño se eligen todos una vez, aunque el orden pueda cambiar. Con un candidato sólo puede resultar ese ID. En dos llamadas distintas se repone una copia de los candidatos: un ID puede aparecer en ambas; la unicidad prometida corresponde a cada selección."
+          "text": "Criterios: validación completa antes de consumir el motor; original intacto; cantidad exacta, pertenencia y unicidad; copia del elegido anterior al reemplazo; intervalo de índices sólo dentro del prefijo positivo; ninguna obtención en el caso cero. Con cantidad igual al tamaño se eligen todos una vez, aunque el orden pueda cambiar. Con un candidato sólo puede resultar ese ID. En dos llamadas distintas se repone una copia de los candidatos: un ID puede aparecer en ambas; la unicidad prometida corresponde a cada selección.",
+          "emphasis": [
+            {
+              "text": "antes de consumir el motor",
+              "style": "bold"
+            },
+            {
+              "text": "la unicidad prometida corresponde a cada selección",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Los índices de trabajo se justifican porque extraidos < cantidad <= total deja restantes=total-extraidos al menos uno. El intervalo inclusivo 0..restantes-1 contiene exactamente las posiciones disponibles. Quitar un candidato reduce restantes en uno y no introduce otro ID en el prefijo. La cola no se vuelve a consultar como disponible. La copia del último activo también funciona cuando su posición es la elegida."
+          "text": "Los índices de trabajo se justifican porque `extraidos < cantidad <= total` deja `restantes=total-extraidos` al menos uno. El intervalo inclusivo 0..`restantes-1` contiene exactamente las posiciones disponibles. Quitar un candidato reduce `restantes` en uno y no introduce otro ID en el prefijo. La cola no se vuelve a consultar como disponible. La copia del último activo también funciona cuando su posición es la elegida.",
+          "emphasis": [
+            {
+              "text": "al menos uno",
+              "style": "bold"
+            },
+            {
+              "text": "La cola no se vuelve a consultar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "La distribución puede transformar los valores del motor de forma diferente entre bibliotecas. Dos selecciones sucesivas pueden coincidir. La distribución tampoco garantiza un número fijo de avances internos por extracción. La conservación del motor al rechazar se refiere a argumentos inválidos detectados previamente; no anuncia recuperación automática ante cualquier fallo posterior de memoria."
+          "text": "La distribución puede transformar los valores del motor de forma diferente entre bibliotecas; tampoco se exige un número fijo de avances internos por extracción (Köppe et al., 2023). Dos selecciones sucesivas pueden coincidir.\n\nLa conservación del motor al rechazar se refiere a argumentos inválidos detectados antes de usarlo. No promete recuperar automáticamente el estado ante cualquier fallo posterior de memoria.",
+          "emphasis": [
+            {
+              "text": "antes de usarlo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "heading",
@@ -203,7 +373,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Estos programas usan índices ya fijados dentro de su dominio. No llaman al motor. Traza elegido, posiciones activas y cola antes de predecir; así puedes estudiar el procedimiento sin adivinar una secuencia de la biblioteca."
+          "text": "Estos programas usan índices ya fijados dentro de su dominio. No llaman al motor. Traza elegido, posiciones activas y cola antes de predecir; así puedes estudiar el procedimiento sin adivinar una secuencia de la biblioteca.",
+          "emphasis": [
+            {
+              "text": "No llaman al motor",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -214,7 +390,8 @@
           "answers": [
             "Elegido:3\nActivos: 8 6\nTrabajo: 8 6 6 1"
           ],
-          "explanation": "Se conserva tres antes de reemplazar. Seis sigue disponible en el hueco; su antigua posición queda inactiva. El tamaño del vector completo no cambia."
+          "explanation": "Se conserva tres antes de reemplazar. Seis sigue disponible en el hueco; su antigua posición queda inactiva. El tamaño del vector completo no cambia.",
+          "reviewFeedback": "Sigue por separado el ID guardado, el contador restantes y las posiciones que aún pertenecen al prefijo. No confundas ese prefijo con todo el almacenamiento."
         },
         {
           "type": "multiple_choice",
@@ -226,7 +403,12 @@
             "Leer la última posición del vector completo aunque esté fuera del prefijo."
           ],
           "correctIndex": 0,
-          "explanation": "Con restantes=1, el máximo válido es cero. La cola y size() no sustituyen el extremo activo."
+          "explanation": "Con restantes=1, el máximo válido es cero. La cola y size() no sustituyen el extremo activo.",
+          "reviewFeedback": [
+            "Identifica el último índice de un prefijo que contiene un solo elemento.",
+            "Cuenta cuántas posiciones contiene un intervalo inclusivo antes de elegir su extremo superior.",
+            "Revisa si la posición elegida pertenece al prefijo que sigue disponible."
+          ]
         },
         {
           "type": "output_prediction",
@@ -237,11 +419,22 @@
           "answers": [
             "Guardado:2\nActivos: 2 0 4"
           ],
-          "explanation": "El siete se pierde antes de copiarlo al resultado; el dos guardado sigue activo. El programa termina y sus accesos son válidos, pero no retira correctamente el candidato que anuncia."
+          "explanation": "El siete se pierde antes de copiarlo al resultado; el dos guardado sigue activo. El programa termina y sus accesos son válidos, pero no retira correctamente el candidato que anuncia.",
+          "reviewFeedback": "Traza las asignaciones en el orden escrito. Cuando se guarda el valor, comprueba si esa posición conserva todavía su contenido anterior."
         },
         {
           "type": "paragraph",
-          "text": "El reemplazo puede cambiar la posición de otros candidatos disponibles; el siguiente índice se interpreta dentro del prefijo actualizado. La cola conserva almacenamiento y deja de representar disponibilidad. La recuperación independiente siguiente comprueba ese contrato con otros datos, sin reemplazar el programa de la batería anterior."
+          "text": "El reemplazo puede cambiar la posición de otros candidatos disponibles; el siguiente índice se interpreta dentro del prefijo actualizado. La cola conserva almacenamiento y deja de representar disponibilidad. La recuperación independiente siguiente comprueba ese contrato con otros datos, sin reemplazar el programa de la batería anterior.",
+          "emphasis": [
+            {
+              "text": "prefijo actualizado",
+              "style": "bold"
+            },
+            {
+              "text": "sin reemplazar el programa",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -253,7 +446,12 @@
             "Cada resultado es único internamente; entre llamadas pueden compartir ID."
           ],
           "correctIndex": 2,
-          "explanation": "Cada llamada prepara su propia copia de candidatos disponibles. Continuar el motor no cambia ese contrato."
+          "explanation": "Cada llamada prepara su propia copia de candidatos disponibles. Continuar el motor no cambia ese contrato.",
+          "reviewFeedback": [
+            "Revisa si las dos llamadas comparten la misma copia de trabajo o preparan cada una la suya.",
+            "Continuar el estado del motor no garantiza que dos resultados deban ser diferentes.",
+            "Distingue la unicidad dentro de un resultado del conjunto disponible en otra llamada."
+          ]
         },
         {
           "type": "heading",
@@ -261,10 +459,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye seleccionar y sus comprobaciones en este editor independiente para candidatos {8,5,0,9,3,6,1}, cinco elecciones y semilla 701. Usa el mismo formato de una línea: Cantidad:N;Propiedades:B;Original:B;Reproduccion:B;Continuacion:B;Vacio:N:B;Rechazo:B. Comprueba dos continuaciones desde motores copiados del mismo punto, cero sin consumo y el rechazo previo de {2,2} con cantidad cero. Pulsa Compilar, ejecutar y comprobar: la cantidad debe ser cinco, el vacío cero y todos los indicadores uno. No se pide reproducir una lista concreta de ID.",
+          "text": "Construye `seleccionar` y sus comprobaciones en este editor independiente para candidatos {8,5,0,9,3,6,1}, cinco elecciones y semilla 701. Usa el mismo formato de una línea: Cantidad:N;Propiedades:B;Original:B;Reproduccion:B;Continuacion:B;Vacio:N:B;Rechazo:B.\n\nReproduccion compara una selección repetida desde el mismo estado inicial y los estados finales de ambos motores. Después copia el estado alcanzado y realiza una selección adicional de dos candidatos desde cada motor. Continuacion compara esos resultados y sus estados finales. Comprueba también cantidad, pertenencia, unicidad, original conservado, cero sin consumo y el rechazo previo de {2,2} con cantidad cero.\n\nPulsa Compilar, ejecutar y comprobar: la cantidad debe ser cinco, el vacío cero y todos los indicadores uno. No se pide reproducir una lista concreta de ID ni imprimir los indicadores como constantes.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "editor independiente",
+              "style": "bold"
+            },
+            {
+              "text": "No se pide reproducir una lista concreta de ID",
+              "style": "bold"
             }
           ]
         },
@@ -293,22 +496,65 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye struct Pareja con miembros int primero y segundo. formar_parejas recibe std::mt19937& motor, const vector<int>& candidatos e int pares; devuelve vector<Pareja>. Los candidatos cumplen el mismo contrato de como máximo diez ID distintos 0..9. pares debe estar entre cero y cinco y no pedir más personas que las disponibles. Rechaza cualquier incumplimiento con invalid_argument antes de consumir el motor. Un número impar de candidatos es válido: puede quedar alguien sin elegir."
-        },
-        {
-          "type": "paragraph",
-          "text": "Cada ID aparece como máximo una vez en el conjunto completo de parejas, no sólo dentro de cada pareja. Reutiliza seleccionar para obtener todos los participantes de esta llamada en una sola selección. La primera pareja reúne el primer ID obtenido con el segundo; la siguiente reúne el tercero con el cuarto, y así sucesivamente. No ordenes dentro de las parejas ni entre ellas: se conserva el orden de obtención. La cantidad solicitada, los miembros de cada registro y ese orden son garantías diferentes."
-        },
-        {
-          "type": "paragraph",
-          "text": "Comprueba pares entre cero y cinco y que no excede total/2 antes de multiplicarlo por dos. No conviertas size() a int hasta comprobar el límite de diez. Con pares cero, seleccionar sigue validando candidatos y devuelve vacío sin usar el motor.\n\nLa batería de main reúne candidatos y pares en este orden: {0,5,2,8,3} con 2; vacío con 0; {0} con 0; {2,9} con 1; {8,0,5} con 1; los diez ID 0..9 con 5; {3,8,2,5,0} con 2; vacío con 1; {0} con 1; los diez ID con -1 y con 6; {-1,2} con 0; {10,2} con 0; {0,0} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {2,9} con 2."
-        },
-        {
-          "type": "paragraph",
-          "text": "Construye probar(candidatos,pares), con motor nuevo de semilla 809 y copias iniciales de motor y datos. Si acepta, comprueba cantidad, pertenencia y unicidad global. Aplana las parejas en orden primero,segundo y compara ese vector con seleccionar de 2*pares ID desde la copia inicial del motor; compara también los estados finales. Comprueba cero parejas sin consumo y una solicitud imposible de total/2+1 parejas, que debe rechazarse sin usar el motor.\n\nMuestra una línea por prueba: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B. Si la configuración inicial se rechaza, muestra Configuracion rechazada:B;Original:B comparando estado y datos con sus copias anteriores. Termina siempre con salto. Pulsa Compilar, ejecutar y comprobar. Las siete primeras configuraciones son válidas y producen 2,0,0,1,1,5,2 parejas; las nueve restantes se rechazan. Todos los indicadores deben ser uno. El editor conserva seleccionar ya conocida: construye el registro Pareja, formar_parejas y las comprobaciones.",
+          "text": "Construye struct `Pareja` con miembros `int` primero y segundo. `formar_parejas` recibe `std::mt19937& motor, const vector<int>& candidatos` e `int` pares; devuelve `vector<Pareja>`. Los candidatos cumplen el mismo contrato de como máximo diez ID distintos 0..9. pares debe estar entre cero y cinco y no pedir más personas que las disponibles. Rechaza cualquier incumplimiento con `invalid_argument` antes de consumir el motor. Un número impar de candidatos es válido: puede quedar alguien sin elegir.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "antes de consumir el motor",
+              "style": "bold"
+            },
+            {
+              "text": "Un número impar de candidatos es válido",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada ID aparece como máximo una vez en el conjunto completo de parejas, no sólo dentro de cada pareja. Reutiliza `seleccionar` para obtener todos los participantes de esta llamada en una sola selección. La primera pareja reúne el primer ID obtenido con el segundo; la siguiente reúne el tercero con el cuarto, y así sucesivamente. No ordenes dentro de las parejas ni entre ellas: se conserva el orden de obtención. La cantidad solicitada, los miembros de cada registro y ese orden son garantías diferentes.",
+          "emphasis": [
+            {
+              "text": "conjunto completo de parejas",
+              "style": "bold"
+            },
+            {
+              "text": "una sola selección",
+              "style": "bold"
+            },
+            {
+              "text": "No ordenes",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba pares entre cero y cinco y que no excede `total/2` antes de multiplicarlo por dos. No conviertas `size()` a `int` hasta comprobar el límite de diez. Con pares cero, `seleccionar` sigue validando candidatos y devuelve vacío sin usar el motor.\n\nLa batería de main reúne candidatos y pares en este orden: {0,5,2,8,3} con 2; vacío con 0; {0} con 0; {2,9} con 1; {8,0,5} con 1; los diez ID 0..9 con 5; {3,8,2,5,0} con 2; vacío con 1; {0} con 1; los diez ID con -1 y con 6; {-1,2} con 0; {10,2} con 0; {0,0} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {2,9} con 2.",
+          "emphasis": [
+            {
+              "text": "antes de multiplicarlo por dos",
+              "style": "bold"
+            },
+            {
+              "text": "pares cero",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye `probar(candidatos,pares)`, con motor nuevo de semilla 809 y copias iniciales de motor y datos. Si acepta, comprueba cantidad, pertenencia y unicidad global. Aplana las parejas en orden primero,segundo y compara ese vector con `seleccionar` de `2*pares` ID desde la copia inicial del motor; compara también los estados finales. Comprueba cero parejas sin consumo y una solicitud imposible de `total/2+1` parejas, que debe rechazarse sin usar el motor.\n\nMuestra una línea por prueba: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B. Si la configuración inicial se rechaza, muestra Configuracion rechazada:B;Original:B comparando estado y datos con sus copias anteriores. Termina siempre con salto. Pulsa Compilar, ejecutar y comprobar. Las siete primeras configuraciones son válidas y producen 2,0,0,1,1,5,2 parejas; las nueve `restantes` se rechazan. Todos los indicadores deben ser uno. El editor conserva `seleccionar` ya conocida: construye el registro `Pareja`, `formar_parejas` y las comprobaciones.",
+          "emphasis": [
+            {
+              "text": "compara también los estados finales",
+              "style": "bold"
+            },
+            {
+              "text": "sin consumo",
+              "style": "bold"
+            },
+            {
+              "text": "`seleccionar` ya conocida",
+              "style": "bold"
             }
           ]
         },
@@ -329,7 +575,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada prueba completa su propio informe antes de pasar a la siguiente. Un número impar de candidatos permite parejas y deja un sobrante. El caso de diez candidatos con cinco parejas comprueba el máximo; las listas inválidas se rechazan incluso al pedir cero. Reordenar candidatos cambia la configuración y la comparación de orden usa una selección independiente con ese mismo orden nuevo."
+          "text": "Cada prueba completa su propio informe antes de pasar a la siguiente. Tras formar las parejas quedan sin elegir `total-2*pares` candidatos. Si el total es impar y se pide el máximo número de parejas completas, queda exactamente uno; si se piden menos parejas, quedan más.\n\nEl caso de diez candidatos con cinco parejas comprueba el máximo; las listas inválidas se rechazan incluso al pedir cero. Reordenar candidatos cambia la configuración: la comparación de orden utiliza una selección independiente con ese mismo orden nuevo.",
+          "emphasis": [
+            {
+              "text": "`total-2*pares`",
+              "style": "bold"
+            },
+            {
+              "text": "máximo número de parejas completas",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -341,7 +597,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia usa siete candidatos {7,0,9,2,5,4,1}, tres parejas y semilla 821. Una persona quedará sin elegir. aplanar_parejas es una comprobación: copia los miembros en el orden del informe para compararlos con una selección independiente desde un motor copiado del mismo punto. No se comparan dos objetos Pareja con un operador nuevo."
+          "text": "La referencia usa siete candidatos {7,0,9,2,5,4,1}, tres parejas y semilla 821. Una persona quedará sin elegir. `aplanar_parejas` es una comprobación: copia los miembros en el orden del informe para compararlos con una selección independiente desde un motor copiado del mismo punto. No se comparan dos objetos `Pareja` con un operador nuevo.",
+          "emphasis": [
+            {
+              "text": "Una persona quedará sin elegir",
+              "style": "bold"
+            },
+            {
+              "text": "motor copiado del mismo punto",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -350,19 +616,51 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo inicial presenta seis líneas para una configuración válida. La batería siguiente reúne ese informe en una línea por configuración y conserva sus comprobaciones. Aplanar el resultado permite comprobar el orden completo, además de la unicidad dentro de cada pareja. No es necesario conocer qué ID concretos entregará la distribución."
+          "text": "El ejemplo inicial presenta seis líneas para una configuración válida. La batería siguiente reúne ese informe en una línea por configuración y conserva sus comprobaciones. Aplanar el resultado permite comprobar el orden completo, además de la unicidad dentro de cada pareja. No es necesario conocer qué ID concretos entregará la distribución.",
+          "emphasis": [
+            {
+              "text": "orden completo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validar rango de pares y capacidad antes de multiplicar; delegar la selección única de 2*pares; formar exactamente pares registros; conservar pertenencia y unicidad global; agrupar consecutivamente sin ordenar; original intacto y cero/rechazo sin consumo. Una colección impar permite parejas completas y un sobrante. Para {} con cero hay resultado vacío; una pareja se rechaza. Con {2,9} y una pareja se usan ambos ID una vez, en el orden obtenido, sin exigir cuál va primero."
+          "text": "Criterios: validar el rango de pares y la capacidad antes de multiplicar; delegar una selección de `2*pares` candidatos distintos; formar exactamente pares registros; conservar pertenencia y unicidad global; agrupar consecutivamente sin ordenar; mantener el original intacto y no usar el motor en el caso cero ni en un rechazo previo.\n\nEl número de candidatos sin elegir es `total-2*pares`. Un total impar deja exactamente uno sólo cuando se pide el máximo de parejas. Para {} con cero hay resultado vacío; una pareja se rechaza. Con {2,9} y una pareja se usan ambos ID una vez, en el orden obtenido, sin exigir cuál va primero.",
+          "emphasis": [
+            {
+              "text": "`total-2*pares`",
+              "style": "bold"
+            },
+            {
+              "text": "sólo cuando se pide el máximo de parejas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En el recorrido i<pares, los índices usados son 2*i y 2*i+1. La selección devuelve exactamente 2*pares valores, así que ambos quedan dentro del vector; con cero pares no hay accesos. Tras validar pares<=5, los productos empleados no superan diez. Pedir una pareja desde un solo candidato se rechaza previamente; no se construye una distribución con extremo negativo ni se intenta completar una pareja inventando un ID."
+          "text": "En el recorrido `i<pares`, los índices usados son `2*i` y `2*i+1`. La selección devuelve exactamente `2*pares` valores, así que ambos quedan dentro del vector; con cero pares no hay accesos. Tras validar `pares<=5`, los productos empleados no superan diez. Pedir una pareja desde un solo candidato se rechaza previamente; no se construye una distribución con extremo negativo ni se intenta completar una pareja inventando un ID.",
+          "emphasis": [
+            {
+              "text": "con cero pares no hay accesos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "No confundas sin reposición con elecciones independientes: cuando se elige un ID, ya no puede aparecer en otra posición de esta llamada. Dos llamadas con el mismo vector vuelven a disponer de todos sus candidatos. Conservar motor y configuración permite repetir el mismo procedimiento desde copias en el mismo entorno; no impone una composición fija de parejas entre bibliotecas."
+          "text": "Sin reposición describe el alcance de esta llamada: un ID elegido no puede aparecer en otra posición de su resultado. Una llamada nueva con el mismo vector vuelve a disponer de todos sus candidatos.\n\nConservar motor y configuración permite repetir el mismo procedimiento desde copias en el mismo entorno. La forma de transformar los valores del motor depende de la biblioteca; por eso no se exige una composición fija de parejas entre bibliotecas (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "alcance de esta llamada",
+              "style": "bold"
+            },
+            {
+              "text": "Una llamada nueva",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "heading",
@@ -383,7 +681,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Estas selecciones están preparadas explícitamente. Predice el agrupamiento y las comprobaciones sin consultar los resultados anteriores. El orden dentro de Pareja sigue el orden de obtención; el ID cero es un participante, no una ausencia."
+          "text": "Estas selecciones están preparadas explícitamente. Predice el agrupamiento y las comprobaciones sin consultar los resultados anteriores. El orden dentro de `Pareja` sigue el orden de obtención; el ID cero es un participante, no una ausencia.",
+          "emphasis": [
+            {
+              "text": "el ID cero es un participante",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -394,7 +698,8 @@
           "answers": [
             "[9:0][4:7]\nOrden:1"
           ],
-          "explanation": "Se agrupan las posiciones 0/1 y 2/3. Recuperar primero y segundo conserva exactamente 9,0,4,7."
+          "explanation": "Se agrupan las posiciones 0/1 y 2/3. Recuperar primero y segundo conserva exactamente 9,0,4,7.",
+          "reviewFeedback": "Forma cada registro con dos posiciones consecutivas y después recórrelo en el orden primero,segundo. Trata el cero como un ID."
         },
         {
           "type": "multiple_choice",
@@ -406,7 +711,12 @@
             "Eliminar una copia de cero y aceptar la configuración reparada."
           ],
           "correctIndex": 1,
-          "explanation": "Pedir cero no cambia el contrato del vector. seleccionar valida candidatos antes de devolver su resultado vacío."
+          "explanation": "Pedir cero no cambia el contrato del vector. seleccionar valida candidatos antes de devolver su resultado vacío.",
+          "reviewFeedback": [
+            "Comprueba qué requisitos del vector siguen vigentes aunque no se soliciten parejas.",
+            "Revisa la validez de candidatos antes de decidir cuántas parejas producir.",
+            "Revisa si la función está autorizada a reparar el vector recibido o debe comprobar su contrato."
+          ]
         },
         {
           "type": "output_prediction",
@@ -417,7 +727,8 @@
           "answers": [
             "Locales:1\nGlobales:0"
           ],
-          "explanation": "Las dos parejas tienen miembros diferentes internamente, pero el ID uno aparece en ambas. El contrato exige unicidad de todos los participantes."
+          "explanation": "Las dos parejas tienen miembros diferentes internamente, pero el ID uno aparece en ambas. El contrato exige unicidad de todos los participantes.",
+          "reviewFeedback": "Separa la comparación dentro de cada pareja de la comparación entre todos los participantes del resultado."
         },
         {
           "type": "math_puzzle",
@@ -484,24 +795,33 @@
         },
         {
           "type": "note",
-          "text": "Los valores distintos y su generación aleatoria son requisitos separados: obtener varios enteros de un intervalo permite repeticiones y no resuelve por sí solo una selección sin reposición (Stroustrup, 2024, sección 4.7.5 y ejercicios 12–13 del capítulo 4). La distribución entera produce índices dentro de sus dos extremos inclusivos. La copia de un motor conserva su estado para comparar el mismo procedimiento desde el mismo punto (Working Draft: Programming Languages — C++, s. f., secciones [rand.dist.uni.int] y [rand.req.eng]).",
+          "text": "Una selección válida necesita evidencias distintas para cantidad, pertenencia, unicidad, orden y conservación. Por ejemplo, obtener la cantidad correcta no demuestra que todos los ID sean diferentes. Repetir un resultado tampoco basta para demostrar la igualdad de los estados finales de los motores: el programa compara ambos aspectos por separado.",
           "emphasis": [
             {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
+              "text": "cantidad, pertenencia, unicidad, orden y conservación",
+              "style": "bold"
+            },
+            {
+              "text": "ambos aspectos por separado",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "heading",
-          "text": "Recuperar las parejas con cantidad impar y fronteras"
+          "text": "Recuperar parejas con un total impar de candidatos"
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye seleccionar, Pareja, formar_parejas y sus comprobaciones en este editor. Reúne {9,0,7,2,5,8,1,6,3} con cuatro parejas, vacío con cero, los diez ID 0..9 con cinco y {2,9} con dos. Cada prueba crea motor con semilla 809. Usa el formato de la batería: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B; para una configuración inicial inválida muestra Configuracion rechazada:B;Original:B. Termina cada prueba con salto.\n\nComprueba cantidad, pertenencia, unicidad global, orden frente a una selección desde una copia inicial, original conservado, cero sin consumo y solicitud total/2+1 rechazada sin consumo. Pulsa Compilar, ejecutar y comprobar. Las tres configuraciones válidas producen cuatro, cero y cinco parejas, y la última se rechaza. Los indicadores deben ser uno. Los nueve candidatos del primer caso y sus ocho personas elegidas representan cantidades diferentes.",
+          "text": "Reconstruye `seleccionar`, `Pareja`, `formar_parejas` y sus comprobaciones en este editor. Reúne {9,0,7,2,5,8,1,6,3} con cuatro parejas, vacío con cero, los diez ID 0..9 con cinco y {2,9} con dos. Cada prueba crea motor con semilla 809. Usa el formato de la batería: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B; para una configuración inicial inválida muestra Configuracion rechazada:B;Original:B. Termina cada prueba con salto.\n\nComprueba cantidad, pertenencia, unicidad global, orden frente a una selección desde una copia inicial, original conservado, cero sin consumo y solicitud `total/2+1` rechazada sin consumo. Pulsa Compilar, ejecutar y comprobar. Las tres configuraciones válidas producen cuatro, cero y cinco parejas, y la última se rechaza. Los indicadores deben ser uno. Los nueve candidatos del primer caso y sus ocho personas elegidas representan cantidades diferentes.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Los indicadores deben ser uno",
+              "style": "bold"
+            },
+            {
+              "text": "cantidades diferentes",
+              "style": "bold"
             }
           ]
         },
@@ -548,5 +868,1726 @@
         }
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0005",
+      "blocks": [
+        "block_0002_0006",
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005",
+        "block_0003_0006",
+        "block_0003_0007",
+        "block_0003_0008"
+      ]
+    },
+    {
+      "activity": "block_0004_0009",
+      "blocks": [
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    },
+    {
+      "activity": "block_0005_0005",
+      "blocks": [
+        "block_0005_0006",
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0006_0004",
+        "block_0006_0005",
+        "block_0006_0006",
+        "block_0006_0007",
+        "block_0006_0008"
+      ]
+    },
+    {
+      "activity": "block_0007_0009",
+      "blocks": [
+        "block_0009_0000",
+        "block_0009_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0002",
+      "requires": [
+        "block_0002_0005"
+      ]
+    },
+    {
+      "activity": "block_0004_0004",
+      "requires": [
+        "block_0002_0005"
+      ]
+    },
+    {
+      "activity": "block_0005_0005",
+      "requires": [
+        "block_0002_0005"
+      ]
+    },
+    {
+      "activity": "block_0007_0002",
+      "requires": [
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "block_0007_0004",
+      "requires": [
+        "block_0005_0005"
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "b839330fe0d99b7939c47397ea17cde2599682a875ea1fed3279cc04b6b33193"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "bbd1cf4364344b8e454aaa3539ac5888a76faf34ed9c7023f914c5e4faf86e37"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "f76b8c6f9269b92864cb8cbe5d143c100f71c1f353abb1f4bfcdb5b1c09fce6f"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "867ea20eab930de8a0d4fd7e7d3358a77edec1dcbf3348ce3f7dc4cd9b728a6a"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "50a7d6fc276ea1b008b7e1ad07116aeac0945840678049ccc663153da444bbd7"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "a18d771d4da36b21c6346a8dd1482db52d013b16c663b861f394feb0e6efc832"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0008",
+            "sha256": "d636bcd9c1df2e6076b8ef9e10afb1fbc304f17f6cf8a6e26c12506382b5cdee"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "7616f103eee54346bdd606683f8b8c4ecec8037b9ce856673d464f9bfd9fc54c"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "c7ce4844cf9668be417db8674287664b845f351f8b1f880799157182760b7fed"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "9fd1fd7a9a3f26803118c66588dc4600b49d5d9f0a20e80dadf001dce0affb93"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "729cbe17c095532c5e72bcbba451270420d923a3e464d59c333600ff64ffcf55"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0009",
+            "sha256": "12e62ec4a5f6cfe6e4cbc1b6e2045a7d593223196c29fa139fe40b6145d3cc45"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "98ef1f7df3f0896189357fb44ac4b91048b5a01cc6de0ce7fa7c1d9314de1cb5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "4c35fc897db80351ccd686c399b15564755224d35be1cf6761d4703245045d04"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0008",
+            "sha256": "2aff48950689d00e67085fae3d0a478781f5f20bd561a6f35eb8c82a242d2976"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "59656194b8282ecc07360f8893ef29860bf27fbe6548af4b696ffc6316d89f82"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "c460366f43011505adcad686f22f54a7c9435bd3f0e89d5d945ad566a237665b"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "9b3c4f525a6beb0deeb73a0cdabbdcfcc1ec3674cf10fba74a46ccb74f5daa7c"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "85d549a5b49377329d0f9915d3e84a7df2e707e4968dd7dfc85ba7ac2651290a"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "a333f917752a095e0fc3d45941822d69c612be312e2cab2689a68ff29e69c22e"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "586d2a883ff25e55fadd622f0bbe3d271d1e027e7025caf4246ac604ebc407d7"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "c31403bb6f3ac45cdbfabad1cf43f6b134e6cf7ba979a20aa0df4c6187e55a24"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "block_0003_0008"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008",
+          "block_0004_0009"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007",
+          "block_0006_0008"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "3759ef5f174c4e096289bbcaa8791c0d1647600493bfe876afaa2a2a8c132c7a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "cf601fa24d0418c07627fa4843e96ea39598544f07f560d51bbf0ba7beca0dbf"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "f3dc1be2ff5082f2827a495fbf1c95aa7b914d43f47594ecfc7aa3e5a1ca5130"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "154b8a7f025d109327ea86519b7910eb6659d7d40400fbcc1de910fb413a0908"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "0e21413fd3c9a7989a43df3421592873571e3e5f7d7ad60a5f7cf9c0ec8ed909"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "2b813e1214159e1d44097787bb96b63df531bae87c312d70529fd472b3916d56"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "9c83f580364e6ef46e12029c8f569da0f03ae068c367d13cec3d011031807915"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "31a4faae7b847b05665302ffb2bba948f95306a710aeb1cebd3796f2229c7ff0"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1d61bd3a71ad9bda5d6baa5106c6aeba6670f138b7102c194cb5bf55eb1f715d"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "7319c6562275496b7ece97af3450e117552b18b706f234ec28cd7f71fa08fdba"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "a868848bfc9464d1d093a8c61e9e0e34459f388431a274a6edf01e70bce36869"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "18b7e304f5878ec6725ad56830f5eb48a54169b349c3c5366d51c78546026c16"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "d56bede84e45f3a96a7713b14769cd456e356481b2c4325ea18c19de2c7f0e46"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "81223334f588938a56422b3f7dace23618c52f8a9530597140fe15055ec4e28c"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "91ffe96c35aab2ae4fe0ffc72a7360a68c3d444936d1c6c67dd52f66fd69191a"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "fa17ff7c78f8b5af463423b1295d5a3ab649c9eea3136ce6ed8a422f85482a73",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b839330fe0d99b7939c47397ea17cde2599682a875ea1fed3279cc04b6b33193"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "bbd1cf4364344b8e454aaa3539ac5888a76faf34ed9c7023f914c5e4faf86e37"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "f76b8c6f9269b92864cb8cbe5d143c100f71c1f353abb1f4bfcdb5b1c09fce6f"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "867ea20eab930de8a0d4fd7e7d3358a77edec1dcbf3348ce3f7dc4cd9b728a6a"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "50a7d6fc276ea1b008b7e1ad07116aeac0945840678049ccc663153da444bbd7"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "a18d771d4da36b21c6346a8dd1482db52d013b16c663b861f394feb0e6efc832"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0008",
+                "sha256": "d636bcd9c1df2e6076b8ef9e10afb1fbc304f17f6cf8a6e26c12506382b5cdee"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "7616f103eee54346bdd606683f8b8c4ecec8037b9ce856673d464f9bfd9fc54c"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "c7ce4844cf9668be417db8674287664b845f351f8b1f880799157182760b7fed"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "9fd1fd7a9a3f26803118c66588dc4600b49d5d9f0a20e80dadf001dce0affb93"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "729cbe17c095532c5e72bcbba451270420d923a3e464d59c333600ff64ffcf55"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "12e62ec4a5f6cfe6e4cbc1b6e2045a7d593223196c29fa139fe40b6145d3cc45"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "98ef1f7df3f0896189357fb44ac4b91048b5a01cc6de0ce7fa7c1d9314de1cb5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "4c35fc897db80351ccd686c399b15564755224d35be1cf6761d4703245045d04"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0008",
+                "sha256": "2aff48950689d00e67085fae3d0a478781f5f20bd561a6f35eb8c82a242d2976"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "59656194b8282ecc07360f8893ef29860bf27fbe6548af4b696ffc6316d89f82"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "c460366f43011505adcad686f22f54a7c9435bd3f0e89d5d945ad566a237665b"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "9b3c4f525a6beb0deeb73a0cdabbdcfcc1ec3674cf10fba74a46ccb74f5daa7c"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "85d549a5b49377329d0f9915d3e84a7df2e707e4968dd7dfc85ba7ac2651290a"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "a333f917752a095e0fc3d45941822d69c612be312e2cab2689a68ff29e69c22e"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "586d2a883ff25e55fadd622f0bbe3d271d1e027e7025caf4246ac604ebc407d7"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "c31403bb6f3ac45cdbfabad1cf43f6b134e6cf7ba979a20aa0df4c6187e55a24"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "1886b857541d31ff408daadb26f1b7723aff283be2d88ab67798c7775d5cbeb5",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "c5282e43016aa8314b8143ff02a15f156c54ce188342531ef45d1056107a3403"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "a0cbf5a53fff580a3ce6077badfc111f3d85bb23051b9562423987e80de212ca"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "d2c4d04e641806c1dd2f00a210eae370e380b9b0fd45df369f7b36bbdbc7c1d8"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "0e21413fd3c9a7989a43df3421592873571e3e5f7d7ad60a5f7cf9c0ec8ed909"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "2aa10ccb68caf6bc72a23e4e0ebb2abdbd4437909f2488415ef088d8092c589c"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ea4e10b678105da0c280526caeb0bdd69fec0aa1f279f4b7423653c06f502a47"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "3cd6aa4193e7da3313eb467abf2795e027c4b48160b6a4e4850840c960e6a719"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "e7cc403a6be0d98a2ac64d21e3d6fff54e6e4fbdde6a64401855ce51cb22e19a"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "aba5481ba12aa38244ccc2b1876426bac3a5eeceedfc0ce1e7a8f132ff868c08"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "8f9f19571c63615e183e0b0414ee6227da2c807b1891ff1d87fe0cba1dc54701"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "e40cece661fcfe4736b7eb6154d4caa829cc87c91255d39fb6186e3946901e48"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "3f6bb4bf27b2a6b6d98d28bc6cebc411fcff97a22a6eb0481d2bea65becd4ecf"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "978dfc6c23e6402d532d62b3791809aea634e2ad4b791a45e02955e3118587cd"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "9b3c4f525a6beb0deeb73a0cdabbdcfcc1ec3674cf10fba74a46ccb74f5daa7c"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "a5d76edd8fd3547eaae80a16189c0a402f81cc1c000f23263f0e569425e0e5bc",
+        "afterSha256": "8a42c02b4ca4a68b75dd0fa1efb344a3db5539b1d05246ffbfc135fed935680a"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "b96095c13e8315c044d55bc435683ea6c889e36e3e71b52115877161b602efd4",
+        "afterSha256": "6fc4fbe7662e41efc5cdb4c5f24f114ed1bfc7702f21acc45e6027dbd91ac8d9"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "81bbb0616c0b58afa6a7bd5496fe39ada3b7eb4fbd383d280903c28eeaa790f8",
+        "afterSha256": "bcd86a8c491ffcfe63d1f8c64ba62e1ef2699faeb77c62c46e16cc1572f9f7bd"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4ca2ff83b10ce263a6fd16feac67cdbccb1eca756fd8ae65ba0f32183a544fbe",
+        "afterSha256": "c09e7b14dc571a6cb11c6c4e3bcdb93ed84f3dc0ca3dbedf7c24fbf9045b8c8a"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "6c4b8d853c838a2b9eab0611922f31084a3b4b7b69a886a51b0ffd99ecf8c505",
+        "afterSha256": "788602cfc97600438cdfb7822f13ac510beae3c1e6c80373868c6eab4a17d329"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "10bd0535e6a392dc8e9257c63ec505df1b614592bc10f78a8deb71db86c2f865",
+        "afterSha256": "1d14e2592532ee20aff4df4cac555b6bca376481359fbc9f692b6c0879fb354d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "796de05b459992214137e06c1999a81a1f87847c65d934cfa3d679973d4d1704",
+        "afterSha256": "2c26b708b28b1c4e3a6d6d0a3328e0c7ec4dcaa1c9c99d319723e43fd98a57e4"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "ccc46d4db267caa8483e1217ba6aa6f321c16b835efb82dd78aef08577f4cd3f",
+        "afterSha256": "2ff86d56a4642728c3231cd37d0acd40733f46ab1c232ff6e78848c0ed984caf"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "9b1fe727445be292c93a1df757adf7152c29e39803510e9ab31932661802dd9b",
+        "afterSha256": "bbf047a0d790edc2ffdb0c872bcd83e62f61be138667458ac9cd03fcf39cc190"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "11576a9dbd30db754630658659390714eeb6e5e93e08e62073bc6c96c5c2c481",
+        "afterSha256": "600cd506ff1f4e0b28b3ce31b23fd8ea8e1cb0c27b60c475b2bd0205452e1ad0"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "769a48500decd6235d79738bf48f902d49af4e9e8d8a042124e44f674c99c0a5",
+        "afterSha256": "b0a81980d5c222600f6f00e4ef8d2af5d3d0bc6c2741206730f5ede5bf09dfd1"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2694fc6eddcf5e12b63e8516b10246f474687d2517fbc160976cd0aa08a32083",
+        "afterSha256": "6dd48ab5f4985796c367044c79c5c218b129b403b32f75b517c828ff3987c26c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "30ed039f8fba4bad35d9810ef7cb456af06af08b4aebbf3a4dff0766a3be2262",
+        "afterSha256": "765811e12209615b0d1b88c4d853ebb6909168fcf910f1f711dc3349ca560200"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "490ec14acc6a6335ebfa4caf00fd0053aefa258de2259b9ede8b1652e6e2fd4b",
+        "afterSha256": "799d7ae2bbbf62272ee222298b37a91285d29ddafb12368733274641e4b7dd82"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "f797cb17b787d2322d2354c95cea4634c62c2b61cc7903d4f02c3ef55126ba38",
+        "afterSha256": "99f4b93fdebc620469115e3d98c7676c7c1f654ddce84cb47399ceebd0618862"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f15249868a5ccf77c7a5e7a8cda76f046e65da934fabd32987eb363a273d28aa",
+        "afterSha256": "66848f6b0c9f7bfbe632510d1195910dd126d5fa99f86b106cbf9359c0531d18"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "c11414008e89d458e0977ab6a0cbec9d6b685526543e64ff5806b0a493a09abf",
+        "afterSha256": "b526067c4ddb0cea88eb89e0c898f52ea3e7da12fdc62390b87b89ff94c4f1c5"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "6050131d8e73e4fe503d42af6ba5997c276db2a66d24fdce644040d0fa31dc14",
+        "afterSha256": "59ad2bb257e53279f95700d130ad2be38d8478d8bf32e91a042f855f7ca9c4e8"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "1141dafed222fc6f5cdc285ef858c5adf248a8250938cf6378cc7c9c0a1ec8cd",
+        "afterSha256": "53d1a26655bb8ed59f68d6a42362ed1ef41815831af73ceada23b1fc1b3723b8"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "77f2c3197e0ff00581c7ca33a553b2930ab0f994b483e4cce55f21f429aa2a3b",
+        "afterSha256": "0139d176f687a0cb66f8996a78b30b53b7cf04b0fd41959d091b3a8aefc6b603"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "893c785ae8c31f9ba3aa4cf3e8e69d14ce34d2ccfedddf08669c5c737a5b6fb4",
+        "afterSha256": "06a58d9b20bdc2ade60802d875518f942fab1edf7d9c2c981e4ec8dac6bdeaf9"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "b25ea4bec1e12a0c5d3753812ba25bc377159b22cd8b462656864f1a365afc94",
+        "afterSha256": "f12893168d98e32f7006823c006ca0bc3457187fbe328e54819df2c3d00a3dd3"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "39e0e164bc85ed9b5dac630d8e0079c0b25fb537406700cefe79697ebfd9ac02",
+        "afterSha256": "073a2fbdbc671c417197af3d84084d69a9373f7a27b1521014eaa0e6d4ec1644"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "d3545771179baa908fcaa292cb176775d130a39d32774296722eedecf0c52605",
+        "afterSha256": "6cdea8f073902fe1112b11af8a52a45e15ec29e8158789cf66f88c9b490d14fb"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "b552af8d55dc546bc2e84c713eb6b767c4473cdb5dbe7ddd9ebeff645acd6e29",
+        "afterSha256": "38e5db1e4a4abf2f353260766b02c3bc14cb315e15fc9a273ac2db9ceff4a2bd"
+      },
+      {
+        "id": "block_0004_0008",
+        "beforeSha256": "3e5326b17179cc4e4baa8b0f505396e206fa63aefc5f2eb3e2dc701cb79ec26c",
+        "afterSha256": "3d4d3a4bef7b0363d0c3dbd44a7a844a35086ec044d7f86d99f3612084ba783c"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "5f074f5e038b4a0ddf327753e4e7111e4532ee2b1bc40a10593a56b6e87cb9fa",
+        "afterSha256": "694dce57b31063187ace6b9a5f6718946ecbea23127c0d6beb2283bbb58ca27f"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "58ac7a48438d5793df13033c54a163d8943a5e55624d5dc59ad020516f5f5145",
+        "afterSha256": "2563ec23b87bc53b5767e39c1c8474a13c606ff9a0d8d20bc36d7c8e1284759b"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "aea5d04bf2af0eb75563447913262ada3b6d72561e7541a0c17c9c01dcc15e1f",
+        "afterSha256": "07247567e89448c1f9c436df984346a9b19e7950a8c0fe078f14829675028f5e"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "316620aa0883bf93a6ec6500d01cea4d274034ede1748c64e4db5fa5c5739a55",
+        "afterSha256": "229468bdeeb0c5d149e46ac507b23e25bb66b47021ef3afe10d864530a11b315"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "1df7ec1107e3dfcf900dd6951505747ec7e48fcdb794941dfa1eb78878a48625",
+        "afterSha256": "c798a54421cbf41ffbf4fcf6f13808f3ec104659d6eaa6b2fabf0b450787364a"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "342e9f81aa9fb46bb1d7a147f2d556c3d16f55946e4565ec5935a86fd79d8dd4",
+        "afterSha256": "245fd1c50a159d6fe6372dcafbf3fda60e8a146436999f035b0cbdbaa3c55700"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "7928719d7b27a7b5431aaff2ce9c7da6a05a5adcab599f838ca80d000d9aed5a",
+        "afterSha256": "b076dd7f6c90c35acad1b47f9a28a511b16cfba9d287ab816b50f653153f1171"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "31eca56ebdf097f32627c0cb9166e538ce3e8fb4cd971c4ee49166b7197442b3",
+        "afterSha256": "45b6d84ed104a1c8ab308e424badf61d954d597e65e0ff49cc26fd03025cf855"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "2eebfee70735d6036947aa711b05f2aae151952d97493c3e425e6768e4ab42a3",
+        "afterSha256": "38e42879c6581710ec735f18a1151b0b9447d461d709e3c11f8ac5c79409be44"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "557c41dbeca490fdcf0dd564d3999f9765cbcb84f98f38ee1971e9102fd1173b",
+        "afterSha256": "aef2a2567a17db1efbd2c03bf58466f785e766ece3ec02e6c83805deb655a2dc"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "9721c2e293167c4c3d9e2eff3523f27c185d24b981d3ec4bd2d39ae578150a76",
+        "afterSha256": "ee7231ea67e70e9176a5a44024d03d15d5dcaa6a1d6692e82643e5bf4e64f341"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "bee6efb273e54b727219c04faf41fa1fa7f8e78d8875ff6c7dcb21a872ea77e0",
+        "afterSha256": "5e73c19bb3075e445ac158cbdd70a7eb28f28ed616ce45a82ed2460e171cbbf9"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "6dccc1d65ef723bbaa48fb67a505f1ae449ed875096c1e446450fd9fb82a5c84",
+        "afterSha256": "268ffcd476d405f80dee4e7e7b38fd7ae7621b9377fad266ceeb389a398014e5"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "2816d1670c052d9c5657e71c656301bd65768432cddb8e955e520cb2880b06f9",
+        "afterSha256": "23396886bc2f40274ba829a7476ee8241d3e78a5e786d83b04d7eea80e4c3f3d"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "6936f29af5eb87409c2dde7f192303e05c7a27c2dcfd9fd039bf9fe8e2f8ec49",
+        "afterSha256": "22e431ce8e20077c47963c5496439d6240c5225a66b52682f37b9f171969394a"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "82c35b4c9a2ca746e21d11c1aa7901c5bd186334a0c94c1a9349ef5cf2016823",
+        "afterSha256": "55cda06f1ad45e76a6465fd3d60fa03607239a3fdf9e15832cf3e5af0307b193"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "bbf047a0d790edc2ffdb0c872bcd83e62f61be138667458ac9cd03fcf39cc190",
+        "afterSha256": "27c499a6f570e0401a10a9cf6af5c7dae7fbd1bbd9b493445054d712b5f8605d"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "27c499a6f570e0401a10a9cf6af5c7dae7fbd1bbd9b493445054d712b5f8605d",
+        "afterSha256": "c9730ddda2579e978404436b4805acdf79487423d5b89ec2c4b8da0a2089997c"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "a9155af2ae84ff324b55d24fda9cadbade84e062b2d8afaa1f9d4382646058cd",
+        "afterSha256": "8db180b1d213ad29f8202838255fab6c0372195a14869aa87964c5531efb0372"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "c9730ddda2579e978404436b4805acdf79487423d5b89ec2c4b8da0a2089997c",
+        "afterSha256": "f40561f3d897878113dca2232fe020406267c402dd818c5d7d1d4163c16ffadf"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "6fc4fbe7662e41efc5cdb4c5f24f114ed1bfc7702f21acc45e6027dbd91ac8d9",
+        "afterSha256": "3d83c068e577067d2eef3dc2ec2519d4d0437058689dfbececfa21c1386549b5"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "bcd86a8c491ffcfe63d1f8c64ba62e1ef2699faeb77c62c46e16cc1572f9f7bd",
+        "afterSha256": "74f9f3a9764ff1a19ce1deffce350c6ab80a91b408168546371af2076b5a0439"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "c09e7b14dc571a6cb11c6c4e3bcdb93ed84f3dc0ca3dbedf7c24fbf9045b8c8a",
+        "afterSha256": "833f00c0a80778e9a2a163c63c18fe9b990e3cd9025e05483a7f0f2ca4e3c400"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "1d14e2592532ee20aff4df4cac555b6bca376481359fbc9f692b6c0879fb354d",
+        "afterSha256": "898249695e16e0fc2b7a8a6595bd8637ff92e0b4b80d89c073f0358bebda8714"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "2c26b708b28b1c4e3a6d6d0a3328e0c7ec4dcaa1c9c99d319723e43fd98a57e4",
+        "afterSha256": "1ef1fa6bea9fa9977adf041c0fe951c62a6dd03cef19e89bed23759e86ecbe22"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "f40561f3d897878113dca2232fe020406267c402dd818c5d7d1d4163c16ffadf",
+        "afterSha256": "7f3d39ee7c8e08cbd911426b4bf0ed991c8a33ce0474b2952eb84d04678f73cc"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b0a81980d5c222600f6f00e4ef8d2af5d3d0bc6c2741206730f5ede5bf09dfd1",
+        "afterSha256": "b76c0a50b5533026efe0ce7e46f5017a1ba17fe5c25299b14f9dff06ea770955"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "6dd48ab5f4985796c367044c79c5c218b129b403b32f75b517c828ff3987c26c",
+        "afterSha256": "a093d6d92340191cc85d075514fc85f9d60191a0ace904f2d98c56644e09bdda"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "765811e12209615b0d1b88c4d853ebb6909168fcf910f1f711dc3349ca560200",
+        "afterSha256": "239e8abd54868adc5ce420d8ce5640f9a21412735893a373be22bc8df2d1e126"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "99f4b93fdebc620469115e3d98c7676c7c1f654ddce84cb47399ceebd0618862",
+        "afterSha256": "259f65828b2cdc673b2f28e962660dadc73118b5ac1f44a568b383dd5e42e916"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "59ad2bb257e53279f95700d130ad2be38d8478d8bf32e91a042f855f7ca9c4e8",
+        "afterSha256": "9a21e038d6a53c7d96a60d9fe3b43d2398f01bcb20c4ae51e72abc1d258ebbf9"
+      },
+      {
+        "id": "block_0004_0008",
+        "beforeSha256": "3d4d3a4bef7b0363d0c3dbd44a7a844a35086ec044d7f86d99f3612084ba783c",
+        "afterSha256": "ee04cdc0f1cd1135c54fd4fdd42ca099ef28353d99146be60e593ae3a9082af0"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "694dce57b31063187ace6b9a5f6718946ecbea23127c0d6beb2283bbb58ca27f",
+        "afterSha256": "d4d7b3eb7d91b40c9a1f0e6a99b658b10365e30d456a71f3f35636ae02fc4f50"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "2563ec23b87bc53b5767e39c1c8474a13c606ff9a0d8d20bc36d7c8e1284759b",
+        "afterSha256": "308d3c19be113897d82a45bbbcfd242fe689683e4d8261d9241a80cd7977e2a9"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "07247567e89448c1f9c436df984346a9b19e7950a8c0fe078f14829675028f5e",
+        "afterSha256": "d277d4eb66a4702273ff24c7f5c612afd0d83985d3af2741a68d476604c0c3a9"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "229468bdeeb0c5d149e46ac507b23e25bb66b47021ef3afe10d864530a11b315",
+        "afterSha256": "e498acf59f0fd6eea168ca5b22365cac4929b3be50b7105e4d0863800b9ac35d"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "c798a54421cbf41ffbf4fcf6f13808f3ec104659d6eaa6b2fabf0b450787364a",
+        "afterSha256": "c1aa6f71d2ea4bd8ae81f8266860c52662708f8edfafafa3e1a7b50483d4f703"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "245fd1c50a159d6fe6372dcafbf3fda60e8a146436999f035b0cbdbaa3c55700",
+        "afterSha256": "9679f895ed476c89f87b44870c05c777104a518d2709d4e2fe3694f2db580b48"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "45b6d84ed104a1c8ab308e424badf61d954d597e65e0ff49cc26fd03025cf855",
+        "afterSha256": "f12b312bf30fc3f5d6169e689c447d2be6857bb812c86abc749d7657fecd6e05"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "38e42879c6581710ec735f18a1151b0b9447d461d709e3c11f8ac5c79409be44",
+        "afterSha256": "3fefffa7f92e4924ec03ab11f5c7b7b8efa815b19f4b11cbc71b166237490a0d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ee7231ea67e70e9176a5a44024d03d15d5dcaa6a1d6692e82643e5bf4e64f341",
+        "afterSha256": "201ed575a52ee63c26b73748d5ea11b3f3c032f8902ec0161605bc2aafb48f14"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "55cda06f1ad45e76a6465fd3d60fa03607239a3fdf9e15832cf3e5af0307b193",
+        "afterSha256": "d87bfc38adc005a4e41b6308ccb3ef8297fb39625e03b34aa0088c9f5a00dcdc"
+      }
+    ]
+  }
 }

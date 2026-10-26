@@ -10,19 +10,45 @@
         },
         {
           "type": "paragraph",
-          "text": "Un experimento reproducible necesita más que obtener números. Debe conservar su configuración, construir una muestra, comprobar propiedades y poder repetir el procedimiento. Recuperaremos struct para asociar semilla, cantidad y límites. Estos cuatro enteros tienen funciones distintas aunque compartan tipo.",
+          "text": "Para repetir e investigar un experimento hay que conservar cómo se preparó el generador y qué llamadas se realizaron (Stroustrup, 2024). En esta actividad, la configuración reúne semilla, cantidad y límites dentro de un struct llamado Plan.\n\nEsos cuatro miembros son enteros, pero representan decisiones distintas: dónde comienza el motor, cuántos datos se solicitan y qué intervalo admite cada uno. A partir del plan se construye una muestra y se comprueban sus propiedades.",
           "emphasis": [
             {
-              "text": "configuración"
+              "text": "cómo se preparó el generador",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "comprobar propiedades"
+              "text": "decisiones distintas",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "se comprueban sus propiedades",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Nuestro Plan acepta semilla 0..1000, cantidad 0..20 y límites 0..9, con mínimo no mayor que máximo. La función preparar recibe el plan por referencia const, lo valida y construye un motor y una distribución nuevos en cada llamada. Devuelve la muestra sin imprimir. Es un contrato de reproducción desde el comienzo, distinto del generador anterior que recibe un motor para continuarlo."
+          "text": "Plan admite semilla entre cero y mil, cantidad entre cero y veinte y ambos límites entre cero y nueve, con minimo <= maximo. Estos límites forman parte del contrato del ejercicio.\n\npreparar recibe el plan por referencia const, lo valida y crea un motor y una distribución nuevos en cada llamada. Devuelve la muestra sin imprimir. Cada llamada empieza desde la configuración guardada; se distingue así del generador que recibe un motor existente para continuarlo.",
+          "emphasis": [
+            {
+              "text": "contrato del ejercicio",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "nuevos en cada llamada",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sin imprimir",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -33,7 +59,12 @@
             "El segundo lote continúa el motor local de la primera llamada, aunque ese objeto terminó."
           ],
           "correctIndex": 1,
-          "explanation": "El contrato construye objetos nuevos desde la misma configuración; no conserva un motor entre llamadas."
+          "explanation": "El contrato construye objetos nuevos desde la misma configuración; no conserva un motor entre llamadas.",
+          "reviewFeedback": [
+            "Revisa qué preparación se repite al usar el mismo plan y si repetirla exige obtener datos distintos.",
+            "Relaciona el comienzo de cada llamada con la comparación de las muestras completas.",
+            "Sigue dónde se construye el motor y qué objeto estaría disponible después de terminar esa llamada."
+          ]
         }
       ]
     },
@@ -50,7 +81,24 @@
         },
         {
           "type": "paragraph",
-          "text": "La comparación guiada muestra 1:0. Cero es una semilla manual válida y cero datos es una solicitud válida; no son marcas automáticas de error. El segundo plan conserva límites invertidos y se rechaza aunque no vaya a obtener datos."
+          "text": "Este programa muestra 1:0. Dentro del dominio de Plan, cero es una semilla válida y solicitar cero datos también es válido. Ninguno de esos ceros actúa como marca automática de error.\n\nEl segundo plan tiene los límites invertidos. La función debe rechazar esa configuración aunque la cantidad solicitada sea cero: una muestra vacía no elimina las condiciones del plan.",
+          "emphasis": [
+            {
+              "text": "cero es una semilla válida",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "límites invertidos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "una muestra vacía",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -64,11 +112,45 @@
         },
         {
           "type": "paragraph",
-          "text": "El tipo de semilla que acepta mt19937 se llama std::mt19937::result_type: es un nombre de tipo perteneciente a ese motor. Nuestros enteros 0..1000 caben en él. La conversión explícita en la referencia comunica esa adaptación después de validar. No necesitamos decidir a mano el tamaño interno del motor."
+          "text": "std::mt19937::result_type es el nombre del tipo que devuelve ese motor y que acepta su constructor como semilla (Köppe et al., 2023). El nombre completo permite referirse a ese tipo de la biblioteca.\n\nLos enteros de cero a mil que admite Plan se pueden representar en él. Después de validar, static_cast<std::mt19937::result_type>(plan.semilla) expresa la conversión al tipo del motor, con la notación ya practicada. La conversión no sustituye la validación ni convierte un plan inválido en uno válido.",
+          "emphasis": [
+            {
+              "text": "std::mt19937::result_type",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Después de validar",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no sustituye la validación",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El resumen asociará cantidad, menores que un umbral, desde ese umbral incluido y en_rango. Debe contar cada observación una vez, incluidas las repetidas. en_rango comprueba los límites elegidos. Igual que antes, rango y conteos no certifican frecuencias uniformes en una muestra pequeña."
+          "text": "Informe reunirá la cantidad de observaciones, el conteo de menores que un umbral, el conteo desde ese umbral incluido y el indicador en_rango. Cada observación debe contar una vez en una de las dos categorías, también cuando su valor se repite.\n\nen_rango comprueba si todos los datos pertenecen al intervalo elegido. Esta propiedad y los conteos describen la muestra obtenida; no certifican que sus valores hayan aparecido con frecuencias uniformes.",
+          "emphasis": [
+            {
+              "text": "Cada observación",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "dos categorías",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "todos los datos",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         }
       ]
     },
@@ -80,18 +162,69 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye Plan, plan_valido y preparar según sus contratos. Construye además Informe y resumir: recibe vector<int> por referencia const, mínimo, máximo y umbral. Acepta hasta veinte datos, límites y umbral 0..9 y mínimo <= máximo. Puede inspeccionar cualquier valor int: en_rango será false si alguno no pertenece al intervalo. Rechaza argumentos de resumen inválidos con invalid_argument antes de recorrer. El conteo debe separar dato < umbral de dato >= umbral."
-        },
-        {
-          "type": "paragraph",
-          "text": "Construye probar(const Plan& plan). Dentro de try prepara dos muestras independientes con ese mismo plan y resume la primera con umbral cuatro. En una línea muestra Cantidad:N;Rango:B;Conteo:B;Repeticion:B. N procede del informe; Rango de su indicador; Conteo compara menores+desde con cantidad; Repeticion compara las dos muestras completas, con su orden. Si captura invalid_argument, muestra Configuracion rechazada. Termina cada prueba con un salto de línea. Calcula los indicadores: no los escribas como constantes."
-        },
-        {
-          "type": "paragraph",
-          "text": "Reúne en main una sola batería con Plan{271,12,1,7}, {0,0,2,7}, {317,1,9,9}, {1000,6,4,4}, {-1,3,0,9}, {1001,3,0,9}, {271,-1,0,9}, {271,21,0,9}, {271,3,-1,9}, {271,3,0,10} y {271,0,7,2}, en ese orden. Pulsa Compilar, ejecutar y comprobar. Las cuatro primeras pruebas producen cantidades 12, 0, 1 y 6, con sus tres indicadores verdaderos; las siete restantes se rechazan. El plan de cantidad cero con límites invertidos sigue siendo inválido. No se exige una lista de números aleatorios concreta: las relaciones y los dominios son el criterio.",
+          "text": "Construye Plan, plan_valido y preparar según sus contratos. Define también Informe y resumir. Esta función recibe un vector<int> por referencia const, además de minimo, maximo y umbral.\n\nAcepta hasta veinte datos, ambos límites y umbral entre cero y nueve, y minimo <= maximo. Rechaza los argumentos de resumen inválidos con std::invalid_argument antes de recorrer la colección.\n\nLos valores de los datos pueden ser cualquier int. Un dato fuera del intervalo hace que en_rango sea false, pero sigue siendo una observación que debe clasificarse. Separa dato < umbral de dato >= umbral y conserva los datos recibidos.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "antes de recorrer la colección",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cualquier int",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sigue siendo una observación",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye probar(const Plan& plan). Dentro de try, prepara dos muestras con llamadas independientes a preparar usando ese mismo plan. Resume la primera con umbral cuatro.\n\nMuestra Cantidad:N;Rango:B;Conteo:B;Repeticion:B en una sola línea. N procede de la cantidad del informe; Rango consulta en_rango; Conteo comprueba menores + desde == cantidad; Repeticion compara las dos muestras completas, conservando su orden.\n\nSi un catch recibe std::invalid_argument, muestra Configuracion rechazada. Termina cada prueba con un salto de línea. Los indicadores deben obtenerse del informe y de las comparaciones, en lugar de imprimirse como constantes.",
+          "emphasis": [
+            {
+              "text": "llamadas independientes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "una sola línea",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "conservando su orden",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "del informe y de las comparaciones",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En main reúne una sola batería con estos planes, en este orden: Plan{271,12,1,7}, {0,0,2,7}, {317,1,9,9}, {1000,6,4,4}, {-1,3,0,9}, {1001,3,0,9}, {271,-1,0,9}, {271,21,0,9}, {271,3,-1,9}, {271,3,0,10} y {271,0,7,2}.\n\nPulsa Compilar, ejecutar y comprobar. Las cuatro primeras pruebas muestran cantidades 12, 0, 1 y 6, con sus tres indicadores verdaderos; las siete restantes se rechazan. También debe rechazarse el plan de cantidad cero con límites invertidos.\n\nEl objetivo no exige una lista concreta de números generados. Comprueba los dominios y las relaciones solicitadas con el mismo programa para toda la batería.",
+          "emphasis": [
+            {
+              "text": "una sola batería",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tres indicadores verdaderos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "el mismo programa",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -125,11 +258,50 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia inicial muestra una sola configuración válida. La batería siguiente reúne el dominio completo solicitado sin cambiar de programa entre pruebas: conserva las cuatro cantidades y distingue los siete rechazos. En la muestra vacía no hay observaciones, pero el rango y la partición se cumplen. Comparar las dos muestras completas comprueba reproducción en el mismo entorno; no certifica frecuencias uniformes."
+          "text": "El primer programa muestra una sola configuración válida: Plan{271,12,1,7}. Presenta Cantidad:12, Rango:1, Conteo:1 y Repeticion:1, en líneas separadas y sin salto final.\n\nLa referencia completa que sigue reúne los once planes de la actividad, con el formato de una línea por caso y su salto final. Comprueba las cuatro configuraciones válidas y los siete rechazos elegidos; no se presenta como un recorrido exhaustivo de todos los planes posibles.\n\nEn la muestra vacía no hay observaciones fuera del intervalo ni elementos que queden sin clasificar. Comparar las dos muestras comprueba la repetición dentro del mismo entorno; no certifica frecuencias uniformes.",
+          "emphasis": [
+            {
+              "text": "una sola configuración válida",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "referencia completa",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "once planes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "no se presenta como un recorrido exhaustivo",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La suma de los dos conteos llega como máximo a veinte. Cada elemento entra exactamente en una categoría. Si permites cualquier int en los datos del resumen, compararlo no exige restarlo ni multiplicarlo: la comprobación del rango puede señalar false sin realizar aritmética peligrosa."
+          "text": "La cantidad máxima es veinte. Cada dato se clasifica como menor que el umbral o como mayor o igual que él, de modo que la suma de ambos conteos debe recuperar la cantidad.\n\nEsa suma, por sí sola, no demuestra que cada observación se haya colocado en la categoría correcta. Los casos fijos siguientes permiten comprobar qué ocurre a cada lado del umbral y en la igualdad.\n\nPara decidir si un int está en el intervalo basta compararlo con los límites. No hace falta restarlo ni multiplicarlo: el informe puede marcar en_rango como false y seguir contando esa observación sin realizar esas operaciones.",
+          "emphasis": [
+            {
+              "text": "recuperar la cantidad",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "por sí sola",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "en la igualdad",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "heading",
@@ -177,7 +349,12 @@
             "Que cada entero apareció igualmente y el experimento certifica calidad estadística."
           ],
           "correctIndex": 2,
-          "explanation": "Las propiedades comprobadas no incluyen una certificación de frecuencias ni de calidad estadística."
+          "explanation": "Las propiedades comprobadas no incluyen una certificación de frecuencias ni de calidad estadística.",
+          "reviewFeedback": [
+            "Relaciona la comparación de muestras completas con la preparación que repiten esas dos llamadas.",
+            "Distingue una afirmación limitada a las comprobaciones observadas de otra propiedad que no se haya medido.",
+            "Identifica qué propiedades se comprobaron y si entre ellas figuraba la frecuencia de cada entero."
+          ]
         }
       ]
     },
@@ -189,23 +366,63 @@
         },
         {
           "type": "paragraph",
-          "text": "Un histograma de estos enteros conserva cuántas veces aparece cada valor. En una tabla de diez conteos, el índice cero corresponde al dato cero y el índice nueve al dato nueve. La cantidad de casillas es diez, no nueve; todos los conteos empiezan en cero. Los repetidos aumentan el mismo conteo y no se borran de la muestra original. Recupera el constructor por cantidad: std::vector<int> tabla(10); crea diez elementos int inicializados a cero. En cambio, std::vector<int> tabla{10}; crea un solo elemento de valor diez. Los paréntesis expresan aquí cantidad; las llaves expresan la lista de valores. Para el histograma necesitamos diez casillas cuyos conteos comiencen en cero.",
+          "text": "Un histograma de estos enteros guarda cuántas veces aparece cada valor. Se usan diez conteos: el índice cero corresponde al dato cero, el índice uno al dato uno y así hasta el nueve. Cada observación aumenta su conteo, aunque ese mismo valor ya haya aparecido.\n\nstd::vector<int> tabla(10); construye diez elementos int inicializados a cero. std::vector<int> tabla{10}; utiliza, en cambio, una lista con un solo elemento de valor diez (Köppe et al., 2023). En esta construcción de vector, los paréntesis indican cantidad y las llaves proporcionan los valores de la lista.\n\nEl histograma necesita diez casillas que empiecen en cero. Contar una repetición no crea otra casilla ni elimina ese dato de la muestra original.",
           "emphasis": [
             {
-              "text": "histograma",
+              "text": "diez conteos",
+              "style": "bold",
               "occurrence": 1
             },
             {
-              "text": "diez conteos"
+              "text": "Cada observación",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "diez elementos int inicializados a cero",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "un solo elemento",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "la muestra original",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Construye frecuencias(const vector<int>&): acepta hasta veinte datos 0..9, rechaza otros argumentos con invalid_argument y devuelve diez conteos. Valida cada valor antes de usarlo como índice. Construye probar(datos), que conserva una copia original. Si acepta, muestra Conteos: seguido de VALOR:CANTIDAD; por cada conteo no nulo, en orden de valor; añade Total:N;Conservado:B. El total se obtiene sumando la tabla y B comparando datos con su copia. Si rechaza, muestra Datos rechazados;Conservado:B. Termina cada prueba con un salto.\n\nEn main reúne {2,0,2,9}, vacío, {0}, {9}, {3,3,3}, {-1}, {10} y veintiún ceros, en ese orden. Resuelve el puzzle y pulsa Compilar, ejecutar y comprobar. Las cinco primeras pruebas conservan totales 4, 0, 1, 1 y 3; las tres últimas se rechazan sin modificar datos. El rótulo Conteos: permanece incluso sin filas no nulas.",
+          "text": "Construye frecuencias(const vector<int>& datos). Acepta hasta veinte datos entre cero y nueve, rechaza los demás argumentos con std::invalid_argument y devuelve un vector con diez conteos. Valida los datos antes de usarlos como índices.\n\nConstruye probar(datos) y conserva una copia original del vector. Si acepta, muestra Conteos: seguido de VALOR:CANTIDAD; por cada conteo no nulo, en orden creciente de valor. Añade Total:N;Conservado:B. N se obtiene sumando los diez conteos y B compara datos con su copia. Si rechaza, muestra Datos rechazados;Conservado:B. Termina cada prueba con un salto.\n\nEn main reúne {2,0,2,9}, el vector vacío, {0}, {9}, {3,3,3}, {-1}, {10} y veintiún ceros, en ese orden. Las cinco primeras pruebas deben mostrar totales 4, 0, 1, 1 y 3; las tres últimas se rechazan sin modificar los datos. El rótulo Conteos: permanece aunque no haya conteos no nulos.\n\nResuelve el puzzle siguiente y después pulsa Compilar, ejecutar y comprobar para comprobar toda la batería en un solo programa.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "antes de usarlos como índices",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "diez conteos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "en orden creciente de valor",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sin modificar los datos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "el puzzle siguiente",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -247,10 +464,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente reúne preparar y frecuencias con sus contratos. Usa Plan{313,20,0,9}, conserva la muestra y construye su histograma. Suma sus conteos y compara la muestra con una copia previa. Muestra Casillas:10, Total:20 y Conservado:1, una línea por resultado y un salto al final. Calcula los tres resultados desde los objetos. Pulsa Compilar, ejecutar y comprobar. No se exige una frecuencia concreta por valor: la muestra puede variar entre bibliotecas y las tres propiedades se conservan.",
+          "text": "Integra preparar y frecuencias en este editor, con su propio programa y objetivo. Conserva los contratos que se han construido: validar el plan antes de generar, obtener la muestra desde su configuración y contar las observaciones válidas sin modificarlas.\n\nUsa Plan{313,20,0,9}, conserva una copia de la muestra y construye su histograma. Muestra Casillas:10 a partir del tamaño de la tabla, Total:20 sumando sus conteos y Conservado:1 comparando datos con su copia previa. Cada resultado ocupa una línea y termina con un salto. Pulsa Compilar, ejecutar y comprobar.\n\nNo se exige una frecuencia particular por valor. El algoritmo de la distribución puede variar entre bibliotecas (Köppe et al., 2023), mientras estas tres propiedades siguen siendo las que debe comprobar el programa.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "su propio programa y objetivo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "a partir del tamaño de la tabla",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sumando sus conteos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "estas tres propiedades",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -284,11 +518,55 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo inicial presenta un histograma de una sola muestra fija; la batería siguiente conserva los mismos cálculos en un formato de una línea por caso. El conteo de tres aparece tres veces acumulado en su propia casilla. Cero y nueve prueban los dos extremos. Los rechazos de -1, 10 y veintiuna observaciones ocurren antes de construir un resultado aceptado."
+          "text": "El ejemplo inicial utiliza sólo la muestra fija {2,0,2,9}. Presenta los conteos 0:1, 2:2 y 9:1, después Total:4 y Conservado:1, cada rótulo en su línea y sin salto final.\n\nLa referencia de la batería reúne los ocho casos del objetivo, con una línea por caso y su salto final. En {3,3,3}, las tres observaciones aumentan la casilla del valor tres hasta dejarla en tres. Los casos {0} y {9} comprueban los extremos válidos; {-1}, {10} y las veintiuna observaciones deben rechazarse.\n\nLa referencia de la transferencia añade después el plan de generación y sus tres propiedades. Cada referencia corresponde al editor que pidió construir ese programa.",
+          "emphasis": [
+            {
+              "text": "sólo la muestra fija",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "la batería",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "tres observaciones",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "al editor que pidió construir",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "at() ofrece comprobación adicional, pero frecuencias valida antes el dominio de cada dato. La suma de los diez conteos reconstruye la cantidad de observaciones sin reconstruir su orden. Ese orden sigue disponible en el vector original: el histograma y la muestra conservan información diferente."
+          "text": "at() comprueba si un índice alcanza o supera el tamaño de la colección y lanza std::out_of_range en ese caso (Köppe et al., 2023). frecuencias valida primero el dominio de cada dato, de modo que sólo utiliza como índices los enteros de cero a nueve.\n\nLa suma de los diez conteos recupera la cantidad de observaciones, pero no su orden. Por ejemplo, {2,0,2,9} y {9,2,2,0} producen los mismos conteos. El vector original conserva esa diferencia: el histograma y la muestra aportan información distinta.",
+          "emphasis": [
+            {
+              "text": "valida primero",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "sólo utiliza como índices",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "pero no su orden",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "información distinta",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "heading",
@@ -325,7 +603,12 @@
             "Plan, componentes y llamadas, datos concretos y expectativa que el caso debe cumplir."
           ],
           "correctIndex": 2,
-          "explanation": "La configuración explica el experimento y el caso concreto permite investigarlo sin depender de una transformación idéntica entre bibliotecas."
+          "explanation": "La configuración explica el experimento y el caso concreto permite investigarlo sin depender de una transformación idéntica entre bibliotecas.",
+          "reviewFeedback": [
+            "Reconsidera qué información sobre el orden se conserva al reemplazar la muestra por sus conteos.",
+            "Distingue la secuencia del motor del algoritmo que utiliza la biblioteca para obtener los datos del intervalo.",
+            "Relaciona el caso concreto con la pregunta que se desea volver a comprobar, además de su configuración."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -346,7 +629,24 @@
         },
         {
           "type": "note",
-          "text": "Un motor y una distribución cumplen funciones diferentes: el motor avanza su estado y la distribución convierte sus valores al dominio solicitado. Reiniciar un motor con la misma configuración permite repetir un procedimiento en el mismo entorno, una propiedad útil para investigar errores y hacer pruebas repetibles (Stroustrup, 2024, sección 4.7.5). Comparar propiedades del experimento no exige que dos bibliotecas transformen de forma idéntica la secuencia del motor."
+          "text": "El motor y la distribución cumplen funciones diferentes. El motor proporciona una secuencia a partir de su estado y la distribución obtiene los datos del dominio solicitado. Prepararlos de nuevo con la misma configuración permite repetir el procedimiento en el mismo entorno (Stroustrup, 2024).\n\nComparar las propiedades del experimento no exige que dos bibliotecas transformen de forma idéntica la secuencia del motor (Köppe et al., 2023). Para investigar una diferencia se conservan también el caso concreto y la expectativa que debía cumplir.",
+          "emphasis": [
+            {
+              "text": "funciones diferentes",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "en el mismo entorno",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "el caso concreto y la expectativa",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "heading",
@@ -354,10 +654,32 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor Plan, preparar e Informe con resumir, y una función continuar(motor,cantidad,minimo,maximo) que recibe mt19937 por referencia y produce la cantidad sin reiniciarlo. continuar acepta cantidades 0..20 y límites 0..9 no invertidos; rechaza argumentos inválidos antes de generar.\n\nCon Plan{83,6,2,6}, compara dos llamadas a preparar y muestra Reinicio:B. Con otro motor de semilla 83, obtén dos datos en 2..6, copia el estado alcanzado y produce cuatro datos desde cada copia. Muestra Continuacion:B comprobando tamaño del primer lote, igualdad de las continuaciones y estados finales. Resume después {0,2,4,7,9} con límites 2..7 y umbral cuatro; muestra Fijo:cantidad:menores:desde:en_rango. Termina cada línea con salto. Pulsa Compilar, ejecutar y comprobar: se esperan Reinicio:1, Continuacion:1 y Fijo:5:2:3:0. Esta última muestra conserva un conteo completo aunque haya datos fuera de rango.",
+          "text": "En este editor reconstruye Plan, preparar e Informe con resumir. Construye también continuar(std::mt19937& motor, int cantidad, int minimo, int maximo), que devuelve un vector<int> con la cantidad solicitada y utiliza el motor recibido sin reiniciarlo.\n\ncontinuar admite cantidad entre cero y veinte y ambos límites entre cero y nueve, con minimo <= maximo. Rechaza los argumentos inválidos con std::invalid_argument antes de generar datos.\n\nCon Plan{83,6,2,6}, compara dos llamadas a preparar y muestra Reinicio:B. Después prepara otro motor con semilla 83. Obtiene dos datos en 2..6, copia el motor desde ese punto y obtiene cuatro datos desde el motor y cuatro desde su copia. Muestra Continuacion:B comprobando el tamaño dos del primer lote, la igualdad de los vectores de continuación y la igualdad final de los motores.\n\nResume la muestra fija {0,2,4,7,9} con límites 2..7 y umbral cuatro. Muestra Fijo:cantidad:menores:desde:en_rango. Los datos fuera del intervalo hacen que en_rango sea false, pero siguen formando parte del conteo.\n\nTermina cada línea con un salto y pulsa Compilar, ejecutar y comprobar. Los resultados requeridos son Reinicio:1, Continuacion:1 y Fijo:5:2:3:0. Cada indicador debe calcularse desde los objetos correspondientes.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "sin reiniciarlo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "antes de generar datos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "desde ese punto",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "siguen formando parte del conteo",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "desde los objetos correspondientes",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -389,6 +711,1147 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nint main() {\n    const Plan plan{83,6,2,6};\n    const std::vector<int> primera=preparar(plan);\n    const std::vector<int> reiniciada=preparar(plan);\n    std::cout<<\"Reinicio:\"<<(primera==reiniciada)<<\"\\n\";\n    std::mt19937 motor{83};\n    const std::vector<int> primer_lote=continuar(motor,2,2,6);\n    std::mt19937 copia=motor;\n    const std::vector<int> siguiente=continuar(motor,4,2,6);\n    const std::vector<int> reproducida=continuar(copia,4,2,6);\n    std::cout<<\"Continuacion:\"<<(primer_lote.size()==2 && siguiente==reproducida && motor==copia)<<\"\\n\";\n    const Informe fijo=resumir({0,2,4,7,9},2,7,4);\n    std::cout<<\"Fijo:\"<<fijo.cantidad<<\":\"<<fijo.menores<<\":\"<<fijo.desde<<\":\"<<fijo.en_rango<<\"\\n\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "bef0bc0709ecb451d2691c8afe7d0f493fb837a45c6a1006a09966923457d7bd"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "83f9d5319cd5648933bcff9e221a9129dedd787a5b9f716f4db68ecf0ff50bad"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "c78c0a4ea88da382d3c477a8fdb225e6db5fcb444a65ebe540feaf87ad348b49"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "afa18889cb5c6ce08905964ebe5f9879cb45f1c1bf267e4f58e4e9a47fe09fe1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "fac3ea050bd7f729e1042327e2bd73cf31e7e7bbcbd2fd5016f21e3e6278f4b1"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "63052f35ffdc92f248decbbec06ecff07131130d6b0ebc93233b13faed0f72be"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "09c9f3a6b1c616014dcd960c15e258c25ed3fa2a8c6b376daa78f9c475815d14"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "39a989ae4394c570872e17f4c6597cec25d00ff9fd70b96810891805568314eb"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "c4df14828b2d07f4d81fe7c14765ea5cd12ec6eaff5e1ee6bd2cd9682c1697bf"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "7105492570302f16e233079623b36942f39a10b24830edd0e00afa88f18c427d"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "d57551d11ba258229b4052c31c01eafe1645516bbe27791a31c8f08246e7744e"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "02966a819d0a92c225e6d332c05fa4359f3412384f62288cfee1526a29cb65a3"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "f3ea315b185c05bca82e98b36e2acf45d633072590592168cb58865398d0efe7"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "bba987f940ae325403a34089d73cb3524b15dd0697f3b6410cba5a9f98b3c119"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "9572a450c6dad7ac01ed9e931956724ef8921f7293a6a85db675fe44d13775f5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "dda95f3062057a91177f2de3ff193537fd5d27071ee1b905d1310b308802a5f7"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "10758e667e0279f9192216bc525f7c568e3ccadef6ba085cc1656022ab339259"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "6da5b16f868626a802b8d706f11cd42d54af46828794027b81a42f2d9d3dd5e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "3b029e9824c333853e1029282f6d6c1d2b697fb76c45fc0a10c9ba24ed7129d5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "0306ef38357a672a798a6a404d129b34c2433bc81a591ca287680107b5d45ac6",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "116601169f81adbbd5aa3e90cb0d3efc7b0e411b5b904026188f576c0f6c7c0a"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "83f9d5319cd5648933bcff9e221a9129dedd787a5b9f716f4db68ecf0ff50bad"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "c78c0a4ea88da382d3c477a8fdb225e6db5fcb444a65ebe540feaf87ad348b49"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "7c771f0198fc27b99f850edd6d9c53985d70c9d2a4c10de20724b41f225f6aa8"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5d192131dbd22453bb049f649cdbdf6b75c5336f6ee5af7bf32a992ecdd24d38"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "19d76519710f9bff477539b4ccd102aa67403e0e913b2a37f879d0408ccc5dab"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ed8f1473233cc97b320cbf82f1352deb6ae8cbb0afe567304f23058ef82c532f"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "14c588e384a01ab053a056b3ca6c5f760785e9dbcaa5ebea790359910715e840"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "7c771f0198fc27b99f850edd6d9c53985d70c9d2a4c10de20724b41f225f6aa8"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "aa75e07eb316d8129c8e726f789a25ee4216cd801ba80848cee061479080c0f3"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1af3a53a5e8ca374bf0f4cc4d8d63e6b75c0dfbfc8ab9b8652fac8cdddec82c9"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "721d46da7696ee0798ed40c5f4f66c6826269740110bd2d2d04954763d6ba052",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "bef0bc0709ecb451d2691c8afe7d0f493fb837a45c6a1006a09966923457d7bd"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "83f9d5319cd5648933bcff9e221a9129dedd787a5b9f716f4db68ecf0ff50bad"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "c78c0a4ea88da382d3c477a8fdb225e6db5fcb444a65ebe540feaf87ad348b49"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "afa18889cb5c6ce08905964ebe5f9879cb45f1c1bf267e4f58e4e9a47fe09fe1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "fac3ea050bd7f729e1042327e2bd73cf31e7e7bbcbd2fd5016f21e3e6278f4b1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "63052f35ffdc92f248decbbec06ecff07131130d6b0ebc93233b13faed0f72be"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "09c9f3a6b1c616014dcd960c15e258c25ed3fa2a8c6b376daa78f9c475815d14"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "39a989ae4394c570872e17f4c6597cec25d00ff9fd70b96810891805568314eb"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "c4df14828b2d07f4d81fe7c14765ea5cd12ec6eaff5e1ee6bd2cd9682c1697bf"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "7105492570302f16e233079623b36942f39a10b24830edd0e00afa88f18c427d"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "d57551d11ba258229b4052c31c01eafe1645516bbe27791a31c8f08246e7744e"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "02966a819d0a92c225e6d332c05fa4359f3412384f62288cfee1526a29cb65a3"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "f3ea315b185c05bca82e98b36e2acf45d633072590592168cb58865398d0efe7"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "bba987f940ae325403a34089d73cb3524b15dd0697f3b6410cba5a9f98b3c119"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "9572a450c6dad7ac01ed9e931956724ef8921f7293a6a85db675fe44d13775f5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "dda95f3062057a91177f2de3ff193537fd5d27071ee1b905d1310b308802a5f7"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "10758e667e0279f9192216bc525f7c568e3ccadef6ba085cc1656022ab339259"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "6da5b16f868626a802b8d706f11cd42d54af46828794027b81a42f2d9d3dd5e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "3b029e9824c333853e1029282f6d6c1d2b697fb76c45fc0a10c9ba24ed7129d5"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "9ee229356561378dc36146c0bd189fdf657b7e4fa1a2ca8aaba8ca5fb1885010",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "3fc17cde6b54eeeb8a2b04d04b1b350c0d3e517ed49c159e76f02cb74f597cb3"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "83f9d5319cd5648933bcff9e221a9129dedd787a5b9f716f4db68ecf0ff50bad"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "c78c0a4ea88da382d3c477a8fdb225e6db5fcb444a65ebe540feaf87ad348b49"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "6493cbc5e15da1573b5567ca0ae578dea4482b36d84d789f4af932e6c7cacba9"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "aca66ce4b193f4c62760da8857045dcc68199f1a53c2c6be0350ad8ef245a886"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "d072a63a0399132970ae8cb9c21508aa2eb64633fb70e33ae51e10cfb564bac4"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "63d01bd75ae1f0330ccc374071de37c0eedad46a196b0fe959ed9553168637b8"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "a062a51c02bf50534a6ad49e7a73a5954ea6d5d86fd9617130094247838293bf"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "6493cbc5e15da1573b5567ca0ae578dea4482b36d84d789f4af932e6c7cacba9"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "ea9d1bf0a72b9dfd57b4c60b8c98529432076b6c769aad1635ae718a04415c26"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "15a75c56384afb5c6d9518c48a49ba12d1309130cee3e7d64470e2a280e793dd"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0fbfbda2b2d649ee95182d4b2d75eddca6253e44bbf1bcd9bbfab237d344356a",
+        "afterSha256": "63bf615b4e694ccd19a5746743f39e889d7c22a5c297d12797d5c5e8d9f2b1e8"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "249f3f238c65b8a3d803b5839ccc4f9072a63bd377a58b76e7287aa3ee3dfbf0",
+        "afterSha256": "facdbba80737a524b59cfbf8c49f15ce8940ff57d21617f31395a6070a37c9d1"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "b686de850bc25c2a985581c7c1d2032486994109caee6bff66d0490665904089",
+        "afterSha256": "8824ce906f08a79bce25bc0171e300f68e10958f1837d58f8702c877017b918d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "be41fdbe1767675c77353cb7755e626d25336242b81973632dfd9630f114ce71",
+        "afterSha256": "d149bdba282295d5939d6c61e03dbf31f19ac8b3cc4c600621bcbd0d835385b0"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "febf915d1f23e30f54d112a2443c9965ab5345daa484fb0a7d82a13ea9502812",
+        "afterSha256": "f08f6c69da950d7e09258274db5d0b6729456b63f9eb7a21d380fa7fa3a99b3f"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "94b2b120cfee62e4443a8c0612bd50aac9582f52518d041568c0f527ae1e9c60",
+        "afterSha256": "cdb4a63ae28ed32be465b0f62c3c9b629c699d6c95a8d3ca11b897bb1ab96e79"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "29508b4671b7fcf45835f8c7ce7dbb9381ee110e1c6286c21de59f946265441d",
+        "afterSha256": "7b792811952fd171649855bd88f0af64cc5494584cde2c58fd9ccce4350de907"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "866b7303f77e8efc8730e98977265ab088e6b671e3372d41a8ef584cd2f2f2d7",
+        "afterSha256": "7ad600cab00771239f5869bfd6e521ac0ae54a0a2c0959dad2ad593dcc436434"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1da92268e4f2cc390d5c72a52873d1ed2ff380fcc261ef24c6de992a4d87b4df",
+        "afterSha256": "1ae54b41be279f8c37c26a13208dbaace790793ead89a6015e7d59287d7597ee"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "38f82b0580730dba27ff94b1e594754b4774a7823c8bf133318514fe349c6a09",
+        "afterSha256": "185d5a81c1fbb3d3df9e920d4adce99325820bbca89b94140313fba86271f3c6"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "bfe0d764e551d99e1438d3bfdfcf2938f7a8cf84d0c4dc8a946b4610ee4776c4",
+        "afterSha256": "f94d15e6a58aed37eb17a0f020bacb5adca10d2a150214cb475b4035cb0a1d80"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "18611187d3e0b0d59f9012f36de697bd307086dfaf8c6d1cf8e599eecf773f3e",
+        "afterSha256": "6bde286d9b6a6f8267819c311d0d7aafdc31573515acd77c4b6cc7fc8db95177"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "9bc0254e46869c129467326ddac9a402a96b65f8153ecb7696038cb7e3c79284",
+        "afterSha256": "8f94aa6cf5206a2ae515e7ec2d1e658f2dfbcec509bca76994d4bbcb09685041"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "e6e064481124e75462ab3df4b4e4745b581312c25a4ac43eb8c61e7f652a6283",
+        "afterSha256": "f04a31458e1847b7993bf8a4a64b067f829c5bb62695b9bd485a09fa9afb6b0e"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "09f70f43d65eb17b0aac928db595cd0b7419bb3b67b2881f24cd0c9b14321c81",
+        "afterSha256": "b37259ab07ba158d50820cfa2d2adefe22db4c6efaf1a497b82f154095432e97"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "74e7c7cdc84dc2432b9cbfe7c921c606522f3a3c542e4d6f20233b366f01b797",
+        "afterSha256": "86ff4b199305c996c9f0f832b42528d11231a670bbfe782280b4c7773860d692"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "679b9dfe1418113b627aaad7ad81a513f1ff5462a2be36908bff76aace8386eb",
+        "afterSha256": "4d56f4c44047914aa9b4df052846ad08dfdcb86d2574604d60a6fa40267e65bb"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "db2ec8a1a726a5e14e825b3b89cccd7337952b986b65a854defe6ef096ea0ae2",
+        "afterSha256": "4f7131646d0fc686c570abcad68134e121f3627f3286bd013b30436142b4750a"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "01bcea6b57e31dc7b1d164f8bb59efd2cf5eace98165c3cc8ef9a35876161354",
+        "afterSha256": "03979631576791a0173c8b49d150cbf21300849f37fa2f208ad926fe88dae975"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "9b4066ab93c7426603bc844e4e735353821988bc7d5ea02256a0d8a45ff80d2e",
+        "afterSha256": "04cd7d7ddbe62f47c53bdabcfb22dfa924a5958e2f643fe7ec17017b79a740ac"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0004",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005"
+      ]
+    },
+    {
+      "activity": "block_0005_0004",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0006_0004",
+        "block_0006_0005"
+      ]
+    },
+    {
+      "activity": "block_0005_0007",
+      "blocks": [
+        "block_0006_0006",
+        "block_0006_0007"
+      ]
+    },
+    {
+      "activity": "block_0007_0006",
+      "blocks": [
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0001",
+      "requires": [
+        "block_0002_0004"
+      ]
+    },
+    {
+      "activity": "block_0004_0002",
+      "requires": [
+        "block_0002_0004"
+      ]
+    },
+    {
+      "activity": "block_0005_0007",
+      "requires": [
+        "block_0002_0004",
+        "block_0005_0004"
       ]
     }
   ]
