@@ -200,16 +200,19 @@
           "fragments": [
             "    std::cout << \"Acceso autorizado\";",
             "#include <iostream>",
-            "    return 0;\n}",
+            "    return 0;",
+            "}",
             "int main() {"
           ],
           "correctOrder": [
             1,
-            3,
+            4,
             0,
-            2
+            2,
+            3
           ],
-          "explanation": "Primero #include <iostream> permite usar el recurso de salida; después se abre main, se escribe la instrucción que muestra el mensaje y se termina el cuerpo."
+          "explanation": "`#include <iostream>` incorpora las declaraciones necesarias para usar `std::cout`. Dentro de las llaves de `main`, la instrucción `std::cout << \"Acceso autorizado\";` escribe el mensaje. `return 0;` termina la función y la última llave cierra su cuerpo.",
+          "reviewFeedback": "Distingue las líneas que preparan la biblioteca de las instrucciones que pertenecen al cuerpo de main. Revisa también qué llave cierra ese cuerpo: una instrucción no puede quedar fuera del lugar donde debe ejecutarse."
         },
         {
           "type": "multiple_choice",
@@ -1154,6 +1157,21 @@
         "id": "block_0005_0001",
         "beforeSha256": "cf0a88ed4be31e03eb8bef6c4231ec98a67be492de826770570d34f5251b0c44",
         "afterSha256": "84576aed3dd199b026cec9d56e3dd353c5ebafbaf036798c269cf5710b11c13f"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "db09b7eff22a3255152e318d23b8bbe5df7fe335c7b92c565a92b46bce8500a1",
+        "afterSha256": "9346db7d61dcb50217c18eaeb230462710bb00fdfaa52d0d0328b84dc9f3dfd7"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9346db7d61dcb50217c18eaeb230462710bb00fdfaa52d0d0328b84dc9f3dfd7",
+        "afterSha256": "b39ea0e16333554fbdf7ff8b202fb94d16f586580abbfa5b6ba46834b5a22d02"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "b39ea0e16333554fbdf7ff8b202fb94d16f586580abbfa5b6ba46834b5a22d02",
+        "afterSha256": "68adc8bd7a31a9fe1ffacf5df6346d86aefcf9016f96e75260a01d63e2981441"
       }
     ],
     "retired": [
@@ -1714,6 +1732,29 @@
             ]
           }
         ]
+      }
+    ],
+    "orderRefinements": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "order_code",
+          "id": "armar_programa",
+          "question": "Ordena las piezas para construir un programa que muestre Acceso autorizado.",
+          "fragments": [
+            "    std::cout << \"Acceso autorizado\";",
+            "#include <iostream>",
+            "    return 0;\n}",
+            "int main() {"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "Primero #include <iostream> permite usar el recurso de salida; después se abre main, se escribe la instrucción que muestra el mensaje y se termina el cuerpo."
+        }
       }
     ]
   },

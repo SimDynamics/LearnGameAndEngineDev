@@ -10,15 +10,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya usaste istringstream para texto definido en el código y cin para entrada preparada. Ahora combinaremos std::cin como lector exterior con un istringstream local que valide cada línea. Cambiaremos los datos sin cambiar la fuente del programa."
+          "text": "El lector exterior usará ahora `std::cin`, que recibe el texto del campo Entrada. Un `std::istringstream` local analizará cada línea por separado, igual que en la lección anterior. La lectura desde el origen y la interpretación del texto obtenido siguen siendo responsabilidades distintas (Stroustrup, 2024, pp. 279, 283).\n\nEl cambio permite probar varias secuencias de datos con el mismo código: se modifica la entrada de una ejecución, sin sustituir una cadena dentro del programa.",
+          "emphasis": [
+            {
+              "text": "el mismo código",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Escribe toda la entrada antes de ejecutar. La ejecución recibe ese texto desde el comienzo y encuentra EOF cuando se agota. No es una consola para contestar mientras el programa corre. Una entrada completamente vacía entrega EOF; no obliga a esperar otra respuesta."
+          "text": "Prepara todo el texto en Entrada antes de ejecutar. La ejecución recibe ese texto desde el principio y encuentra el final de la entrada, EOF, cuando se agota. El campo prepara los datos de una ejecución; no sirve para responder mientras el programa está corriendo.\n\nSi el campo está completamente vacío, la ejecución recibe el final desde el primer intento de lectura. No queda esperando otra respuesta.",
+          "emphasis": [
+            {
+              "text": "Prepara todo el texto en Entrada antes de ejecutar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construiremos el registro de ocupación de un pequeño almacén. Cada ejecución empieza con 3 plazas ocupadas, recibe movimientos por líneas y conserva sólo los movimientos aceptados. La entrada no se imprime automáticamente: toda salida visible la decide el programa."
+          "text": "La construcción registrará la ocupación de un pequeño almacén. Cada ejecución empieza con `3` plazas ocupadas y procesa movimientos por líneas. Sólo un movimiento aceptado puede actualizar la ocupación y aumentar el contador de aceptadas.\n\nLa entrada no se muestra automáticamente como salida: el programa decide qué mensajes escribe en `std::cout`.",
+          "emphasis": [
+            {
+              "text": "Sólo un movimiento aceptado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -30,7 +48,12 @@
             "Una cadena dentro del código; cin obtiene automáticamente esa cadena."
           ],
           "correctIndex": 0,
-          "explanation": "Entrada preparada se entrega a cin. Cambiar la presentación no cambia esos datos, y una string local no alimenta cin por sí sola. Cada ejecución vuelve a comenzar con su estado inicial."
+          "explanation": "El texto del campo Entrada se entrega a cin. Cambiar la presentación no cambia esos datos, y una string local no alimenta cin por sí sola. Cada ejecución vuelve a comenzar con su estado inicial.",
+          "reviewFeedback": [
+            "Distingue los datos que recibe el lector del código que procesa esos datos.",
+            "Cambiar lo que escribe cout modifica la presentación, no los caracteres que recibe cin. Revisa dónde se prepara la entrada de la ejecución.",
+            "Un flujo local de cadena y cin son objetos lectores distintos. Revisa si crear una string en el programa cambia por sí solo la entrada que recibe cin."
+          ]
         }
       ]
     },
@@ -42,19 +65,47 @@
         },
         {
           "type": "paragraph",
-          "text": "Una operación ocupa exactamente una línea con el formato entran:salen. Los dos valores se leen como int mediante >>; el separador debe ser el carácter :. Se permiten blancos que omite la extracción formateada, como espacios o tabuladores alrededor de los campos. Por ello 2:1, +2 : 01 y  2 : 1  representan los mismos valores. No estamos exigiendo la gramática de dígitos del futuro intérprete."
+          "text": "Cada operación ocupa una línea con el formato entran:salen. El analizador obtiene los dos valores como `int` mediante `>>` y exige que el separador sea el carácter `':'`. La extracción formateada omite el espacio en blanco inicial de cada campo (Köppe et al., 2023, pp. 1643–1646).\n\nPor ejemplo, las líneas 2:1, +2 : 01 y 2 : 1 representan los mismos valores. El contrato permite los signos y los espacios que reconoce esa extracción; no exige que toda la línea sea una secuencia continua de dígitos.",
+          "emphasis": [
+            {
+              "text": "Cada operación ocupa una línea",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Cada cantidad debe estar entre 0 y 3. La nueva ocupación se calcula como ocupación anterior + entran - salen y debe quedar entre 0 y 6, ambos incluidos. Este contrato comprueba el resultado conjunto del movimiento; no exige un estado intermedio después de las entradas. Sólo una línea completa y válida publica la nueva ocupación y aumenta el contador de aceptadas. El estado recibido por el analizador debe estar entre 0 y 6: main lo inicializa en 3 y mantiene ese invariante al publicar sólo movimientos válidos."
+          "text": "Cada cantidad debe pertenecer al intervalo de `0` a `3`. La ocupación candidata se calcula sumando las entradas a la ocupación anterior y restando las salidas; el resultado debe quedar entre `0` y `6`, incluidos los extremos. Se evalúa el efecto conjunto del movimiento, sin imponer un estado intermedio después de las entradas.\n\nSólo una línea completa y válida actualiza la ocupación y aumenta el contador de aceptadas. El analizador recibe una ocupación ya válida, entre `0` y `6`: `main` empieza en `3` y conserva esa condición al actualizar únicamente con movimientos aceptados.",
+          "emphasis": [
+            {
+              "text": "Se evalúa el efecto conjunto del movimiento",
+              "style": "bold"
+            },
+            {
+              "text": "Sólo una línea completa y válida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Los motivos de rechazo tienen un orden para que un caso con varios problemas tenga un diagnóstico único: Sin datos si no contiene ningún campo; Formato invalido si no se obtienen int, :, int completos; Datos adicionales si después queda cualquier texto que no sea blanco; Fuera de dominio si alguna cantidad está fuera de 0..3; Capacidad invalida si el resultado queda fuera de 0..6. Una línea con cero caracteres y una línea sólo de blancos son distintas strings, pero ambas reciben Sin datos en este contrato."
+          "text": "Comprueba los motivos de rechazo en este orden. El primer motivo que se cumpla determina el diagnóstico, aunque la línea tenga varios problemas:\n\n1. Sin datos: no se encuentra ningún campo.\n2. Formato invalido: no se obtienen completos los dos enteros y el separador exigido.\n3. Datos adicionales: queda texto distinto de espacio en blanco después de los campos.\n4. Fuera de dominio: alguna cantidad queda fuera del intervalo de 0 a 3.\n5. Capacidad invalida: la ocupación candidata queda fuera del intervalo de 0 a 6.\n\nUna línea sin caracteres y otra formada sólo por espacio en blanco son textos distintos. En este contrato ambas reciben el diagnóstico Sin datos.",
+          "emphasis": [
+            {
+              "text": "El primer motivo que se cumpla determina el diagnóstico",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Por ejemplo, 2:1 resto tiene datos adicionales; 2: requiere un campo que falta. No se trata de un fallo de la lectura exterior: getline puede haber obtenido correctamente ambos textos. Conserva el estado anterior en cualquiera de los rechazos diagnosticados."
+          "text": "La línea 2:1 resto deja texto adicional; la línea 2: termina sin aportar el segundo entero. En ambos casos, `getline` puede haber obtenido correctamente la línea completa: es el análisis local el que decide su rechazo.\n\nCualquiera de los rechazos diagnosticados conserva la ocupación anterior. Un diagnóstico explica qué incumplió la línea; no autoriza a aplicar parcialmente sus cantidades.",
+          "emphasis": [
+            {
+              "text": "conserva la ocupación anterior",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -66,7 +117,12 @@
             "Datos adicionales; ocupación 5."
           ],
           "correctIndex": 2,
-          "explanation": "El residuo aviso se detecta antes de comprobar el dominio de las cantidades. La línea se rechaza completa y no publica 9 ni cambia el estado anterior 5."
+          "explanation": "El residuo aviso se detecta antes de comprobar el dominio de las cantidades. La línea se rechaza completa y no publica 9 ni cambia el estado anterior 5.",
+          "reviewFeedback": [
+            "Un motivo de rechazo puede ser verdadero sin ser el primero que debe diagnosticarse. Sigue el orden del contrato antes de elegir una etiqueta.",
+            "Calcular una candidata no autoriza a publicarla. Comprueba qué requisitos deben completarse antes de aceptar la línea.",
+            "Aplica primero el orden de diagnóstico y conserva el estado cuando la línea se rechaza."
+          ]
         }
       ]
     },
@@ -78,11 +134,27 @@
         },
         {
           "type": "paragraph",
-          "text": "getline puede obtener la última línea aunque termine sin salto. Si leyó caracteres antes de encontrar EOF, esa línea debe analizarse. Si el intento siguiente no obtiene una nueva línea, no inventes una operación vacía. Un salto disponible, en cambio, puede terminar una línea con cero caracteres que sí se debe analizar."
+          "text": "`getline` puede obtener la última línea aunque no termine con un salto. Si obtiene caracteres antes de encontrar EOF, esa línea debe analizarse. Un intento posterior que no obtiene nada nuevo termina la lectura y no inventa otra operación (Köppe et al., 2023, pp. 865–866).\n\nEn cambio, un salto disponible puede delimitar una línea sin caracteres. Esa línea sí se obtuvo y debe recibir el diagnóstico que establece el contrato.",
+          "emphasis": [
+            {
+              "text": "esa línea debe analizarse",
+              "style": "bold"
+            },
+            {
+              "text": "un salto disponible",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "EOF no demuestra que los campos de una operación estén completos. El siguiente programa utiliza un texto local pequeño para distinguir obtener una línea de extraer los tres campos. El programa del editor de código leerá desde cin; los indicadores de los dos objetos lectores siguen siendo independientes."
+          "text": "Encontrar EOF no demuestra que los campos de una operación estén completos. El programa siguiente usa un texto local pequeño para distinguir la lectura de una línea del análisis de sus tres campos; el programa de construcción leerá desde `std::cin`.\n\nLa conversión `static_cast<bool>(...)` obtiene el resultado lógico de cada lectura para guardarlo y mostrarlo. Consulta si el flujo permite considerar satisfactoria la operación, igual que al usarlo como condición; no sustituye esa pregunta por `good()` (Köppe et al., 2023, p. 1628).",
+          "emphasis": [
+            {
+              "text": "no demuestra que los campos de una operación estén completos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -93,11 +165,18 @@
           "answers": [
             "1 1 0 1 1"
           ],
-          "explanation": "getline obtiene los caracteres 1: antes de EOF, por lo que su lectura se evalúa como verdadera. El análisis local no encuentra el segundo entero: alcanza EOF y marca fallo. La línea existe, pero la operación está incompleta."
+          "explanation": "getline obtiene los caracteres 1: antes de EOF, por lo que su lectura se evalúa como verdadera. El análisis local no encuentra el segundo entero: alcanza EOF y marca fallo. La línea existe, pero la operación está incompleta.",
+          "reviewFeedback": "Evalúa por separado la obtención de la línea y la extracción de sus campos. Consulta después los indicadores del objeto correspondiente; encontrar EOF no responde por sí solo si la operación solicitada se completó."
         },
         {
           "type": "paragraph",
-          "text": "Al terminar la lectura exterior, bad() o un fallo sin EOF indican un problema del origen y no una operación mal escrita. El EOF normal termina la sesión, incluso aunque el último intento de getline marque también fail por no haber obtenido nada nuevo. Primero decide si se obtuvo una línea; después valida su contenido. No uses while (!cin.eof()) para fabricar intentos."
+          "text": "Cuando termina el bucle exterior, `bad()` o un fallo sin EOF indican un problema del origen. Ese problema es distinto de una línea cuyos datos incumplen el formato. El final normal de la entrada termina la sesión, aunque el último intento de `getline` también marque fallo por no obtener nada nuevo.\n\nPrimero se decide si se obtuvo una línea y después se valida su contenido. Usar `while (!std::cin.eof())` preguntaría por un estado anterior al intento siguiente y podría crear un procesamiento sin una línea nueva (Köppe et al., 2023, pp. 865–866, 1628).",
+          "emphasis": [
+            {
+              "text": "Primero se decide si se obtuvo una línea y después se valida su contenido",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -105,24 +184,54 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construcción independiente: aceptar movimientos desde entrada real"
+          "text": "Construir el lector de movimientos desde entrada preparada"
         },
         {
           "type": "paragraph",
-          "text": "Escribe el lector completo desde el editor mínimo. Usa cin para obtener una línea por vuelta y un análisis local para esa línea. Separa el análisis y la decisión de aceptación en una función que reciba const std::string& y el estado por referencia. Puede devolver un enum class con los resultados del contrato, como los tipos de alternativas que ya construiste. Elige sus nombres y organiza las funciones; no leas del exterior dentro del analizador local."
-        },
-        {
-          "type": "paragraph",
-          "text": "El estado inicial es 3 y el contador de aceptadas empieza en 0. Por cada línea obtenida imprime el diagnóstico, el separador exacto  | Ocupadas:  y la ocupación que permanece tras decidir. Una línea válida usa Aceptada como diagnóstico. Al acabar por EOF imprime Aceptadas: A y después Ocupadas: N, una línea para cada etiqueta y un espacio después de los dos puntos. Todas las líneas de salida terminan con salto."
-        },
-        {
-          "type": "paragraph",
-          "text": "Los rechazos de datos permiten seguir con la línea siguiente y la sesión termina con código 0. Si el origen tiene bad() o la lectura se detiene sin EOF, imprime sólo Fallo del origen como aviso final y termina con código 1, sin el resumen normal; conserva lo ya aceptado. No intentaremos provocar un fallo físico escribiendo datos malos. Las pruebas de datos tienen hasta 8 líneas de hasta 40 caracteres ASCII; las cantidades escritas están entre -20 y 99. Las guardas de 0..3 y 0..6 deben preceder a la publicación del estado."
-        },
-        {
-          "type": "paragraph",
-          "text": "Entrada preparada contiene siete líneas. La segunda contiene un espacio y un tabulador; la última no lleva salto final. El caso inicial exige la salida siguiente, con salto también después de la última línea:\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nConserva el mismo programa mientras pruebas aquí entrada vacía; un LF; 0:0 sin LF, con un LF y con dos LF; 2:; q:1; 2;1; 2:1x; 2:1 0; -1:0; 0:4; +2 : 01. Después prueba las parejas 3:0 y 1:0; 0:3 y 0:1; q:2 y 1:0, cada pareja en líneas distintas. Finalmente prueba 1:0, 1:0 resto y 0:1 en tres líneas, y la pareja 0:0 y 0:4. Usa Compilar, ejecutar y comprobar antes de avanzar; cada ejecución vuelve al estado inicial 3.",
+          "text": "Construye el programa completo a partir del editor mínimo. `std::cin` debe obtener una línea por vuelta; una función debe analizar y decidir si se acepta esa línea, recibiendo `const std::string&` y la ocupación por referencia. El análisis local trabaja con el texto recibido, sin leer directamente del origen exterior.\n\nPuedes devolver un `enum class` que distinga los resultados del contrato, como las alternativas ya estudiadas. Elige los nombres y la organización de las funciones; el objetivo no exige copiar los de la referencia posterior.",
           "emphasis": [
+            {
+              "text": "una línea por vuelta",
+              "style": "bold"
+            },
+            {
+              "text": "sin leer directamente del origen exterior",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada ejecución comienza con `3` plazas ocupadas y un contador de aceptadas igual a `0`. Por cada línea obtenida escribe su diagnóstico, el separador exacto « | Ocupadas: » y la ocupación que permanece después de decidir. El separador tiene un espacio antes de la barra, otro después y otro después de los dos puntos. Un movimiento válido usa Aceptada como diagnóstico.\n\nAl terminar normalmente por EOF, presenta Aceptadas: A y después Ocupadas: N, cada etiqueta en su propia línea y con un espacio después de los dos puntos. Sustituye A y N por los valores correspondientes. Todas las líneas de salida terminan con un salto, incluida la última.",
+          "emphasis": [
+            {
+              "text": "Todas las líneas de salida terminan con un salto",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Un rechazo de datos produce su diagnóstico y permite analizar la línea siguiente. La sesión que termina normalmente por EOF devuelve el código `0`.\n\nSi el origen tiene `bad()` o la lectura se detiene sin EOF, añade Fallo del origen como aviso final y termina con código `1`, sin presentar el resumen normal. Conserva las operaciones que ya se habían aceptado. Es una situación distinta de recibir una línea mal formada: escribir datos incorrectos no simula una avería física del origen.\n\nLas pruebas contienen como máximo ocho líneas de hasta 40 caracteres ASCII; las cantidades escritas están entre `-20` y `99`. Las comprobaciones de cantidades y capacidad deben completarse antes de actualizar la ocupación.",
+          "emphasis": [
+            {
+              "text": "antes de actualizar la ocupación",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "El campo Entrada contiene inicialmente siete líneas. La segunda tiene un espacio seguido de un tabulador y la última no lleva salto final. Ese caso inicial debe producir lo siguiente, con un salto también después de la última línea:\n\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nEl objetivo es un único lector comprobado con diecinueve entradas. Entre ejecuciones cambia únicamente Entrada y conserva el mismo código; cada ejecución empieza otra vez con ocupación 3. Además del caso inicial, comprueba estos grupos:\n\n• Entrada completamente vacía; un único LF; 0:0 sin LF final, con un LF final y con dos LF finales.\n• Los textos de una línea 2:, q:1, 2;1, 2:1x, 2:1 0, -1:0, 0:4 y +2 : 01, cada uno en su propia ejecución.\n• Las parejas 3:0 y 1:0; 0:3 y 0:1; q:2 y 1:0. Cada pareja ocupa dos líneas de una ejecución, sin salto al final de la segunda.\n• La secuencia 1:0, 1:0 resto y 0:1, en tres líneas y sin salto al final de la tercera.\n• La pareja 0:0 y 0:4, en dos líneas y sin salto al final de la segunda.\n\nSalvo las variantes que piden expresamente uno o dos LF finales, no añadas un salto después del último dato. Los saltos entre líneas son caracteres reales en Entrada; escribir los dos caracteres barra invertida y n no los sustituye. En esta lista LF representa ese salto de línea. Pulsa Compilar, ejecutar y comprobar con cada entrada; no cambies la implementación para resolver casos individuales.",
+          "emphasis": [
+            {
+              "text": "un único lector comprobado con diecinueve entradas",
+              "style": "bold"
+            },
+            {
+              "text": "cambia únicamente Entrada",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -254,7 +363,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Los movimientos y sus resultados deben proceder de la entrada y del análisis. Una implementación que sólo reproduce el caso inicial no cumple el objetivo de leer, validar, recuperar y conservar estado. La comprobación contrasta stdout de las entradas declaradas; la organización del analizador sigue siendo un criterio de revisión."
+          "text": "Los resultados deben proceder de la entrada y de su análisis. Reproducir únicamente el informe del primer caso no construye un lector que valide otras operaciones, continúe tras un rechazo y conserve el estado.\n\nLa comprobación de salida contrasta los casos declarados. La organización del analizador y la procedencia de los resultados siguen siendo criterios del programa; una coincidencia de texto no los demuestra por sí sola.",
+          "emphasis": [
+            {
+              "text": "una coincidencia de texto no los demuestra por sí sola",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -266,19 +381,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Con entrada vacía no hay diagnóstico por operación: aparecen Aceptadas: 0 y Ocupadas: 3. Con un único salto hay una línea Sin datos y luego ese mismo resumen. Con 0:0 sin salto final hay una Aceptada y el resumen cuenta una operación, aunque la ocupación siga en 3. Añadir sólo un salto final a 0:0 no crea una línea adicional; añadir dos sí deja una línea vacía posterior."
+          "text": "Una entrada completamente vacía no contiene operaciones: sólo produce el resumen Aceptadas: 0 y Ocupadas: 3. Un único salto sí delimita una línea vacía; esa operación recibe Sin datos antes de presentar el mismo resumen.\n\nEl texto 0:0 sin salto final contiene una operación válida. Se cuenta una aceptación aunque la ocupación permanezca en 3. Añadir un solo salto final no crea otra línea; añadir dos deja una línea vacía posterior.",
+          "emphasis": [
+            {
+              "text": "Se cuenta una aceptación aunque la ocupación permanezca en 3",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Las líneas 2:, q:1 y 2;1 reciben Formato invalido. 2:1x y 2:1 0 reciben Datos adicionales. -1:0 y 0:4 reciben Fuera de dominio. Todos estos rechazos conservan la ocupación 3 cuando son la primera operación. +2 : 01 es una representación permitida y deja la ocupación en 4."
+          "text": "Las líneas 2:, q:1 y 2;1 incumplen la obtención de los campos y el separador: reciben Formato invalido. Los textos 2:1x y 2:1 0 sí permiten obtener los campos, pero dejan residuo y reciben Datos adicionales.\n\nLos casos -1:0 y 0:4 exceden el dominio de alguna cantidad y reciben Fuera de dominio. Si cualquiera de esos rechazos es la primera operación, conserva la ocupación inicial 3. La representación +2 : 01 está permitida y deja la ocupación en 4.",
+          "emphasis": [
+            {
+              "text": "conserva la ocupación inicial 3",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En la pareja 3:0 y 1:0, la primera línea alcanza 6 y la segunda se rechaza con Capacidad invalida conservando 6. En una ejecución nueva, la pareja 0:3 y 0:1 alcanza 0 y conserva 0 ante el segundo movimiento. Una frontera válida no es el primer valor que la rebasa."
+          "text": "En la secuencia de dos líneas 3:0 y 1:0, la primera operación alcanza la ocupación 6. La segunda excedería la capacidad y recibe Capacidad invalida, conservando 6.\n\nEn una ejecución nueva, 0:3 alcanza la ocupación 0 y el movimiento posterior 0:1 se rechaza conservando 0. Alcanzar un extremo permitido es válido; sobrepasarlo en una operación posterior exige un rechazo.",
+          "emphasis": [
+            {
+              "text": "Alcanzar un extremo permitido es válido",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En q:2 seguido por 1:0, con la última línea sin salto, el rechazo conserva 3 y la línea siguiente se acepta dejando 4. En 1:0, 1:0 resto y 0:1, el residuo rechaza sólo la línea central: los dos movimientos válidos dejan 3. El lector no reutiliza el último movimiento válido para completar otro incompleto."
+          "text": "En q:2 seguido por 1:0, con la última línea sin salto, el rechazo conserva 3 y la operación siguiente se acepta dejando 4. La ausencia del salto final no elimina esa segunda línea.\n\nEn la secuencia 1:0, 1:0 resto y 0:1, el residuo rechaza sólo la operación central. Los dos movimientos aceptados dejan la ocupación final en 3. Cada análisis utiliza su propia línea; no reutiliza campos de una operación anterior para completar otra.",
+          "emphasis": [
+            {
+              "text": "La ausencia del salto final no elimina esa segunda línea",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -290,7 +429,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Compara ahora tu solución con esta referencia. El análisis utiliza variables locales, comprueba que no queda un campo adicional y sólo al final asigna la ocupación candidata. La pequeña enumeración expresa los motivos sin convertirlos en números arbitrarios. mensaje devuelve una string para presentar los resultados; no define cómo se leen ni cómo se validan."
+          "text": "Esta referencia muestra una organización posible. El analizador utiliza variables locales y asigna la ocupación candidata sólo después de completar todas las comprobaciones. La enumeración da un nombre a cada resultado del contrato.\n\nLa función `mensaje` convierte esa categoría en el texto que debe presentarse; no decide cómo leer ni validar las operaciones. Separar esas tareas permite estudiar por qué se acepta una línea sin confundirlo con la elección de su etiqueta.",
+          "emphasis": [
+            {
+              "text": "sólo después de completar todas las comprobaciones",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -299,11 +444,27 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia conserva el mismo código con cualquier texto de Entrada preparada. presencia se utiliza sólo para distinguir ausencia de campos de formato incorrecto; campos empieza otra vez desde el principio de la misma línea. Son dos flujos locales distintos, y ninguno altera los indicadores de cin. La extracción final de extra falla normalmente al llegar a EOF sin otro campo; ese fallo esperado no invalida los tres campos completos ya obtenidos."
+          "text": "El flujo `presencia` sólo distingue si hay algún campo; no obtiene los valores del movimiento. El flujo `campos` comienza desde el principio de la misma línea para extraer los dos enteros y el separador. Son dos lectores locales distintos y ninguno cambia los indicadores de `std::cin` (Stroustrup, 2024, p. 283).\n\nEl intento de obtener `extra` falla normalmente cuando no queda otro campo. Después se comprueba que el flujo llegó al final sin un problema grave. Ese fallo esperado no invalida los campos completos que ya se obtuvieron, igual que en el analizador de la lección anterior.",
+          "emphasis": [
+            {
+              "text": "no obtiene los valores del movimiento",
+              "style": "bold"
+            },
+            {
+              "text": "dos lectores locales distintos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La suma sólo se realiza después de comprobar ambas cantidades. Con ocupación entre 0 y 6 y cantidades entre 0 y 3, la candidata queda entre -3 y 9 y cabe en int. La única asignación a ocupadas ocurre después de todas las guardas. Esta garantía cubre los rechazos diagnosticados del contrato, no promete recuperarse de cualquier fallo de recursos del proceso."
+          "text": "Antes de calcular la candidata se comprueban ambas cantidades. Con una ocupación de `0` a `6` y entradas y salidas de `0` a `3`, la expresión puede producir valores de `-3` a `9`; todos caben en `int`. La comprobación de capacidad decide después si esa candidata pertenece al intervalo permitido.\n\nLa única asignación a `ocupadas` queda al final. Los rechazos diagnosticados por la función no llegan a esa asignación y conservan la ocupación del llamador (Stroustrup, 2024, p. 267).",
+          "emphasis": [
+            {
+              "text": "La única asignación a",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -315,17 +476,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Una solución es correcta si consume la entrada real por líneas, aplica el formato y el orden de diagnósticos establecidos, publica únicamente movimientos completos y válidos, conserva el estado y el contador ante rechazos, analiza las líneas posteriores y presenta exactamente las etiquetas y los totales requeridos. Nombres, organización de funciones y formas equivalentes de comprobar el residuo pueden variar. No se requiere copiar la referencia. Compilar, ejecutar y comprobar contrasta las salidas de los casos declarados; no inspecciona por sí solo la estructura de las funciones ni demuestra todos los criterios.",
+          "text": "El lector debe consumir la entrada por líneas, aplicar el formato y el orden de diagnósticos establecidos, actualizar sólo con movimientos completos y válidos, conservar ocupación y contador ante rechazos y analizar las líneas posteriores. Los mensajes y totales deben respetar el formato solicitado.\n\nPueden variar los nombres, la organización de funciones y las comprobaciones equivalentes del residuo. Compilar, ejecutar y comprobar contrasta las salidas de las entradas declaradas; no inspecciona por sí solo la estructura de las funciones ni demuestra todas las propiedades del programa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            },
+            {
+              "text": "las salidas de las entradas declaradas",
               "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Una llamada directa al analizador con estado 6 y texto 1:0 diagnostica capacidad y conserva 6; desde 0 con 0:1 también conserva 0. La entrada preparada 3:0 seguida de 1:0 y la pareja 0:3, 0:1 hacen observables esas mismas fronteras desde main. Con 0:0 se acepta una operación aunque el argumento conserve su valor: el contador aumenta por aceptación, no por diferencia de estados."
+          "text": "Una llamada al analizador con ocupación `6` y el texto 1:0 rechaza la capacidad y conserva `6`. Desde ocupación `0`, el movimiento 0:1 también debe rechazarse conservando el extremo permitido. Las parejas de entradas 3:0, 1:0 y 0:3, 0:1 hacen observables esas fronteras al ejecutar `main`.\n\nEl caso 0:0 expresa otra condición: una operación puede ser aceptada sin cambiar la ocupación. El contador registra aceptaciones, no diferencias entre el estado anterior y el posterior.",
+          "emphasis": [
+            {
+              "text": "El contador registra aceptaciones",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -337,11 +508,22 @@
             "Aceptadas: 2 y Ocupadas: -1."
           ],
           "correctIndex": 1,
-          "explanation": "0:0 es completo, está en el dominio y conserva un resultado válido: se acepta y cuenta. 0:4 incumple el dominio de salidas y no cambia ni el contador ni la ocupación."
+          "explanation": "0:0 es completo, está en el dominio y conserva un resultado válido: se acepta y cuenta. 0:4 incumple el dominio de salidas y no cambia ni el contador ni la ocupación.",
+          "reviewFeedback": [
+            "El contador registra decisiones de aceptación. Revisa si un movimiento completo y válido tiene que cambiar obligatoriamente el valor para ser aceptado.",
+            "Distingue las operaciones aceptadas de los cambios que dejan en el estado.",
+            "Comprueba los límites de cada cantidad antes de contar una operación o aplicarla a la ocupación."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Un caso de borde debe comprobar tanto el diagnóstico como el estado posterior. Comparar sólo Ocupadas puede esconder que una línea válida que no cambia el valor se contó como rechazo. Comparar sólo la cantidad de aceptadas puede esconder una modificación anticipada ante datos adicionales."
+          "text": "Una prueba debe contrastar el diagnóstico y el estado que queda después. Observar sólo Ocupadas puede ocultar que se rechazó indebidamente una operación válida sin cambio de valor.\n\nContar sólo las aceptaciones tampoco basta: el número podría ser correcto aunque una operación rechazada hubiera modificado la ocupación antes de detectar datos adicionales. Las dos observaciones cumplen funciones distintas.",
+          "emphasis": [
+            {
+              "text": "Las dos observaciones cumplen funciones distintas",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -361,22 +543,1172 @@
             "getline ya consumió esa línea y el fallo pertenece al analizador local que se abandona."
           ],
           "correctIndex": 2,
-          "explanation": "El lector exterior ya avanzó hasta la frontera. El siguiente análisis crea un flujo local nuevo; borrar cin no es necesario para reparar un fallo de otro objeto y no descartaría caracteres por sí mismo."
+          "explanation": "El lector exterior ya avanzó hasta la frontera. El siguiente análisis crea un flujo local nuevo; borrar cin no es necesario para reparar un fallo de otro objeto y no descartaría caracteres por sí mismo.",
+          "reviewFeedback": [
+            "clear modifica indicadores, pero no selecciona ni descarta por sí solo líneas del texto. Revisa qué lectura ya consumió la operación.",
+            "La ocupación y la entrada son objetos distintos. Cambiar el estado del almacén no cambia la posición desde la que lee cin.",
+            "Distingue el objeto que obtiene líneas del objeto que analiza una sola operación."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Conservamos el estado de las líneas aceptadas aunque después haya un rechazo; no deshacemos toda la sesión. Cada ejecución nueva vuelve al estado inicial. Hemos construido un formato por líneas; el intérprete posterior podrá usar otro límite de operación y necesitará definir sus tokens antes de recuperar hasta esa frontera."
+          "text": "La sesión conserva los movimientos aceptados aunque después se rechace otra línea; no deshace todo el trabajo anterior. Una ejecución nueva vuelve al estado inicial.\n\nEste formato usa líneas como operaciones completas. El intérprete posterior podrá elegir otra frontera, pero tendrá que definirla antes de decidir qué texto descartar para continuar.",
+          "emphasis": [
+            {
+              "text": "La sesión conserva los movimientos aceptados",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "getline obtiene caracteres hasta el delimitador y extrae ese delimitador sin incorporarlo a la cadena. Una línea vacía terminada por su delimitador y un intento sin caracteres al final del origen tienen resultados de lectura distintos (Working Draft: Programming Languages — C++, s. f., sección [string.io]). Obtener una línea no valida el movimiento que describe: esa decisión y la conservación del estado corresponden al programa. Estas pruebas utilizan entrada preparada real dentro de la aplicación.",
+          "text": "`getline` obtiene los caracteres hasta el delimitador y consume también ese delimitador, sin guardarlo en la cadena. Una línea vacía terminada por su delimitador y un intento que no obtiene caracteres al final del origen tienen resultados distintos (Köppe et al., 2023, pp. 865–866).\n\nObtener una línea no valida el movimiento que describe. La decisión de aceptación y la conservación del estado corresponden al programa; las pruebas de esta actividad suministran texto real mediante el campo Entrada.",
           "emphasis": [
             {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
+              "text": "Obtener una línea no valida el movimiento que describe",
+              "style": "bold"
             }
           ]
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "6cf40a01fa8a87c4bfcf577dd41fe2e071a0219a26a7571c2d081677d911a260"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "fae99f077c2e6aea8743897d980a53d76fd325dcb37c8a2d6e536a0c6180cf08"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "2bf4f9e8d2e9fd33c3620309a957ed7ef37a81e1f663483652a244591020c5e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "0ff28cd1a7cb92334d0a2486d5fcd773c7727813c84a082f8908950a6a3399c6"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "dbde453241dd9a16d443fd4d7b859b52c4ce5f16d86079a38c7054a507d4f872"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5303a4e3285b4bdda65a3cd83da726a870f95da8c0481ae833ba7adeeed11fd9"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "ec0eea2bea5219bff1151916a85cc76cd4d1fe4d567a8bce624a7b8f7ff87f18"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "a6caf609a41aebf4d848753cec9f214bc09b2ce89d85273a34d9c1d723600592",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8f6f7f817802f24b324ad0f3e4d6eebd594252116b765bfd1fe4c839041f31ad"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "84e2196b9ffa5f214afbf562846759172458de5d85fa2ce615726eb22421bcf5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "2bf4f9e8d2e9fd33c3620309a957ed7ef37a81e1f663483652a244591020c5e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "617ef41bc5804cfed6da8ae4998bbdc830f09fbe6acfda5df5740abd7f5a06e1"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "43d7311f33b1758f8182fc36d5f703bf2e4029bf2671df3a338dbff0f3afdc6e"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "4218d3b17073eef4f932b872f39151de9c2f6829807ba13f8ccef0c9bd6dfa46"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "767c682cd5c80422f9ce4fd5e539b0b6959e26c7e7f5994402d884941fba16c8"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "97d5dc742d07276e1d448a10f71df986cf4f93a32fc10c76067bda725ac56264",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "6cf40a01fa8a87c4bfcf577dd41fe2e071a0219a26a7571c2d081677d911a260"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "fae99f077c2e6aea8743897d980a53d76fd325dcb37c8a2d6e536a0c6180cf08"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "2bf4f9e8d2e9fd33c3620309a957ed7ef37a81e1f663483652a244591020c5e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "0ff28cd1a7cb92334d0a2486d5fcd773c7727813c84a082f8908950a6a3399c6"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "dbde453241dd9a16d443fd4d7b859b52c4ce5f16d86079a38c7054a507d4f872"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5303a4e3285b4bdda65a3cd83da726a870f95da8c0481ae833ba7adeeed11fd9"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "ec0eea2bea5219bff1151916a85cc76cd4d1fe4d567a8bce624a7b8f7ff87f18"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "2401106f6e78cf3f0a45b6dc51034f604c2ba5581230ea18f2e738b0e56d6891",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8e743782e5b4b28b74386dd52d924fb761a8b5cc5749af55ca9722b6a9d4bb43"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "9f1af067bfb928ffd4f6542b638b3ae6146e604481d025fd4a88b864c6b2b833"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "2bf4f9e8d2e9fd33c3620309a957ed7ef37a81e1f663483652a244591020c5e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "66199d74986f829a06fc24066d20d99b7093a34c659d3b9ad2b5bb9e032ca9dc"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "13b95050e8fa0e41cbaef4227c5881bedbc7bf1d35338689586d40b242d12bd9"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "9168dc14dd9710441b84a0bacf6328be60567f637e9dc684979e18835c156ed8"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0e0b2c06d69b56f4e4d9bbcd410b4edc1a5a0a2bdf8ebaac628bd431ad697350"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8636582fa9a975c5a51e4e3ccb719a57f7aff9e1b867acf3de9db2cd0a587fb4",
+        "afterSha256": "ec845376b05ca635f554ca089ff431b1d738eb061a96b773164501014fd55911"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "322776b4d08b77630cefedd3473a18ff8b90abb441bd353b621fc30527ed686b",
+        "afterSha256": "cf0ca1c230e7e8e9d679270d8c98d7866266d5624ed0d1bfe0007cab7bc47063"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "66b65e69b8ef5baeb5bc467f23e6b1bcb195a0a2e5a3422f791b757822297bdd",
+        "afterSha256": "62b7516819a0189b88934f5f0e008d37f4beef25015d053cf9dbdfbfaf320f53"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "4ed9824288a3e99df07bfdb1ff69f489137b76e396d5c0b5e865b8ef6eed761d",
+        "afterSha256": "216ad42f12e4e8cb01c008a6896a5b6923afe555e2f88dc3fb7b09fb6b131187"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "7b3b7353273e3c989377029c313342eb4c75d504dc54d4d221145c36e91ea1db",
+        "afterSha256": "ba9793181228cd143016c6f582ebdc543f012e645fe723f1db26eabef47ce159"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c2cfbe599ef4266d23f5d4136179dab0ea4251f10e460ddabdf1ce31e8b6cfdb",
+        "afterSha256": "365b5aaedf55a665a67f578af6b6c16d1fe0f094d28c4be96c76a57c2db68925"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "1bade4f72418245df79bf8df9e64144a46e6ebca7ca39bb93afbe5116e38a219",
+        "afterSha256": "7a444b1c50d849a911d4a395a423307e41aad8ed98d10f49e4cf25917591e25f"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "e968e7ef8241b236bdb1c6a068f907e292a1a0d81ba3d3bbaf4495694a65e3e1",
+        "afterSha256": "3bfb8d2d2e61b0093a480ae0925186678f2511bc21f0d5e9d92ffc188e81ebdf"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "3656033eac7f80a900f05d63fbc01349f68a76cfa06abac3871d91fce101a89f",
+        "afterSha256": "0850a75f803fdfb0cb8e3fd72288d081fd301a585b19f444795a2595e5c8e203"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "e3479da06c8fc8dd427a72a4d10879e053ec4901c9674b1d2289fd9968b35028",
+        "afterSha256": "88792ae57c96a33f5601d145ce4d236ceb2078f9a93449c314ab7868375992dd"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "e70ca79b080c855ae7469dc96ecc975c5a5b111d68426a18385b5ec2717cd058",
+        "afterSha256": "e315a6e28bd2ad4d3ec6406a5cef81376285bde56a9c6a0fe1fbf90701bf2583"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8d5cb0b2416259e5d366ef75ebab108e4cd987a5846ace4a502f5b360f62d3f8",
+        "afterSha256": "e7cdac6fd3293db43ba8a65d97c4067dfe52fab32ca264e94b13ff765595ba2a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "7178b52ae74f6de324f6809ecb9b9ef8ed7954e7f4d17c2048befd09d753612d",
+        "afterSha256": "ede6cad23421ffde681874e1af9551b75c5f70a322af7f4aa479f2a8d965bef8"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "77f1b05a902281516860ba72f27c8dfe8c91fe24ddaf070d97cb9df06dcf3df5",
+        "afterSha256": "50f24a9c995c359d578750ab85c745d9712bc7db2986d1b94f922e0e30e4c541"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "124ab7d367eaae17c470a807f44beb4ae23ae7ae655fa21c34103840c7a159d2",
+        "afterSha256": "edded82241173b512085506d4b5a52ecaef327b5099fdc21204e4334a78857de"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "1081ad01429461f3bbef67fe995c225e132d0d764c1851a3933b80f6fdcff110",
+        "afterSha256": "574dfac76b3facca9660f10e6f49a2fb917c2ad65eceab216ca9e43ac132294f"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "669a56dc8ee206d84d5c5784193008e3199a5f44f8f5786bba97e7579c69acef",
+        "afterSha256": "0db2bfd05e9dd6e077acffd663663dc984cfe94d9606f4e4781b0b170910da16"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "bdc203132693466a52808c091431dbfea46a05be9df94cb3bace46254fd315be",
+        "afterSha256": "949bebdf91616b97755b3aff90566e82d2a02d15475d61fe8669957563304271"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "b354c1a3d1fa18467d924ea8e5df858ebad3479bf9cedcb2a8bf43750cc2a80d",
+        "afterSha256": "4630b5de2ae011609ff1502020763169bf14869853eb4f37e25e0fbb5fb0b811"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "64998cdec038cb0e9646453816a19f0d5ecda343ace20a55df7eb5b8e798c85e",
+        "afterSha256": "54fca39226d4fa6946bc423c75dd8db5821853d68977bec5f1881d7ea156e045"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "df8e665c6ae181bd5c23a5a39e3e40aa344cd2af0b20543b30617855805d8d4d",
+        "afterSha256": "3f5841521d2b3e114778df00579725701e35b2a1bb44eb829a7986a88d366da4"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "6eedea143c53c4f62c31c3d9e7a852b008a7e9f67f7f640246542e42b9ad1466",
+        "afterSha256": "de5647f4d8d40238b65b35ef499ef8c6dca2beab284d9b13f8a9e85038dbea87"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "98e43a755cdbcaa8101ef0424517271731f61f7685464f15f11e74e3b6730d0b",
+        "afterSha256": "f993a0065000a322fb521015524a53f9d8f7f6936ad84778b9b1aab8e231b656"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "edded82241173b512085506d4b5a52ecaef327b5099fdc21204e4334a78857de",
+        "afterSha256": "da1c9a30d92f0d1d79ef7cfd6e5797b065264f8b581e75d8261f7059ef41c34b"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "fa5c1946a3397d18455e32a2c33f3ab9e6319ab1f779a950a82b0ef06d38ab9a",
+        "afterSha256": "9ad99f27ec6875d2a088c71b16b596837e5864929df107e8384b9e6f3a2b513e"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "04e8438ec5bccec4e271af89114259ba2c88e35fb9e66c07c13a15fffb7b6034",
+        "afterSha256": "2a06e2d1c9d0b658d6cae8b297839e2b4f0b95f490332463a6829e5391cb438c"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "3c1b6f1edfbef7a80e1d9dfca880f55f35f5c5629e5a6fec11e8f37ac4632d79",
+        "afterSha256": "429741e5544747652a3bf105aafa758a58a6e15186e450693e2174fcd5b74cc4"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "dedf302ef6a945f5c78a046e620316f3b543f8438a2263434af6d0f9f99f5907",
+        "afterSha256": "82a3f56bc54397630a4b4678c1a2e1fdf589b6002d0ce044c748374c424c04c7"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "3d1b80e079646b845ffc37d7e7485d7f37429cb73e42633f7ada3bc2f71d4c90",
+        "afterSha256": "c66c7364e4c7b3e7c810d079a3a1d7c997e60d2c8efa5e8beda48636d5b6ce74"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "3bd3e0e5135e623f8450d9affcca23afbd8b80248083ba5923c69c3a64072702",
+        "afterSha256": "dc8f8dd8e44ee7c2aaf730b5a28e6f3be4fc398b57b5aab92f62d088cefa62a5"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "b6e74c469d376305886011b7a0091ded27b102b6183b6ec3a8478c28ad6344b6",
+        "afterSha256": "e1598a28211e80b3b6b0f3c18bfdb3c3030a5d14ee2a351fbd27d36b58297b5a"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "6ad95374a4a7d910020028465233d5aa2ec19d766a4c27ecae4345da93e2b650",
+        "afterSha256": "65319e272405c1544fd8abb47b57537aa1827f30dcd0bcc4e53f7b8d887fa1d9"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "5bb061d8c1779b3a24c0112acef5cb7c97d8c182764a9396fc30ba5f8c003555",
+        "afterSha256": "34baf0fe820618012590fce07fbd433de8747157bb49020f1ab579cd3d624589"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "3560744ffc783b08ba4e05e6914a5d0c291b5eba3ed4f1e4351444e5ca428f86",
+        "afterSha256": "4763a51f9b9c7a803f08885cdac901411d0667e79b25a7ac343d7d960817901d"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "3f5841521d2b3e114778df00579725701e35b2a1bb44eb829a7986a88d366da4",
+        "afterSha256": "1588a86d210ef1c95b08fee6120684afc51caa303e932519d401b13981eb65dc"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0005",
+      "blocks": [
+        "block_0003_0006",
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0004"
       ]
     }
   ]

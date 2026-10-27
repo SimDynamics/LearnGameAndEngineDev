@@ -10,11 +10,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Una etiqueta como Patio norte es un solo dato aunque contenga dos palabras. std::getline(entrada, linea) lee caracteres hasta un salto de línea. Los guarda en una std::string, consume el salto que termina la línea y no lo incluye en el destino. A diferencia de >> para string, conserva los espacios iniciales, internos y finales."
+          "text": "Una etiqueta como Patio norte puede ser un solo dato aunque contenga dos palabras. Leer la línea completa permite conservar esos espacios y decidir después cómo interpretar su contenido (Stroustrup, 2024).\n\n`std::getline(entrada, linea)` guarda en una `std::string` los caracteres anteriores al salto de línea. Consume el salto que delimita esa línea, pero no lo añade al destino. Conserva los espacios iniciales, internos y finales; también puede obtener la última línea cuando el texto termina sin otro salto (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "conservar esos espacios",
+              "style": "bold"
+            },
+            {
+              "text": "Consume el salto que delimita esa línea, pero no lo añade al destino",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "std::getline recibe primero el flujo y después el destino. Devuelve el flujo para que puedas comprobar la lectura en una condición. La función se declara en <string>; el flujo de texto preparado sigue necesitando <sstream>. No representa una lectura del teclado en estos laboratorios."
+          "text": "`std::getline` recibe primero el flujo y después el destino. Devuelve el flujo para que se pueda comprobar la lectura mediante una condición (Köppe et al., 2023).\n\nLa función se declara en `<string>`. El `std::istringstream` que lee el texto preparado sigue necesitando `<sstream>`. En estos programas, el origen es la cadena con la que se construye ese flujo.",
+          "emphasis": [
+            {
+              "text": "primero el flujo y después el destino",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -23,7 +39,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera línea conserva sus dos espacios iniciales y finales. La segunda también se obtiene aunque el texto termine sin otro salto. Cada cuerpo del bucle corresponde a una línea que se leyó válidamente; el intento posterior que no obtiene una nueva línea no ejecuta el cuerpo."
+          "text": "La primera línea del ejemplo conserva sus dos espacios iniciales y sus dos espacios finales. La segunda también se obtiene, aunque el texto termine sin otro salto.\n\nCada ejecución del cuerpo corresponde a una línea leída válidamente. El intento posterior, que ya no encuentra una línea nueva, no ejecuta el cuerpo. Es el mismo criterio de lectura condicionada de la lección anterior, aplicado a otra unidad de texto.",
+          "emphasis": [
+            {
+              "text": "también se obtiene",
+              "style": "bold"
+            },
+            {
+              "text": "una línea leída válidamente",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -35,7 +61,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el siguiente carácter es un salto de línea, getline lo consume y obtiene una cadena vacía. Esa lectura tiene éxito: encontró una línea vacía. Si no quedan caracteres ni un delimitador por consumir, el intento de obtener otra línea falla. La validez de la lectura y el contenido de la línea son preguntas distintas."
+          "text": "Si el siguiente carácter es un salto de línea, `std::getline` lo consume y obtiene una cadena vacía. Esa lectura tiene éxito: el delimitador disponible permite obtener una línea vacía. Si ya no quedan caracteres ni un delimitador por consumir, el intento de obtener otra línea falla (Köppe et al., 2023).\n\nLa validez de la lectura y el contenido de la línea son preguntas distintas. Una condición comprueba si se obtuvo el dato; otra puede examinar qué contiene ese dato.",
+          "emphasis": [
+            {
+              "text": "Esa lectura tiene éxito",
+              "style": "bold"
+            },
+            {
+              "text": "La validez de la lectura y el contenido de la línea son preguntas distintas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -45,11 +81,22 @@
           "answers": [
             "1:<Puerta 4>\n2:<>\n3:<  Rampa>\nTotal: 3"
           ],
-          "explanation": "Hay tres líneas. El segundo salto termina una línea vacía; la tercera conserva dos espacios iniciales y se obtiene antes de llegar al final del texto."
+          "explanation": "Hay tres líneas. El segundo salto termina una línea vacía; la tercera conserva dos espacios iniciales y se obtiene antes de llegar al final del texto.",
+          "reviewFeedback": "Sigue cada delimitador en orden. Distingue la línea de longitud cero de la que conserva espacios y cuenta únicamente las lecturas válidas."
         },
         {
           "type": "paragraph",
-          "text": "linea.empty() pregunta si la string contiene cero caracteres. No pregunta si el flujo falló. Una línea con dos espacios tiene dos caracteres y no está vacía, aunque parezca una zona en blanco al presentarla sin delimitadores."
+          "text": "`linea.empty()` devuelve `true` si la cadena contiene cero caracteres (Köppe et al., 2023). Examina el contenido del destino; no pregunta si el flujo falló.\n\nUna línea con dos espacios tiene dos caracteres y no está vacía. Los delimitadores de la salida ayudan a verla: entre `<` y `>` se conservan esos dos espacios.",
+          "emphasis": [
+            {
+              "text": "cero caracteres",
+              "style": "bold"
+            },
+            {
+              "text": "no está vacía",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -60,7 +107,12 @@
             "Dos: una por el salto y otra por el final del texto."
           ],
           "correctIndex": 1,
-          "explanation": "El salto permite obtener una línea vacía válida. El siguiente intento no dispone de caracteres ni de otro delimitador, por lo que termina el bucle."
+          "explanation": "El salto permite obtener una línea vacía válida. El siguiente intento no dispone de caracteres ni de otro delimitador, por lo que termina el bucle.",
+          "reviewFeedback": [
+            "Distingue una cadena de longitud cero de una lectura fallida. Comprueba si existe un delimitador que la función pueda consumir.",
+            "Sigue el flujo hasta el delimitador disponible y después considera qué queda para otra lectura.",
+            "El final del texto no es un carácter delimitador adicional. Revisa qué podría consumir el segundo intento."
+          ]
         }
       ]
     },
@@ -72,17 +124,28 @@
         },
         {
           "type": "output_prediction",
-          "question": "Obtén el número de líneas que presenta este programa.",
+          "question": "Predice la cantidad que imprime el programa: cuenta las líneas que obtiene de la entrada, no las líneas de su salida.",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
           "answers": [
             "2"
           ],
-          "explanation": "Los saltos terminan A y B. Después no queda un delimitador que produzca otra línea vacía ni caracteres para una línea nueva."
+          "explanation": "Los saltos terminan A y B. Después no queda un delimitador que produzca otra línea vacía ni caracteres para una línea nueva.",
+          "reviewFeedback": "Distingue los delimitadores consumidos de los caracteres que quedan después del último salto. El contador aumenta dentro del cuerpo de cada lectura válida."
         },
         {
           "type": "paragraph",
-          "text": "Compáralo con A\\nB\\n\\n: el segundo salto consecutivo sí termina una tercera línea vacía. Con una cadena completamente vacía no hay líneas que obtener. Estas fronteras conviene decidirlas antes de escribir un contador; contar saltos y contar lecturas válidas no son reglas intercambiables para todo texto."
+          "text": "Compáralo con el texto del literal `\"A\\nB\\n\\n\"`: el segundo salto consecutivo termina una tercera línea vacía. Con una cadena completamente vacía no hay líneas que obtener.\n\nEstas fronteras muestran por qué contar saltos y contar lecturas válidas no son reglas intercambiables para todo texto. Una última línea puede tener caracteres sin terminar con un salto; una lectura válida también puede producir una cadena de longitud cero.",
+          "emphasis": [
+            {
+              "text": "tercera línea vacía",
+              "style": "bold"
+            },
+            {
+              "text": "no son reglas intercambiables",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "fill_code",
@@ -92,7 +155,8 @@
           "answers": [
             "getline"
           ],
-          "explanation": "getline obtiene una línea completa, conserva los espacios y permite procesar también una línea vacía leída válidamente."
+          "explanation": "getline obtiene una línea completa, conserva los espacios y permite procesar también una línea vacía leída válidamente.",
+          "reviewFeedback": "Busca la función de lectura completa ya utilizada con este flujo y este destino. Debe conservar los espacios que pertenecen a la línea."
         }
       ]
     },
@@ -104,7 +168,17 @@
         },
         {
           "type": "paragraph",
-          "text": ">> deja de leer una palabra al encontrar espacio en blanco y no consume ese separador final como parte de la palabra. Una getline inmediata empieza exactamente donde terminó esa operación; puede encontrar el salto de línea que todavía queda. No se ha saltado una línea nueva: se ha leído el resto de la línea actual."
+          "text": "La extracción con `>>` a `std::string` se detiene ante el espacio en blanco y deja ese separador pendiente en el flujo (Köppe et al., 2023). Una llamada inmediata a `std::getline` comienza desde la posición alcanzada por esa extracción.\n\nSi allí queda el salto de línea, la función lo consume y obtiene el resto vacío de la línea actual. No ha ignorado una línea nueva: aún estaba leyendo el final de la que contenía la palabra anterior.",
+          "emphasis": [
+            {
+              "text": "deja ese separador pendiente",
+              "style": "bold"
+            },
+            {
+              "text": "el resto vacío de la línea actual",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -113,7 +187,13 @@
         },
         {
           "type": "paragraph",
-          "text": "En este formato, la primera getline consume el resto vacío de la línea de inicio; la segunda obtiene Taller verde. Si el formato fuera inicio aviso\\nTaller verde, el resto contendría el espacio y aviso. Descartarlo sin comprobarlo escondería datos. Primero decide qué admite el formato y luego qué hacer con ese resto."
+          "text": "En este formato, la primera llamada a `std::getline` consume el resto vacío de la línea que contiene inicio; la segunda obtiene Taller verde. Si el origen fuera el texto del literal `\"inicio aviso\\nTaller verde\"`, el resto contendría un espacio seguido de aviso.\n\nDescartarlo sin comprobarlo escondería esos caracteres. La decisión de conservar, validar o descartar el resto depende del formato de los datos, no de aplicar siempre una eliminación de espacios.",
+          "emphasis": [
+            {
+              "text": "depende del formato de los datos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -124,7 +204,12 @@
             "Perder líneas vacías que forman parte de los datos."
           ],
           "correctIndex": 2,
-          "explanation": "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla. Consumir blancos no obtiene una palabra: se detiene al llegar al primer carácter que no es blanco."
+          "explanation": "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla. Consumir blancos no obtiene una palabra: se detiene al llegar al primer carácter que no es blanco.",
+          "reviewFeedback": [
+            "Revisa qué caracteres se incluyen en espacio en blanco y cuál delimita las líneas.",
+            "Consumir espacio en blanco se detiene ante un carácter que no lo sea. Distingue esa operación de leer una palabra.",
+            "Comprueba si una línea sin caracteres puede formar parte de los datos que deben conservarse."
+          ]
         }
       ]
     },
@@ -136,8 +221,20 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un informe de líneas para \"Patio norte\\n\\n  Muelle\\n\". Numera cada línea obtenida desde 1 y preséntala como número:<contenido>, conservando sus caracteres. Al terminar, presenta dos líneas: Lineas: con la cantidad total y Vacias: con la cantidad que contiene cero caracteres. Usa un espacio después de cada etiqueta. El dominio de estas pruebas es de hasta 6 líneas de hasta 40 caracteres ASCII; ambos contadores caben en int. Construye una sola batería mediante probar(const std::string& texto): cada llamada crea un flujo y contadores nuevos. main llama con \"Patio norte\\n\\n  Muelle\\n\", \"\", \"\\n\", \"  \", \"A\\n\" y \"A\\n\\n\", en ese orden. Cada \\n representa un LF real. Cada línea de contenido y ambos resúmenes terminan con salto, sin títulos ni líneas vacías añadidas entre informes. Resuelve el puzzle siguiente y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "text": "Construye `probar(const std::string& texto)` para informar sobre las líneas del texto recibido. Cada llamada debe crear un flujo y contadores nuevos. Numera cada línea obtenida desde uno y preséntala como número:<contenido>, conservando sus caracteres. Después muestra dos líneas: Lineas: con la cantidad total y Vacias: con la cantidad cuyo contenido tiene cero caracteres. Usa un espacio después de cada etiqueta.\n\nEl dominio es de hasta seis líneas de hasta cuarenta caracteres ASCII cada una; ambos contadores caben en `int`. `main` debe llamar a `probar` con `\"Patio norte\\n\\n  Muelle\\n\"`, `\"\"`, `\"\\n\"`, `\"  \"`, `\"A\\n\"` y `\"A\\n\\n\"`, en ese orden. Cada escape `\\n` del literal produce un carácter de salto de línea, llamado LF.\n\nCada línea de contenido y ambos resúmenes deben terminar con un salto, sin títulos ni líneas vacías añadidas entre informes. Resuelve la selección siguiente y construye esta única batería de seis casos en el editor de código. Pulsa Compilar, ejecutar y comprobar para contrastar el informe completo.",
           "emphasis": [
+            {
+              "text": "Cada llamada debe crear un flujo y contadores nuevos",
+              "style": "bold"
+            },
+            {
+              "text": "conservando sus caracteres",
+              "style": "bold"
+            },
+            {
+              "text": "seis casos",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -154,7 +251,12 @@
             "Dos líneas: A y una línea vacía."
           ],
           "correctIndex": 2,
-          "explanation": "El primer LF termina A. El segundo termina una línea vacía. Después no hay caracteres ni delimitador para obtener una tercera línea."
+          "explanation": "El primer LF termina A. El segundo termina una línea vacía. Después no hay caracteres ni delimitador para obtener una tercera línea.",
+          "reviewFeedback": [
+            "Decide qué ocurre con el delimitador que sigue inmediatamente al que cierra A.",
+            "Comprueba si después del último salto queda algún carácter o delimitador que otra lectura pueda consumir.",
+            "Relaciona cada lectura válida con los caracteres y el delimitador disponibles."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -172,7 +274,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La lectura decide si existe una línea nueva y empty() inspecciona su contenido. La comprobación de stdout contrasta los seis informes; una línea válida vacía debe diferenciarse del intento que no obtiene ninguna."
+          "text": "La lectura decide si existe una línea nueva y `empty()` inspecciona su contenido. El programa debe usar esas dos comprobaciones para producir los informes; imprimirlos como un texto fijo no practica el recorrido.\n\nLa comprobación de stdout contrasta los seis casos: una línea válida vacía debe diferenciarse tanto de una línea con espacios como de un intento que ya no obtiene ninguna línea.",
+          "emphasis": [
+            {
+              "text": "esas dos comprobaciones",
+              "style": "bold"
+            },
+            {
+              "text": "una línea válida vacía",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -184,7 +296,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia utiliza Zona este como primera línea. Se incrementa el total en cada lectura válida y se inspecciona el contenido para decidir si aumenta vacias. Las decisiones se toman dentro del cuerpo, donde existe una nueva línea."
+          "text": "Esta referencia usa Zona este como primera línea. Muestra un informe para observar dos decisiones: incrementar el total por cada lectura válida y aumentar `vacias` sólo si la línea obtenida tiene cero caracteres. Ambas decisiones se toman dentro del cuerpo, donde existe una línea nueva.\n\nLa referencia final de la lección reúne las seis llamadas de la actividad e incluye los saltos que cierran cada resumen. No es necesario reemplazar una solución que ya cumpla esos mismos criterios.",
+          "emphasis": [
+            {
+              "text": "sólo si la línea obtenida tiene cero caracteres",
+              "style": "bold"
+            },
+            {
+              "text": "las seis llamadas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -201,7 +323,12 @@
             "Porque la extracción a string conserva siempre los blancos iniciales."
           ],
           "correctIndex": 0,
-          "explanation": "getline usa el salto como delimitador y no omite los espacios del contenido. Una eliminación general de blancos cambiaría el dato y el contrato."
+          "explanation": "getline usa el salto como delimitador y no omite los espacios del contenido. Una eliminación general de blancos cambiaría el dato y el contrato.",
+          "reviewFeedback": [
+            "Relaciona la regla de lectura con los caracteres situados antes del salto.",
+            "Revisa qué instrucciones añaden caracteres a la salida y cuáles sólo llevan la cuenta de las lecturas.",
+            "Compara la separación de palabras de la extracción a string con la unidad que obtiene getline."
+          ]
         },
         {
           "type": "output_prediction",
@@ -211,7 +338,8 @@
           "answers": [
             "Lineas: 3\nVacias: 1"
           ],
-          "explanation": "La primera línea está vacía, la segunda contiene un espacio y la tercera contiene Fin. Sólo una de las tres tiene cero caracteres."
+          "explanation": "La primera línea está vacía, la segunda contiene un espacio y la tercera contiene Fin. Sólo una de las tres tiene cero caracteres.",
+          "reviewFeedback": "Sigue por separado el total de lecturas válidas y la condición sobre la longitud del destino. Un espacio también es un carácter."
         }
       ]
     },
@@ -223,7 +351,17 @@
         },
         {
           "type": "paragraph",
-          "text": "getline decide dónde acaba una línea; no comprueba que su contenido tenga el formato que un problema exige. Una línea como agregar tres puede haberse leído válidamente y seguir siendo una orden inválida. Más adelante pondremos una línea obtenida dentro de otro istringstream para analizar sus partes sin perder la frontera de la operación."
+          "text": "Obtener una línea completa permite separar su lectura del análisis posterior de su contenido (Stroustrup, 2024). `std::getline` establece dónde termina la línea; no comprueba por sí misma el formato que necesita un problema.\n\nPor ejemplo, supón que una operación debe incluir una cantidad escrita con cifras decimales. La línea agregar tres puede leerse válidamente y, aun así, incumplir ese formato: tres contiene letras, no las cifras requeridas. Más adelante, una línea obtenida servirá como origen de otro `std::istringstream` para analizar sus partes conservando la frontera de cada operación.",
+          "emphasis": [
+            {
+              "text": "separar su lectura del análisis posterior",
+              "style": "bold"
+            },
+            {
+              "text": "no comprueba por sí misma el formato",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -234,7 +372,12 @@
             "Convertir automáticamente cada palabra de la línea en un número."
           ],
           "correctIndex": 0,
-          "explanation": "La lectura de línea obtiene una unidad de texto. Validar su estructura y convertir sus partes son responsabilidades posteriores."
+          "explanation": "La lectura de línea obtiene una unidad de texto. Validar su estructura y convertir sus partes son responsabilidades posteriores.",
+          "reviewFeedback": [
+            "Distingue la obtención del texto de las comprobaciones que decidirán si su contenido es admisible.",
+            "Una lectura válida no aplica automáticamente las reglas particulares de una orden. Revisa qué conserva esta primera fase.",
+            "Identifica el tipo del destino de getline y qué dato entrega antes de analizar sus partes."
+          ]
         }
       ]
     },
@@ -251,5 +394,912 @@
         }
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0005_0004",
+      "requires": [
+        "block_0004_0003"
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "8210268cd504a151f935fbe3da0941a347b172cb512df3ec68442fb13d01ca03"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "3a3c6ada1f2237f94a86c423afec365ac0b1ed0a68de1593135167011e5e2048"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "d1b8ff1be79f68078d7da0bcc20a6e42eedca3b7c7a8a3553e77d25700adec51"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "0ca529ab23dd8ea6aeb44d2a6296cf21158554a12fb8feea0b0c3a4c59177e25"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "b4b733463e11919427963afb41e9436878b4d010c0794d743677930adfe92142"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "66a643a6af7936c630931b095341869cc7f3cf2e890f56f792d3f606854433a3"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "c04c795597ec8905d9e697be837dfe91b15f13a7e4e483f53add20aedfd1a509"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "040136ccdf3e836badd9f963602557154952f65ae1929496491cc33ca11e7cd5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "fef7d866d8d46bcd4fd4d29f50e11a2c42e236c6de8aedb2c14ba4aa57ab83e7"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "85dfc7290c551d049022d3e8744fc2e709e65846f08135ec849dd538357b35ee"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "6d4b9540eba7fbabca858ac8bf842e4aaeb064b6e0a7d5d68217fc37bf392db2"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "312dda2522dbe6ecae0d121881ae0ba3728104163637a70fe9111f88e10700ad"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "3ce280d8cff8e7c30c9b13f5b77f739c14727f8720115a76a643787b2587fd2b"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "fdfd5b589840bf950d19d47acf2259f5433c797e40fcc5b95af534143d46ca20"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "66e42187488d92cb7b912bfec7615059398eb2e60cfd51d1b2053dba343daac0",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "4e761b020bc90a0113a070ec7cffd54dbb80729ebe0f462ed45ee7714385490a"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1a9ace3570b14750d172b18d9b76d69d60515aa16003395942619693f5f6daad"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "b8055d3ac59e744c68569432952e76d2d34bc4e3558a919a876c375fc90d909a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0ca529ab23dd8ea6aeb44d2a6296cf21158554a12fb8feea0b0c3a4c59177e25"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "e6b93262558a045e4f703ba38ef2fd4905fc9ff0a889f76c10b22e50996578bf"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "c208bf4dbec7e40111ff0bfc8c09a5d6dfba13823434ec3cd6d33bbe755e3cec"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "d72c22c18ff72f8cd83f3af7f16f8357791349b5e60a839196a0f874545fdba2"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "44d09d19a163c3e03126e36617bfdc899669e997b3a4914fa7536673d3c26400"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "8e6cbbd53204419708fcdfe9b3a1f4c018e58f15355c581a28798fed3ff25e58"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "23019b2e7c34ac743c9fde81248a3e6bd60430cce5afb72dd34409eb7fc8088f"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "4a1064fd0cdea12585cad13f96c55969b5eff6ea5b70770095af909f19a80f11"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "b19a58d5ce6e45ff2083c59b5b62ce6a524ac3e44549de734f4a8dfc66d47d71",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "8210268cd504a151f935fbe3da0941a347b172cb512df3ec68442fb13d01ca03"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "3a3c6ada1f2237f94a86c423afec365ac0b1ed0a68de1593135167011e5e2048"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "d1b8ff1be79f68078d7da0bcc20a6e42eedca3b7c7a8a3553e77d25700adec51"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0ca529ab23dd8ea6aeb44d2a6296cf21158554a12fb8feea0b0c3a4c59177e25"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "b4b733463e11919427963afb41e9436878b4d010c0794d743677930adfe92142"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "66a643a6af7936c630931b095341869cc7f3cf2e890f56f792d3f606854433a3"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "c04c795597ec8905d9e697be837dfe91b15f13a7e4e483f53add20aedfd1a509"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "040136ccdf3e836badd9f963602557154952f65ae1929496491cc33ca11e7cd5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "fef7d866d8d46bcd4fd4d29f50e11a2c42e236c6de8aedb2c14ba4aa57ab83e7"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "85dfc7290c551d049022d3e8744fc2e709e65846f08135ec849dd538357b35ee"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "6d4b9540eba7fbabca858ac8bf842e4aaeb064b6e0a7d5d68217fc37bf392db2"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "312dda2522dbe6ecae0d121881ae0ba3728104163637a70fe9111f88e10700ad"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "3ce280d8cff8e7c30c9b13f5b77f739c14727f8720115a76a643787b2587fd2b"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "fdfd5b589840bf950d19d47acf2259f5433c797e40fcc5b95af534143d46ca20"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "25ed3fde2f8b3710d6ec9b5e8ccb51aaad47b45ac9cbc244b8e449ac4ac5c9ca",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "4b0b446458483f270c88d7a46923d61e075bb5274d128a67a8c4b9cedc88c97d"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "0480cbb995e2cd16b7f883ca6b3b1f05f0f9a2bf3f8d54c0018378b852a8309c"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "2859bcd267ca6c48d393870b495ad45ce53f9b0ef3b43ff466bf62494381d7eb"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0ca529ab23dd8ea6aeb44d2a6296cf21158554a12fb8feea0b0c3a4c59177e25"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "c1dd6a8389b2e93443853d058b1dcf14d068a7a3e96c7e07eb5aaf1c7c4b6207"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "b4962bb301d49b4574b78b8f9870c9673f98b42b84f4b4aa23871ef0ced4bd45"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "3e16dffda00f3b6e147dc7cc26a30b62ce27063fe91f66cc88d8e5f41cf87073"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "415b84f1ebc3a1782eb43862ff34866acbcd3b130acf091179ca58e3e4b42e3f"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "79831c45aec27a75ea052f572c092ec0a35ed4d2348d7991e1f7bb8014c20852"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "08600a2daa11db67207f0368fa299a873924a7a1e0a71904c50402b546d9bf0e"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a8f782635e61ae69497955e5895167c779441173d50ce74fccdd9395982f548f"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "33d3bfe11e7a8ae5b27c796424d4e0769abca85c0481067a729041a2849d7fe2",
+        "afterSha256": "8be6b37d90581e730beee8108f13139b57717244dd1d5cededd79679a9799dfd"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "a8899e3ea56a57aea83962c3e356d17cb88bf3664750be269ef8f8a4d20ba43e",
+        "afterSha256": "1c6c4d9bf92cf14c582d8dfdaeedd6f349da97480f95b87ad00a2801e99a9a7f"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4839640a436f37ce7319a8d1a164664c978228489efb39163d5e7fc1a59fee55",
+        "afterSha256": "6076f8947724af99f2ff5c2aa2fb3f85bc49cac355151484143f989da3bcf40a"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "0f26e3a0b95eb1facd93bb67acd12ff6bec6cd338237975eaaaa1a2f5cee86d0",
+        "afterSha256": "dcc714d49d62a4427902893024416d9fc3805d703cc9ba572c76cda5b1b5cfdf"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "80bc9db8b74fd4c1d1fcaafcefd5543037c32ce012b7d0db9c4b3163c3d71687",
+        "afterSha256": "2d5e05dd849599f4fe9d3b35df2c431bc15b99e5e66fdc88fe9ee94dd4ad4445"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "4579d4b12e75ee8d9abf0ae0510b32332b4f8fea854b01a39a0ca8f357715270",
+        "afterSha256": "f889f407ea572f8a38d115a3538d6d70ae8f6dfa5b4fba0ba3039c452d8c9999"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "c4634f5f8684413599988ba142a1d76aa034a43520f67f2e30c9597db31e446c",
+        "afterSha256": "2f478f4b9b8b241b41b3cf191e1a62d28ea2b7fc289c20dcdddaab25064a8244"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "1ba6bab8f53b727873ab4952cf5300b8050919af516e527feadcd75565d4df8e",
+        "afterSha256": "7ed6f5a644a10e2475e68b4fafae1ee668046d7f30c290dacfaedf3f39e06fe7"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a8d36d2995a25ab927011e1ce78b98e0543b2acceb24ff7ec235810492e4cea2",
+        "afterSha256": "f21885db01460fdaedaeb86c0dd617fe3ceb438c6ed641102235bc52abb7cd1a"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "9c493b423a6b4190850ffd186520a87a1b6c43bda9cb1cd04670ce22b6bffe9e",
+        "afterSha256": "1b7d995637586ec1af8f7413b5db625cc6694326a115089ae583406ed3b52f1f"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "579162f3ac5266071b04fb7b17bb26c0ae75ce9795a8d30b5d2552637fcbd767",
+        "afterSha256": "1c8da23da01986663d718b17d17c9b155915bbdb731b6c72b6382c6f84372b1e"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "8b2f960e5c78542260f3fe4091dd34657201ba78930009f91e3b03e0c4a84adb",
+        "afterSha256": "8cb8153796d2decfbd27fefa9a643eb69916931e0fef1e11d635ae6cc4d77fb7"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "a4f4246e99c409b8755a0ac123180d8fd8c657970a3aa0164f6f60eb52386c42",
+        "afterSha256": "bab069c083eb69089f0d0e736cd9472f0b14feec13c1aa7f2a506356084ade01"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7f4b5477a3964f7305ea91029e790bc011972f5a0ec9d874cdaf1bf97636d33d",
+        "afterSha256": "ca2f5324676b298666522cb4812a6a9c9d13a78b62e897b7a1144c4996d4bd60"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "fadf9cdb96be544f3b552b9d8a3fc23a258e9c36efea6747d6ccda0a022a44ac",
+        "afterSha256": "d48a8ec2fecbc370b9a02cfb55ccee72f2878ee6e2cebcd4983e36437a5dd2a6"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "ca215f10410d242b5ef26f9e674d03f5204b665b96040f8a8d6478c980886ade",
+        "afterSha256": "767e23ce7661193dac46f5993e51265afaeb863b05e0c4b7d4028d9defd27b98"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "b5815ba693695c2593b8b2affad50eb2f22d3b9e8eb086c7d243efaaeaeb1271",
+        "afterSha256": "c022d31f4ce8e0c4add9d95621fed63253592a113cbf5721fd0c0cf1746fc350"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "511c2fc1170081c35ec1c68c84c4449b1d9e36c12e34ff3ef6fe9f08060bc078",
+        "afterSha256": "2e128c0df8d525124803e2303661723c02a7ac7e95142dadfc7c03847f329dc4"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "ed2c810c5658d5c15dd4d945c780018f897f04e9a2a770babab1892c664fcd5d",
+        "afterSha256": "8fa2656ca6ff3a0d0e81b0880b0a664cde19a67e0a092a4ad87951777d3bac6c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "3d2f5461a02f871c6e0d1400cedc78bb3b2ac937fff321deedc8724ab5a34835",
+        "afterSha256": "3e9550f481e8b611f1b3d0e4694e1e304e137bda642f4268ea979dbda4a47c36"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "fde3b22ab7faf8692d9ee995e13bbdcdcdc2c050de82fc7825a7e6a076127e86",
+        "afterSha256": "f1f2c475f3f9fdf6af294dae78c8232efa6c06cfe8fc7298422615902c1b7ccf"
+      }
+    ]
+  }
 }

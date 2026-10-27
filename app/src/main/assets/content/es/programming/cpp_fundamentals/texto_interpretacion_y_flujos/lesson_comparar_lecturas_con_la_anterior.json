@@ -10,15 +10,41 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya puedes leer y contar palabras mientras la extracción tiene éxito. Ahora el encargo depende de dos momentos: la palabra recién obtenida y la obtenida inmediatamente antes. Repetición adyacente significa que esas dos palabras son iguales. No pregunta si la palabra apareció en cualquier lugar anterior ni cuántas palabras distintas hay."
+          "text": "Ya puedes leer y contar palabras mientras la extracción tiene éxito. Ahora el resultado depende de dos momentos: la palabra recién obtenida y la obtenida inmediatamente antes. Comparar ambos valores permite detectar repeticiones adyacentes (Stroustrup, 2024).\n\nRepetición adyacente significa que esas dos palabras son iguales. No pregunta si la palabra apareció en cualquier lugar anterior ni cuántas palabras distintas hay.",
+          "emphasis": [
+            {
+              "text": "dos momentos",
+              "style": "bold"
+            },
+            {
+              "text": "Repetición adyacente",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En pino pino sauce hay una repetición adyacente al obtener el segundo pino. En pino sauce pino no la hay: el último pino tiene a sauce como vecino anterior. Ordenar esas palabras cambiaría la pregunta, porque cambiaría sus vecinos. Debemos procesar el orden de lectura sin reunir ni ordenar toda la entrada."
+          "text": "En pino pino sauce hay una repetición adyacente al obtener el segundo pino. En pino sauce pino no la hay: el último pino tiene a sauce como vecino anterior. Ordenar esas palabras cambiaría la pregunta, porque cambiaría sus vecinos. Debemos procesar el orden de lectura sin reunir ni ordenar toda la entrada.",
+          "emphasis": [
+            {
+              "text": "sin reunir ni ordenar toda la entrada",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Numeraremos cada lectura válida desde uno. Si la palabra de la posición P coincide con la de P-1, el informe marca P, la posición de la segunda palabra de ese par. La primera lectura no tiene vecina anterior. En una racha de palabras iguales pueden marcarse varias posiciones: cada par adyacente se considera por separado, aunque comparta una palabra con el siguiente."
+          "text": "Numerar cada lectura válida permite indicar dónde se detecta una repetición (Stroustrup, 2024). La numeración empieza en uno. Si la palabra de la posición P coincide con la de P-1, el informe marca P: la posición de la segunda palabra de ese par.\n\nLa primera lectura no tiene vecina anterior. En una racha de palabras iguales pueden marcarse varias posiciones: cada par adyacente se considera por separado, aunque comparta una palabra con el siguiente.",
+          "emphasis": [
+            {
+              "text": "posición de la segunda palabra",
+              "style": "bold"
+            },
+            {
+              "text": "cada par adyacente",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -30,7 +56,12 @@
             "Marcar las posiciones uno y tres porque tienen la misma escritura."
           ],
           "correctIndex": 1,
-          "explanation": "Los vecinos son rio/sol y sol/rio. La igualdad entre primera y tercera posición no constituye una repetición adyacente."
+          "explanation": "Los vecinos son rio/sol y sol/rio. La igualdad entre primera y tercera posición no constituye una repetición adyacente.",
+          "reviewFeedback": [
+            "Revisa qué palabra está inmediatamente antes de la última. Haber aparecido en otro lugar no basta para formar un par vecino.",
+            "Comprueba los dos pares consecutivos sin reunir apariciones de posiciones separadas.",
+            "La primera posición no tiene una observación previa. Distingue una coincidencia global de un par adyacente."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -42,7 +73,12 @@
             "Dos y tres: hay dos pares y la primera no tiene palabra anterior."
           ],
           "correctIndex": 2,
-          "explanation": "Se comparan las posiciones uno/dos y dos/tres. La posición dos pertenece a ambos pares con papeles distintos."
+          "explanation": "Se comparan las posiciones uno/dos y dos/tres. La posición dos pertenece a ambos pares con papeles distintos.",
+          "reviewFeedback": [
+            "Una palabra puede cerrar un par y empezar el siguiente. Revisa los vecinos de la tercera posición.",
+            "Cada posición marcada debe tener una palabra anterior con la que comparar.",
+            "Forma los pares de posiciones vecinas y señala la segunda posición de cada par."
+          ]
         }
       ]
     },
@@ -54,7 +90,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva una copia del valor anterior que pueda sobrevivir a la lectura siguiente. Antes de actualizarla, úsala para decidir qué relación tiene con el dato nuevo. Asignar primero el nuevo valor a anterior elimina esa diferencia: después estarías comparando el dato con una copia de sí mismo. El orden de dos instrucciones cambia lo que significa la pregunta."
+          "text": "Conserva una copia del valor anterior hasta compararlo con el dato nuevo. Sólo después se actualiza esa copia para preparar la comparación siguiente (Stroustrup, 2024).\n\nAsignar primero el nuevo valor a anterior elimina la diferencia que se quería examinar: después se estaría comparando el dato con una copia de sí mismo. El orden de esas dos acciones cambia qué se está comprobando.",
+          "emphasis": [
+            {
+              "text": "Sólo después se actualiza",
+              "style": "bold"
+            },
+            {
+              "text": "qué se está comprobando",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -63,7 +109,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Comparación guiada: primero se obtiene false, mostrado como 0; después true, mostrado como 1. El segundo resultado acredita la copia, no que pino y roble hubieran sido iguales. En una secuencia, la copia debe prepararse después de comparar y en cada lectura válida, también cuando las palabras sean distintas."
+          "text": "Comparación guiada: primero se obtiene `false`, mostrado como 0; después `true`, mostrado como 1. El segundo resultado acredita la copia, no que pino y roble hubieran sido iguales. En una secuencia, la copia debe prepararse después de comparar y en cada lectura válida, también cuando las palabras sean distintas.",
+          "emphasis": [
+            {
+              "text": "después de comparar",
+              "style": "bold"
+            },
+            {
+              "text": "en cada lectura válida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -75,11 +131,22 @@
             "Una cadena vacía, para empezar una historia nueva tras cada diferencia."
           ],
           "correctIndex": 0,
-          "explanation": "El vecino de la tercera palabra es el segundo b. Conservar a después de una diferencia dejaría de representar la observación inmediatamente anterior."
+          "explanation": "La palabra anterior a la tercera es la obtenida en la posición dos: b. Conservar a después de una diferencia dejaría de representar la observación inmediatamente anterior.",
+          "reviewFeedback": [
+            "Conserva el valor de la última lectura válida hasta compararlo con la que llega después.",
+            "Después de una diferencia también habrá una palabra inmediatamente anterior en el siguiente paso. Comprueba cuál será.",
+            "Revisa si una diferencia elimina una lectura válida o si esa lectura sigue siendo la más reciente."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En el contrato de palabras, >> para string omite separadores y una lectura válida no entrega una palabra vacía. Por eso una string anterior inicialmente vacía puede representar que todavía no hubo palabra previa: nunca coincidirá con la primera palabra válida. También puedes usar un bool explícito de presencia. La justificación depende del dominio; no se puede trasladar esa marca vacía a cualquier otra clase de lectura."
+          "text": "La extracción a `string` omite los separadores y una lectura válida de palabra no entrega una cadena vacía. Por eso, anterior puede empezar vacía para representar que aún no hubo palabra previa: esa marca no coincidirá con la primera palabra válida (Stroustrup, 2024).\n\nTambién se puede representar la presencia mediante un `bool`. Elegir una marca de ausencia depende del dominio: si la cadena vacía pudiera ser un dato válido, ya no bastaría para distinguir los dos estados.",
+          "emphasis": [
+            {
+              "text": "Elegir una marca de ausencia depende del dominio",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -91,16 +158,36 @@
         },
         {
           "type": "paragraph",
-          "text": "Recuerda que std::cin es el flujo estándar de entrada declarado en <iostream>; aquí recibe el texto del campo Entrada preparada. Construye el lector de palabras desde el editor. Usa std::cin con entrada preparada: lee string mediante >> y procesa sólo las lecturas válidas. El texto admite hasta ocho palabras de hasta veinte caracteres ASCII cada una. Compara las strings literalmente: mayúsculas y puntuación conservadas pertenecen al dato. No normalices, ordenes ni guardes toda la secuencia."
-        },
-        {
-          "type": "paragraph",
-          "text": "Numera desde uno. Por cada palabra igual a la inmediatamente anterior, muestra Repetida: P en una línea; P es la posición de esa nueva palabra. Al terminar muestra Palabras: N y Repeticiones: R en dos líneas más. Hay un espacio después de cada etiqueta y cada línea termina con salto. La primera palabra nunca cuenta una repetición. Si no se obtuvo ninguna palabra, sólo aparecen los dos resúmenes en cero."
-        },
-        {
-          "type": "paragraph",
-          "text": "La entrada inicial preparada es \"tiza tiza muro tiza muro muro\", sin salto final. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, sólo espacios y tabuladores, \"lago\", \"lago lago lago\", \"lago sol lago\", \"a b b\" y \"Eco eco eco.\". Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "text": "Recuerda que `std::cin` es el flujo estándar de entrada declarado en `<iostream>`; aquí recibe el texto del campo Entrada preparada. Construye el lector de palabras desde el editor. Usa `std::cin` con entrada preparada: lee `string` mediante `>>` y procesa sólo las lecturas válidas. El texto admite hasta ocho palabras de hasta veinte caracteres ASCII cada una. Compara las strings literalmente: mayúsculas y puntuación conservadas pertenecen al dato. No normalices, ordenes ni guardes toda la secuencia.",
           "emphasis": [
+            {
+              "text": "procesa sólo las lecturas válidas",
+              "style": "bold"
+            },
+            {
+              "text": "Compara las strings literalmente",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Numera desde uno. Por cada palabra igual a la inmediatamente anterior, muestra Repetida: P en una línea; P es la posición de esa nueva palabra. Al terminar muestra Palabras: N y Repeticiones: R en dos líneas más. Hay un espacio después de cada etiqueta y cada línea termina con salto.\n\nLa posición uno nunca se marca como repetida: su valor se conserva para compararlo con la palabra siguiente. Si no se obtuvo ninguna palabra, sólo aparecen los dos resúmenes en cero.",
+          "emphasis": [
+            {
+              "text": "La posición uno nunca se marca como repetida",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada inicial preparada es `\"tiza tiza muro tiza muro muro\"`, sin salto final. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, sólo espacios y tabuladores, `\"lago\"`, `\"lago lago lago\"`, `\"lago sol lago\"`, `\"a b b\"` y `\"Eco eco eco.\"`. Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "emphasis": [
+            {
+              "text": "un solo lector",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -117,7 +204,12 @@
             "Se convierte automáticamente en una observación vacía válida."
           ],
           "correctIndex": 1,
-          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo."
+          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo.",
+          "reviewFeedback": [
+            "Un destino conservado después de un fallo no representa un dato recién obtenido.",
+            "La condición debe autorizar el cuerpo sólo cuando se obtiene otra palabra.",
+            "Distingue la falta de una palabra nueva de una observación válida cuyo contenido fuese vacío."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -178,7 +270,13 @@
         },
         {
           "type": "note",
-          "text": "Construye y contrasta antes de abrir la referencia. El editor no entrega variables, condición de repetición ni actualización. Son válidos otros nombres o interfaces si mantienen el contrato y el uso de sólo la observación actual y la anterior, sin reunir toda la entrada."
+          "text": "Construye y contrasta antes de abrir la referencia. El editor no entrega variables, condición de repetición ni actualización. Son válidos otros nombres o interfaces si mantienen el contrato y el uso de sólo la observación actual y la anterior, sin reunir toda la entrada.",
+          "emphasis": [
+            {
+              "text": "sólo la observación actual y la anterior",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -190,7 +288,7 @@
         },
         {
           "type": "note",
-          "text": "Entrada preparada de esta referencia, distinta del intento: \"  faro\\tpuente puente\\npuente faro  \". El tabulador, el salto y los espacios separan palabras; no se presentan como observaciones. El código siguiente permite contrastar el orden de comparación y actualización después de construir el lector."
+          "text": "Entrada preparada de esta referencia, distinta del intento: `\"  faro\\tpuente puente\\npuente faro  \"`. El tabulador, el salto y los espacios separan palabras; no se presentan como observaciones. El código siguiente permite contrastar el orden de comparación y actualización después de construir el lector."
         },
         {
           "type": "code",
@@ -199,19 +297,35 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia produce Repetida: 3, Repetida: 4, Palabras: 5 y Repeticiones: 2, cada parte en su línea. El último faro apareció antes, pero su vecino es puente: no se marca. La entrada del intento produce Repetida: 2, Repetida: 6, Palabras: 6 y Repeticiones: 2."
+          "text": "Para la entrada alternativa de la referencia, la salida es:\n\nRepetida: 3\nRepetida: 4\nPalabras: 5\nRepeticiones: 2\n\nEl último faro apareció antes, pero su vecino es puente: no se marca. La entrada inicial del intento marca las posiciones dos y seis, con seis palabras y dos repeticiones."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: comparar antes de reemplazar anterior; actualizarla en cada lectura válida; contar la posición nueva desde uno; excluir el intento fallido final y la primera palabra del informe de pares. La cadena vacía inicial es una marca válida de ausencia sólo porque ninguna palabra válida obtenida por >> es vacía."
+          "text": "Criterios: comparar antes de reemplazar anterior; actualizarla tras cada lectura válida, aunque sea diferente; numerar la nueva posición desde uno y excluir el intento fallido final de los contadores. No se marca la posición uno, pero su valor sí participa en la comparación con la segunda palabra.\n\nLa cadena vacía inicial representa ausencia sólo porque ninguna palabra válida obtenida mediante `>>` es vacía. No es una regla general para cualquier clase de datos.",
+          "emphasis": [
+            {
+              "text": "su valor sí participa",
+              "style": "bold"
+            },
+            {
+              "text": "No es una regla general",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "\"lago lago lago\" marca dos y tres; \"lago sol lago\" no marca nada; \"a b b\" marca tres; \"Eco eco eco.\" tampoco marca nada. En texto vacío o sólo separadores, N y R son cero; \"lago\" tiene N=1 y R=0. La asignación anterior = actual conserva una copia del valor recibido, no una referencia que siga automáticamente la siguiente lectura de actual."
+          "text": "`\"lago lago lago\"` marca dos y tres; `\"lago sol lago\"` no marca nada; `\"a b b\"` marca tres; `\"Eco eco eco.\"` tampoco marca nada. En texto vacío o sólo separadores, N y R son cero; `\"lago\"` tiene N=1 y R=0. \n\nLa asignación `anterior = actual` conserva una copia del valor recibido (Stroustrup, 2024). No crea una referencia que siga automáticamente la lectura siguiente de actual."
         },
         {
           "type": "note",
-          "text": "Una organización con bool de presencia también es correcta. Cuando N es positivo, R nunca supera N-1: sólo existen esos pares vecinos. Para N=0, R=0. Esta propiedad ayuda a detectar un error, pero no sustituye contrastar las posiciones marcadas."
+          "text": "Una organización con `bool` de presencia también es correcta. Cuando N es positivo, R nunca supera N-1: sólo existen esos pares vecinos. Para N=0, R=0. Esta propiedad ayuda a detectar un error, pero no sustituye contrastar las posiciones marcadas.",
+          "emphasis": [
+            {
+              "text": "no sustituye contrastar las posiciones marcadas",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -223,7 +337,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La extracción determina qué es una palabra; la comparación literal determina si dos palabras son iguales. El lector no convierte Eco en eco ni elimina el punto de eco. Cambiar esas reglas sería otro contrato. La relación entre posiciones también importa: obtener la misma palabra más tarde no implica que sea vecina de su aparición anterior."
+          "text": "La extracción determina qué es una palabra; la comparación literal determina si dos palabras son iguales. El lector no convierte Eco en eco ni elimina el punto de eco. Cambiar esas reglas sería otro contrato. La relación entre posiciones también importa: obtener la misma palabra más tarde no implica que sea vecina de su aparición anterior.",
+          "emphasis": [
+            {
+              "text": "La relación entre posiciones también importa",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -234,11 +354,18 @@
           "answers": [
             "Repetida: 4\nPalabras: 5\nRepeticiones: 1"
           ],
-          "explanation": "Sólo las dos apariciones contiguas de eco. coinciden literalmente. Eco no coincide con eco ni con eco.; la última Eco no tiene a la primera como vecina."
+          "explanation": "Sólo las dos apariciones contiguas de eco. coinciden literalmente. Eco no coincide con eco ni con eco.; la última Eco no tiene a la primera como vecina.",
+          "reviewFeedback": "Compara el contenido literal de cada palabra con el de su vecina anterior. Conserva mayúsculas y puntuación."
         },
         {
           "type": "paragraph",
-          "text": "Contrasta ahora una versión que compila y termina pero altera el orden de actualización. No confundas la salida que realmente ejecuta con la que exige el contrato; una repetición del primer dato ya sería evidencia de una pregunta mal situada."
+          "text": "La siguiente versión compila y termina, pero copia actual en anterior antes de compararlas. Predice lo que ejecuta tal como está escrita.\n\nMarcar la posición uno como repetida demostraría el fallo: allí todavía no existe una palabra anterior con la que formar un par. No confundas esa marca indebida con una repetición válida de la misma palabra en posiciones posteriores.",
+          "emphasis": [
+            {
+              "text": "Marcar la posición uno como repetida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -249,11 +376,18 @@
           "answers": [
             "Repetida: 1\nRepetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 3"
           ],
-          "explanation": "Copia actual antes de preguntar y compara cada palabra consigo misma. Incluso marca la primera. El encargo para sal roca sal no contiene pares iguales; mover la copia después de la comparación restablece el significado de anterior."
+          "explanation": "Copia actual antes de preguntar y compara cada palabra consigo misma. Incluso marca la primera. El encargo para sal roca sal no contiene pares iguales; mover la copia después de la comparación restablece el significado de anterior.",
+          "reviewFeedback": "Traza la asignación y después la condición, en el orden en que están escritas. Predice esa versión, no una reparación imaginada."
         },
         {
           "type": "note",
-          "text": "Una sola palabra y tres palabras iguales distinguen reparar el orden del estado de ocultar únicamente una línea de salida: la primera no marca ninguna repetición; las tres iguales marcan las posiciones dos y tres. El dominio pequeño mantiene los contadores representables."
+          "text": "Una sola palabra y tres palabras iguales distinguen reparar el orden del estado de ocultar únicamente una línea de salida: la primera no marca ninguna repetición; las tres iguales marcan las posiciones dos y tres. El dominio pequeño mantiene los contadores representables.",
+          "emphasis": [
+            {
+              "text": "ocultar únicamente una línea de salida",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -265,16 +399,36 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye otro lector, ahora con std::getline(std::cin, actual). Cada línea obtenida válidamente es una observación, incluso si contiene cero caracteres. El texto preparado tiene hasta seis líneas de hasta cuarenta caracteres ASCII cada una, con LF como delimitador. Compara todo el contenido literal: conserva espacios y tabuladores; no dividas en palabras, elimines espacios, ordenes ni almacenes todas las líneas."
-        },
-        {
-          "type": "paragraph",
-          "text": "La primera línea no tiene anterior aunque sea vacía. Una string anterior vacía ya no distingue ausencia de una línea previa válida vacía. Usa un bool de presencia que empieza en false y sólo pasa a true después de obtener una línea. La comparación requiere que exista una anterior; después de decidir, la copia debe representar la línea recién obtenida, también si estaba vacía o era distinta."
-        },
-        {
-          "type": "paragraph",
-          "text": "La entrada inicial es \"patio\\n\\n\\npatio\\n patio\\n patio\", sin LF final; \\n representa cada salto real. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, \"\\n\", \"\\n\\n\", \"A\\nA\", \"A\\nA\\n\", \"A\\nB\\nA\", \"A\\n A\" y \"\\nA\\nA\". Cada \\n representa LF. Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "text": "Construye otro lector, ahora con `std::getline(std::cin, actual)`. Cada línea obtenida válidamente es una observación, incluso si contiene cero caracteres. El texto preparado tiene hasta seis líneas de hasta cuarenta caracteres ASCII cada una, con LF como delimitador. Compara todo el contenido literal: conserva espacios y tabuladores; no dividas en palabras, elimines espacios, ordenes ni almacenes todas las líneas.",
           "emphasis": [
+            {
+              "text": "incluso si contiene cero caracteres",
+              "style": "bold"
+            },
+            {
+              "text": "todo el contenido literal",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera línea no tiene anterior aunque sea vacía. Como `getline` puede obtener válidamente una línea de longitud cero, una `string` anterior vacía no distingue la ausencia de una lectura previa de la presencia de ese dato (Köppe et al., 2023).\n\nUsa un `bool` de presencia que empiece en `false` y pase a `true` después de obtener una línea. Compara sólo cuando exista una anterior. Después de decidir, actualiza la copia para que represente la línea recién obtenida, también si estaba vacía o era distinta.",
+          "emphasis": [
+            {
+              "text": "Compara sólo cuando exista una anterior",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada inicial es `\"patio\\n\\n\\npatio\\n patio\\n patio\"`, sin LF final; `\\n` representa cada salto real. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, `\"\\n\"`, `\"\\n\\n\"`, `\"A\\nA\"`, `\"A\\nA\\n\"`, `\"A\\nB\\nA\"`, `\"A\\n A\"` y `\"\\nA\\nA\"`. Cada `\\n` representa LF. Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "emphasis": [
+            {
+              "text": "un solo lector",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -291,7 +445,12 @@
             "Se convierte automáticamente en una observación vacía válida."
           ],
           "correctIndex": 1,
-          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo."
+          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo.",
+          "reviewFeedback": [
+            "Distingue la última línea obtenida de un intento que ya no consigue otra.",
+            "Comprueba que la condición autorice el cuerpo sólo tras una lectura válida.",
+            "Una línea vacía válida necesita un delimitador disponible; no equivale a cualquier intento fallido."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -358,7 +517,13 @@
         },
         {
           "type": "note",
-          "text": "Este editor nuevo no entrega el algoritmo. Recupera el significado de anterior y cambia lo que la unidad de lectura permite: una línea vacía es un dato real. Se admiten otras organizaciones con una distinción explícita de presencia y el mismo orden de comparación y actualización."
+          "text": "Este editor nuevo no entrega el algoritmo. Recupera el significado de anterior y cambia lo que la unidad de lectura permite: una línea vacía es un dato real. Se admiten otras organizaciones con una distinción explícita de presencia y el mismo orden de comparación y actualización.",
+          "emphasis": [
+            {
+              "text": "una línea vacía es un dato real",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -370,7 +535,7 @@
         },
         {
           "type": "note",
-          "text": "Entrada preparada de esta referencia: \"\\npuerta\\npuerta\\n\\n\\npuerta\", donde cada \\n representa un LF. Empieza con una línea vacía y termina con una línea sin LF. Es distinta de la entrada del intento; el código muestra cómo la presencia previa se distingue del contenido vacío."
+          "text": "Entrada preparada de esta referencia: `\"\\npuerta\\npuerta\\n\\n\\npuerta\"`, donde cada `\\n` representa un LF. Empieza con una línea vacía y termina con una línea sin LF. Es distinta de la entrada del intento; el código muestra cómo la presencia previa se distingue del contenido vacío."
         },
         {
           "type": "code",
@@ -379,19 +544,35 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia marca las posiciones tres y cinco; después muestra Lineas: 6 y Repeticiones: 2. La primera línea vacía no se marca. En la quinta se obtiene una segunda línea vacía contigua a la cuarta, y la última puerta no coincide con esa línea anterior vacía. El texto del intento marca tres y seis, con seis líneas y dos repeticiones."
+          "text": "Para la entrada alternativa de esta referencia, la salida es:\n\nRepetida: 3\nRepetida: 5\nLineas: 6\nRepeticiones: 2\n\nLa primera línea vacía no se marca. En la quinta se obtiene una segunda línea vacía contigua a la cuarta, y la última puerta no coincide con esa línea anterior vacía. La entrada inicial del intento marca las posiciones tres y seis, con seis líneas y dos repeticiones."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: presencia previa independiente de la string; comparación literal de vecinos en el orden recibido; ninguna repetición de la primera línea; actualización después de comparar y sólo tras lectura válida; posición y total incluyen líneas vacías. El último dato sin LF se procesa una sola vez. La condición getline evita procesar otra vez el destino después de fallar."
+          "text": "Criterios: presencia previa independiente del contenido de la `string`; comparación literal de vecinos en el orden recibido; actualización después de comparar y sólo tras una lectura válida. No se marca la posición uno; después de obtenerla, su contenido queda disponible para la comparación siguiente.\n\nLa posición y el total incluyen las líneas vacías. El último dato sin LF se procesa una sola vez. La condición de `getline` impide volver a procesar el destino cuando ya no se obtuvo otra línea.",
+          "emphasis": [
+            {
+              "text": "No se marca la posición uno",
+              "style": "bold"
+            },
+            {
+              "text": "incluyen las líneas vacías",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Con texto vacío los dos resúmenes son cero. \"\\n\" produce una línea vacía y cero repeticiones; \"\\n\\n\" produce dos líneas vacías y marca sólo dos. \"A\\nA\" y \"A\\nA\\n\" producen dos líneas y marcan dos. \"A\\nB\\nA\" y \"A\\n A\" no marcan ninguna posición. \"\\nA\\nA\" marca tres. De nuevo, si N>0 hay como máximo N-1 pares; esa cota no decide cuáles son iguales."
+          "text": "Con texto vacío los dos resúmenes son cero. `\"\\n\"` produce una línea vacía y cero repeticiones; `\"\\n\\n\"` produce dos líneas vacías y marca sólo dos. `\"A\\nA\"` y `\"A\\nA\\n\"` producen dos líneas y marcan dos. `\"A\\nB\\nA\"` y `\"A\\n A\"` no marcan ninguna posición. `\"\\nA\\nA\"` marca tres. De nuevo, si N>0 hay como máximo N-1 pares; esa cota no decide cuáles son iguales."
         },
         {
           "type": "note",
-          "text": "El bool no describe que la línea tenga caracteres: describe que hubo una lectura válida anterior. No se reinicia en cada vuelta. El programa conserva sólo los dos valores de línea necesarios para la comparación, junto con presencia y contadores; no guarda una colección de toda la entrada."
+          "text": "El `bool` no describe que la línea tenga caracteres: describe que hubo una lectura válida anterior. No se reinicia en cada vuelta. El programa conserva sólo los dos valores de línea necesarios para la comparación, junto con presencia y contadores; no guarda una colección de toda la entrada.",
+          "emphasis": [
+            {
+              "text": "No se reinicia en cada vuelta",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -403,7 +584,13 @@
         },
         {
           "type": "paragraph",
-          "text": "En estos textos preparados, \\n representa LF, el carácter que getline usa como delimitador. La escritura \\r representa otro carácter, CR. Si ese CR está realmente en el flujo antes del LF, la lectura lo conserva como parte de la string: no elimina cualquier carácter que parezca un final de línea. Por contraste, >> para palabras trata esos caracteres de espacio en blanco como separadores. En el siguiente istringstream los caracteres se fijan dentro del programa."
+          "text": "En estos textos preparados, `\\n` representa LF, el carácter que `getline` usa como delimitador. La escritura `\\r` representa otro carácter, CR. Si ese CR está realmente en el flujo antes del LF, la lectura lo conserva como parte de la `string`: sólo extrae sin añadir el delimitador que cierra la línea (Köppe et al., 2023). Por contraste, `>>` para palabras trata esos caracteres de espacio en blanco como separadores. En el siguiente `istringstream` los caracteres se fijan dentro del programa.",
+          "emphasis": [
+            {
+              "text": "sólo extrae sin añadir el delimitador",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -414,11 +601,18 @@
           "answers": [
             "Repetida: 3\nLineas: 3\nRepeticiones: 1"
           ],
-          "explanation": "getline elimina cada LF delimitador, pero conserva el CR literal de la primera línea. A con CR difiere de A. Las líneas segunda y tercera sí coinciden; el LF final no inventa una cuarta lectura."
+          "explanation": "getline elimina cada LF delimitador, pero conserva el CR literal de la primera línea. A con CR difiere de A. Las líneas segunda y tercera sí coinciden; el LF final no inventa una cuarta lectura.",
+          "reviewFeedback": "Distingue el CR que forma parte del dato del LF que delimita cada lectura. Cuenta sólo los pares vecinos con contenidos iguales."
         },
         {
           "type": "paragraph",
-          "text": "Los intentos y referencias con entrada externa usan LF preparado. Un origen de texto puede traducir finales de línea antes de entregar caracteres al flujo; no suponemos el mismo tratamiento de bytes CR/LF en todos los entornos. El contrato compara las strings que realmente obtiene. Si otro formato exige normalizar CR, eso sería una regla explícita adicional; aquí no se aplica."
+          "text": "Los intentos y referencias con entrada externa usan LF preparado. Un origen de texto puede traducir finales de línea antes de entregar caracteres al flujo; no suponemos el mismo tratamiento de bytes CR/LF en todos los entornos. El contrato compara las strings que realmente obtiene. Si otro formato exige normalizar CR, eso sería una regla explícita adicional; aquí no se aplica.",
+          "emphasis": [
+            {
+              "text": "sería una regla explícita adicional",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -429,7 +623,8 @@
           "answers": [
             "Repetida: 2\nRepetida: 5\nLineas: 6\nRepeticiones: 2"
           ],
-          "explanation": "Las dos primeras líneas contienen dos espacios seguidos de x. Las líneas cuarta y quinta contienen x seguido de un espacio. La tercera x y la sexta tabulador seguido de x tienen otros contenidos literales; no se eliminan esos caracteres para compararlos."
+          "explanation": "Las dos primeras líneas contienen dos espacios seguidos de x. Las líneas cuarta y quinta contienen x seguido de un espacio. La tercera x y la sexta tabulador seguido de x tienen otros contenidos literales; no se eliminan esos caracteres para compararlos.",
+          "reviewFeedback": "Conserva todos los caracteres de cada línea, incluidos espacios y tabuladores; después compara únicamente vecinos."
         },
         {
           "type": "multiple_choice",
@@ -441,12 +636,1467 @@
             "El primero no tiene líneas; el segundo tiene dos líneas vacías y una repetición."
           ],
           "correctIndex": 2,
-          "explanation": "getline obtiene una línea vacía por cada delimitador disponible aquí. La primera tiene ausencia previa; la segunda sí tiene una línea vacía anterior igual."
+          "explanation": "getline obtiene una línea vacía por cada delimitador disponible aquí. La primera tiene ausencia previa; la segunda sí tiene una línea vacía anterior igual.",
+          "reviewFeedback": [
+            "Distingue una observación de longitud cero de la ausencia de observaciones.",
+            "Sigue los delimitadores disponibles y decide en qué posición ya existe una línea anterior.",
+            "Comprueba por separado el número de lecturas válidas y los pares que esas lecturas permiten comparar."
+          ]
         },
         {
           "type": "note",
-          "text": "Comparar lecturas vecinas exige conservar el dato anterior hasta haber comparado el actual. Sólo después se actualiza esa copia; contar las lecturas permite situar una repetición (Stroustrup, 2024, secciones 2.5.1 y 2.5.3). La primera lectura no tiene vecina anterior. Para líneas, una línea vacía sí es un dato válido: la marca de existencia de una lectura anterior debe distinguirse de su contenido. La comparación usa el mismo significado de >>, getline y fin del origen que ya se practicó."
+          "text": "Comparar lecturas vecinas exige conservar el dato anterior hasta haber comparado el actual. Sólo después se actualiza esa copia; contar las lecturas permite situar una repetición (Stroustrup, 2024, secciones 2.5.1 y 2.5.3). La primera lectura no tiene vecina anterior. Para líneas, una línea vacía sí es un dato válido: la marca de existencia de una lectura anterior debe distinguirse de su contenido. La comparación usa el mismo significado de `>>`, `getline` y fin del origen que ya se practicó.",
+          "emphasis": [
+            {
+              "text": "Sólo después se actualiza",
+              "style": "bold"
+            }
+          ]
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "feb5a8b0d4a38c4ed5fc1c0511d10901a988a9dec31a074432c882ea549d2a41"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "a1fdf1b0e4b52c0bbab6aaab63ff316a063103a2664f0fbe43032fd5b5f5b478"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "4c1f2e06b3cfa86c843844121f71eb5fc48b1f343236c145aec3dffdccda0202"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "2e4a613406975b21bba9fa225066980cd9a78d4522b5f1dd13d5a43c56578d6e"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "9e95064c9d38defa8583f95eb75916cd56946b9206ed37682e3271e78268ab0f"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "cd5be33cee0a19b10e831cb967f70b1eb63129465a88e2a52ddf0eb36893890a"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "456475873d5aa7c837ceb6e8004d1da649ac6c87245037ac76f86b9362363689"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "40cc343896c10772491d55ee023dc6e06020036cd90afdda37e4633074b827b8"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "a5959103bf16c7c64db3189b1efa901fee8c1f730ad884f07b77a3667a50d66f"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "694bb6c9689f6326d9799abc6ccbfd908e7363f609d15f71bd4d0ce417d55aad"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "805be13d1430c930731ba4685f0a0b2051839eafd2453b332f0676f4f4d5d333"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "c370567723e1b703bc76f02a9939dc4b4c1563ac4be2a341098d9c1bd8158ddc"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "61560bfd571f6105547461280313d59a10ca47704c55b7547918319a4a96d50d"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "f01bdc3062ec1a06f160dff0c80fe3db751be05ab47c5ae82d250c0eabd5937d"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "ca0aa0bb56b71fa64a60639d2001f85f1f8ab5caa664a97eced39b85e0b41750"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "329b95d07f569249d18ad5841ddcb3bd1f12c993401ee99bcec5c0f91b54160e",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "17b4b382c9709392c69490c426aa16890e2b9053c6383f125d80c8bc18895185"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "7b9aabe3ab4ffe7354b9c2633512ea00ed74cf3060d9a402a6ddb267dfa6cf71"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "5141c9dc80562b4fa8e3b7d4ad7b74d5306562fee27e31e9c4d463e4c1b1afda"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "9b90bc000105c16c1fa6822ef6f545c50e6bebbe1794780c7792cd1ac31864fd"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "aa40cea53434451429e54fb8deb8486b4d94e764b0d3250e0ac0ccd3e1fcfb62"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "52aca916f4737d705be8d276e0baefb6ddc2c3f5def48a4619dd3a2e9d5b660a"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "16c7f5f41b79a01dbb0094e7185d63230a77df26cde7939670466130b80cb614"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "f67eb82766c6b35b300d99458ed9452969bde34c169c836efdb10c04f15147c2"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "0fb1030317fa4ed90d4ce2b9c3949a32d9b9a5fcc4828d2bde71e6202f2a502a"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "b2f9ecf84eed8312fdce0ac0c71315b40c50220bdcc0638755107f877e25cf86"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "f66de8dd9116bb584db4a91ca5ebd38fffaf35c4d01c41d94a1adfbeba3d6863"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "99890c5ccfece1a84995827277e2d0b69162a9e2248cbf70f1f3d967fec80f96"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1e2e929b7a7dfb62221eef6219c29cef699bc95c0f7e823a57bfe5751a33aea4"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "c75c817c9a9aadd91b20f3ff47c02d80c4a7acae595463533c3d5d9378f2df27",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "feb5a8b0d4a38c4ed5fc1c0511d10901a988a9dec31a074432c882ea549d2a41"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "a1fdf1b0e4b52c0bbab6aaab63ff316a063103a2664f0fbe43032fd5b5f5b478"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "4c1f2e06b3cfa86c843844121f71eb5fc48b1f343236c145aec3dffdccda0202"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "2e4a613406975b21bba9fa225066980cd9a78d4522b5f1dd13d5a43c56578d6e"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "9e95064c9d38defa8583f95eb75916cd56946b9206ed37682e3271e78268ab0f"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "cd5be33cee0a19b10e831cb967f70b1eb63129465a88e2a52ddf0eb36893890a"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "456475873d5aa7c837ceb6e8004d1da649ac6c87245037ac76f86b9362363689"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "40cc343896c10772491d55ee023dc6e06020036cd90afdda37e4633074b827b8"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "a5959103bf16c7c64db3189b1efa901fee8c1f730ad884f07b77a3667a50d66f"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "694bb6c9689f6326d9799abc6ccbfd908e7363f609d15f71bd4d0ce417d55aad"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "805be13d1430c930731ba4685f0a0b2051839eafd2453b332f0676f4f4d5d333"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "c370567723e1b703bc76f02a9939dc4b4c1563ac4be2a341098d9c1bd8158ddc"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "61560bfd571f6105547461280313d59a10ca47704c55b7547918319a4a96d50d"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "f01bdc3062ec1a06f160dff0c80fe3db751be05ab47c5ae82d250c0eabd5937d"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "ca0aa0bb56b71fa64a60639d2001f85f1f8ab5caa664a97eced39b85e0b41750"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "d061389ba1f38bed4b579a6868072853919e116da7bd9f24e7a47b6ff682954b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "aca30e19c4bf99364a4771811cd187aebb5f9a95a17d1ea5a2d945d6906d5b43"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "eb56492b611fc5bc308ad69638f1cc60469c5f393bcd4b6e20f232ac782a6830"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "07baf9724807ef1d413ec522a59f46dfb0207437324aa7634c053e15778ec859"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "a2dd3d188b64d1bdfa3bbaa1e1897f06f4843087f4d7352f7204a3278c061b5b"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "690fc4b9dfbdb40eba951c3e748d57f3d4fcd660200515d0e7d6d53d4dbfac81"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "618375df08ab10641b0bc0bcefaa1a44c5b6fd4329768e0648abcb3d6b7743f2"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ef23f1e3486af7447ee9abac01a854d4014027a22973f0134cb4c92add770b7c"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "cb321de959367ff4293988eacd9e7be2da4f92c1e0e078dfe5d7451bdd127443"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "fd1a96f6ef103e2c1a5c076fb3d83359241d87881319d667a88803e742a09b63"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "c3fb2f396b19e4ac4f31761fc93d3fdf48f0ed83f5b92facf18fd834f1ca0f30"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "4ede161d04ef3d2f57d8cb7a6c08cab6a8a0321bf46dcdfa58b1de17323d5ebd"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "efed17230ba5283c42476ce4ade26f9eb2b565d88be1d29d73a300b2f6650b22"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "36b3996d90414ba2d62c4e32bb23d8d02a14ab3a71ebd4cc3aef832280700f49"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "2553f79043662decb246b0e1902cd22afeb5c17bf517ef9c14f5c6e4733f88b5",
+        "afterSha256": "5db6b9680d8300a5ab846bb15637586fa833bab26aecbcb4c3cf5415b0b9c4e1"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "6237ef27f73052be7a0ea1b4148773cae0de016705d392d1c2013098a56b24d0",
+        "afterSha256": "d15ffc767dead99d6570955a4343e5a86875f6ef4bc03f98357ede4f8e3cbc3c"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "337fc49c07bbd2b5ef235a6d6b5116d1b1dc9d49eb1a765f3d29d5a755bf4ec4",
+        "afterSha256": "de30a6a22d3877c012d9ead5bb764ec2b63577502d902a589fc015bd38126469"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "01e27c7d591f0af325e5092f3206f7fdb0c45bd2d18a5edf4b3f53f80f42c3df",
+        "afterSha256": "3dcb6e4c6fb682367e3de77e309f90a94d4feb5f443cded6d4758b00d60cbb68"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "5c2dba1e94253f2f64ac9e9284183bf8bc382e9a9ed4004b4217cda21c74b5c9",
+        "afterSha256": "0bc4706d94773cc50358dca75ddea2d9f517405f5c4d912759fd327d63f767bf"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c545430e17966d15859ef3e4e0b34d67ebfb998c4cccf751d9f231935f6973e3",
+        "afterSha256": "154cdfb183452b37ffc9599f3ac5dc7fd765e9286bc20391b7661550ff7fccc1"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "127f3e1433c98f9fdc6d1af6c30f8c7a2ca91f3a714e02d297dc74053e6bce57",
+        "afterSha256": "5b9c609be8586ed3d0bb337998d39817d819bc6057c3c2aa413a2194cc0cee1f"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "692d26015f4b7abd6ce27475d9d11a7ddd6e35d4aa8a3c6d9298fe2b194331cb",
+        "afterSha256": "04bb78b5669c210680ac0c4f12bb34157c972807b220842062a9852eeaab2d2e"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "60ef721cd2a46fd1b97b62ca1049a8d3b40f3f6c9b9598c42c4d7fb16459820a",
+        "afterSha256": "719bc54b4b44815e0917e6a29450c46797418a3f6ce74dcaf9c7444593a8dca6"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "b6c6864d02df3d6d9c329e477bc8838d0d767e10e22514e775f386507673bcf8",
+        "afterSha256": "69d1508a28f15456abf7aa7eefeb58f72e9f464af89162cace52890347310f04"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "0f661f883884c54805a57d7a7042183791563b0dfce56cec1bc6d6f7d6c1f020",
+        "afterSha256": "30cccb5b5d4b1b34f974a03eaa8544d0dee91171a107fc4a2c79e50982853a76"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "b2d81433065752d5429b7e3e4f7c8bf4632fdbee5e70a599e8e354b1e872807a",
+        "afterSha256": "a98f96b2ffb53d77230e668ceffc04ed698829424f82d664140c30497bb3929e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "5db6b9680d8300a5ab846bb15637586fa833bab26aecbcb4c3cf5415b0b9c4e1",
+        "afterSha256": "ddfd1088b3d8875e6e1d0df9d1e6de4529c2794952d53588c2e12d1efbdb0a91"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "ba988d56edb768009250f6a8a34f6f1fdd043fa9125a3e298ee31abd7b0b621d",
+        "afterSha256": "4bd679de0ed77e63e5dc18b1f0ffd00b2b04832a449c88729199da6bf8853a27"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "d15ffc767dead99d6570955a4343e5a86875f6ef4bc03f98357ede4f8e3cbc3c",
+        "afterSha256": "c24e1cd9bfe7d35c173afd1b467ea8decb247c6a155bab2e4b538ca2cc889dc6"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "8b93602ad7d8a9e396f1c87443db9e6bfc4d7919cdfb61a30f654effe0511243",
+        "afterSha256": "e6fd6c485487c6dff8c3620b778576e364230507f930d41b4e29b099d396041d"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "d1fc05a6c180d1402d924f5649bc1444938a73c68bb7b17dbc1fad45f4c03ca0",
+        "afterSha256": "ac3b4200aa210a97f7abdcdc0444466e2a1767256c16c38309196c6927bb3c7d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "de30a6a22d3877c012d9ead5bb764ec2b63577502d902a589fc015bd38126469",
+        "afterSha256": "3ead3f6ff8e3c8f751f1d5e2fb145a2024e01dc6334f0966fd96c28f54bf30c4"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "8b2f3d5dab2348d17fa55e51e45faca13441af055f610bbea3f927ec838cf61e",
+        "afterSha256": "8caa632bb2c48fee501b68d981b5c06a461bb18ae9e8770f64b87ca1fb537e9d"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "3dcb6e4c6fb682367e3de77e309f90a94d4feb5f443cded6d4758b00d60cbb68",
+        "afterSha256": "9588d94bdbb51f8bed6e5541403c403b98725c1843fcd6b9c8d4551e3ad8db8a"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "0bc4706d94773cc50358dca75ddea2d9f517405f5c4d912759fd327d63f767bf",
+        "afterSha256": "f594cac6232eb6ff757c7bd1c5e31d087076262f0edd29bd1767b7639afa63c9"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "8e40aa679a2fbbbd721b9cf3e76a08ad7259c7f14925132eeb2692f01417c025",
+        "afterSha256": "3bc3aeb5c454b27788ff2be8d265c959a4f09a8df7032a9633af0e6512bab556"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "154cdfb183452b37ffc9599f3ac5dc7fd765e9286bc20391b7661550ff7fccc1",
+        "afterSha256": "d856caab7c467ddb04a9ee9d0e582e47034d8e934356ee477af60ba80e981ebd"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "9ce3f2c4aef4379830b5e825b72b30e7846422e25c80e12035eed48bbe1fc42a",
+        "afterSha256": "dfed34980f6de2152678526bb5fc79108a0e414434d947e2c3fbbf0422871b29"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "8b8a906cc4bbaf5a6758b4ca4c5c44b6149ab4304947f7b2eb752a5366d7ce11",
+        "afterSha256": "06e6a451f4917e48da74f62673490090d8b5fa5c55f7324034cd347e2fe8282c"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "1919327f95b483a739f13a8c2a3007a18f522df37b63d5418a0b1029c89f46eb",
+        "afterSha256": "f72dff20a7ac10aad2ac84a13c57288d1c76cd61cb99f8a492fe962d58f6516a"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "2e0c41efe972e14aa6d4e7ee02f01d4a807e5dabc4f0785d9ce66451bedaf70c",
+        "afterSha256": "9a8ce56ee1b15a3f509aaeaa5b8e114b2f3236193a341589a9bc8c0bf10d0df1"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "5b9c609be8586ed3d0bb337998d39817d819bc6057c3c2aa413a2194cc0cee1f",
+        "afterSha256": "299415e35efaefe03f3ecc8a7b31234900631aa718874c973e5ac59e304acd59"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "04bb78b5669c210680ac0c4f12bb34157c972807b220842062a9852eeaab2d2e",
+        "afterSha256": "f2e064a07608407fae542d0d5ae8c57bf10c1503b86882940c202cc6a2a77ecd"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "eab238122978023aaca6deefcba9d719dfb04035b527b229249e27605eb275a6",
+        "afterSha256": "6eb7458bbb555fcb6366fa73772bff9177eff0444302ddcaa5751c062abe4480"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "5d16b8b4bc79099108cc615226e44560d6a8bb71ee86a0931066dd564abd929a",
+        "afterSha256": "2115d9abe8d1ca2624c21ea559451cb579d6be4787a4b0d3a231b7307e537e25"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "76f1aee5a4cf6dd5a906f72bed6316675d174bb387281944d1126b9189cb251c",
+        "afterSha256": "ef7c66c1cc30198425530abdf37a667307a30e7f7dcdb82a649eaf2b60b67bda"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "719bc54b4b44815e0917e6a29450c46797418a3f6ce74dcaf9c7444593a8dca6",
+        "afterSha256": "e0fe0f4a056dc3776585b1bc7cefe386100f8c8932aef13cf9264a5022d25663"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "cc6f56b16099d1dada1057d3dfe3a5b42c1f0349e8766bdc14b3c0f3a8306fd3",
+        "afterSha256": "65443153c4768ec50becea6fbf276268a35445180537511eca59601e59cf44d9"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "3b0255fafa36f9a52f0779cf59b1ec8f24bf11a16b98c4f8b9843d2e3fd037ec",
+        "afterSha256": "fdf31f9b7af40a1cc737da9667d47c9a446d0ccc53838f8126766e4639d9b2c1"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "2a248ce3a184bf95f26758f54c5746d8d7d743f0847cd8e8abb43e1aef485f7b",
+        "afterSha256": "7bcc76b9bfc76a69681fddf9f8ca715c172b214aa7ccb3ffb595e722d1a6dc42"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "69d1508a28f15456abf7aa7eefeb58f72e9f464af89162cace52890347310f04",
+        "afterSha256": "ddb4723d4f09440eb0a87b5d0bc13aea4b46a4dd7d1d2139c0e221676313c826"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "60869bce75a467cdd2c89bfd5f1344150dfe6e334c1c1eea1dfcbd64ffaf5f1f",
+        "afterSha256": "de5f3f1db3ead5b0636474a5a2e2a86ce6aeabf001c78089115657d008c84c66"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "352895bd19b5d3ca65c4c9c54cfb4e02ed0c0d4c4e19728aaa178ae2bbe2e976",
+        "afterSha256": "828406600d6d732844fd998b163c65c7336834598532e5a51c765ab3633ca41e"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "2f577446809abd6244e0ab1c3e378cf56d3a8196477056c5faeba3139ce06e7a",
+        "afterSha256": "6f445b91260705c014ff5048e764d3338ccb683c770823bc9b67c640075d92e6"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "5a079d45a6395bb4eb5022f2f817bc9e9b9aea8d33fda070d54764ea67c835c2",
+        "afterSha256": "854dc8cb0f9b41615f76a87a6b258fe9e5e546d8967d67cbb9045e4f6560cea4"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "30cccb5b5d4b1b34f974a03eaa8544d0dee91171a107fc4a2c79e50982853a76",
+        "afterSha256": "ccf977f01208faa2152d20de7895d2181860c0a6b0f5dfbf305f0c58333f5f7e"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "ae6365e276008955d1473911fafbba045c123f0da0469eef188a53e2864fc07b",
+        "afterSha256": "cb6970a6268e2dc0b331056f70f6aa9db9334a5c29115d151102e11f9036f94b"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "55532087100f72e12baa833762c25e825374f40b8694a148e21643fc7c3d76f6",
+        "afterSha256": "537c2f93612fa964cab05b0c78ab7c2a29cd65f67050409ef01c3ec157f86e86"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "a98f96b2ffb53d77230e668ceffc04ed698829424f82d664140c30497bb3929e",
+        "afterSha256": "22bdaa6cb2c46a3cdd1db8213065e878972347709113db2549b94fd35f32584c"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "533cb4fa024697df7f5d01f199e621513b82c90ca8a4bfbe581dbba968153f81",
+        "afterSha256": "0197188aefa644135909a1d83b7f82b0861e417801210c5d1405eda18ef97c02"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "d412166a188fd0f6840b54d4f610fcd7721e30ba9847baf1321eb94b24c576f0",
+        "afterSha256": "6759a9f3b81de3f803c025019bf169f09f5d8120979437bc55d5212adf6cb6ea"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "c66a65d86d96a859c13a4b5a8e325796e14de7d3805427e6de8a943194721035",
+        "afterSha256": "e521b63a3f77984722d7e70bba3167fc4266d954bc731c69498276708e4a8277"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "9b886e179f04ba8ad270a8328362c438e37bc7439773e0c3a0562aff2ebd8b85",
+        "afterSha256": "86d882669df6048a86113ac1dfd9e771b1f26b386727cce0a7f26a4e00229467"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "a70cabafe3e6831ef919360a2c7aef74c0296f2c16ed3542a45d21ecb043f9f3",
+        "afterSha256": "2529961f2dcb053dc31354cae6d77cf76fdd744852f458ea5f9a2738ef363010"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "347a5553bd60f061335d3a216e913b264759fb1039e6d16e1f85a2d21017b6b3",
+        "afterSha256": "18357afce6cb037f6dbc6ed8eb096ed582fac2ef0f1d36de9bb1b028addef65f"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "95d6feecf32ee545bad3544b07e032e4c135d2c87e30ab42204ba31c11bfb9ab",
+        "afterSha256": "23b4e8f1afc2c4c9a921a9ac6b3c6cd97d2aab07b431ccf346c2462ca924b275"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0005",
+      "blocks": [
+        "block_0002_0006",
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005",
+        "block_0003_0006"
+      ]
+    },
+    {
+      "activity": "block_0005_0005",
+      "blocks": [
+        "block_0005_0006",
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0006_0004",
+        "block_0006_0005",
+        "block_0006_0006"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0002",
+      "requires": [
+        "block_0002_0005"
+      ]
+    },
+    {
+      "activity": "block_0004_0004",
+      "requires": [
+        "block_0002_0005"
+      ]
+    },
+    {
+      "activity": "block_0007_0002",
+      "requires": [
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "block_0007_0004",
+      "requires": [
+        "block_0005_0005"
       ]
     }
   ]

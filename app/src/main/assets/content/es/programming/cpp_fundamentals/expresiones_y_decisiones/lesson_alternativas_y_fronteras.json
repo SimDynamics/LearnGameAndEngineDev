@@ -217,16 +217,28 @@
           "type": "order_code",
           "question": "Ordena este programa: inclusión y apertura, dato declarado, decisión completa y cierre. La regla permite retirar hasta 4 elementos, incluidos 4.",
           "fragments": [
-            "    if (cantidad <= 4) {\n        std::cout << \"Permitido\";\n    } else {\n        std::cout << \"Excede el limite\";\n    }",
-            "    return 0;\n}",
+            "    if (cantidad <= 4) {",
+            "        std::cout << \"Permitido\";",
+            "    } else {",
+            "        std::cout << \"Excede el limite\";",
+            "    }",
+            "    return 0;",
+            "}",
             "    const int cantidad = 4;",
-            "#include <iostream>\n\nint main() {"
+            "#include <iostream>",
+            "int main() {"
           ],
           "correctOrder": [
-            3,
-            2,
+            8,
+            9,
+            7,
             0,
-            1
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
           ],
           "explanation": "La condición lee cantidad después de su declaración. <= incluye la frontera 4 y muestra Permitido."
         },
@@ -1130,6 +1142,33 @@
         "id": "block_0003_0001",
         "beforeSha256": "e05ac79f5f3358c9653c148841b204e5e47ca55077b1a4ad87d15bc610d3aaf7",
         "afterSha256": "d187ddf790e832a426fffdb274b929d88d11d0e25b8815a878cf7bd8ec165c75"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "524c589b2c4e7101e4a2e3d08f6c30a09734db94d44ce6f8c5527f947cbab62b",
+        "afterSha256": "58fc3e04b61c7fb57f8b46e6b9670bddaf6ea9a76a5b190181dccff4ed28216e"
+      }
+    ],
+    "orderRefinements": [
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "order_code",
+          "question": "Ordena este programa: inclusión y apertura, dato declarado, decisión completa y cierre. La regla permite retirar hasta 4 elementos, incluidos 4.",
+          "fragments": [
+            "    if (cantidad <= 4) {\n        std::cout << \"Permitido\";\n    } else {\n        std::cout << \"Excede el limite\";\n    }",
+            "    return 0;\n}",
+            "    const int cantidad = 4;",
+            "#include <iostream>\n\nint main() {"
+          ],
+          "correctOrder": [
+            3,
+            2,
+            0,
+            1
+          ],
+          "explanation": "La condición lee cantidad después de su declaración. <= incluye la frontera 4 y muestra Permitido."
+        }
       }
     ]
   }

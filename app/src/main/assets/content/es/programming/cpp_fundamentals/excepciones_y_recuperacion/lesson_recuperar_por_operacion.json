@@ -135,18 +135,46 @@
           "id": "orden_pedido_con_aceptacion",
           "question": "Ordena el programa para contar como aceptado sólo un cálculo que retorna normalmente. Conserva la definición antes de main.",
           "fragments": [
-            "    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }",
-            "#include <iostream>\n#include <stdexcept>\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { throw std::invalid_argument{\"Dato\"}; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\nint main() {\n    int aceptados{0};\n    try {",
+            "    } catch (const std::invalid_argument& error) {",
+            "        std::cout << \"Rechazado:\";",
+            "    }",
+            "#include <iostream>",
+            "#include <stdexcept>",
+            "int estimar(int piezas) {",
+            "    if (piezas < 0 || piezas > 10) { throw std::invalid_argument{\"Dato\"}; }",
+            "    if (piezas == 0) { return 0; }",
+            "    return 3 + 2 * piezas;",
+            "}",
+            "int main() {",
+            "    int aceptados{0};",
+            "    try {",
             "        int minutos{estimar(11)};",
-            "    std::cout << aceptados;\n    return 0;\n}",
-            "        ++aceptados;\n        std::cout << minutos;"
+            "    std::cout << aceptados;",
+            "    return 0;",
+            "}",
+            "        ++aceptados;",
+            "        std::cout << minutos;"
           ],
           "correctOrder": [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            17,
+            18,
+            0,
             1,
             2,
-            4,
-            0,
-            3
+            14,
+            15,
+            16
           ],
           "explanation": "Primero se obtiene el resultado; después se incorporan los efectos de aceptación. El catch conserva el contador si la llamada falla."
         }
@@ -841,6 +869,36 @@
         "id": "block_0004_0004",
         "beforeSha256": "c820b1a953e8a2393458dcc6025fadbbdd0ff50137422fd77944620180c0ac3b",
         "afterSha256": "82feda9fe97afa1b8fa22cfa4e8e3325249f41334ca1f6a3eb24896ef5c574ea"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d1ae79973b79e65d4f612a23d7b00cab682093e3913e7250528b2496922692f6",
+        "afterSha256": "06018842f8fe240660ce4559252af465ad69ee046ee113d4a89cd0d324cd8320"
+      }
+    ],
+    "orderRefinements": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "order_code",
+          "id": "orden_pedido_con_aceptacion",
+          "question": "Ordena el programa para contar como aceptado sólo un cálculo que retorna normalmente. Conserva la definición antes de main.",
+          "fragments": [
+            "    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }",
+            "#include <iostream>\n#include <stdexcept>\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { throw std::invalid_argument{\"Dato\"}; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\nint main() {\n    int aceptados{0};\n    try {",
+            "        int minutos{estimar(11)};",
+            "    std::cout << aceptados;\n    return 0;\n}",
+            "        ++aceptados;\n        std::cout << minutos;"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            4,
+            0,
+            3
+          ],
+          "explanation": "Primero se obtiene el resultado; después se incorporan los efectos de aceptación. El catch conserva el contador si la llamada falla."
+        }
       }
     ]
   },

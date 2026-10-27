@@ -10,7 +10,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Una extracción a int interpreta una representación de entero: puede omitir espacio inicial, reconocer un signo y reunir dígitos. Si intenta leer un entero donde encuentra x, no obtiene el dato solicitado. Aunque el destino estuviera inicializado, no debes usarlo como el resultado de una lectura que falló."
+          "text": "Una extracción con `>>` hacia un `int` intenta interpretar una representación de entero: puede omitir espacio inicial, reconocer un signo y reunir dígitos. Si encuentra `'x'` donde necesita comenzar ese número, no obtiene el dato solicitado.\n\nInicializar el destino evita dejarlo sin un valor inicial, pero no acredita ninguna lectura. Después de una extracción fallida, no debe usarse ese destino como si acabara de recibir un dato válido (Stroustrup, 2024, pp. 261–264).",
+          "emphasis": [
+            {
+              "text": "no acredita ninguna lectura",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -19,7 +25,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Aquí la lectura obtiene 8 antes de terminar el texto. Su resultado controla qué alternativa usa el dato. Con x debe presentarse el diagnóstico, sin suponer que cantidad representa una entrada válida. Leer válidamente tampoco demuestra que el número esté dentro del dominio de un problema: esa validación se hace después."
+          "text": "En este ejemplo, la lectura obtiene el entero `8` y permite entrar en la alternativa que lo presenta. Si el texto preparado fuera `\"x\"`, se ejecutaría la alternativa del diagnóstico; no se trataría `cantidad` como una entrada válida.\n\nHay otra pregunta distinta: ¿sirve el valor leído para el problema? Una extracción puede reconocer un entero que queda fuera del intervalo permitido. El éxito de la lectura y la validación de ese dominio deben comprobarse por separado (Stroustrup, 2024, pp. 262–264).",
+          "emphasis": [
+            {
+              "text": "El éxito de la lectura y la validación de ese dominio",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -30,7 +42,12 @@
             "Nada: el éxito de >> garantiza cualquier contrato del programa."
           ],
           "correctIndex": 1,
-          "explanation": "La extracción comprueba una representación de int; el contrato del problema establece un dominio adicional. Son validaciones diferentes."
+          "explanation": "La extracción comprueba una representación de int; el contrato del problema establece un dominio adicional. Son validaciones diferentes.",
+          "reviewFeedback": [
+            "La extracción ya reconoció un entero. Revisa qué condición adicional impone el problema al valor obtenido.",
+            "Distingue reconocer la representación de un dato de comprobar el intervalo permitido.",
+            "El flujo interpreta la representación de un tipo; revisa dónde se expresa la restricción concreta de este problema."
+          ]
         }
       ]
     },
@@ -42,11 +59,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Un flujo conserva indicadores de sus operaciones. eof() indica que una operación llegó al final de la entrada. fail() indica fallo de la operación solicitada e incluye los fallos graves señalados por bad(). bad() señala un problema del flujo que no debe tratarse como un simple formato incorrecto. good() sólo es verdadero cuando no hay ningún indicador de error ni de final activado."
+          "text": "Un flujo conserva indicadores de lo ocurrido durante sus operaciones. `eof()` consulta si se ha encontrado el final de la entrada; no anuncia de antemano si queda un próximo dato. `fail()` consulta si hay un fallo que impide tratar la operación como satisfactoria; también incluye el estado grave que consulta `bad()` (Köppe et al., 2023, p. 1628).\n\n`bad()` corresponde a un problema grave de la operación del flujo, distinto de un simple formato inesperado. `good()` es más estricto: sólo devuelve verdadero cuando no hay ningún indicador de error ni de final activado (Köppe et al., 2023, pp. 1628–1629; Stroustrup, 2024, pp. 258–259).",
+          "emphasis": [
+            {
+              "text": "no anuncia de antemano si queda un próximo dato",
+              "style": "bold"
+            },
+            {
+              "text": "más estricto",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Pueden coexistir indicadores: no son cuatro alternativas excluyentes. En una condición, el flujo es válido mientras fail() sea falso; eof() por sí solo no hace fallar esa condición. Por eso comprobar good() y comprobar si una extracción tuvo éxito no son preguntas equivalentes. eof() y fail() juntos también pueden aparecer si una conversión numérica llega al final con una representación incompleta, como un signo menos sin dígitos. Los indicadores solos no distinguen ese caso de un intento que no encontró más datos."
+          "text": "Los indicadores pueden coexistir; no son cuatro alternativas excluyentes. Al usar el flujo como condición, la conversión devuelve verdadero mientras `fail()` sea falso. Por tanto, `eof()` por sí solo no impide que esa condición sea verdadera: alcanzar el final y completar una extracción pueden ocurrir juntos (Köppe et al., 2023, p. 1628).\n\nTambién pueden coincidir `eof()` y `fail()` después de una representación incompleta al final, como un signo menos sin dígitos. Esa coincidencia no demuestra, por sí sola, si faltaba otro dato o si había comenzado una representación inválida. Para distinguir esos casos hará falta examinar algo más que los indicadores (Köppe et al., 2023, pp. 1591, 1628).",
+          "emphasis": [
+            {
+              "text": "Los indicadores pueden coexistir",
+              "style": "bold"
+            },
+            {
+              "text": "alcanzar el final y completar una extracción pueden ocurrir juntos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -55,7 +92,13 @@
         },
         {
           "type": "paragraph",
-          "text": "El resultado es Dato: 8 y, en otra línea, eof: 1 fail: 0 bad: 0 good: 0. La lectura reconoció el entero y encontró el final al buscar cómo continuaba. El dato es válido aunque good() sea falso. Las consultas se presentan como 0 o 1 porque cout utiliza aquí su formato habitual para bool."
+          "text": "La salida tiene estas dos líneas:\n\nDato: 8\neof: 1 fail: 0 bad: 0 good: 0\n\nLa extracción reconoció el entero y encontró el final al buscar cómo continuaba su representación. El dato puede procesarse aunque `good()` sea falso. Las consultas aparecen como `0` o `1` porque `std::cout` mantiene aquí el formato habitual de los valores `bool`.",
+          "emphasis": [
+            {
+              "text": "El dato puede procesarse",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -73,7 +116,8 @@
           "answers": [
             "Primero: 6\nSin segundo\neof: 1 fail: 1"
           ],
-          "explanation": "La primera lectura obtiene 6 y llega al final. El segundo intento no puede obtener otro entero y activa también el estado de fallo. No se usa segundo en la alternativa de éxito."
+          "explanation": "La primera lectura obtiene 6 y llega al final. El segundo intento no puede obtener otro entero y activa también el estado de fallo. No se usa segundo en la alternativa de éxito.",
+          "reviewFeedback": "Sigue los dos intentos por separado. Decide si cada uno obtuvo un dato antes de elegir su alternativa y consulta al final los indicadores que hayan quedado activados."
         },
         {
           "type": "multiple_choice",
@@ -84,11 +128,22 @@
             "eof() siempre permanece falso mientras exista un destino int."
           ],
           "correctIndex": 0,
-          "explanation": "La extracción válida permite usar 7. El final y el éxito de esa lectura pueden coexistir; el siguiente intento falla al no encontrar otro dato."
+          "explanation": "La extracción válida permite usar 7. El final y el éxito de esa lectura pueden coexistir; el siguiente intento falla al no encontrar otro dato.",
+          "reviewFeedback": [
+            "Separa el resultado de la extracción del estado que deja registrado al terminar.",
+            "El bucle decide a partir del resultado de cada extracción. No conoce por anticipado lo que devolverá una operación que todavía no ha realizado.",
+            "El tipo del destino no determina si una lectura encontrará el final. Revisa qué operación puede activar ese indicador."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "No uses while (!entrada.eof()) como sustituto. Pregunta por un estado anterior y permite entrar antes de saber si la próxima extracción obtendrá un dato. La condición con la lectura pone la comprobación en el lugar donde nace el dato, antes de procesarlo."
+          "text": "La condición `while (!entrada.eof())` consulta lo que ocurrió antes de la siguiente extracción. Puede dejar entrar al cuerpo sin saber todavía si se obtendrá un dato nuevo. En cambio, `while (entrada >> valor)` realiza la extracción y comprueba su resultado antes de permitir que el cuerpo use `valor`. Esa ubicación de la comprobación evita procesar un intento fallido como si fuera otro dato (Stroustrup, 2024, pp. 267–268).",
+          "emphasis": [
+            {
+              "text": "antes de permitir que el cuerpo use",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -105,7 +160,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La extracción obtiene 12 y deja x para una operación posterior. >> a int no exige que todo el texto sea exclusivamente un entero. Si el formato pide un número por línea sin residuos, habrá que comprobar también lo que queda. Tener éxito y consumir una operación completa son requisitos diferentes."
+          "text": "La extracción obtiene el entero `12` y deja `'x'` disponible para la lectura posterior con `get`. Una extracción hacia `int` puede reconocer un prefijo numérico sin exigir que todo el texto sea exclusivamente ese entero (Köppe et al., 2023, pp. 1590–1591).\n\nSi el formato exige un único número por línea, todavía hay que comprobar si quedaron caracteres que el contrato no admite. Obtener un dato y consumir una operación completa son requisitos diferentes.",
+          "emphasis": [
+            {
+              "text": "Obtener un dato y consumir una operación completa son requisitos diferentes",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -115,7 +176,8 @@
           "answers": [
             "4\n9\neof: 0 fail: 1"
           ],
-          "explanation": "Obtiene 4 y luego el prefijo entero 9. El intento siguiente encuentra x donde esperaba un entero y falla sin llegar al final; 3 todavía no se ha obtenido."
+          "explanation": "Obtiene 4 y luego el prefijo entero 9. El intento siguiente encuentra x donde esperaba un entero y falla sin llegar al final; 3 todavía no se ha obtenido.",
+          "reviewFeedback": "Sigue dónde se detiene cada extracción numérica y qué carácter queda para el intento siguiente. Procesa el destino sólo cuando ese intento tenga éxito; distingue encontrar un formato inesperado de llegar al final."
         }
       ]
     },
@@ -127,7 +189,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Con texto almacenado en memoria no esperamos un fallo de un dispositivo. Para observar el significado del estado grave podemos activarlo deliberadamente: setstate añade el indicador que le pasamos. std::ios::badbit es el nombre de la biblioteca para ese indicador; usarlo aquí no simula una avería física ni demuestra cómo reparar un origen dañado."
+          "text": "Los ejemplos usan texto almacenado en memoria; no necesitan provocar una avería física. Para observar el estado grave de forma controlada, el programa llama a `setstate`, que añade el indicador solicitado a los que ya tenía el flujo. `std::ios::badbit` identifica ese indicador de problema grave (Köppe et al., 2023, p. 1628).\n\nLa prueba permite observar las consultas del estado. No reproduce la causa de una avería ni enseña a reparar un origen dañado.",
+          "emphasis": [
+            {
+              "text": "No reproduce la causa de una avería",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -136,7 +204,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es bad: 1 fail: 1 eof: 0. fail() incluye bad(): un estado grave también impide tratar la lectura como exitosa. Cuando se decide por qué terminó una lectura, conviene comprobar primero bad() para no ocultar un problema grave bajo otro indicador que pudiera coexistir."
+          "text": "La salida ocupa una línea:\n\nbad: 1 fail: 1 eof: 0\n\nEl estado que detecta `bad()` también hace verdadero `fail()`. Por eso, si se necesita distinguir un problema grave de otras causas de terminación, hay que considerar ese indicador antes de decidir que sólo hubo un formato inesperado o un final de entrada (Köppe et al., 2023, p. 1628).",
+          "emphasis": [
+            {
+              "text": "también hace verdadero",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -147,7 +221,12 @@
             "Hace falta una política del origen y del problema; borrar un indicador no demuestra que el daño desapareció."
           ],
           "correctIndex": 2,
-          "explanation": "El estado comunica un fallo. Cambiar un destino o borrar el indicador no repara por sí mismo el problema que lo produjo."
+          "explanation": "El estado comunica un fallo. Cambiar un destino o borrar el indicador no repara por sí mismo el problema que lo produjo.",
+          "reviewFeedback": [
+            "Cambiar el tipo del destino no elimina la causa de un problema grave del origen. Distingue interpretar un dato de reparar el flujo.",
+            "Un indicador de final desactivado no describe todos los posibles problemas del flujo. Revisa el estado grave señalado en la pregunta.",
+            "Distingue cambiar los indicadores de resolver la causa que los activó."
+          ]
         }
       ]
     },
@@ -159,10 +238,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un lector de enteros para \"2 7 x 4\".\n\nPresenta cada entero obtenido válidamente en una línea Dato: N.\n\nAl detenerse, muestra una única etiqueta final: Fallo del flujo si bad() es verdadero; en otro caso Fin si eof() es verdadero; en otro caso Formato invalido.\n\nNo uses el destino después del intento fallido ni intentes saltar todavía el texto inválido.\n\nEn este informe, Fin sólo comunica que se observó eof(); no certifica que toda la representación de entrada fuera correcta.\n\nPor ejemplo, \"2 -\" presenta Dato: 2 y Fin porque el intento de convertir el signo aislado termina con eof y fail.\n\nEsta política de observación es limitada: la siguiente lección analizará una línea completa y rechazará también las representaciones incompletas.\n\nConstruye una batería mediante probar(const std::string& texto, bool grave): crea un flujo local y, sólo si grave es true, activa badbit antes de leer. main llama con (\"2 7 x 4\", false), (\"3 8\", false), (\"\", false), (\"5 \", false), (\"9z\", false), (\"x 6\", false), (\"2 -\", false) y (\"3\", true), en ese orden.\n\nCada Dato y etiqueta final ocupa una línea con salto, sin títulos ni separaciones adicionales.\n\nEs una única implementación del informe; la última llamada observa un indicador activado deliberadamente y no simula una avería física.\n\nUsa Compilar, ejecutar y comprobar con la batería completa.",
+          "text": "Construye una batería con la función `probar(const std::string& texto, bool grave)`. Cada llamada crea un flujo local a partir de `texto`. Sólo cuando `grave` sea `true`, activa `std::ios::badbit` antes de intentar leer. Usa la misma implementación para todos los casos.\n\nMientras la extracción de un entero tenga éxito, presenta una línea Dato: N, con un espacio después de los dos puntos. Al detenerse, escribe una única etiqueta final: Fallo del flujo si `bad()` es verdadero; en otro caso, Fin si `eof()` es verdadero; en otro caso, Formato invalido. No uses el destino del intento fallido ni saltes todavía el texto inválido.\n\n`main` debe llamar a la función con estos argumentos, en este orden: `(\"2 7 x 4\", false)`, `(\"3 8\", false)`, `(\"\", false)`, `(\"5 \", false)`, `(\"9z\", false)`, `(\"x 6\", false)`, `(\"2 -\", false)` y `(\"3\", true)`. Cada línea de datos y cada etiqueta final termina con un salto; no añadas títulos ni separaciones entre casos. Pulsa Compilar, ejecutar y comprobar para verificar toda la batería.\n\nLa etiqueta Fin sólo comunica que se observó el final. En `\"2 -\"`, el programa presenta Dato: 2 y Fin aunque el signo aislado no sea un entero válido: coinciden el final y el fallo de conversión. La última llamada observa un estado grave activado deliberadamente; no simula una avería física. La validación completa de una operación se estudiará en la lección siguiente.",
           "emphasis": [
             {
+              "text": "la misma implementación para todos los casos",
+              "style": "bold"
+            },
+            {
+              "text": "una única etiqueta final",
+              "style": "bold"
+            },
+            {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            },
+            {
+              "text": "Fin sólo comunica que se observó el final",
               "style": "bold"
             }
           ]
@@ -177,7 +268,12 @@
             "Dato: 0 y Formato invalido, porque el destino estaba inicializado."
           ],
           "correctIndex": 1,
-          "explanation": "No se obtiene el primer entero ni se recupera todavía el texto inválido. La variable inicializada no representa una extracción nueva y 6 queda sin procesar."
+          "explanation": "No se obtiene el primer entero ni se recupera todavía el texto inválido. La variable inicializada no representa una extracción nueva y 6 queda sin procesar.",
+          "reviewFeedback": [
+            "El contrato se detiene cuando falla una extracción. Revisa si el programa tiene alguna operación que descarte el carácter que impide leer.",
+            "Decide primero si se obtuvo algún dato nuevo; después aplica la política de diagnóstico.",
+            "Inicializar el destino no equivale a haber obtenido un dato. Revisa qué condición permite presentar una línea Dato."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -195,7 +291,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La última llamada activa badbit antes de leer: debe producir sólo Fallo del flujo. Las lecturas fallidas no añaden Dato; esa línea se presenta únicamente dentro del cuerpo controlado por una extracción válida. La coexistencia de eof y fail en \"2 -\" sigue la política limitada de observación descrita, sin certificar que el signo aislado sea una representación válida."
+          "text": "Las líneas Dato corresponden únicamente a las extracciones que permitieron ejecutar el cuerpo del bucle. Al fallar el intento siguiente no se añade otra línea de datos; la decisión posterior consulta los indicadores para seleccionar la etiqueta final.\n\nLa última llamada deja el estado grave activado antes de intentar leer. La política distingue ese estado antes de consultar el final. El caso del signo aislado conserva la limitación anunciada: observar el final no basta para certificar la representación completa.",
+          "emphasis": [
+            {
+              "text": "únicamente a las extracciones",
+              "style": "bold"
+            },
+            {
+              "text": "observar el final no basta",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -207,7 +313,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia usa \"5 11z 2\". El cuerpo presenta sólo lecturas válidas; después del bucle se interpreta el estado. Este programa no recupera el texto posterior a z: detenerse y recuperarse son políticas diferentes. La próxima construcción enseñará cómo descartar una operación incorrecta sin repetir el mismo fallo."
+          "text": "Esta referencia usa `\"5 11z 2\"`. El cuerpo presenta las extracciones válidas y, al salir del bucle, la cadena de alternativas decide la etiqueta final. El texto a partir de `'z'` no se recupera: detenerse y recuperarse son políticas diferentes.\n\nEl ejemplo presenta un solo informe y no termina su etiqueta final con un salto. Permite estudiar las responsabilidades del algoritmo; la referencia completa de la batería, al final de la lección, cumple también la cantidad de casos y los saltos exigidos.",
+          "emphasis": [
+            {
+              "text": "detenerse y recuperarse son políticas diferentes",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -216,18 +328,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Compara también los casos sin un separador final. Una implementación que exige good() antes de procesar el dato puede perder el último entero de \"3 8\". Una que entra al cuerpo sin comprobar la extracción puede presentar un valor que no corresponde a una lectura nueva."
+          "text": "Sin un separador al final, la extracción del último entero puede tener éxito y activar `eof()` a la vez. Si se exige además `good()` para procesarlo, se descarta un dato válido. El problema está en esa comprobación adicional, no en el valor reconocido.\n\nEl defecto opuesto aparece cuando se procesa el destino sin comprobar la extracción: puede presentarse un valor que no corresponde a ninguna lectura nueva. El cuerpo controlado por `while (entrada >> valor)` evita ambos errores.",
+          "emphasis": [
+            {
+              "text": "se descarta un dato válido",
+              "style": "bold"
+            },
+            {
+              "text": "sin comprobar la extracción",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
-          "question": "Una prueba con \"4 10\" imprime sólo Dato: 4 y después Fin. ¿Qué cambio del diseño conviene revisar primero?",
+          "question": "Una prueba con \"4 10\" imprime sólo Dato: 4 y después Fin. ¿Qué decisión del diseño podría explicar ese resultado?",
           "options": [
             "La decisión de procesar el último dato exige good() en vez del éxito de la extracción.",
             "El diagnóstico final debería escribirse antes del primer dato.",
             "Los enteros 4 y 10 no caben en el tipo int de una implementación conforme."
           ],
           "correctIndex": 0,
-          "explanation": "El éxito de la extracción permite procesar el último entero aunque eof() ya esté activo. good() es más estricto y puede omitirlo."
+          "explanation": "El éxito de la extracción permite procesar el último entero aunque eof() ya esté activo. good() es más estricto y puede omitirlo.",
+          "reviewFeedback": [
+            "Compara qué exige la condición que deja usar el dato con lo que consulta good().",
+            "Cambiar el orden de los mensajes no explica por qué falta un dato reconocido. Revisa la condición que permite procesarlo.",
+            "Los dos valores del ejemplo son pequeños y representables como int. Revisa qué consulta podría impedir procesar el último aunque se haya leído."
+          ]
         }
       ]
     },
@@ -239,11 +366,23 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente problema tendrá una operación por línea. Primero obtendremos la línea completa; luego un flujo local intentará convertir sus partes. Esto permite rechazar residuos y recuperar la operación siguiente conservando una frontera clara. La lectura válida, el dominio del valor y la ausencia de texto extra tendrán comprobaciones distintas."
+          "text": "En la lección siguiente habrá una operación por línea. Obtener la línea completa permite conservar su frontera; un flujo local intentará interpretar después sus partes. Así se podrá rechazar el residuo de una operación y continuar con la siguiente.\n\nConviene distinguir tres requisitos: obtener el dato, comprobar el dominio del valor y comprobar que no queda texto extra no admitido. La lectura de una línea y su interpretación son responsabilidades distintas (Stroustrup, 2024, pp. 279, 283).",
+          "emphasis": [
+            {
+              "text": "tres requisitos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "En los programas mostrados no se cambió la máscara de excepciones del flujo: un formato incorrecto comunica su resultado mediante el estado y la condición. El tratamiento de excepciones enseñado en la unidad de excepciones sigue siendo útil para otros contratos; aquí no hay que suponer que cada fail() lanza automáticamente."
+          "text": "En estos programas no se ha configurado el flujo para lanzar excepciones por sus indicadores. Un formato incorrecto se comunica mediante el estado y la condición de la lectura; no hay que suponer que cada resultado verdadero de `fail()` lanza automáticamente una excepción. La configuración de qué estados provocan excepciones es una decisión adicional, distinta de consultar el estado (Köppe et al., 2023, pp. 1626, 1629).",
+          "emphasis": [
+            {
+              "text": "una decisión adicional, distinta de consultar el estado",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -258,6 +397,1032 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n\n#include <string>\n#include <ios>\n\nvoid probar(const std::string& texto, bool grave) {\n    std::istringstream entrada{texto};\n    if (grave) entrada.setstate(std::ios::badbit);\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"2 7 x 4\", false);\n    probar(\"3 8\", false);\n    probar(\"\", false);\n    probar(\"5 \", false);\n    probar(\"9z\", false);\n    probar(\"x 6\", false);\n    probar(\"2 -\", false);\n    probar(\"3\", true);\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "5e194a13131d0a29d6811fbfb9e15ab314dc45839ad2f87e5c82bba10858c7d1"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1b6b28e489163b95f392d39de9ad974bed1245173d6a68831200fd6442b9fe71"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "477805b8293281711f4ed22b34de75bb71901742d8b4f9aac175dd23065779ee"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "37099045e0bc564c3a0e979d09c131dc9f7defcc7c59e5efc8d86d7649400b6b"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "e92fc03bc1c27b6ac5d6fbe8a3a336425353688072f47ff3f2568b89f914957e"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "ff266ccc8e73fba9122f2c23ced314878c11815ca910c8de934b5cc588baaf3d"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "698906d7485a3def639c6b67b40aaf1bae6ccabd63a981586d8fe3deb08b3ac9"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "7d826c9415468f573b67c43c15b15fd04774608e5a3a2230832ce84f2c7061bc"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "b145c364c20581d4a12b76ded85ca0bb70e0dbbe2cb682633886b9ebbc60492a"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "2636e6b81dfc49040e26cbfcffba4f9ff23dbd719693d3d1ed6bbb670c49b758"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "81d93d337694c6ff5990f636d4031eed1abfc9db5634e71248fd79b77feb82de"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "4f2c04b24beafcddede8b30015038b5b270cf2038517279e86c7ba41e98be7d8"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "5393e161f7486d6803e37a6ce4b3cb9ca5fb832d458b7e3303e3477d462d1b25"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "17a73c3ef9a351f42e3155b13f6dffabc7a44b4a34d501280be8feb9baa68271"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "2a1e561ce0d12bfa562f0a0e9edd011fd220d7e4d855f2b618b6b73468728c5c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "43ee6b73b0d72cb5a9c29e4a319dc85fa2d1798982c753ee21b41291a3f83105"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "0b645ef2dd64edbb77868119870bb681e4efcdd935c6bddcfb7a6a5af016982b"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "0b8a89074ee1c78408c0250949d295a75c6491dfefa06897357e66a8acf8175f"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "b871ba0b385299382b2adb8fe2093d8e0f5f6f17bddc3e795c063aefaea983ba"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "3a71380e10fa97e25684ed9c49a03b1c66c91f03d2a46c19cfc3bd2aa018d756"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "24809e9d2313824d550a582822c5ac2e683b96c5f44bc1c2d4a38865bdf3c7fb"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "698906d7485a3def639c6b67b40aaf1bae6ccabd63a981586d8fe3deb08b3ac9"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "7d826c9415468f573b67c43c15b15fd04774608e5a3a2230832ce84f2c7061bc"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "0c7361a97b9d7296e6012ff0233ad4bc4149e364fac51aa18fd57c1f11c145a8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "d93c2f46fc4f760c703036c52774e95e201f2b64f76e2247f94d61662a4c02e7"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a1f09fb069acf353ad55d82b76851122c45bd5a51dca5c6d85158a0b5e6f6baa"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "43de50c9edc3d0c11ddbc99cca057bf994af4ae80348f100f7b8c640da25422e"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "8a5ed96957605384f2004ebe69bab88985034bbc0ae4ae17d263287ef6fcac37",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "5e194a13131d0a29d6811fbfb9e15ab314dc45839ad2f87e5c82bba10858c7d1"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1b6b28e489163b95f392d39de9ad974bed1245173d6a68831200fd6442b9fe71"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "477805b8293281711f4ed22b34de75bb71901742d8b4f9aac175dd23065779ee"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "37099045e0bc564c3a0e979d09c131dc9f7defcc7c59e5efc8d86d7649400b6b"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "e92fc03bc1c27b6ac5d6fbe8a3a336425353688072f47ff3f2568b89f914957e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "ff266ccc8e73fba9122f2c23ced314878c11815ca910c8de934b5cc588baaf3d"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "698906d7485a3def639c6b67b40aaf1bae6ccabd63a981586d8fe3deb08b3ac9"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "7d826c9415468f573b67c43c15b15fd04774608e5a3a2230832ce84f2c7061bc"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "b145c364c20581d4a12b76ded85ca0bb70e0dbbe2cb682633886b9ebbc60492a"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "2636e6b81dfc49040e26cbfcffba4f9ff23dbd719693d3d1ed6bbb670c49b758"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "81d93d337694c6ff5990f636d4031eed1abfc9db5634e71248fd79b77feb82de"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "4f2c04b24beafcddede8b30015038b5b270cf2038517279e86c7ba41e98be7d8"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "5393e161f7486d6803e37a6ce4b3cb9ca5fb832d458b7e3303e3477d462d1b25"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "17a73c3ef9a351f42e3155b13f6dffabc7a44b4a34d501280be8feb9baa68271"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "14485f279ec7d545568e48d52f00ff684923e048b4a9da6332248b0292742442",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "cb5cc1084dd0adb1e934f5aeabbfe2c857d8ac39a48856b27f5e40f7aab6ae50"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "2e2ae2af0f5875413705cc6c45f738c718a08452f44d2a0172d17564fb1d98db"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "eb5124f68085e0ba8d66f7f49d107b37a1f17c9f2a7879056c0bf122d11f0113"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "2aa3fa41bc0cab5a1c4fe1c3725ad940f9906cb2d223e31ac342f690079216cb"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "f82af54f50d4e0046c1d4cc66d949659fb950002ecc96e4e94e24c60565ad5f7"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "58d592f6effb83c4650888d2e84dc663d43ad3d03ec7b63920c7244174bd291e"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "698906d7485a3def639c6b67b40aaf1bae6ccabd63a981586d8fe3deb08b3ac9"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "7d826c9415468f573b67c43c15b15fd04774608e5a3a2230832ce84f2c7061bc"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "cee2a04edc3d48b87aea861d54d80281161e515ce27daee0157f5a6c31fc4c92"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "d93c2f46fc4f760c703036c52774e95e201f2b64f76e2247f94d61662a4c02e7"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "f44a62d3f6e9eea0fe4c31b14862550897eff336538d984cca49bd82cbb725b3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "b9e597968b972262a42eaca067d725a19f02a44b7867fd61490dd631bc6f6ede"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "e4beab272f91d2f5be196d5b834fe53dc881eecdf98f869a5f7e7edcafed2b6e",
+        "afterSha256": "8256b37b8b42ddd0992c81af2aef3912633d25cc4e2c4a95246e4a106db546a7"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "39c50517f5fa430dd3681597adcdab408a0cc6be4022301e331f068c4372c898",
+        "afterSha256": "ed1ffec74cec59b5c581bd5933c61ddd80f3164e16fdc4aeb9a6c4c22ee51f63"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3e70b1f8363390b7b3616731a37026ee2a34faad7aac4074ae2ab2e20e415b0d",
+        "afterSha256": "8da3d713b5128bdbb0c8fce1ffa212679ad59455e10b9b165655ee591ace6aa3"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "74a1ff69cc89850a8dd38f97e599a686fa7f545d784c9a4d427440672b0bb37a",
+        "afterSha256": "c72721c56fccce6512d720d38673d46ac9601bdb320e93eef7e0192265d66325"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "90d557ddbdab3190d01e9beb74cd947d2ff38b38238c4edfaf9c1588e03ba9d0",
+        "afterSha256": "9ff7ddbdbdaef81f5609be90a9b49061f710cbd317692629529ea6e8f9db97e8"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "976d93e405af493ca93ed03ca26b3c80dc8939c7e75ad27685aae46e7c8dfea2",
+        "afterSha256": "282ac2481a9fdae58deaa96b5ca25c97ff4bed4be006730fd7e72e46e88bd763"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "00b38e92a8e9db2634648dc0796aa9c52929bdd26e658702871950b245bd606d",
+        "afterSha256": "a284faf6fff48188ddb5b40d6b78a1529aea33968118ed394f8f373294a7b6d7"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "64a6fb15d3dc3850d5334f77fdeb13cb947d778a2956563cfbb900514c9eba02",
+        "afterSha256": "1ec0cdf90be4e239ec7cec3345294f629392a4d917b83bdb063579eee2b798ca"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "8aa78f4c52e18ccb11a3a113fcf10f67738d4c5c02902242020348f51a54435a",
+        "afterSha256": "5076b377f56047cfca67b76c0ad4056e623c8d8320f7e31d3430280dd342fa9a"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "623f4c3665ae36c4dfee5507f75d9abf21eafc1b01309fcf72776e6308ff472f",
+        "afterSha256": "fb6cc8264d860e1c69338adaef989c49aaf42514a70bfef53af7d1b13a2c3d30"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "8da3d713b5128bdbb0c8fce1ffa212679ad59455e10b9b165655ee591ace6aa3",
+        "afterSha256": "56db8aa0eb70e0f01858966ff469a843ab8527281cb187ed0fd361e0d3ecd931"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "c72721c56fccce6512d720d38673d46ac9601bdb320e93eef7e0192265d66325",
+        "afterSha256": "81476ef616b9ede2edb4029cd079c9a23c9002c3b5388ed4c2e688050fb21c32"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "57a82c39c23d946c8d034c1f41957de13e3889fe682a04413fef42c88d6157c1",
+        "afterSha256": "f47bc891c2e44a26fd9d343a3760303329da41d99f8f4c539001aed4323c5f30"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "0190a677bc16f5a33ce5e8776954f653f6a56a99ef99d0fae934a8f49d3ceea0",
+        "afterSha256": "8e77207326c0cc2896a6cfcc7cec0a3114b8cdb2287f7330c580c99fda3a225e"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a284faf6fff48188ddb5b40d6b78a1529aea33968118ed394f8f373294a7b6d7",
+        "afterSha256": "59a160424312cfe6876d89e922423d4d504321a9d88e7dbdd6b72dd1081451d3"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "5c78600fe85ee90f98f8684b2ab7ff111a137ba1671653327112cadb6a905473",
+        "afterSha256": "645962472e870afea2beedc22af1329d973e86e36039d40c924b18ce0289d91d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1ec0cdf90be4e239ec7cec3345294f629392a4d917b83bdb063579eee2b798ca",
+        "afterSha256": "2cc1cb38556ec59ba3f498d555b5a680e5159c66894151063183cdbc26e0fbea"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "31f53a4188d244e5d0dc9531501ea176fad0dc94edf7e4b2e287e5deb9d1181b",
+        "afterSha256": "1c4a44ef56a905e660cab03c30d1700b5e7b27380e4bd7680f03e535e9fd8a1d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c8ff9a3568f654a12c74b23b28965479d51534a2af8a889c1166bfea5469903d",
+        "afterSha256": "5a524af758d87f3c47e3ae88bb2a3e2c91248beb3f277b058231a77abc0f559f"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ec9da71c13930e019219a00fcc949e7da7c5ad9c49c55a8744a53012fb89668f",
+        "afterSha256": "8c7c81d5b985a96e48b0d966a4ae737a760a251f183b11727f13c62ccb03cfa2"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "a340f88ff9985f46494463ab3f511d3643d9512df8826bda7444177624b1be64",
+        "afterSha256": "2aadd9a334d12d50a5a83dea25358804517a2e84ad4aadb1ad9929328dd1a8a9"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "9041bbd2c8aea35042dcaf8553f390c723b9506dca68f8d4aec843e33b223483",
+        "afterSha256": "885fd039ce2185ffcbf335a2068432d6ee2ce3e9510a9f12550826cdd8b7277f"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "1ab9d7ba9b3be3c08724beaded485bfb50d1fbbcfb0e5372901b4cf635885ad4",
+        "afterSha256": "0411b09f53e64fa07f6e354ff09fafe785ac9ea55a8bf7d6660a38e452e4c31b"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "b0f29863f94922959340cde2bc792eb161736412be99e1db7af03c37671acd44",
+        "afterSha256": "ccba0a5461601602d2c74520a20b3b800156e23c4156c6f9edb613908d4c3a5f"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "14995687a7f6ebc998cd1e4297656e2212af8d8bb020527bb1a4f130a67c8fa8",
+        "afterSha256": "64245e755cc50c89e08f909cdd9a387508d6557b16009a7b42d51e3c4894894e"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "86bd922a647799a6a2b18ee7614dd65b0d19b8e2529a2ac94165a32a1e642ca2",
+        "afterSha256": "3ea39cb025d610b3c3f275fd357b937cb52c5694a9fef3b364120bc07fc82d45"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0003",
+      "blocks": [
+        "block_0005_0004",
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0006_0004",
+      "requires": [
+        "block_0005_0003"
       ]
     }
   ]
