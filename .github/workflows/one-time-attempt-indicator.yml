@@ -1,0 +1,71 @@
+name: One-time attempt indicator verification
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - '.github/workflows/one-time-attempt-indicator.yml'
+      - 'scripts/maintenance/verify_attempt_indicator.py'
+      - 'native/presentation/windows/attempt_indicator.hpp'
+      - 'native/presentation/windows/attempt_indicator_tests.cpp'
+permissions:
+  contents: write
+jobs:
+  verify-and-publish:
+    runs-on: windows-2025
+    timeout-minutes: 8
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Prepare isolated original rendering and current sources
+        run: |
+          python scripts/maintenance/verify_attempt_indicator.py prepare
+          if ($LASTEXITCODE -ne 0) { throw 'The original drawing anchors changed.' }
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'MSVC is unavailable.' }
+          "VCVARS=$vs\VC\Auxiliary\Build\vcvars64.bat" >> $env:GITHUB_ENV
+      - name: Reproduce timer gap and double-painted icon edges
+        run: |
+          $qa = Join-Path $env:RUNNER_TEMP 'attempt-indicator-qa'
+          $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $qa + '\Debug" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build "' + $qa + '\Debug" --target baseline --parallel 2'
+          cmd /d /s /c $cmd
+          if ($LASTEXITCODE -ne 0) { throw 'The original rendering fixture failed to compile.' }
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & "$qa\Debug\baseline.exe" 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -ne 1 -or ($output -join "`n") -notmatch 'FAIL recovery label' -or ($output -join "`n") -notmatch 'FAIL overlapping red/white edges') { throw 'Both reported drawing defects were not reproduced.' }
+          exit 0
+      - name: Apply scoped fix and check real pixels in Debug and Release
+        run: |
+          python scripts/maintenance/verify_attempt_indicator.py fix
+          if ($LASTEXITCODE -ne 0) { throw 'A production patch anchor changed.' }
+          $qa = Join-Path $env:RUNNER_TEMP 'attempt-indicator-qa'
+          foreach ($mode in @('Debug','Release')) {
+            $build = Join-Path $qa $mode
+            $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $build + '" -G Ninja -DCMAKE_BUILD_TYPE=' + $mode + ' && cmake --build "' + $build + '" --target fixed views_compile --parallel 2 && ctest --test-dir "' + $build + '" --output-on-failure --verbose'
+            cmd /d /s /c $cmd
+            if ($LASTEXITCODE -ne 0) { throw "Attempt indicator verification failed: $mode" }
+          }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid diff.' }
+      - name: Publish verified rendering fix without overwriting concurrent work
+        run: |
+          $remote = git ls-remote origin refs/heads/Codex
+          if ($LASTEXITCODE -ne 0 -or ($remote -split '\s+')[0] -ne $env:GITHUB_SHA) { throw 'Codex advanced; no concurrent changes will be overwritten.' }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CMakeLists.txt native/presentation/windows/lesson_view.cpp native/presentation/windows/settings_view.cpp native/presentation/windows/attempt_indicator.hpp native/presentation/windows/attempt_indicator_tests.cpp
+          git rm scripts/maintenance/verify_attempt_indicator.py .github/workflows/one-time-attempt-indicator.yml
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot remove one-time tooling.' }
+          git diff --cached --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid staged diff.' }
+          git commit -m 'fix(windows): attach recovery time to attempt glyph and align reserve icon colors'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot save the verified fix.' }
+          git push origin HEAD:refs/heads/Codex
+          if ($LASTEXITCODE -ne 0) { throw 'Publish rejected; no force push attempted.' }
+          git status --short
+          git rev-parse HEAD
