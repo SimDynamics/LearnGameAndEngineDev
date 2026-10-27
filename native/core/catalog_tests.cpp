@@ -4,6 +4,7 @@
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "core/retirement_test_fixture.hpp"
+#include "core/choice_revision_test_fixture.hpp"
 #include "native_build_config.hpp"
 
 #include <winrt/Windows.Data.Json.h>
@@ -207,6 +208,40 @@ void catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads() {
     rejects([&] { (void)windows::parse_lesson_progress_metadata(R"({"id":"x","title":"X","pages":[{"blocks":[{"type":"unknown"}]}]})"); },
         "Unknown activity metadata was silently credited as theory");
 }
+void choice_revision_reset_keeps_exact_scope_and_provenance(){
+    using namespace lgaed;
+    const auto& plan=test::choice_revision_cases().front();
+    const auto original=windows::load_lesson(std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
+    const auto revised=test::revise_choice_lesson(original,plan.identity);const auto at=curriculum::stable_block_position(revised,plan.identity);
+    check(at.has_value(),"Choice reset fixture lost its activity");const auto& block=revised.pages[at->page].blocks[at->block];
+    const auto legacy=curriculum::exercise_key(revised,block),current=state::response_storage_key(revised,block);
+    state::StateData data;state::prepare_lesson_state(data,revised);
+    state::Response response;response.correct=true;response.selected=static_cast<std::int64_t>(*block.correct_index);
+    state::put_response(data,legacy,response);state::put_response(data,revised,block,response);
+    std::vector<std::string> removed{legacy,current};
+    for(const auto locale:{"en","fr"})removed.push_back("choice-options/v1/"+std::string(locale)+'/'+std::string(64,'a')+'/'+legacy);
+    removed.push_back("order-lines/v1/es/"+std::string(64,'b')+'/'+legacy);
+    for(const auto& key:removed)if(!state::find(data,"learning_progress",key))data.preferences["learning_progress"][key]=std::string("explicit reset target");
+    const auto foreign="exercise_"+original.id+"_extra_page_0_block_0";
+    const std::vector<std::string> preserved{
+        "choice-options/v1/es/"+std::string(64,'a')+'/'+foreign,
+        "choice-options/v1/de/"+std::string(64,'a')+'/'+legacy,
+        "choice-options/v1/es/"+std::string(64,'g')+'/'+legacy,
+        "choice-options/v1/es/"+std::string(64,'A')+'/'+legacy,
+        "choice-options/v1/es/short/"+legacy};
+    for(const auto& key:preserved)data.preferences["learning_progress"][key]=std::string("preserve unrecognized or foreign state");
+    data.preferences["cpp_lesson_drafts"]["programming/"+original.id+"/0/0/source"]=std::string("student source intact\r\n");
+    data.preferences["narration_settings"]["voice"]=std::string("ef_dora");
+    const auto before=data;curriculum::CatalogScope scope;scope.lessons={original.id};
+    check(curriculum::reset_catalog_progress(data,scope)==removed.size(),"Catalog reset did not remove exactly the scoped answer editions");
+    for(const auto& key:removed)check(!state::find(data,"learning_progress",key),"Catalog reset retained a scoped choice/order answer");
+    for(const auto& [domain,values]:before.preferences)for(const auto& [key,value]:values)
+        if(std::ranges::find(removed,key)==removed.end())check(state::find(data,domain,key)&&*state::find(data,domain,key)==value,
+            "Catalog reset changed a choice revision pin, unrelated answer, draft or preference");
+    check(!state::get_response(data,revised,block),"Catalog reset restored a historical choice achievement");
+    std::cout<<"PASS choice revision catalog reset: current/original/locales removed, exact scope, archive pins, drafts and unknown keys retained\n";
+}
 }
 int main() {
     using namespace lgaed;
@@ -218,6 +253,7 @@ int main() {
         stable_progress_groups_survive_splits_reordering_and_new_activities();
         unit_percentage_weights_lessons_like_android_and_keeps_completion_counts();
         catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads();
+        choice_revision_reset_keeps_exact_scope_and_provenance();
         const auto root = std::filesystem::path(build::source_root) / "app/src/main/assets/content";
         CatalogLocation location;
         const auto routes = windows::load_catalog(root,location);

@@ -204,6 +204,44 @@ std::string state_fingerprint(const JsonObject& original) {
     }
     return fingerprint(value);
 }
+struct ReviewedChoice {
+    std::string_view lesson,identity,before_payload,after_payload,before_full,first_after_full;
+};
+const std::vector<ReviewedChoice>& reviewed_choices() {
+    static const std::vector<ReviewedChoice> values{
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__estados_del_flujo_y_datos_validos","block_0006_0004",
+            "5393e161f7486d6803e37a6ce4b3cb9ca5fb832d458b7e3303e3477d462d1b25","e817c3fea65911ada1efdb18b7784a76b63d4b5a915530b56ff79a041a1960d6",
+            "ccba0a5461601602d2c74520a20b3b800156e23c4156c6f9edb613908d4c3a5f","0853764d61cd61df3f1ab10f310ff237a8ee4b057151d5c37e99490963589d3d"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__validar_una_operacion_y_recuperar_la_siguiente","block_0005_0004",
+            "ddc59680893eb3049921f89156aabbf9cbda4dd5ff60d45e51d1dc03e4068272","8db059b96aad937bf75def2d3d18181620bd2fd2215f7d01d923a7a02ec15b74",
+            "c694da695d8cb9b889ece1b22570c0e25cfcb37c004a3b22d71f3862a61d373f","5dfe0ec554c75abe71df341c5fda4a0c68fa41747bb2d9bbefb753ef0f636713"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada","block_0000_0004",
+            "6cf40a01fa8a87c4bfcf577dd41fe2e071a0219a26a7571c2d081677d911a260","2bcddeb382c97368786dc91558d6b53de5a2bbf5320ba1672a919fc95e973f9f",
+            "1588a86d210ef1c95b08fee6120684afc51caa303e932519d401b13981eb65dc","35964088aa38c6231c8febb7b1a00da3a8389e4f1605112af426d03cde09d360"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor","block_0003_0002",
+            "1a1a494aa8c49c0255c0c8634e52835d84f6d5c29a2eb533ed257c13ef18b816","b4e00e593e89935b313392a17d7983b2998e64905c37f38c2a18e3e837c699f8",
+            "9b28a5432859a50e1d336098022614188ad75f81eb7cb2db87284b98838efca1","4d598fee502105e520f800f975a57486947851153339a448ea92cdff768ac400"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor","block_0006_0001",
+            "2c62ea997577dd3e617968b33746ed53576100e3ae0a16b220cdb9f15b59a917","b3a836a39bae7b92db9b357b530681316c69af866e35c3b5f8b7190eeb026bf3",
+            "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91","123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1"}
+    };
+    return values;
+}
+const ReviewedChoice* reviewed_choice_owner(std::string_view lesson,std::string_view identity) {
+    const auto& values=reviewed_choices();
+    const auto found=std::ranges::find_if(values,[&](const auto& item){return item.lesson==lesson&&item.identity==identity;});
+    return found==values.end()?nullptr:&*found;
+}
+bool reviewed_choice_payload(std::string_view digest) {
+    return std::ranges::any_of(reviewed_choices(),[&](const auto& item){return item.after_payload==digest;});
+}
+void reject_unmapped_reviewed_choices(const JsonArray& pages) {
+    for(const auto& page:pages)for(const auto& item:array(page.GetObject(),"blocks")) {
+        const auto block=item.GetObject();
+        require(text(block,"type")!="multiple_choice"||!reviewed_choice_payload(state_fingerprint(block)),
+            "A reviewed option revision needs its published v2 snapshot and proof");
+    }
+}
 struct ExpandedOrder {
     OrderRefinement record;
     Block block;
@@ -427,7 +465,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -480,6 +518,23 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for (const auto& page : result.current) { current_pages.insert(page.id); current_blocks.insert(page.blocks.begin(), page.blocks.end()); }
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
     std::map<std::string,std::string> refined_order_signatures;
+    std::map<std::string,const ReviewedChoice*> revised_choices;
+    if(metadata.HasKey(L"choiceRevisions")) {
+        const auto records=array(metadata,"choiceRevisions");
+        require(result.version==2&&records.Size()<=5&&(!records.Size()||locale=="es"),"Reviewed choices require their Spanish v2 ownership");
+        for(const auto& value:records) {
+            const auto item=value.GetObject();allowed_keys(item,{"id","block"},true);
+            const auto id=text(item,"id");const auto* reviewed=reviewed_choice_owner(lesson_id,id);
+            require(reviewed&&current_blocks.contains(id)&&revised_choices.emplace(id,reviewed).second,
+                "Unknown, inactive or repeated reviewed option identity");
+            const auto snapshot=item.GetNamedObject(L"block");
+            require(text(snapshot,"type")=="multiple_choice"&&fingerprint(snapshot)==reviewed->before_full&&
+                state_fingerprint(snapshot)==reviewed->before_payload&&result.signatures.at(id)==reviewed->before_payload,
+                "The reviewed option snapshot changed its complete published original");
+            ChoiceRevision record;record.id=id;record.raw_json=utf8(snapshot.Stringify());record.sha256=fingerprint(snapshot);
+            result.choice_revisions.push_back(std::move(record));
+        }
+    }
     if (metadata.HasKey(L"orderRefinements")) {
         require(result.version == 2, "Ordering refinements require state layout v2");
         const auto records = array(metadata,"orderRefinements");
@@ -530,6 +585,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(current_pages == origin_pages && current_blocks.size() + result.retired.size() == result.signatures.size(),
             "State map loses historical identities");
     std::map<std::string, std::string> editorial;
+    std::map<std::string,std::set<std::pair<std::string,std::string>>> editorial_edges;
     std::map<std::string, std::set<std::string>> seen;
     if (result.version == 2) {
         for (const auto& value : array(metadata, "editorial")) {
@@ -539,11 +595,15 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             if (!seen.contains(id)) seen[id].insert(before);
             require((!editorial.contains(id) || editorial.at(id) == before) && !seen[id].contains(after), "Broken editorial chain");
             seen[id].insert(after); editorial[id] = after;
+            editorial_edges[id].emplace(before,after);
         }
     }
     for (const auto& refinement : result.order_refinements)
         require(editorial.contains(refinement.id) && seen.at(refinement.id).contains(refinement.sha256),
             "An ordering refinement needs its complete original published editorial provenance");
+    for(const auto& [id,reviewed]:revised_choices)
+        require(editorial_edges[id].contains({std::string(reviewed->before_full),std::string(reviewed->first_after_full)}),
+            "A reviewed option needs its exact first published editorial edge");
     for (std::size_t p = 0; p < result.current.size(); ++p) {
         const auto blocks = array(pages.GetAt(static_cast<unsigned>(p)).GetObject(), "blocks");
         require(blocks.Size() == result.current[p].blocks.size(), "State map block count differs");
@@ -555,8 +615,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(editorial.contains(id) && editorial.at(id) == math_label_after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(math_label_before)),
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
-            const auto expected = refined_order_signatures.contains(id) ? refined_order_signatures.at(id) : result.signatures.at(id);
-            require(state_fingerprint(block) == expected, "State-bearing block changed without a compatible map");
+            const auto digest=state_fingerprint(block);
+            if(reviewed_choice_payload(digest))require(result.version==2&&locale=="es"&&revised_choices.contains(id)&&
+                revised_choices.at(id)->lesson==lesson_id,"A reviewed option belongs to its original v2 snapshot and owner");
+            const auto expected = revised_choices.contains(id)?std::string(revised_choices.at(id)->after_payload):
+                refined_order_signatures.contains(id) ? refined_order_signatures.at(id) : result.signatures.at(id);
+            require(digest == expected, "State-bearing block changed without a compatible map");
             if (editorial.contains(id)) require(fingerprint(block) == editorial.at(id), "Stale editorial fingerprint");
         }
     }
@@ -598,7 +662,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     const auto& id=record.blocks[b];
                     const auto digest = state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject());
                     require(result.signatures.contains(id) && (digest == result.signatures.at(id) ||
-                            (refined_order_signatures.contains(id) && digest == refined_order_signatures.at(id))),
+                            (refined_order_signatures.contains(id) && digest == refined_order_signatures.at(id)) ||
+                            (revised_choices.contains(id)&&digest==revised_choices.at(id)->after_payload)),
                             "Historical reading snapshot changed an activity contract");
                 }
             }
@@ -832,6 +897,14 @@ void resolve_addresses(Lesson& lesson) {
     std::map<std::string, StateAddress> addresses;
     std::map<std::string,const OrderRefinement*> refinements;
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
+    std::map<std::string,ChoiceRevision*> choices;
+    for(auto& revision:layout.choice_revisions) {
+        const auto original=read_block(JsonObject::Parse(key(revision.raw_json)),revision.raw_json);
+        revision.original_options=original.options;revision.original_correct_index=original.correct_index;
+        revision.original_question=original.question;revision.original_explanation=original.explanation;
+        revision.original_review_feedback=original.review_feedback;revision.original_review_feedback_options=original.review_feedback_options;
+        choices.emplace(revision.id,&revision);
+    }
     for (std::size_t p = 0; p < layout.origin.size(); ++p)
         for (std::size_t b = 0; b < layout.origin[p].blocks.size(); ++b)
             addresses.emplace(layout.origin[p].blocks[b], StateAddress{p, b, {}, layout.origin[p].id});
@@ -850,6 +923,10 @@ void resolve_addresses(Lesson& lesson) {
                 block.order_refinement = *refinement->second;
             }
             apply_reviewed_order_equivalences(lesson,block);
+            if(const auto choice=choices.find(block.stable_id);choice!=choices.end()) {
+                choice->second->representation_signature=sha256(choice_representation_frame(block));
+                block.choice_revision=*choice->second;
+            }
         }
     }
     for (const auto& retired : layout.retired) {
@@ -874,6 +951,9 @@ void resolve_addresses(Lesson& lesson) {
                 if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end() &&
                     block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature)
                     block.order_refinement = *refinement->second;
+                if(const auto choice=choices.find(block.stable_id);choice!=choices.end()&&
+                    block.type==BlockType::multiple_choice&&sha256(choice_representation_frame(block))==choice->second->representation_signature)
+                    block.choice_revision=*choice->second;
                 block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));
             }
             snapshot.pages.push_back(std::move(page));
@@ -909,7 +989,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id);
-        } else reject_unmapped_reviewed_math(pages);
+        } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);}
         read_relationships(root,lesson);
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
@@ -958,7 +1038,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id);
-        } else reject_unmapped_reviewed_math(pages);
+        } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);}
         read_relationships(root,lesson);
         // The catalog keeps its historical read-only progress projection, but
         // dependency sources need their real objectives even in lessons that

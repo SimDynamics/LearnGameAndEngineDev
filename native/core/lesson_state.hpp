@@ -25,6 +25,8 @@ struct Response {
     std::int64_t selected = -1;
     std::vector<std::int64_t> order;
     std::string reviewed_answer_identity;
+    // In-memory provenance only. Never serialize this flag into the old blob.
+    bool historical_choice = false;
 };
 struct Draft {
     std::string source, input;

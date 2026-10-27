@@ -1,5 +1,6 @@
 #include "core/lesson.hpp"
 #include "core/retirement_test_fixture.hpp"
+#include "core/choice_revision_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
@@ -343,6 +344,104 @@ void reviewed_order_equivalences_are_source_bound() {
         check(!evaluate_order(malformed,malformed.correct_order).correct,"Malformed independent fragment groups bypassed canonical validation");
     }
     std::cout<<"PASS five source-bound ordering equivalences: 22 reviewed orders, 17 additional reconstructions, exact text/card ownership, dependency/scope/validation negatives, locale/identity/payload guards and unchanged historical representation\n";
+}
+void reviewed_choice_revisions_preserve_the_published_contract() {
+    using namespace winrt::Windows::Data::Json;
+    const auto folder=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
+    for(const auto& plan:lgaed::test::choice_revision_cases()) {
+        const auto before=lgaed::windows::load_lesson(folder/plan.filename);
+        const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);
+        const auto metadata=lgaed::windows::parse_lesson_progress_metadata(current.raw_json);
+        const auto position=stable_block_position(current,plan.identity);check(position.has_value(),"Reviewed choice lost its stable identity");
+        const auto& old=before.pages[position->page].blocks[position->block];const auto& block=current.pages[position->page].blocks[position->block];
+        check(block.choice_revision&&block.choice_revision->original_options==old.options&&block.choice_revision->original_review_feedback_options==old.review_feedback_options
+            &&block.choice_revision->original_question==old.question&&block.choice_revision->original_explanation==old.explanation
+            &&block.choice_revision->original_correct_index==old.correct_index&&block.choice_revision->sha256==plan.before_full,
+            "Reviewed choice lost its complete original option/question/feedback contract");
+        check(block.options[plan.option]==plan.replacement&&block.correct_index==old.correct_index&&current.state_layout.lineage==before.state_layout.lineage
+            &&current.state_layout.signatures==before.state_layout.signatures&&exercise_key(current,block)==exercise_key(before,old)
+            &&draft_key("programming",current,block)==draft_key("programming",before,old),"Reviewed choice changed correctness, family or historical slots");
+        check(metadata.pages[position->page].blocks[position->block].choice_revision&&
+            metadata.pages[position->page].blocks[position->block].choice_revision->original_review_feedback_options==old.review_feedback_options&&
+            metadata.pages[position->page].blocks[position->block].choice_revision->representation_signature==block.choice_revision->representation_signature,
+            "Catalog projection discarded reviewed choice provenance or representation");
+        check(evaluate_choice(block,*block.correct_index).correct&&evaluate_choice(block,plan.option).correct==(plan.option==*block.correct_index),
+            "Reviewed choice changed an authored verdict");
+        std::string retired_paragraph;
+        for(const auto& page:before.pages)for(const auto& candidate:page.blocks)
+            if(retired_paragraph.empty()&&candidate.type==BlockType::paragraph)retired_paragraph=candidate.stable_id;
+        check(!retired_paragraph.empty(),"Choice archive QA needs a real published paragraph");
+        const std::vector<std::string> retirement{retired_paragraph};
+        const auto retired_before=lgaed::test::retire_lesson(before,retirement,before.compiler_puzzles_required);
+        const auto revised_after_retirement=lgaed::test::revise_choice_lesson(retired_before,plan.identity);
+        const auto retired_after=lgaed::test::retire_lesson(current,retirement,current.compiler_puzzles_required);
+        lgaed::state::StateData data;lgaed::state::Response prior;prior.selected=static_cast<std::int64_t>(plan.option);
+        prior.correct=evaluate_choice(old,plan.option).correct;if(!prior.correct)lgaed::state::mark_response_reviewed(prior,old);
+        const auto historical_key=exercise_key(before,old);lgaed::state::put_response(data,historical_key,prior);
+        const auto original_json=lgaed::state::string_value(data,"learning_progress",historical_key);
+        for(const bool after_revision:{false,true}) {
+            auto archived=after_revision?retired_after:revised_after_retirement;
+            check(archived.state_layout.retirement_history.size()==1,"Choice archive QA unexpectedly changed retirement batches");
+            const auto& snapshot=archived.state_layout.retirement_history.front();archived.pages=snapshot.pages;archived.state_layout.current=snapshot.current;
+            const auto archived_position=stable_block_position(archived,plan.identity);check(archived_position.has_value(),"Retirement lost the archived choice");
+            const auto& archived_block=archived.pages[archived_position->page].blocks[archived_position->block];
+            check(archived_block.choice_revision.has_value()==after_revision&&archived_block.options==(after_revision?block.options:old.options),
+                "Choice revision was omitted from a later reading archive or attributed to an earlier one");
+            check(exercise_key(archived,archived_block)==historical_key&&lgaed::state::response_storage_key(archived,archived_block)==
+                (after_revision?lgaed::state::response_storage_key(current,block):historical_key),
+                "An archived choice read another representation's response slot");
+            const auto untouched=data;const auto restored=lgaed::state::get_response(data,archived,archived_block);
+            check(restored&&restored->historical_choice==after_revision&&restored->correct==prior.correct&&restored->selected==prior.selected
+                &&lgaed::state::selected_choice_text(*restored,archived_block)==old.options[plan.option]
+                &&lgaed::state::choice_incorrect_feedback(*restored,archived_block)==incorrect_feedback(old,plan.option)&&data==untouched,
+                "Archived reading attributed a corrected option or new guide to the original selection");
+            lgaed::state::Response selected;selected.selected=static_cast<std::int64_t>(plan.option);selected.correct=evaluate_choice(block,plan.option).correct;
+            if(!selected.correct)lgaed::state::mark_response_reviewed(selected,block);
+            auto with_current=data;lgaed::state::put_response(with_current,current,block,selected);
+            const auto latest=lgaed::state::get_response(with_current,archived,archived_block);
+            check(latest&&!latest->historical_choice&&lgaed::state::selected_choice_text(*latest,archived_block)==(after_revision?block.options[plan.option]:old.options[plan.option])
+                &&lgaed::state::choice_incorrect_feedback(*latest,archived_block)==incorrect_feedback(after_revision?block:old,plan.option)
+                &&lgaed::state::string_value(with_current,"learning_progress",historical_key)==original_json,
+                "Before/after reading archives confused current sidecar guidance or rewrote the old response");
+        }
+        for(const auto change:{"snapshot","snapshot-prose","missing","duplicate","extra","identity","lesson","proof","option","order","correct","review","origin","unmapped","v1","locale"}) {
+            const auto root=JsonObject::Parse(winrt::to_hstring(current.raw_json));const auto layout=root.GetNamedObject(L"stateLayout");
+            const auto record=layout.GetNamedArray(L"choiceRevisions").GetAt(0).GetObject();
+            const auto puzzle=root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
+            const auto target=std::string_view(change);
+            if(target=="snapshot")record.GetNamedObject(L"block").GetNamedArray(L"options").SetAt(0,JsonValue::CreateStringValue(L"Changed original"));
+            else if(target=="snapshot-prose")record.GetNamedObject(L"block").Insert(L"question",JsonValue::CreateStringValue(L"Changed original prompt"));
+            else if(target=="missing")layout.Remove(L"choiceRevisions");
+            else if(target=="duplicate")layout.GetNamedArray(L"choiceRevisions").Append(JsonObject::Parse(record.Stringify()));
+            else if(target=="extra")record.Insert(L"options",JsonArray{});
+            else if(target=="identity")record.Insert(L"id",JsonValue::CreateStringValue(L"unknown"));
+            else if(target=="lesson")root.Insert(L"id",JsonValue::CreateStringValue(L"different_owner"));
+            else if(target=="proof")layout.GetNamedArray(L"editorial").RemoveAtEnd();
+            else if(target=="option")puzzle.GetNamedArray(L"options").SetAt(1,JsonValue::CreateStringValue(L"Another option"));
+            else if(target=="order"){const auto options=puzzle.GetNamedArray(L"options");const auto first=options.GetAt(0);options.SetAt(0,options.GetAt(1));options.SetAt(1,first);}
+            else if(target=="correct")puzzle.Insert(L"correctIndex",JsonValue::CreateNumberValue(static_cast<double>((*block.correct_index+1)%block.options.size())));
+            else if(target=="review")puzzle.GetNamedArray(L"reviewFeedback").SetAt(1,JsonValue::CreateStringValue(L"Changed current guide without proof"));
+            else if(target=="origin")layout.GetNamedArray(L"origin").GetAt(static_cast<unsigned>(block.address.page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(block.address.block)).GetObject().Insert(L"sha256",JsonValue::CreateStringValue(L"0000000000000000000000000000000000000000000000000000000000000000"));
+            else if(target=="unmapped")root.Remove(L"stateLayout");
+            else if(target=="v1"){JsonObject v1;v1.Insert(L"version",JsonValue::CreateNumberValue(1));v1.Insert(L"origin",layout.GetNamedArray(L"origin"));v1.Insert(L"current",layout.GetNamedArray(L"current"));root.Insert(L"stateLayout",v1);}
+            else layout.Insert(L"locale",JsonValue::CreateStringValue(L"en"));
+            const auto invalid=winrt::to_string(root.Stringify());
+            rejects([&]{(void)lgaed::windows::parse_lesson_json(invalid);},"Unapproved choice/source/provenance revision passed the full loader");
+            rejects([&]{(void)lgaed::windows::parse_lesson_progress_metadata(invalid);},"Unapproved choice revision passed catalog projection");
+        }
+        if(std::string_view(plan.identity)=="block_0006_0004") {
+            const auto root=JsonObject::Parse(winrt::to_hstring(current.raw_json));
+            root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject().Insert(L"explanation",JsonValue::CreateStringValue(L"QA subsequent editorial text"));
+            JsonObject proof;proof.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(plan.identity)));
+            proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(plan.after_full)));
+            proof.Insert(L"afterSha256",JsonValue::CreateStringValue(L"33057f95b36e8f88e11b57a6dd5a40c8410593884be99e226d182126560919de"));
+            root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Append(proof);
+            const auto later=lgaed::windows::parse_lesson_json(winrt::to_string(root.Stringify()));
+            check(later.pages[position->page].blocks[position->block].choice_revision->original_explanation==old.explanation,
+                "A later editorial explanation replaced the historical choice snapshot");
+        }
+    }
+    std::cout<<"PASS five exact choice revisions: original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
 }
 void reviewed_matching_label_preserves_historical_contract() {
     using namespace winrt::Windows::Data::Json;
@@ -767,6 +866,7 @@ int main() {
         narration_metadata_tests(lesson);
         independently_movable_order_lines_preserve_the_original_contract();
         reviewed_order_equivalences_are_source_bound();
+        reviewed_choice_revisions_preserve_the_published_contract();
         reviewed_matching_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();

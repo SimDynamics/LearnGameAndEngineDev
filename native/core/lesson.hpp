@@ -73,6 +73,14 @@ struct OrderRefinement {
     std::vector<std::size_t> original_correct_order;
     std::vector<std::vector<std::size_t>> groups;
 };
+// One explicitly reviewed option revision. The complete old block owns the
+// historical selection; current attempts use a separate representation.
+struct ChoiceRevision {
+    std::string id, raw_json, sha256, representation_signature;
+    std::vector<std::string> original_options, original_review_feedback_options;
+    std::string original_question, original_explanation, original_review_feedback;
+    std::optional<std::size_t> original_correct_index;
+};
 struct Block {
     BlockType type{};
     std::string stable_id, id, text, question, code, initial_code, language;
@@ -90,6 +98,7 @@ struct Block {
     // and does not change the stored representation or historical answer key.
     std::vector<std::vector<std::size_t>> order_equivalence_groups;
     std::optional<OrderRefinement> order_refinement;
+    std::optional<ChoiceRevision> choice_revision;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
@@ -135,6 +144,7 @@ struct StateLayout {
     std::vector<StateRetirement> retired;
     std::vector<StateRetirementHistory> retirement_history;
     std::vector<OrderRefinement> order_refinements;
+    std::vector<ChoiceRevision> choice_revisions;
 };
 struct Lesson {
     std::string id, title, locale, raw_json;
@@ -166,6 +176,7 @@ void validate_activity_relationships(const Lesson&);
 // Fragments and their canonical permutation only; prose and view placement do
 // not change an ordering draft's representation. The platform hashes this frame.
 [[nodiscard]] std::string order_representation_frame(const Block&);
+[[nodiscard]] std::string choice_representation_frame(const Block&);
 
 // These keys deliberately retain the Android lesson identity and original slots.
 [[nodiscard]] std::string exercise_key(const Lesson&, const Block&);

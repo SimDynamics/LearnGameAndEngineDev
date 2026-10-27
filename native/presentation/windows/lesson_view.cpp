@@ -444,7 +444,10 @@ struct LessonView {
         auto& vm=controls[index];std::string identity;
         if(vm.math)identity=math_answer_identity(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(vm.math->answer_identity_json())));
         else if(vm.answer_editor)identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.answer_editor->document().text);
-        else if(block(index).type==BlockType::multiple_choice)identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.response.selected);
+        else if(block(index).type==BlockType::multiple_choice){
+            identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.response.selected);
+            if(block(index).choice_revision)identity=state::sha256(curriculum::choice_representation_frame(block(index)))+'/'+identity;
+        }
         else {
             std::vector<std::string> values;
             if(vm.fill){if(block(index).type==BlockType::inline_fill_code)for(const auto& answer:vm.fill->answers())values.push_back(lgaed::attempts::ExerciseAnswerIdentity::of(answer));
@@ -663,6 +666,7 @@ struct LessonView {
             if (current.type == BlockType::heading || current.type == BlockType::paragraph || current.type == BlockType::note)
                 add(index,find_item(control_id(index,0)),current.text);
             else add(index,find_item(control_id(index,0)),current.question);
+            add(index,find_item(control_id(index,40)),choice_history_text(index));
             for (std::size_t option = 0; option < current.options.size(); ++option)
                 add(index,find_item(control_id(index,21 + static_cast<int>(option) * 2)),current.options[option]);
             if(legacy_programming){if(vm.order_view)for(const auto& [target,text]:vm.order_view->reading_regions())add(index,target,text);}
@@ -728,8 +732,10 @@ struct LessonView {
             if(page==0&&find_item(lesson_heading_id))result.push_back({lesson.id+'/'+lesson.locale+'/'+page_id+"/title",lesson.title,nullptr,std::numeric_limits<std::size_t>::max(),false,false,false,true});
             for(std::size_t index=0;index<historical.pages[page].blocks.size();++index){const auto& current=historical.pages[page].blocks[index];
                 if(!available(index,current))continue;
+                const auto response=state::get_response(data,historical,current);
                 if(current.type==BlockType::note)emit(index,current,19,ui("Nota","Note","Note"));
                 emit(index,current,0,current.type==BlockType::heading||current.type==BlockType::paragraph||current.type==BlockType::note?current.text:current.question);
+                if(response)emit(index,current,40,choice_history_text(current,*response));
                 for(std::size_t option=0;option<current.options.size();++option)emit(index,current,21+static_cast<int>(option)*2,current.options[option]);
                 emit(index,current,37,secondary_instruction(current.type));
                 if(current.type!=BlockType::multiple_choice&&(current.type==BlockType::code||current.type==BlockType::cpp_compiler||exercise(current.type))&&current.type!=BlockType::math_puzzle){
@@ -738,14 +744,14 @@ struct LessonView {
                         :current.type==BlockType::code?ui("Ejemplo de código ","Example of ","Exemple de code ")+code_language+ui("."," code.",".")
                         :ui("Ejercicio de código ","Code exercise in ","Exercice de code ")+code_language+".",true);
                 }
-                const auto response=state::get_response(data,historical,current);
                 std::string prior_feedback;bool correct=false;
                 if(current.type==BlockType::cpp_compiler&&windows::compiler_puzzle_completed(data,historical,current)){
                     const auto stored=windows::compiler_puzzle_feedback(data,historical,current);const auto body=stored.find_first_of("\r\n");
                     prior_feedback=verdict_text(true);if(body!=std::string::npos)prior_feedback+=stored.substr(body);correct=true;
                 }else if(response&&response->correct){prior_feedback=verdict_text(true)+(current.explanation.empty()?"":"\n"+current.explanation);correct=true;}
                 else if(response&&exercise(current.type)&&state::response_reviewed(*response,current)){
-                    const auto review=curriculum::incorrect_feedback(current,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
+                    const auto review=current.type==BlockType::multiple_choice?state::choice_incorrect_feedback(*response,current)
+                        :curriculum::incorrect_feedback(current,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
                     prior_feedback=verdict_text(false)+'\n'+(review.empty()?default_review():review);
                 }
                 if(!prior_feedback.empty()){
@@ -1307,7 +1313,8 @@ struct LessonView {
         std::string text=current.question+"\n\n";
         for(const auto& option:current.options)text+="• "+option+'\n';
         if(vm.response.selected>=0&&static_cast<std::size_t>(vm.response.selected)<current.options.size())
-            text+=ui("\nSeleccionado: ","\nSelected: ","\nSélection : ")+current.options[static_cast<std::size_t>(vm.response.selected)];
+            text+=(vm.response.historical_choice?ui("\nRespuesta anterior: ","\nPrevious answer: ","\nRéponse précédente : ")
+                :ui("\nSeleccionado: ","\nSelected: ","\nSélection : "))+state::selected_choice_text(vm.response,current);
         copy_text(text);
     }
     void simulated_menu(std::size_t index) {
@@ -2123,7 +2130,7 @@ struct LessonView {
         SetWindowTextW(check,wide(editable ? ui("Comprobar","Check","Vérifier") : ui("Correcto ✓","Correct ✓","Correct ✓")).c_str());
         bool prepared=true;
         const auto& current=block(index);
-        if(current.type==BlockType::multiple_choice)prepared=vm.response.selected>=0;
+        if(current.type==BlockType::multiple_choice)prepared=vm.response.selected>=0&&!vm.response.historical_choice;
         else if(vm.answer_editor){
             const auto answer=vm.answer_editor->document().text;
             prepared=(current.type==BlockType::fill_code?!answer.empty():!blank_answer(answer))
@@ -2144,6 +2151,21 @@ struct LessonView {
         const auto previous_update = updating; updating = true;
         updating = previous_update; sync_quiz_controls(index); reflow();
         notify_content();
+    }
+    std::string choice_history_text(const curriculum::Block& current,const state::Response& response) const {
+        if(current.type!=BlockType::multiple_choice||!response.historical_choice||response.selected<0)return {};
+        const auto label=response.correct?ui("Respuesta anterior (correcta): ","Previous answer (correct): ","Réponse précédente (correcte) : ")
+            :state::response_reviewed(response,current)?ui("Respuesta anterior (incorrecta): ","Previous answer (incorrect): ","Réponse précédente (incorrecte) : ")
+            :ui("Selección anterior: ","Previous selection: ","Sélection précédente : ");
+        return label+state::selected_choice_text(response,current);
+    }
+    std::string choice_history_text(std::size_t index) const {
+        return choice_history_text(block(index),controls[index].response);
+    }
+    void refresh_choice_history(std::size_t index) {
+        if(block(index).type!=BlockType::multiple_choice||!block(index).choice_revision)return;
+        if(const auto target=find_item(control_id(index,40)))
+            set_rich_text(target,choice_history_text(index),{},false,RichTextRole::body,lesson.locale);
     }
     void create_feedback(std::size_t index) {
         auto& vm = controls[index];
@@ -2167,7 +2189,8 @@ struct LessonView {
             const auto& current = block(index);
             // Restoring a reviewed attempt is not a new submission. Never
             // attach a success explanation to an imported incorrect attempt.
-            const auto review=curriculum::incorrect_feedback(current,vm.response.selected<0?std::nullopt:std::optional<std::size_t>(vm.response.selected));
+            const auto review=current.type==BlockType::multiple_choice?state::choice_incorrect_feedback(vm.response,current)
+                :curriculum::incorrect_feedback(current,vm.response.selected<0?std::nullopt:std::optional<std::size_t>(vm.response.selected));
             feedback(index, verdict_text(false) + '\n' + (review.empty()
                 ? default_review() : review), false, true, review.empty());
         }
@@ -2358,12 +2381,16 @@ struct LessonView {
             SetWindowLongPtrW(vm.fill->window(),GWLP_ID,control_id(index,5));
             rows.push_back({{vm.fill->window()},{0},80,false});
         } else if (current.type == BlockType::multiple_choice) {
+            if(const auto history=choice_history_text(index);!history.empty()){
+                text_row(history,control_id(index,40));
+                reader_theme::apply(find_item(control_id(index,40)),reader_theme::Surface::card);
+            }
             for (std::size_t option = 0; option < current.options.size(); ++option) {
                 const auto radio = control(L"BUTTON", "", BS_RADIOBUTTON | WS_TABSTOP,
                     control_id(index, 20 + static_cast<int>(option) * 2));
                 label_radio(radio,current.options[option]);
                 actions.push_back({control_id(index, 20 + static_cast<int>(option) * 2), ActionType::choose, index, option});
-                SendMessageW(radio, BM_SETCHECK, vm.response.selected == static_cast<std::int64_t>(option) ? BST_CHECKED : BST_UNCHECKED, 0);
+                SendMessageW(radio, BM_SETCHECK, !vm.response.historical_choice&&vm.response.selected == static_cast<std::int64_t>(option) ? BST_CHECKED : BST_UNCHECKED, 0);
                 vm.choices.push_back(radio);
                 auto label = rich(current.options[option], control_id(index, 21 + static_cast<int>(option) * 2));
                 choice_labels.emplace(label,radio);
@@ -2944,6 +2971,7 @@ struct LessonView {
             updating = false;
             if (!vm.order.empty()) refresh_order(index);
             state::put_response(data, lesson, block(index), vm.response); mark_dirty(); flush();
+            refresh_choice_history(index);
             feedback(index, "", false); sync_quiz_controls(index);
     }
     void check_answer(std::size_t index) {
@@ -2960,7 +2988,7 @@ struct LessonView {
                 :std::ranges::any_of(vm.fill->answers(),[](const auto& answer){return blank_answer(answer);});
             if(!result.correct&&incomplete){show_incomplete(index);return;}
         } else if (current.type == BlockType::multiple_choice) {
-            if (vm.response.selected < 0) {show_incomplete(index);return;}
+            if (vm.response.selected < 0||vm.response.historical_choice) {show_incomplete(index);return;}
             result = curriculum::evaluate_choice(current, static_cast<std::size_t>(vm.response.selected));
         } else if (current.type == BlockType::order_code) {
             result = curriculum::evaluate_order(current, vm.order);
@@ -3363,7 +3391,9 @@ struct LessonView {
         case ActionType::check: check_answer(action.block); break;
         case ActionType::choose:
             if (vm.response.correct) break;
+            if(vm.response.historical_choice)vm.response={};
             vm.response.selected = static_cast<std::int64_t>(action.option); vm.response.correct = false;
+            refresh_choice_history(action.block);
             state::clear_response_review(vm.response);
             for (std::size_t i = 0; i < vm.choices.size(); ++i) SendMessageW(vm.choices[i], BM_SETCHECK, i == action.option ? BST_CHECKED : BST_UNCHECKED, 0);
             state::put_response(data, lesson, block(action.block), vm.response); feedback(action.block, "", false);sync_quiz_controls(action.block);mark_dirty(); break;

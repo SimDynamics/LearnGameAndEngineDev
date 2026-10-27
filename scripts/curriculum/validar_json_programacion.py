@@ -25,6 +25,13 @@ _state_spec.loader.exec_module(_state_layout)
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
+# These five choices pass the ordinary editorial-preservation guard after the
+# complete state-layout proof has projected only their reviewed option. This
+# does not authorize a detached new option or arbitrary later prose changes.
+CHOICE_OPTION_REVISION_LOCATIONS = frozenset(
+    ("texto_interpretacion_y_flujos/lesson_" + lesson.split("__")[-1] + ".json",
+     int(identity.split("_")[1]) + 1, int(identity.split("_")[2]) + 1)
+    for lesson, identity in _state_layout.CHOICE_OPTION_REVISIONS)
 FIELDS = {
     "heading": {"type", "text"},
     "paragraph": {"type", "text", "emphasis"},
@@ -1440,7 +1447,8 @@ def main(argv=None):
                         Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
                         origin_p + 1,
                         origin_b + 1,
-                    ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS):
+                    ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS.keys() | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS.keys()
+                          | CHOICE_OPTION_REVISION_LOCATIONS):
                         require(preserves_previous_exercise(relative, origin_p, origin_b, block, current), relative,
                                 f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
 

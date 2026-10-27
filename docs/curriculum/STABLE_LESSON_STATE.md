@@ -113,7 +113,8 @@ La primera familia se ancla al SHA publicado; al adoptar después otro idioma se
 reutiliza esa misma familia, sin cambiar la referencia histórica.
 
 El objeto `stateLayout` v2 contiene estos campos obligatorios y admite los archivos
-opcionales `retired` y `retirementHistory` descritos más abajo:
+opcionales `retired`, `retirementHistory`, `orderRefinements` y
+`choiceRevisions` descritos más abajo:
 
 | Campo | Contrato |
 | --- | --- |
@@ -126,6 +127,7 @@ opcionales `retired` y `retirementHistory` descritos más abajo:
 | `editorial` | Pruebas encadenadas `{id, beforeSha256, afterSha256}` de los bloques completos cuya prosa cambia. |
 | `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
+| `choiceRevisions` | Opcional. Archivo acumulativo de las cinco revisiones de opción españolas autorizadas, con `{id, block}` y el bloque publicado anterior íntegro. No permite sustituciones generales de respuestas. |
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
@@ -169,6 +171,51 @@ su identidad, idioma español y prueba exacta. El puente matemático conserva la
 huella de respuesta anterior sólo para el bloque revisado completo; la vista y
 el lector reciben el rótulo nuevo. Cualquier otro cambio sigue necesitando su
 contrato propio. Esta excepción Windows no cambia el motor Android conservado.
+
+## Cinco revisiones exactas de opciones en Windows
+
+`CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5` admite exclusivamente una opción en
+U11L5 (`block_0006_0004`, índice 2), U11L6 (`block_0005_0004`, índice 2),
+U11L7 (`block_0000_0004`, índice 0) y dos en U11L8 (`block_0003_0002` y
+`block_0006_0001`, ambas de índice 2). La identidad completa de la lección,
+el idioma español, el índice y los contratos protegidos antes/después forman
+parte de la autorización cerrada. U11L7 ajusta el nombre del campo a «Entrada»;
+las otras cuatro revisan un distractor y su guía correspondiente. Se mantienen
+el índice correcto, las demás opciones, la pregunta, la explicación, los IDs,
+las dependencias, los programas y las direcciones históricas.
+
+`revise_choice_option(documento_v2, identidad_estable)` prepara una copia en
+memoria, añade a `stateLayout.choiceRevisions` una entrada
+`{"id": "identidad_estable", "block": bloque_publicado_anterior_completo}`
+y añade la arista editorial exacta del bloque anterior a la primera versión
+revisada, incluida su guía. El CLI `revise-choice-option` usa `--identity`,
+`--locale es`, `--base-ref` publicado y `--output` nuevo. No modifica el asset
+de origen ni consulta progreso. Si falta el mapa, primero se prepara v2 con
+la familia publicada; no se regeneran familias ni orígenes existentes.
+
+El archivo anterior es inmutable y acumulativo. Una transición que lo añada
+debe conservar exactamente el bloque completo de la publicación anterior;
+no basta fabricar un snapshot con el mismo tipo de ejercicio. El cargador y
+las herramientas exigen su firma completa, la arista editorial revisada dentro
+de la cadena y el contrato protegido nuevo exacto. Una versión sin mapa, v1,
+otro idioma, otra identidad o una alteración de otra opción se rechaza.
+La firma de estado conserva el contrato protegido histórico sólo para esas
+cinco sustituciones. No se cambian los hashes de `origin`, `family` o
+`additions`, ni se reasignan posiciones.
+
+Las revisiones posteriores de pregunta, explicación o guías conservan las
+reglas editoriales ordinarias: añaden su procedencia sin reescribir el snapshot
+original ni sustituir la primera arista revisada. La proyección usada por el
+validador curricular restaura exclusivamente la opción histórica, después de
+validar la transición completa; no oculta cambios de prosa ni añade excepciones
+generales para opciones. La revisión de otra opción necesita su propio contrato.
+
+El soporte técnico no activa automáticamente estas sustituciones en los JSON.
+Work integra las cinco revisiones y comprueba rechazo, acierto, reapertura,
+presentación y escucha. Los intentos históricos conservan su respuesta y su
+procedencia; una elección anterior no se presenta como una elección del texto
+nuevo. La aceptación curricular y visual queda separada de las pruebas de
+contrato Python y de conservación nativa Windows.
 
 ## Piezas independientes de una línea en Windows
 

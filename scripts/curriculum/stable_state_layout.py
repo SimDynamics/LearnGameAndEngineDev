@@ -24,7 +24,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
@@ -93,6 +93,87 @@ MATH_LABEL_IDENTITY = "block_0007_0001"
 MATH_LABEL_BEFORE = "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d"
 MATH_LABEL_AFTER = "20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"
 
+# CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5: five individually reviewed
+# Spanish options. A protected digest covers every response/code field, not
+# merely this string. The whole first revision also pins its exact guidance.
+_CHOICE_PREFIX = "cpp_fundamentals__texto_interpretacion_y_flujos__"
+CHOICE_OPTION_REVISIONS = {
+    (_CHOICE_PREFIX + "estados_del_flujo_y_datos_validos", "block_0006_0004"): {
+        "option": 2,
+        "before": "Los enteros 4 y 10 no caben en el tipo int de una implementación conforme.",
+        "after": "La entrada necesita siempre un espacio después de 10 para que la última extracción sea válida.",
+        "feedback": "Revisa qué garantiza el éxito de la extracción y si detectar el final durante esa misma operación invalida necesariamente el dato obtenido.",
+        "full_before": "ccba0a5461601602d2c74520a20b3b800156e23c4156c6f9edb613908d4c3a5f",
+        "full_after": "0853764d61cd61df3f1ab10f310ff237a8ee4b057151d5c37e99490963589d3d",
+        "protected_before": "5393e161f7486d6803e37a6ce4b3cb9ca5fb832d458b7e3303e3477d462d1b25",
+        "protected_after": "e817c3fea65911ada1efdb18b7784a76b63d4b5a915530b56ff79a041a1960d6",
+    },
+    (_CHOICE_PREFIX + "validar_una_operacion_y_recuperar_la_siguiente", "block_0005_0004"): {
+        "option": 2,
+        "before": "Porque devolver false borra automáticamente todos los flujos del programa.",
+        "after": "Porque el bucle vuelve a construir el flujo exterior en cada vuelta.",
+        "feedback": "Localiza dónde se construye origen y dónde se crea el flujo local de análisis. Distingue qué objeto se reutiliza en el bucle y cuál se crea para una sola línea.",
+        "full_before": "c694da695d8cb9b889ece1b22570c0e25cfcb37c004a3b22d71f3862a61d373f",
+        "full_after": "5dfe0ec554c75abe71df341c5fda4a0c68fa41747bb2d9bbefb753ef0f636713",
+        "protected_before": "ddc59680893eb3049921f89156aabbf9cbda4dd5ff60d45e51d1dc03e4068272",
+        "protected_after": "8db059b96aad937bf75def2d3d18181620bd2fd2215f7d01d923a7a02ec15b74",
+    },
+    (_CHOICE_PREFIX + "construir_un_lector_de_entrada_preparada", "block_0000_0004"): {
+        "option": 0,
+        "before": "El campo Entrada preparada, manteniendo el código del lector.",
+        "after": "El campo Entrada, manteniendo el código del lector.",
+        "feedback": None,
+        "full_before": "1588a86d210ef1c95b08fee6120684afc51caa303e932519d401b13981eb65dc",
+        "full_after": "35964088aa38c6231c8febb7b1a00da3a8389e4f1605112af426d03cde09d360",
+        "protected_before": "6cf40a01fa8a87c4bfcf577dd41fe2e071a0219a26a7571c2d081677d911a260",
+        "protected_after": "2bcddeb382c97368786dc91558d6b53de5a2bbf5320ba1672a919fc95e973f9f",
+    },
+    (_CHOICE_PREFIX + "tokens_con_categoria_y_valor", "block_0003_0002"): {
+        "option": 2,
+        "before": "Un diagnóstico porque 8 no pertenece al intervalo de un dígito.",
+        "after": "Un token numérico de valor 1; el segundo dígito queda descartado al devolver el primero.",
+        "feedback": "Distingue terminar una llamada de consumir el resto del flujo. Sigue desde qué posición empieza la llamada siguiente.",
+        "full_before": "9b28a5432859a50e1d336098022614188ad75f81eb7cb2db87284b98838efca1",
+        "full_after": "4d598fee502105e520f800f975a57486947851153339a448ea92cdff768ac400",
+        "protected_before": "1a1a494aa8c49c0255c0c8634e52835d84f6d5c29a2eb533ed257c13ef18b816",
+        "protected_after": "b4e00e593e89935b313392a17d7983b2998e64905c37f38c2a18e3e837c699f8",
+    },
+    (_CHOICE_PREFIX + "tokens_con_categoria_y_valor", "block_0006_0001"): {
+        "option": 2,
+        "before": "El inspector de tokens calcula los tres resultados y los convierte en cero.",
+        "after": "Los tres se rechazan al combinar tokens, porque todo error de una expresión es de gramática.",
+        "feedback": "Un orden de unidades permitido puede incumplir las condiciones de una operación. Distingue su forma de los valores con los que se intenta calcular.",
+        "full_before": "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91",
+        "full_after": "123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1",
+        "protected_before": "2c62ea997577dd3e617968b33746ed53576100e3ae0a16b220cdb9f15b59a917",
+        "protected_after": "b3a836a39bae7b92db9b357b530681316c69af866e35c3b5f8b7190eeb026bf3",
+    },
+}
+
+
+def _choice_payload(block: dict) -> dict:
+    return {key: value for key, value in block.items()
+            if key not in {"question", "explanation", "reviewFeedback"}}
+
+
+def _reviewed_choice(block: dict) -> dict | None:
+    if block.get("type") != "multiple_choice":
+        return None
+    signature = fingerprint(_choice_payload(block))
+    return next((spec for spec in CHOICE_OPTION_REVISIONS.values()
+                 if signature == spec["protected_after"]), None)
+
+
+def historical_choice_payload(block: dict) -> dict:
+    """Normalize only five exact new response contracts, without relaxing prose."""
+    spec = _reviewed_choice(block)
+    if spec is None:
+        return block
+    result = deepcopy(block)
+    result["options"][spec["option"]] = spec["before"]
+    require(fingerprint(_choice_payload(result)) == spec["protected_before"], "Invalid reviewed choice revision")
+    return result
+
 
 def historical_math_payload(block: dict) -> dict:
     """One reviewed label revision; every other mathematical byte stays protected.
@@ -111,8 +192,10 @@ def historical_math_payload(block: dict) -> dict:
 def state_payload(block: dict) -> dict:
     """Only explicit editorial fields may vary without changing a response contract.
 
-    The existing curricular validator still decides which wording changes are
-    authorized. Mathematics retains its exact contract except one reviewed label.
+    The curricular validator still decides which prose changes are authorized.
+    Five exact reviewed options normalize to their historical contract; document
+    validation additionally requires their v2 context, archive and proof. Maths
+    retains its exact contract except one reviewed label.
     """
     kind = block.get("type")
     if kind in {"heading", "paragraph", "note"}:
@@ -120,8 +203,8 @@ def state_payload(block: dict) -> dict:
         return {key: value for key, value in block.items() if key not in {"text", "emphasis"}}
     if kind in {"multiple_choice", "fill_code", "output_prediction", "order_code",
                 "drag_fill_code", "inline_fill_code"}:
-        return {key: value for key, value in block.items()
-                if key not in {"question", "explanation", "reviewFeedback"}}
+        payload = _choice_payload(block)
+        return historical_choice_payload(payload) if kind == "multiple_choice" else payload
     if kind == "cpp_compiler":
         payload = deepcopy(block)
         config = payload.get("outputCheck")
@@ -210,6 +293,16 @@ def _order_refinements(document: dict) -> dict[str, dict]:
 def _historical_order_contract(document: dict, identity: str, block: dict, *, allow_original: bool = False) -> dict:
     original = _order_refinements(document).get(identity)
     return order_contract_projection(block, original, allow_original=allow_original) if original is not None else block
+
+
+def _choice_revisions(document: dict) -> dict[str, dict]:
+    return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("choiceRevisions", [])}
+
+
+def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
+    # Only callers that have validated the complete document/transition use
+    # this projection. Keep current prose/guidance for its ordinary validator.
+    return historical_choice_payload(block) if identity in _choice_revisions(document) else block
 
 
 def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
@@ -359,6 +452,24 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(lines != original["fragments"] or order != original["correctOrder"], "An order refinement must split its original presentation")
         require(state_fingerprint(original) == digests[identity], "The order snapshot does not match its immutable response contract")
         refined[identity] = original
+    choice_revisions = meta.get("choiceRevisions", [])
+    require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS),
+            "Malformed reviewed choice archive")
+    require(not choice_revisions or meta["locale"] == "es", "Choice revisions are authorized only for Spanish")
+    choices = {}
+    for item in choice_revisions:
+        require(type(item) is dict and set(item) == {"id", "block"}, "A choice revision needs its identity and complete original block")
+        identity = _identity(item["id"])
+        require(identity in storage and identity not in choices, "Unknown or repeated choice revision identity")
+        spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
+        require(spec is not None, "This choice revision belongs to its reviewed Spanish lesson and identity")
+        original = item["block"]
+        require(type(original) is dict and original.get("type") == "multiple_choice"
+                and fingerprint(original) == spec["full_before"]
+                and fingerprint(_choice_payload(original)) == spec["protected_before"],
+                "The choice archive must preserve its exact complete published block")
+        require(state_fingerprint(original) == digests[identity], "The choice snapshot does not match its immutable response contract")
+        choices[identity] = spec
     current = meta["current"]
     require(type(current) is list and len(current) == len(pages) == len(page_ids),
             "This extension preserves historical pages")
@@ -376,6 +487,11 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         and identity == MATH_LABEL_IDENTITY,
                         "The reviewed mathematical label belongs to its original Spanish activity")
             block = pages[p]["blocks"][b]
+            reviewed = _reviewed_choice(block)
+            if reviewed is not None or identity in choices:
+                require(meta["locale"] == "es" and identity in choices
+                        and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
+                        "A revised choice requires its exact lesson, identity and original archive")
             projected = order_contract_projection(block, refined[identity]) if identity in refined else block
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
@@ -383,6 +499,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             mapping[p, b] = storage[identity]
     require(len(set(seen_pages)) == len(seen_pages) and set(seen_pages) == set(page_ids), "Page identities changed")
     require(refined.keys() <= set(seen_blocks), "Order refinements must remain active under their existing identities")
+    require(choices.keys() <= set(seen_blocks), "Choice revisions must remain active under their existing identities")
     retired = meta.get("retired", [])
     require(type(retired) is list and len(retired) <= 100_000, "Malformed retired activity archive")
     require(not retired or meta["locale"] == "es", "Retirement is currently authorized only for Spanish")
@@ -433,6 +550,11 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(fingerprint(original) in chains.get(identity, [])
                 and chains[identity][-1] == fingerprint(actual[identity]),
                 "An order refinement needs the full published snapshot and current editorial proof")
+    for identity, spec in choices.items():
+        chain = chains.get(identity, [])
+        require(any(chain[index:index + 2] == [spec["full_before"], spec["full_after"]]
+                    for index in range(len(chain) - 1)),
+                "A choice revision needs its exact original-to-reviewed editorial edge")
     for identity, block in actual.items():
         if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
             require(chains.get(identity) == [MATH_LABEL_BEFORE, MATH_LABEL_AFTER],
@@ -506,6 +628,8 @@ def _validate_state_layout(document: dict) -> dict[tuple[int, int], tuple[int, i
         require(not any(block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER
                         for page in pages for block in page.get("blocks", [])),
                 "The reviewed mathematical label requires its published v2 identity and proof")
+        require(not any(_reviewed_choice(block) is not None for page in pages for block in page.get("blocks", [])),
+                "A reviewed choice revision requires its published v2 identity and proof")
     if "stateLayout" not in document:
         return {(p, b): (p, b) for p, page in enumerate(pages) for b in range(len(page.get("blocks", [])))}
     meta = document["stateLayout"]
@@ -633,6 +757,7 @@ def _validate_retirement_history(document: dict) -> None:
     require(type(history) is list and len(history) <= 100_000, "Malformed retirement reading history")
     archived = [entry["id"] for entry in meta.get("retired", [])]
     available = _all_blocks(document)
+    choices = _choice_revisions(document)
     page_ids = {record["id"] for record in meta["current"]}
     page_shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
                    for page, record in zip(document["pages"], meta["current"])}
@@ -663,6 +788,15 @@ def _validate_retirement_history(document: dict) -> None:
             for block_id, block in zip(record["blocks"], page.get("blocks", [])):
                 _identity(block_id)
                 require(block_id in available and block_id not in seen_blocks, "Unknown or repeated historical reading block")
+                reviewed = _reviewed_choice(block)
+                if reviewed is not None:
+                    # The global payload alias is not evidence that this
+                    # presentation ever owned the new wording. Older, original
+                    # choice snapshots remain valid before a later revision.
+                    require(meta["locale"] == "es" and block_id in choices
+                            and CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)) == reviewed
+                            and _reviewed_choice(available[block_id]) == reviewed,
+                            "A historical revised choice requires its matching active revision archive")
                 require(state_fingerprint(_historical_order_contract(document, block_id, block, allow_original=True))
                         == state_fingerprint(_historical_order_contract(document, block_id, available[block_id])),
                         "Historical reading snapshot changed a response/code contract")
@@ -727,6 +861,33 @@ def refine_order_lines(document: dict, identity: str) -> dict:
     result["stateLayout"].setdefault("orderRefinements", []).append({"id": identity, "block": deepcopy(original)})
     result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": fingerprint(original),
                                             "afterSha256": fingerprint(actual)})
+    validate_transition(document, result)
+    return result
+
+
+def revise_choice_option(document: dict, identity: str) -> dict:
+    """Prepare exactly one reviewed option and its guidance, never edit assets."""
+    validate(document)
+    meta = document.get("stateLayout", {})
+    require(meta.get("version") == 2 and meta.get("locale") == "es",
+            "Prepare the published Spanish family as stateLayout v2 before revising a choice")
+    _identity(identity)
+    spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
+    require(spec is not None, "The choice option is not one of the five reviewed activities")
+    if identity in _choice_revisions(document):
+        return deepcopy(document)
+    original = _blocks(document).get(identity)
+    require(original is not None and fingerprint(original) == spec["full_before"],
+            "A reviewed choice must start from its exact complete published block")
+    result = deepcopy(document)
+    actual = _blocks(result)[identity]
+    actual["options"][spec["option"]] = spec["after"]
+    if spec["feedback"] is not None:
+        actual["reviewFeedback"][spec["option"]] = spec["feedback"]
+    require(fingerprint(actual) == spec["full_after"], "The reviewed choice option/guidance does not match its approved first revision")
+    result["stateLayout"].setdefault("choiceRevisions", []).append({"id": identity, "block": deepcopy(original)})
+    result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": spec["full_before"],
+                                            "afterSha256": spec["full_after"]})
     validate_transition(document, result)
     return result
 
@@ -854,6 +1015,13 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for item in refinements[len(old_refinements):]:
         require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
                 "A new order refinement must preserve its complete published block")
+    old_choices = old_meta.get("choiceRevisions", []) if old_v2 else []
+    choices = meta.get("choiceRevisions", [])
+    require(choices[:len(old_choices)] == old_choices,
+            "Published choice revisions are append-only and cannot be removed or replaced")
+    for item in choices[len(old_choices):]:
+        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
+                "A new choice revision must preserve its complete previous published block")
     _preserve_compiler_channel_requirements(before, after)
     old_positions = {identity: (record["id"], index, record["blocks"])
                      for record in old_meta["current"] for index, identity in enumerate(record["blocks"])}
@@ -984,6 +1152,9 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     old_refinements = _order_refinements(old)
     blocks = {identity: _historical_order_contract(current, identity, block)
               if identity not in old_refinements else block for identity, block in blocks.items()}
+    old_choices = _choice_revisions(old)
+    blocks = {identity: _historical_choice_contract(current, identity, block)
+              if identity not in old_choices else block for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
     result["pages"] = [{**deepcopy(page_by_id[record["id"]]),
@@ -1003,6 +1174,7 @@ def original_projection(document: dict) -> dict:
     validate(document)
     blocks = _all_blocks(document)
     blocks = {identity: _historical_order_contract(document, identity, block) for identity, block in blocks.items()}
+    blocks = {identity: _historical_choice_contract(document, identity, block) for identity, block in blocks.items()}
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
@@ -1246,7 +1418,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -1255,7 +1427,7 @@ def main() -> None:
     parser.add_argument("--locale", choices=sorted(LOCALES), help="Use v2 and read all published language assets from Git")
     parser.add_argument("--additions", type=Path,
                         help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
-    parser.add_argument("--identity", help="Existing stable order_code identity for refine-order-lines")
+    parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
     args = parser.parse_args()
     try:
         if args.action == "check-tree":
@@ -1292,6 +1464,11 @@ def main() -> None:
                     "refine-order-lines requires --identity without a move/addition plan")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = refine_order_lines(baseline, args.identity)
+        elif args.action == "revise-choice-option":
+            require(args.identity is not None and args.plan is None and args.additions is None,
+                    "revise-choice-option requires --identity without a move/addition plan")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_choice_option(baseline, args.identity)
         else:
             validate(source)
             validate_transition(previous, source)

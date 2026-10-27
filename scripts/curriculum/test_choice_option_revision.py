@@ -1,0 +1,288 @@
+"""Five exact option revisions preserve immutable contracts and editorial history."""
+from copy import deepcopy
+from functools import lru_cache
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+import stable_state_layout as layout
+import validar_json_programacion as contract
+
+
+BASELINE = "16c497c7751f49d1f3f641cf3937b0275aa62e0f"
+PREFIX = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+
+
+def asset_path(lesson):
+    return "texto_interpretacion_y_flujos/lesson_" + lesson.split("__")[-1] + ".json"
+
+
+@lru_cache(maxsize=None)
+def published_bytes(lesson, locale="es"):
+    return subprocess.check_output(["git", "show", BASELINE + ":" + PREFIX.replace("/es/", "/" + locale + "/") + asset_path(lesson)], cwd=contract.ROOT)
+
+
+def published(lesson, locale="es"):
+    return json.loads(published_bytes(lesson, locale))
+
+
+def block(document, identity):
+    return layout._blocks(document)[identity]
+
+
+def slot(identity):
+    _, page, position = identity.split("_")
+    return int(page), int(position)
+
+
+def revised(lesson, identity):
+    return layout.revise_choice_option(published(lesson), identity)
+
+
+def replace_terminal_proof(document, identity):
+    proofs = [proof for proof in document["stateLayout"]["editorial"] if proof["id"] == identity]
+    proofs[-1]["afterSha256"] = layout.fingerprint(block(document, identity))
+
+
+def historical_block(document, identity):
+    snapshot = document["stateLayout"]["retirementHistory"][0]
+    return next(candidate for page, record in zip(snapshot["pages"], snapshot["current"])
+                for candidate, owner in zip(page["blocks"], record["blocks"]) if owner == identity)
+
+
+class ChoiceOptionRevisionTest(unittest.TestCase):
+    def test_exact_five_revisions_keep_all_other_fields_and_historical_addresses(self):
+        self.assertEqual(5, len(layout.CHOICE_OPTION_REVISIONS))
+        for (lesson, identity), spec in layout.CHOICE_OPTION_REVISIONS.items():
+            with self.subTest(lesson=lesson, identity=identity):
+                before = published(lesson)
+                untouched = deepcopy(before)
+                current = layout.revise_choice_option(before, identity)
+                old, new = block(before, identity), block(current, identity)
+                self.assertEqual(spec["full_before"], layout.fingerprint(old))
+                self.assertEqual(spec["full_after"], layout.fingerprint(new))
+                self.assertEqual(spec["protected_before"], layout.state_fingerprint(old))
+                self.assertEqual(spec["protected_after"], layout.fingerprint(layout._choice_payload(new)))
+                self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(new))
+                self.assertEqual(spec["before"], old["options"][spec["option"]])
+                self.assertEqual(spec["after"], new["options"][spec["option"]])
+                expected = deepcopy(old)
+                expected["options"][spec["option"]] = spec["after"]
+                if spec["feedback"] is not None:
+                    expected["reviewFeedback"][spec["option"]] = spec["feedback"]
+                self.assertEqual(expected, new)
+                self.assertEqual(before, untouched)
+                self.assertEqual(current, layout.revise_choice_option(current, identity))
+                self.assertEqual([{"id": identity, "block": old}], current["stateLayout"]["choiceRevisions"])
+                for field in ("origin", "current", "family", "additions", "retired", "retirementHistory", "orderRefinements"):
+                    self.assertEqual(before["stateLayout"].get(field), current["stateLayout"].get(field))
+                self.assertEqual(layout.validate(before), layout.validate(current))
+                layout.validate_transition(before, current)
+                layout.check_localized_family([current, published(lesson, "en"), published(lesson, "fr")], ["es", "en", "fr"])
+
+    def test_detached_option_does_not_bypass_the_curricular_guard(self):
+        for lesson, identity in layout.CHOICE_OPTION_REVISIONS:
+            with self.subTest(identity=identity):
+                before, current = published(lesson), revised(lesson, identity)
+                page, position = slot(identity)
+                self.assertFalse(contract.preserves_previous_exercise(PREFIX + asset_path(lesson), page, position,
+                                                                     block(before, identity), block(current, identity)))
+                aligned = layout.align_for_previous_validation(before, current)
+                self.assertTrue(contract.preserves_previous_exercise(PREFIX + asset_path(lesson), page, position,
+                                                                    block(before, identity), block(aligned, identity)))
+                self.assertIn((asset_path(lesson), page + 1, position + 1), contract.CHOICE_OPTION_REVISION_LOCATIONS)
+
+    def test_after_requires_v2_spanish_identity_archive_and_exact_editorial_edge(self):
+        for lesson, identity in layout.CHOICE_OPTION_REVISIONS:
+            good = revised(lesson, identity)
+            def no_map(doc): doc.pop("stateLayout")
+            def v1(doc): doc["stateLayout"] = {key: value for key, value in doc["stateLayout"].items() if key in {"origin", "current"}} | {"version": 1}
+            def no_archive(doc): doc["stateLayout"].pop("choiceRevisions")
+            def no_proof(doc): doc["stateLayout"]["editorial"] = [proof for proof in doc["stateLayout"]["editorial"] if proof["id"] != identity]
+            def wrong_lesson(doc): doc["id"] += "_other"
+            def wrong_locale(doc): doc["stateLayout"]["locale"] = "en"
+            def wrong_identity(doc): doc["stateLayout"]["choiceRevisions"][0]["id"] = "block_0000_0000"
+            for mutate in (no_map, v1, no_archive, no_proof, wrong_lesson, wrong_locale, wrong_identity):
+                with self.subTest(lesson=lesson, mutation=mutate.__name__):
+                    bad = deepcopy(good); mutate(bad)
+                    with self.assertRaises(layout.LayoutError): layout.validate(bad)
+
+    def test_archive_and_schema_cannot_be_fabricated_or_repeated(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        for value in (None, {}, [{}], [{"id": identity, "block": []}],
+                      [{"id": identity, "block": block(published(lesson), identity), "other": True}]):
+            with self.subTest(value=value):
+                bad = revised(lesson, identity); bad["stateLayout"]["choiceRevisions"] = value
+                with self.assertRaises(layout.LayoutError): layout.validate(bad)
+        bad = revised(lesson, identity)
+        bad["stateLayout"]["choiceRevisions"] *= 2
+        with self.assertRaises(layout.LayoutError): layout.validate(bad)
+        bad = revised(lesson, identity)
+        bad["stateLayout"]["choiceRevisions"][0]["block"]["reviewFeedback"][0] += " Otra guía."
+        with self.assertRaises(layout.LayoutError): layout.validate(bad)
+
+    def test_other_options_correct_index_ids_code_and_extra_contract_fields_stay_protected(self):
+        for (lesson, identity), spec in layout.CHOICE_OPTION_REVISIONS.items():
+            for change in ("other_option", "correctIndex", "id", "code", "type", "option_wording"):
+                with self.subTest(lesson=lesson, change=change):
+                    bad = revised(lesson, identity); actual = block(bad, identity)
+                    if change == "other_option": actual["options"][(spec["option"] + 1) % len(actual["options"])] += " Otra opción."
+                    elif change == "option_wording": actual["options"][spec["option"]] += " Otra frase."
+                    elif change == "correctIndex": actual["correctIndex"] = (actual["correctIndex"] + 1) % len(actual["options"])
+                    elif change == "id": actual["id"] = "another_exercise"
+                    elif change == "code": actual["code"] = "return 0;"
+                    else: actual["type"] = "output_prediction"
+                    replace_terminal_proof(bad, identity)
+                    with self.assertRaises(layout.LayoutError): layout.validate(bad)
+
+    def test_first_revision_requires_exact_guidance_and_consecutive_reviewed_edge(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        bad = revised(lesson, identity)
+        block(bad, identity)["reviewFeedback"][2] += " Texto no revisado."
+        replace_terminal_proof(bad, identity)
+        with self.assertRaises(layout.LayoutError): layout.validate(bad)
+        bad = revised(lesson, identity)
+        proof = bad["stateLayout"]["editorial"].pop()
+        middle = "0" * 64
+        bad["stateLayout"]["editorial"].extend([
+            {**proof, "afterSha256": middle}, {**proof, "beforeSha256": middle}])
+        with self.assertRaises(layout.LayoutError): layout.validate(bad)
+
+    def test_two_l8_revisions_append_without_rewriting_first_snapshot_or_provenance(self):
+        entries = [(lesson, identity) for lesson, identity in layout.CHOICE_OPTION_REVISIONS if lesson.endswith("__tokens_con_categoria_y_valor")]
+        lesson, first = entries[0]; second = entries[1][1]
+        one = revised(lesson, first); both = layout.revise_choice_option(one, second)
+        self.assertEqual(one["stateLayout"]["choiceRevisions"], both["stateLayout"]["choiceRevisions"][:1])
+        self.assertEqual(one["stateLayout"]["editorial"], both["stateLayout"]["editorial"][:-1])
+        layout.validate_transition(one, both)
+        bad = deepcopy(both); bad["stateLayout"]["choiceRevisions"].reverse()
+        layout.validate(bad)
+        with self.assertRaisesRegex(layout.LayoutError, "append-only"): layout.validate_transition(both, bad)
+
+    def test_retirement_reading_snapshot_cannot_invent_a_revision_without_its_archive(self):
+        for (lesson, identity), spec in layout.CHOICE_OPTION_REVISIONS.items():
+            with self.subTest(identity=identity):
+                before = published(lesson)
+                current = layout.retire(before, ["block_0000_0001"])
+                forged = historical_block(current, identity)
+                forged["options"][spec["option"]] = spec["after"]
+                if spec["feedback"] is not None:
+                    forged["reviewFeedback"][spec["option"]] = spec["feedback"]
+                self.assertEqual(spec["full_after"], layout.fingerprint(forged))
+                self.assertEqual(spec["full_before"], layout.fingerprint(block(current, identity)))
+                self.assertNotIn("choiceRevisions", current["stateLayout"])
+                with self.assertRaisesRegex(layout.LayoutError, "historical revised choice"):
+                    layout.validate(current)
+                with self.assertRaises(layout.LayoutError): layout.validate_transition(before, current)
+
+    def test_reading_history_keeps_its_real_choice_version_before_and_after_revision(self):
+        for (lesson, identity), spec in layout.CHOICE_OPTION_REVISIONS.items():
+            with self.subTest(identity=identity):
+                before = published(lesson)
+                retired_first = layout.retire(before, ["block_0000_0001"])
+                old_history = deepcopy(retired_first["stateLayout"]["retirementHistory"])
+                revised_later = layout.revise_choice_option(retired_first, identity)
+                layout.validate(revised_later)
+                layout.validate_transition(retired_first, revised_later)
+                self.assertEqual(old_history, revised_later["stateLayout"]["retirementHistory"])
+                self.assertEqual(spec["full_before"], layout.fingerprint(historical_block(revised_later, identity)))
+                revision_first = layout.revise_choice_option(before, identity)
+                retired_later = layout.retire(revision_first, ["block_0000_0001"])
+                layout.validate(retired_later)
+                layout.validate_transition(revision_first, retired_later)
+                self.assertEqual(spec["full_after"], layout.fingerprint(historical_block(retired_later, identity)))
+                self.assertEqual(revision_first["stateLayout"]["choiceRevisions"], retired_later["stateLayout"]["choiceRevisions"])
+
+    def test_historical_after_cannot_borrow_another_activitys_revision_archive(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        current = layout.retire(revised(lesson, identity), ["block_0000_0001"])
+        page, position = slot(identity)
+        blocks = current["stateLayout"]["retirementHistory"][0]["pages"][page]["blocks"]
+        blocks[position - 1], blocks[position] = blocks[position], blocks[position - 1]
+        with self.assertRaisesRegex(layout.LayoutError, "historical revised choice"):
+            layout.validate(current)
+
+    def test_retirement_after_a_later_prose_revision_preserves_that_exact_presentation(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        before = revised(lesson, identity); draft = deepcopy(before)
+        block(draft, identity)["explanation"] += " Sigue el objeto que conserva cada estado."
+        family = {locale: published(lesson, locale) for locale in ("es", "en", "fr")}
+        future = layout.prepare_v2(draft, "es", family, previous=before)
+        current = layout.retire(future, ["block_0000_0001"])
+        layout.validate(current)
+        layout.validate_transition(future, current)
+        self.assertEqual(block(future, identity), historical_block(current, identity))
+        self.assertEqual(before["stateLayout"]["choiceRevisions"], current["stateLayout"]["choiceRevisions"])
+
+    def test_future_prose_and_guidance_extend_chain_without_rewriting_the_archive(self):
+        for lesson, identity in layout.CHOICE_OPTION_REVISIONS:
+            with self.subTest(identity=identity):
+                before = revised(lesson, identity); draft = deepcopy(before)
+                actual = block(draft, identity); old_question = actual["question"]
+                actual["question"] += " Sigue los objetos lectores."
+                actual["reviewFeedback"][0] += " Conserva la posición de lectura."
+                family = {locale: published(lesson, locale) for locale in ("es", "en", "fr")}
+                current = layout.prepare_v2(draft, "es", family, previous=before)
+                layout.validate_transition(published(lesson), current)
+                self.assertEqual(before["stateLayout"]["choiceRevisions"], current["stateLayout"]["choiceRevisions"])
+                self.assertEqual(before["stateLayout"]["editorial"], current["stateLayout"]["editorial"][:-1])
+                self.assertEqual(current, layout.revise_choice_option(current, identity))
+                page, position = slot(identity); aligned = layout.align_for_previous_validation(before, current)
+                self.assertEqual(actual["question"], block(aligned, identity)["question"])
+                self.assertEqual(actual["reviewFeedback"], block(aligned, identity)["reviewFeedback"])
+                self.assertFalse(contract.preserves_previous_exercise(PREFIX + asset_path(lesson), page, position,
+                                                                     block(before, identity), block(aligned, identity)))
+                key = (asset_path(lesson), page + 1, position + 1, "multiple_choice", "question", actual.get("id"))
+                pair = tuple(hashlib.sha256(value.encode("utf-8")).hexdigest() for value in (old_question, actual["question"]))
+                with mock.patch.dict(contract.WORK_EXACT_EDITORIAL_REVISIONS, {key: pair}):
+                    self.assertTrue(contract.preserves_previous_exercise(PREFIX + asset_path(lesson), page, position,
+                                                                        block(before, identity), block(aligned, identity)))
+
+    def test_reorder_preserves_choice_history_and_cannot_reattach_it_to_another_identity(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        current = revised(lesson, identity)
+        plan = deepcopy(current["stateLayout"]["current"])
+        page, position = slot(identity)
+        plan[page]["blocks"][position - 1], plan[page]["blocks"][position] = plan[page]["blocks"][position], plan[page]["blocks"][position - 1]
+        moved = layout.reorder(current, plan)
+        layout.validate_transition(published(lesson), moved)
+        self.assertEqual(current["stateLayout"]["choiceRevisions"], moved["stateLayout"]["choiceRevisions"])
+        self.assertEqual(block(current, identity), block(moved, identity))
+        self.assertEqual((page, position), layout.validate(moved)[page, position - 1])
+        bad = deepcopy(moved); bad["stateLayout"]["choiceRevisions"][0]["id"] = "block_0006_0003"
+        with self.assertRaises(layout.LayoutError): layout.validate(bad)
+
+    def test_helper_refuses_other_activity_or_changed_pre_revision_snapshot(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        with self.assertRaises(layout.LayoutError): layout.revise_choice_option(published(lesson), "block_0000_0000")
+        before = published(lesson); block(before, identity)["question"] += " Otra pregunta."
+        proof = {"id": identity, "beforeSha256": layout.CHOICE_OPTION_REVISIONS[lesson, identity]["full_before"],
+                 "afterSha256": layout.fingerprint(block(before, identity))}
+        before["stateLayout"]["editorial"].append(proof); layout.validate(before)
+        untouched = deepcopy(before)
+        with self.assertRaises(layout.LayoutError): layout.revise_choice_option(before, identity)
+        self.assertEqual(untouched, before)
+
+    def test_cli_produces_only_a_new_proposal_and_never_overwrites_source_or_output(self):
+        lesson, identity = next(iter(layout.CHOICE_OPTION_REVISIONS))
+        source = contract.ROOT / (PREFIX + asset_path(lesson)); original_bytes = source.read_bytes()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "proposal.json"
+            command = [sys.executable, str(Path(layout.__file__)), "revise-choice-option", str(source), "--locale", "es",
+                       "--base-ref", BASELINE, "--identity", identity, "--output", str(output)]
+            result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            proposal = output.read_bytes(); self.assertEqual(revised(lesson, identity), json.loads(proposal))
+            again = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+            self.assertNotEqual(0, again.returncode)
+            self.assertEqual(proposal, output.read_bytes())
+        self.assertEqual(original_bytes, source.read_bytes())
+
+
+if __name__ == "__main__":
+    unittest.main()

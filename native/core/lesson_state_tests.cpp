@@ -2,6 +2,7 @@
 #include "core/lesson.hpp"
 #include "core/catalog.hpp"
 #include "core/retirement_test_fixture.hpp"
+#include "core/choice_revision_test_fixture.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -473,6 +474,74 @@ void reviewed_order_equivalences_preserve_history(const std::filesystem::path& b
     }
     std::cout<<"PASS five reviewed order equivalents: unchanged keys/provenance, empty/draft/wrong/canonical history, explicit new success, native reopen, Android import and untouched translations\n";
 }
+void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& base) {
+    using namespace lgaed::curriculum;
+    const auto content=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content";
+    for(std::size_t index=0;index<lgaed::test::choice_revision_cases().size();++index) {
+        const auto& plan=lgaed::test::choice_revision_cases()[index];
+        const auto before=lgaed::windows::load_lesson(content/"es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
+        const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);const auto position=stable_block_position(current,plan.identity);
+        require(position.has_value(),"A reviewed choice lost its published identity");
+        const auto& block=current.pages[position->page].blocks[position->block];const auto& old_block=before.pages[position->page].blocks[position->block];
+        const auto original_key=exercise_key(before,old_block),sidecar=response_storage_key(current,block);
+        require(original_key==exercise_key(current,block)&&original_key!=sidecar&&sidecar.starts_with("choice-options/v1/es/"),
+            "Choice revision reused its historical response slot or changed its original key");
+        StateData empty;require(!get_response(empty,current,block)&&empty.preferences.empty(),"An empty profile acquired an invented historical choice");
+        for(const auto mode:{"draft","wrong","correct"}) {
+            StateData data;prepare_lesson_state(data,before);
+            data.preferences["choice_opaque"]["keep"]=std::string(" \t preserved \r\n");
+            Response old;old.raw_json=R"({"incorrectAttempts":4,"opaque":{"source":"original choice"}})";
+            old.selected=std::string_view(mode)=="draft"?-1:static_cast<std::int64_t>(std::string_view(mode)=="correct"?*old_block.correct_index:
+                plan.option==*old_block.correct_index?(plan.option+1)%old_block.options.size():plan.option);
+            old.correct=std::string_view(mode)=="correct";if(std::string_view(mode)=="wrong")mark_response_reviewed(old,old_block);
+            put_response(data,original_key,old);const auto original_raw=string_value(data,"learning_progress",original_key);const auto untouched=data;
+            const auto restored=get_response(data,current,block);
+            require(restored&&restored->historical_choice&&restored->selected==old.selected&&restored->correct==old.correct&&restored->raw_json==original_raw
+                &&response_reviewed(*restored,block)==(std::string_view(mode)=="wrong")&&data==untouched,
+                "Restoring a prior choice changed its verdict, opaque metadata or provenance");
+            require(selected_choice_text(*restored,block)==(old.selected<0?std::string{}:old_block.options[static_cast<std::size_t>(old.selected)])
+                &&choice_incorrect_feedback(*restored,block)==incorrect_feedback(old_block,old.selected<0?std::nullopt:std::optional<std::size_t>(static_cast<std::size_t>(old.selected))),
+                "An old response was attributed the corrected option or new guidance");
+            rejects([&]{put_response(data,current,block,*restored);});require(data==untouched,"Rejecting an implicit historical-to-current write changed data");
+            validate_lesson_state(data,current);prepare_lesson_state(data,current);const auto adopted=data;
+            const auto pin="lesson_"+current.id+"_state_choice_revisions_v1_es";
+            require(find(data,"learning_progress",pin)&&string_value(data,"learning_progress",original_key)==original_raw,"Choice provenance pin replaced original response metadata");
+            auto no_pin=data;no_pin.preferences["learning_progress"].erase(pin);require(no_pin==untouched,"Adopting a choice revision rewrote unrelated preferences or historical state");
+            prepare_lesson_state(data,current);require(data==adopted,"Choice revision adoption is not idempotent");
+            auto rollback=data;rejects([&]{prepare_lesson_state(rollback,before);});require(rollback==data,"Rejecting a removed revision changed saved data");
+            const auto name=std::to_string(index)+'-'+mode;StateStore store(base/("choice-"+name));(void)store.load();store.save(data);
+            auto reopened=store.load();validate_lesson_state(reopened,current);require(reopened==data,"Historical choice changed during normal persistence/reopening");
+            const auto exported=base/("choice-export-"+name);export_preferences(exported,data);const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+            const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,current);
+            require(get_response(preview.data,current,block)->historical_choice&&string_value(preview.data,"learning_progress",original_key)==original_raw,
+                "Imported choice lost its original blob or was silently promoted to current text");
+            commit_android_import(preview,base/("choice-import-"+name));StateStore imported_store(base/("choice-import-"+name));const auto imported=imported_store.load();
+            require(string_value(imported,"learning_progress",original_key)==original_raw&&sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"))==source_hash,
+                "Choice import changed original response bytes or its source export");
+            Response selected;selected.selected=static_cast<std::int64_t>(plan.option);selected.correct=evaluate_choice(block,plan.option).correct;
+            if(!selected.correct)mark_response_reviewed(selected,block);put_response(reopened,current,block,selected);validate_lesson_state(reopened,current);
+            const auto actual=get_response(reopened,current,block);
+            require(actual&&!actual->historical_choice&&actual->selected==selected.selected&&actual->correct==selected.correct&&selected_choice_text(*actual,block)==plan.replacement
+                &&string_value(reopened,"learning_progress",original_key)==original_raw&&actual->raw_json.find("incorrectAttempts")==std::string::npos,
+                "A new choice overwrote or inherited an old attempt's text, verdict or opaque metadata");
+            if(plan.feedback)require(choice_incorrect_feedback(*actual,block)==plan.feedback,"The revised incorrect choice lost its own exact guidance");
+            store.save(reopened);const auto saved=store.load();require(saved==reopened&&!get_response(saved,current,block)->historical_choice,"New choice provenance failed normal reopening");
+            Response reset;put_response(reopened,current,block,reset);require(get_response(reopened,current,block)->selected==-1&&!get_response(reopened,current,block)->correct
+                &&!get_response(reopened,current,block)->historical_choice&&string_value(reopened,"learning_progress",original_key)==original_raw,
+                "Explicit reset revived an old achievement or erased the archived choice");
+            for(const auto corrupt:{"index","correct","original","pin"}) {
+                auto invalid=saved;Response wrong;wrong.selected=static_cast<std::int64_t>(block.options.size());
+                if(std::string_view(corrupt)=="correct"){wrong.selected=static_cast<std::int64_t>((*block.correct_index+1)%block.options.size());wrong.correct=true;}
+                if(std::string_view(corrupt)=="pin")invalid.preferences["learning_progress"][pin]=std::string("[\"invalid\"]");
+                else put_response(invalid,std::string_view(corrupt)=="original"?original_key:sidecar,wrong);
+                const auto preserved=invalid;
+                rejects([&]{validate_lesson_state(invalid,current);});require(invalid==preserved,"Rejecting corrupt choice provenance altered saved state");
+            }
+            ++groups;
+        }
+    }
+    std::cout<<"PASS five reviewed choice revisions: old draft/rejection/success text and guidance, opaque history, separate current selection/reset, append-only pins, native reopen and Android import\n";
+}
 }
 int main(int argc, char** argv) {
     try {
@@ -484,6 +553,7 @@ int main(int argc, char** argv) {
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);
+        reviewed_choice_revisions_preserve_responses(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");
         initial.preferences["types"]["français_élève"] = std::string("cœur, niño, std::cout, 𝑥");

@@ -480,6 +480,13 @@ std::string order_representation_frame(const Block& block) {
     result += ']';
     return result;
 }
+std::string choice_representation_frame(const Block& block) {
+    if(block.type!=BlockType::multiple_choice||!block.correct_index||*block.correct_index>=block.options.size())
+        throw std::invalid_argument("Invalid choice representation");
+    std::string result="choice-options-v1/"+std::to_string(block.options.size())+'[';
+    for(const auto& option:block.options)result+=std::to_string(option.size())+':'+option;
+    return result+"]/"+std::to_string(*block.correct_index);
+}
 AnswerEvaluation evaluate_hole_answers(const Block& block,std::span<const std::string> answers) {
     if (block.type != BlockType::inline_fill_code) throw std::invalid_argument("Invalid inline fill answer");
     const auto holes = literal_holes(block.code_template,"[]");

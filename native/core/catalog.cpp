@@ -189,8 +189,8 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
             const auto& key = item->first; bool matches = false;
             if (domain == "learning_progress") {
                 auto response_key=std::string_view(key);
-                if(response_key.starts_with("order-lines/v1/")) {
-                    response_key.remove_prefix(15);
+                if(response_key.starts_with("order-lines/v1/")||response_key.starts_with("choice-options/v1/")) {
+                    response_key.remove_prefix(response_key.starts_with("order-lines/v1/")?15:18);
                     const auto locale_end=response_key.find('/');
                     const auto locale=response_key.substr(0,locale_end);
                     if(locale_end==response_key.npos||(locale!="es"&&locale!="en"&&locale!="fr"))response_key={};

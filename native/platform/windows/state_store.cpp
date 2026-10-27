@@ -254,7 +254,38 @@ void mark_response_reviewed(Response& response, const curriculum::Block& block) 
     response.reviewed_answer_identity = response.correct ? std::string{} : response_identity(response, block);
 }
 void clear_response_review(Response& response) noexcept { response.reviewed_answer_identity.clear(); }
+std::string selected_choice_text(const Response& response,const curriculum::Block& block) {
+    if(block.type!=curriculum::BlockType::multiple_choice)return {};
+    if(response.historical_choice&&!block.choice_revision)throw std::runtime_error("Falta el origen de la selección histórica.");
+    const auto& options=response.historical_choice?block.choice_revision->original_options:block.options;
+    if(response.selected<0)return {};
+    if(static_cast<std::uint64_t>(response.selected)>=options.size())throw std::runtime_error("La selección no pertenece a esta edición.");
+    return options[static_cast<std::size_t>(response.selected)];
+}
+std::string choice_incorrect_feedback(const Response& response,const curriculum::Block& block) {
+    if(response.historical_choice) {
+        if(!block.choice_revision)throw std::runtime_error("Falta la guía de la respuesta histórica.");
+        const auto& revision=*block.choice_revision;
+        if(response.selected>=0&&static_cast<std::uint64_t>(response.selected)<revision.original_review_feedback_options.size())
+            return revision.original_review_feedback_options[static_cast<std::size_t>(response.selected)];
+        return revision.original_review_feedback;
+    }
+    return curriculum::incorrect_feedback(block,response.selected<0?std::nullopt:std::optional<std::size_t>(static_cast<std::size_t>(response.selected)));
+}
 namespace {
+curriculum::Block original_choice_block(const curriculum::Block& block) {
+    const auto& revision=*block.choice_revision;auto original=block;
+    original.options=revision.original_options;original.correct_index=revision.original_correct_index;
+    original.question=revision.original_question;original.explanation=revision.original_explanation;
+    original.review_feedback=revision.original_review_feedback;original.review_feedback_options=revision.original_review_feedback_options;
+    original.raw_json=revision.raw_json;original.choice_revision.reset();return original;
+}
+void validate_choice_response(const Response& response,const curriculum::Block& block) {
+    if(response.selected < -1 || (response.selected>=0&&static_cast<std::uint64_t>(response.selected)>=block.options.size()))
+        throw std::runtime_error("La opción guardada no pertenece a esta edición; se conserva su origen.");
+    if(response.correct&&(response.selected<0||!curriculum::evaluate_choice(block,static_cast<std::size_t>(response.selected)).correct))
+        throw std::runtime_error("El acierto guardado no corresponde a esta edición; se conserva su origen.");
+}
 void validate_order_response(const Response& response, const curriculum::Block& block) {
     std::set<std::int64_t> seen;
     for (const auto index : response.order)
@@ -280,6 +311,11 @@ curriculum::Block original_order_block(const curriculum::Block& block) {
 }
 std::string response_storage_key(const curriculum::Lesson& lesson, const curriculum::Block& block) {
     const auto historical = curriculum::exercise_key(lesson,block);
+    if(block.type==curriculum::BlockType::multiple_choice&&block.choice_revision) {
+        const auto signature=sha256(curriculum::choice_representation_frame(block));
+        if(signature!=block.choice_revision->representation_signature)throw std::runtime_error("La representación de opciones cambió sin conservar su origen.");
+        return "choice-options/v1/"+lesson.locale+'/'+signature+'/'+historical;
+    }
     if (block.type != curriculum::BlockType::order_code || !block.order_refinement) return historical;
     const auto signature = sha256(curriculum::order_representation_frame(block));
     if (!block.order_refinement->representation_signature.empty() &&
@@ -288,6 +324,13 @@ std::string response_storage_key(const curriculum::Lesson& lesson, const curricu
     return "order-lines/v1/" + lesson.locale + '/' + signature + '/' + historical;
 }
 std::optional<Response> get_response(const StateData& data, const curriculum::Lesson& lesson, const curriculum::Block& block) {
+    if(block.type==curriculum::BlockType::multiple_choice&&block.choice_revision) {
+        auto historical=get_response(data,curriculum::exercise_key(lesson,block));
+        if(historical)validate_choice_response(*historical,original_choice_block(block));
+        if(auto current=get_response(data,response_storage_key(lesson,block))) {validate_choice_response(*current,block);return current;}
+        if(historical)historical->historical_choice=true;
+        return historical;
+    }
     if (block.type != curriculum::BlockType::order_code || !block.order_refinement)
         return get_response(data,curriculum::exercise_key(lesson,block));
     const auto& refinement = *block.order_refinement;
@@ -316,6 +359,8 @@ std::optional<Response> get_response(const StateData& data, const curriculum::Le
     return projected;
 }
 void put_response(StateData& data, const curriculum::Lesson& lesson, const curriculum::Block& block, const Response& response) {
+    if(response.historical_choice)throw std::runtime_error("Una selección histórica necesita una elección o reinicio explícito antes de guardarse como actual.");
+    if(block.type==curriculum::BlockType::multiple_choice&&block.choice_revision)validate_choice_response(response,block);
     if (block.type == curriculum::BlockType::order_code && block.order_refinement)
         validate_order_response(response,block);
     put_response(data,response_storage_key(lesson,block),response);
@@ -539,6 +584,28 @@ std::optional<std::string> order_refinement_state_update(const StateData& data,c
     } else if(!current.Size())return {};
     return utf8(current.Stringify());
 }
+std::string choice_revision_key(const curriculum::Lesson& lesson) {
+    return "lesson_"+lesson.id+"_state_choice_revisions_v1_"+lesson.locale;
+}
+std::optional<std::string> choice_revision_state_update(const StateData& data,const curriculum::Lesson& lesson) {
+    const auto key=choice_revision_key(lesson);JsonArray current;
+    for(const auto& revision:lesson.state_layout.choice_revisions) {
+        JsonArray row;for(const auto* field:{&revision.id,&revision.sha256,&revision.representation_signature})
+            row.Append(JsonValue::CreateStringValue(wide(*field)));
+        current.Append(row);
+    }
+    if(find(data,"learning_progress",key)) {
+        if(lesson.state_layout.version!=2)throw std::runtime_error("Falta el mapa de las opciones históricas.");
+        const auto raw=string_value(data,"learning_progress",key);
+        if(raw.empty())throw std::runtime_error("La procedencia de las opciones guardadas no es válida.");
+        const auto previous=JsonArray::Parse(wide(raw));
+        if(previous.Size()>current.Size())throw std::runtime_error("Se eliminó una revisión publicada de opciones.");
+        for(std::uint32_t index=0;index<previous.Size();++index)
+            if(previous.GetAt(index).Stringify()!=current.GetAt(index).Stringify())throw std::runtime_error("Cambió la edición histórica de una opción guardada.");
+        if(previous.Size()==current.Size())return {};
+    }else if(!current.Size())return {};
+    return utf8(current.Stringify());
+}
 }
 void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try {
     windows::ensure_winrt_apartment();
@@ -547,6 +614,7 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
     const auto retirement_update = retirement_state_update(data,lesson);
     const auto retirement_history_update = retirement_history_state_update(data,lesson);
     const auto order_refinement_update = order_refinement_state_update(data,lesson);
+    const auto choice_revision_update = choice_revision_state_update(data,lesson);
     const auto old_pin_key = base + "_state_lineage_v1";
     const bool has_old_pin = find(data, "learning_progress", old_pin_key) != nullptr;
     const auto old_pin = string_value(data, "learning_progress", old_pin_key);
@@ -586,13 +654,15 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
         if (retirement_update) data.preferences["learning_progress"][retirement_key(lesson)] = *retirement_update;
         if (retirement_history_update) data.preferences["learning_progress"][retirement_history_key(lesson)] = *retirement_history_update;
         if (order_refinement_update) data.preferences["learning_progress"][order_refinement_key(lesson)] = *order_refinement_update;
+        if (choice_revision_update) data.preferences["learning_progress"][choice_revision_key(lesson)] = *choice_revision_update;
         return;
     }
     if (find(data, "learning_progress", pages_key) || find(data, "learning_progress", blocks_key) ||
         (layout.version == 2 && (find(data, "learning_progress", additions_key) ||
                                find(data,"learning_progress",retirement_key(lesson)) ||
                                find(data,"learning_progress",retirement_history_key(lesson)) ||
-                               find(data,"learning_progress",order_refinement_key(lesson)))))
+                               find(data,"learning_progress",order_refinement_key(lesson)) ||
+                               find(data,"learning_progress",choice_revision_key(lesson)))))
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
     std::vector<std::string> pages, blocks;
     const bool started = bool_value(data, base + "_started");
@@ -617,6 +687,7 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
     if (retirement_update) prefs[retirement_key(lesson)] = *retirement_update;
     if (retirement_history_update) prefs[retirement_history_key(lesson)] = *retirement_history_update;
     if (order_refinement_update) prefs[order_refinement_key(lesson)] = *order_refinement_update;
+    if (choice_revision_update) prefs[choice_revision_key(lesson)] = *choice_revision_update;
     if (started && !find(data, "learning_progress", base + "_page")) prefs[base + "_page"] = std::int64_t{0};
 } catch (const winrt::hresult_error&) {
     throw std::runtime_error("Los metadatos del progreso no son compatibles; no se usan direcciones visibles.");
