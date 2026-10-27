@@ -1,0 +1,71 @@
+name: One-time reader arrow focus verification
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - '.github/workflows/one-time-reader-arrow-focus.yml'
+      - 'scripts/maintenance/repair_reader_arrow_focus.py'
+      - 'native/presentation/windows/reader_shortcut_focus*'
+permissions:
+  contents: write
+jobs:
+  verify-and-publish:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Prepare isolated native controls and baseline policy
+        shell: pwsh
+        run: |
+          python scripts/maintenance/repair_reader_arrow_focus.py prepare
+          if ($LASTEXITCODE -ne 0) { throw 'Changed baseline; no repair applied.' }
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'MSVC not available.' }
+          "VCVARS=$vs\VC\Auxiliary\Build\vcvars64.bat" >> $env:GITHUB_ENV
+      - name: Reproduce arrows blocked by readonly lesson prose
+        shell: pwsh
+        run: |
+          $qa = Join-Path $env:RUNNER_TEMP 'reader-arrow-focus'
+          $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $qa + '\Debug" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build "' + $qa + '\Debug" --target focus_baseline --parallel 2'
+          cmd /d /s /c $cmd
+          if ($LASTEXITCODE -ne 0) { throw 'Baseline fixture failed to build.' }
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & "$qa\Debug\focus_baseline.exe" 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -ne 1 -or ($output -join "`n") -notmatch 'Unselected curriculum prose blocked a reader arrow') { throw 'Original focus failure not reproduced.' }
+          exit 0
+      - name: Apply guarded fix and verify Debug and Release
+        shell: pwsh
+        run: |
+          python scripts/maintenance/repair_reader_arrow_focus.py fix
+          if ($LASTEXITCODE -ne 0) { throw 'Repair anchor changed.' }
+          $qa = Join-Path $env:RUNNER_TEMP 'reader-arrow-focus'
+          foreach ($mode in @('Debug','Release')) {
+            $build = Join-Path $qa $mode
+            $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $build + '" -G Ninja -DCMAKE_BUILD_TYPE=' + $mode + ' && cmake --build "' + $build + '" --target focus_fixed reader_compile_check reader_tests_compile_check --parallel 2 && ctest --test-dir "' + $build + '" --output-on-failure --verbose'
+            cmd /d /s /c $cmd
+            if ($LASTEXITCODE -ne 0) { throw "Reader focus verification failed: $mode" }
+          }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'Diff validation failed.' }
+      - name: Publish verified fix only if Codex has not advanced
+        shell: pwsh
+        run: |
+          $remote = git ls-remote origin refs/heads/Codex
+          if ($LASTEXITCODE -ne 0 -or ($remote -split '\s+')[0] -ne $env:GITHUB_SHA) { throw 'Codex advanced; concurrent changes will not be overwritten.' }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CMakeLists.txt native/presentation/windows/lesson_reader.cpp native/presentation/windows/lesson_reader_tests.cpp native/presentation/windows/reader_shortcut_focus.hpp native/presentation/windows/reader_shortcut_focus_tests.cpp
+          git rm .github/workflows/one-time-reader-arrow-focus.yml scripts/maintenance/repair_reader_arrow_focus.py
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot remove one-time tooling.' }
+          git diff --cached --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid staged diff.' }
+          git commit -m 'fix(windows): allow reader arrows from prose and ordinary buttons without stealing editor keys'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot save verified changes.' }
+          git push origin HEAD:refs/heads/Codex
+          if ($LASTEXITCODE -ne 0) { throw 'Publish rejected; no force push attempted.' }
+          git status --short
+          git rev-parse HEAD
