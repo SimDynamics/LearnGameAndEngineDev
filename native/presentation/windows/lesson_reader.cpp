@@ -1,4 +1,5 @@
 #include "presentation/windows/lesson_reader.hpp"
+#include "presentation/windows/reader_shortcut_focus.hpp"
 #include "core/narration_speed.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reading_shade.hpp"
@@ -45,20 +46,7 @@ bool promoted_pointer_mouse(){
 }
 std::string guid(){GUID id{};CoCreateGuid(&id);wchar_t value[40]{};StringFromGUID2(id,value,40);return utf8(value);}
 bool setting_bool(const state::StateData& data,const char* key,bool fallback){const auto value=state::find(data,"lesson_narration_settings",key);return value&&std::holds_alternative<bool>(*value)?std::get<bool>(*value):fallback;}
-bool owns_arrow_keys(HWND target,HWND view,HWND bar,const MSG& message){
-    if(!target||target==bar||IsChild(bar,target)||!IsChild(view,target))return false;
-    for(auto item=target;item&&item!=view;item=GetParent(item)){
-        wchar_t name[128]{};GetClassNameW(item,name,128);
-        if(_wcsicmp(name,L"EDIT")==0||_wcsnicmp(name,L"RichEdit",8)==0||
-            _wcsicmp(name,L"LearnGameAndEngineDev.MathExpressionEditor")==0)return true;
-        for(const auto kind:{L"ComboBox",L"ComboBoxEx32",L"ComboLBox",L"ListBox",L"SysListView32",L"SysTreeView32",
-                L"msctls_trackbar32",L"msctls_updown32",L"ScrollBar",L"ToolbarWindow32",L"BUTTON"})
-            if(_wcsicmp(name,kind)==0)return true;
-        auto query=message;query.hwnd=item;
-        if(SendMessageW(item,WM_GETDLGCODE,message.wParam,reinterpret_cast<LPARAM>(&query))&(DLGC_WANTARROWS|DLGC_WANTALLKEYS))return true;
-    }
-    return false;
-}
+
 }
 struct LessonReader::Impl {
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
@@ -534,9 +522,15 @@ struct LessonReader::Impl {
         if(!enabled||!visible||!IsWindowVisible(view)||!IsWindowVisible(window)||
             !IsWindowEnabled(root)||!IsWindowEnabled(view)||!IsWindowEnabled(window)||
             !message.hwnd||(message.hwnd!=root&&message.hwnd!=view&&!IsChild(view,message.hwnd)))return false;
-        // Arrow aliases yield to native cursor/selection and interactive controls,
-        // including readonly text. Function-key shortcuts keep their existing scope.
-        if(arrow_key&&(owns_arrow_keys(GetFocus(),view,window,message)||owns_arrow_keys(message.hwnd,view,window,message)))return false;
+        // Lesson prose is also RichEdit, but it is not an answer/code editor.
+        // Only unselected live narration targets may yield their arrow keys;
+        // native inputs, source viewers and interactive controls retain them.
+        if(arrow_key){
+            const auto reading_text=[&](HWND target){return std::ranges::any_of(regions,
+                [target](const auto& region){return region.target==target;});};
+            if(reader_shortcuts::owns_arrow_keys(GetFocus(),view,window,message,reading_text)||
+                reader_shortcuts::owns_arrow_keys(message.hwnd,view,window,message,reading_text))return false;
+        }
         if(speed_key){
             // F10's unmodified system-key release must not reach USER's menu
             // activation. Repeats adjust speed until its endpoint, never wrap.

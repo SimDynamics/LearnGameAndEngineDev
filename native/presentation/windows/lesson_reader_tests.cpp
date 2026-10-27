@@ -568,6 +568,20 @@ void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::N
     }
     check(!press(VK_LEFT,play,WM_SYSKEYDOWN,1LL|(1LL<<29)),"An Alt-context system arrow controlled narration");
     f.reader->set_controls_visible(false);check(!press(VK_RIGHT,play),"A hidden reader consumed a seek arrow");f.reader->set_controls_visible(true);
+    // Normal reading commonly leaves focus on a paragraph or the header's
+    // reader button, not on the floating playback controls.
+    SendMessageW(readonly,EM_SETSEL,0,0);
+    for(const auto target:{readonly,child(f.view,111),child(f.view,1111)}){
+        SetFocus(target);check(GetFocus()==target,"Cannot focus an ordinary reading surface");
+        for(const auto& [key,button]:mappings){const auto count=probe.commands.size();
+            check(press(key,target)&&probe.commands.size()==count+1&&probe.commands.back()==button&&GetFocus()==target,
+                "A real prose/header/compile-button focus blocked an existing seek action or changed focus");
+            check(press(key,target,WM_KEYDOWN,1LL|(1LL<<30))&&probe.commands.size()==count+1,
+                "An autorepeated prose seek activated the reader twice");
+        }
+    }
+    check(edit_text(readonly)==readonly_text&&edit_text(source)==source_text,
+        "Reading shortcuts rewrote curricular prose or source code");
     DestroyWindow(list);DestroyWindow(math);
     std::cout<<"PASS F5/Left -3, F6/Up -5, F7/Down +5, F8/Right +3: root/bar normal/SYS once, editor/readonly/math/card-list arrows preserve documents/cursors/selection and paused playback\n";
 }
