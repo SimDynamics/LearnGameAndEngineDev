@@ -1,4 +1,5 @@
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
@@ -606,8 +607,28 @@ std::optional<std::string> choice_revision_state_update(const StateData& data,co
     }else if(!current.Size())return {};
     return utf8(current.Stringify());
 }
+std::string compiler_revision_key(const curriculum::Lesson& lesson) {
+    return "lesson_"+lesson.id+"_state_compiler_revisions_v1_"+lesson.locale;
 }
-void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try {
+std::optional<std::string> compiler_revision_state_update(const StateData& data,const curriculum::Lesson& lesson) {
+    const auto key=compiler_revision_key(lesson);JsonArray current;
+    for(const auto& revision:lesson.state_layout.compiler_revisions) {
+        JsonArray row;for(const auto* field:{&revision.id,&revision.sha256,&revision.current_payload})row.Append(JsonValue::CreateStringValue(wide(*field)));
+        for(const auto& reference:revision.references)for(const auto* field:{&reference.id,&reference.sha256,&reference.current_payload})row.Append(JsonValue::CreateStringValue(wide(*field)));
+        current.Append(row);
+    }
+    if(find(data,"learning_progress",key)) {
+        if(lesson.state_layout.version!=2)throw std::runtime_error("Falta el mapa de las comprobaciones históricas del compilador.");
+        const auto raw=string_value(data,"learning_progress",key);if(raw.empty())throw std::runtime_error("La procedencia del compilador no es válida.");
+        const auto previous=JsonArray::Parse(wide(raw));if(previous.Size()>current.Size())throw std::runtime_error("Se eliminó una ampliación publicada del compilador.");
+        for(std::uint32_t index=0;index<previous.Size();++index)if(previous.GetAt(index).Stringify()!=current.GetAt(index).Stringify())
+            throw std::runtime_error("Cambió el contrato histórico de una comprobación del compilador.");
+        if(previous.Size()==current.Size())return {};
+    }else if(!current.Size())return {};
+    return utf8(current.Stringify());
+}
+}
+static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesson& lesson) try {
     windows::ensure_winrt_apartment();
     const auto& layout = lesson.state_layout; const auto base = "lesson_" + lesson.id;
     // Validate the archive before any lineage/adoption writes can take place.
@@ -615,6 +636,7 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
     const auto retirement_history_update = retirement_history_state_update(data,lesson);
     const auto order_refinement_update = order_refinement_state_update(data,lesson);
     const auto choice_revision_update = choice_revision_state_update(data,lesson);
+    const auto compiler_revision_update = compiler_revision_state_update(data,lesson);
     const auto old_pin_key = base + "_state_lineage_v1";
     const bool has_old_pin = find(data, "learning_progress", old_pin_key) != nullptr;
     const auto old_pin = string_value(data, "learning_progress", old_pin_key);
@@ -655,6 +677,7 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
         if (retirement_history_update) data.preferences["learning_progress"][retirement_history_key(lesson)] = *retirement_history_update;
         if (order_refinement_update) data.preferences["learning_progress"][order_refinement_key(lesson)] = *order_refinement_update;
         if (choice_revision_update) data.preferences["learning_progress"][choice_revision_key(lesson)] = *choice_revision_update;
+        if (compiler_revision_update) data.preferences["learning_progress"][compiler_revision_key(lesson)] = *compiler_revision_update;
         return;
     }
     if (find(data, "learning_progress", pages_key) || find(data, "learning_progress", blocks_key) ||
@@ -662,7 +685,8 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
                                find(data,"learning_progress",retirement_key(lesson)) ||
                                find(data,"learning_progress",retirement_history_key(lesson)) ||
                                find(data,"learning_progress",order_refinement_key(lesson)) ||
-                               find(data,"learning_progress",choice_revision_key(lesson)))))
+                               find(data,"learning_progress",choice_revision_key(lesson)) ||
+                               find(data,"learning_progress",compiler_revision_key(lesson)))))
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
     std::vector<std::string> pages, blocks;
     const bool started = bool_value(data, base + "_started");
@@ -688,9 +712,21 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
     if (retirement_history_update) prefs[retirement_history_key(lesson)] = *retirement_history_update;
     if (order_refinement_update) prefs[order_refinement_key(lesson)] = *order_refinement_update;
     if (choice_revision_update) prefs[choice_revision_key(lesson)] = *choice_revision_update;
+    if (compiler_revision_update) prefs[compiler_revision_key(lesson)] = *compiler_revision_update;
     if (started && !find(data, "learning_progress", base + "_page")) prefs[base + "_page"] = std::int64_t{0};
 } catch (const winrt::hresult_error&) {
     throw std::runtime_error("Los metadatos del progreso no son compatibles; no se usan direcciones visibles.");
+}
+void prepare_lesson_state(StateData& data,const curriculum::Lesson& lesson) {
+    if(lesson.state_layout.compiler_revisions.empty()&&!find(data,"learning_progress",compiler_revision_key(lesson))) {
+        // Preserve legacy map-node lifetime and cost when no compiler
+        // expansion or pinned rollback requires the new atomic adoption.
+        prepare_lesson_state_staged(data,lesson);return;
+    }
+    // All provenance and compiler receipt checks complete before publishing
+    // any lineage, adoption marker or projected case. Errors preserve bytes.
+    auto staged=data;prepare_lesson_state_staged(staged,lesson);
+    windows::prepare_compiler_puzzle_revisions(staged,lesson);data=std::move(staged);
 }
 void validate_lesson_state(const StateData& data, const curriculum::Lesson& lesson, std::string_view route_id) try {
     auto metadata = data;
@@ -702,6 +738,7 @@ void validate_lesson_state(const StateData& data, const curriculum::Lesson& less
     for (const auto* preserved : preserved_blocks) {
         const auto& block = *preserved;
         if (block.type == curriculum::BlockType::cpp_compiler) {
+            windows::validate_compiler_puzzle_state(data,lesson,block);
             (void)get_draft(data, curriculum::draft_key(route_id, lesson, block),
                             block.initial_code, block.standard_input.value_or(""));
             continue;

@@ -40,6 +40,29 @@ std::string complete_seal(const std::string& key,std::string_view program,const 
     for(const auto& item:proofs)frame+=token(item);
     return state::sha256(frame);
 }
+curriculum::Block historical_block(const curriculum::Block& block) {
+    auto original=block;original.output_check=block.compiler_revision->previous_output_check;
+    original.raw_json=block.compiler_revision->raw_json;original.compiler_revision.reset();return original;
+}
+bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& right) {
+    return left.standard_input==right.standard_input&&left.outputs==right.outputs&&left.executable==right.executable&&
+        left.standard_error==right.standard_error;
+}
+void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!block.output_check)return;const auto key=base(lesson,block);
+    for(const auto suffix:{"program","completed","feedback"})if(const auto value=state::find(data,"native_windows",key+suffix);value&&!std::holds_alternative<std::string>(*value))
+        throw std::runtime_error("Invalid compiler execution provenance; data was preserved.");
+    const auto program=state::string_value(data,"native_windows",key+"program");const auto proofs=case_proofs(data,key);
+    if(!proofs.empty()&&(program.empty()||proofs.size()!=block.output_check->cases.size()))
+        throw std::runtime_error("Invalid compiler case count or captured program; data was preserved.");
+    for(std::size_t index=0;index<proofs.size();++index)if(!proofs[index].empty()&&proofs[index]!=proof(key,program,index,block.output_check->cases[index]))
+        throw std::runtime_error("A compiler case proof belongs to another program or objective; data was preserved.");
+    if(const auto value=state::find(data,"native_windows",key+"completed")) {
+        if(proofs.empty()||std::ranges::any_of(proofs,[](const auto& value){return value.empty();})||
+            std::get<std::string>(*value)!=complete_seal(key,program,proofs))
+            throw std::runtime_error("Invalid compiler completion proof; data was preserved.");
+    }
+}
 }
 std::string compiler_program_frame(const CppRunRequest& request) {
     if(request.project_files.empty())return "single-file-v1/"+token(request.source_utf8);
@@ -69,6 +92,49 @@ std::size_t compiler_puzzle_case_count(const state::StateData& data,const curric
     for(std::size_t index=0;index<std::min(proofs.size(),block.output_check->cases.size());++index)
         if(proofs[index]==proof(key,captured,index,block.output_check->cases[index]))++count;
     return count;
+}
+std::size_t compiler_puzzle_historical_case_count(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return block.compiler_revision?compiler_puzzle_case_count(data,lesson,historical_block(block)):0;
+}
+bool compiler_puzzle_historical_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return block.compiler_revision&&compiler_puzzle_completed(data,lesson,historical_block(block));
+}
+std::string compiler_puzzle_historical_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return block.compiler_revision?compiler_puzzle_feedback(data,lesson,historical_block(block)):std::string{};
+}
+void validate_compiler_puzzle_state(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    // Existing objectives retain their historical permissive decoding. The
+    // reviewed migration validates every receipt it is about to reuse.
+    if(!block.compiler_revision)return;
+    validate_receipts(data,lesson,historical_block(block));validate_receipts(data,lesson,block);
+}
+void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::Lesson& lesson) {
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)if(block.compiler_revision) {
+        validate_compiler_puzzle_state(data,lesson,block);
+        const auto key=base(lesson,block),marker=root(lesson,block)+"revision-adopted/"+state::sha256(curriculum::reference_objective_frame(lesson,block));
+        if(const auto adopted=state::find(data,"native_windows",marker)) {
+            if(!std::holds_alternative<bool>(*adopted)||!std::get<bool>(*adopted))throw std::runtime_error("Invalid compiler expansion adoption marker; data was preserved.");
+            continue;
+        }
+        const auto original=historical_block(block);const auto old_key=base(lesson,original);
+        const auto program=state::string_value(data,"native_windows",old_key+"program");
+        if(!program.empty()&&!state::find(data,"native_windows",key+"program")) {
+            const auto old_proofs=case_proofs(data,old_key);std::vector<std::string> proofs(block.output_check->cases.size());
+            if(original.output_check->input_comparison==block.output_check->input_comparison)
+                for(std::size_t index=0;index<block.output_check->cases.size();++index)
+                    for(std::size_t prior=0;prior<old_proofs.size();++prior)
+                        if(!old_proofs[prior].empty()&&same_case(original.output_check->cases[prior],block.output_check->cases[index])) {
+                            proofs[index]=proof(key,program,index,block.output_check->cases[index]);break;
+                        }
+            // A wholly replaced expected report keeps its old achievement,
+            // but does not receive a current receipt or completed seal.
+            if(std::ranges::any_of(proofs,[](const auto& value){return !value.empty();})) {
+                data.preferences["native_windows"][key+"program"]=program;
+                data.preferences["native_windows"][key+"cases"]=std::move(proofs);
+            }
+        }
+        data.preferences["native_windows"][marker]=true;
+    }
 }
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {

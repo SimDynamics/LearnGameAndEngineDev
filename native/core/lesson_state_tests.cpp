@@ -3,6 +3,8 @@
 #include "core/catalog.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
+#include "core/compiler_revision_test_fixture.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -542,6 +544,94 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
     }
     std::cout<<"PASS five reviewed choice revisions: old draft/rejection/success text and guidance, opaque history, separate current selection/reset, append-only pins, native reopen and Android import\n";
 }
+void reviewed_compiler_expansions_preserve_execution_history(const std::filesystem::path& base) {
+    using namespace lgaed;using namespace curriculum;using namespace windows;
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
+    for(std::size_t index=0;index<test::compiler_revision_cases().size();++index) {
+        const auto& plan=test::compiler_revision_cases()[index];const auto before=load_lesson(folder/plan.filename);
+        const auto current=test::revise_compiler_lesson(before,plan.identity);const auto position=stable_block_position(current,plan.identity);
+        require(position.has_value(),"The expanded compiler lost its historical identity");
+        const auto& old=before.pages[position->page].blocks[position->block];const auto& block=current.pages[position->page].blocks[position->block];
+        for(unsigned mode=0;mode<3;++mode) {
+            StateData data;prepare_lesson_state(data,before);data.preferences["opaque_compiler"]["keep"]=std::string(" \t\r\n retained");
+            CppRunRequest captured;captured.revision=7;captured.source_utf8=old.initial_code+"\n// QA captured receipt program\n";
+            Draft draft;draft.source=captured.source_utf8;draft.input=old.standard_input.value_or("");put_draft(data,draft_key("programming",before,old),draft);
+            const auto seeded=mode==2?old.output_check->cases.size():mode==1?old.output_check->cases.size()/2:0;
+            for(std::size_t i=0;i<seeded;++i) {
+                const auto& item=old.output_check->cases[i];FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
+                (void)record_compiler_puzzle_case(data,before,old,captured,execution,"Correcto histórico.");
+            }
+            const auto original=data;prepare_lesson_state(data,current);validate_lesson_state(data,current);
+            const auto old_base="compiler-puzzle/v1/"+before.locale+'/'+before.id+'/'+exercise_key(before,old)+'/'+sha256(reference_objective_frame(before,old))+'/';
+            for(const auto damage:{"program","proof","seal"}) {
+                if(!seeded&&(std::string_view(damage)=="proof"||std::string_view(damage)=="seal"))continue;
+                if(std::string_view(damage)=="seal"&&mode!=2)continue;
+                auto malformed=original;
+                if(std::string_view(damage)=="program")malformed.preferences["native_windows"][old_base+"program"]=std::int64_t{42};
+                if(std::string_view(damage)=="proof") {
+                    auto proofs=std::get<std::vector<std::string>>(*find(malformed,"native_windows",old_base+"cases"));proofs[0]="forged";
+                    malformed.preferences["native_windows"][old_base+"cases"]=std::move(proofs);
+                }
+                if(std::string_view(damage)=="seal")malformed.preferences["native_windows"][old_base+"completed"]=std::string("forged");
+                const auto preserved=malformed;rejects([&]{prepare_lesson_state(malformed,current);});require(malformed==preserved,"Rejecting a corrupt inherited compiler receipt partially adopted its state");
+            }
+            for(const auto& [domain,preferences]:original.preferences)for(const auto& [name,value]:preferences)
+                require(find(data,domain,name)&&*find(data,domain,name)==value,"Adopting a compiler expansion rewrote historical or unrelated data");
+            require(!compiler_puzzle_completed(data,current,block)&&compiler_puzzle_historical_case_count(data,current,block)==seeded&&
+                compiler_puzzle_historical_completed(data,current,block)==(seeded==old.output_check->cases.size()),
+                "Historical cases became current completion or lost their provenance");
+            require(compiler_puzzle_case_count(data,current,block)==(plan.suffix?0:seeded),"The expansion reused changed expected output or discarded unchanged valid cases");
+            if(!plan.suffix&&mode==2) {
+                auto inherited=data,changed_program=data;auto different=captured;different.source_utf8+="// different captured program\n";
+                for(std::size_t extra=old.output_check->cases.size();extra<block.output_check->cases.size();++extra) {
+                    const auto& item=block.output_check->cases[extra];FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
+                    (void)record_compiler_puzzle_case(inherited,current,block,captured,execution,"Correcto ampliado.");
+                    (void)record_compiler_puzzle_case(changed_program,current,block,different,execution,"Only new contrasts.");
+                }
+                require(compiler_puzzle_completed(inherited,current,block)&&compiler_puzzle_case_count(inherited,current,block)==21,
+                    "The same captured program had to repeat its nineteen preserved execution cases");
+                require(!compiler_puzzle_completed(changed_program,current,block)&&compiler_puzzle_case_count(changed_program,current,block)==2&&
+                    compiler_puzzle_historical_completed(changed_program,current,block),"A different program borrowed nineteen historical execution receipts");
+            }
+            const auto adopted=data;prepare_lesson_state(data,current);require(data==adopted,"Compiler expansion adoption is not idempotent");
+            auto rollback=data;rejects([&]{prepare_lesson_state(rollback,before);});require(rollback==data,"Rejecting a compiler downgrade modified progress");
+            auto edited=data;auto other=captured;other.source_utf8+="// other program\n";
+            invalidate_compiler_puzzle_attempt(edited,current,block,other);invalidate_compiler_puzzle_attempt(edited,current,block,captured);prepare_lesson_state(edited,current);
+            require(!compiler_puzzle_case_count(edited,current,block)&&compiler_puzzle_historical_case_count(edited,current,block)==seeded,
+                "Edit/Undo resurrected an incomplete inherited receipt or erased its historical program");
+            const auto name=std::to_string(index)+'-'+std::to_string(mode);StateStore store(base/("compiler-"+name));(void)store.load();store.save(data);
+            auto reopened=store.load();validate_lesson_state(reopened,current);require(reopened==data,"Reopening changed an expanded compiler's historical/current proof");
+            const auto reserved_export=base/("compiler-native-export-"+name);export_preferences(reserved_export,data);
+            rejects([&]{(void)inspect_android_export(reserved_export);});
+            auto android=data;android.preferences.erase("native_windows");
+            const auto exported=base/("compiler-export-"+name);export_preferences(exported,android,true);const auto preview=inspect_android_export(exported);
+            validate_lesson_state(preview.data,current);commit_android_import(preview,base/("compiler-import-"+name));
+            StateStore imported_store(base/("compiler-import-"+name));auto imported=imported_store.load();validate_lesson_state(imported,current);
+            for(const auto& [domain,preferences]:android.preferences)for(const auto& [key,value]:preferences)
+                require(find(imported,domain,key)&&*find(imported,domain,key)==value,"Android import changed historical learning data, drafts or provenance pins");
+            require(!compiler_puzzle_historical_case_count(imported,current,block)&&!compiler_puzzle_case_count(imported,current,block)&&
+                get_draft(imported,draft_key("programming",current,block),"").source==captured.source_utf8,
+                "Android import manufactured native execution credit or erased the original code draft");
+            auto failed=FreshExecution{7,false,false,-1,"","wrong"};
+            require(!record_compiler_puzzle_case(reopened,current,block,captured,failed,"Incorrecto")&&compiler_puzzle_historical_case_count(reopened,current,block)==seeded,
+                "A technical failure accredited a compiler expansion or erased its historical cases");
+            for(const auto& item:block.output_check->cases) {
+                FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
+                (void)record_compiler_puzzle_case(reopened,current,block,captured,execution,"Correcto ampliado.");
+            }
+            require(compiler_puzzle_completed(reopened,current,block)&&compiler_puzzle_feedback(reopened,current,block)=="Correcto ampliado."&&
+                compiler_puzzle_historical_case_count(reopened,current,block)==seeded,"The fresh complete expanded program lost old credit or failed its new objective");
+            invalidate_compiler_puzzle_attempt(reopened,current,block,other);require(compiler_puzzle_completed(reopened,current,block),"Editing revoked a completed expanded objective");
+            const auto pin="lesson_"+current.id+"_state_compiler_revisions_v1_es";auto malformed=reopened;malformed.preferences["learning_progress"][pin]=std::string("[\"invalid\"]");
+            const auto preserved=malformed;rejects([&]{prepare_lesson_state(malformed,current);});require(malformed==preserved,"Rejecting corrupted compiler provenance changed data");
+            reset_compiler_puzzle(reopened,current,block);prepare_lesson_state(reopened,current);
+            require(!compiler_puzzle_completed(reopened,current,block)&&!compiler_puzzle_historical_completed(reopened,current,block)&&
+                !compiler_puzzle_case_count(reopened,current,block)&&!compiler_puzzle_historical_case_count(reopened,current,block),
+                "Explicit Reset revived old compiler credit or retained a completed expansion");
+        }
+    }
+    std::cout<<"PASS four reviewed compiler expansions: native empty/partial/completed proofs and reopen, unchanged-case reuse, new outputs, Edit/Undo and Reset; Android drafts/pins retained without invented native credit or reserved-domain import\n";
+}
 }
 int main(int argc, char** argv) {
     try {
@@ -554,6 +644,7 @@ int main(int argc, char** argv) {
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);
         reviewed_choice_revisions_preserve_responses(base);
+        reviewed_compiler_expansions_preserve_execution_history(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");
         initial.preferences["types"]["français_élève"] = std::string("cœur, niño, std::cout, 𝑥");

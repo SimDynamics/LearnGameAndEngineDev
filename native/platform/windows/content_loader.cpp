@@ -242,6 +242,43 @@ void reject_unmapped_reviewed_choices(const JsonArray& pages) {
             "A reviewed option revision needs its published v2 snapshot and proof");
     }
 }
+struct ReviewedCompiler {
+    std::string_view lesson,identity,before,after;
+    std::string_view reference_identity,reference_before,reference_after;
+};
+const std::vector<ReviewedCompiler>& reviewed_compilers() {
+    static const std::vector<ReviewedCompiler> values{
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada","block_0003_0005",
+            "0ff28cd1a7cb92334d0a2486d5fcd773c7727813c84a082f8908950a6a3399c6","e3d81fc9c5d397dfdd1be6df7271b34cba21d56a696cce43ca5ad1c8e5ae088a"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor","block_0004_0004",
+            "a0633caa9e65905eb3216a603cc7bfcb23b766fcad3715756d47c08796f2940e","0800175e415321a20eb95403a67778d11549225a67ba9732cc9358a031138629",
+            "block_0007_0001","ddd301c6c0a3c53e70ac18b616b2a3a1aae584590cf7b9e632d550088f6bde5a","4d2480ce9aa48f34eb3b1777ab5d0ad88524436faa22cf666a0abb3c010edb46"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__numeros_de_varios_digitos_y_limites","block_0004_0003",
+            "c28f8e645fd47269c44c418648e69b765ff614441a5cb4c2e3723e6ac29c7e10","27698af9c281a19311b4c1c070cc49a86bf68223d85175aeff0bae4aaffc3d7a",
+            "block_0008_0001","1b9b8dc7b0973c441205dcff6182317983b4dfa6865f15738fa20d61bc165055","10f38c37b8a211edd53a6a9bb059296360bd2c2fe5c11d865a8b48d29d8b5c07"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__una_gramatica_para_sumar_y_restar","block_0004_0003",
+            "3e793a0dcd1ed13fd57e97c68f4a22f960585f9acf8611c7aa09927a5c8404f2","55b38dc4d94d9cea6ed446040c7e043dde447be7a18ead7735df182de91cee01",
+            "block_0008_0001","05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d","eee52db854d07ecc2e3319731c18c07940ed543f9836b722ba85ea5e790cc5e4"}
+    };return values;
+}
+const ReviewedCompiler* reviewed_compiler_owner(std::string_view lesson,std::string_view identity) {
+    const auto& values=reviewed_compilers();const auto found=std::ranges::find_if(values,[&](const auto& item){return item.lesson==lesson&&item.identity==identity;});
+    return found==values.end()?nullptr:&*found;
+}
+bool reviewed_compiler_payload(std::string_view digest) {
+    return std::ranges::any_of(reviewed_compilers(),[&](const auto& item){return item.after==digest;});
+}
+bool reviewed_compiler_reference_payload(std::string_view digest) {
+    return std::ranges::any_of(reviewed_compilers(),[&](const auto& item){return !item.reference_after.empty()&&item.reference_after==digest;});
+}
+void reject_unmapped_compiler_revisions(const JsonArray& pages) {
+    for(const auto& page:pages)for(const auto& item:array(page.GetObject(),"blocks")) {
+        const auto block=item.GetObject();require(text(block,"type")!="cpp_compiler"||!reviewed_compiler_payload(state_fingerprint(block)),
+            "A reviewed compiler expansion needs its published v2 snapshot and proof");
+        require(text(block,"type")!="code"||!reviewed_compiler_reference_payload(state_fingerprint(block)),
+            "An expanded reference needs its paired reviewed compiler and original code archive");
+    }
+}
 struct ExpandedOrder {
     OrderRefinement record;
     Block block;
@@ -465,7 +502,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -519,6 +556,36 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
     std::map<std::string,std::string> refined_order_signatures;
     std::map<std::string,const ReviewedChoice*> revised_choices;
+    std::map<std::string,const ReviewedCompiler*> revised_compilers;
+    std::map<std::string,const ReviewedCompiler*> revised_compiler_references;
+    if(metadata.HasKey(L"compilerRevisions")) {
+        const auto records=array(metadata,"compilerRevisions");
+        require(result.version==2&&records.Size()<=4&&(!records.Size()||locale=="es"),"Reviewed compiler expansions require Spanish v2 ownership");
+        for(const auto& value:records) {
+            const auto item=value.GetObject();allowed_keys(item,{"id","block","references"});const auto id=text(item,"id");
+            const auto* reviewed=reviewed_compiler_owner(lesson_id,id);
+            require(reviewed&&current_blocks.contains(id)&&revised_compilers.emplace(id,reviewed).second,
+                "Unknown, inactive or repeated reviewed compiler identity");
+            const auto snapshot=item.GetNamedObject(L"block");
+            require(text(snapshot,"type")=="cpp_compiler"&&fingerprint(snapshot)==reviewed->before&&
+                state_fingerprint(snapshot)==reviewed->before&&result.signatures.at(id)==reviewed->before,
+                "A compiler expansion changed its complete published original");
+            CompilerRevision record;record.id=id;record.raw_json=utf8(snapshot.Stringify());record.sha256=fingerprint(snapshot);
+            record.previous_payload=reviewed->before;record.current_payload=reviewed->after;
+            require(item.HasKey(L"references")==!reviewed->reference_identity.empty(),"The expanded report and its reference must be revised together");
+            if(item.HasKey(L"references")) {
+                const auto references=array(item,"references");require(references.Size()==1,"A compiler expansion has one exact reviewed reference");
+                const auto reference=references.GetAt(0).GetObject();allowed_keys(reference,{"id","block"},true);const auto reference_id=text(reference,"id");
+                const auto original=reference.GetNamedObject(L"block");
+                require(reference_id==reviewed->reference_identity&&current_blocks.contains(reference_id)&&
+                    revised_compiler_references.emplace(reference_id,reviewed).second&&text(original,"type")=="code"&&
+                    fingerprint(original)==reviewed->reference_before&&result.signatures.at(reference_id)==reviewed->reference_before,
+                    "The reviewed reference changed its complete published code or owner");
+                record.references.push_back({reference_id,utf8(original.Stringify()),std::string(reviewed->reference_before),std::string(reviewed->reference_after)});
+            }
+            result.compiler_revisions.push_back(std::move(record));
+        }
+    }
     if(metadata.HasKey(L"choiceRevisions")) {
         const auto records=array(metadata,"choiceRevisions");
         require(result.version==2&&records.Size()<=5&&(!records.Size()||locale=="es"),"Reviewed choices require their Spanish v2 ownership");
@@ -604,6 +671,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for(const auto& [id,reviewed]:revised_choices)
         require(editorial_edges[id].contains({std::string(reviewed->before_full),std::string(reviewed->first_after_full)}),
             "A reviewed option needs its exact first published editorial edge");
+    for(const auto& [id,reviewed]:revised_compilers)
+        require(editorial_edges[id].contains({std::string(reviewed->before),std::string(reviewed->after)}),
+            "A compiler expansion needs its exact first published editorial edge");
+    for(const auto& [id,reviewed]:revised_compiler_references)
+        require(editorial_edges[id].contains({std::string(reviewed->reference_before),std::string(reviewed->reference_after)}),
+            "An expanded reference needs its exact first published editorial edge");
     for (std::size_t p = 0; p < result.current.size(); ++p) {
         const auto blocks = array(pages.GetAt(static_cast<unsigned>(p)).GetObject(), "blocks");
         require(blocks.Size() == result.current[p].blocks.size(), "State map block count differs");
@@ -618,7 +691,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto digest=state_fingerprint(block);
             if(reviewed_choice_payload(digest))require(result.version==2&&locale=="es"&&revised_choices.contains(id)&&
                 revised_choices.at(id)->lesson==lesson_id,"A reviewed option belongs to its original v2 snapshot and owner");
-            const auto expected = revised_choices.contains(id)?std::string(revised_choices.at(id)->after_payload):
+            if(reviewed_compiler_payload(digest))require(result.version==2&&locale=="es"&&revised_compilers.contains(id)&&
+                revised_compilers.at(id)->lesson==lesson_id,"A reviewed compiler expansion belongs to its original v2 snapshot and owner");
+            if(reviewed_compiler_reference_payload(digest))require(result.version==2&&locale=="es"&&revised_compiler_references.contains(id)&&
+                revised_compiler_references.at(id)->lesson==lesson_id,"An expanded reference belongs to its paired reviewed compiler");
+            const auto expected = revised_compiler_references.contains(id)?std::string(revised_compiler_references.at(id)->reference_after):
+                revised_compilers.contains(id)?std::string(revised_compilers.at(id)->after):
+                revised_choices.contains(id)?std::string(revised_choices.at(id)->after_payload):
                 refined_order_signatures.contains(id) ? refined_order_signatures.at(id) : result.signatures.at(id);
             require(digest == expected, "State-bearing block changed without a compatible map");
             if (editorial.contains(id)) require(fingerprint(block) == editorial.at(id), "Stale editorial fingerprint");
@@ -651,6 +730,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto historical_pages=array(item,"pages");
             require(snapshot.current.size()==result.current.size()&&historical_pages.Size()==snapshot.current.size(),"Historical reading page count changed");
             std::set<std::string> snapshot_pages;
+            std::map<std::string,std::string> snapshot_contracts;
             for(std::size_t p=0;p<snapshot.current.size();++p) {
                 const auto& record=snapshot.current[p];snapshot_pages.insert(record.id);
                 require(shells.contains(record.id),"Unknown historical reading page");
@@ -661,11 +741,24 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto digest = state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject());
+                    snapshot_contracts.emplace(id,digest);
+                    if(reviewed_compiler_payload(digest))require(revised_compilers.contains(id)&&revised_compilers.at(id)->lesson==lesson_id&&locale=="es",
+                        "An expanded historical compiler needs its active reviewed snapshot");
+                    if(reviewed_compiler_reference_payload(digest))require(revised_compiler_references.contains(id)&&revised_compiler_references.at(id)->lesson==lesson_id&&locale=="es",
+                        "An expanded historical reference needs its active compiler archive");
                     require(result.signatures.contains(id) && (digest == result.signatures.at(id) ||
                             (refined_order_signatures.contains(id) && digest == refined_order_signatures.at(id)) ||
-                            (revised_choices.contains(id)&&digest==revised_choices.at(id)->after_payload)),
+                            (revised_choices.contains(id)&&digest==revised_choices.at(id)->after_payload)||
+                            (revised_compilers.contains(id)&&digest==revised_compilers.at(id)->after)||
+                            (revised_compiler_references.contains(id)&&digest==revised_compiler_references.at(id)->reference_after)),
                             "Historical reading snapshot changed an activity contract");
                 }
+            }
+            for(const auto& [id,reviewed]:revised_compilers)if(!reviewed->reference_identity.empty()) {
+                const auto compiler=snapshot_contracts.find(id),reference=snapshot_contracts.find(std::string(reviewed->reference_identity));
+                require(compiler!=snapshot_contracts.end()&&reference!=snapshot_contracts.end()&&
+                    (compiler->second==reviewed->after)==(reference->second==reviewed->reference_after),
+                    "A historical expanded report and its reference must belong to the same published revision");
             }
             require(snapshot_pages==origin_pages,"Historical reading page identities changed");
             for(const auto& link:array(item,"referenceAfter")) {
@@ -898,6 +991,12 @@ void resolve_addresses(Lesson& lesson) {
     std::map<std::string,const OrderRefinement*> refinements;
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
     std::map<std::string,ChoiceRevision*> choices;
+    std::map<std::string,CompilerRevision*> compilers;
+    for(auto& revision:layout.compiler_revisions) {
+        const auto original=read_block(JsonObject::Parse(key(revision.raw_json)),revision.raw_json);
+        require(original.output_check.has_value(),"An original compiler revision needs its exact output contract");
+        revision.previous_output_check=*original.output_check;compilers.emplace(revision.id,&revision);
+    }
     for(auto& revision:layout.choice_revisions) {
         const auto original=read_block(JsonObject::Parse(key(revision.raw_json)),revision.raw_json);
         revision.original_options=original.options;revision.original_correct_index=original.correct_index;
@@ -927,6 +1026,7 @@ void resolve_addresses(Lesson& lesson) {
                 choice->second->representation_signature=sha256(choice_representation_frame(block));
                 block.choice_revision=*choice->second;
             }
+            if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end())block.compiler_revision=*compiler->second;
         }
     }
     for (const auto& retired : layout.retired) {
@@ -954,6 +1054,8 @@ void resolve_addresses(Lesson& lesson) {
                 if(const auto choice=choices.find(block.stable_id);choice!=choices.end()&&
                     block.type==BlockType::multiple_choice&&sha256(choice_representation_frame(block))==choice->second->representation_signature)
                     block.choice_revision=*choice->second;
+                if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end()&&block.type==BlockType::cpp_compiler&&
+                    state_fingerprint(source)==compiler->second->current_payload)block.compiler_revision=*compiler->second;
                 block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));
             }
             snapshot.pages.push_back(std::move(page));
@@ -989,7 +1091,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id);
-        } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);}
+        } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
@@ -1038,7 +1140,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id);
-        } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);}
+        } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
         // The catalog keeps its historical read-only progress projection, but
         // dependency sources need their real objectives even in lessons that

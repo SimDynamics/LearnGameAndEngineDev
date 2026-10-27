@@ -571,6 +571,76 @@ void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::N
     DestroyWindow(list);DestroyWindow(math);
     std::cout<<"PASS F5/Left -3, F6/Up -5, F7/Down +5, F8/Right +3: root/bar normal/SYS once, editor/readonly/math/card-list arrows preserve documents/cursors/selection and paused playback\n";
 }
+void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    auto lesson=model();lesson.pages.resize(1);Fixture f(backend,false,true,true,"es",std::move(lesson),true);
+    update_lesson_preferences(f.view,[](state::StateData& data){
+        auto history=narration::begin({},"retained-paused","owner-a",{0,120,0,false},{},"retained-page-a");
+        history=narration::begin(std::move(history),"retained-finished","owner-b",{0,240,1,false},{},"retained-page-b");
+        history=narration::checkpoint(std::move(history),"retained-finished","owner-b",{0,240,1,true});narration::write_history(data,history);
+    });
+    f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==1&&value.offset>300;},"real playback before deleting one private QA recording");
+    f.reader->pause();const auto paused=f.snapshot();const auto missing=paused.segments[paused.index].recording;
+    const auto valid=paused.segments.front().recording;
+    const auto relative=missing.lexically_relative(f.environment.paths.cache);
+    check(!relative.empty()&&relative.begin()->native()!=L".."&&missing!=valid&&std::filesystem::is_regular_file(missing),
+        "Recording deletion regression is not confined to this test's independent audio cache");
+    const auto digest=[](const std::filesystem::path& path){std::ifstream stream(path,std::ios::binary);std::string bytes((std::istreambuf_iterator<char>(stream)),std::istreambuf_iterator<char>());check(!bytes.empty(),"Cannot inspect an independent cached recording");return state::sha256(bytes);};
+    const auto valid_digest=digest(valid);const auto valid_size=std::filesystem::file_size(valid);
+    check(std::filesystem::remove(missing),"Cannot remove the one private QA recording for the missing-file regression");
+    f.reader->toggle();const auto pending=f.snapshot();
+    check(pending.key==paused.key&&pending.index==paused.index&&pending.offset==paused.offset&&!pending.allocated,
+        "A missing recording rebuilt the script, reset its exact position or opened an absent file");
+    f.ready();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==paused.index;},"regenerated missing recording resumes the real paused segment");
+    const auto resumed=f.snapshot();check(std::filesystem::is_regular_file(missing)&&resumed.key==paused.key&&resumed.offset>=paused.offset,
+        "Missing-file recovery failed to resume the same recording identity and offset");
+    f.reader->pause();check(!f.snapshot().allocated&&digest(valid)==valid_digest&&std::filesystem::file_size(valid)==valid_size,
+        "Missing-file recovery retained a paused player or changed another valid cached recording");
+    const auto history=narration::read_history(read_lesson_state(f.view));
+    check(history.entries.size()==3&&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="retained-paused"&&entry.position.milliseconds==120;})
+        &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="retained-finished"&&entry.position.finished&&entry.position.milliseconds==240;}),
+        "Recovering a deleted audio file changed the other two recent page positions");
+    std::cout<<"PASS explicitly deleted private recording: existing worker recovers it at the same offset, preserves valid cache and all three page positions\n";
+
+    // A second, separate recovery keeps the original exact-resume
+    // assertions above intact and exercises a seek before new timing
+    // metadata is delivered to the UI thread.
+    f.reader->toggle();wait([&]{const auto value=f.snapshot();if(!value.playing||value.index!=paused.index||value.offset<=1500)return false;
+        return std::ranges::any_of(value.segments[value.index].timings,[&](const auto& timing){return timing.start_ms>value.offset-900&&timing.start_ms<value.offset-100;});},
+        "real playback before seeking in one unavailable recording");
+    f.reader->pause();const auto before_seek=f.snapshot();const auto& old_part=before_seek.segments[before_seek.index];
+    const auto old_word=std::ranges::find_if(old_part.timings,[&](const auto& timing){return timing.start_ms>before_seek.offset-1000&&timing.start_ms<=before_seek.offset;});
+    check(old_word!=old_part.timings.end(),"The recovery-seek fixture has no actually read word after its destination");
+    const auto character=static_cast<LONG>(old_part.start+old_word->start);
+    // The timed word can be a technical fragment. Its pending ink must
+    // contrast with that fragment's own background, just as ReadingShade does.
+    CHARRANGE old_selection{};SendMessageW(old_part.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&old_selection));
+    CHARRANGE timed_word{character,character+1};SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&timed_word));
+    CHARFORMAT2W word_style{};word_style.cbSize=sizeof(word_style);
+    SendMessageW(old_part.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&word_style));
+    SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&old_selection));
+    const auto pending_ink=reader_theme::unread_color((word_style.dwEffects&CFE_AUTOBACKCOLOR)
+        ?reader_theme::background(old_part.target):word_style.crBackColor);
+    check(color(old_part.target,character)!=pending_ink,"The real word was not read before deleting its private recording");
+    check(old_part.recording==missing&&std::filesystem::remove(missing),"The controlled seek regression did not remove only the same private WAV");
+    f.reader->toggle();f.reader->pause();const auto recovering=f.snapshot();
+    check(!recovering.segments[recovering.index].available&&!recovering.allocated&&recovering.offset==before_seek.offset,
+        "The recovery-seek fixture already delivered replacement timings or changed the paused offset");
+    check(color(old_part.target,character)!=pending_ink,"Preparing an unchanged missing recording lost the existing word shading");
+    f.reader->seek_seconds(-1);const auto rewound=f.snapshot();
+    check(rewound.index==before_seek.index&&rewound.offset==before_seek.offset-1000&&rewound.offset>0
+            &&!rewound.allocated&&!rewound.playing&&rewound.heard_through==before_seek.heard_through,
+        "Rewinding without an audio file changed segment identity, listening credit or the exact requested offset");
+    check(color(old_part.target,character)==pending_ink,
+        "A seek reused an older visible word boundary while the current recording had no timing metadata");
+    f.ready();check(f.snapshot().offset==rewound.offset&&!f.snapshot().playing,
+        "Replacement timing delivery moved the new rewind position or overrode its pause");
+    f.reader->toggle();const auto final_resume=f.snapshot();
+    check(final_resume.allocated&&std::abs(final_resume.offset-rewound.offset)<=1,
+        "Playback after an unavailable-audio seek did not request the same exact recording offset");
+    f.reader->pause();check(digest(valid)==valid_digest&&std::filesystem::file_size(valid)==valid_size,
+        "The controlled unavailable-audio seek changed a different valid recording");
+    std::cout<<"PASS unavailable recording seek: unchanged offset preserves shading, real rewind restores pending words without invented timing or listening credit, and exact paused resume\n";
+}
 }
 
 int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
@@ -579,11 +649,13 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool rates_only=argc==2&&std::string_view(argv[1])=="--rates";
     const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
-    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only)return 2;
+    const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
+    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        if(missing_recording_only){missing_recording_recovery(backend);return 0;}
         if(seek_keys_only){reader_arrow_aliases_preserve_control_keys(backend);return 0;}
         if(compiler_focus_only){checked_compilation_keeps_keyboard_reader_control(backend);return 0;}
         if(rates_only){extended_reader_playback_rates(backend);return 0;}
@@ -1224,68 +1296,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 "Replacing incorrect feedback created parallel unbounded reading history");
             std::cout<<"PASS wrong-to-correct edits retain the nearest real segment and select only the new feedback, without page restart\n";
         }
-        {
-            auto lesson=model();lesson.pages.resize(1);Fixture f(backend,false,true,true,"es",std::move(lesson),true);
-            update_lesson_preferences(f.view,[](state::StateData& data){
-                auto history=narration::begin({},"retained-paused","owner-a",{0,120,0,false},{},"retained-page-a");
-                history=narration::begin(std::move(history),"retained-finished","owner-b",{0,240,1,false},{},"retained-page-b");
-                history=narration::checkpoint(std::move(history),"retained-finished","owner-b",{0,240,1,true});narration::write_history(data,history);
-            });
-            f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==1&&value.offset>300;},"real playback before deleting one private QA recording");
-            f.reader->pause();const auto paused=f.snapshot();const auto missing=paused.segments[paused.index].recording;
-            const auto valid=paused.segments.front().recording;
-            const auto relative=missing.lexically_relative(f.environment.paths.cache);
-            check(!relative.empty()&&relative.begin()->native()!=L".."&&missing!=valid&&std::filesystem::is_regular_file(missing),
-                "Recording deletion regression is not confined to this test's independent audio cache");
-            const auto digest=[](const std::filesystem::path& path){std::ifstream stream(path,std::ios::binary);std::string bytes((std::istreambuf_iterator<char>(stream)),std::istreambuf_iterator<char>());check(!bytes.empty(),"Cannot inspect an independent cached recording");return state::sha256(bytes);};
-            const auto valid_digest=digest(valid);const auto valid_size=std::filesystem::file_size(valid);
-            check(std::filesystem::remove(missing),"Cannot remove the one private QA recording for the missing-file regression");
-            f.reader->toggle();const auto pending=f.snapshot();
-            check(pending.key==paused.key&&pending.index==paused.index&&pending.offset==paused.offset&&!pending.allocated,
-                "A missing recording rebuilt the script, reset its exact position or opened an absent file");
-            f.ready();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==paused.index;},"regenerated missing recording resumes the real paused segment");
-            const auto resumed=f.snapshot();check(std::filesystem::is_regular_file(missing)&&resumed.key==paused.key&&resumed.offset>=paused.offset,
-                "Missing-file recovery failed to resume the same recording identity and offset");
-            f.reader->pause();check(!f.snapshot().allocated&&digest(valid)==valid_digest&&std::filesystem::file_size(valid)==valid_size,
-                "Missing-file recovery retained a paused player or changed another valid cached recording");
-            const auto history=narration::read_history(read_lesson_state(f.view));
-            check(history.entries.size()==3&&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="retained-paused"&&entry.position.milliseconds==120;})
-                &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="retained-finished"&&entry.position.finished&&entry.position.milliseconds==240;}),
-                "Recovering a deleted audio file changed the other two recent page positions");
-            std::cout<<"PASS explicitly deleted private recording: existing worker recovers it at the same offset, preserves valid cache and all three page positions\n";
-
-            // A second, separate recovery keeps the original exact-resume
-            // assertions above intact and exercises a seek before new timing
-            // metadata is delivered to the UI thread.
-            f.reader->toggle();wait([&]{const auto value=f.snapshot();if(!value.playing||value.index!=paused.index||value.offset<=1500)return false;
-                return std::ranges::any_of(value.segments[value.index].timings,[&](const auto& timing){return timing.start_ms>value.offset-900&&timing.start_ms<value.offset-100;});},
-                "real playback before seeking in one unavailable recording");
-            f.reader->pause();const auto before_seek=f.snapshot();const auto& old_part=before_seek.segments[before_seek.index];
-            const auto old_word=std::ranges::find_if(old_part.timings,[&](const auto& timing){return timing.start_ms>before_seek.offset-1000&&timing.start_ms<=before_seek.offset;});
-            check(old_word!=old_part.timings.end(),"The recovery-seek fixture has no actually read word after its destination");
-            const auto character=static_cast<LONG>(old_part.start+old_word->start);
-            const auto pending_ink=reader_theme::unread_color(reader_theme::background(old_part.target));
-            check(color(old_part.target,character)!=pending_ink,"The real word was not read before deleting its private recording");
-            check(old_part.recording==missing&&std::filesystem::remove(missing),"The controlled seek regression did not remove only the same private WAV");
-            f.reader->toggle();f.reader->pause();const auto recovering=f.snapshot();
-            check(!recovering.segments[recovering.index].available&&!recovering.allocated&&recovering.offset==before_seek.offset,
-                "The recovery-seek fixture already delivered replacement timings or changed the paused offset");
-            check(color(old_part.target,character)!=pending_ink,"Preparing an unchanged missing recording lost the existing word shading");
-            f.reader->seek_seconds(-1);const auto rewound=f.snapshot();
-            check(rewound.index==before_seek.index&&rewound.offset==before_seek.offset-1000&&rewound.offset>0
-                    &&!rewound.allocated&&!rewound.playing&&rewound.heard_through==before_seek.heard_through,
-                "Rewinding without an audio file changed segment identity, listening credit or the exact requested offset");
-            check(color(old_part.target,character)==pending_ink,
-                "A seek reused an older visible word boundary while the current recording had no timing metadata");
-            f.ready();check(f.snapshot().offset==rewound.offset&&!f.snapshot().playing,
-                "Replacement timing delivery moved the new rewind position or overrode its pause");
-            f.reader->toggle();const auto final_resume=f.snapshot();
-            check(final_resume.allocated&&std::abs(final_resume.offset-rewound.offset)<=1,
-                "Playback after an unavailable-audio seek did not request the same exact recording offset");
-            f.reader->pause();check(digest(valid)==valid_digest&&std::filesystem::file_size(valid)==valid_size,
-                "The controlled unavailable-audio seek changed a different valid recording");
-            std::cout<<"PASS unavailable recording seek: unchanged offset preserves shading, real rewind restores pending words without invented timing or listening credit, and exact paused resume\n";
-        }
+        missing_recording_recovery(backend);
         {
             Fixture f(backend,false,true,false);const auto before=f.snapshot();
             check(before.segments.size()>1&&std::ranges::count_if(before.segments,[](const auto& part){return part.available;})==1,

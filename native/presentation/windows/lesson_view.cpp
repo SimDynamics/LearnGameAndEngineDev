@@ -691,6 +691,8 @@ struct LessonView {
                     region.source_text,region.target,index,false,false,true,vm.response.correct});
             }
             add(index,vm.feedback,vm.feedback_source,true);
+            if(script_version==0&&current.type==BlockType::cpp_compiler)
+                add(index,find_item(control_id(index,40)),compiler_history_text(index));
         }
         return result;
     }
@@ -763,6 +765,7 @@ struct LessonView {
                     }
                     emit(index,current,4,std::move(prior_feedback));result.back().feedback=true;result.back().correct=correct;result.back().is_exercise=true;result.back().solved=correct;
                 }
+                if(current.type==BlockType::cpp_compiler)emit(index,current,40,compiler_history_text(historical,current));
             }
             archives.push_back(std::move(archived));
         }
@@ -2152,6 +2155,28 @@ struct LessonView {
         updating = previous_update; sync_quiz_controls(index); reflow();
         notify_content();
     }
+    std::string compiler_history_text(const curriculum::Lesson& model,const curriculum::Block& current) const {
+        if(current.type!=BlockType::cpp_compiler||!current.compiler_revision||
+            windows::compiler_puzzle_completed(data,model,current))return {};
+        const auto count=windows::compiler_puzzle_historical_case_count(data,model,current);
+        if(!count)return {};
+        auto text=windows::compiler_puzzle_historical_completed(data,model,current)
+            ?ui("Logro anterior conservado. La ampliación de esta actividad sigue pendiente.",
+                "Previous achievement retained. The expanded activity is still pending.",
+                "Réussite précédente conservée. L’activité élargie reste à vérifier.")
+            :ui("Comprobaciones anteriores conservadas. La ampliación de esta actividad sigue pendiente.",
+                "Previous checks retained. The expanded activity is still pending.",
+                "Vérifications précédentes conservées. L’activité élargie reste à vérifier.");
+        const auto previous=windows::compiler_puzzle_historical_feedback(data,model,current);
+        if(!previous.empty())text+='\n'+previous;
+        return text;
+    }
+    std::string compiler_history_text(std::size_t index) const {return compiler_history_text(lesson,block(index));}
+    void refresh_compiler_history(std::size_t index) {
+        if(block(index).type!=BlockType::cpp_compiler||!block(index).compiler_revision)return;
+        if(const auto target=find_item(control_id(index,40))){const auto text=compiler_history_text(index);
+            if(edit_text(target)!=text)set_rich_text(target,text,{},false,RichTextRole::body,lesson.locale);}
+    }
     std::string choice_history_text(const curriculum::Block& current,const state::Response& response) const {
         if(current.type!=BlockType::multiple_choice||!response.historical_choice||response.selected<0)return {};
         const auto label=response.correct?ui("Respuesta anterior (correcta): ","Previous answer (correct): ","Réponse précédente (correcte) : ")
@@ -2366,6 +2391,10 @@ struct LessonView {
             rows.push_back({{vm.console}, {0}, 72, true,0,240});rows.back().horizontal_inset=16;rows.back().padding_after=0;
             reader_theme::set_text_color(vm.console,RGB(121,226,157));
             create_feedback(index);refresh_project_actions(index);
+            if(current.compiler_revision){
+                const auto history=rich(compiler_history_text(index),control_id(index,40));
+                rows.push_back({{history},{0},0,true});
+            }
             if(current.output_check&&vm.status&&!windows::compiler_puzzle_completed(data,lesson,current)){
                 const auto count=windows::compiler_puzzle_case_count(data,lesson,current);
                 if(count)set_rich_text(vm.status,ui("Casos comprobados: ","Checked cases: ","Cas vérifiés : ")
@@ -3197,7 +3226,7 @@ struct LessonView {
                 if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
-                if(correct){mark_dirty();flush();refresh_references();}
+                if(correct){refresh_compiler_history(index);mark_dirty();flush();refresh_references();}
             }
         }
         reflow();
@@ -3449,6 +3478,7 @@ struct LessonView {
         case ActionType::reset:
             if (running_block == action.block) cancel_run();
             windows::reset_compiler_puzzle(data,lesson,block(action.block));
+            refresh_compiler_history(action.block);
             clear_reference_completion(action.block);feedback(action.block,"",false);mark_dirty();
             if(vm.project){vm.project->reset();capture_draft(action.block);mark_dirty();refresh_references();break;}
             updating = true;

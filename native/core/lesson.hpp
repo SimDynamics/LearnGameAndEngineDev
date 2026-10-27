@@ -81,6 +81,16 @@ struct ChoiceRevision {
     std::string original_question, original_explanation, original_review_feedback;
     std::optional<std::size_t> original_correct_index;
 };
+// An exact reviewed compiler contract expansion retains its complete original
+// and independent execution proofs; old success never proves the new checks.
+struct CompilerReferenceRevision {
+    std::string id, raw_json, sha256, current_payload;
+};
+struct CompilerRevision {
+    std::string id, raw_json, sha256, previous_payload, current_payload;
+    OutputCheck previous_output_check;
+    std::vector<CompilerReferenceRevision> references;
+};
 struct Block {
     BlockType type{};
     std::string stable_id, id, text, question, code, initial_code, language;
@@ -99,6 +109,7 @@ struct Block {
     std::vector<std::vector<std::size_t>> order_equivalence_groups;
     std::optional<OrderRefinement> order_refinement;
     std::optional<ChoiceRevision> choice_revision;
+    std::optional<CompilerRevision> compiler_revision;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
@@ -145,6 +156,7 @@ struct StateLayout {
     std::vector<StateRetirementHistory> retirement_history;
     std::vector<OrderRefinement> order_refinements;
     std::vector<ChoiceRevision> choice_revisions;
+    std::vector<CompilerRevision> compiler_revisions;
 };
 struct Lesson {
     std::string id, title, locale, raw_json;

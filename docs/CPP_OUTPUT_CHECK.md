@@ -119,6 +119,33 @@ Al activar el contrato, cada compilador activo con `outputCheck` forma parte del
 
 El prototipo general sigue libre. Los bloques retirados conservan sus datos históricos y no crean controles, audio ni obligaciones activas. El contrato de Windows no cambia las reglas de ejecución o conservación Android descritas en los apartados anteriores.
 
+## Ampliaciones revisadas con conservación en Windows
+
+La extensión `stateLayout.compilerRevisions` admite las cuatro ampliaciones
+cerradas de `CPP_CASOS_ADICIONALES_CON_PROGRESO`; su contrato de autoría está en
+`docs/curriculum/STABLE_LESSON_STATE.md`. No es una excepción general para editar
+los esperados de un compilador publicado.
+
+En U11L7 se conservan los 19 casos originales y se añaden dos. Una prueba anterior
+válida puede reutilizarse exclusivamente para el mismo caso del mismo programa
+capturado; no acredita ninguno de los dos casos nuevos. Una edición de fuentes
+antes de completar el objetivo ampliado mantiene las reglas de invalidación de
+intentos. En U11L8, U11L10 y U11L11 el caso único exige un stdout ampliado: el logro
+anterior se conserva como histórico, separado de la nueva comprobación completa.
+Ni una salida anterior ni un booleano antiguo aprueban silenciosamente el objetivo
+ampliado. El botón Reiniciar elimina el intento activo y evita que una prueba
+histórica vuelva a proyectarse como acreditación corriente.
+
+Las tres ampliaciones de stdout modifican simultáneamente la referencia estática
+posterior: únicamente añaden sus llamadas revisadas antes del `return 0;` final
+de `main`. El mapa conserva el bloque anterior completo en el archivo
+`references` de su revisión. No se permite ampliar el esperado dejando una
+referencia incompatible ni usar este contrato para cambiar otros programas.
+
+La ampliación no crea otro editor, no copia borradores ni altera las traducciones.
+Work sigue siendo responsable de integrar las consignas y referencias revisadas;
+las pruebas del contrato no equivalen a su aceptación visual o escucha.
+
 ## Actividad integrada
 
 `programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`, página 5, bloque 3, declara la última modificación que ya solicitan sus instrucciones y muestra su referencia en la página 6: `Caja recibida` (español), `Box received` (inglés) o `Boîte reçue` (francés), sin salto final ni comillas. No se deduce el esperado de la predicción del programa inicial ni se cambia esa respuesta. El programa original y la primera modificación siguen disponibles para editar, ejecutar, comparar y reiniciar; esta comprobación no exige completar una etapa previa ni bloquea otra ejecución. Cada laboratorio utiliza la modalidad de sus propios metadatos; la ausencia de `outputCheck` conserva la exploración libre.

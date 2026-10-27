@@ -24,7 +24,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
@@ -151,6 +151,119 @@ CHOICE_OPTION_REVISIONS = {
 }
 
 
+# CPP_CASOS_ADICIONALES_CON_PROGRESO: four closed Spanish output contracts.
+# Initial code, owner and every existing case are protected independently of
+# editable guidance. The complete original block is archived in the v2 map.
+COMPILER_CASE_REVISIONS = {
+    (_CHOICE_PREFIX + "construir_un_lector_de_entrada_preparada", "block_0003_0005"): {
+        "before": "0ff28cd1a7cb92334d0a2486d5fcd773c7727813c84a082f8908950a6a3399c6",
+        "after": "e3d81fc9c5d397dfdd1be6df7271b34cba21d56a696cce43ca5ad1c8e5ae088a",
+        "append": [
+            {"standardInput": "4:0 aviso", "outputs": ["Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"]},
+            {"standardInput": "4;0 aviso", "outputs": ["Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"]},
+        ],
+    },
+    (_CHOICE_PREFIX + "tokens_con_categoria_y_valor", "block_0004_0004"): {
+        "before": "a0633caa9e65905eb3216a603cc7bfcb23b766fcad3715756d47c08796f2940e",
+        "after": "0800175e415321a20eb95403a67778d11549225a67ba9732cc9358a031138629",
+        "suffix": "Numero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\n",
+    },
+    (_CHOICE_PREFIX + "numeros_de_varios_digitos_y_limites", "block_0004_0003"): {
+        "before": "c28f8e645fd47269c44c418648e69b765ff614441a5cb4c2e3723e6ac29c7e10",
+        "after": "27698af9c281a19311b4c1c070cc49a86bf68223d85175aeff0bae4aaffc3d7a",
+        "suffix": "Numero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\n",
+    },
+    (_CHOICE_PREFIX + "una_gramatica_para_sumar_y_restar", "block_0004_0003"): {
+        "before": "3e793a0dcd1ed13fd57e97c68f4a22f960585f9acf8611c7aa09927a5c8404f2",
+        "after": "55b38dc4d94d9cea6ed446040c7e043dde447be7a18ead7735df182de91cee01",
+        "suffix": "Resultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\n",
+    },
+}
+
+
+# The three in-program batteries need their complete static reference to grow
+# with the same reviewed calls. These are paired with their compiler revision.
+COMPILER_REFERENCE_REVISIONS = {
+    (_CHOICE_PREFIX + "tokens_con_categoria_y_valor", "block_0004_0004"): {
+        "id": "block_0007_0001",
+        "before": "ddd301c6c0a3c53e70ac18b616b2a3a1aae584590cf7b9e632d550088f6bde5a",
+        "after": "4d2480ce9aa48f34eb3b1777ab5d0ad88524436faa22cf666a0abb3c010edb46",
+        "insert": '    probar("8-4*(2)/1;");\n',
+    },
+    (_CHOICE_PREFIX + "numeros_de_varios_digitos_y_limites", "block_0004_0003"): {
+        "id": "block_0008_0001",
+        "before": "1b9b8dc7b0973c441205dcff6182317983b4dfa6865f15738fa20d61bc165055",
+        "after": "10f38c37b8a211edd53a6a9bb059296360bd2c2fe5c11d865a8b48d29d8b5c07",
+        "insert": '    trazar("0007+2;");\n',
+    },
+    (_CHOICE_PREFIX + "una_gramatica_para_sumar_y_restar", "block_0004_0003"): {
+        "id": "block_0008_0001",
+        "before": "05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d",
+        "after": "eee52db854d07ecc2e3319731c18c07940ed543f9836b722ba85ea5e790cc5e4",
+        "insert": '    probar("99+1;");\n    probar("0-99-1;");\n    probar("99+2-2;");\n    probar("0-99-2+2;");\n',
+    },
+}
+_COMPILER_REFERENCE_TAIL = "    return 0;\n}\n"
+
+
+def _reviewed_compiler_reference(block: dict) -> dict | None:
+    if block.get("type") != "code":
+        return None
+    signature = fingerprint(block)
+    return next((spec for spec in COMPILER_REFERENCE_REVISIONS.values() if signature == spec["after"]), None)
+
+
+def historical_compiler_reference_payload(block: dict) -> dict:
+    """Restore only a complete reviewed reference after contextual validation."""
+    spec = _reviewed_compiler_reference(block)
+    if spec is None:
+        return block
+    result = deepcopy(block)
+    tail = spec["insert"] + _COMPILER_REFERENCE_TAIL
+    require(result["code"].endswith(tail), "Invalid reviewed compiler reference tail")
+    result["code"] = result["code"][:-len(tail)] + _COMPILER_REFERENCE_TAIL
+    require(fingerprint(result) == spec["before"], "Invalid reviewed compiler reference")
+    return result
+
+
+def _compiler_payload(block: dict) -> dict:
+    payload = deepcopy(block)
+    config = payload.get("outputCheck")
+    if type(config) is dict and type(config.get("cases")) is list:
+        for case in config["cases"]:
+            if type(case) is dict:
+                case.pop("explanation", None)
+                case.pop("reviewFeedback", None)
+                if "standardError" in case:
+                    require(case["standardError"] == "nonBlank", "Unsupported compiler stderr requirement")
+                    case.pop("standardError")
+    return payload
+
+
+def _reviewed_compiler(block: dict) -> dict | None:
+    if block.get("type") != "cpp_compiler":
+        return None
+    signature = fingerprint(_compiler_payload(block))
+    return next((spec for spec in COMPILER_CASE_REVISIONS.values() if signature == spec["after"]), None)
+
+
+def historical_compiler_payload(block: dict) -> dict:
+    """Project only four exact expanded output contracts, keeping current guidance."""
+    spec = _reviewed_compiler(block)
+    if spec is None:
+        return block
+    result = deepcopy(block)
+    cases = result["outputCheck"]["cases"]
+    if "append" in spec:
+        del cases[-len(spec["append"]):]
+    else:
+        output = cases[0]["outputs"][0]
+        require(output.endswith(spec["suffix"]), "Invalid reviewed compiler suffix")
+        cases[0]["outputs"][0] = output[:-len(spec["suffix"])]
+    require(fingerprint(_compiler_payload(result)) == spec["before"], "Invalid reviewed compiler revision")
+    return result
+
+
 def _choice_payload(block: dict) -> dict:
     return {key: value for key, value in block.items()
             if key not in {"question", "explanation", "reviewFeedback"}}
@@ -193,9 +306,10 @@ def state_payload(block: dict) -> dict:
     """Only explicit editorial fields may vary without changing a response contract.
 
     The curricular validator still decides which prose changes are authorized.
-    Five exact reviewed options normalize to their historical contract; document
-    validation additionally requires their v2 context, archive and proof. Maths
-    retains its exact contract except one reviewed label.
+    Closed reviewed options, compiler expansions and their three references
+    normalize to historical contracts; document validation additionally requires
+    their v2 context, paired archives and proofs. Maths retains its exact
+    contract except one reviewed label.
     """
     kind = block.get("type")
     if kind in {"heading", "paragraph", "note"}:
@@ -206,20 +320,8 @@ def state_payload(block: dict) -> dict:
         payload = _choice_payload(block)
         return historical_choice_payload(payload) if kind == "multiple_choice" else payload
     if kind == "cpp_compiler":
-        payload = deepcopy(block)
-        config = payload.get("outputCheck")
-        if type(config) is dict and type(config.get("cases")) is list:
-            for case in config["cases"]:
-                if type(case) is dict:
-                    case.pop("explanation", None)
-                    case.pop("reviewFeedback", None)
-                    if "standardError" in case:
-                        require(case["standardError"] == "nonBlank", "Unsupported compiler stderr requirement")
-                        # Historical state addresses retain their stdout contract;
-                        # native completion proofs hash the additional objective.
-                        case.pop("standardError")
-        return payload
-    return historical_math_payload(block)
+        return historical_compiler_payload(_compiler_payload(block))
+    return historical_compiler_reference_payload(historical_math_payload(block))
 
 
 def state_fingerprint(block: dict) -> str:
@@ -303,6 +405,23 @@ def _historical_choice_contract(document: dict, identity: str, block: dict) -> d
     # Only callers that have validated the complete document/transition use
     # this projection. Keep current prose/guidance for its ordinary validator.
     return historical_choice_payload(block) if identity in _choice_revisions(document) else block
+
+
+def _compiler_revisions(document: dict) -> dict[str, dict]:
+    return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("compilerRevisions", [])}
+
+
+def _compiler_references(document: dict) -> dict[str, dict]:
+    return {reference["id"]: reference["block"]
+            for item in document.get("stateLayout", {}).get("compilerRevisions", [])
+            for reference in item.get("references", [])}
+
+
+def _historical_compiler_contract(document: dict, identity: str, block: dict) -> dict:
+    # Only validated document/transition callers may use this curricular view.
+    if identity in _compiler_revisions(document):
+        return historical_compiler_payload(block)
+    return historical_compiler_reference_payload(block) if identity in _compiler_references(document) else block
 
 
 def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
@@ -470,6 +589,45 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 "The choice archive must preserve its exact complete published block")
         require(state_fingerprint(original) == digests[identity], "The choice snapshot does not match its immutable response contract")
         choices[identity] = spec
+    compiler_revisions = meta.get("compilerRevisions", [])
+    require(type(compiler_revisions) is list and len(compiler_revisions) <= len(COMPILER_CASE_REVISIONS),
+            "Malformed reviewed compiler archive")
+    require(not compiler_revisions or meta["locale"] == "es", "Compiler revisions are authorized only for Spanish")
+    compilers, compiler_references = {}, {}
+    for item in compiler_revisions:
+        require(type(item) is dict and {"id", "block"} <= set(item) <= {"id", "block", "references"},
+                "A compiler revision needs its identity and complete original block")
+        identity = _identity(item["id"])
+        require(identity in storage and identity not in compilers, "Unknown or repeated compiler revision identity")
+        spec = COMPILER_CASE_REVISIONS.get((document.get("id"), identity))
+        require(spec is not None, "This compiler revision belongs to its reviewed Spanish lesson and identity")
+        original = item["block"]
+        require(type(original) is dict and original.get("type") == "cpp_compiler"
+                and fingerprint(original) == spec["before"]
+                and fingerprint(_compiler_payload(original)) == spec["before"],
+                "The compiler archive must preserve its exact complete published block")
+        require(state_fingerprint(original) == digests[identity],
+                "The compiler snapshot does not match its immutable response contract")
+        compilers[identity] = spec
+        reference_spec = COMPILER_REFERENCE_REVISIONS.get((document.get("id"), identity))
+        require(("references" in item) == (reference_spec is not None),
+                "A compiler expansion needs exactly its paired reviewed reference archive")
+        if reference_spec is not None:
+            references = item["references"]
+            require(type(references) is list and len(references) == 1,
+                    "A compiler revision needs its one complete original reference")
+            reference = references[0]
+            require(type(reference) is dict and set(reference) == {"id", "block"}
+                    and reference["id"] == reference_spec["id"], "Invalid paired compiler reference identity")
+            reference_id = _identity(reference["id"])
+            require(reference_id in storage and reference_id not in compiler_references,
+                    "Unknown or repeated compiler reference identity")
+            original_reference = reference["block"]
+            require(type(original_reference) is dict and original_reference.get("type") == "code"
+                    and fingerprint(original_reference) == reference_spec["before"]
+                    and state_fingerprint(original_reference) == digests[reference_id],
+                    "The compiler reference archive must preserve its exact complete published block")
+            compiler_references[reference_id] = reference_spec
     current = meta["current"]
     require(type(current) is list and len(current) == len(pages) == len(page_ids),
             "This extension preserves historical pages")
@@ -492,6 +650,16 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(meta["locale"] == "es" and identity in choices
                         and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
                         "A revised choice requires its exact lesson, identity and original archive")
+            compiler_reviewed = _reviewed_compiler(block)
+            if compiler_reviewed is not None or identity in compilers:
+                require(meta["locale"] == "es" and identity in compilers
+                        and COMPILER_CASE_REVISIONS.get((document.get("id"), identity)) == compiler_reviewed,
+                        "A revised compiler requires its exact lesson, identity and original archive")
+            reference_reviewed = _reviewed_compiler_reference(block)
+            if reference_reviewed is not None or identity in compiler_references:
+                require(meta["locale"] == "es" and identity in compiler_references
+                        and compiler_references[identity] == reference_reviewed,
+                        "A revised compiler reference requires its matching expanded compiler and archive")
             projected = order_contract_projection(block, refined[identity]) if identity in refined else block
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
@@ -500,6 +668,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     require(len(set(seen_pages)) == len(seen_pages) and set(seen_pages) == set(page_ids), "Page identities changed")
     require(refined.keys() <= set(seen_blocks), "Order refinements must remain active under their existing identities")
     require(choices.keys() <= set(seen_blocks), "Choice revisions must remain active under their existing identities")
+    require(compilers.keys() <= set(seen_blocks), "Compiler revisions must remain active under their existing identities")
+    require(compiler_references.keys() <= set(seen_blocks), "Compiler references must remain active under their existing identities")
     retired = meta.get("retired", [])
     require(type(retired) is list and len(retired) <= 100_000, "Malformed retired activity archive")
     require(not retired or meta["locale"] == "es", "Retirement is currently authorized only for Spanish")
@@ -515,6 +685,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 and item["next"] != identity, "Invalid retired activity successor")
         require(type(item["block"]) is dict and item["block"].get("type") in RETIRABLE_TYPES,
                 "Only compiler activities and their presentation blocks can be retired")
+        require(_reviewed_compiler(item["block"]) is None,
+                "A revised compiler must retain its active revision archive")
+        require(_reviewed_compiler_reference(item["block"]) is None,
+                "A revised compiler reference must retain its active revision archive")
         require(state_fingerprint(item["block"]) == digests[identity],
                 "The retired response/code contract changed")
         retired_ids.add(identity)
@@ -555,6 +729,16 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(any(chain[index:index + 2] == [spec["full_before"], spec["full_after"]]
                     for index in range(len(chain) - 1)),
                 "A choice revision needs its exact original-to-reviewed editorial edge")
+    for identity, spec in compilers.items():
+        chain = chains.get(identity, [])
+        require(any(chain[index:index + 2] == [spec["before"], spec["after"]]
+                    for index in range(len(chain) - 1)),
+                "A compiler revision needs its exact original-to-reviewed editorial edge")
+    for identity, spec in compiler_references.items():
+        chain = chains.get(identity, [])
+        require(any(chain[index:index + 2] == [spec["before"], spec["after"]]
+                    for index in range(len(chain) - 1)),
+                "A compiler reference needs its exact original-to-reviewed editorial edge")
     for identity, block in actual.items():
         if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
             require(chains.get(identity) == [MATH_LABEL_BEFORE, MATH_LABEL_AFTER],
@@ -630,6 +814,10 @@ def _validate_state_layout(document: dict) -> dict[tuple[int, int], tuple[int, i
                 "The reviewed mathematical label requires its published v2 identity and proof")
         require(not any(_reviewed_choice(block) is not None for page in pages for block in page.get("blocks", [])),
                 "A reviewed choice revision requires its published v2 identity and proof")
+        require(not any(_reviewed_compiler(block) is not None for page in pages for block in page.get("blocks", [])),
+                "A reviewed compiler revision requires its published v2 identity and proof")
+        require(not any(_reviewed_compiler_reference(block) is not None for page in pages for block in page.get("blocks", [])),
+                "A reviewed compiler reference requires its published v2 identity and proof")
     if "stateLayout" not in document:
         return {(p, b): (p, b) for p, page in enumerate(pages) for b in range(len(page.get("blocks", [])))}
     meta = document["stateLayout"]
@@ -758,6 +946,8 @@ def _validate_retirement_history(document: dict) -> None:
     archived = [entry["id"] for entry in meta.get("retired", [])]
     available = _all_blocks(document)
     choices = _choice_revisions(document)
+    compilers = _compiler_revisions(document)
+    compiler_references = _compiler_references(document)
     page_ids = {record["id"] for record in meta["current"]}
     page_shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
                    for page, record in zip(document["pages"], meta["current"])}
@@ -797,10 +987,33 @@ def _validate_retirement_history(document: dict) -> None:
                             and CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)) == reviewed
                             and _reviewed_choice(available[block_id]) == reviewed,
                             "A historical revised choice requires its matching active revision archive")
+                compiler_reviewed = _reviewed_compiler(block)
+                if compiler_reviewed is not None:
+                    require(meta["locale"] == "es" and block_id in compilers
+                            and COMPILER_CASE_REVISIONS.get((document.get("id"), block_id)) == compiler_reviewed
+                            and _reviewed_compiler(available[block_id]) == compiler_reviewed,
+                            "A historical revised compiler requires its matching active revision archive")
+                reference_reviewed = _reviewed_compiler_reference(block)
+                if reference_reviewed is not None:
+                    expected_reference = next((reference for (lesson, compiler), reference in COMPILER_REFERENCE_REVISIONS.items()
+                                               if lesson == document.get("id") and reference["id"] == block_id), None)
+                    require(meta["locale"] == "es" and block_id in compiler_references
+                            and expected_reference == reference_reviewed
+                            and _reviewed_compiler_reference(available[block_id]) == reference_reviewed,
+                            "A historical revised compiler reference requires its matching active revision archive")
                 require(state_fingerprint(_historical_order_contract(document, block_id, block, allow_original=True))
                         == state_fingerprint(_historical_order_contract(document, block_id, available[block_id])),
                         "Historical reading snapshot changed a response/code contract")
                 seen_blocks.add(block_id)
+        historical_blocks = {identity: block for page, record in zip(pages, current)
+                             for identity, block in zip(record["blocks"], page.get("blocks", []))}
+        for (lesson, compiler), reference in COMPILER_REFERENCE_REVISIONS.items():
+            if lesson == document.get("id") and compiler in compilers:
+                reference_id = reference["id"]
+                if compiler in historical_blocks and reference_id in historical_blocks:
+                    require((_reviewed_compiler(historical_blocks[compiler]) is not None)
+                            == (_reviewed_compiler_reference(historical_blocks[reference_id]) is not None),
+                            "A historical compiler revision and reference must preserve the same published version")
         historical = {"pages": pages, "stateLayout": {"current": current},
                       "referenceAfter": snapshot["referenceAfter"], "activityAfter": snapshot["activityAfter"]}
         _validate_presentation_relationships(historical)
@@ -888,6 +1101,48 @@ def revise_choice_option(document: dict, identity: str) -> dict:
     result["stateLayout"].setdefault("choiceRevisions", []).append({"id": identity, "block": deepcopy(original)})
     result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": spec["full_before"],
                                             "afterSha256": spec["full_after"]})
+    validate_transition(document, result)
+    return result
+
+
+def revise_compiler_cases(document: dict, identity: str) -> dict:
+    """Prepare exactly one reviewed compiler expansion without editing assets."""
+    validate(document)
+    meta = document.get("stateLayout", {})
+    require(meta.get("version") == 2 and meta.get("locale") == "es",
+            "Prepare the published Spanish family as stateLayout v2 before revising a compiler")
+    _identity(identity)
+    spec = COMPILER_CASE_REVISIONS.get((document.get("id"), identity))
+    require(spec is not None, "The compiler is not one of the four reviewed activities")
+    if identity in _compiler_revisions(document):
+        return deepcopy(document)
+    original = _blocks(document).get(identity)
+    require(original is not None and fingerprint(original) == spec["before"],
+            "A reviewed compiler must start from its exact complete published block")
+    result = deepcopy(document)
+    actual = _blocks(result)[identity]
+    if "append" in spec:
+        actual["outputCheck"]["cases"].extend(deepcopy(spec["append"]))
+    else:
+        actual["outputCheck"]["cases"][0]["outputs"][0] += spec["suffix"]
+    require(fingerprint(actual) == spec["after"], "The expanded compiler does not match its reviewed first revision")
+    archive = {"id": identity, "block": deepcopy(original)}
+    result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": spec["before"],
+                                            "afterSha256": spec["after"]})
+    reference_spec = COMPILER_REFERENCE_REVISIONS.get((document.get("id"), identity))
+    if reference_spec is not None:
+        reference_id = reference_spec["id"]
+        original_reference = _blocks(document).get(reference_id)
+        require(original_reference is not None and fingerprint(original_reference) == reference_spec["before"],
+                "A compiler expansion needs its exact complete published reference")
+        reference = _blocks(result)[reference_id]
+        require(reference["code"].endswith(_COMPILER_REFERENCE_TAIL), "Invalid published reference ending")
+        reference["code"] = reference["code"][:-len(_COMPILER_REFERENCE_TAIL)] + reference_spec["insert"] + _COMPILER_REFERENCE_TAIL
+        require(fingerprint(reference) == reference_spec["after"], "The compiler reference does not match its reviewed expansion")
+        archive["references"] = [{"id": reference_id, "block": deepcopy(original_reference)}]
+        result["stateLayout"]["editorial"].append({"id": reference_id, "beforeSha256": reference_spec["before"],
+                                                "afterSha256": reference_spec["after"]})
+    result["stateLayout"].setdefault("compilerRevisions", []).append(archive)
     validate_transition(document, result)
     return result
 
@@ -1022,6 +1277,16 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for item in choices[len(old_choices):]:
         require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
                 "A new choice revision must preserve its complete previous published block")
+    old_compilers = old_meta.get("compilerRevisions", []) if old_v2 else []
+    compilers = meta.get("compilerRevisions", [])
+    require(compilers[:len(old_compilers)] == old_compilers,
+            "Published compiler revisions are append-only and cannot be removed or replaced")
+    for item in compilers[len(old_compilers):]:
+        require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
+                "A new compiler revision must preserve its complete previous published block")
+        for reference in item.get("references", []):
+            require(reference["id"] in before and fingerprint(reference["block"]) == fingerprint(before[reference["id"]]),
+                    "A new compiler reference must preserve its complete previous published block")
     _preserve_compiler_channel_requirements(before, after)
     old_positions = {identity: (record["id"], index, record["blocks"])
                      for record in old_meta["current"] for index, identity in enumerate(record["blocks"])}
@@ -1155,6 +1420,9 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     old_choices = _choice_revisions(old)
     blocks = {identity: _historical_choice_contract(current, identity, block)
               if identity not in old_choices else block for identity, block in blocks.items()}
+    old_compilers = _compiler_revisions(old) | _compiler_references(old)
+    blocks = {identity: _historical_compiler_contract(current, identity, block)
+              if identity not in old_compilers else block for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
     result["pages"] = [{**deepcopy(page_by_id[record["id"]]),
@@ -1175,6 +1443,7 @@ def original_projection(document: dict) -> dict:
     blocks = _all_blocks(document)
     blocks = {identity: _historical_order_contract(document, identity, block) for identity, block in blocks.items()}
     blocks = {identity: _historical_choice_contract(document, identity, block) for identity, block in blocks.items()}
+    blocks = {identity: _historical_compiler_contract(document, identity, block) for identity, block in blocks.items()}
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
@@ -1418,7 +1687,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -1469,6 +1738,11 @@ def main() -> None:
                     "revise-choice-option requires --identity without a move/addition plan")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = revise_choice_option(baseline, args.identity)
+        elif args.action == "revise-compiler-cases":
+            require(args.identity is not None and args.plan is None and args.additions is None,
+                    "revise-compiler-cases requires --identity without a move/addition plan")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_compiler_cases(baseline, args.identity)
         else:
             validate(source)
             validate_transition(previous, source)

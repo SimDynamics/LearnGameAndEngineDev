@@ -113,8 +113,8 @@ La primera familia se ancla al SHA publicado; al adoptar después otro idioma se
 reutiliza esa misma familia, sin cambiar la referencia histórica.
 
 El objeto `stateLayout` v2 contiene estos campos obligatorios y admite los archivos
-opcionales `retired`, `retirementHistory`, `orderRefinements` y
-`choiceRevisions` descritos más abajo:
+opcionales `retired`, `retirementHistory`, `orderRefinements`,
+`choiceRevisions` y `compilerRevisions` descritos más abajo:
 
 | Campo | Contrato |
 | --- | --- |
@@ -128,6 +128,7 @@ opcionales `retired`, `retirementHistory`, `orderRefinements` y
 | `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
 | `choiceRevisions` | Opcional. Archivo acumulativo de las cinco revisiones de opción españolas autorizadas, con `{id, block}` y el bloque publicado anterior íntegro. No permite sustituciones generales de respuestas. |
+| `compilerRevisions` | Opcional. Archivo acumulativo de las cuatro ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. U11L8/L10/L11 incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. No permite cambiar otros programas o esperados. |
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
@@ -216,6 +217,62 @@ presentación y escucha. Los intentos históricos conservan su respuesta y su
 procedencia; una elección anterior no se presenta como una elección del texto
 nuevo. La aceptación curricular y visual queda separada de las pruebas de
 contrato Python y de conservación nativa Windows.
+
+## Cuatro ampliaciones exactas de comprobación en Windows
+
+`CPP_CASOS_ADICIONALES_CON_PROGRESO` admite exclusivamente las ampliaciones
+revisadas de U11L7 (`block_0003_0005`), U11L8 (`block_0004_0004`), U11L10 y
+U11L11 (ambas `block_0004_0003` de sus respectivas lecciones). La primera añade
+dos casos al final de los 19 publicados, manteniendo cada caso previo y su orden.
+Las otras tres añaden únicamente sus informes revisados al esperado de su caso
+existente y las llamadas correspondientes al `main` de su referencia estática
+completa posterior. Los programas iniciales del editor, entradas iniciales, modos
+de comparación, propietarios y demás campos protegidos permanecen iguales.
+
+`revise_compiler_cases(documento_v2, identidad_estable)` prepara una copia en
+memoria y añade a `stateLayout.compilerRevisions` una entrada
+`{"id": "identidad_estable", "block": editor_publicado_anterior_completo}`.
+Para U11L8/L10/L11 añade también `references: [{"id": "referencia_estable",
+"block": referencia_publicada_anterior_completa}]`, modifica esa referencia con
+las llamadas exactas antes del `return 0;` final y conserva ambas aristas
+editoriales anteriores/ampliadas. U11L8 usa `block_0007_0001`; U11L10/L11 usan
+`block_0008_0001` de su lección correspondiente. El CLI
+`revise-compiler-cases` recibe `--identity`, `--locale es`, el `--base-ref`
+publicado y un `--output` nuevo; nunca sobrescribe el asset ni una propuesta
+existente. No consulta preferencias ni progreso del estudiante.
+
+La autorización contrasta la lección española, identidades estables, bloques
+originales completos, contratos ampliados y aristas iniciales exactas dentro de
+la cadena editorial. El esperado y su referencia crecen juntos; una ampliación
+parcial o una referencia prestada de otro editor se rechaza. Ambos bloques
+conservan sus identidades activas; no se retiran como parte de esta revisión.
+El archivo se conserva acumulativo e inmutable. No se sustituyen `origin`,
+`family`, `additions` ni direcciones históricas. Quitar el archivo, cambiar su
+propietario, restablecer el contrato antiguo como si no hubiera revisión o
+inventar el contrato ampliado dentro de una presentación archivada se rechaza.
+Las presentaciones anteriores al cambio conservan su contrato anterior; un
+retiro posterior de otros bloques conserva la presentación ampliada real.
+
+La proyección para el validador curricular restaura únicamente esos casos o
+esperados y las tres referencias exactas después de validar la transición
+completa. Las guías posteriores
+siguen pasando por las guardas editoriales existentes. Añadir una exigencia
+`standardError: "nonBlank"` conserva su regla propia: una publicación posterior
+no puede retirarla. Las cuatro revisiones no autorizan respuestas generales,
+otras ampliaciones de casos ni cambios de fuentes.
+
+Las pruebas de ejecución anteriores permanecen vinculadas a su objetivo,
+idioma y programa capturado. En U11L7 sólo las pruebas válidas de casos idénticos
+del mismo programa pueden contribuir a los 21; los dos casos nuevos siguen
+pendientes. En las otras tres actividades el esperado completo cambia: el logro
+anterior conserva su procedencia, pero la ampliación necesita una nueva ejecución
+completa. Una acreditación anterior no se convierte en prueba del contraste nuevo.
+Reiniciar explícitamente impide recuperar pruebas anteriores como intento activo.
+
+El soporte no modifica automáticamente los JSON. Work incorpora las consignas,
+casos y referencias correspondientes después de preparar esta transición y
+comprueba su aceptación curricular. La capacidad descrita es Windows; no acredita
+soporte de `compilerRevisions` en Android ni escucha o aceptación visual completa.
 
 ## Piezas independientes de una línea en Windows
 

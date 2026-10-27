@@ -2307,7 +2307,7 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                         values.Append(winrt::Windows::Data::Json::JsonValue::CreateNumberValue(static_cast<double>(slot)));
                     submitted.Insert(block.type==BlockType::inline_fill_code?L"answers":L"slots",values);old.raw_json=winrt::to_string(submitted.Stringify());
                 }
-                state::put_response(data,curriculum::exercise_key(lesson,block),old);
+                state::put_response(data,lesson,block,old);
             }
         },[&](const curriculum::Lesson&){return windows::load_lesson(folder/filename);});
         require(f.lesson.compiler_puzzles_required,"An integrated U1 lesson stopped requiring its useful compilers");

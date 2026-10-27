@@ -1,6 +1,7 @@
 #include "core/lesson.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
+#include "core/compiler_revision_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
@@ -856,6 +857,71 @@ void standard_error_objective_tests(const Lesson& real_lesson) {
     std::cout << "Runtime stderr objectives, partial stdout, exact output, target/revision ownership and stable slots: PASS\n";
 }
 }
+void reviewed_compiler_expansions_keep_the_original_contract() {
+    using namespace winrt::Windows::Data::Json;using namespace lgaed;
+    const auto directory=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
+    for(const auto& plan:test::compiler_revision_cases()) {
+        const auto before=windows::load_lesson(directory/plan.filename);const auto position=stable_block_position(before,plan.identity);
+        check(position.has_value(),"A reviewed compiler disappeared from its published identity");
+        const auto current=test::revise_compiler_lesson(before,plan.identity);const auto& old=before.pages[position->page].blocks[position->block];
+        const auto& block=current.pages[position->page].blocks[position->block];
+        check(block.compiler_revision&&block.compiler_revision->sha256==plan.before_full&&block.compiler_revision->current_payload==plan.after_full&&
+            block.compiler_revision->previous_output_check.cases.size()==old.output_check->cases.size(),"The complete compiler expansion archive did not reach the model");
+        check(current.state_layout.lineage==before.state_layout.lineage&&exercise_key(current,block)==exercise_key(before,old)&&
+            draft_key("programming",current,block)==draft_key("programming",before,old)&&block.initial_code==old.initial_code&&block.standard_input==old.standard_input,
+            "A compiler expansion changed family, address, program or prepared input");
+        check(reference_objective_frame(current,block)!=reference_objective_frame(before,old),"An expanded compiler objective reused its historical execution seal");
+        const auto json=test::compiler_revision_json(before,plan.identity);const auto summary=windows::parse_lesson_progress_metadata(json,"es");
+        check(summary.pages[position->page].blocks[position->block].compiler_revision.has_value(),"Catalog metadata lost an expanded compiler objective");
+        std::string retirement;
+        for(const auto& page:before.pages)for(const auto& candidate:page.blocks)if(retirement.empty()&&candidate.type==BlockType::paragraph)retirement=candidate.stable_id;
+        const std::vector<std::string> retiring{retirement};check(!retirement.empty(),"Compiler revision QA needs an independent paragraph for reading history");
+        const auto retired_before=test::retire_lesson(before,retiring,before.compiler_puzzles_required);
+        const auto revised_after_retirement=test::revise_compiler_lesson(retired_before,plan.identity);
+        const auto retired_after=test::retire_lesson(current,retiring,current.compiler_puzzles_required);
+        for(const bool after:{false,true}) {
+            const auto& archived=after?retired_after:revised_after_retirement;const auto& history=archived.state_layout.retirement_history.front();
+            const auto& historical=history.pages[position->page].blocks[position->block];
+            check(historical.compiler_revision.has_value()==after&&historical.output_check->cases.size()==(after?block.output_check->cases.size():old.output_check->cases.size()),
+                "A reading archive confused the original and expanded compiler objective");
+        }
+        if(plan.reference_identity)for(const bool replace_compiler:{false,true}) {
+            const auto mixed=JsonObject::Parse(winrt::to_hstring(retired_after.raw_json));
+            const auto history=mixed.GetNamedObject(L"stateLayout").GetNamedArray(L"retirementHistory").GetAt(0).GetObject();
+            const auto reference_position=stable_block_position(before,plan.reference_identity);
+            const auto mixed_position=replace_compiler?position:reference_position;
+            const auto& original=before.pages[mixed_position->page].blocks[mixed_position->block];
+            history.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(mixed_position->page)).GetObject().GetNamedArray(L"blocks").SetAt(static_cast<unsigned>(mixed_position->block),JsonObject::Parse(winrt::to_hstring(original.raw_json)));
+            const auto invalid=winrt::to_string(mixed.Stringify());
+            rejects([&]{(void)windows::parse_lesson_json(invalid,"es");},"A historical snapshot mixed old/new compiler and reference versions");
+            rejects([&]{(void)windows::parse_lesson_progress_metadata(invalid,"es");},"Catalog history accepted a mixed compiler/reference version");
+        }
+        for(const auto mode:{"archive","snapshot","payload","owner","proof","unmapped","reference-archive","reference-original","reference-source","compiler-only"}) {
+            const auto reference_mode=std::string_view(mode).starts_with("reference-")||std::string_view(mode)=="compiler-only";
+            if(reference_mode&&!plan.reference_identity)continue;
+            const auto invalid=JsonObject::Parse(winrt::to_hstring(json));const auto metadata=invalid.GetNamedObject(L"stateLayout");
+            const auto target=invalid.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
+            if(std::string_view(mode)=="archive")metadata.Remove(L"compilerRevisions");
+            if(std::string_view(mode)=="snapshot")metadata.GetNamedArray(L"compilerRevisions").GetAt(0).GetObject().GetNamedObject(L"block").Insert(L"initialCode",JsonValue::CreateStringValue(L"unreviewed"));
+            if(std::string_view(mode)=="payload")target.GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetAt(0).GetObject().Insert(L"standardInput",JsonValue::CreateStringValue(L"unreviewed"));
+            if(std::string_view(mode)=="owner")invalid.Insert(L"id",JsonValue::CreateStringValue(L"another_owner"));
+            if(std::string_view(mode)=="proof")metadata.GetNamedArray(L"editorial").RemoveAtEnd();
+            if(std::string_view(mode)=="unmapped")invalid.Remove(L"stateLayout");
+            if(reference_mode) {
+                const auto expansion=metadata.GetNamedArray(L"compilerRevisions").GetAt(0).GetObject();
+                const auto reference_position=stable_block_position(current,plan.reference_identity);
+                const auto reference=invalid.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(reference_position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(reference_position->block)).GetObject();
+                if(std::string_view(mode)=="reference-archive")expansion.Remove(L"references");
+                if(std::string_view(mode)=="reference-original")expansion.GetNamedArray(L"references").GetAt(0).GetObject().GetNamedObject(L"block").Insert(L"code",JsonValue::CreateStringValue(L"changed original reference"));
+                if(std::string_view(mode)=="reference-source")reference.Insert(L"code",JsonValue::CreateStringValue(L"unreviewed replacement program"));
+                if(std::string_view(mode)=="compiler-only")reference.Insert(L"code",expansion.GetNamedArray(L"references").GetAt(0).GetObject().GetNamedObject(L"block").GetNamedValue(L"code"));
+            }
+            rejects([&]{(void)windows::parse_lesson_json(winrt::to_string(invalid.Stringify()),"es");},"An unreviewed compiler expansion bypassed provenance validation");
+            rejects([&]{(void)windows::parse_lesson_progress_metadata(winrt::to_string(invalid.Stringify()),"es");},"Catalog projection accepted a forged compiler expansion");
+        }
+    }
+    std::cout<<"PASS four exact compiler expansions: immutable originals, distinct execution goals, original families/addresses and forged archive/payload/owner/proof rejection\n";
+}
 int main() {
     try {
         using lgaed::windows::parse_lesson_json;
@@ -867,6 +933,7 @@ int main() {
         independently_movable_order_lines_preserve_the_original_contract();
         reviewed_order_equivalences_are_source_bound();
         reviewed_choice_revisions_preserve_the_published_contract();
+        reviewed_compiler_expansions_keep_the_original_contract();
         reviewed_matching_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();
