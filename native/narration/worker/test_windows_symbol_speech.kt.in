@@ -50,6 +50,68 @@ fun main() {
         "Wrong Kokoro reading/source ownership: ${prepared.text}; $owners")
     val background = SpanishTechnicalSpeech.prepareForKokoro(source).text
     verify(prepared.text == background, "Foreground/background preparation diverged: ${prepared.text}; $background")
+
+    // Real U1L5 feedback: the trailing reference follows a technical name.
+    // It must not be consumed as main(author, year) by codeEnd().
+    val feedback = "#include <iostream> permite usar los recursos de entrada y salida de esa cabecera; no muestra por sí misma un mensaje. En estos programas, la salida la producen las instrucciones con std::cout dentro de main (Stroustrup, 2024)."
+    val citations = listOf(
+        feedback,
+        "main (Stroustrup, 2024).",
+        "std::cout (Lippman, Lajoie y Moo, 2013).",
+        "Texto (Stroustrup, 2024a, pp. 12–14).",
+        "Texto (García et al., 2020; Stroustrup, 2024).",
+        "Texto (Microsoft, s. f.).",
+        "𐐀 En main (Stroustrup, 2024) continúa la explicación."
+    )
+    fun cleaned(value: String) = normalized(value).replace(Regex(" +([,.;:!?])"), "$1")
+    for (citation in citations) {
+        val opening = citation.indexOf('(')
+        val closing = citation.indexOf(')', opening)
+        val body = citation.substring(opening + 1, closing)
+        val plain = SpanishTechnicalSpeech.prepare(citation).text
+        verify("paréntesis" !in plain && '(' !in plain && ')' !in plain,
+            "Citation delimiters were spoken instead of paused: $citation => $plain")
+        verify(", $body" in plain, "Lost short citation pause, author or date: $plain")
+        val observedPieces = mutableListOf<Triple<Int,Int,String>>()
+        val observedCitation = SpanishTechnicalSpeech.prepareObserved(citation) { a,b,s ->
+            observedPieces += Triple(a,b,s)
+        }
+        verify(observedCitation.text == plain, "Observed citation reading diverged: $citation")
+        verify(cleaned(observedPieces.joinToString("") { it.third }) == plain,
+            "Citation source ownership changed the prepared words: $citation")
+        verify(observedPieces.any { it.first == opening && it.second == opening + 1 && it.third == ", " } &&
+            observedPieces.any { it.first == opening + 1 && it.second == closing && it.third == body } &&
+            observedPieces.any { it.first == closing && it.second == closing + 1 && it.third.isEmpty() },
+            "Citation punctuation or author/year lost their original UTF-16 owners: $citation")
+        verify(observedPieces.all { it.first in 0..citation.length && it.second in it.first..citation.length },
+            "Citation introduced an invalid source range: $citation")
+        val livePieces = mutableListOf<Triple<Int,Int,String>>()
+        val live = SpanishTechnicalSpeech.prepareForReading(citation) { a,b,s -> livePieces += Triple(a,b,s) }
+        val queued = SpanishTechnicalSpeech.prepareForKokoro(citation)
+        verify(live.text == queued.text && "paréntesis" !in live.text && ", $body" in live.text,
+            "Foreground/background citation preparation diverged: $citation => ${live.text}")
+        verify(cleaned(livePieces.joinToString("") { it.third }) == live.text,
+            "Kokoro citation owners no longer reconstruct prepared speech: $citation")
+    }
+    // Actual technical parentheses must remain audible, including a call whose
+    // argument spelling looks like the author/year pair but belongs to code.
+    for (technical in listOf("`main()`", "main (argc, argv);", "main(Stroustrup, 2024);",
+            "main (Stroustrup, 2024);", "`main (Stroustrup, 2024)`", "`\"(Stroustrup, 2024)\"`")) {
+        val result = SpanishTechnicalSpeech.prepare(technical).text
+        verify("abre paréntesis" in result && "cierra paréntesis" in result,
+            "Citation handling suppressed technical parentheses: $technical => $result")
+    }
+    for (mode in listOf("inline", "block")) {
+        val formula = "(X, 2024)"
+        verify(SpanishTechnicalSpeech.prepare(formula, mode).text == formula,
+            "Citation handling changed a forced mathematical group")
+    }
+    for (untouched in listOf("(X, 2024)", "Texto (Stroustrup, sin fecha)", "Texto (Stroustrup, 2024",
+            "https://example.org/(Stroustrup,2024)")) {
+        verify(SpanishTechnicalSpeech.prepare(untouched).text == untouched,
+            "Citation handling changed a non-citation or unfinished group: $untouched")
+    }
+
     check(failures.isEmpty()) { failures.joinToString("\n") }
     println("PASS $assertions Windows technical-speech assertions: delimiters, empty literals, double diagonal in prose/code/strings, single quotes/slashes, URLs, math, named letters, provenance and Kokoro preparation")
 }

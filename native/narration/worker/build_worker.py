@@ -466,6 +466,12 @@ def windows_reading_source(name: str, code: str) -> str:
     implementation moves, rather than silently leaving one preparation path stale.
     """
     if name == "SpanishTechnicalSpeech":
+        # Recognize author/year citations before local technical detection.
+        # The same production pass serves ordinary speech and word ownership.
+        code = exact(code, "            val technicalEnd = codeEnd(text, index)", '            val citationEnd = WindowsNarrationSpeechRules.proseCitationEnd(text, index)\n            if (citationEnd != null) {\n                // Spoken punctuation only: a short opening pause, no bracket\n                // names. Keep the author\'s words/year and their source owners.\n                val content = text.substring(index + 1, citationEnd - 1)\n                output.append(", ").append(content)\n                if (onPiece != null) {\n                    onPiece(index, index + 1, ", ")\n                    onPiece(index + 1, citationEnd - 1, content)\n                    onPiece(citationEnd - 1, citationEnd, "")\n                    observedChildren = true\n                }\n                index = citationEnd\n                changed = true\n                continue\n            }\n            val technicalEnd = codeEnd(text, index)')
+        code = exact(code, "            if (text.getOrNull(next) in listOf('(', '{', '[')) {",
+                     "            if (text.getOrNull(next) in listOf('(', '{', '[') &&\n"
+                     "                WindowsNarrationSpeechRules.proseCitationEnd(text, next) == null) {")
         # Windows-only labels; retain canonical parsing and source ownership.
         code = exact(code, '                    result += "abre $name"', '                    result += if (char == \'"\') name else "abre $name"')
         code = exact(code, '                    result += "cierra $name"', '                    result += if (char == \'"\') name else "cierra $name"')

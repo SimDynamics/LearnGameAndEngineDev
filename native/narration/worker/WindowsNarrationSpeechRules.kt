@@ -29,6 +29,35 @@ internal object WindowsNarrationSpeechRules {
             (index + 2 == text.length || isolatedEscapeBoundary(text[index + 2]))
     }
 
+
+    // A bounded prose citation is not a function argument list. Require an
+    // author name and a bibliographical date, rather than hiding all brackets.
+    private val citationEntry = Regex(
+        """[ \t]*[\p{Lu}\p{Lt}][\p{L}\p{M}]+[\p{L}\p{M} \t.,'’&\-–]*,[ \t]*(?:[12][0-9]{3}[a-z]?|s\.[ \t]*f\.)(?:[ \t]*,[ \t]*(?:pp?\.|cap\.)[ \t]*[0-9]+(?:[–-][0-9]+)?)?[ \t]*"""
+    )
+
+    /** Exclusive end, only in prose. Call after explicit code/math/URL handling.
+     * Adjacent calls, single-letter coordinates, unfinished groups and explicit
+     * statement tails retain the canonical technical reading. */
+    fun proseCitationEnd(text: String, index: Int): Int? {
+        if (text.getOrNull(index) != '(' ||
+            (index > 0 && !text[index - 1].isWhitespace())) return null
+        val limit = minOf(text.length, index + 513)
+        var closing = index + 1
+        while (closing < limit && text[closing] != ')') {
+            if (text[closing] in "(\r\n`\\\"{}[]") return null
+            closing++
+        }
+        if (closing == limit) return null
+        // A following C++ statement delimiter/body is not an author citation.
+        var after = closing + 1
+        while (after < text.length && text[after] in " \t") after++
+        if (text.getOrNull(after)?.let { it in ";{[=+*/%<>" } == true) return null
+        val entries = text.substring(index + 1, closing).split(';')
+        if (entries.isEmpty() || entries.any { !citationEntry.matches(it) }) return null
+        return closing + 1
+    }
+
     /** Called only after technical/math preparation. Keep the visible punctuation
      * and use the same sentence boundary as a prose semicolon, without splitting
      * namespaces, calls, quoted symbols or URLs that still occur in the text. */
