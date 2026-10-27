@@ -202,6 +202,22 @@ sobrecargas con `Lesson` y `Block`, no interpretar la respuesta histórica como
 si ya tuviera el nuevo número de piezas. El soporte corresponde a Windows;
 las pruebas JVM o de Android anteriores conservan su alcance propio.
 
+### Órdenes equivalentes revisados
+
+Windows acepta también los intercambios independientes revisados en los cinco
+puzzles españoles de copiar antes de modificar, acumular y contar, validar antes
+de calcular, recuperar por operación y extraer un tipo sin cambiarlo en fallo.
+La autorización exige la lección, identidad estable y firma exacta del contrato
+de código y respuesta. No se añade un campo JSON ni se infiere equivalencia de
+otros programas. Cada pieza física debe aparecer una vez; sólo se intercambian
+los textos de los grupos revisados en sus posiciones canónicas. Las dependencias
+y el resto de las posiciones siguen siendo obligatorios.
+
+Esta ampliación conserva las claves, representación, borradores, intentos y
+veredictos guardados. Un intento antes incorrecto no se convierte en acierto al
+abrirlo: el estudiante debe volver a comprobarlo. Las traducciones y las copias
+históricas de los grupos anteriores conservan su evaluación propia.
+
 ## Procedimiento v2 para Work
 
 Usar el SHA publicado verificado, no un commit que ya contenga el mapa que se

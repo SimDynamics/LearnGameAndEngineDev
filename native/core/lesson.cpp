@@ -445,15 +445,30 @@ AnswerEvaluation evaluate_order(const Block& block, std::span<const std::size_t>
         if (index >= order.size() || seen[index]) return verdict(block, false);
         seen[index] = true;
     }
-    // Equal closing lines remain interchangeable, but every physical card must
-    // occur exactly once. No whitespace/literal/source normalization is applied.
+    // Every physical card must occur once. A reviewed group exchanges its
+    // canonical text slots only; text-identical cards remain interchangeable
+    // even when one physical index lies outside that group. Compare text bags
+    // in those slots rather than inferring C++ semantics or normalizing source.
+    const auto ungrouped = order.size();
+    std::vector<std::size_t> groups(order.size(),ungrouped);
+    std::vector<std::multiset<std::string_view>> expected_groups(block.order_equivalence_groups.size()), actual_groups(expected_groups.size());
+    for (std::size_t group=0;group<block.order_equivalence_groups.size();++group) {
+        const auto& members=block.order_equivalence_groups[group];
+        if(members.size()<2)return verdict(block,false);
+        for(const auto index:members) {
+            if(index>=order.size()||groups[index]!=ungrouped)return verdict(block,false);
+            groups[index]=group;expected_groups[group].insert(block.fragments[index]);
+        }
+    }
     std::fill(seen.begin(), seen.end(), false);
     for (std::size_t i = 0; i < order.size(); ++i) {
         const auto expected = block.correct_order[i];
         if (expected >= order.size() || seen[expected]) return verdict(block, false);
         seen[expected] = true;
-        if (block.fragments[order[i]] != block.fragments[expected]) return verdict(block, false);
+        if(groups[expected]!=ungrouped)actual_groups[groups[expected]].insert(block.fragments[order[i]]);
+        else if (block.fragments[order[i]] != block.fragments[expected]) return verdict(block, false);
     }
+    if(actual_groups!=expected_groups)return verdict(block,false);
     return verdict(block, true);
 }
 std::string order_representation_frame(const Block& block) {

@@ -196,6 +196,154 @@ void independently_movable_order_lines_preserve_the_original_contract() {
         "A single-line raw literal containing a written escape was changed or unnecessarily disabled");
     std::cout << "PASS all 14 ordering refinements: 65 groups to 124 real lines, 8 archived blank lines, original response keys, catalog metadata, grouped reading archives, exact duplicate-line equivalence and negative provenance/source guards\n";
 }
+void reviewed_order_equivalences_are_source_bound() {
+    using namespace winrt::Windows::Data::Json;
+    using lgaed::windows::parse_lesson_json;
+    struct Reviewed {
+        std::string_view path,lesson,identity,payload,changed_source,changed_order;
+        std::vector<std::vector<std::size_t>> groups;
+        std::vector<std::pair<std::size_t,std::size_t>> rejected_swaps;
+        std::size_t accepted_count;
+    };
+    const std::vector<Reviewed> cases{
+        {"objetos_y_estado/lesson_representar_procesar_y_recuperar.json",
+            "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar","block_0002_0001",
+            "258a6d4d80faadc66eb13ae8816884516ce6fea5fc214d94ebf8381d916bd794",
+            "8228af5ce9bc0ecebc96a13b35a1603945531b71ee380e56ac358a60a77f0261",
+            "135a1cbe862094a0d43b4594b02d4aa34e162e6e39aa7663014df242d4efa8f6",{{2,3}},{{5,8}},2},
+        {"colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json",
+            "cpp_fundamentals__colecciones_y_recorridos__acumular_contar_y_seleccionar","block_0005_0004",
+            "2bb235af23438d36d2d8767e3ea0f0375e071bff8bbf6187712dd664a4fb856a",
+            "d02b8e8ab818ad582edfdcd7cb002c9959d7cffa6f41cf3c5872527b5bcabe79",
+            "e1da4ca2025ec2eeead4ee3cd6d84ccf26384b398e815d38aac7bb4a205ae122",{{2,3},{6,7}},{{7,5}},4},
+        {"funciones_y_contratos/lesson_construir_un_proyecto_desde_su_interfaz.json",
+            "cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz","orden_validar_antes_de_calcular",
+            "db9c0be2b1cbbc53902fc10d467795eef8cb8aca7b76adb523aeac586cd070e0",
+            "587b5e99d4ef43debdd40ad0ad065b68a492df4a9e83947759fca2ea09e06e50",
+            "ef6294814a96ea737f733bb69090343d2216fb3616b50dbf941c736493cafbb1",{{2,3}},{{0,4},{0,1}},2},
+        {"excepciones_y_recuperacion/lesson_recuperar_por_operacion.json",
+            "cpp_fundamentals__excepciones_y_recuperacion__recuperar_por_operacion","block_0002_0003",
+            "5671aba2d45f3845d3084c367a057a9f519ae9da8e9b2207c428abd2f4bac513",
+            "5bc21f5c8d717f58f0addb3757c49c73f3b3a29ad21cb203011900f299a17dba",
+            "36419863e044fff8e9394ec7704a53b2202f178bab68a4280d933927f283f956",{{3,4},{6,7},{17,18}},{{13,17},{5,10}},8},
+        {"archivos_y_programa_completo/lesson_extraer_un_tipo_sin_cambiarlo_en_fallo.json",
+            "cpp_fundamentals__archivos_y_programa_completo__extraer_un_tipo_sin_cambiarlo_en_fallo","block_0004_0003",
+            "4380d9b5e34bdda15027e6d92939d391ad4b22864f3ded1dac00d22717111af6",
+            "465f87245763c22a1f7fc53f3a8356be994ec212862c262e6afb03613a4c770a",
+            "d90c1adea8ee23ba29bcf79b457272762c2d5acc876c6258a4f9dc8eb7395a02",{{2,3,4}},{{0,5},{0,6}},6}
+    };
+    // A valid one-block v2 origin isolates the equivalence guard from unrelated
+    // retirement/editorial manifests. Digests below are independent Python
+    // state_payload goldens, including valid but unreviewed source/order edits.
+    const auto fixture=[](const Reviewed& entry,const Block& block,std::string_view change) {
+        const auto root=JsonObject::Parse(LR"({"id":"","title":"Reviewed orders","pages":[{"blocks":[]}],"stateLayout":{"version":2,"locale":"es","origin":[],"current":[{"id":"page","blocks":[]}],"family":{},"additions":[],"editorial":[]}})");
+        const auto puzzle=JsonObject::Parse(winrt::to_hstring(block.raw_json));
+        const auto language=change=="locale"?"en":"es";
+        const auto identity=change=="identity"?std::string("different_identity"):std::string(entry.identity);
+        const auto owner=change=="lesson"?std::string(entry.lesson)+"_other":std::string(entry.lesson);
+        auto digest=entry.payload;
+        if(change=="source"||change=="stale-source") {
+            const auto fragments=puzzle.GetNamedArray(L"fragments");
+            fragments.SetAt(0,JsonValue::CreateStringValue(winrt::to_hstring(winrt::to_string(fragments.GetAt(0).GetString())+" // sin revision")));
+            if(change=="source")digest=entry.changed_source;
+        } else if(change=="order"||change=="stale-order") {
+            const auto order=puzzle.GetNamedArray(L"correctOrder");const auto first=order.GetAt(0);
+            order.SetAt(0,order.GetAt(1));order.SetAt(1,first);
+            if(change=="order")digest=entry.changed_order;
+        } else if(change=="editorial") {
+            for(const auto field:{L"question",L"explanation",L"reviewFeedback"})
+                puzzle.Insert(field,JsonValue::CreateStringValue(L"Redacción editorial revisada"));
+        }
+        root.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(owner)));
+        root.GetNamedArray(L"pages").GetAt(0).GetObject().GetNamedArray(L"blocks").Append(puzzle);
+        const auto origin=JsonArray::Parse(LR"([{"id":"page","blocks":[{"id":"","sha256":""}]}])");
+        const auto original=origin.GetAt(0).GetObject().GetNamedArray(L"blocks").GetAt(0).GetObject();
+        original.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(identity)));
+        original.Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(digest)));
+        const auto layout=root.GetNamedObject(L"stateLayout");layout.Insert(L"origin",origin);
+        layout.Insert(L"locale",JsonValue::CreateStringValue(winrt::to_hstring(language)));
+        layout.GetNamedArray(L"current").GetAt(0).GetObject().GetNamedArray(L"blocks").Append(JsonValue::CreateStringValue(winrt::to_hstring(identity)));
+        const auto family=JsonObject::Parse(LR"({"sha256":"0000000000000000000000000000000000000000000000000000000000000000","origin":[]})");
+        family.Insert(L"origin",origin);layout.GetNamedObject(L"family").Insert(winrt::to_hstring(language),family);
+        return winrt::to_string(root.Stringify());
+    };
+    const auto folder=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
+    std::size_t accepted=0,additional=0;
+    for(const auto& entry:cases) {
+        const auto lesson=lgaed::windows::load_lesson(folder/entry.path);
+        check(lesson.id==entry.lesson,"Reviewed ordering fixture changed its full lesson identity");
+        const auto position=stable_block_position(lesson,entry.identity);
+        check(position.has_value(),"Reviewed ordering fixture lost its stable identity");
+        const auto& block=lesson.pages[position->page].blocks[position->block];
+        check(block.order_equivalence_groups==entry.groups,"An exact reviewed ordering lost its independent fragments");
+        const auto metadata=lgaed::windows::load_lesson_progress_metadata(folder/entry.path);
+        const auto projected=stable_block_position(metadata,entry.identity);
+        check(projected&&metadata.pages[projected->page].blocks[projected->block].order_equivalence_groups==entry.groups,
+            "Catalog projection lost reviewed ordering equivalences");
+        auto original=block;original.order_equivalence_groups.clear();
+        check(order_representation_frame(block)==order_representation_frame(original)&&
+            exercise_key(lesson,block)==exercise_key(lesson,original)&&draft_key("programming",lesson,block)==draft_key("programming",lesson,original),
+            "Reviewed equivalences changed canonical representation, historical response address or draft key");
+        std::vector<std::vector<std::size_t>> orders{block.correct_order};
+        for(auto group:entry.groups) {
+            std::vector<std::size_t> slots;
+            for(std::size_t slot=0;slot<block.correct_order.size();++slot)
+                if(std::ranges::find(group,block.correct_order[slot])!=group.end())slots.push_back(slot);
+            check(slots.size()==group.size(),"Reviewed fixture group omitted a canonical card");
+            std::ranges::sort(group);std::vector<std::vector<std::size_t>> next;
+            do {for(auto order:orders){for(std::size_t index=0;index<slots.size();++index)order[slots[index]]=group[index];next.push_back(std::move(order));}}
+            while(std::next_permutation(group.begin(),group.end()));
+            orders=std::move(next);
+        }
+        check(orders.size()==entry.accepted_count,"Reviewed ordering permutation census changed");
+        for(const auto& order:orders) {
+            check(evaluate_order(block,order).correct,"An explicitly reviewed independent ordering was rejected");
+            ++accepted;if(!evaluate_order(original,order).correct)++additional;
+        }
+        auto missing=block.correct_order;missing.pop_back();
+        auto duplicate=block.correct_order;duplicate.back()=duplicate.front();
+        auto outside=block.correct_order;outside.back()=block.fragments.size();
+        check(!evaluate_order(block,missing).correct&&!evaluate_order(block,duplicate).correct&&!evaluate_order(block,outside).correct,
+            "Reviewed groups accepted missing, reused or unknown physical cards");
+        for(const auto [left,right]:entry.rejected_swaps) {
+            auto wrong=block.correct_order;
+            std::iter_swap(std::ranges::find(wrong,left),std::ranges::find(wrong,right));
+            check(!evaluate_order(block,wrong).correct,"Reviewed groups accepted a dependency, scope or validation-before-assignment violation");
+        }
+        for(const auto& snapshot:lesson.state_layout.retirement_history)for(const auto& page:snapshot.pages)for(const auto& archived:page.blocks)
+            check(archived.order_equivalence_groups.empty(),"A historical reading snapshot silently acquired current answer equivalences");
+        for(const auto change:{"exact","editorial","lesson","identity","locale","source","order"}) {
+            const auto text=fixture(entry,block,change);const auto language=std::string_view(change)=="locale"?"en":"es";
+            const auto current=parse_lesson_json(text,language);
+            const auto summary=lgaed::windows::parse_lesson_progress_metadata(text,language);
+            const auto expected=std::string_view(change)=="exact"||std::string_view(change)=="editorial"?entry.groups:std::vector<std::vector<std::size_t>>{};
+            check(current.pages[0].blocks[0].order_equivalence_groups==expected&&summary.pages[0].blocks[0].order_equivalence_groups==expected,
+                "Reviewed ordering guard ignored locale, owner, identity or protected source, or wrongly pinned editorial prose");
+            check(evaluate_order(current.pages[0].blocks[0],current.pages[0].blocks[0].correct_order).correct,
+                "An unreviewed valid contract lost its own canonical answer");
+        }
+        for(const auto change:{"stale-source","stale-order"}) {
+            const auto text=fixture(entry,block,change);
+            rejects([&]{(void)parse_lesson_json(text);},"A stale protected source or canonical order passed the reviewed loader");
+            rejects([&]{(void)lgaed::windows::parse_lesson_progress_metadata(text);},"A stale protected ordering passed catalog projection");
+        }
+    }
+    check(accepted==22&&additional==17,"The five reviewed orderings no longer expose exactly 22 valid reconstructions");
+    Block identical;identical.type=BlockType::order_code;identical.fragments={"A","B","A","C"};
+    identical.correct_order={0,1,2,3};identical.order_equivalence_groups={{0,1}};
+    check(evaluate_order(identical,std::vector<std::size_t>{1,0,2,3}).correct&&
+        evaluate_order(identical,std::vector<std::size_t>{1,2,0,3}).correct,
+        "Text-identical physical pieces lost equivalent source reconstruction inside a reviewed group");
+    check(!evaluate_order(identical,std::vector<std::size_t>{1,3,0,2}).correct,
+        "Reviewed text equivalence moved a different statement into an unreviewed slot");
+    auto indented=identical;indented.fragments[2]=" A";
+    check(!evaluate_order(indented,std::vector<std::size_t>{1,2,0,3}).correct,"Reviewed text equivalence normalized indentation");
+    for(const auto& groups:std::vector<std::vector<std::vector<std::size_t>>>{{{0}},{{0,1},{1,2}},{{0,4}},{{0,0}}}) {
+        auto malformed=identical;malformed.order_equivalence_groups=groups;
+        check(!evaluate_order(malformed,malformed.correct_order).correct,"Malformed independent fragment groups bypassed canonical validation");
+    }
+    std::cout<<"PASS five source-bound ordering equivalences: 22 reviewed orders, 17 additional reconstructions, exact text/card ownership, dependency/scope/validation negatives, locale/identity/payload guards and unchanged historical representation\n";
+}
 void reviewed_matching_label_preserves_historical_contract() {
     using namespace winrt::Windows::Data::Json;
     using lgaed::windows::parse_lesson_json;
@@ -431,17 +579,34 @@ void integrated_retirement_contract_tests() {
     using namespace winrt::Windows::Data::Json;
     const auto folder=std::filesystem::path(lgaed::build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
-    const std::array<std::pair<const char*,std::array<std::string,2>>,3> plans{{
-        {"lesson_primer_programa_y_salida.json",{"ejecucion_original_consigna","ejecucion_original_editor"}},
-        {"lesson_texto_secuencia_y_formato.json",{"ejecucion_original_texto_secuencia_y_formato_consigna","ejecucion_original_texto_secuencia_y_formato_editor"}},
-        {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"}}
+    struct Plan {
+        const char* filename;
+        std::array<std::string,2> compiler_ids;
+        std::vector<std::string> reading_ids;
+        std::string_view refined_order;
+    };
+    const std::array<Plan,3> plans{{
+        {"lesson_primer_programa_y_salida.json",{"ejecucion_original_consigna","ejecucion_original_editor"},
+            {"block_0005_0002","block_0005_0008"},"block_0003_0002"},
+        {"lesson_texto_secuencia_y_formato.json",{"ejecucion_original_texto_secuencia_y_formato_consigna","ejecucion_original_texto_secuencia_y_formato_editor"},
+            {"block_0007_0002","block_0007_0003"},"block_0004_0002"},
+        {"lesson_fuente_compilacion_y_diagnostico.json",{"ejecucion_original_fuente_compilacion_y_diagnostico_consigna","ejecucion_original_fuente_compilacion_y_diagnostico_editor"},{},{}}
     }};
     std::size_t useful=0;
-    for(const auto& [filename,ids]:plans){
-        const auto before=lgaed::test::load_pre_retirement_lesson(filename);
-        const auto current=lgaed::windows::load_lesson(folder/filename);
-        check(current.compiler_puzzles_required&&current.retired_blocks.size()==2&&current.state_layout.retirement_history.size()==1,
-            "The integrated U1 asset lost mandatory objectives or its two archived identities");
+    for(const auto& plan:plans){
+        const auto before=lgaed::test::load_pre_retirement_lesson(plan.filename);
+        const auto current=lgaed::windows::load_lesson(folder/plan.filename);
+        std::set<std::string> expected_ids(plan.compiler_ids.begin(),plan.compiler_ids.end()),actual_ids,layout_ids;
+        expected_ids.insert(plan.reading_ids.begin(),plan.reading_ids.end());
+        for(const auto& block:current.retired_blocks)actual_ids.insert(block.stable_id);
+        for(const auto& record:current.state_layout.retired)layout_ids.insert(record.id);
+        check(current.compiler_puzzles_required&&current.retired_blocks.size()==expected_ids.size()
+            &&current.state_layout.retired.size()==expected_ids.size()&&actual_ids==expected_ids&&layout_ids==expected_ids
+            &&current.state_layout.retirement_history.size()==(plan.reading_ids.empty()?1u:2u),
+            "The integrated U1 asset changed mandatory objectives, its exact archived identities or retirement batches");
+        check(current.state_layout.retirement_history.front().retired==std::vector<std::string>(plan.compiler_ids.begin(),plan.compiler_ids.end())
+            &&(plan.reading_ids.empty()||current.state_layout.retirement_history.back().retired==plan.reading_ids),
+            "Integrated retirement merged or rewrote the published compiler and reading archive batches");
         check(current.state_layout.lineage==before.state_layout.lineage&&current.state_layout.legacy_lineage==before.state_layout.legacy_lineage
             &&current.state_layout.signatures==before.state_layout.signatures,
             "Integrated retirement changed historical state ownership");
@@ -450,9 +615,34 @@ void integrated_retirement_contract_tests() {
         check(archived.GetNamedArray(L"pages").Stringify()==historical.GetNamedArray(L"pages").Stringify()
             &&archived.GetNamedArray(L"current").Stringify()==historical.GetNamedObject(L"stateLayout").GetNamedArray(L"current").Stringify(),
             "The integrated archive differs from its independently pinned d1933ed presentation");
-        rejects([&]{(void)lgaed::test::retire_lesson(current,ids);},"An integrated asset could silently retire the same identities twice");
-        for(const auto& identity:ids)check(retired_block(current,identity)&&!stable_block_position(current,identity)
+        rejects([&]{(void)lgaed::test::retire_lesson(current,plan.compiler_ids);},"An integrated asset could silently retire the same identities twice");
+        if(!plan.reading_ids.empty())rejects([&]{(void)lgaed::test::retire_lesson(current,plan.reading_ids);},
+            "An integrated asset could silently retire the same reading references twice");
+        for(const auto& identity:expected_ids)check(retired_block(current,identity)&&!stable_block_position(current,identity)
             &&active_block_successor(current,identity).has_value(),"An integrated retired identity remained active or lost its successor");
+        for(const auto& block:current.retired_blocks){
+            const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an archived identity");
+            const auto& old=before.pages[origin->page].blocks[origin->block];
+            check(block.type==old.type&&JsonObject::Parse(winrt::to_hstring(block.raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify()
+                &&exercise_key(current,block)==exercise_key(before,old)&&draft_key("programming",current,block)==draft_key("programming",before,old),
+                "An integrated archived compiler or reading reference lost its complete published source or historical slots");
+        }
+        check(current.state_layout.order_refinements.size()==(plan.refined_order.empty()?0u:1u),
+            "Integrated retirement lost or added a grouped ordering provenance record");
+        if(!plan.refined_order.empty()){
+            const auto position=stable_block_position(current,plan.refined_order),origin=stable_block_position(before,plan.refined_order);
+            check(position&&origin,"An integrated refined ordering lost its original activity identity");
+            const auto& block=current.pages[position->page].blocks[position->block];
+            const auto& old=before.pages[origin->page].blocks[origin->block];
+            check(block.order_refinement&&block.order_refinement->id==plan.refined_order
+                &&block.order_refinement->original_fragments==old.fragments&&block.order_refinement->original_correct_order==old.correct_order
+                &&JsonObject::Parse(winrt::to_hstring(block.order_refinement->raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(old.raw_json)).Stringify(),
+                "Integrated line refinement changed its independently pinned original grouped ordering");
+            bool preserved=false;
+            for(const auto& page:current.state_layout.retirement_history.back().pages)for(const auto& archived_order:page.blocks)
+                if(archived_order.stable_id==plan.refined_order)preserved=order_representation_frame(archived_order)==order_representation_frame(block);
+            check(preserved,"The later reading archive lost the already-refined ordering representation");
+        }
         for(const auto& page:current.pages)for(const auto& block:page.blocks){
             const auto origin=stable_block_position(before,block.stable_id);check(origin.has_value(),"Integrated retirement invented an active identity");
             const auto& old=before.pages[origin->page].blocks[origin->block];
@@ -470,7 +660,7 @@ void integrated_retirement_contract_tests() {
     for(const auto& page:last.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
         ++useful;check(block.output_check.has_value(),"A final useful U1 compiler lost its objective");}
     check(useful==8,"Current U1 no longer contains exactly eight useful mandatory compilers");
-    std::cout<<"Integrated U1 assets: exact d1933ed archive, original slots, eight mandatory useful objectives and no second retirement: PASS\n";
+    std::cout<<"Integrated U1 assets: exact compiler/reading retirement batches and d1933ed source, preserved ordering provenance/slots, eight mandatory useful objectives and no repeated retirement: PASS\n";
 }
 void standard_error_objective_tests(const Lesson& real_lesson) {
     using lgaed::windows::parse_lesson_json;
@@ -576,6 +766,7 @@ int main() {
         const auto lesson = lgaed::test::load_pre_retirement_lesson(path.filename().string());
         narration_metadata_tests(lesson);
         independently_movable_order_lines_preserve_the_original_contract();
+        reviewed_order_equivalences_are_source_bound();
         reviewed_matching_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();

@@ -100,8 +100,6 @@ EXPLANATION_CLARIFICATIONS = {
         ('output_prediction', '`auto` deduce el tipo `bool` a partir del inicializador `true`. La asignación posterior cambia el valor a `false`, pero no cambia el tipo deducido. En la consola aparece `0` por el formato predeterminado (Stroustrup, 2024, sección 2.10, p. 47; sección 2.8, p. 43; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).'),
     ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 8, 5):
         ('output_prediction', '`nombre` aporta la secuencia `Modulo`; `inicial` aporta el carácter `M`; `preparado` conserva `false`, que en este formato se muestra como `0`. Los dos espacios están escritos en las instrucciones de salida. Ninguno de los objetos cambia de tipo por aparecer junto a los otros (Stroustrup, 2024, sección 2.2, p. 32; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).'),
-    ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 4, 3):
-        ("order_code", "Primero #include <iostream> permite usar el recurso de salida; después se abre main, se escribe la instrucción que muestra el mensaje y se termina el cuerpo."),
     ("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json", 3, 3):
         ("output_prediction", "La condición inicial es falsa y el acumulador conserva su valor inicial cero."),
 }
@@ -1058,6 +1056,31 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 }
 
 
+# Pedidos de Work: la explicación de U1L2, la pregunta de U11L2 y las dos
+# explicaciones de U11L11. Cada par fija texto, coordenada histórica y la
+# identidad explícita original (None exige que el campo id no exista).
+# La explicación antigua de U1L2 no es una autorización de destino genérico:
+# ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
+WORK_EXACT_EDITORIAL_REVISIONS = {
+    ('programas_y_ejecucion/lesson_primer_programa_y_salida.json',
+     4, 3, 'order_code', 'explanation', 'armar_programa'): (
+        'c50562e326eb30529a30379fdc5fc521f83e6361b8d3cb2b2e4fb4bb53425bb5',
+        '60d676de2ed953914099a4dc6288b7466e97a3a70bc11bcb6169b2c86f652822'),
+    ('texto_interpretacion_y_flujos/lesson_lineas_y_separadores_pendientes.json',
+     3, 2, 'output_prediction', 'question', None): (
+        '731496fab5e064157fea4e0108c6990c18392e403b39628d47f556d721cb3e35',
+        '6e0a38ef37e7ad479787f5e501679c00568c8f5fdfd91c6b8ecae12851fd9f5a'),
+    ('texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json',
+     3, 3, 'multiple_choice', 'explanation', None): (
+        '54a1c2f05e6cf4af61cb561eb01b9938ed20931e6321cfa783538a9c640635e2',
+        'c85463058609727aaf54b4ea6721db53136af0bf37068c86bcc0b8f7b198a2e2'),
+    ('texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json',
+     7, 3, 'output_prediction', 'explanation', None): (
+        '5fcc83da4e6f4dcd16510343f01d4633b95ad901841af88f68b12a9c91554043',
+        'eb3bd0aea79408b2146891b3116c41678e8cf098bbd56d3328dba1ba936ebadd'),
+}
+
+
 # CPP_COMPROBACION_STDERR_POR_OBJETIVO: la explicación de acierto revisada
 # pertenece sólo al editor histórico block_0002_0008 de U8L3, caso cero.
 # Las coordenadas recibidas son las de origen, verificadas por stateLayout.
@@ -1155,10 +1178,13 @@ def restore_approved_editorial_fields(location, old, current):
     for field in ("question", "explanation"):
         key = location + (old.get("type"), field)
         exercise_id = old.get("id") if isinstance(old.get("id"), str) else None
+        exact_identity = ("id" not in old and "id" not in current) if exercise_id is None \
+            else current.get("id") == exercise_id
         transitions = (APPROVED_EDITORIAL_REVISIONS.get(key), SEQUENCE_EDITORIAL_REVISIONS.get(key),
                        RETIREMENT_EDITORIAL_REVISIONS.get(key + (exercise_id,)),
                        U11_QUESTION_EDITORIAL_REVISIONS.get(key + (None,))
-                       if "id" not in old and "id" not in current else None)
+                       if "id" not in old and "id" not in current else None,
+                       WORK_EXACT_EDITORIAL_REVISIONS.get(key + (exercise_id,)) if exact_identity else None)
         before, after = old.get(field), current.get(field)
         if not isinstance(before, str) or not isinstance(after, str):
             continue
@@ -1216,6 +1242,14 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     revision = MULTIPLE_CHOICE_DISTRACTOR_REVISIONS.get(location)
     if revision is not None and old["type"] == "multiple_choice":
         options, explanation = revision
+        reviewed = WORK_EXACT_EDITORIAL_REVISIONS.get(
+            location + ("multiple_choice", "explanation", old.get("id")))
+        if (reviewed is not None and isinstance(old.get("explanation"), str)
+                and hashlib.sha256(old["explanation"].encode("utf-8")).hexdigest() == reviewed[1]
+                and current.get("explanation") != old["explanation"]):
+            # The older distractor approval cannot roll a later reviewed
+            # explanation back to its original wording.
+            return False
         return (
             options[old["correctIndex"]] == old["options"][old["correctIndex"]]
             and current == dict(old, options=options, explanation=explanation)

@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -104,6 +105,7 @@ void add_revision(const std::filesystem::path& root) {
 }
 void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::filesystem::path& base) {
     using namespace lgaed::curriculum;
+    using namespace winrt::Windows::Data::Json;
     const std::vector<std::string> retiring{"ejecucion_original_consigna","ejecucion_original_editor"};
     const auto retired = lgaed::test::retire_lesson(before,retiring);
     const auto old_position = stable_block_position(before,retiring[1]);
@@ -119,6 +121,10 @@ void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::
     put_draft(original,old_key,draft);
     put_response(original,exercise_key(before,old_editor),{"historial conservado",true});
     original.preferences["native_windows"]["reference-proof/v1/es/" + old_key] = sha256("historical opaque proof");
+    original.preferences["unrelated_preferences"]["enabled"] = true;
+    original.preferences["unrelated_preferences"]["timestamp"] = std::int64_t{1792536389797};
+    original.preferences["unrelated_preferences"]["rate"] = 2.5;
+    original.preferences["unrelated_preferences"]["labels"] = std::vector<std::string>{"primera", " \\t segunda \\n"};
     StateStore store(base/"retired-compiler-profile");
     require(store.load().preferences.empty(),"Retirement QA profile must begin empty");
     store.save(original);
@@ -133,10 +139,47 @@ void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::
     store.save(migrated); const auto reopened = store.load(); validate_lesson_state(reopened,retired);
     require(reopened == migrated,"Retirement state did not survive normal persistence/reopening");
     const auto integrated=lgaed::windows::load_lesson(before.source_path);
-    require(integrated.compiler_puzzles_required&&integrated.retired_blocks.size()==2,
-        "The active Spanish asset has not integrated the expected retirement");
+    const std::set<std::string> expected_retired{"ejecucion_original_consigna","ejecucion_original_editor","block_0005_0002","block_0005_0008"};
+    std::set<std::string> actual_retired;for(const auto& block:integrated.retired_blocks)actual_retired.insert(block.stable_id);
+    require(integrated.compiler_puzzles_required&&actual_retired==expected_retired,
+        "The active Spanish asset lost its two retired executions or its two conserved reference programs");
     auto current=reopened;validate_lesson_state(current,integrated);prepare_lesson_state(current,integrated);
-    require(current==reopened,"Opening the integrated asset rewrote the preserved migration data");
+    const auto prefix="lesson_"+integrated.id;
+    const auto retired_pin=prefix+"_state_retired_v2_es",history_pin=prefix+"_state_retirement_history_v2_es",order_pin=prefix+"_state_order_refinements_v1_es";
+    const std::set<std::string> provenance_keys{retired_pin,history_pin,order_pin};
+    // The published asset now also archives the two comparison programs and
+    // pins the line refinement. Only this audited append-only provenance can
+    // differ: every answer, draft, preference, bookmark and opaque value stays.
+    for(const auto& [domain,values]:reopened.preferences)for(const auto& [key,value]:values){
+        const auto retained=find(current,domain,key);require(retained,"Opening the integrated asset removed an existing preference");
+        if(domain=="learning_progress"&&(key==retired_pin||key==history_pin)){
+            const auto previous=JsonArray::Parse(winrt::to_hstring(std::get<std::string>(value)));
+            const auto appended=JsonArray::Parse(winrt::to_hstring(std::get<std::string>(*retained)));
+            require(appended.Size()>=previous.Size(),"Integrated retirement removed historical provenance");
+            for(std::uint32_t i=0;i<previous.Size();++i)require(previous.GetAt(i).Stringify()==appended.GetAt(i).Stringify(),
+                "Integrated retirement rewrote an earlier provenance record");
+        }else require(*retained==value,"Opening the integrated asset changed an existing answer, draft or preference");
+    }
+    for(const auto& [domain,values]:current.preferences)for(const auto& [key,value]:values)if(!find(reopened,domain,key))
+        require(domain=="learning_progress"&&provenance_keys.contains(key),"Integrated retirement added unrelated state");
+    const auto recorded_retired=JsonArray::Parse(winrt::to_hstring(string_value(current,"learning_progress",retired_pin)));
+    require(recorded_retired.Size()==expected_retired.size(),"Integrated retirement did not preserve exactly the four reviewed archives");
+    for(std::uint32_t i=0;i<recorded_retired.Size();++i){const auto row=recorded_retired.GetAt(i).GetArray();const auto& record=integrated.state_layout.retired.at(i);
+        require(row.Size()==4&&winrt::to_string(row.GetStringAt(0))==record.id&&winrt::to_string(row.GetStringAt(1))==record.page&&
+            winrt::to_string(row.GetStringAt(2))==record.next&&winrt::to_string(row.GetStringAt(3))==record.sha256,
+            "An archived block lost its exact owner, successor or source fingerprint");}
+    const auto recorded_history=JsonArray::Parse(winrt::to_hstring(string_value(current,"learning_progress",history_pin)));
+    require(recorded_history.Size()==integrated.state_layout.retirement_history.size(),"Integrated retirement omitted its published reading provenance");
+    for(std::uint32_t i=0;i<recorded_history.Size();++i)require(winrt::to_string(recorded_history.GetStringAt(i))==integrated.state_layout.retirement_history[i].sha256,
+        "Integrated retirement changed the source of an archived reading presentation");
+    const auto recorded_order=JsonArray::Parse(winrt::to_hstring(string_value(current,"learning_progress",order_pin)));
+    require(recorded_order.Size()==1&&integrated.state_layout.order_refinements.size()==1,"The current order needs exactly its one published provenance record");
+    const auto order_record=recorded_order.GetAt(0).GetArray();const auto& refinement=integrated.state_layout.order_refinements.front();
+    require(order_record.Size()==3&&winrt::to_string(order_record.GetStringAt(0))=="block_0003_0002"&&
+        winrt::to_string(order_record.GetStringAt(1))==refinement.sha256&&winrt::to_string(order_record.GetStringAt(2))==refinement.representation_signature,
+        "The integrated order pin does not match its exact published source and line representation");
+    store.save(current);auto integrated_reopened=store.load();validate_lesson_state(integrated_reopened,integrated);prepare_lesson_state(integrated_reopened,integrated);
+    require(integrated_reopened==current,"Integrated retirement/refinement was not idempotent after persistence/reopening");
     auto downgraded = reopened; const auto downgrade_before = downgraded;
     rejects([&]{prepare_lesson_state(downgraded,before);});
     require(downgraded == downgrade_before,"Rejecting a removed retirement archive modified stored data");
@@ -156,8 +199,8 @@ void retirement_state_tests(const lgaed::curriculum::Lesson& before, const std::
     for (const auto language : {"en","fr"}) {
         const auto translated = lgaed::windows::load_lesson(std::filesystem::path(lgaed::build::source_root)/
             "app/src/main/assets/content"/language/"programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json",language);
-        auto changed_language = reopened; prepare_lesson_state(changed_language,translated);
-        require(changed_language == reopened,"Changing to an untouched translation rewrote Spanish retirement state");
+        auto changed_language = current; prepare_lesson_state(changed_language,translated);
+        require(changed_language == current,"Changing to an untouched translation rewrote Spanish retirement/refinement state");
     }
     ++groups;
 }
@@ -346,6 +389,90 @@ void all_authored_refined_orders_preserve_state(const std::filesystem::path& bas
     require(old_pieces==65&&new_pieces==124,"The authored order corpus no longer covers the complete 65-to-124 refinement");
     std::cout<<"PASS fourteen authored order projections (65 to124), grouped import, unchanged translations, append-only runtime provenance and scoped course/unit reset\n";
 }
+void reviewed_order_equivalences_preserve_history(const std::filesystem::path& base){
+    using namespace lgaed::curriculum;
+    struct Case{const char* file;const char* identity;std::vector<std::int64_t> alternative;};
+    const std::vector<Case> cases{
+        {"objetos_y_estado/lesson_representar_procesar_y_recuperar.json","block_0002_0001",{3,2,4,5,8,0,1,6,7}},
+        {"colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json","block_0005_0004",{3,2,4,7,6,5,0,8,1,9,10}},
+        {"funciones_y_contratos/lesson_construir_un_proyecto_desde_su_interfaz.json","orden_validar_antes_de_calcular",{3,2,4,5,6,7,0,1}},
+        {"excepciones_y_recuperacion/lesson_recuperar_por_operacion.json","block_0002_0003",{4,3,5,7,6,8,9,10,11,12,13,18,17,0,1,2,14,15,16}},
+        {"archivos_y_programa_completo/lesson_extraer_un_tipo_sin_cambiarlo_en_fallo.json","block_0004_0003",{4,3,2,5,6,7,8,9,0,1}}
+    };
+    const auto content=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content";
+    for(std::size_t index=0;index<cases.size();++index){const auto& test=cases[index];
+        const auto lesson=lgaed::windows::load_lesson(content/"es/programming/cpp_fundamentals"/test.file);
+        const auto position=stable_block_position(lesson,test.identity);require(position.has_value(),"A reviewed order lost its published identity");
+        const auto& block=lesson.pages[position->page].blocks[position->block];
+        require(!block.order_equivalence_groups.empty(),"The current reviewed order has no approved equivalence groups");
+        auto previous=lesson;auto& previous_block=previous.pages[position->page].blocks[position->block];previous_block.order_equivalence_groups.clear();
+        std::vector<std::size_t> alternative(test.alternative.begin(),test.alternative.end());
+        require(evaluate_order(block,alternative).correct&&!evaluate_order(previous_block,alternative).correct,
+            "The independent equivalent order did not reproduce the previous rejection and current acceptance");
+        require(exercise_key(previous,previous_block)==exercise_key(lesson,block)&&
+            response_storage_key(previous,previous_block)==response_storage_key(lesson,block)&&
+            order_representation_frame(previous_block)==order_representation_frame(block),
+            "An acceptance-only order revision changed its historical identity, storage or line representation");
+        StateData empty;require(!get_response(empty,lesson,block)&&empty.preferences.empty(),"Enabling reviewed equivalents invented an answer in an empty profile");
+        for(const auto mode:{"draft","wrong","canonical"}){
+            StateData data;prepare_lesson_state(data,previous);
+            data.preferences["unrelated_order_preferences"]["retained"]=std::string(" \t untouched \r\n");
+            Response old;old.raw_json=R"({"incorrectAttempts":4,"opaque":{"selection":17}})";
+            old.order=test.alternative;old.correct=std::string_view(mode)=="canonical";
+            if(old.correct)old.order.assign(block.correct_order.begin(),block.correct_order.end());
+            if(std::string_view(mode)=="wrong")mark_response_reviewed(old,previous_block);
+            put_response(data,previous,previous_block,old);
+            const auto storage=response_storage_key(previous,previous_block);
+            const auto raw=string_value(data,"learning_progress",storage);const auto before=data;
+            const auto restored=get_response(data,lesson,block);
+            require(restored&&restored->order==old.order&&restored->correct==old.correct&&
+                response_reviewed(*restored,block)==(std::string_view(mode)=="wrong")&&data==before,
+                "Enabling an equivalent order silently regraded an old draft or incorrect reviewed answer");
+            validate_lesson_state(data,lesson);prepare_lesson_state(data,lesson);
+            require(data==before,"Reviewed order equivalents rewrote an existing preference or provenance pin");
+            const auto name=std::to_string(index)+'-'+mode;
+            StateStore store(base/("reviewed-order-"+name));require(store.load().preferences.empty(),"The reviewed-order QA profile must begin empty");
+            store.save(data);auto reopened=store.load();
+            validate_lesson_state(reopened,lesson);require(reopened==before,"An old reviewed order changed after normal persistence/reopening");
+            const auto exported=base/("reviewed-order-export-"+name);export_preferences(exported,data);
+            const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+            const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,lesson);
+            const auto imported_response=get_response(preview.data,lesson,block);
+            require(imported_response&&imported_response->order==old.order&&imported_response->correct==old.correct&&
+                response_reviewed(*imported_response,block)==(std::string_view(mode)=="wrong")&&
+                string_value(preview.data,"learning_progress",storage)==raw,
+                "Importing a prior line response promoted its old verdict or changed its serialized history");
+            commit_android_import(preview,base/("reviewed-order-import-"+name));
+            StateStore imported_store(base/("reviewed-order-import-"+name));const auto imported=imported_store.load();
+            require(string_value(imported,"learning_progress",storage)==raw&&
+                sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"))==source_hash,
+                "Committed order import changed the original export or historical response");
+            auto checked=*restored;checked.order=test.alternative;checked.correct=true;clear_response_review(checked);
+            put_response(reopened,lesson,block,checked);validate_lesson_state(reopened,lesson);
+            require(get_response(reopened,lesson,block)->correct&&get_response(reopened,lesson,block)->order==test.alternative&&
+                get_response(reopened,lesson,block)->raw_json.find("\"incorrectAttempts\":4")!=std::string::npos&&
+                get_response(reopened,lesson,block)->raw_json.find("\"selection\":17")!=std::string::npos,
+                "Explicitly checking an equivalent order lost its achievement or opaque attempt history");
+            auto old_policy=reopened;rejects([&]{validate_lesson_state(old_policy,previous);});
+            require(old_policy==reopened,"Refusing a new equivalent achievement under the old evaluator modified its data");
+            store.save(reopened);const auto correct=store.load();validate_lesson_state(correct,lesson);
+            require(correct==reopened,"A newly accepted equivalent order failed normal persistence/reopening");
+            for(const auto locale:{"en","fr"}){
+                const auto translated=lgaed::windows::load_lesson(content/locale/"programming/cpp_fundamentals"/test.file,locale);
+                require(translated.id==lesson.id&&translated.locale==locale,"The untouched translation belongs to another lesson or locale");
+                // Spanish additions need not exist in an untranslated asset.
+                // Every translated activity must retain its own exact policy.
+                for(const auto& page:translated.pages)for(const auto& translated_block:page.blocks)
+                    require(translated_block.order_equivalence_groups.empty(),"A Spanish reviewed allowance was transferred to an untouched translation");
+                auto switched=correct;prepare_lesson_state(switched,translated);
+                require(switched==correct&&string_value(switched,"learning_progress",storage)==string_value(correct,"learning_progress",storage),
+                    "Opening an untouched translation rewrote a Spanish line response or its provenance");
+            }
+            ++groups;
+        }
+    }
+    std::cout<<"PASS five reviewed order equivalents: unchanged keys/provenance, empty/draft/wrong/canonical history, explicit new success, native reopen, Android import and untouched translations\n";
+}
 }
 int main(int argc, char** argv) {
     try {
@@ -356,6 +483,7 @@ int main(int argc, char** argv) {
         std::filesystem::create_directories(base);
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
+        reviewed_order_equivalences_preserve_history(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");
         initial.preferences["types"]["français_élève"] = std::string("cœur, niño, std::cout, 𝑥");

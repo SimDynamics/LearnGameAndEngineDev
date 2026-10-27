@@ -1,7 +1,9 @@
 """Explicit compiler retirement preserves published contracts and state slots."""
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
+import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -20,6 +22,16 @@ PLANS = (
     ("lesson_fuente_compilacion_y_diagnostico.json", ("ejecucion_original_fuente_compilacion_y_diagnostico_consigna",
                                                   "ejecucion_original_fuente_compilacion_y_diagnostico_editor")),
 )
+FIRST_RETIRED_COMMIT = "52d057d1aad844b133d0d26ff195cbfcbe18b2e1"
+FIRST_RETIRED_SHA256 = {
+    "lesson_primer_programa_y_salida.json": "449b62604d3738cc10b54ac0a0b8835f020d36f64cb120e9c9ac28ff3a62118f",
+    "lesson_texto_secuencia_y_formato.json": "9b5bce191c5100cacfb7b2c32d213c1c3a71a9362b6af84454c57cd118fd9786",
+    "lesson_fuente_compilacion_y_diagnostico.json": "6509a4ab4b7e00d48b10387e45f6a232ffbf6c7e4edf7dd087918de3f7f24904",
+}
+REFERENCE_RETIREMENTS = {
+    "lesson_primer_programa_y_salida.json": ("block_0005_0002", "block_0005_0008"),
+    "lesson_texto_secuencia_y_formato.json": ("block_0007_0002", "block_0007_0003"),
+}
 
 
 def source(filename):
@@ -28,6 +40,17 @@ def source(filename):
 
 def integrated_source(filename):
     return layout.load(CONTENT / "es" / UNIT / filename)
+
+
+def first_retired_source(filename):
+    """The exact published reading layout before the later reference retirement."""
+    if filename not in FIRST_RETIRED_SHA256:
+        raise ValueError("Unknown first-retirement fixture: " + filename)
+    relative = fixtures.RELATIVE_UNIT + "/" + filename
+    payload = subprocess.check_output(["git", "show", FIRST_RETIRED_COMMIT + ":" + relative], cwd=ROOT)
+    if hashlib.sha256(payload).hexdigest() != FIRST_RETIRED_SHA256[filename]:
+        raise RuntimeError("First-retirement fixture SHA-256 mismatch: " + filename)
+    return layout.parse_json(payload.decode("utf-8"))
 
 
 def retired(source, identities):
@@ -96,8 +119,12 @@ class RetiredStateLayoutTest(unittest.TestCase):
         useful_compilers = 0
         for filename, identities in PLANS:
             before, after = source(filename), integrated_source(filename)
+            intermediate = first_retired_source(filename)
             original = deepcopy(after)
-            layout.validate_transition(before, after)
+            # Two separately published archives must be checked through their
+            # actual intermediate reading layout, never merged into one step.
+            layout.validate_transition(before, intermediate)
+            layout.validate_transition(intermediate, after)
             self.assertEqual(original, after)
             self.assertTrue(after["compilerPuzzlesRequired"])
             for field in ("origin", "family", "additions"):
@@ -105,18 +132,33 @@ class RetiredStateLayoutTest(unittest.TestCase):
             published, current = layout._all_blocks(before), layout._all_blocks(after)
             self.assertEqual(published.keys(), current.keys())
             for identity in published:
-                self.assertEqual(layout.state_payload(published[identity]), layout.state_payload(current[identity]))
-            self.assertEqual(list(identities), [row["id"] for row in after["stateLayout"]["retired"]])
+                # The two reviewed line refinements display the same original
+                # groups as separate lines; compare their validated historical
+                # response contract as the runtime migration does.
+                projected = layout._historical_order_contract(after, identity, current[identity])
+                self.assertEqual(layout.state_payload(published[identity]), layout.state_payload(projected))
+            references = REFERENCE_RETIREMENTS.get(filename, ())
+            self.assertEqual(list(identities + references), [row["id"] for row in after["stateLayout"]["retired"]])
             for record in after["stateLayout"]["retired"]:
                 self.assertEqual(published[record["id"]], record["block"])
             history = after["stateLayout"]["retirementHistory"]
-            self.assertEqual(1, len(history))
+            self.assertEqual(1 + bool(references), len(history))
             self.assertEqual(before["pages"], history[0]["pages"])
             self.assertEqual(before["stateLayout"]["current"], history[0]["current"])
             self.assertEqual(before.get("activityAfter", []), history[0]["activityAfter"])
             self.assertEqual(before.get("referenceAfter", []), history[0]["referenceAfter"])
             self.assertFalse(history[0]["compilerPuzzlesRequired"])
-            self.assertTrue(set(identities).isdisjoint(layout._blocks(after)))
+            self.assertEqual(intermediate["stateLayout"]["retirementHistory"], history[:1])
+            if references:
+                self.assertEqual(intermediate["pages"], history[1]["pages"])
+                self.assertEqual(intermediate["stateLayout"]["current"], history[1]["current"])
+                self.assertEqual(intermediate.get("activityAfter", []), history[1]["activityAfter"])
+                self.assertEqual(intermediate.get("referenceAfter", []), history[1]["referenceAfter"])
+                self.assertEqual(intermediate["compilerPuzzlesRequired"], history[1]["compilerPuzzlesRequired"])
+                with self.assertRaisesRegex(layout.LayoutError,
+                                            "One transition can archive only its actual previous reading layout"):
+                    layout.validate_transition(before, after)
+            self.assertTrue(set(identities + references).isdisjoint(layout._blocks(after)))
             with self.assertRaisesRegex(layout.LayoutError, "Only active identities"):
                 retired(after, identities)
             useful_compilers += sum(block.get("type") == "cpp_compiler" for block in layout._blocks(after).values())

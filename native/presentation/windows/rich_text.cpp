@@ -20,6 +20,148 @@
 namespace lgaed::presentation {
 namespace {
 constexpr UINT_PTR hint_subclass_id=0x4c474854;
+constexpr UINT_PTR semantic_background_subclass_id=0x4c475342;
+struct SemanticBackground {
+    COLORREF color=0;
+    bool painting=false;
+    static DWORD pixel(COLORREF value) {
+        return (static_cast<DWORD>(GetRValue(value))<<16)|(static_cast<DWORD>(GetGValue(value))<<8)|GetBValue(value);
+    }
+    void correct(HWND edit,DWORD* pixels,const RECT& dirty,LONG width) const {
+        Microsoft::WRL::ComPtr<IRichEditOle> rich;
+        SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+        Microsoft::WRL::ComPtr<ITextDocument> document;
+        if(!rich||FAILED(rich.As(&document)))return;
+        RECT viewport{};GetClientRect(edit,&viewport);
+        Microsoft::WRL::ComPtr<ITextDocument2> extended;
+        if(SUCCEEDED(rich.As(&extended))){RECT measured{};
+            if(extended->GetClientRect(tomClientCoord|tomIncludeInset,&measured.left,&measured.top,&measured.right,&measured.bottom)==S_OK)
+                viewport=measured;
+        }
+        RECT clip{};if(!IntersectRect(&clip,&dirty,&viewport))return;
+        GETTEXTLENGTHEX request{GTL_PRECISE|GTL_NUMCHARS,1200};
+        const auto length=static_cast<LONG>(SendMessageW(edit,EM_GETTEXTLENGTHEX,reinterpret_cast<WPARAM>(&request),0));
+        if(length<=0)return;
+        constexpr long coordinates=tomStart|tomClientCoord|tomAllowOffClient;
+        const auto point=[&](LONG at,LONG align,POINTL& value){
+            Microsoft::WRL::ComPtr<ITextRange> range;
+            return document->Range(at,at,&range)==S_OK&&range&&range->GetPoint(coordinates|align,&value.x,&value.y)==S_OK;
+        };
+        const auto trim=[&](LONG first,LONG last){
+            if(first>=last)return;
+            POINTL top{},bottom{},end{};
+            if(!point(last-1,TA_TOP|TA_LEFT,top)||!point(last-1,TA_BOTTOM|TA_RIGHT,bottom)||
+                bottom.y<=clip.top||top.y>=clip.bottom||!point(last,TA_TOP|TA_LEFT,end)||end.y!=top.y)return;
+            const auto line=SendMessageW(edit,EM_EXLINEFROMCHAR,0,last-1);
+            const auto line_start=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,line,0));
+            auto line_end=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,line+1,0));
+            if(line_end<0)line_end=length;
+            Microsoft::WRL::ComPtr<ITextRange> row;
+            Microsoft::WRL::ComPtr<ITextPara> paragraph;
+            if(document->Range(line_start,line_end,&row)!=S_OK||!row||FAILED(row->GetPara(&paragraph))||!paragraph)return;
+            long rule=0;float factor=0,before=0,after=0;
+            if(FAILED(paragraph->GetLineSpacingRule(&rule))||rule!=tomLineSpaceMultiple||
+                FAILED(paragraph->GetLineSpacing(&factor))||!std::isfinite(factor)||factor<=1||
+                FAILED(paragraph->GetSpaceBefore(&before))||FAILED(paragraph->GetSpaceAfter(&after))||before!=0||after!=0)return;
+            // A built-up OfficeMath/OLE row has its own vertical layout. Keep
+            // its native backdrop until its natural descent is demonstrable.
+            Microsoft::WRL::ComPtr<ITextFont> font;
+            Microsoft::WRL::ComPtr<ITextFont2> math_font;
+            long math=tomFalse;
+            if(FAILED(row->GetFont(&font))||!font||FAILED(font.As(&math_font))||
+                FAILED(math_font->GetMathZone(&math))||math!=tomFalse)return;
+            for(LONG object=0,count=rich->GetObjectCount();object<count;++object){REOBJECT entry{};entry.cbStruct=sizeof(entry);
+                if(FAILED(rich->GetObject(object,&entry,REO_GETOBJ_NO_INTERFACES))||
+                    (entry.cp>=line_start&&entry.cp<line_end))return;
+            }
+            // Android Layout.getSelectionPath excludes line-spacing extra
+            // only on the range's final line. Native BackColor includes it.
+            // Invert the actual proportional line box, never a font/pixel
+            // offset: this also follows fallback fonts, zoom and DPI rounding.
+            const auto natural=static_cast<LONG>(std::lround((bottom.y-top.y)/static_cast<double>(factor)));
+            const auto cut=std::max(clip.top,top.y+natural),limit=std::min(clip.bottom,bottom.y);
+            if(natural<=0||cut>=limit)return;
+            const auto backdrop=pixel(color),surface=pixel(reader_theme::background(edit));
+            for(auto at=std::max(first,line_start);at<last;++at){POINTL left{},right{};
+                if(!point(at,TA_TOP|TA_LEFT,left)||!point(at,TA_BOTTOM|TA_RIGHT,right)||left.y!=top.y)continue;
+                const auto start=std::max(clip.left,std::min(left.x,right.x)),finish=std::min(clip.right,std::max(left.x,right.x));
+                for(auto y=cut;y<limit;++y)for(auto x=start;x<finish;++x){auto& value=pixels[static_cast<std::size_t>(y-dirty.top)*width+x-dirty.left];
+                    // Keep native selection, caret and every glyph/antialias
+                    // pixel, including the narrator's dimmed foreground.
+                    if((value&0xffffffu)==backdrop)value=(value&0xff000000u)|surface;
+                }
+            }
+        };
+        // Traverse native format runs in the dirty visible lines, rather than
+        // all characters of a paragraph on every narration word. Coalesce
+        // syntax/emphasis/reading-ink runs by their unchanged BackColor.
+        POINTL hit{viewport.left,clip.top};
+        const auto first_hit=std::clamp<LONG>(static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&hit))),0,length-1);
+        const auto first_line=SendMessageW(edit,EM_EXLINEFROMCHAR,0,first_hit);
+        auto at=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,first_line,0));
+        hit={viewport.right,clip.bottom-1};
+        const auto last_hit=std::clamp<LONG>(static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&hit))),0,length-1);
+        const auto last_line=SendMessageW(edit,EM_EXLINEFROMCHAR,0,last_hit);
+        auto visible_end=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,last_line+1,0));
+        if(visible_end<0)visible_end=length;
+        LONG first=-1;
+        while(at>=0&&at<length&&at<visible_end){
+            Microsoft::WRL::ComPtr<ITextRange> run;Microsoft::WRL::ComPtr<ITextFont> font;
+            if(document->Range(at,at+1,&run)!=S_OK||!run||FAILED(run->GetFont(&font))||!font)return;
+            long background=tomAutoColor,end=at+1,delta=0;
+            if(FAILED(font->GetBackColor(&background)))return;
+            if(background==static_cast<long>(color)){if(first<0)first=at;}
+            else if(first>=0){trim(first,at);first=-1;}
+            if(SUCCEEDED(run->EndOf(tomCharFormat,tomExtend,&delta)))run->GetEnd(&end);
+            at=std::clamp<LONG>(end,at+1,length);
+        }
+        if(first>=0&&at==length)trim(first,length);
+    }
+    static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+        auto* self=reinterpret_cast<SemanticBackground*>(raw);
+        if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,semantic_background_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
+        // In particular, never query TOM/text from its own synchronous read
+        // messages, and never format/freeze/invalidate from a paint callback.
+        if((message!=WM_PAINT&&message!=WM_PRINTCLIENT)||self->painting||reader_theme::palette().high_contrast)
+            return DefSubclassProc(edit,message,wp,lp);
+        if(message==WM_PRINTCLIENT&&lp!=(PRF_CLIENT|PRF_ERASEBKGND))return DefSubclassProc(edit,message,wp,lp);
+        RECT client{},dirty{};GetClientRect(edit,&client);
+        if(message==WM_PAINT){if(!GetUpdateRect(edit,&dirty,FALSE))return DefSubclassProc(edit,message,wp,lp);}
+        else{if(!wp||GetClipBox(reinterpret_cast<HDC>(wp),&dirty)==ERROR)return DefSubclassProc(edit,message,wp,lp);}
+        RECT bounds{};if(!IntersectRect(&bounds,&client,&dirty))return DefSubclassProc(edit,message,wp,lp);
+        const auto width=bounds.right-bounds.left,height=bounds.bottom-bounds.top;
+        const auto memory=CreateCompatibleDC(nullptr);if(!memory)return DefSubclassProc(edit,message,wp,lp);
+        BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=width;info.bmiHeader.biHeight=-height;
+        info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        void* pixels=nullptr;const auto bitmap=CreateDIBSection(memory,&info,DIB_RGB_COLORS,&pixels,nullptr,0);
+        if(!bitmap||!pixels){if(bitmap)DeleteObject(bitmap);DeleteDC(memory);return DefSubclassProc(edit,message,wp,lp);}
+        const auto previous=SelectObject(memory,bitmap);SetViewportOrgEx(memory,-bounds.left,-bounds.top,nullptr);
+        PAINTSTRUCT paint{};const bool restore_caret=message==WM_PAINT&&GetFocus()==edit&&HideCaret(edit)!=FALSE;
+        const auto target=message==WM_PAINT?BeginPaint(edit,&paint):reinterpret_cast<HDC>(wp);
+        const auto fill=CreateSolidBrush(reader_theme::background(edit));if(fill){FillRect(memory,&client,fill);DeleteObject(fill);}
+        self->painting=true;
+        const auto result=DefSubclassProc(edit,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT|PRF_ERASEBKGND);
+        DWORD_PTR attached=0;
+        if(GetWindowSubclass(edit,proc,semantic_background_subclass_id,&attached)&&attached==raw){
+            GdiFlush();self->correct(edit,static_cast<DWORD*>(pixels),bounds,width);self->painting=false;
+            if(target)BitBlt(target,bounds.left,bounds.top,width,height,memory,bounds.left,bounds.top,SRCCOPY);
+        }
+        if(message==WM_PAINT){EndPaint(edit,&paint);if(restore_caret)ShowCaret(edit);}
+        SelectObject(memory,previous);DeleteObject(bitmap);DeleteDC(memory);return result;
+    }
+};
+void semantic_background(HWND edit,COLORREF color,bool enabled){
+    DWORD_PTR attached=0;
+    if(GetWindowSubclass(edit,SemanticBackground::proc,semantic_background_subclass_id,&attached)){
+        auto* state=reinterpret_cast<SemanticBackground*>(attached);
+        if(enabled)state->color=color;
+        else{RemoveWindowSubclass(edit,SemanticBackground::proc,semantic_background_subclass_id);delete state;}
+    }else if(enabled){auto state=std::make_unique<SemanticBackground>();state->color=color;
+        if(!SetWindowSubclass(edit,SemanticBackground::proc,semantic_background_subclass_id,reinterpret_cast<DWORD_PTR>(state.get())))
+            throw std::runtime_error("Cannot attach the semantic background renderer");
+        state.release();
+    }
+}
 struct EditHint {
     std::wstring text;
     COLORREF color=RGB(140,145,155);
@@ -829,6 +971,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         if(standalone_inline){style.dwMask|=CFM_FACE;wcscpy_s(style.szFaceName,L"Roboto");}
         SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
     }
+    COLORREF semantic_color=0;
     if(!code&&has_background){
         const auto surface=reader_theme::background(edit);
         auto foreground=role==RichTextRole::body?reader_theme::foreground(edit):RGB(255,255,255);
@@ -839,6 +982,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             foreground=RGB(205,208,215);
         const auto blend=[](BYTE ink,BYTE background){return static_cast<BYTE>((ink*8+background*247)/255);};
         const auto background=1.05/(luminance(foreground)+.05)>=4.5?RGB(31,35,48):RGB(blend(GetRValue(foreground),GetRValue(surface)),blend(GetGValue(foreground),GetGValue(surface)),blend(GetBValue(foreground),GetBValue(surface)));
+        semantic_color=background;
         const auto paint_background=[&](std::size_t first,std::size_t last){if(first>=last)return;select(edit,first,last);
             CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_BACKCOLOR;style.crBackColor=background;
             SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));};
@@ -848,5 +992,6 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             paint_background(begin,last);
         }
     }
+    semantic_background(edit,semantic_color,!code&&has_background&&!semantic.fragments.empty());
 }
 } // namespace lgaed::presentation

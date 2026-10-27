@@ -85,6 +85,10 @@ struct Block {
     std::vector<std::vector<std::string>> answer_alternatives;
     std::optional<std::size_t> correct_index;
     std::vector<std::size_t> correct_order;
+    // Reviewed, source-bound independent fragments may exchange only their
+    // canonical positions. This is supplied by the native loader, not JSON,
+    // and does not change the stored representation or historical answer key.
+    std::vector<std::vector<std::size_t>> order_equivalence_groups;
     std::optional<OrderRefinement> order_refinement;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;

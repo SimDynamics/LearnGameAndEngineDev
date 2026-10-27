@@ -2,6 +2,7 @@
 
 import copy
 from functools import lru_cache
+import hashlib
 import json
 import subprocess
 import unittest
@@ -13,6 +14,12 @@ import retirement_fixture_source as retirement_fixtures
 
 BASELINE = 'dd6787d190fcb707a8e935abeadda64584d773d9'
 LAYOUT_BASELINE = '25cfe2965b4fb03740795ef1d10d6fd7a0dcb50d'
+BEFORE_REFERENCE_RETIREMENT_COMMIT = '52d057d1aad844b133d0d26ff195cbfcbe18b2e1'
+BEFORE_REFERENCE_RETIREMENT_SHA256 = {
+    'lesson_primer_programa_y_salida.json': '449b62604d3738cc10b54ac0a0b8835f020d36f64cb120e9c9ac28ff3a62118f',
+    'lesson_texto_secuencia_y_formato.json': '9b5bce191c5100cacfb7b2c32d213c1c3a71a9362b6af84454c57cd118fd9786',
+    'lesson_fuente_compilacion_y_diagnostico.json': '6509a4ab4b7e00d48b10387e45f6a232ffbf6c7e4edf7dd087918de3f7f24904',
+}
 
 
 def old_lesson(lesson):
@@ -39,6 +46,30 @@ def published_source(lesson):
 
 def published_lesson(lesson):
     return json.loads(published_source(lesson))
+
+
+@lru_cache(maxsize=3)
+def first_retired_source(lesson):
+    """Freeze the first retirement after its reviewed editorial refinements.
+
+    These are the actual published pages immediately before the later removal
+    of the two static references. The live asset cannot stand in for this
+    intermediate reading layout when it already contains both retirements.
+    """
+    prefix = 'programas_y_ejecucion/'
+    filename = lesson.removeprefix(prefix)
+    if not lesson.startswith(prefix) or filename not in BEFORE_REFERENCE_RETIREMENT_SHA256:
+        raise ValueError('Unknown first-retirement lesson: ' + lesson)
+    relative = (contract.CONTENT / lesson).relative_to(contract.ROOT).as_posix()
+    payload = subprocess.check_output(
+        ['git', 'show', BEFORE_REFERENCE_RETIREMENT_COMMIT + ':' + relative], cwd=contract.ROOT)
+    if hashlib.sha256(payload).hexdigest() != BEFORE_REFERENCE_RETIREMENT_SHA256[filename]:
+        raise RuntimeError('First-retirement fixture SHA-256 mismatch: ' + lesson)
+    return payload
+
+
+def first_retired_lesson(lesson):
+    return json.loads(first_retired_source(lesson))
 
 
 class SequencePreservationTest(unittest.TestCase):
@@ -151,7 +182,7 @@ class SequencePreservationTest(unittest.TestCase):
         self.assertEqual(['Zona inicial'], original['outputCheck']['cases'][0]['outputs'])
         self.assertEqual(['Caja recibida'], construction['outputCheck']['cases'][0]['outputs'])
         self.assertNotEqual(positions[original_slot], positions[inverse[4, 2]])
-        integrated = contract.load(contract.CONTENT / lesson)
+        integrated = first_retired_lesson(lesson)
         state_layout.validate_transition(current, integrated)
         self.assertEqual(current['pages'], integrated['stateLayout']['retirementHistory'][0]['pages'])
         self.assertEqual(current['stateLayout']['current'],
@@ -284,7 +315,15 @@ class SequencePreservationTest(unittest.TestCase):
             with self.subTest(lesson=lesson, prediction=prediction_identity):
                 document = contract.load(contract.CONTENT / lesson)
                 previous = published_lesson(lesson)
-                state_layout.validate_transition(previous, document)
+                if old_editor_identity in useful_editors:
+                    # Each archive must name its real immediate predecessor;
+                    # validate both published transitions instead of inventing
+                    # one transition from before either retirement to today.
+                    intermediate = first_retired_lesson(lesson)
+                    state_layout.validate_transition(previous, intermediate)
+                    state_layout.validate_transition(intermediate, document)
+                else:
+                    state_layout.validate_transition(previous, document)
                 blocks = self.visible_state_blocks(document)
                 old_blocks = self.visible_state_blocks(previous)
                 editor_identity = useful_editors.get(old_editor_identity, old_editor_identity)
@@ -312,6 +351,28 @@ class SequencePreservationTest(unittest.TestCase):
                                      document['stateLayout']['retirementHistory'][0]['current'])
                     self.assertTrue(set(prediction['answers']).isdisjoint(editor['outputCheck']['cases'][0]['outputs']),
                                     'The useful editor must retain its distinct construction goal.')
+
+    def test_second_retirement_preserves_its_actual_reading_snapshot_and_rejects_skipping_it(self):
+        for lesson, *_ in self.reviewed_routes()[:2]:
+            with self.subTest(lesson=lesson):
+                previous = published_lesson(lesson)
+                intermediate = first_retired_lesson(lesson)
+                document = contract.load(contract.CONTENT / lesson)
+                self.assertEqual(2, len(intermediate['stateLayout']['retired']))
+                self.assertEqual(1, len(intermediate['stateLayout']['retirementHistory']))
+                self.assertEqual(4, len(document['stateLayout']['retired']))
+                self.assertEqual(2, len(document['stateLayout']['retirementHistory']))
+                self.assertEqual(intermediate['pages'],
+                                 document['stateLayout']['retirementHistory'][1]['pages'])
+                self.assertEqual(intermediate['stateLayout']['current'],
+                                 document['stateLayout']['retirementHistory'][1]['current'])
+                self.assertEqual(intermediate['stateLayout']['retirementHistory'],
+                                 document['stateLayout']['retirementHistory'][:1])
+                state_layout.validate_transition(previous, intermediate)
+                state_layout.validate_transition(intermediate, document)
+                with self.assertRaisesRegex(state_layout.LayoutError,
+                                            'One transition can archive only its actual previous reading layout'):
+                    state_layout.validate_transition(previous, document)
 
 
 if __name__ == '__main__':

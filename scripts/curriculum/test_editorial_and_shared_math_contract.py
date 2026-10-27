@@ -9,6 +9,27 @@ from functools import lru_cache
 
 import validar_json_programacion as contract
 import stable_state_layout as state_layout
+import retirement_fixture_source as retirement_fixtures
+
+
+FIRST_RETIREMENT_COMMIT = "aa230c6575210c2154e59dee60ff87cdeb8e615b"
+FIRST_RETIREMENT_SHA256 = {
+    "lesson_primer_programa_y_salida.json": "3b98f6b9ee6ace411c4120e2d2efb2a204acbc3947d1abd86215609f2d2ad07c",
+    "lesson_texto_secuencia_y_formato.json": "6eeca0158eb48c676cebb1fb249a59d36a7c45ae11e0c3c8bb6677032cc48e63",
+    "lesson_fuente_compilacion_y_diagnostico.json": "6509a4ab4b7e00d48b10387e45f6a232ffbf6c7e4edf7dd087918de3f7f24904",
+}
+
+
+@lru_cache(maxsize=3)
+def first_retirement_bytes(filename):
+    """The four text approvals belong to the first actual retirement only."""
+    if filename not in FIRST_RETIREMENT_SHA256:
+        raise ValueError("Unknown first-retirement fixture: " + filename)
+    relative = retirement_fixtures.RELATIVE_UNIT + "/" + filename
+    payload = subprocess.check_output(["git", "show", FIRST_RETIREMENT_COMMIT + ":" + relative], cwd=contract.ROOT)
+    if hashlib.sha256(payload).hexdigest() != FIRST_RETIREMENT_SHA256[filename]:
+        raise RuntimeError("First-retirement fixture SHA-256 mismatch: " + filename)
+    return payload
 
 
 @lru_cache(maxsize=None)
@@ -336,8 +357,11 @@ class RetirementEditorialContractTest(unittest.TestCase):
 
     def fixtures(self):
         for lesson, page, block, identity, field, before_hash, after_hash in self.cases:
-            previous = historical_lesson("d1933ed", lesson)
-            current = contract.load(contract.CONTENT / lesson)
+            filename = (contract.CONTENT / lesson).name
+            previous = retirement_fixtures.load_historical_json(filename)
+            # Today's assets can contain later, separately published retirements.
+            # They cannot impersonate the immediate successor of d1933ed.
+            current = json.loads(first_retirement_bytes(filename))
             aligned = state_layout.align_for_previous_validation(previous, current)
             position = next(position for position, origin in state_layout.validate(previous).items()
                             if origin == (page - 1, block - 1))
@@ -366,6 +390,18 @@ class RetirementEditorialContractTest(unittest.TestCase):
                 self.assertEqual(old["answers"], new["answers"])
                 self.assertEqual("exact", old["outputComparison"])
                 self.assertEqual(old["outputComparison"], new["outputComparison"])
+
+    def test_first_retirement_fixtures_retain_exact_reading_snapshots(self):
+        for filename in FIRST_RETIREMENT_SHA256:
+            previous = retirement_fixtures.load_historical_json(filename)
+            current = json.loads(first_retirement_bytes(filename))
+            with self.subTest(filename=filename):
+                state_layout.validate_transition(previous, current)
+                self.assertEqual(2, len(current["stateLayout"]["retired"]))
+                self.assertEqual(1, len(current["stateLayout"]["retirementHistory"]))
+                snapshot = current["stateLayout"]["retirementHistory"][0]
+                self.assertEqual(previous["pages"], snapshot["pages"])
+                self.assertEqual(previous["stateLayout"]["current"], snapshot["current"])
 
     def test_pinned_text_does_not_license_technical_changes_or_other_owners(self):
         for location, _, _, _, old, new in self.fixtures():

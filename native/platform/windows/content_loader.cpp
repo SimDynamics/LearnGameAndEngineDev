@@ -802,6 +802,31 @@ void read_relationships(const JsonObject& root, Lesson& lesson) {
         }
     }
 }
+void apply_reviewed_order_equivalences(const Lesson& lesson,Block& block) {
+    if(lesson.locale!="es"||lesson.state_layout.version!=2||block.type!=BlockType::order_code)return;
+    // CPP_ORDENACION_UNA_LINEA_POR_PIEZA: only the five complete response/code
+    // contracts reviewed by Work. A different source, owner or canonical order
+    // retains ordinary exact-text evaluation. Editorial prose may still vary.
+    struct Reviewed {
+        std::string_view lesson,identity,payload;
+        std::vector<std::vector<std::size_t>> groups;
+    };
+    static const std::vector<Reviewed> reviewed{
+        {"cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar","block_0002_0001",
+            "258a6d4d80faadc66eb13ae8816884516ce6fea5fc214d94ebf8381d916bd794",{{2,3}}},
+        {"cpp_fundamentals__colecciones_y_recorridos__acumular_contar_y_seleccionar","block_0005_0004",
+            "2bb235af23438d36d2d8767e3ea0f0375e071bff8bbf6187712dd664a4fb856a",{{2,3},{6,7}}},
+        {"cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz","orden_validar_antes_de_calcular",
+            "db9c0be2b1cbbc53902fc10d467795eef8cb8aca7b76adb523aeac586cd070e0",{{2,3}}},
+        {"cpp_fundamentals__excepciones_y_recuperacion__recuperar_por_operacion","block_0002_0003",
+            "5671aba2d45f3845d3084c367a057a9f519ae9da8e9b2207c428abd2f4bac513",{{3,4},{6,7},{17,18}}},
+        {"cpp_fundamentals__archivos_y_programa_completo__extraer_un_tipo_sin_cambiarlo_en_fallo","block_0004_0003",
+            "4380d9b5e34bdda15027e6d92939d391ad4b22864f3ded1dac00d22717111af6",{{2,3,4}}}
+    };
+    const auto found=std::ranges::find_if(reviewed,[&](const auto& item){return item.lesson==lesson.id&&item.identity==block.stable_id;});
+    if(found!=reviewed.end()&&state_fingerprint(JsonObject::Parse(key(block.raw_json)))==found->payload)
+        block.order_equivalence_groups=found->groups;
+}
 void resolve_addresses(Lesson& lesson) {
     auto& layout = lesson.state_layout;
     std::map<std::string, StateAddress> addresses;
@@ -824,6 +849,7 @@ void resolve_addresses(Lesson& lesson) {
                     "An ordering refinement belongs to another visible representation");
                 block.order_refinement = *refinement->second;
             }
+            apply_reviewed_order_equivalences(lesson,block);
         }
     }
     for (const auto& retired : layout.retired) {

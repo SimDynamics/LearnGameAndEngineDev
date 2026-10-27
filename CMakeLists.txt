@@ -519,6 +519,9 @@ if(BUILD_TESTING)
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
     add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
+    add_test(NAME native.technical_background COMMAND lgaed_rich_text_tests --technical-background
+        "${CMAKE_SOURCE_DIR}/out/qa/technical-background.bmp")
+    set_tests_properties(native.technical_background PROPERTIES TIMEOUT 45)
     add_test(NAME native.technical_text_stress COMMAND lgaed_rich_text_tests --technical-stress)
     set_tests_properties(native.technical_text_stress PROPERTIES TIMEOUT 45)
     add_test(NAME native.technical_text_android_parity COMMAND lgaed_rich_text_tests --android-parity

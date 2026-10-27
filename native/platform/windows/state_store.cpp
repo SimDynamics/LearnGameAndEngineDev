@@ -273,6 +273,7 @@ curriculum::Block original_order_block(const curriculum::Block& block) {
     auto original = block;
     original.fragments = block.order_refinement->original_fragments;
     original.correct_order = block.order_refinement->original_correct_order;
+    original.order_equivalence_groups.clear();
     original.order_refinement.reset();
     return original;
 }
