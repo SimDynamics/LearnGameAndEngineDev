@@ -6,19 +6,57 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una regla explica qué secuencias pertenecen al lenguaje"
+          "text": "Decidir qué secuencias forman una operación"
         },
         {
           "type": "paragraph",
-          "text": "Reconocer los tokens no basta para interpretar 8+4;. Una gramática describe cómo se combinan. La primera etapa admite una expresión formada por un número y cero o más pares de signo + y número. Después exige ; como final de operación. Así, 8; y 8+4+2; cumplen la regla; +8;, 8+; y 8 4; no la cumplen."
+          "text": "Reconocer los tokens permite distinguir números y signos, pero no determina cómo deben combinarse. Una gramática describe las secuencias admitidas por el lenguaje; sus reglas permiten reconocer una expresión completa (Stroustrup, 2024, pp. 127–128).\n\nLa primera etapa de esta lección admite sólo sumas:\n• Una expresión comienza por un número.\n• Después puede contener cero o más pares formados por el signo `+` y otro número.\n• Una operación contiene esa expresión y termina con `;`.\n\nCero pares significa que un número aislado también puede ser una expresión: `8;` forma una operación. En `8+4+2;` aparecen dos pares. En cambio, `+8;` no comienza por un número, `8+;` carece del número posterior al signo y `8 4;` contiene un segundo número sin signo entre ambos.",
+          "emphasis": [
+            {
+              "text": "no determina cómo deben combinarse",
+              "style": "bold"
+            },
+            {
+              "text": "sólo sumas",
+              "style": "bold"
+            },
+            {
+              "text": "cero o más pares",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La expresión produce un int. Los tokens numéricos siguen en 0..99; cada resultado parcial debe estar en -100..100. El texto de la prueba tiene hasta 64 caracteres ASCII. El dominio de resultados es una regla del intérprete: se rechazará un resultado que salga de esa banda, aunque pueda representarse en int."
+          "text": "La expresión entrega un `int`. Se conservan dos límites diferentes: cada token numérico tiene un valor de 0 a 99, y cada resultado parcial debe permanecer entre −100 y 100, ambos incluidos. Un resultado que se salga de ese intervalo se rechaza aunque todavía quepa en `int`. Es una condición del intérprete, no una prueba de desbordamiento del tipo.\n\nLas entradas preparadas de esta lección son textos ASCII de hasta 64 caracteres. La construcción se concentra en reconocer una operación completa, calcularla respetando el dominio y comprobar que no quede otra unidad después.",
+          "emphasis": [
+            {
+              "text": "dos límites diferentes",
+              "style": "bold"
+            },
+            {
+              "text": "cada resultado parcial",
+              "style": "bold"
+            },
+            {
+              "text": "una operación completa",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Divide el trabajo en funciones: leer_numero obtiene el operando que esa regla permite; leer_expresion combina números; leer_operacion comprueba el punto y coma. Una regla consume lo que le pertenece y conserva el primer token que pertenece al nivel que la llamó. El flujo queda en un estado lógico que permite continuar."
+          "text": "La implementación separa las reglas en funciones que comparten el mismo lector por referencia:\n• `leer_numero` exige un token numérico y entrega su valor.\n• `leer_expresion` combina el primer número con los pares posteriores y entrega el acumulado.\n• `leer_operacion` exige el `;` que termina la expresión.\n\nEsta división permite que cada función resuelva una parte del análisis y utilice el resultado de las demás (Stroustrup, 2024, pp. 130–131). Si `leer_expresion` obtiene un token que ya no pertenece a sus pares de suma, lo reserva y termina. La función que la llamó puede recuperar esa misma unidad; las llamadas no empiezan cada una desde el principio del texto.",
+          "emphasis": [
+            {
+              "text": "el mismo lector por referencia",
+              "style": "bold"
+            },
+            {
+              "text": "lo reserva y termina",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -29,7 +67,12 @@
             "6+2+1;"
           ],
           "correctIndex": 2,
-          "explanation": "Cada signo + tiene un número después y la operación termina con ;. Las otras secuencias omiten un operando o un signo necesario."
+          "explanation": "Cada signo + tiene un número después y la operación termina con ;. Las otras secuencias omiten un operando o un signo necesario.",
+          "reviewFeedback": [
+            "Después del signo, comprueba qué categoría exige la regla antes de llegar al final de la operación.",
+            "Compara las dos unidades numéricas consecutivas con el patrón que debe repetirse después del primer número.",
+            "Separa el primer número de cada par posterior y comprueba después el terminador."
+          ]
         }
       ]
     },
@@ -37,11 +80,25 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construir el primer nivel con una repetición"
+          "text": "Traducir la repetición a un bucle"
         },
         {
           "type": "paragraph",
-          "text": "La expresión comienza obteniendo un número. Después lee una unidad: si es +, obtiene otro número y actualiza el acumulado; si no lo es, la devuelve y termina. El punto y coma queda reservado para leer_operacion. La función numérica también devuelve un token inesperado antes de lanzar su diagnóstico, para que otra política pueda observar esa frontera."
+          "text": "El bucle mantiene un acumulado. Primero obtiene el valor de un número; después lee un token. Si es `+`, exige otro número y suma su valor al acumulado. Si no lo es, reserva ese token y devuelve el resultado. Repetir esta actualización permite procesar cualquier cantidad de pares admitidos, sin agrupar a la derecha todo lo que queda de la expresión (Stroustrup, 2024, pp. 133–134).\n\nCon `\"8+4;\"`, el recorrido es:\n1. `leer_numero` obtiene el valor 8.\n2. La expresión obtiene `+`, exige el número 4 y actualiza el acumulado a 12.\n3. La expresión obtiene `;`, lo reserva y termina con el valor 12.\n4. `leer_operacion` recupera ese `;` y valida el final de la operación.\n\nLa reserva entrega al nivel superior la unidad que la expresión ya no debe consumir (Stroustrup, 2024, pp. 139–140). El nivel superior todavía debe aceptarla o rechazarla. Si `leer_numero` encuentra otra categoría, también la reserva antes de lanzar una excepción con `Se esperaba un numero`. Conservarla no significa recuperarse del error: este programa captura la excepción y termina esa prueba.",
+          "emphasis": [
+            {
+              "text": "mantiene un acumulado",
+              "style": "bold"
+            },
+            {
+              "text": "lo reserva y termina",
+              "style": "bold"
+            },
+            {
+              "text": "no significa recuperarse del error",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -50,11 +107,31 @@
         },
         {
           "type": "paragraph",
-          "text": "resultado_en_dominio comprueba cada candidato antes de aceptarlo como acumulado. Un acumulado de -100..100 combinado con un número de 0..99 produce en una suma o resta un candidato entre -199 y 199, representable en cualquier int conforme. Esta comprobación establece el dominio del lenguaje y conserva una aritmética segura."
+          "text": "`resultado_en_dominio` comprueba el candidato antes de aceptarlo como acumulado. En la etapa ampliada, un acumulado entre −100 y 100 y un número entre 0 y 99 producen, al sumarse o restarse, un candidato entre −199 y 199. Esos valores caben incluso en el rango mínimo garantizado para `int` (Köppe et al., 2023, § 6.8.2).\n\nDespués se aplica el límite del intérprete: sólo se conserva el candidato si está entre −100 y 100. Cada resultado parcial cuenta. Por ejemplo, `99+2-2;` se rechaza al alcanzar 101; no se espera a que una resta posterior vuelva a reducirlo. La guarda mantiene la cota necesaria para que el cálculo siguiente también sea seguro.",
+          "emphasis": [
+            {
+              "text": "Cada resultado parcial cuenta.",
+              "style": "bold"
+            },
+            {
+              "text": "La guarda mantiene la cota",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La aplicación de esta etapa acepta exactamente una operación y luego comprueba final del texto, permitiendo separadores. No imprime el resultado antes de validar el punto y coma y la ausencia de otra unidad: una expresión calculada no demuestra que toda la entrada cumpla el formato."
+          "text": "El cliente acepta exactamente una operación. Tras `leer_operacion`, pide otro token y exige `'f'`, el final del texto. El lector omite los espacios, tabuladores y saltos de línea admitidos, por lo que esos separadores pueden quedar después del `;`. Otra unidad ya sería texto adicional.\n\nSólo entonces se imprime `Resultado: ` y el valor. Calcular una expresión, encontrar su `;` y agotar el texto son tres comprobaciones distintas. Posponer la impresión evita presentar como aceptado un resultado cuyo formato completo todavía no se ha validado.",
+          "emphasis": [
+            {
+              "text": "exactamente una operación",
+              "style": "bold"
+            },
+            {
+              "text": "tres comprobaciones distintas",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -62,7 +139,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Justificar consumo y terminación"
+          "text": "Por qué el bucle consume unidades o termina"
         },
         {
           "type": "output_prediction",
@@ -72,7 +149,8 @@
           "answers": [
             "Resultado: 22"
           ],
-          "explanation": "Se comienza con 7, se incorpora 12 y después 3. Cada par + y número actualiza el acumulado. ; se devuelve al nivel que valida el final de la operación."
+          "explanation": "Se comienza con 7, se incorpora 12 y después 3. Cada par + y número actualiza el acumulado. ; se devuelve al nivel que valida el final de la operación.",
+          "reviewFeedback": "Sigue las actualizaciones del acumulado y distingue el token que devuelve la expresión del que consume el nivel de operación."
         },
         {
           "type": "multiple_choice",
@@ -83,11 +161,26 @@
             "Devolver cualquier token hace que el flujo retroceda al principio."
           ],
           "correctIndex": 0,
-          "explanation": "El caso repetido consume unidades; el caso que conserva una unidad termina la función. Una lectura que falla lanza un diagnóstico y abandona la regla."
+          "explanation": "Una vuelta que continúa consume el signo y un número; una vuelta que conserva otra unidad termina la función. Si una función encuentra una categoría inadmisible, lanza una excepción y abandona esa regla. Así no se repite la misma decisión sobre una unidad reservada.",
+          "reviewFeedback": [
+            "Distingue la rama que actualiza el acumulado de la rama que termina la función tras reservar el token.",
+            "Lee las operaciones de la reserva: una lectura puede entregar la misma unidad que se reservó. Comprueba qué otra acción garantiza el progreso del bucle.",
+            "La reserva contiene un token, no una posición inicial del texto. Revisa qué cambia realmente devolver y qué permanece consumido."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La devolución no crea un ciclo porque quien devuelve ; deja de ejecutar su regla. El nivel superior lo obtiene y lo consume. Si una función devolviera una unidad y siguiera intentando la misma pregunta sin consumir nada, esa justificación de progreso desaparecería."
+          "text": "Una vuelta que continúa ha consumido un signo `+` y el número posterior. Una vuelta que reserva un token termina inmediatamente la función. Por eso el mismo token reservado no vuelve una y otra vez a la misma pregunta dentro de ese bucle.\n\nDespués, `leer_operacion` recupera la unidad reservada y decide si es el final que exige. Si una función reservara una unidad y repitiera la misma pregunta sin consumirla ni retornar, ya no existiría esta justificación de progreso. El búfer conserva información; por sí solo no obliga a avanzar.",
+          "emphasis": [
+            {
+              "text": "termina inmediatamente",
+              "style": "bold"
+            },
+            {
+              "text": "por sí solo no obliga a avanzar",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -95,15 +188,35 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Añadir resta conserva un orden de asociación"
+          "text": "Añadir resta y mantener la asociación izquierda"
         },
         {
           "type": "paragraph",
-          "text": "Amplía la expresión para que cada par pueda empezar por + o por -. Al encontrar -, el acumulado anterior pierde el valor del número siguiente. Procesar esos pares de izquierda a derecha da a la resta asociación izquierda: 18-5-4 se interpreta como (18-5)-4 y produce 9. Interpretarla como 18-(5-4) produciría 17 y sería otra regla."
+          "text": "La segunda etapa admite pares que empiezan por `+` o por `-`. En ambos casos se obtiene el número siguiente y se actualiza el acumulado: una suma lo incrementa y una resta sustrae ese valor.\n\nLa resta binaria se agrupa de izquierda a derecha. Un bucle que actualiza el acumulado después de cada par mantiene esa asociación; resolver primero toda la parte derecha cambiaría la regla (Stroustrup, 2024, pp. 132–134). Por ejemplo, `18-5-4` se interpreta como `(18-5)-4`: primero 13 y después 9. La agrupación `18-(5-4)` produciría 17.",
+          "emphasis": [
+            {
+              "text": "se actualiza el acumulado",
+              "style": "bold"
+            },
+            {
+              "text": "de izquierda a derecha",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Los paréntesis de esa explicación muestran agrupación matemática; esta etapa aún no los acepta en su entrada. La ampliación de resta binaria tampoco admite empezar por -: cada expresión comienza por un número. El signo unario y la agrupación explícita tendrán sus propias reglas después de construir prioridad."
+          "text": "Los paréntesis anteriores sólo muestran la agrupación matemática de la explicación. Esta etapa todavía no los acepta dentro del texto que analiza.\n\nTambién se distingue resta binaria de signo unario. En la resta binaria ya existe un valor a la izquierda y se resta el número siguiente. Por eso una expresión sigue comenzando por un número, no por `-`. Los signos unarios y los paréntesis se incorporarán con sus propias reglas después de introducir los niveles de prioridad.",
+          "emphasis": [
+            {
+              "text": "sólo muestran la agrupación matemática",
+              "style": "bold"
+            },
+            {
+              "text": "resta binaria de signo unario",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -114,7 +227,12 @@
             "Volver a leer 20 desde el principio para cada signo."
           ],
           "correctIndex": 1,
-          "explanation": "El acumulado resume los pares ya procesados. La siguiente resta utiliza 14 y 3, conservando asociación izquierda."
+          "explanation": "El acumulado resume los pares ya procesados. La siguiente resta utiliza 14 y 3, conservando asociación izquierda.",
+          "reviewFeedback": [
+            "Identifica qué operaciones ya resume el acumulado y cuál es el siguiente par todavía pendiente.",
+            "Usa el acumulado que dejó la primera resta como valor izquierdo del siguiente paso.",
+            "Comprueba si el acumulado conserva el resultado de los pares anteriores o necesita volver a reconocerlos."
+          ]
         }
       ]
     },
@@ -122,12 +240,24 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construir la ampliación desde las reglas"
+          "text": "Construir y comprobar la gramática ampliada"
         },
         {
           "type": "paragraph",
-          "text": "El editor proporciona el módulo de tokens y búfer ya conocido.\n\nConstruye tus funciones de número, expresión y operación para admitir sumas y restas binarias.\n\nUsa como texto inicial \"17-6+4;\" y presenta Resultado: N sólo cuando haya una operación completa, un resultado en -100..100 y ningún texto extra salvo separadores.\n\nCaptura los rechazos y presenta Error: seguido de un diagnóstico que identifique el requisito incumplido.\n\nAgrupa las pruebas en una sola batería: define probar(const std::string& texto), crea un lector nuevo por llamada y no cambies la implementación entre casos. main llama, en este orden, con \"17-6+4;\", \"20-6-3;\", \"0;\", \"2-5;\", \"4+;\", \"4 2;\", \"4+2\", \"99+2;\", \"\", \"2;3;\".\n\nCada llamada presenta su resultado o diagnóstico en una línea terminada con salto, sin títulos ni líneas vacías.\n\nPara comparar stdout, conserva los mensajes exactos Resultado: N o Error: seguido de la causa: Resultado fuera de dominio, Se esperaba ;, Se esperaba un numero, Texto extra tras la operacion.\n\nDistintos nombres de funciones y organizaciones siguen siendo válidos si conservan reglas, seguridad y estos mensajes observables.\n\nUsa Compilar, ejecutar y comprobar con toda la batería; un fallo de compilación o ejecución conserva su diagnóstico técnico sin veredicto de stdout.",
+          "text": "El editor proporciona el módulo de tokens y su búfer. Construye las funciones que reconocen un número, combinan sumas y restas binarias y exigen el final `;`. Conserva ese módulo y su interfaz; organiza las funciones nuevas sin variables globales modificables.\n\nCada token numérico conserva el dominio de 0 a 99. Comprueba cada resultado parcial entre −100 y 100. Sólo presenta un resultado después de validar toda la operación y el final del texto, permitiendo los separadores del lector.\n\nDefine `probar(const std::string& texto)`. Cada llamada crea un lector nuevo y captura sus propios rechazos. Integra en un único programa las siguientes llamadas, en este orden, sin cambiar la implementación entre casos:\n1. `probar(\"17-6+4;\");`\n2. `probar(\"20-6-3;\");`\n3. `probar(\"0;\");`\n4. `probar(\"2-5;\");`\n5. `probar(\"4+;\");`\n6. `probar(\"4 2;\");`\n7. `probar(\"4+2\");`\n8. `probar(\"99+2;\");`\n9. `probar(\"\");`\n10. `probar(\"2;3;\");`\n\nUna operación aceptada presenta `Resultado: ` seguido del valor calculado. Un rechazo presenta `Error: ` seguido del diagnóstico correspondiente: `Resultado fuera de dominio`, `Se esperaba ;`, `Se esperaba un numero` o `Texto extra tras la operacion`. Conserva el espacio después de los dos puntos. Cada llamada produce una línea terminada con salto, sin títulos ni líneas vacías.\n\nPulsa Compilar, ejecutar y comprobar para contrastar los diez informes. Puedes corregir y reintentar el mismo programa. Los nombres de las funciones nuevas y su organización pueden variar si conservan las reglas, la seguridad y esos resultados observables.",
           "emphasis": [
+            {
+              "text": "cada resultado parcial",
+              "style": "bold"
+            },
+            {
+              "text": "en un único programa",
+              "style": "bold"
+            },
+            {
+              "text": "Conserva el espacio después de los dos puntos.",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -144,7 +274,12 @@
             "Un rechazo, porque dos restas requieren paréntesis."
           ],
           "correctIndex": 0,
-          "explanation": "El bucle actualiza el acumulado después de cada par. La resta binaria se aplica de izquierda a derecha y esta etapa todavía no admite paréntesis en el texto."
+          "explanation": "El bucle actualiza el acumulado después de cada par. La resta binaria se aplica de izquierda a derecha y esta etapa todavía no admite paréntesis en el texto.",
+          "reviewFeedback": [
+            "Recorre un par de signo y número cada vez y conserva el resultado como acumulado del siguiente paso.",
+            "Compara agrupar toda la parte derecha con actualizar el acumulado al terminar cada par.",
+            "Revisa la repetición admitida por la regla: distingue encadenar restas de introducir agrupación explícita."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -162,7 +297,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Elige nombres y organiza las llamadas sin variables globales modificables. Valida cada resultado parcial y conserva una única reserva para el nivel que debe leerla después. La comprobación contrasta los diez informes con las etiquetas de esta consigna; no demuestra por sí sola la estructura de las funciones ni la ausencia de un cálculo inseguro."
+          "text": "La comprobación contrasta los diez informes de una sola implementación: resultados positivos, cero y negativo; asociación de restas; operandos o terminadores ausentes; exceso de dominio y texto adicional.\n\nEsos resultados no demuestran por sí solos la organización de las funciones ni la seguridad de cualquier programa posible. La construcción también debe respetar las guardas explicadas, compartir el lector y conservar una única reserva. Un resultado correcto para un prefijo del texto no sustituye la validación completa.",
+          "emphasis": [
+            {
+              "text": "una sola implementación",
+              "style": "bold"
+            },
+            {
+              "text": "no demuestran por sí solos",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -170,11 +315,21 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comparar la gramática ampliada después del intento"
+          "text": "Comparar la ampliación después del intento"
         },
         {
           "type": "paragraph",
-          "text": "La referencia calcula \"23-7+2;\", con otros datos. La decisión sobre + o - actualiza el mismo acumulado y conserva un único punto de retorno cuando el token ya pertenece a otro nivel. El resto del módulo lector permanece igual."
+          "text": "Esta referencia parcial calcula `\"23-7+2;\"` con datos distintos de los del intento. Ambas decisiones, sumar y restar, actualizan el mismo acumulado. Cuando llega otra categoría, la expresión reserva el token y retorna para que el nivel superior lo examine.\n\nEl módulo lector conserva su implementación. Este cliente comprueba una operación; la batería de diez llamadas aparece completa al final de la lección.",
+          "emphasis": [
+            {
+              "text": "referencia parcial",
+              "style": "bold"
+            },
+            {
+              "text": "el mismo acumulado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -183,7 +338,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Compara tus funciones con las reglas y las pruebas, no sólo con este texto. Una organización diferente puede cumplir el contrato. En particular, el resultado inicial del intento es 15; la asociación de 20-6-3 da 11; y la validación de ; ocurre antes de presentar el resultado. Si una prueba falla, sigue qué regla obtuvo el primer token que no le pertenecía."
+          "text": "Conserva tu solución si cumple las reglas y las pruebas, aunque sus funciones nuevas tengan otra organización. La referencia de esta página obtiene 18; la primera llamada de la batería obtiene 15. No son textos de prueba intercambiables.\n\nLa cadena `20-6-3` exige actualizar primero a 14 y después a 11. En todas las pruebas aceptadas, la comprobación de `;` y del final del texto ocurre antes de presentar el resultado. Si falla una prueba, sigue qué función obtiene cada token y si debe consumirlo, reservarlo o rechazarlo.",
+          "emphasis": [
+            {
+              "text": "No son textos de prueba intercambiables.",
+              "style": "bold"
+            },
+            {
+              "text": "antes de presentar el resultado",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -191,7 +356,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Recuperar estructura y dominio con casos distintos"
+          "text": "Seguir acumulados negativos y operandos ausentes"
         },
         {
           "type": "output_prediction",
@@ -201,7 +366,8 @@
           "answers": [
             "Resultado: -3"
           ],
-          "explanation": "El acumulado pasa de 3 a -5 y luego a -3. Ambos resultados parciales están dentro del dominio."
+          "explanation": "El acumulado pasa de 3 a -5 y luego a -3. Ambos resultados parciales están dentro del dominio.",
+          "reviewFeedback": "Calcula cada actualización en orden, conservando el signo del acumulado antes de incorporar el par siguiente."
         },
         {
           "type": "output_prediction",
@@ -211,7 +377,8 @@
           "answers": [
             "Error: Se esperaba un numero"
           ],
-          "explanation": "Después de -, leer_numero encuentra ;. Conserva esa unidad y lanza el diagnóstico sin producir un resultado de operación válido."
+          "explanation": "Después de -, leer_numero encuentra ;. Reserva esa unidad y lanza una excepción con el diagnóstico de operando ausente. El cliente captura el rechazo y no presenta un resultado de operación válido.",
+          "reviewFeedback": "Sigue la función llamada después del signo. Comprueba qué categoría obtiene y en qué punto deja de producir un resultado aceptado."
         }
       ]
     },
@@ -219,15 +386,31 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una nueva operación requiere un nivel nuevo de prioridad"
+          "text": "Preparar el siguiente nivel de prioridad"
         },
         {
           "type": "paragraph",
-          "text": "El lector reconoce * y /, pero esta gramática aún los devuelve como unidades ajenas y la operación no los acepta en lugar de ;. Añadirlos al mismo bucle de + y - resolvería todo de izquierda a derecha: 2+3*4 produciría 20. El requisito de prioridad aritmética exige 14. Por eso construiremos un nivel para términos antes de ampliar el bucle exterior."
+          "text": "El lector reconoce `*` y `/`, pero esta gramática todavía no los combina. La expresión los reserva y termina; después, la operación los rechaza porque esperaba `;`. Reconocer un signo y disponer de una regla que lo utilice son capacidades diferentes.\n\nAñadir multiplicación al mismo bucle que suma y resta evaluaría todo de izquierda a derecha. En `2+3*4`, esa estrategia daría 20, mientras que la prioridad de multiplicación exige 14. Separar niveles permite respetar esa regla aritmética (Stroustrup, 2024, pp. 121, 127–129). El siguiente paso será reconocer términos antes de combinar sumas y restas.",
+          "emphasis": [
+            {
+              "text": "capacidades diferentes",
+              "style": "bold"
+            },
+            {
+              "text": "Separar niveles",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "Una regla gramatical puede organizarse mediante funciones que reconocen sus partes. Para sumar y restar de izquierda a derecha se obtiene el primer valor y se acumula cada operación posterior en un recorrido, en lugar de agrupar recursivamente todo lo que queda a la derecha (Stroustrup, 2024, secciones 5.5.1–5.5.2.3). Esta etapa sólo acepta números, +, -, la frontera ; y separadores. Que el lector reconozca otras unidades no significa que una regla de expresión ya las admita."
+          "text": "El dominio del valor y la forma de la expresión son condiciones distintas. Una secuencia puede tener todos sus signos y operandos y, aun así, superar el límite de un resultado parcial. Del mismo modo, números válidos no convierten una secuencia sin signos o sin terminador en una operación completa.",
+          "emphasis": [
+            {
+              "text": "condiciones distintas",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -244,5 +427,1011 @@
         }
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0006_0001",
+      "requires": [
+        "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "requires": [
+        "block_0004_0003"
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "8a80a6b154940a2222f8c654c1cff704f422b43e12dec4f1fe01735114d9948e"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1b5f7636ff4e8da732bb4d027728381919f7290f790fb7331389a63eb3182397"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "f1365ab44e39264f68edd678cc910331fec751894269f9629ce63a09f08590f5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "13d7a17710784ef977f2c3daded0140f55be91c7be44d83cf2f905296f42c39e"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "a9e523dc2219d3da8049e77b25af5b7fe7dcc63006196eac4d872dd86e107846"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "6a77c1fbe33e3053ac2fd3f2630e1bf5423e5d400b1d28ce396562afcb3774e0"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "3e793a0dcd1ed13fd57e97c68f4a22f960585f9acf8611c7aa09927a5c8404f2"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "a9bdaab67a7624fe9c3c2170a6285f5d1cbcc6a58d9e0e19a51b064b7137db5c"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "99aea7164d1d235893f9dab817b01bd8793a77e902284a0580bce447911ca938"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "2083eaae30f60168178f0b02f8a13e125678c7f1693618b75d2d5ae92cc09f1f"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "477b42e2c538a980b703e605d68085509d86acfa0dd785c69b35a34af54cba42",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8a80a6b154940a2222f8c654c1cff704f422b43e12dec4f1fe01735114d9948e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "32b4fa66a60306286d84a68c712a43545bf823970ac43c8f6a9cf46e37088807"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "8cab884cf14d7d2273c73dca82493513d85edbfd9e3b34a54fcae4aaaf7721fb"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "edd8965fc24a78ae983fbdae03a0058894c4d086bf6ae4e9dbd50ce3dba2f8c3"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "a3c84b05c8fe4c9646e6457a2dfba73b2de4639e08de82b05c14a7bcac90db57"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "ff510e7385dc6020753ca51280a4e7505b4c1828bcfb39bd1b5304354e6d769a"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "16aa6d921131623bdefdd317ecbc1f4c80a18ea2a00eb0f651acefe74c234f0e"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "4a5b6d29330afc461bec8d40d46f3f22fb0d2ab7a7b41346bd7dad07775d46e6"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "f5dcca05743f7f006d765d47250ad903371134c75b41cb0b8140f48935a89978"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "03546b478125cb78420a82e102b68c274cc93a0e9a47ebf3422fc172cf01c081",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8a80a6b154940a2222f8c654c1cff704f422b43e12dec4f1fe01735114d9948e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1b5f7636ff4e8da732bb4d027728381919f7290f790fb7331389a63eb3182397"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "f1365ab44e39264f68edd678cc910331fec751894269f9629ce63a09f08590f5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "13d7a17710784ef977f2c3daded0140f55be91c7be44d83cf2f905296f42c39e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "a9e523dc2219d3da8049e77b25af5b7fe7dcc63006196eac4d872dd86e107846"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "6a77c1fbe33e3053ac2fd3f2630e1bf5423e5d400b1d28ce396562afcb3774e0"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "3e793a0dcd1ed13fd57e97c68f4a22f960585f9acf8611c7aa09927a5c8404f2"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "a9bdaab67a7624fe9c3c2170a6285f5d1cbcc6a58d9e0e19a51b064b7137db5c"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "99aea7164d1d235893f9dab817b01bd8793a77e902284a0580bce447911ca938"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "2083eaae30f60168178f0b02f8a13e125678c7f1693618b75d2d5ae92cc09f1f"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "3fb40fe23f422ef5cd6c0c4007bd1a3ce5ccd9ab2dae68eee73e25f7ca6d7279",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "8a80a6b154940a2222f8c654c1cff704f422b43e12dec4f1fe01735114d9948e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "97b7ac9dede7195410ba1fee8ff43099bfa3b2803ac036b55652610d786e20e8"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "925846f4d418abff4cc8e4dcf06c0be4c2a0bc8317743f34d2e5b8656bbae468"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "6f063f32e30744ff4364ee6fca70aa5b64f841261cae0436a0a8ea194e55c07c"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "0e02c5855e1e9c4cdfae7404225ceea732b488b78baf21c8b5f8da9d85d444cb"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "e4fe69bec699eb42a39b32762309c9da7c4c9f7cb781f60924309242c388ddf8"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "d8d510b8121029b3ebad1f7e3cc44ff6d9cc7273d6ef66c282c12b974847d02c"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "5981560465525ec407ffa447e2948462f760d1b88a4eb6ea2a623a32b116224d"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "906d9078089b78035f954fe0e143882c9b8cac5bc045a79d423e2e8d38f05e79"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0000",
+        "beforeSha256": "2338a5e214bcfc45a109729a6c5108e818f838a5fb024d262bdb6fa095d6af34",
+        "afterSha256": "6db59c2d2002baceef42cf91ba8aba8465ad29842d59e6230dc6025651d5fa84"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "2c59bda2b67b8df6f4616b7d5cf270c61d6d475cdd8616cc2bd086ab9b101a9f",
+        "afterSha256": "c0e7706a31731a3c51747fff32e732a532b99ee79d4bda2e549d120df3cb177a"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4a2d4ecab46f7e42e4e2dffd4661421e5d75621f8a2089fb341da837279daada",
+        "afterSha256": "d6db7e97e1288ae59ed6c9d5aca736b03ac859e3bab4ef2c7d4535feed95499e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "2bf782767556c445b8269e6950560ed036952b36e654478209ff5a8d06df6a31",
+        "afterSha256": "c3f2ceb75fb92be9edb4a03d20eed218dcdb8c80a3630ef16b564bc61897ee2a"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "114907468e166d85d6959ed8b9bce2201c881ae4c39428bcac09f2209257d398",
+        "afterSha256": "1f626394c23ef58540c7eb4e54769e536f4ee7816dd75d03e323266bd98b0dea"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "2c3d4b5383182f9a75471235f4f7c4584f8a127eb272f5380347a2cbdca5d612",
+        "afterSha256": "15ddc81c02d2f07892d611f213d28984ff8c0cea60ef61deb1ac64e4fc63b7c7"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "aa76ecd900b633974b05ec01bf46f9a448b30689e9b252fd8f086c484994b042",
+        "afterSha256": "f0dcf73238df73fee739c680a056f189b135e3b53130021ce55c0d81f6d79a2e"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "080817b6f347577bcb7c58375a70cf1ae117213aa3156e4edfd6633fb3d92cc9",
+        "afterSha256": "d5d533a2afb239ad76f3d2a443b61bf325379f1717f33d0049c642845e94ab6b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "8ca835a2adb250da649ae8b6dc794ab42b2a3057dcf4d564d65473b69cbd7ded",
+        "afterSha256": "372574008ef3edadd1275279b13df28fa6d9a62025396bb194418cf8da8e1a14"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "e1e65e81e47f8bc6586a4cb2aff25c3eba54a33f34c9d9d10a5bb0571a4c8204",
+        "afterSha256": "bcbd73ecf29673ec9eb2aaa96bd3354e315128781333fe4f062be7c946988ae2"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "671ddcc863b5e74ceb5172a410ec23aa620d124dee06cc7f418c683be3b1b3e8",
+        "afterSha256": "676127ca0c2e847caf98cfc1e3a0415c547e436ef3cc035f0bef4b33d1bcbecd"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "518e4bda503e498b03885b2217b0917646617fce62cb02e1820c41dc98ba8843",
+        "afterSha256": "eb885c59de663d09e26a4c3d65fa1654812abeeaeae9a2624ff442046e811195"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2f2a8be1894652fa308cd1306a3e3475a51742050414f285544f829ac4e6eea4",
+        "afterSha256": "4495abfee7aa43b15fb37d7d41dc940364a73ffc8a520d7ba84e429761cbb498"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "e27736ceab4613797bc2239b719e79b132ce5b6e292502b5be4ee859c6bade55",
+        "afterSha256": "cf5938156922af6fcc375445f6e21d635bc88258797020cfd3f11ae33949e27c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "1071443d29b8854d94fe5c33bf88659f3b93dd43bf5827e53813064f94494044",
+        "afterSha256": "960c2eb29e5803c2f78d80f44842bfc7ef525e85fe19c1dcac300fd820c1488a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f42ae1539371544c31d3c8ac240c1eafda2df7ea9a595471aa969a645e6e6a6b",
+        "afterSha256": "065193b8ed208f93c7b35433612e60f6cd05707ea9d41761394ab6449acc87d5"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ccdf89b5a7cb30b5b56e9d8181e02a01c1bd31f041ea73338a0f22038f314fe4",
+        "afterSha256": "729a8e7c2265acad2891664c54d668f26fef94fc276252b8a8726f5f18b66b79"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "a29cd9aeb66343a8dcf1b763031f35212f7be9d8091f187e93b802a769282ba3",
+        "afterSha256": "09c06e70a8a7c33f2343be40744b261493a2e205e7b1468f6af41edcac23fdf6"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "40734b3f7f27c59d4fa8307b0dd532ac8af79a88337ca97c90d55335aca99865",
+        "afterSha256": "9ac83a9b9cd09a1aea4ae1a9fa8faea4e9adf848d3780bdcf55f943846d6b7b6"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "6fd89edaea033b9980b2c922dccc9c6bc8b77d6f08add578b79d6cd4f32ede30",
+        "afterSha256": "860464a85c4bdcda34cfef3713f5261f5a8227fab63c7e3f803b27f61a180597"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "f78b59073ecb3d7e2c43ddf9409c98b6cc5b490d089c6ff698cca788e7c1536f",
+        "afterSha256": "708c133e7716ff26df363a958f331fd0c53c672133f56e942328922cde5d199d"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "54fedead04020503ffa90a5e15aad4a354064547600f7dba7ea2fc28351ac9a9",
+        "afterSha256": "8ba242f7f0d536c856dd87e10f22e09012004dc59c59c78b5ad87f6d82d1fef6"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c0d45d5277d8d44fda2543a69979839cadca404e5d5e7c4afb7610e8af545d0b",
+        "afterSha256": "29840101a712d8d2d94c2d363e48b7f6c304529b68b84b721cc6f76dcf27380f"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "a5d84aca229b82acdf2920b984b2435302e7cf76cad5bb1334f5e7cd2ea2f97b",
+        "afterSha256": "432b3a6e7bc4d8b359e5a34046eb34de302e52221c122153b248ce8664349194"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "a6ca9671fc56cc9cf274d9159c802e601ca9c27406440c494866739ba4405284",
+        "afterSha256": "24555eb0164038510330235abcfffb6e7a0fc4c106ac2ebfbd82761b6525ca18"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "13b3ea24950bacde56dbb5f4809b5fbbb544743fcbf9bef3af7e78273d1d6ac2",
+        "afterSha256": "209faf5fe282d48750cbc185d04b1127f9d87b6a4fcf9e3bb0cc7e7dc508f5df"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "952592a22d0a51b1bbb3d23dc3b4c5fb0da0534eb4336d7b86fe06d9ce3f9bf5",
+        "afterSha256": "b1deb82a8a2a30c7f684e230787a538e2800bc1797f6deccfb9f4306a65cefb9"
+      },
+      {
+        "id": "block_0007_0000",
+        "beforeSha256": "7ea3640840c4bc17a40d993ecd7f009ff5840ea96c8cf21018f24e6373379b14",
+        "afterSha256": "a84453da700fc80ff0ec0d09a3df30814618597e7539bb3138d3d1cdb2bec84d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "8dd8d59b7ced6521811e068430aa1b54e0c1d8902e95de3f4e8b80b09e23af42",
+        "afterSha256": "7c7e455df8013adc912fb556c954fa5dee38fb75c3902f0a4864aca7d1b3665f"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "7808faa26ce30f5aa235794f11c2748db10feeb9292165db2493f29b48d17e40",
+        "afterSha256": "ad568d961e67bc5fd206236515bd67ce896a0039c7be4eba14d7ae9779e18ed1"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f0dcf73238df73fee739c680a056f189b135e3b53130021ce55c0d81f6d79a2e",
+        "afterSha256": "b1c1a078574f71869717cebd796fc8f2dbca5ac1604bdbcc2fc09a236fae3df1"
+      }
+    ]
+  }
 }
