@@ -92,8 +92,8 @@ def fix():
     path.write_text(source, encoding='utf-8', newline='\n')
     path = ROOT / 'CMakeLists.txt'
     source = path.read_text(encoding='utf-8-sig')
-    source = once(source, 'if(BUILD_TESTING)\n', '''if(BUILD_TESTING)
-    add_executable(lgaed_reader_shortcut_focus_tests native/presentation/windows/reader_shortcut_focus_tests.cpp)
+    anchor = '    set_tests_properties(native.card_list PROPERTIES TIMEOUT 30)\n'
+    source = once(source, anchor, anchor + '''    add_executable(lgaed_reader_shortcut_focus_tests native/presentation/windows/reader_shortcut_focus_tests.cpp)
     target_link_libraries(lgaed_reader_shortcut_focus_tests PRIVATE lgaed_host_options user32 comctl32)
     add_test(NAME native.reader_shortcut_focus COMMAND lgaed_reader_shortcut_focus_tests)
     set_tests_properties(native.reader_shortcut_focus PROPERTIES TIMEOUT 30)
