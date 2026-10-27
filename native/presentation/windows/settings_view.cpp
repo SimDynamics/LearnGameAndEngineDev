@@ -2,6 +2,7 @@
 #include "core/narration_speed.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/icons.hpp"
+#include "presentation/windows/attempt_indicator.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/editing_bar.hpp"
 #include "platform/windows/system_speech.hpp"
@@ -1081,9 +1082,9 @@ LRESULT CALLBACK attempt_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         const auto tint=reader_theme::appearance_accent(data,details->route);
         const auto icon=details->route=="math_physics"?Icon::attempt_math:Icon::terminal;
         for(int index=0;index<current.maximum;++index){RECT slot{start+index*width,0,start+(index+1)*width,area.bottom};
-            const auto inset=std::max(1,width/12);InflateRect(&slot,-inset,-inset);draw_icon(memory,slot,icon,RGB(255,255,255));
-            const auto saved=SaveDC(memory);const auto progress=std::clamp(current.reserve-index,0.,1.);
-            IntersectClipRect(memory,slot.left,slot.top,slot.left+static_cast<int>((slot.right-slot.left)*progress),slot.bottom);draw_icon(memory,slot,icon,tint);RestoreDC(memory,saved);
+            const auto inset=std::max(1,width/12);InflateRect(&slot,-inset,-inset);
+            const auto progress=std::clamp(current.reserve-index,0.,1.);
+            attempt_indicator::draw(memory,slot,icon,tint,RGB(255,255,255),progress);
         }
         BitBlt(dc,0,0,area.right,area.bottom,memory,0,0,SRCCOPY);SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);EndPaint(window,&paint);return 0;
     }

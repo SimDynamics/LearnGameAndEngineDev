@@ -5,6 +5,7 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/editing_bar.hpp"
 #include "presentation/windows/icons.hpp"
+#include "presentation/windows/attempt_indicator.hpp"
 #include "presentation/windows/native_menu.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/settings_view.hpp"
@@ -901,13 +902,8 @@ struct LessonView {
             const RECT glyph{x,bounds.top+px(12),x+side,bounds.top+px(12)+side};
             const auto route_icon=route=="math_physics"?Icon::attempt_math:Icon::terminal;
             const auto progress=attempt_state.premium?1.:std::clamp(attempt_state.progress,0.,1.);
-            const auto split=glyph.left+static_cast<int>(std::round(side*progress));
-            // Complementary clips use the same geometry. Painting the accent
-            // over a complete white icon leaves a pale antialiasing fringe.
-            auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,split,glyph.top,glyph.right,glyph.bottom);
-            draw_icon(item.hDC,glyph,route_icon,colors.high_contrast?colors.text:RGB(255,255,255));RestoreDC(item.hDC,clipped);
-            clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.top,split,glyph.bottom);
-            draw_icon(item.hDC,glyph,route_icon,ink);RestoreDC(item.hDC,clipped);
+            attempt_indicator::draw(item.hDC,glyph,route_icon,ink,
+                colors.high_contrast?colors.text:RGB(255,255,255),progress);
             if(attempt_state.premium){
                 // The original 30x26dp ImageView sits at (8,-1) inside the
                 // 80%-scaled Android attempt indicator; it replaces both labels.
@@ -924,7 +920,7 @@ struct LessonView {
             auto right=bounds;right.right-=MulDiv(px(4),4,5);right.bottom=right.top+px(15);
             const auto percent=std::to_wstring(static_cast<int>(std::round(attempt_state.progress*100)))+L"%";
             DrawTextW(item.hDC,percent.c_str(),-1,&right,DT_RIGHT|DT_SINGLELINE);
-            auto remaining=bounds;remaining.top=remaining.bottom-px(13);
+            auto remaining=attempt_indicator::recovery_bounds(bounds,glyph);
             const auto time=wide(lgaed::attempts::recovery_label(attempt_state.maximum,attempt_state.maximum*attempt_state.progress,attempt_state.premium));
             DrawTextW(item.hDC,time.c_str(),-1,&remaining,DT_CENTER|DT_SINGLELINE);
             SelectObject(item.hDC,old);DeleteObject(badge);return true;
