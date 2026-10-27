@@ -1,5 +1,6 @@
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/code_gutter.hpp"
+#include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
 
 #include <commctrl.h>
@@ -259,6 +260,18 @@ public:
     FrozenText& operator=(const FrozenText&)=delete;
 };
 
+struct NativeCodeScrollbars {
+    HWND window;
+    bool enabled,previous;
+    NativeCodeScrollbars(HWND target,bool code)
+        :window(target),enabled(code),previous(presentation::reader_theme::native_scrollbar_theme(target)) {
+        if(enabled)presentation::reader_theme::use_native_scrollbar_theme(window);
+    }
+    ~NativeCodeScrollbars() {
+        if(enabled&&IsWindow(window))presentation::reader_theme::use_native_scrollbar_theme(window,previous);
+    }
+};
+
 } // namespace
 
 EditorDocument predefined_code_document(std::string_view source) {
@@ -310,10 +323,12 @@ struct CodeEditor::Impl {
     bool pending_backspace = false;
     std::vector<Snapshot> history;
     std::size_t current = 0;
+    NativeCodeScrollbars native_scrollbars;
     std::unique_ptr<CodeGutter> gutter;
 
     Impl(HWND control, bool lines, std::function<void()> action, bool assistance, bool indent)
-        : window(control), multiline(lines), code_assistance(assistance), auto_indent(indent), submit(std::move(action)) {}
+        : window(control), multiline(lines), code_assistance(assistance), auto_indent(indent), submit(std::move(action)),
+          native_scrollbars(control,assistance) {}
 
     Snapshot& now() { return history[current]; }
     const Snapshot& now() const { return history[current]; }
@@ -455,6 +470,9 @@ struct CodeEditor::Impl {
                 SendMessageW(parent,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),
                     reinterpret_cast<LPARAM>(window));
         }
+        // Native paragraph positions become authoritative after the outer
+        // Unfreeze and final scroll/layout restoration, including Undo/Redo.
+        if(!previous_applying&&gutter)gutter->refresh_content();
     }
 
     void capture() {
@@ -495,6 +513,10 @@ struct CodeEditor::Impl {
         next.cursor = selection(window);
         SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&next.scroll));
         commit(std::move(next));
+        // TOM/UI Automation can change the native story without WM_SETTEXT or
+        // EM_REPLACESEL. The completed edit observed here owns its paragraph
+        // refresh; cursor/format-only observations take the early return above.
+        if(gutter)gutter->refresh_content();
     }
 
     void replace(std::size_t start, std::size_t end, std::wstring_view replacement,
@@ -744,6 +766,7 @@ struct CodeEditor::Impl {
             }
             if (message == WM_NCDESTROY) {
                 RemoveWindowSubclass(window, subclass, 1);
+                self.native_scrollbars.window = nullptr;
                 self.window = nullptr;
                 return DefSubclassProc(window, message, wparam, lparam);
             }

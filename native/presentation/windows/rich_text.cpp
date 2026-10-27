@@ -1,4 +1,5 @@
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/programming_technical_ranges.hpp"
 #include "presentation/windows/reader_theme.hpp"
 
 #include <richedit.h>
@@ -276,24 +277,25 @@ bool identifier_start(wchar_t c) { return (c >= L'A' && c <= L'Z') || (c >= L'a'
 bool identifier_part(wchar_t c) { return identifier_start(c) || (c >= L'0' && c <= L'9'); }
 struct Ink { std::size_t start, end; COLORREF color; };
 enum class CppInk { identifier, keyword, string, literal, preprocessor, comment };
-COLORREF cpp_color(HWND edit, CppInk category) {
+COLORREF cpp_color(HWND edit, CppInk category, bool semantic_background=false) {
+    const auto readable=[&](COLORREF original){return semantic_background&&!reader_theme::palette().high_contrast?original:accessible(edit,original);};
     switch (category) {
-    case CppInk::identifier: return accessible(edit,RGB(171,141,227));
-    case CppInk::keyword: return accessible(edit,RGB(231,155,186));
-    case CppInk::string: return accessible(edit,RGB(122,195,141));
-    case CppInk::literal: return accessible(edit,RGB(224,151,109));
-    case CppInk::preprocessor: return accessible(edit,RGB(92,156,231));
-    case CppInk::comment: return accessible(edit,RGB(172,172,172));
+    case CppInk::identifier: return readable(RGB(171,141,227));
+    case CppInk::keyword: return readable(RGB(231,155,186));
+    case CppInk::string: return readable(RGB(122,195,141));
+    case CppInk::literal: return readable(RGB(224,151,109));
+    case CppInk::preprocessor: return readable(RGB(92,156,231));
+    case CppInk::comment: return readable(RGB(172,172,172));
     }
     return reader_theme::foreground(edit);
 }
-std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
-    const auto identifier_color = cpp_color(edit,CppInk::identifier);
-    const auto keyword_color = cpp_color(edit,CppInk::keyword);
-    const auto string_color = cpp_color(edit,CppInk::string);
-    const auto literal_color = cpp_color(edit,CppInk::literal);
-    const auto preprocessor_color = cpp_color(edit,CppInk::preprocessor);
-    const auto comment_color = cpp_color(edit,CppInk::comment);
+std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_background=false) {
+    const auto identifier_color = cpp_color(edit,CppInk::identifier,semantic_background);
+    const auto keyword_color = cpp_color(edit,CppInk::keyword,semantic_background);
+    const auto string_color = cpp_color(edit,CppInk::string,semantic_background);
+    const auto literal_color = cpp_color(edit,CppInk::literal,semantic_background);
+    const auto preprocessor_color = cpp_color(edit,CppInk::preprocessor,semantic_background);
+    const auto comment_color = cpp_color(edit,CppInk::comment,semantic_background);
     static const std::set<std::wstring_view> keywords{L"alignas",L"alignof",L"asm",L"break",L"case",L"catch",L"class",L"concept",L"const",L"consteval",L"constexpr",L"constinit",L"continue",L"co_await",L"co_return",L"co_yield",L"default",L"delete",L"do",L"else",L"enum",L"explicit",L"export",L"extern",L"for",L"friend",L"goto",L"if",L"inline",L"mutable",L"namespace",L"new",L"noexcept",L"operator",L"private",L"protected",L"public",L"register",L"requires",L"return",L"sizeof",L"static",L"static_assert",L"struct",L"switch",L"template",L"throw",L"try",L"typedef",L"typename",L"union",L"using",L"virtual",L"volatile",L"while",L"import",L"module"};
     std::vector<Ink> result;
     auto index = std::size_t{0};
@@ -341,13 +343,40 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
     }
     return result;
 }
-void apply_cpp(HWND edit, std::wstring_view source, std::size_t offset = 0, bool monospaced = false) {
-    for (const auto& ink : cpp_ink(edit, source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? reader_theme::code_font_face() : nullptr);
+void apply_cpp(HWND edit, std::wstring_view source, std::size_t offset = 0, bool monospaced = false,bool semantic_background=false) {
+    for (const auto& ink : cpp_ink(edit, source,semantic_background)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? reader_theme::code_font_face() : nullptr);
 }
 bool technical_mention_boundary(wchar_t value) {
     // Positive prose boundaries keep accented words and identifiers intact,
     // independent of the process locale used by std::wregex's ASCII \b.
     return std::wstring_view(L" \t\r\n\u00a0\u202f.,;:!?()[]{}\"'`«»“”‘’…/\\+-*=<>|&—–").find(value)!=std::wstring_view::npos;
+}
+enum class MentionKind { syntax, qualified, language };
+struct TechnicalMention {std::size_t start,end;MentionKind kind;};
+std::vector<TechnicalMention> technical_mentions(std::wstring_view source){
+    std::vector<TechnicalMention> result;
+    for(std::size_t index=0;index<source.size();++index){
+        const auto rest=source.substr(index);const bool boundary=!index||!technical_prose::identifier(source[index-1]);
+        if(boundary&&(rest.starts_with(L"C++")||rest.starts_with(L"c++"))){auto end=index+3;while(end<source.size()&&technical_prose::digit(source[end]))++end;
+            result.push_back({index,end,MentionKind::language});index=end-1;continue;}
+        if(boundary&&source[index]==L'#'){auto name=index+1;while(name<source.size()&&technical_prose::space(source[name]))++name;
+            if(source.substr(name).starts_with(L"include")&&(name+7==source.size()||!technical_prose::identifier(source[name+7]))){
+                auto end=name+7;const auto argument=technical_prose::skip_spaces(source,end);
+                if(argument<source.size()&&source[argument]==L'<'){const auto close=source.find_first_of(L">\r\n",argument+1);if(close!=source.npos&&source[close]==L'>')end=close+1;}
+                else if(argument<source.size()&&source[argument]==L'"'){const auto close=technical_prose::closed_quote_end(source,argument,source.size());if(close!=source.npos&&source.substr(argument,close-argument).find_first_of(L"\r\n")==source.npos)end=close;}
+                result.push_back({index,end,MentionKind::syntax});index=end-1;continue;
+            }
+        }
+        if(boundary&&rest.starts_with(L"std")){const auto colon=technical_prose::skip_spaces(source,index+3);if(source.substr(colon).starts_with(L"::")){
+            auto end=colon+2;while(end<source.size()&&(identifier_part(source[end])||source[end]==L':'))++end;
+            result.push_back({index,end,MentionKind::qualified});index=end-1;continue;}}
+        if(boundary&&rest.starts_with(L"main")&&(index+4==source.size()||!technical_prose::identifier(source[index+4]))){const auto end=index+4+(source.substr(index+4).starts_with(L"()")?2:0);
+            result.push_back({index,end,MentionKind::syntax});index=end-1;continue;}
+        if(boundary&&rest.starts_with(L"return")&&index+6<source.size()&&(source[index+6]==L' '||source[index+6]==L'\t')){auto number=index+6;while(number<source.size()&&(source[number]==L' '||source[number]==L'\t'))++number;
+            auto end=number;while(end<source.size()&&technical_prose::digit(source[end]))++end;
+            if(end>number){end=technical_prose::skip_spaces(source,end);if(end<source.size()&&source[end]==L';')++end;result.push_back({index,end,MentionKind::syntax});index=end-1;continue;}}
+        if(rest.starts_with(L"<<")||rest.starts_with(L">>")){result.push_back({index,index+2,MentionKind::syntax});++index;}
+    }return result;
 }
 std::size_t escape_mention_end(std::wstring_view text,std::size_t start) {
     if(start>=text.size()||text[start]!=L'\\')return start;
@@ -475,10 +504,10 @@ DWORD CALLBACK stream_text(DWORD_PTR cookie, LPBYTE buffer, LONG requested, LONG
 }
 void default_format(HWND edit, bool code, RichTextRole role) {
     select(edit, 0, static_cast<std::size_t>(GetWindowTextLengthW(edit)));
-    CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE;
+    CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_BACKCOLOR | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE;
     style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(edit);
     if(role!=RichTextRole::body&&!reader_theme::palette().high_contrast)style.crTextColor=RGB(255,255,255);
-    style.dwEffects = role == RichTextRole::body ? 0 : CFE_BOLD;
+    style.dwEffects = CFE_AUTOBACKCOLOR | (role == RichTextRole::body ? 0 : CFE_BOLD);
     wcscpy_s(style.szFaceName, code ? reader_theme::code_font_face() : L"Roboto");
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&style));
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_DEFAULT, reinterpret_cast<LPARAM>(&style));
@@ -657,23 +686,31 @@ void style_cpp(HWND edit) {
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
 }
-void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role) {
+void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role,
+    std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics) {
     std::string displayed;
     std::vector<std::size_t> mapping(text.size() + 1);
     std::vector<std::pair<std::size_t,std::size_t>> fragments;
+    const auto original_source=wide(text);
+    const auto trusted=code?technical_prose::InlineCodeSpans{}:technical_prose::inline_code_spans(original_source,mathematics);
+    std::vector<std::size_t> byte_boundaries(original_source.size()+1,std::string_view::npos);
+    for(std::size_t byte=0,unit=0;byte<text.size();){byte_boundaries[unit]=byte;const auto lead=static_cast<unsigned char>(text[byte]);
+        const auto count=lead<0x80?1:lead<0xe0?2:lead<0xf0?3:4;byte+=count;unit+=count==4?2:1;byte_boundaries[unit]=byte;}
+    byte_boundaries.back()=text.size();
+    std::vector<technical_prose::Range> wrappers;for(const auto& [first,last]:trusted.wrappers)wrappers.emplace_back(byte_boundaries[first],byte_boundaries[last]);
+    std::size_t next_wrapper=0;
     for (std::size_t i = 0; i < text.size();) {
         mapping[i] = displayed.size();
-        if (!code && text[i] == '`') {
-            const auto end = text.find('`', i + 1);
-            if (end != text.npos && end > i + 1 && text.substr(i + 1, end - i - 1).find_first_of("\r\n") == text.npos) {
-                const auto start = displayed.size();
-                for (auto j = i + 1; j < end; ++j) { mapping[j] = displayed.size(); displayed += text[j]; }
-                mapping[end] = displayed.size(); fragments.emplace_back(start, displayed.size()); i = end + 1; continue;
-            }
-        }
+        if(next_wrapper<wrappers.size()&&wrappers[next_wrapper].first==i){const auto last=wrappers[next_wrapper++].second;
+            for(auto hidden=i;hidden<=last;++hidden)mapping[hidden]=displayed.size();i=last;continue;}
+        // RichEdit stores a single paragraph mark. Keep display-formatting
+        // offsets in that same unit while the original UTF-8 source/map stays
+        // authoritative for emphasis, narration and CRLF preservation.
+        if(text[i]=='\r'){if(i+1<text.size()&&text[i+1]=='\n')mapping[++i]=displayed.size();displayed+='\n';++i;continue;}
         displayed += text[i++];
     }
     mapping[text.size()] = displayed.size();
+    for(const auto& [first,last]:trusted.fragments)fragments.emplace_back(mapping[byte_boundaries[first]],mapping[byte_boundaries[last]]);
     set_edit_text(edit, displayed);
     FormatTransaction transaction(edit);
     default_format(edit, code, role);
@@ -684,37 +721,56 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     std::vector<std::pair<std::size_t,std::size_t>> cpp_statements;
     std::vector<std::pair<std::size_t,std::size_t>> quoted_literals;
     std::vector<std::pair<std::size_t,std::size_t>> inline_fragments;
+    for(const auto& [start,end]:fragments){const auto begin=wide(std::string_view(displayed).substr(0,start)).size();
+        inline_fragments.emplace_back(begin,begin+wide(std::string_view(displayed).substr(start,end-start)).size());}
+    std::vector<technical_prose::Range> displayed_mathematics;
+    if(!mathematics.empty()){for(const auto& [first,last]:mathematics)if(first<last&&last<=original_source.size()){
+        const auto begin_byte=byte_boundaries[first],end_byte=byte_boundaries[last];
+        if(begin_byte==std::string_view::npos||end_byte==std::string_view::npos)throw std::invalid_argument("A mathematical range splits a UTF-16 character");
+        displayed_mathematics.emplace_back(wide(std::string_view(displayed).substr(0,mapping[begin_byte])).size(),wide(std::string_view(displayed).substr(0,mapping[end_byte])).size());}}
+    auto semantic=code?technical_prose::Analysis{}:technical_prose::analyze(source,locale,inline_fragments,displayed_mathematics);
+    const bool has_background=!reader_theme::palette().high_contrast;
+    const auto backed=[&](std::size_t start,std::size_t end){return has_background&&std::ranges::any_of(semantic.fragments,[&](const auto& part){return part.first<=start&&part.second>=end;});};
+    const auto protected_text=[&](std::size_t start,std::size_t end){return technical_prose::overlaps({start,end},semantic.protected_ranges);};
+    std::vector<std::pair<std::size_t,std::size_t>> prose_language_names;
     if (code) apply_cpp(edit, source);
     else {
-        static const std::wregex technical(LR"((#\s*include(?:[ \t]*(?:<[^>\r\n]+>|"[^"\r\n]*"))?)|(\bstd[ \t]*::[A-Za-z_0-9:]*)|(\bmain(?:\(\))?)|(\breturn[ \t]+[0-9]+[ \t]*;?)|([Cc]\+\+[0-9]*)|(<<|>>))");
-        for (std::wsregex_iterator match(source.begin(), source.end(), technical), end; match != end; ++match) {
-            const auto start = static_cast<std::size_t>(match->position()); const auto count = static_cast<std::size_t>(match->length());
-            // Capture group 5 is the language name C++ (optionally with a version).
-            // Do not lex it as identifier C plus two pink operator tokens.
-            if((*match)[5].matched){language_names.emplace_back(start,start+count);continue;}
-            format(edit, start, start + count, reader_theme::foreground(edit), reader_theme::code_font_face());
-            apply_cpp(edit, std::wstring_view(source).substr(start,count), start, true);
-            if((*match)[2].matched&&(cpp_statements.empty()||start>=cpp_statements.back().second)){
+        // Android applies syntax and a native-layout underlay over semantic
+        // ranges, without introducing metric-affecting spans. Preserve every
+        // existing Windows face/size; the added technical ranges change ink only.
+        for(const auto& [start,end]:semantic.fragments){
+            format(edit,start,end,has_background?RGB(216,216,216):reader_theme::foreground(edit));
+            apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start,false,has_background);
+        }
+        for (const auto& mention:technical_mentions(source)) {
+            const auto start=mention.start,count=mention.end-start;
+            // A language name is never an identifier C plus two operators.
+            if(mention.kind==MentionKind::language){language_names.emplace_back(start,start+count);continue;}
+            if(protected_text(start,start+count)||!technical_prose::overlaps({start,start+count},semantic.fragments))continue;
+            format(edit, start, start + count, backed(start,start+count)?RGB(216,216,216):reader_theme::foreground(edit), reader_theme::code_font_face());
+            apply_cpp(edit, std::wstring_view(source).substr(start,count), start, true,backed(start,start+count));
+            if(mention.kind==MentionKind::qualified&&(cpp_statements.empty()||start>=cpp_statements.back().second)){
                 const auto statement_end=inline_cpp_statement_end(source,start+count);
                 if(statement_end>start+count)cpp_statements.emplace_back(start,statement_end);
             }
         }
         const auto character_mentions=inline_character_mentions(source);
         for(const auto& [start,end]:character_mentions) {
+            if(protected_text(start,end))continue;
             if(source[start]==L'\\'||named_string_character(source,start,end))
-                format(edit,start,end,cpp_color(edit,CppInk::string));
-            else apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
+                format(edit,start,end,cpp_color(edit,CppInk::string,backed(start,end)));
+            else apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start,false,backed(start,end));
         }
         // Apply complete fragments after individual technical mentions so a
         // word such as std::cout or << inside a literal keeps the string ink.
         // Match Android's color-only treatment: preserve existing fonts,
         // source positions and paragraph measurements.
-        for(const auto& [start,end]:cpp_statements)apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
+        for(const auto& [start,end]:cpp_statements)apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start,false,backed(start,end));
         for (const auto& [start,end] : fragments) {
             const auto begin_wide = wide(std::string_view(displayed).substr(0,start)).size();
             const auto fragment = wide(std::string_view(displayed).substr(start,end-start));
-            inline_fragments.emplace_back(begin_wide,begin_wide+fragment.size());
-            format(edit, begin_wide, begin_wide + fragment.size(), reader_theme::foreground(edit), reader_theme::code_font_face());
+            if(protected_text(begin_wide,begin_wide+fragment.size()))continue;
+            format(edit, begin_wide, begin_wide + fragment.size(), backed(begin_wide,begin_wide+fragment.size())?RGB(216,216,216):reader_theme::foreground(edit), reader_theme::code_font_face());
             // Explicit output prose gives this backtick span data semantics.
             // In particular, "La salida es `Carga lista`" must not lex its
             // words as two identifiers. Other code spans keep the C++ lexer.
@@ -728,14 +784,14 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 named_string_character(source,begin_wide,begin_wide+fragment.size());
             if(std::regex_search(tail.begin(),tail.end(),output_cue)||
                     (fragment.starts_with(L"\\")&&escape_mention_end(fragment,0)==fragment.size())||named_string)
-                format(edit,begin_wide,begin_wide+fragment.size(),cpp_color(edit,CppInk::string));
-            else apply_cpp(edit, fragment, begin_wide, true);
+                format(edit,begin_wide,begin_wide+fragment.size(),cpp_color(edit,CppInk::string,backed(begin_wide,begin_wide+fragment.size())));
+            else apply_cpp(edit, fragment, begin_wide, true,backed(begin_wide,begin_wide+fragment.size()));
         }
         // Last lexical layer: operator-looking characters inside an explicit
         // literal keep string ink. Do not change its face, text or source offsets.
         quoted_literals=inline_string_literals(source);
         for(const auto& [begin,end]:quoted_literals)
-            format(edit,begin,end,cpp_color(edit,CppInk::string));
+            if(!protected_text(begin,end))format(edit,begin,end,cpp_color(edit,CppInk::string,backed(begin,end)));
     }
     for (const auto& range : curriculum::emphasis_ranges(text, emphasis)) {
         const auto start = wide(std::string_view(displayed).substr(0, mapping[range.start])).size();
@@ -763,6 +819,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             else embedded_inline=true;
         }
         if(embedded_inline)continue;
+        prose_language_names.emplace_back(start,end);
         select(edit,start,end);
         CHARFORMAT2W style{};style.cbSize=sizeof(style);
         style.dwMask=CFM_COLOR|CFM_BOLD;
@@ -771,6 +828,25 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         style.dwEffects=CFE_BOLD; // Preserve authored italics and other spans.
         if(standalone_inline){style.dwMask|=CFM_FACE;wcscpy_s(style.szFaceName,L"Roboto");}
         SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
+    }
+    if(!code&&has_background){
+        const auto surface=reader_theme::background(edit);
+        auto foreground=role==RichTextRole::body?reader_theme::foreground(edit):RGB(255,255,255);
+        // Android LessonActivity.addParagraph keeps its legacy tint reference
+        // (205,208,215) while body glyphs brighten. Explicit widget ink, such as
+        // MathWidgetUi's 235/239/245, remains its own semantic reference.
+        if(role==RichTextRole::body&&reader_theme::applied(edit)&&foreground==reader_theme::palette(edit).text)
+            foreground=RGB(205,208,215);
+        const auto blend=[](BYTE ink,BYTE background){return static_cast<BYTE>((ink*8+background*247)/255);};
+        const auto background=1.05/(luminance(foreground)+.05)>=4.5?RGB(31,35,48):RGB(blend(GetRValue(foreground),GetRValue(surface)),blend(GetGValue(foreground),GetGValue(surface)),blend(GetBValue(foreground),GetBValue(surface)));
+        const auto paint_background=[&](std::size_t first,std::size_t last){if(first>=last)return;select(edit,first,last);
+            CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_BACKCOLOR;style.crBackColor=background;
+            SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));};
+        for(const auto& [first,last]:semantic.fragments){auto begin=first;
+            for(const auto& [name_first,name_last]:prose_language_names){if(name_last<=begin||name_first>=last)continue;
+                paint_background(begin,std::min(name_first,last));begin=std::min(last,name_last);}
+            paint_background(begin,last);
+        }
     }
 }
 } // namespace lgaed::presentation

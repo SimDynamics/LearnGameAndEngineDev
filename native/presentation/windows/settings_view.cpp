@@ -1,4 +1,5 @@
 #include "presentation/windows/settings_view.hpp"
+#include "core/narration_speed.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/icons.hpp"
 #include "presentation/windows/rich_text.hpp"
@@ -829,7 +830,7 @@ struct Settings {
             switch(id){
             case ui_language:apply_application_language(data,selection<=0?"auto":ui_tags[std::clamp(selection-1,0,2)]);break;
             case enabled:speech["enabled"]=checked;break;
-            case rate:speech["rate"]=std::array{.5,1.,1.5,2.}[std::clamp(selection,0,3)];break;
+            case rate:speech["rate"]=narration::playback_rates[std::clamp(selection,0,static_cast<int>(narration::playback_rates.size())-1)];break;
             case controls:speech["controls_visible"]=checked;break;
             case advance:speech["kokoro_advance_generation"]=checked;break;
             case auto_lesson:flow_draft.between_lessons=checked;curriculum::save_global_flow(data,flow_draft);break;

@@ -3,7 +3,10 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/native_math_text.hpp"
 
+#include <commctrl.h>
 #include <richedit.h>
+#include <richole.h>
+#include <tom.h>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -17,11 +20,11 @@ using namespace lgaed::presentation;
 void require(bool value,const char* message) { if (!value) throw std::runtime_error(message); }
 struct Field {
     HWND parent = nullptr, edit = nullptr;
-    explicit Field(std::string_view source,bool code = false,std::span<const lgaed::curriculum::Emphasis> emphasis = {}) {
+    explicit Field(std::string_view source,bool code = false,std::span<const lgaed::curriculum::Emphasis> emphasis = {},bool readonly = false) {
         parent = CreateWindowExW(0,L"STATIC",L"Reading range QA",WS_OVERLAPPEDWINDOW,
             0,0,640,480,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         require(parent != nullptr,"Cannot create the native QA parent");
-        edit = CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
+        edit = CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | (readonly ? ES_READONLY : 0),
             8,8,420,160,parent,nullptr,GetModuleHandleW(nullptr),nullptr);
         require(edit != nullptr,"Cannot create a real RichEdit target");
         reader_theme::apply(edit,reader_theme::Surface::canvas); set_rich_text(edit,source,emphasis,code);
@@ -63,14 +66,147 @@ void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t bounda
             require(after[index].crTextColor == before[index].crTextColor,"A read token did not recover its original syntax color");
             require((after[index].dwEffects & CFE_AUTOCOLOR) == (before[index].dwEffects & CFE_AUTOCOLOR),
                     "A read token lost its automatic color identity");
-        } else require(after[index].crTextColor == pending(edit) && !(after[index].dwEffects & CFE_AUTOCOLOR),
+        } else require(after[index].crTextColor == reader_theme::unread_color((before[index].dwEffects&CFE_AUTOBACKCOLOR)
+                           ?reader_theme::background(edit):before[index].crBackColor) && !(after[index].dwEffects & CFE_AUTOCOLOR),
                        "An unread word, operator or punctuation mark escaped the pending gray");
     }
 }
 std::size_t source_units(std::string_view source,std::size_t bytes) { return wide(source.substr(0,bytes)).size(); }
+
+struct WordTickTrace {
+    unsigned selections=0,formats=0,redraw=0;
+    HWND target;
+    static LRESULT CALLBACK proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+        auto& trace=*reinterpret_cast<WordTickTrace*>(raw);
+        if(message==EM_EXSETSEL||message==EM_SETSEL)++trace.selections;
+        if(message==EM_SETCHARFORMAT)++trace.formats;
+        if(message==WM_SETREDRAW)++trace.redraw;
+        return DefSubclassProc(item,message,wp,lp);
+    }
+    explicit WordTickTrace(HWND edit):target(edit){require(SetWindowSubclass(edit,proc,0x574f5244,reinterpret_cast<DWORD_PTR>(this)),"Cannot observe native reading word ticks");}
+    ~WordTickTrace(){if(IsWindow(target))RemoveWindowSubclass(target,proc,0x574f5244);}
+    void clear(){selections=formats=redraw=0;}
+};
+void readonly_word_ticks_use_ranges_without_selecting_or_hiding_text() {
+    const auto ole=OleInitialize(nullptr);require(SUCCEEDED(ole),"Cannot initialize the readonly TOM range test");
+    struct OleScope{~OleScope(){OleUninitialize();}} apartment;
+    const std::string source="int valor = 12; // conserva colores\n";
+    // Measure the actual native readonly restriction before exercising our
+    // transaction. The diagnostic separates a rejected range write from an
+    // unavailable TOM implementation; both fields below use real RichEdit.
+    {
+        Field probe(source,true,{},true);IRichEditOle* rich=nullptr;ITextDocument* document=nullptr;
+        SendMessageW(probe.edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(&rich));
+        require(rich!=nullptr,"Readonly RichEdit did not expose its TOM document");
+        const auto queried=rich->QueryInterface(__uuidof(ITextDocument),reinterpret_cast<void**>(&document));rich->Release();
+        require(SUCCEEDED(queried)&&document,"Readonly RichEdit did not support native TOM ranges");
+        ITextRange* range=nullptr;ITextFont* font=nullptr;
+        const auto ranged=document->Range(0,3,&range);document->Release();
+        require(SUCCEEDED(ranged)&&range,"Cannot select a native readonly TOM probe range");
+        const auto formatted=range->GetFont(&font);range->Release();
+        require(SUCCEEDED(formatted)&&font,"Cannot query the readonly TOM probe font");
+        const auto readonly_result=font->SetForeColor(RGB(1,2,3));
+        SendMessageW(probe.edit,EM_SETREADONLY,FALSE,0);
+        const auto writable_result=font->SetForeColor(RGB(4,5,6));font->Release();
+        require(SUCCEEDED(writable_result),"Native TOM range color was unavailable even after a synchronous unlock");
+        std::cout<<"INFO native TOM SetForeColor HRESULT readonly=0x"<<std::hex<<static_cast<unsigned long>(readonly_result)
+            <<" writable=0x"<<static_cast<unsigned long>(writable_result)<<std::dec<<'\n';
+    }
+    bool all_ticks_used_ranges=true;
+    for(const bool readonly:{false,true}){
+        Field field(source,true,{},readonly);
+        // An existing editable-source history must survive the same rendering
+        // transaction used by readonly lesson prose and examples.
+        if(readonly)SendMessageW(field.edit,EM_SETREADONLY,FALSE,0);
+        SendMessageW(field.edit,EM_EMPTYUNDOBUFFER,0,0);SendMessageW(field.edit,EM_SETSEL,static_cast<WPARAM>(-1),-1);
+        SendMessageW(field.edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"X"));
+        if(readonly)SendMessageW(field.edit,EM_SETREADONLY,TRUE,0);
+        const auto current=source+'X';const auto before=ink(field.edit);CHARRANGE selected{4,9};
+        SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        const auto events=SendMessageW(field.edit,EM_GETEVENTMASK,0,0),modified=SendMessageW(field.edit,EM_GETMODIFY,0,0);
+        const auto focus=GetFocus();
+        POINT before_scroll{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before_scroll));
+        WordTickTrace trace(field.edit);ReadingShade shade(field.edit,current);
+        all_ticks_used_ranges=all_ticks_used_ranges&&!trace.selections&&!trace.formats&&!trace.redraw;
+        std::cout<<"INFO "<<(readonly?"readonly":"editable")<<" construction selections="<<trace.selections
+            <<" format_messages="<<trace.formats<<" redraw_toggles="<<trace.redraw<<'\n';
+        for(const auto boundary:{0u,4u,10u,4u,static_cast<unsigned>(wide(current).size())}){
+            trace.clear();shade.read_through(boundary);
+            all_ticks_used_ranges=all_ticks_used_ranges&&!trace.selections&&!trace.formats&&!trace.redraw;
+            std::cout<<"INFO "<<(readonly?"readonly":"editable")<<" tick="<<boundary<<" selections="<<trace.selections
+                <<" format_messages="<<trace.formats<<" redraw_toggles="<<trace.redraw<<'\n';
+            prefix(field.edit,before,boundary);
+            CHARRANGE after{};POINT scroll{};SendMessageW(field.edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+            SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            require(after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&scroll.x==before_scroll.x&&scroll.y==before_scroll.y,
+                "A readonly reading tick changed selection or viewport");
+            require(GetFocus()==focus&&((GetWindowLongPtrW(field.edit,GWL_STYLE)&ES_READONLY)!=0)==readonly&&
+                (GetWindowLongPtrW(field.edit,GWL_STYLE)&WS_VISIBLE)&&events==SendMessageW(field.edit,EM_GETEVENTMASK,0,0)&&modified==SendMessageW(field.edit,EM_GETMODIFY,0,0),
+                "A reading tick changed readonly, visibility, notifications or modified state");
+        }
+        shade.restore();prefix(field.edit,before,before.size());
+        if(readonly)SendMessageW(field.edit,EM_SETREADONLY,FALSE,0);
+        require(SendMessageW(field.edit,EM_UNDO,0,0)&&edit_text(field.edit)==source&&SendMessageW(field.edit,EM_REDO,0,0)&&edit_text(field.edit)==current,
+            "Readonly reading ticks removed or polluted the original text Undo/Redo history");
+    }
+    require(all_ticks_used_ranges,"Readonly word highlighting fell back to UI selection/format messages instead of its available TOM ranges");
+}
+void fenced_code_keeps_original_reading_offsets(){
+    const std::string source="Inicio á 😀.\r\n```cpp\r\nstd::cout << \"área\";\r\nreturn 0;\r\n```\r\nFin con `std::cin`.";
+    const std::string displayed="Inicio á 😀.\ncpp\nstd::cout << \"área\";\nreturn 0;\n\nFin con std::cin.";
+    const std::vector<lgaed::curriculum::Emphasis> emphasis{{"área",0,"bold"},{"Fin",0,"italic"}};
+    Field field(source,false,emphasis,true);require(edit_text(field.edit)==displayed,"Fenced rendering removed its language tag/newlines or left visible wrappers");
+    const auto before=ink(field.edit);const auto native=wide(displayed);
+    require((before[native.find(L"área")].dwEffects&CFE_BOLD)&&(before[native.find(L"Fin")].dwEffects&CFE_ITALIC),
+        "Hiding a fenced wrapper displaced the authored UTF8 emphasis");
+    CHARRANGE selected{1,5};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    POINT wanted{0,24},position{};SendMessageW(field.edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&wanted));SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+    const auto events=SendMessageW(field.edit,EM_GETEVENTMASK,0,0),modified=SendMessageW(field.edit,EM_GETMODIFY,0,0);
+    ReadingShade shade(field.edit,source);require(shade.matches(field.edit,source)&&shade.length()==wide(source).size(),"A fenced source lost its original UTF16 narration mapping");
+    const auto step=[&](std::size_t original,std::size_t visible){shade.read_through(original);prefix(field.edit,before,visible);
+        CHARRANGE selection{};POINT scroll{};SendMessageW(field.edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        require(selection.cpMin==selected.cpMin&&selection.cpMax==selected.cpMax&&scroll.x==position.x&&scroll.y==position.y&&
+            (GetWindowLongPtrW(field.edit,GWL_STYLE)&ES_READONLY)&&events==SendMessageW(field.edit,EM_GETEVENTMASK,0,0)&&modified==SendMessageW(field.edit,EM_GETMODIFY,0,0),
+            "Reading a fenced fragment changed readonly selection, scrolling, notifications or modified state");};
+    step(0,0);step(source_units(source,source.find("😀"))+2,native.find(L"😀")+2);
+    step(source_units(source,source.find("```"))+1,native.find(L"cpp"));
+    step(source_units(source,source.find("std::cout")),native.find(L"std::cout"));
+    step(source_units(source,source.find("Fin")),native.find(L"Fin"));
+    step(source_units(source,source.find("cpp")),native.find(L"cpp"));
+    step(wide(source).size(),native.size());shade.read_through(0);shade.restore();prefix(field.edit,before,before.size());
+    for(const auto& [original,expected]:std::vector<std::pair<std::string,std::string>>{
+        {"Uno `a\nb` fin.","Uno a\nb fin."},
+        {"Vacío ``` \t\r\n``` y ``.","Vacío ``` \t\n``` y ``."},
+        {"Sin cierre ```cpp\nint x;","Sin cierre ```cpp\nint x;"},
+        {"Conserva \\(x`y`\\) y texto.","Conserva \\(x`y`\\) y texto."}}){
+        Field sample(original,false,{},true);require(edit_text(sample.edit)==expected,"Delimiter projection changed blank, multiline, unclosed or protected mathematical source");
+        const auto colors=ink(sample.edit);ReadingShade ranges(sample.edit,original);require(ranges.matches(sample.edit,original),"A delimiter edge case lost its actual displayed source mapping");
+        ranges.read_through(0);prefix(sample.edit,colors,0);ranges.read_through(ranges.length());prefix(sample.edit,colors,colors.size());
+    }
+    {
+        const std::string original="const char* text = \"`literal`\";";Field code(original,true,{},true);const auto colors=ink(code.edit);
+        require(edit_text(code.edit)==original,"A true C++ source lost its literal backticks");ReadingShade ranges(code.edit,original);
+        require(ranges.matches(code.edit,original),"A true C++ source was projected as prose delimiters");
+        ranges.read_through(0);prefix(code.edit,colors,0);ranges.read_through(ranges.length());prefix(code.edit,colors,colors.size());
+    }
+    {
+        const std::string original="Antes ```cpp\nstd::cout;\n``` y \\(x^2\\) después.";Field mixed(original,false,{},true);
+        require(set_native_math_inline_text(mixed.edit,original),"The fenced/math fixture did not build a real native formula");
+        const auto mapping=native_math_text_mapping(mixed.edit,original);const auto colors=ink(mixed.edit);
+        require(mapping&&edit_text(mixed.edit).find('`')==std::string::npos,"A mixed native formula retained a visible fenced delimiter");
+        ReadingShade ranges(mixed.edit,original);require(ranges.matches(mixed.edit,original),"Fenced projection replaced the authoritative OfficeMath source map");
+        for(const auto boundary:{std::size_t{0},source_units(original,original.find("std::cout")),source_units(original,original.find("después")),std::size_t{0},wide(original).size()}){
+            ranges.read_through(boundary);prefix(mixed.edit,colors,mapping->source_to_native.at(boundary),true);
+        }
+        ranges.restore();prefix(mixed.edit,colors,colors.size(),true);
+    }
+}
 }
 
-int main() {
+int main(int argc,char* argv[]) {
+    const bool readonly_only=argc==2&&std::string_view(argv[1])=="--readonly";
+    const bool fences_only=argc==2&&std::string_view(argv[1])=="--fences";
+    if(argc>1&&!readonly_only&&!fences_only)return 2;
     std::cout << std::unitbuf; const auto module = LoadLibraryW(L"Msftedit.dll");
     if (!module) return 2;
     int passed = 0, failed = 0;
@@ -78,6 +214,45 @@ int main() {
         try { action(); ++passed; std::cout << "PASS " << name << '\n'; }
         catch (const std::exception& error) { ++failed; std::cerr << "FAIL " << name << ": " << error.what() << '\n'; }
     };
+    if(fences_only){test("Fenced and inline code keep original UTF16 reading offsets and native math mapping",fenced_code_keeps_original_reading_offsets);FreeLibrary(module);return failed?1:0;}
+    test("Readonly and editable word ticks preserve real colors and UI state without selection or visibility changes",readonly_word_ticks_use_ranges_without_selecting_or_hiding_text);
+    if(readonly_only){FreeLibrary(module);return failed?1:0;}
+    test("Fenced and inline code keep original UTF16 reading offsets and native math mapping",fenced_code_keeps_original_reading_offsets);
+    test("Android technical backgrounds survive readonly forward backward and restored narration",[]{
+        const std::string source="Lee std::cout y continúa con C++.";Field field(source,false,{},true);
+        const auto before=ink(field.edit);const auto displayed=wide(edit_text(field.edit));
+        const auto technical=displayed.find(L"std::cout"),language=displayed.find(L"C++");
+        require(technical!=displayed.npos&&language!=displayed.npos,"The technical-background reading fixture changed its original terms");
+        const bool high_contrast=reader_theme::palette(field.edit).high_contrast;
+        require(((before[technical].dwEffects&CFE_AUTOBACKCOLOR)!=0)==high_contrast&&
+            (before[0].dwEffects&CFE_AUTOBACKCOLOR)&&(before[language].dwEffects&CFE_AUTOBACKCOLOR),
+            "The real prose renderer did not keep Android's technical background or the C++ exception");
+        CHARRANGE selected{1,7};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        POINT position{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+        const auto events=SendMessageW(field.edit,EM_GETEVENTMASK,0,0),modified=SendMessageW(field.edit,EM_GETMODIFY,0,0);
+        const auto stable=[&]{const auto after=ink(field.edit);CHARRANGE selection{};POINT scroll{};
+            SendMessageW(field.edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            require(selection.cpMin==selected.cpMin&&selection.cpMax==selected.cpMax&&scroll.x==position.x&&scroll.y==position.y&&
+                (GetWindowLongPtrW(field.edit,GWL_STYLE)&ES_READONLY)&&events==SendMessageW(field.edit,EM_GETEVENTMASK,0,0)&&modified==SendMessageW(field.edit,EM_GETMODIFY,0,0),
+                "Technical-background narration moved the readonly selection or changed its viewport/events");
+            for(std::size_t at=0;at<before.size();++at){
+                require((before[at].dwEffects&CFE_AUTOBACKCOLOR)==(after[at].dwEffects&CFE_AUTOBACKCOLOR)&&
+                    ((before[at].dwEffects&CFE_AUTOBACKCOLOR)||before[at].crBackColor==after[at].crBackColor),
+                    "Word shading removed or spread a technical background");
+                styles_equal(before[at],after[at]);
+            }
+            require(edit_text(field.edit)==source,"Technical-background narration changed original prose or C++");
+        };
+        ReadingShade shade(field.edit,source);
+        for(const auto boundary:{std::size_t{0},technical,technical+4,technical+9,language,std::size_t{0},displayed.size()}){
+            shade.read_through(boundary);stable();prefix(field.edit,before,boundary);
+            const auto after=ink(field.edit);
+            for(std::size_t at=boundary;at<after.size();++at){const auto background=(before[at].dwEffects&CFE_AUTOBACKCOLOR)
+                    ?reader_theme::background(field.edit):before[at].crBackColor;
+                require(contrast(after[at].crTextColor,background)>=4.5,"Pending technical text lost readable contrast against its own background");}
+        }
+        shade.read_through(technical);shade.restore();stable();prefix(field.edit,before,before.size());
+    });
     test("Android neutral pending gray follows real surfaces and preserves green feedback",[]{
         require(reader_theme::unread_color(RGB(0,0,0))==RGB(122,122,122)&&reader_theme::unread_color(RGB(255,255,255))==RGB(80,80,80),"Pending gray no longer uses Android's original dark/light preferences");
         for(int channel=0;channel<=255;++channel){const auto background=RGB(channel,channel,channel);const auto gray=reader_theme::unread_color(background);require(GetRValue(gray)==GetGValue(gray)&&GetGValue(gray)==GetBValue(gray)&&contrast(gray,background)>=4.5,"An intermediate surface lacks opaque neutral pending ink with4.5contrast");}

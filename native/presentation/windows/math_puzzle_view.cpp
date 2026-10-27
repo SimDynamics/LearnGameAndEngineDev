@@ -621,10 +621,10 @@ struct MathPuzzleView::Impl {
     HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true,std::string_view math_mode="auto") {
         const auto item = make(MSFTEDIT_CLASS,"",ES_MULTILINE | ES_READONLY);
         if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,RGB(235,239,245));
-        set_rich_text(item,value,{},false,role); regions.push_back({key.empty() ? "text/" + std::to_string(regions.size()) : std::move(key),std::move(value),item});
+        set_rich_text(item,value,{},false,role,locale); regions.push_back({key.empty() ? "text/" + std::to_string(regions.size()) : std::move(key),std::move(value),item});
         const auto& original = regions.back().source_text;
         label_formats[item]={std::string(math_mode),role};
-        if(math_mode=="inline"||math_mode=="block")set_native_math_text(item,original);
+        if(math_mode=="inline"||math_mode=="block")set_native_math_text(item,original,locale);
         else if(math_mode!="text"&&callbacks.expression_request){
             const auto fragment_key=std::pair{original,std::string(math_mode)};auto found=typeset_fragments.find(fragment_key);
             if(found==typeset_fragments.end()){JsonObject request;request.SetNamedValue(L"action",string_value("text_layout"));request.SetNamedValue(L"text",string_value(original));request.SetNamedValue(L"mode",string_value(math_mode));
@@ -632,8 +632,8 @@ struct MathPuzzleView::Impl {
                 std::vector<NativeMathFragment> fragments;for(const auto& fragment_value:array(reply,L"fragments")){const auto fragment=fragment_value.GetObject();const auto start=number(fragment,L"start",-1),end=number(fragment,L"end",-1);if(start<0||end<=start||std::floor(start)!=start||std::floor(end)!=end||end>wide(original).size())throw std::runtime_error("The original mathematical text renderer returned an invalid source range");fragments.push_back({static_cast<std::size_t>(start),static_cast<std::size_t>(end),text(fragment,L"formula"),flag(fragment,L"literal")});}
                 found=typeset_fragments.emplace(fragment_key,std::move(fragments)).first;
             }
-            set_native_math_fragments(item,original,found->second,role);
-        }else if(math_mode!="text"&&(original.find("\\(")!=original.npos||original.find("\\[")!=original.npos))set_native_math_inline_text(item,original,{},role);
+            set_native_math_fragments(item,original,found->second,role,locale);
+        }else if(math_mode!="text"&&(original.find("\\(")!=original.npos||original.find("\\[")!=original.npos))set_native_math_inline_text(item,original,{},role,locale);
         // MathWidgetUi.text uses normal platform line spacing, including
         // instructions, labels and tables; lesson prose uses a separate role.
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
@@ -1094,7 +1094,7 @@ struct MathPuzzleView::Impl {
                     const auto number_value = snapped(low + static_cast<double>(SendMessageW(slider,TBM_GETPOS,0,0)) * step,step,low,high);
                     auto current_answer = response(id,"sliders"),current_values = object(current_answer,L"values"); current_values.SetNamedValue(winrt::to_hstring(key),JsonValue::CreateNumberValue(number_value));
                     current_answer.SetNamedValue(L"values",current_values); answers.SetNamedValue(winrt::to_hstring(id),current_answer);
-                    const auto displayed = name+": "+decimal(number_value); set_rich_text(value_label,displayed); for (auto& region : regions) if (region.target == value_label) region.source_text = displayed; change();
+                    const auto displayed = name+": "+decimal(number_value); set_rich_text(value_label,displayed,{},false,RichTextRole::body,locale); for (auto& region : regions) if (region.target == value_label) region.source_text = displayed; change();
                 }; rows.push_back({{{slider}},48});
             }
         } else if (type == "math_coordinate_graph_builder" || type == "math_geometry_builder") {
@@ -1545,7 +1545,7 @@ void MathPuzzleView::set_expression_request(std::function<std::string(std::strin
     for(const auto& region:impl_->regions){const auto format=impl_->label_formats.find(region.target);if(format==impl_->label_formats.end()||!IsWindow(region.target))continue;
         CHARRANGE selection{};POINT scroll{};SendMessageW(region.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(region.target,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         CHARFORMAT2W original{};original.cbSize=sizeof(original);SendMessageW(region.target,EM_SETSEL,0,1);SendMessageW(region.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&original));
-        (void)set_original_math_text(region.target,region.source_text,format->second.first,impl_->callbacks.expression_request,{},format->second.second);
+        (void)set_original_math_text(region.target,region.source_text,format->second.first,impl_->callbacks.expression_request,{},format->second.second,impl_->locale);
         CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=original.yHeight;SendMessageW(region.target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;SendMessageW(region.target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
         SendMessageW(region.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(region.target,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));

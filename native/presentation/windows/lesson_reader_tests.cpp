@@ -4,12 +4,14 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/math_puzzle_view.hpp"
+#include "presentation/windows/card_list.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/narration_state.hpp"
+#include "core/narration_speed.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
@@ -353,19 +355,244 @@ void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& 
         "Explicit compiler Reset lost the prediction answer or retained unavailable later narration");
     std::cout<<"PASS current integrated U1 reader: archived original absent, useful compiler required, native wrong/correct feedback, exact released restore, sticky achievement and scoped Reset\n";
 }
+void extended_reader_playback_rates(const std::shared_ptr<windows::NarrationWorker>& backend){
+    Fixture f(backend,false,true,true,"es",compiler_model());const auto initial=f.snapshot();
+    std::vector<std::pair<std::filesystem::path,std::filesystem::file_time_type>> recordings;
+    for(const auto& part:initial.segments)recordings.emplace_back(part.recording,std::filesystem::last_write_time(part.recording));
+    const auto preserved=read_lesson_state(f.view);
+    const auto unchanged=[&]{auto current=read_lesson_state(f.view),before=preserved;
+        current.preferences["lesson_narration_settings"].erase("rate");before.preferences["lesson_narration_settings"].erase("rate");
+        check(current==before,"The paused speed selector changed narration history, progress, drafts or generation settings");};
+    for(const auto expected:{2.5,3.,.5,1.,1.5,2.}){
+        const auto button=GetDlgItem(f.reader->bar(),6505);check(button!=nullptr,"The real playback speed button is missing");
+        SendMessageW(button,BM_CLICK,0,0);pump();
+        check(f.snapshot().rate==expected&&std::get<double>(*state::find(read_lesson_state(f.view),"lesson_narration_settings","rate"))==expected,
+            "The real speed selector lost an existing rate or did not expose2.5X/3X in order");
+        check(GetCapture()==nullptr,"The accessible playback speed action acquired mouse capture");unchanged();
+    }
+    const auto source=child(f.view,1110);const auto original_source=edit_text(source);CHARRANGE selection{4,9};
+    SetFocus(source);SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));pump();
+    KeyboardStateScope keyboard;
+    const auto press=[&](UINT key,UINT kind=WM_KEYDOWN,LPARAM flags=1,HWND target=nullptr){MSG message{};message.hwnd=target?target:source;
+        message.message=kind;message.wParam=key;message.lParam=flags;return f.reader->dispatch_shortcut(message);};
+    check(press(VK_F10,WM_SYSKEYDOWN)&&f.snapshot().rate==2.5&&press(VK_F10,WM_SYSKEYUP)&&f.snapshot().rate==2.5,
+        "F10 from the actual code editor failed to increase playback speed or leaked its menu-key release");
+    check(press(VK_F10)&&f.snapshot().rate==3.,"F10 did not expose the new3X endpoint");
+    for(int repeat=0;repeat<5;++repeat)check(press(VK_F10,WM_KEYDOWN,1LL|(1LL<<30))&&f.snapshot().rate==3.,
+        "Holding F10 wrapped playback speed past its3X endpoint");
+    bool first=true;for(const auto expected:{2.5,2.,1.5,1.,.5}){
+        check(press(VK_F9,WM_KEYDOWN,first?1:1LL|(1LL<<30))&&f.snapshot().rate==expected,
+            "F9 or its autorepeat skipped an existing playback speed");first=false;
+    }
+    check(press(VK_F9)&&f.snapshot().rate==.5&&press(VK_F9,WM_KEYUP),"F9 wrapped below0.5X or leaked its release");
+    for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN}){
+        auto modified=keyboard.clear;modified[modifier]=0x80;check(SetKeyboardState(modified.data())!=FALSE,"Cannot set the isolated speed-shortcut modifier");
+        check(!press(VK_F10)&&f.snapshot().rate==.5,"A modified F10 shortcut bypassed its original system/editor action");
+        check(SetKeyboardState(keyboard.clear.data())!=FALSE,"Cannot clear the isolated speed-shortcut modifier");
+    }
+    check(!press(VK_F10,WM_SYSKEYDOWN,1LL|(1LL<<29))&&!press(VK_F9,WM_KEYDOWN,1,GetDesktopWindow()),
+        "Speed shortcuts consumed an Alt system key or a different application's target");
+    CHARRANGE after{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(GetFocus()==source&&edit_text(source)==original_source&&after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&GetCapture()==nullptr,
+        "Changing playback speed from the code editor changed focus, source, selection or capture");
+    f.reader->set_controls_visible(false);check(!press(VK_F10)&&f.snapshot().rate==.5,"A hidden reader consumed F10");f.reader->set_controls_visible(true);
+    for(const auto expected:{2.5,3.}){
+        update_lesson_preferences(f.view,[expected](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=expected;});f.reader->settings_changed();
+        const auto history=narration::read_history(read_lesson_state(f.view));
+        f.reader.reset();f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+        check(f.snapshot().rate==expected&&!f.snapshot().playing&&!f.snapshot().allocated&&
+            narration::read_history(read_lesson_state(f.view))==history,"Recreating the reader clamped2.5X/3X or changed its paused bookmark");
+        f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.playback_rate==expected;},"the selected fast rate reaches the actual media session");
+        const auto before=f.snapshot();check(press(expected==2.5?VK_F10:VK_F9)&&
+            f.snapshot().playback_rate==(expected==2.5?3.:2.5),"The focused-editor speed shortcut did not update live MediaPlaybackSession");
+        check(press(expected==2.5?VK_F9:VK_F10)&&f.snapshot().playback_rate==expected&&f.snapshot().index==before.index&&f.snapshot().offset>=before.offset,
+            "Changing a live speed through F9/F10 sought or restarted the current recording");
+        f.reader->pause();check(!f.snapshot().allocated,"Pausing a fast rate retained the media player");
+        state::StateStore saved(f.environment.paths.root);
+        check(std::get<double>(*state::find(saved.load(),"lesson_narration_settings","rate"))==expected,"The selected fast playback rate was not persisted in its isolated profile");
+    }
+    for(const auto& [path,modified]:recordings)check(std::filesystem::is_regular_file(path)&&std::filesystem::last_write_time(path)==modified,
+        "Changing only playback speed regenerated or replaced an existing QA recording");
+    std::cout<<"PASS real reader playback rates: six existing/new choices,2.5X/3X persistence/restoration, focused-editor F9/F10 and held endpoints without menu/capture/seek, live media rates and unchanged recordings/protected state\n";
+}
+void checked_compilation_keeps_keyboard_reader_control(const std::shared_ptr<windows::NarrationWorker>& backend){
+    auto lesson=compiler_model(true);lesson.id="qa_reader_compile_focus";
+    auto& dependent=lesson.pages.front().blocks.back();dependent.type=curriculum::BlockType::multiple_choice;
+    dependent.id=dependent.stable_id;dependent.text.clear();dependent.question="¿Qué salida produjo el programa?";
+    dependent.options={"Bien","Mal"};dependent.correct_index=0;
+    dependent.explanation="El programa mostró Bien en la consola.";
+    lesson.activity_after.push_back({"after_compiler",{"checked_source"}});
+    lesson.state_layout.version=1;lesson.state_layout.locale="es";
+    lesson.state_layout.lineage=state::sha256(lesson.id);lesson.state_layout.legacy_lineage=lesson.state_layout.lineage;
+    for(const auto& page:lesson.pages){curriculum::StatePage layout;layout.id=page.stable_id;
+        for(const auto& block:page.blocks)layout.blocks.push_back(block.stable_id);
+        lesson.state_layout.origin.push_back(layout);lesson.state_layout.current.push_back(std::move(layout));}
+    curriculum::validate_activity_relationships(lesson);
+    Fixture f(backend,false,true,true,"es",lesson);KeyboardStateScope keyboard;f.reader->pause();
+    const auto source=child(f.view,1110),compile=child(f.view,1111),feedback=child(f.view,1104);
+    const auto original_source=edit_text(source);CHARRANGE selection{4,9};
+    SetForegroundWindow(f.host);SetActiveWindow(f.host);SetFocus(source);
+    SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SetFocus(compile);pump();
+    check(GetForegroundWindow()==f.host&&GetActiveWindow()==f.host&&GetFocus()==compile,
+        "Cannot establish actual foreground/focused compile-button preconditions");
+    struct KeyResult{UINT key;HWND target;bool dispatched;};std::vector<KeyResult> keys;
+    const auto log=[&](std::string_view phase){const auto state=f.snapshot();
+        std::cout<<"compile-focus "<<phase<<": focus="<<GetFocus()<<" active="<<GetActiveWindow()<<" foreground="<<GetForegroundWindow()
+            <<" planned="<<state.planned<<" preparing="<<state.preparing<<" playing="<<state.playing<<" allocated="<<state.allocated
+            <<" finished="<<state.finished<<" gate="<<state.waiting_gate<<" index="<<state.index<<" offset="<<state.offset<<'\n';};
+    const auto pump_reader=[&]{MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))if(message.message!=WM_QUIT){
+        const bool handled=f.reader->dispatch_shortcut(message);
+        if((message.message==WM_KEYDOWN||message.message==WM_SYSKEYDOWN)&&
+            (message.wParam==VK_F1||message.wParam==VK_F9||message.wParam==VK_F10)){
+            keys.push_back({static_cast<UINT>(message.wParam),message.hwnd,handled});
+            std::cout<<"compile-focus native key="<<message.wParam<<" message="<<message.message<<" lParam="<<message.lParam
+                <<" alt-context="<<((message.lParam&(1LL<<29))!=0)<<" repeat="<<((message.lParam&(1LL<<30))!=0)
+                <<" hwnd="<<message.hwnd<<" root="<<GetAncestor(message.hwnd,GA_ROOT)<<" dispatched="<<handled<<'\n';
+        }
+        if(!handled){TranslateMessage(&message);DispatchMessageW(&message);}
+    }};
+    const auto wait_reader=[&](const std::function<bool()>& done,std::string_view description,ULONGLONG timeout=60000){
+        const auto deadline=GetTickCount64()+timeout;do{pump_reader();if(done())return;
+            MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);}while(GetTickCount64()<deadline);
+        throw std::runtime_error("Timeout: "+std::string(description));
+    };
+    const auto press=[&](WORD key){INPUT input[2]{};for(auto& event:input){event.type=INPUT_KEYBOARD;event.ki.wVk=key;}
+        input[1].ki.dwFlags=KEYEVENTF_KEYUP;const auto before=keys.size();
+        check(SendInput(2,input,sizeof(INPUT))==2,"Cannot inject the actual isolated QA reader key");
+        wait_reader([&]{return keys.size()>before;},"native reader key delivered to the foreground QA thread",3000);
+        return keys.back().dispatched;
+    };
+    log("before run");SendMessageW(compile,BM_CLICK,0,0);log("run disabled controls");
+    wait_reader([&]{return IsWindowEnabled(compile);},"actual successful checked compiler execution");log("completed before any extra click");
+    check(GetFocus()==source,"Disabling the focused compile button did not retain a healthy source-editor focus");
+    const auto correct_feedback=edit_text(feedback);
+    check(!correct_feedback.empty()&&std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){
+        return region.feedback&&region.correct&&region.block_index==1;}),"Actual compilation did not retain its Correcto feedback");
+    check(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==2;}),
+        "Actual successful compilation did not reveal its dependent puzzle/rebuild the reader script");
+    const bool f1=press(VK_F1);log("after native F1");
+    const auto old_rate=f.snapshot().rate;const bool f9=press(VK_F9);const auto lower=f.snapshot().rate;
+    const bool f10=press(VK_F10);const auto restored=f.snapshot().rate;
+    // A root-directed control is diagnostic only: distinguish lost keyboard
+    // routing from a blocked feedback/bookmark replan before reporting failure.
+    if(!f1){MSG control{};control.hwnd=f.host;control.message=WM_KEYDOWN;control.wParam=VK_F1;control.lParam=1;
+        const auto handled=f.reader->dispatch_shortcut(control);std::cout<<"compile-focus root-directed F1 control="<<handled<<'\n';}
+    wait_reader([&]{return f.snapshot().playing;},"F1 playback after the actual correct-feedback replan");log("playback confirmed");f.reader->pause();
+    CHARRANGE after{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(edit_text(source)==original_source&&after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&edit_text(feedback)==correct_feedback,
+        "Compile/reader shortcuts changed source, cursor selection or accepted feedback");
+    check(f1&&f9&&f10&&lower<old_rate&&restored==old_rate,
+        "After real checked compilation, F1/F9/F10 require another click despite the app remaining active");
+
+    // Keep exercising USER's real no-focus SYS-key route even when the compile
+    // action now transfers its button focus to the source before disabling it.
+    SetFocus(nullptr);check(GetFocus()==nullptr&&GetActiveWindow()==f.host&&GetForegroundWindow()==f.host,
+        "Cannot establish the actual active-root/no-focused-child keyboard route");
+    const bool no_focus_f1=press(VK_F1),no_focus_f9=press(VK_F9);const auto no_focus_lower=f.snapshot().rate;
+    const bool no_focus_f10=press(VK_F10);
+    wait_reader([&]{return f.snapshot().playing;},"native no-focus SYS F1 plays without another click");f.reader->pause();
+    check(no_focus_f1&&no_focus_f9&&no_focus_f10&&no_focus_lower<old_rate&&f.snapshot().rate==old_rate&&GetFocus()==nullptr,
+        "Unmodified native SYS reader keys still fail or move focus when the active root has no focused child");
+    SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+    check(edit_text(source)==original_source&&after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&edit_text(feedback)==correct_feedback,
+        "The native no-focus SYS reader route changed source, cursor selection or accepted feedback");
+
+    // Completion must not restore the launching app's focus after the student
+    // has deliberately activated a different top-level window in the meantime.
+    SetFocus(compile);SendMessageW(compile,BM_CLICK,0,0);
+    const auto other=CreateWindowExW(0,L"STATIC",L"Other active QA window",WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+        80,80,400,200,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(other!=nullptr,"Cannot create the independent foreground QA window");
+    const auto other_edit=CreateWindowExW(0,L"EDIT",L"Other task",WS_CHILD|WS_VISIBLE|WS_TABSTOP,10,10,200,30,other,nullptr,GetModuleHandleW(nullptr),nullptr);
+    SetForegroundWindow(other);SetActiveWindow(other);SetFocus(other_edit);pump_reader();
+    check(GetForegroundWindow()==other&&GetFocus()==other_edit,"Cannot activate the independent QA task during compilation");
+    wait_reader([&]{return IsWindowEnabled(compile);},"background compilation completing without focus restoration");
+    check(GetForegroundWindow()==other&&GetActiveWindow()==other&&GetFocus()==other_edit,
+        "Finishing a background compilation stole focus from the newly active task");
+    MSG thread_key{};thread_key.message=WM_KEYDOWN;thread_key.wParam=VK_F10;thread_key.lParam=1;
+    check(!f.reader->dispatch_shortcut(thread_key),"A thread key belonging to another foreground task changed the reader rate");
+    check(edit_text(feedback)==correct_feedback&&edit_text(source)==original_source,
+        "Recompiling an accepted answer in the background revoked its feedback or changed the source");
+    DestroyWindow(other);
+    std::cout<<"PASS actual checked compilation: active compile-button focus, native F1/F9/F10 without extra clicks, feedback replan, source/selection/Correcto retained, no background focus steal\n";
+}
+void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::NarrationWorker>& backend){
+    Fixture f(backend,false,true,true,"es",compiler_model());KeyboardStateScope keyboard;ReaderCommandProbe probe(f.reader->bar());
+    const auto press=[&](UINT key,HWND target,UINT kind=WM_KEYDOWN,LPARAM flags=1){MSG message{};message.hwnd=target;
+        message.message=kind;message.wParam=key;message.lParam=flags;return f.reader->dispatch_shortcut(message);};
+    const auto play=GetDlgItem(f.reader->bar(),6504);
+    const std::array<std::pair<UINT,int>,8> mappings{{{VK_F5,6500},{VK_LEFT,6500},{VK_F6,6501},{VK_UP,6501},
+        {VK_F7,6502},{VK_DOWN,6502},{VK_F8,6503},{VK_RIGHT,6503}}};
+    for(const auto& [key,button]:mappings)for(const auto kind:{WM_KEYDOWN,WM_SYSKEYDOWN}){
+        SetFocus(kind==WM_KEYDOWN?play:nullptr);const auto count=probe.commands.size();
+        check(press(key,kind==WM_KEYDOWN?play:f.host,kind)&&probe.commands.size()==count+1&&probe.commands.back()==button,
+            "A function/arrow seek alias did not activate its original direction/duration button from the reader/root");
+        check(press(key,kind==WM_KEYDOWN?play:f.host,kind,1LL|(1LL<<30))&&probe.commands.size()==count+1,
+            "Holding a seek arrow repeated an action that the original function key activates once");
+        check(!press(key,f.host,kind==WM_SYSKEYDOWN?WM_SYSKEYUP:WM_KEYUP),"A seek-key release activated narration");f.reader->pause();
+    }
+    const auto source=child(f.view,1110),readonly=child(f.view,1000);
+    check(source&&readonly,"The actual arrow-key fixture lost its source or selectable readonly text");
+    const auto source_text=edit_text(source),readonly_text=edit_text(readonly);CHARRANGE selected{4,9};
+    SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));SendMessageW(readonly,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    MathExpressionEditorAccess access;access.request=[backend](std::string_view request){return backend->math_editor(request);};
+    const auto math=create_math_expression_editor(f.view,9100,std::move(access));
+    check(math&&set_math_expression_latex(math,"1+2"),"Cannot initialize the actual structured math editor for arrow-key routing");
+    MoveWindow(math,0,0,260,60,TRUE);const auto math_before=inspect_math_expression_editor(math);
+    const auto list=create_card_list(f.view,9101,WM_APP+9101);check(list!=nullptr,"Cannot create an actual WANTARROWS card list");MoveWindow(list,0,65,260,60,TRUE);
+    const auto before=f.snapshot();const auto commands=probe.commands.size();
+    for(const auto target:{source,readonly,math,list}){
+        SetFocus(target);check(GetFocus()==target,"Cannot focus the real native control that owns its arrow keys");
+        for(const auto key:{VK_LEFT,VK_UP,VK_DOWN,VK_RIGHT}){
+            check(!press(key,target)&&!press(key,f.host,WM_SYSKEYDOWN),
+                "A seek-arrow alias stole native cursor/selection/control navigation from actual focus");
+        }
+        SetFocus(play);for(const auto key:{VK_LEFT,VK_UP,VK_DOWN,VK_RIGHT})
+            check(!press(key,target),"A seek-arrow alias ignored the message's actual editor/control target");
+    }
+    CHARRANGE source_after{},readonly_after{};
+    SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&source_after));SendMessageW(readonly,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&readonly_after));
+    const auto math_after=inspect_math_expression_editor(math);const auto after=f.snapshot();
+    check(source_after.cpMin==selected.cpMin&&source_after.cpMax==selected.cpMax&&readonly_after.cpMin==selected.cpMin&&readonly_after.cpMax==selected.cpMax&&
+        edit_text(source)==source_text&&edit_text(readonly)==readonly_text&&math_after.cursor_json==math_before.cursor_json&&math_after.draft_json==math_before.draft_json&&
+        probe.commands.size()==commands&&after.key==before.key&&after.index==before.index&&after.offset==before.offset&&after.rate==before.rate,
+        "Yielding arrows changed document bytes, native selection, math cursor/draft or the reader's paused position/rate");
+    SetFocus(source);check(!press(VK_RIGHT,source),"The source editor did not retain its actual Right key");SendMessageW(source,WM_KEYDOWN,VK_RIGHT,1);
+    SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&source_after));
+    check(source_after.cpMin==selected.cpMax&&source_after.cpMax==selected.cpMax&&edit_text(source)==source_text,
+        "The original native Right key failed to collapse the source selection without editing code");
+    SetFocus(play);for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN}){
+        auto state=keyboard.clear;state[modifier]=0x80;check(SetKeyboardState(state.data())!=FALSE,"Cannot set the isolated arrow modifier");
+        check(!press(VK_LEFT,play)&&!press(VK_RIGHT,f.host,WM_SYSKEYDOWN),"A modified arrow controlled narration");
+        check(SetKeyboardState(keyboard.clear.data())!=FALSE,"Cannot restore the isolated arrow modifier");
+    }
+    check(!press(VK_LEFT,play,WM_SYSKEYDOWN,1LL|(1LL<<29)),"An Alt-context system arrow controlled narration");
+    f.reader->set_controls_visible(false);check(!press(VK_RIGHT,play),"A hidden reader consumed a seek arrow");f.reader->set_controls_visible(true);
+    DestroyWindow(list);DestroyWindow(math);
+    std::cout<<"PASS F5/Left -3, F6/Up -5, F7/Down +5, F8/Right +3: root/bar normal/SYS once, editor/readonly/math/card-list arrows preserve documents/cursors/selection and paused playback\n";
+}
 }
 
 int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
     const bool dependencies_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
-    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only)return 2;
+    const bool rates_only=argc==2&&std::string_view(argv[1])=="--rates";
+    const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
+    const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
+    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        if(seek_keys_only){reader_arrow_aliases_preserve_control_keys(backend);return 0;}
+        if(compiler_focus_only){checked_compilation_keeps_keyboard_reader_control(backend);return 0;}
+        if(rates_only){extended_reader_playback_rates(backend);return 0;}
         if(integrated_only){integrated_u1_reader_flow(backend);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
+        extended_reader_playback_rates(backend);
+        checked_compilation_keeps_keyboard_reader_control(backend);
+        reader_arrow_aliases_preserve_control_keys(backend);
         dependent_puzzle_reader_bookmarks(backend);
         independent_feedback_does_not_complete_a_pending_compiler(backend);
         integrated_u1_reader_flow(backend);
@@ -390,14 +617,25 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 check(press(key,play,1LL|(1LL<<30))&&probe.commands.size()==count+1,
                     "A held reader shortcut activated its button more than once");f.reader->pause();
             }
+            const std::array<std::pair<UINT,int>,6> system_mappings{{{VK_F1,6504},{VK_F2,6506},{VK_F5,6500},{VK_F6,6501},{VK_F7,6502},{VK_F8,6503}}};
+            for(const auto& [key,button]:system_mappings){
+                const auto count=probe.commands.size();SetFocus(nullptr);
+                check(press(key,f.host,1,WM_SYSKEYDOWN)&&probe.commands.size()==count+1&&probe.commands.back()==button,
+                    "An unmodified SYS reader shortcut did not activate its existing button from the active root");
+                check(press(key,f.host,1LL|(1LL<<30),WM_SYSKEYDOWN)&&probe.commands.size()==count+1,
+                    "Holding an unmodified SYS reader shortcut activated its button more than once");
+                check(!press(key,f.host,1,WM_SYSKEYUP)&&probe.commands.size()==count+1,
+                    "A SYS reader shortcut release activated its button again");f.reader->pause();
+            }
             const auto count=probe.commands.size();
             for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN}){
                 auto state=keyboard.clear;state[modifier]=0x80;check(SetKeyboardState(state.data())!=FALSE,"Cannot set QA modifier");
-                check(!press(VK_F1,edit)&&probe.commands.size()==count,"A modified function key activated narration");
+                check(!press(VK_F1,edit)&&!press(VK_F1,f.host,1,WM_SYSKEYDOWN)&&probe.commands.size()==count,
+                    "A modified normal/SYS function key activated narration");
                 check(SetKeyboardState(keyboard.clear.data())!=FALSE,"Cannot clear QA modifier");
             }
-            check(!press(VK_F1,edit,1,WM_SYSKEYDOWN)&&!press(VK_F1,edit,1,WM_KEYUP)&&!press(VK_F3,edit),
-                "The reader consumed system, release or unassigned keys");
+            check(!press(VK_F1,edit,1LL|(1LL<<29),WM_SYSKEYDOWN)&&!press(VK_F1,edit,1,WM_KEYUP)&&!press(VK_F3,edit),
+                "The reader consumed an Alt-context system, release or unassigned key");
             EnableWindow(play,FALSE);check(press(VK_F1,edit)&&probe.commands.size()==count,
                 "A shortcut bypassed its disabled reader button");EnableWindow(play,TRUE);
             EnableWindow(f.host,FALSE);const auto disabled=press(VK_F1,edit);EnableWindow(f.host,TRUE);

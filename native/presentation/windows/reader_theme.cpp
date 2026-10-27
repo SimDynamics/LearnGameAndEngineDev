@@ -30,6 +30,8 @@ constexpr wchar_t accent_property[] = L"LGAED.ReaderAccent";
 constexpr wchar_t text_property[] = L"LGAED.ReaderTextColor";
 constexpr wchar_t scroll_paint_pending_property[] = L"LGAED.ReaderScrollbarPaintPending";
 constexpr wchar_t scroll_theme_policy_property[] = L"LGAED.ReaderScrollbarThemePolicy";
+constexpr wchar_t native_scroll_theme_property[] = L"LGAED.ReaderNativeScrollbarTheme";
+constexpr wchar_t scroll_tracking_property[] = L"LGAED.ReaderScrollbarTrackingAxes";
 constexpr UINT_PTR radio_subclass_id = 0x4C475244;
 constexpr UINT_PTR combo_subclass_id = 0x4C47434F;
 constexpr UINT_PTR scroll_subclass_id = 0x4C475342;
@@ -415,17 +417,28 @@ UINT scroll_paint_message(){
 void sync_scrollbar_theme(HWND window){
     if(!applied(window)||!rich_edit(window))return;
     const bool native=palette(window).high_contrast;
-    const ULONG_PTR wanted=native?2:1;
+    const bool native_skin=GetPropW(window,native_scroll_theme_property)!=nullptr;
+    const ULONG_PTR wanted=native?2:native_skin?3:1;
     const auto previous=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_theme_policy_property));
     if(previous==wanted)return;
     // SetWindowTheme sends WM_THEMECHANGED synchronously. Publish the policy
     // first so its nested nonclient paint cannot enter this transition again.
     if(!SetPropW(window,scroll_theme_policy_property,reinterpret_cast<HANDLE>(wanted)))return;
     if(native&&!previous)return;
-    // RichEdit already uses our source and scrollbar skin. Its visual-style
-    // hover animation otherwise paints a second, light scrollbar over it even
-    // after the native tracking loop has finished. Keep USER's actual bars,
-    // hit testing and accessibility; restore Windows styling in high contrast.
+    if(native_skin&&!native){
+        const auto status=SetWindowTheme(window,L"DarkMode_Explorer",nullptr);
+        // RichEdit can keep the scrollbar's theme independently of its client
+        // theme. Accept either handle; never fall back to a competing overlay.
+        const auto scrollbar=SUCCEEDED(status)?OpenThemeData(window,L"SCROLLBAR"):nullptr;
+        const bool available=SUCCEEDED(status)&&(GetWindowTheme(window)||scrollbar);
+        if(scrollbar)CloseThemeData(scrollbar);
+        if(!available)(void)SetWindowTheme(window,nullptr,nullptr);
+        return;
+    }
+    // The opt-in native theme leaves every nonclient frame to USER. The custom
+    // policy disables visual-style hover painting that would otherwise draw a
+    // second skin after tracking. Neither policy changes the actual bars,
+    // hit testing or accessibility; high contrast restores Windows styling.
     if(FAILED(SetWindowTheme(window,native?nullptr:L"",native?nullptr:L""))){
         if(previous)SetPropW(window,scroll_theme_policy_property,reinterpret_cast<HANDLE>(previous));
         else RemovePropW(window,scroll_theme_policy_property);
@@ -439,7 +452,7 @@ void queue_scrollbar_paint(HWND window){
 }
 LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
     constexpr wchar_t hidden_frame_property[]=L"lgaed.scrollbar-frame-hidden";
-    if(message==WM_NCDESTROY){RemovePropW(window,hidden_frame_property);RemovePropW(window,scroll_paint_pending_property);RemovePropW(window,scroll_theme_policy_property);RemoveWindowSubclass(window,scroll_subclass,scroll_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    if(message==WM_NCDESTROY){RemovePropW(window,hidden_frame_property);RemovePropW(window,scroll_paint_pending_property);RemovePropW(window,scroll_theme_policy_property);RemovePropW(window,native_scroll_theme_property);RemovePropW(window,scroll_tracking_property);RemoveWindowSubclass(window,scroll_subclass,scroll_subclass_id);return DefSubclassProc(window,message,wp,lp);}
     if(const auto repaint=scroll_paint_message();repaint&&message==repaint){
         if(RemovePropW(window,scroll_paint_pending_property))refresh_scrollbars(window);
         return 0;
@@ -455,7 +468,18 @@ LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UI
         const auto style=GetWindowLongPtrW(window,GWL_STYLE);
         if(style&mask)SetWindowLongPtrW(window,GWL_STYLE,style&~static_cast<LONG_PTR>(mask));
     }
+    const bool native_scroll=(message==WM_HSCROLL||message==WM_VSCROLL)&&!lp;
+    const ULONG_PTR axis=message==WM_HSCROLL?2:1;
+    const auto tracking=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_tracking_property));
+    if(native_scroll&&LOWORD(wp)==SB_THUMBTRACK)
+        SetPropW(window,scroll_tracking_property,reinterpret_cast<HANDLE>(tracking|axis));
     const auto result=DefSubclassProc(window,message,wp,lp);
+    if((native_scroll&&(LOWORD(wp)==SB_THUMBPOSITION||LOWORD(wp)==SB_ENDSCROLL))||message==WM_CAPTURECHANGED||message==WM_CANCELMODE){
+        const auto active=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_tracking_property));
+        const auto remaining=native_scroll?active&~axis:0;
+        if(remaining)SetPropW(window,scroll_tracking_property,reinterpret_cast<HANDLE>(remaining));
+        else RemovePropW(window,scroll_tracking_property);
+    }
     // During native thumb tracking USER paints again after our nested scroll
     // callback returns. A window message reaches the same modal loop after
     // that paint; coalesce it per HWND instead of polling or changing input.
@@ -464,9 +488,17 @@ LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UI
     // state and releasing capture, without WM_NCPAINT or a nonclient mouse-up. Repaint
     // after those callbacks too, before the native message returns.
     // There is no timer, input interception or parallel scroll position.
-    if(message==WM_NCPAINT||message==WM_PAINT||message==WM_SIZE||message==WM_VSCROLL||message==WM_HSCROLL||
+    // RichEdit also redraws its native frame directly while changing text,
+    // caret layout or bar visibility, without sending WM_NCPAINT. Repaint on
+    // completion of those operations, not only after a later client paint.
+    const bool text_change=rich_edit(window)&&(message==WM_CHAR||message==WM_SETTEXT||message==EM_SETTEXTEX||
+        message==EM_STREAMIN||message==EM_REPLACESEL||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR||
+        message==WM_UNDO||message==EM_UNDO||message==EM_REDO);
+    const bool caret_key=message==WM_KEYDOWN&&((wp>=VK_PRIOR&&wp<=VK_DOWN)||wp==VK_BACK||wp==VK_DELETE||wp==VK_RETURN);
+    if(text_change||caret_key||message==EM_SCROLLCARET||message==EM_SHOWSCROLLBAR||message==EM_SETZOOM||
+        message==WM_NCPAINT||message==WM_PAINT||message==WM_SIZE||message==WM_VSCROLL||message==WM_HSCROLL||
         message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL||message==WM_NCMOUSEMOVE||message==WM_NCMOUSELEAVE||message==WM_NCLBUTTONUP||
-        message==WM_NCLBUTTONDOWN||message==WM_SETCURSOR||message==WM_CAPTURECHANGED||message==WM_THEMECHANGED||message==WM_SETTINGCHANGE||
+        message==WM_NCLBUTTONDOWN||message==WM_SETCURSOR||message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_THEMECHANGED||message==WM_SETTINGCHANGE||
         message==WM_STYLECHANGED||message==WM_DPICHANGED_AFTERPARENT||message==WM_SETFONT||
         message==EM_SETSCROLLPOS||message==EM_LINESCROLL||message==EM_SETTARGETDEVICE||
         message==LB_ADDSTRING||message==LB_DELETESTRING||message==LB_RESETCONTENT||
@@ -599,11 +631,12 @@ COLORREF foreground(HWND window) {
 }
 void paint_scrollbars(HWND window,HDC dc){
     if(!dc||!IsWindow(window)||!applied(window))return;
+    if(GetPropW(window,native_scroll_theme_property))return;
     const auto colors=palette(window);if(colors.high_contrast)return;
     RECT outer{};GetWindowRect(window,&outer);const auto surface=background(window);
     const auto saved=SaveDC(dc);const auto dpi=static_cast<int>(GetDpiForWindow(window));
     const auto scale=[&](int value){return std::max(1,MulDiv(value,dpi,96));};
-    const auto fill=[&](RECT bounds,COLORREF ink){const auto handle=CreateSolidBrush(ink);if(handle){FillRect(dc,&bounds,handle);DeleteObject(handle);}};
+    const auto fill=[](HDC target,RECT bounds,COLORREF ink){const auto handle=CreateSolidBrush(ink);if(handle){FillRect(target,&bounds,handle);DeleteObject(handle);}};
     RECT vertical{},horizontal{};bool has_vertical=false,has_horizontal=false;
     const auto hidden=reinterpret_cast<ULONG_PTR>(GetPropW(window,L"lgaed.scrollbar-frame-hidden"));
     for(const bool sideways:{false,true}){
@@ -613,9 +646,36 @@ void paint_scrollbars(HWND window,HDC dc){
             (info.rgstate[0]&(STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN)))continue;
         auto bounds=info.rcScrollBar;OffsetRect(&bounds,-outer.left,-outer.top);
         if(IsRectEmpty(&bounds))continue;
+        // During thumb tracking xyThumb* still describes the committed nPos.
+        // USER draws at nTrackPos instead. Keep only the native event lifetime
+        // here and derive pixels from USER's current range/page/track state;
+        // no position is copied back or maintained alongside that state.
+        const auto tracking=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_tracking_property));
+        if((tracking&(sideways?2:1))||(info.rgstate[3]&STATE_SYSTEM_PRESSED)){
+            SCROLLINFO range{sizeof(range),SIF_ALL};
+            if(GetScrollInfo(window,sideways?SB_HORZ:SB_VERT,&range)){
+                const auto extent=sideways?bounds.right-bounds.left:bounds.bottom-bounds.top;
+                const auto arrow=std::min<LONG>(info.dxyLineButton,extent/2);
+                const auto length=info.xyThumbBottom-info.xyThumbTop;
+                const auto travel=std::max<LONG>(0,extent-2*arrow-length);
+                const auto maximum=std::max<long long>(range.nMin,static_cast<long long>(range.nMax)-std::max<long long>(0,static_cast<long long>(range.nPage)-1));
+                const auto delta=std::clamp<long long>(range.nTrackPos,range.nMin,maximum)-range.nMin;
+                const auto span=maximum-range.nMin;
+                info.xyThumbTop=static_cast<int>(arrow+(span?(delta*travel+span/2)/span:0));
+                info.xyThumbBottom=info.xyThumbTop+length;
+            }
+        }
         if(sideways){horizontal=bounds;has_horizontal=true;}else{vertical=bounds;has_vertical=true;}
         const auto clipped=SaveDC(dc);IntersectClipRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom);
-        fill(bounds,surface);
+        // A track clear followed by separate arrow/thumb draws exposes an
+        // incomplete frame on the WindowDC. Compose only this native bar off
+        // screen, preserving the destination's nonclient clipping and USER's
+        // geometry, hit testing, capture and scroll state.
+        HDC target=dc;const auto memory=CreateCompatibleDC(dc);
+        const auto bitmap=memory?CreateCompatibleBitmap(dc,bounds.right-bounds.left,bounds.bottom-bounds.top):nullptr;
+        const auto original=bitmap?SelectObject(memory,bitmap):nullptr;
+        if(original&&original!=HGDI_ERROR&&SetViewportOrgEx(memory,-bounds.left,-bounds.top,nullptr))target=memory;
+        fill(target,bounds,surface);
         const auto extent=sideways?bounds.right-bounds.left:bounds.bottom-bounds.top;
         const auto arrow=std::min<LONG>(info.dxyLineButton,extent/2);
         for(const bool end:{false,true}){
@@ -625,17 +685,21 @@ void paint_scrollbars(HWND window,HDC dc){
             const int direction=end?1:-1,radius=scale(2);POINT points[3];
             if(sideways){points[0]={center.x-direction*radius,center.y-radius};points[1]={center.x+direction*radius,center.y};points[2]={center.x-direction*radius,center.y+radius};}
             else{points[0]={center.x-radius,center.y-direction*radius};points[1]={center.x,center.y+direction*radius};points[2]={center.x+radius,center.y-direction*radius};}
-            const auto pen=CreatePen(PS_SOLID,scale(1),ink);const auto before=SelectObject(dc,pen);Polyline(dc,points,3);SelectObject(dc,before);DeleteObject(pen);
+            const auto pen=CreatePen(PS_SOLID,scale(1),ink);const auto before=SelectObject(target,pen);Polyline(target,points,3);SelectObject(target,before);DeleteObject(pen);
         }
         if(!(info.rgstate[3]&(STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_UNAVAILABLE))&&info.xyThumbBottom>info.xyThumbTop){
             auto thumb=bounds;const auto inset=std::max<LONG>(scale(2),((sideways?bounds.bottom-bounds.top:bounds.right-bounds.left)-scale(5))/2);
             if(sideways){thumb.left+=info.xyThumbTop;thumb.right=bounds.left+info.xyThumbBottom;thumb.top+=inset;thumb.bottom-=inset;}
             else{thumb.top+=info.xyThumbTop;thumb.bottom=bounds.top+info.xyThumbBottom;thumb.left+=inset;thumb.right-=inset;}
-            fill(thumb,(info.rgstate[3]&STATE_SYSTEM_PRESSED)?accent_ink(window,surface):colors.muted);
+            fill(target,thumb,(info.rgstate[3]&STATE_SYSTEM_PRESSED)?accent_ink(window,surface):colors.muted);
         }
+        if(target==memory)BitBlt(dc,bounds.left,bounds.top,bounds.right-bounds.left,bounds.bottom-bounds.top,
+            memory,bounds.left,bounds.top,SRCCOPY);
+        if(original&&original!=HGDI_ERROR)SelectObject(memory,original);
+        if(bitmap)DeleteObject(bitmap);if(memory)DeleteDC(memory);
         RestoreDC(dc,clipped);
     }
-    if(has_vertical&&has_horizontal){const RECT corner{vertical.left,horizontal.top,vertical.right,horizontal.bottom};fill(corner,surface);}
+    if(has_vertical&&has_horizontal){const RECT corner{vertical.left,horizontal.top,vertical.right,horizontal.bottom};fill(dc,corner,surface);}
     RestoreDC(dc,saved);
 }
 void refresh_scrollbars(HWND window){
@@ -644,8 +708,16 @@ void refresh_scrollbars(HWND window){
     // Once they acquire a range, retain the same nonclient paint hook too.
     SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
     sync_scrollbar_theme(window);
+    if(GetPropW(window,native_scroll_theme_property))return;
     if(const auto dc=GetWindowDC(window)){paint_scrollbars(window,dc);ReleaseDC(window,dc);}
 }
+void use_native_scrollbar_theme(HWND window,bool enabled){
+    if(!IsWindow(window)||!rich_edit(window))return;
+    if(enabled)SetPropW(window,native_scroll_theme_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)));
+    else RemovePropW(window,native_scroll_theme_property);
+    refresh_scrollbars(window);
+}
+bool native_scrollbar_theme(HWND window){return IsWindow(window)&&GetPropW(window,native_scroll_theme_property)!=nullptr;}
 void set_scrollbar_frame_hidden(HWND window,bool vertical,bool horizontal){
     if(!IsWindow(window))return;
     const ULONG_PTR hidden=(vertical?1:0)|(horizontal?2:0);

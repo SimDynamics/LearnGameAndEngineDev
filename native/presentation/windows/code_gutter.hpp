@@ -17,7 +17,8 @@ struct CodeGutterSnapshot {
 // text, selection, history or input window; existing input routing stays in place.
 // The fixed band/gap never scroll with source pixels. A viewport shows whole
 // display rows inside its zoomed formatting insets without changing scroll offsets;
-// caret navigation/input reveals its complete row when necessary.
+// caret navigation/input reveals its complete row when necessary. Paragraph
+// numbers retain their visible portion at either native viewport edge.
 class CodeGutter {
 public:
     explicit CodeGutter(HWND rich_edit);
@@ -25,6 +26,9 @@ public:
     CodeGutter(const CodeGutter&)=delete;
     CodeGutter& operator=(const CodeGutter&)=delete;
     [[nodiscard]] CodeGutterSnapshot snapshot()const;
+    // Called after an observed native/TOM edit, including UI Automation writes
+    // which bypass RichEdit's public text-message path. Never polls in paint.
+    void refresh_content();
     void set_appearance(COLORREF background,COLORREF foreground,int right_padding,int horizontal_padding=8);
 private:
     struct Impl;std::unique_ptr<Impl> impl_;

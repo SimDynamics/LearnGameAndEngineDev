@@ -8,9 +8,11 @@
 #include <imm.h>
 #include <richole.h>
 #include <tom.h>
+#include <dwmapi.h>
 #include <wrl/client.h>
 #include <algorithm>
 #include <functional>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -25,6 +27,7 @@ struct Fixture{
     Fixture(std::string text,bool multiline=true,bool assistance=true,int width=500,bool wrap=false){
         host=CreateWindowExW(0,L"STATIC",L"Native code gutter QA",WS_OVERLAPPEDWINDOW,0,0,640,360,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host!=nullptr,"Cannot create gutter QA host");
+        const BOOL disable_transitions=TRUE;DwmSetWindowAttribute(host,DWMWA_TRANSITIONS_FORCEDISABLED,&disable_transitions,sizeof(disable_transitions));
         const DWORD style=WS_CHILD|WS_VISIBLE|WS_TABSTOP|(multiline?ES_MULTILINE|WS_VSCROLL|ES_AUTOVSCROLL|ES_WANTRETURN:0)|(wrap?0:ES_AUTOHSCROLL);
         edit=CreateWindowExW(0,MSFTEDIT_CLASS,L"",style,0,0,width,220,host,nullptr,GetModuleHandleW(nullptr),nullptr);check(edit!=nullptr,"Cannot create native RichEdit");
         font=CreateFontW(-17,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FIXED_PITCH,L"Consolas");
@@ -37,24 +40,111 @@ struct Fixture{
 };
 struct Raster{
     HDC dc=nullptr;HBITMAP bitmap=nullptr;HGDIOBJ previous=nullptr;int width=0,height=0;
-    explicit Raster(HWND target){RECT rect{};GetClientRect(target,&rect);width=rect.right;height=rect.bottom;const auto screen=GetDC(target);
+    explicit Raster(HWND target,bool native_only=false){RECT rect{};GetClientRect(target,&rect);width=rect.right;height=rect.bottom;const auto screen=GetDC(target);
         dc=CreateCompatibleDC(screen);bitmap=CreateCompatibleBitmap(screen,width,height);ReleaseDC(target,screen);check(dc&&bitmap,"Cannot create gutter raster");
-        previous=SelectObject(dc,bitmap);SendMessageW(target,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);}
+        previous=SelectObject(dc,bitmap);
+        if(native_only){const auto native=reinterpret_cast<WNDPROC>(GetClassLongPtrW(target,GCLP_WNDPROC));check(native!=nullptr,"Cannot locate original RichEdit renderer");
+            CallWindowProcW(native,target,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);}
+        else SendMessageW(target,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);}
     ~Raster(){if(dc&&previous)SelectObject(dc,previous);if(bitmap)DeleteObject(bitmap);if(dc)DeleteDC(dc);}
 };
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}}
 struct ClientPixels{
     int width=0,height=0;std::vector<DWORD> values;
+    void save(const char* path)const{std::ofstream output(path,std::ios::binary);output<<"P6\n"<<width<<' '<<height<<"\n255\n";
+        for(const auto pixel:values){const char rgb[]{static_cast<char>((pixel>>16)&255),static_cast<char>((pixel>>8)&255),static_cast<char>(pixel&255)};output.write(rgb,3);}}
     explicit ClientPixels(HWND target){RECT area{};GetClientRect(target,&area);width=area.right;height=area.bottom;
         BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=width;info.bmiHeader.biHeight=-height;
         info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        // Read the two already-painted native surfaces in their own DPI
+        // coordinates. No WM_PAINT/WM_PRINTCLIENT is triggered by observing
+        // them. The continuous tracking tests separately sample the desktop.
         const auto screen=GetDC(target),memory=CreateCompatibleDC(screen);void* bits=nullptr;
         const auto bitmap=CreateDIBSection(screen,&info,DIB_RGB_COLORS,&bits,nullptr,0);check(screen&&memory&&bitmap&&bits,"Cannot capture native code pixels");
         const auto old=SelectObject(memory,bitmap);check(BitBlt(memory,0,0,width,height,screen,0,0,SRCCOPY)!=FALSE,"Cannot read native code repaint");
+        const auto band=FindWindowExW(GetParent(target),nullptr,L"LearnGameAndEngineDev.FixedCodeNumbers",nullptr);
+        if(band){RECT band_area{};GetClientRect(band,&band_area);const auto band_dc=GetDC(band);
+            check(band_dc&&BitBlt(memory,0,0,std::min<LONG>(width,band_area.right),std::min<LONG>(height,band_area.bottom),band_dc,0,0,SRCCOPY),"Cannot read the painted fixed number surface");
+            ReleaseDC(band,band_dc);}
         GdiFlush();values.assign(static_cast<DWORD*>(bits),static_cast<DWORD*>(bits)+static_cast<std::size_t>(width)*height);
         SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);ReleaseDC(target,screen);
     }
 };
+void source_origin_is_not_masked(bool readonly){
+    const std::string text="#include <iostream> // "+std::string(110,'x')+"\n\nint main() {\n    std::cout << \"Informe\\n\";\n    std::cout << \"Zona Este\\n\";\n    std::cout << \"Fin\\n\";\n    return 0;\n}\n"+source(1000);
+    Fixture field(text,true,true,450,false);presentation::set_rich_text(field.edit,text,{},true);
+    if(readonly)SendMessageW(field.edit,EM_SETREADONLY,TRUE,0);
+    set_code_gutter_appearance(field.edit,RGB(20,20,20),RGB(111,119,130),3,8);
+    ShowWindow(field.host,SW_SHOWNOACTIVATE);SetWindowPos(field.host,HWND_TOPMOST,40,40,650,380,SWP_NOACTIVATE);
+    const auto document=field.editor->document();
+    for(const int zoom:{75,100,150,200}){
+        SendMessageW(field.edit,EM_SETZOOM,zoom,100);
+        RECT format{},client{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));GetClientRect(field.edit,&client);
+        format.top=MulDiv(16,100,zoom);format.right=client.right-MulDiv(16,100,zoom);format.bottom=client.bottom-MulDiv(16,100,zoom);
+        SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+        for(const bool bottom:{false,true})for(const LONG horizontal:{0,40,105,0}){
+            SendMessageW(field.edit,WM_VSCROLL,bottom?SB_BOTTOM:SB_TOP,0);
+            POINT requested{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&requested));requested.x=horizontal;
+            SendMessageW(field.edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&requested));
+            RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();
+            POINT actual{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&actual));
+            auto line=std::max<LRESULT>(0,SendMessageW(field.edit,EM_GETFIRSTVISIBLELINE,0,0));POINTL origin{},next{};
+            const auto native_top=static_cast<LONG>(static_cast<long long>(format.top)*zoom/100);
+            for(;;++line){const auto first=SendMessageW(field.edit,EM_LINEINDEX,line,0);check(first>=0,"Missing complete source row for native clipping comparison");
+                SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&origin),first);if(origin.y>=native_top)break;}
+            const auto second=SendMessageW(field.edit,EM_LINEINDEX,line+1,0);check(second>=0,"Missing next source row for native clipping comparison");
+            SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),second);
+            const auto left=origin.x+actual.x;const auto right=std::min(client.right-1,static_cast<LONG>(MulDiv(format.right,zoom,100)));
+            Raster visible(field.edit),native(field.edit,true);std::size_t ink=0,covered=0;
+            const auto background=presentation::reader_theme::background(field.edit);
+            for(int y=std::max(0L,origin.y);y<std::min<LONG>(visible.height,next.y);++y)for(int x=std::max(0L,left);x<right;++x){
+                const auto expected=GetPixel(native.dc,x,y);if(expected!=background){++ink;if(GetPixel(visible.dc,x,y)!=expected)++covered;}}
+            if(covered||!ink)std::cerr<<"Source-origin diagnostics: readonly="<<readonly<<", zoom="<<zoom<<", dpi="<<GetDpiForWindow(field.edit)
+                <<", requested="<<horizontal<<", actual="<<actual.x<<", vertical="<<actual.y<<", native_origin="<<origin.x<<", fixed_origin="<<left<<", format="<<format.left
+                <<", gutter="<<code_gutter_snapshot(field.edit).width<<", ink="<<ink<<", covered="<<covered<<'\n';
+            check(ink>0&&covered==0,"The fixed gutter covered source glyphs that native RichEdit exposes after its real text origin");
+            const auto after=field.editor->document();check(after.text==document.text&&after.selection_start==document.selection_start&&after.selection_end==document.selection_end,
+                "Checking the fixed gutter source boundary changed text or selection");
+        }
+    }
+}
+void native_tom_edit_refreshes_numbers(){
+    Fixture field(source(36));
+    Microsoft::WRL::ComPtr<IRichEditOle> rich;
+    check(SendMessageW(field.edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()))!=0,"Missing native TOM editor");
+    Microsoft::WRL::ComPtr<ITextDocument> document;check(SUCCEEDED(rich.As(&document)),"Missing native TOM document");
+    const std::wstring replacement=L"#include <iostream>\n\nint main() {\n    // Construye el informe con tres instrucciones de salida.\n    std::cout << \"Informe\\n\";\n    std::cout << \"Zona Este\\n\";\n    std::cout << \"Fin\\n\";\n    return 0;\n}\n";
+    const auto text=SysAllocStringLen(replacement.data(),static_cast<UINT>(replacement.size()));check(text!=nullptr,"Cannot allocate TOM source fixture");
+    Microsoft::WRL::ComPtr<ITextRange> range;check(SUCCEEDED(document->Range(0,tomForward,&range)),"Cannot address TOM source story");
+    const auto replaced=range->SetText(text);SysFreeString(text);check(SUCCEEDED(replaced),"The native TOM source replacement failed");
+    // UI Automation's Value pattern can write through TOM without sending
+    // WM_SETTEXT/EM_REPLACESEL to the editor. The owner's EN_CHANGE capture is
+    // the authoritative completed edit; observing it must refresh its gutter.
+    field.editor->capture_change();
+    const auto gutter=code_gutter_snapshot(field.edit);
+    if(gutter.logical_lines!=10)std::cerr<<"TOM gutter diagnostics: logical="<<gutter.logical_lines<<", native="<<SendMessageW(field.edit,EM_GETLINECOUNT,0,0)<<'\n';
+    check(gutter.logical_lines==10,"A TOM/UIA edit retained the previous source's logical line numbers");
+    const auto length=GetWindowTextLengthW(field.edit);LONG previous=-1;
+    for(const auto& line:gutter.visible){
+        check(line.number<=10&&line.character<=length&&line.character>previous,"Stale paragraph offsets clamped several line numbers onto the final row");
+        check(line.character==SendMessageW(field.edit,EM_LINEINDEX,line.number-1,0),"The captured TOM source has mismatched native paragraph identities");
+        previous=line.character;
+    }
+    const auto captured=field.editor->document();check(captured.text==presentation::utf8(replacement),"Refreshing native line numbers changed the externally supplied source");
+    field.editor->undo();check(field.editor->document().text==source(36)&&code_gutter_snapshot(field.edit).logical_lines==36,
+        "Refreshing externally edited line numbers damaged Undo or its historical paragraph count");
+    field.editor->redo();check(field.editor->document().text==presentation::utf8(replacement)&&code_gutter_snapshot(field.edit).logical_lines==10,
+        "Redo did not restore the external source and its actual line numbers");
+}
+void erase_does_not_expose_uncomposed_gutter(){
+    Fixture field(source(20));presentation::set_rich_text(field.edit,source(20),{},true);
+    set_code_gutter_appearance(field.edit,RGB(20,20,20),RGB(111,119,130),3,8);
+    Raster pixels(field.edit);const auto gutter=code_gutter_snapshot(field.edit);std::vector<COLORREF> before;
+    for(int y=0;y<pixels.height;++y)for(int x=0;x<gutter.width;++x)before.push_back(GetPixel(pixels.dc,x,y));
+    check(SendMessageW(field.edit,WM_ERASEBKGND,reinterpret_cast<WPARAM>(pixels.dc),0)!=0,"The composed code client did not own its background erase");
+    std::size_t at=0;for(int y=0;y<pixels.height;++y)for(int x=0;x<gutter.width;++x)
+        check(GetPixel(pixels.dc,x,y)==before[at++],"A separate native background erase exposed an empty margin before the composed numbers");
+}
 void code_scroll_repaint(bool readonly){
     std::string text;for(int line=1;line<=24;++line){if(line>1)text+='\n';text+="int line_"+std::to_string(line)+" = "+std::to_string(line)+"; // "+std::string(140,'x');}
     Fixture field(text,true,true,500,false);
@@ -80,6 +170,7 @@ void code_scroll_repaint(bool readonly){
         std::size_t different=0;for(std::size_t at=0;at<incremental.values.size();++at)
             if((incremental.values[at]&0xffffff)!=(complete.values[at]&0xffffff))++different;
         if(different)std::cerr<<"Repaint diagnostics: readonly="<<readonly<<", zoom="<<zoom<<", x="<<x<<", y="<<actual.y<<", different="<<different<<'\n';
+        if(different&&!readonly){incremental.save("gutter-scroll-before.ppm");complete.save("gutter-scroll-after.ppm");}
         check(different==0,"Horizontal code scroll retained stale gutter or text pixels before a full repaint");
         RECT fixed{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&fixed));
         const auto band=code_gutter_snapshot(field.edit).width;
@@ -137,6 +228,51 @@ void code_vertical_edges(bool readonly){
     }
 }
 COLORREF pixel_color(DWORD pixel){return RGB((pixel>>16)&255,(pixel>>8)&255,pixel&255);}
+void partial_number_edges(bool readonly){
+    const auto text=source(36);Fixture field(text,true,true,500,false);presentation::set_rich_text(field.edit,text,{},true);
+    if(readonly)SendMessageW(field.edit,EM_SETREADONLY,TRUE,0);
+    set_code_gutter_appearance(field.edit,RGB(20,20,20),RGB(111,119,130),3,3);
+    ShowWindow(field.host,SW_SHOWNOACTIVATE);SetWindowPos(field.host,HWND_TOPMOST,40,40,650,580,SWP_NOACTIVATE);
+    const auto before=field.editor->document();
+    for(const int zoom:{75,100,150,200}){
+        SendMessageW(field.edit,EM_SETZOOM,zoom,100);
+        const auto native_inset=MulDiv(16,100,zoom);
+        const auto display_inset=static_cast<LONG>(static_cast<long long>(native_inset)*zoom/100);
+        const auto configure=[&]{RECT area{},format{};GetClientRect(field.edit,&area);SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+            format.top=native_inset;format.right=area.right-native_inset;format.bottom=area.bottom-native_inset;
+            SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,WM_VSCROLL,SB_TOP,0);};
+        const auto position=[&](LONG line){const auto character=SendMessageW(field.edit,EM_LINEINDEX,line,0);check(character>=0,"Missing native paragraph for a partial-number edge");
+            POINTL point{};SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),character);return point;};
+        MoveWindow(field.edit,0,0,500,420,TRUE);configure();RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();
+        const auto second=position(1),third=position(2),seventh=position(6),eighth=position(7);
+        const auto top_height=third.y-second.y,bottom_height=eighth.y-seventh.y;
+        check(top_height>4&&bottom_height>4,"Partial-number fixture has no measurable native rows");
+        Raster full(field.edit);const auto gutter=code_gutter_snapshot(field.edit);
+        const auto background=presentation::reader_theme::palette().high_contrast?presentation::reader_theme::background(field.edit):RGB(20,20,20);
+        const auto compare=[&](LONG line,POINTL original,LONG height,bool top){
+            const auto current=position(line);RECT area{};GetClientRect(field.edit,&area);
+            const auto viewport_top=display_inset,viewport_bottom=area.bottom-display_inset;
+            check(top?(current.y<viewport_top&&current.y+height>viewport_top):(current.y<viewport_bottom&&current.y+height>viewport_bottom),
+                "The partial-number fixture did not intersect its requested native viewport edge");
+            Raster partial(field.edit);std::size_t ink=0,different=0;
+            for(int y=std::max(current.y,viewport_top);y<std::min(current.y+height,viewport_bottom);++y)for(int x=0;x<gutter.width;++x){
+                // Use the same label rendered fully before scrolling/resizing
+                // as the pixel reference, rather than reproducing its font.
+                const auto expected=GetPixel(full.dc,x,y-current.y+original.y);if(expected!=background)++ink;
+                if(GetPixel(partial.dc,x,y)!=expected)++different;
+            }
+            if(!ink||different)std::cerr<<"Partial-number diagnostics: readonly="<<readonly<<", zoom="<<zoom<<", top="<<top<<", row="<<line+1
+                <<", y="<<current.y<<", viewport="<<viewport_top<<','<<viewport_bottom<<", ink="<<ink<<", different="<<different<<'\n';
+            check(ink>0&&different==0,"A visible portion of a native line number disappeared at the viewport edge");
+        };
+        POINT requested{0,second.y-display_inset+top_height/2};SendMessageW(field.edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&requested));
+        RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();compare(1,second,top_height,true);
+        MoveWindow(field.edit,0,0,500,seventh.y+bottom_height/2+display_inset,TRUE);configure();
+        RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();compare(6,seventh,bottom_height,false);
+        const auto after=field.editor->document();check(after.text==before.text&&after.selection_start==before.selection_start&&after.selection_end==before.selection_end,
+            "Showing partially visible line numbers changed source or selection");
+    }
+}
 void code_whole_rows(bool readonly,bool wrap=false){
     const auto text=source(24);Fixture field(text,true,true,wrap?180:500,wrap);presentation::set_rich_text(field.edit,text,{},true);
     if(readonly)SendMessageW(field.edit,EM_SETREADONLY,TRUE,0);
@@ -149,8 +285,10 @@ void code_whole_rows(bool readonly,bool wrap=false){
         RECT format=area;format.left=native_format.left;format.top=MulDiv(11,100,zoom);
         format.right-=MulDiv(16,100,zoom);format.bottom-=MulDiv(27,100,zoom);SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
         SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
-        const auto viewport_top=std::clamp<LONG>(MulDiv(format.top,zoom,100),0,area.bottom);
-        const auto viewport_bottom=std::clamp(area.bottom-MulDiv(area.bottom-format.bottom,zoom,100),viewport_top,area.bottom);
+        POINT viewport_scroll{};POINTL viewport_origin{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&viewport_scroll));
+        SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&viewport_origin),0);
+        const auto viewport_top=std::clamp<LONG>(viewport_origin.y+viewport_scroll.y,0,area.bottom);
+        const auto viewport_bottom=std::clamp(area.bottom-static_cast<LONG>(static_cast<long long>(area.bottom-format.bottom)*zoom/100),viewport_top,area.bottom);
         SCROLLINFO range{sizeof(range),SIF_ALL};GetScrollInfo(field.edit,SB_VERT,&range);
         const auto maximum=std::max(range.nMin,range.nMax-static_cast<int>(range.nPage)+1);
         for(const int position:{std::max(1,maximum/3),std::max(1,maximum/2),std::max(1,maximum-1)}){
@@ -170,7 +308,11 @@ void code_whole_rows(bool readonly,bool wrap=false){
                 const bool partial=top.y<viewport_top||top.y+height>viewport_bottom;if(partial){++partial_rows;reveal=static_cast<LONG>(character);}
                 for(int y=std::max(0L,top.y);y<std::min<LONG>(pixels.height,top.y+height);++y)for(int column=0;column<pixels.width;++column){
                     const auto color=pixel_color(pixels.values[static_cast<std::size_t>(y)*pixels.width+column]);
-                    if(partial)check(color==(column<gutter.width?band:background),"A partial source row or line number remained clipped at its padded formatting edge");
+                    if(partial&&column>=gutter.width){if(color!=background){if(!readonly&&!wrap)pixels.save("gutter-partial.ppm");
+                        std::cerr<<"Partial source: readonly="<<readonly<<", wrap="<<wrap<<", zoom="<<zoom<<", line="<<line<<", row="<<top.y<<','<<top.y+height
+                            <<", viewport="<<viewport_top<<','<<viewport_bottom<<", format="<<format.top<<','<<format.bottom<<", scroll="<<before.y
+                            <<", pixel="<<column<<','<<y<<", color="<<color<<", expected="<<background<<'\n';}
+                        check(color==background,"A partial source row remained clipped at its padded formatting edge");}
                     else if(column>=format.left&&color!=background)full_ink=true;
                 }
                 const auto numbered=std::ranges::find(gutter.visible,character,&CodeGutterLine::character);
@@ -178,8 +320,6 @@ void code_whole_rows(bool readonly,bool wrap=false){
                     std::size_t number_ink=0;
                     for(int y=top.y+height/4;y<top.y+height*3/4;++y)for(int column=0;column<gutter.width;++column)
                         if(pixel_color(pixels.values[static_cast<std::size_t>(y)*pixels.width+column])!=band)++number_ink;
-                    if(!number_ink)std::cerr<<"Number diagnostics: readonly="<<readonly<<", wrap="<<wrap<<", zoom="<<zoom<<", number="<<numbered->number
-                        <<", native_row="<<top.y<<','<<top.y+height<<", viewport="<<viewport_top<<','<<viewport_bottom<<'\n';
                     check(number_ink>0,"A complete native source row lost its line number near the padded edge");
                 }
             }
@@ -305,10 +445,16 @@ int main(int argc,char** argv){const bool scroll_only=argc==2&&std::string_view(
     presentation::reader_theme::prepare_fonts();
     INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);int passed=0,failed=0;
     const auto test=[&](const char* name,const std::function<void()>& action){try{action();++passed;std::cout<<"PASS "<<name<<'\n';}catch(const std::exception& error){++failed;std::cerr<<"FAIL "<<name<<": "<<error.what()<<'\n';}};
+    test("TOM/UIA source replacement refreshes logical numbers without touching Undo",native_tom_edit_refreshes_numbers);
+    test("The fixed gutter is never separately erased before its composed frame",erase_does_not_expose_uncomposed_gutter);
+    test("Editable gutter never covers native source after the real text origin",[]{source_origin_is_not_masked(false);});
+    test("Readonly gutter never covers native source after the real text origin",[]{source_origin_is_not_masked(true);});
     test("Editable code scrolling matches a complete native repaint",[]{code_scroll_repaint(false);});
     test("Readonly code scrolling matches a complete native repaint",[]{code_scroll_repaint(true);});
     test("Editable code preserves complete first and final lines at 75-200 percent",[]{code_vertical_edges(false);});
     test("Readonly code preserves complete first and final lines at 75-200 percent",[]{code_vertical_edges(true);});
+    test("Editable line numbers retain their visible pixels at both partial viewport edges",[]{partial_number_edges(false);});
+    test("Readonly line numbers retain their visible pixels at both partial viewport edges",[]{partial_number_edges(true);});
     test("Editable code shows whole intermediate rows and reveals its caret without changing Undo",[]{code_whole_rows(false);});
     test("Readonly code shows whole intermediate rows and reveals selection",[]{code_whole_rows(true);});
     test("Wrapped editable code masks only partial visual rows and preserves complete paragraphs",[]{code_whole_rows(false,true);});

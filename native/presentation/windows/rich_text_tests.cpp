@@ -1,5 +1,6 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/programming_technical_ranges.hpp"
 #include "core/lesson_state.hpp"
 #include "platform/windows/state_store.hpp"
 
@@ -11,8 +12,10 @@
 #include <algorithm>
 #include <array>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -54,12 +57,118 @@ CHARFORMAT2W character(HWND edit, LONG position) {
     SendMessageW(edit, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&before));
     return result;
 }
+void technical_range_contract(){
+    using namespace lgaed::presentation::technical_prose;
+    const auto covered=[](const Analysis& result,std::size_t begin,std::size_t end){for(auto at=begin;at<end;++at)
+        if(!std::ranges::any_of(result.fragments,[&](Range range){return range.first<=at&&range.second>at;}))return false;return true;};
+    for(const auto locale:{"es","en","fr"}){
+        const std::wstring source=L"Before: #include <iostream>\nint count = 2; std::cout << \"ready\"; return 0; After.";const auto result=analyze(source,locale);
+        for(const auto fragment:{L"#include <iostream>",L"int count = 2;",L"std::cout << \"ready\";",L"return 0;"}){
+            const auto begin=source.find(fragment);check(covered(result,begin,begin+std::wstring_view(fragment).size()),"An Android technical statement lost its exact semantic range");}
+        check(!covered(result,0,6)&&!covered(result,source.find(L"After"),source.size()),"A semantic statement swallowed neighboring prose");
+        for(const auto text:{L"const int&& value = other;",L"int render() { return 0; }",L"left && right",L"total += entrada;",L"valor = calcular(2);",L"if (listo) { avanzar(); }",L"valor = objeto.calcular(2);",L"std::vector<int> values{1, 2};"})
+            check(covered(analyze(text,locale),0,std::wstring_view(text).size()),"A complete Android declaration/expression/control lost part of its underlay");
+        const std::wstring protected_text=LR"(Read https://example.org/std::cout?a=2 and \(x < y\), then \[a+b\].)";const auto protected_result=analyze(protected_text,locale);
+        for(const auto part:{LR"(https://example.org/std::cout?a=2)",LR"(\(x < y\))",LR"(\[a+b\])"}){
+            const auto begin=protected_text.find(part),end=begin+std::wstring_view(part).size();
+            check(!overlaps({begin,end},protected_result.fragments),"A URL or explicit mathematical formula acquired a programming backdrop");}
+        const std::wstring name=L"std:: indica el espacio de nombres.";const auto names=analyze(name,locale);
+        check(covered(names,0,5)&&!overlaps({6,name.size()},names.fragments),"A namespace mention consumed its following explanatory verb");
+    }
+    for(const auto source:{L"El operador es << y conserva la secuencia.",L"The operator is << and keeps its place.",L"L'opérateur est << et garde sa place."}){
+        const auto text=std::wstring_view(source);const auto begin=text.find(L"<<");const auto result=analyze(text,text.starts_with(L"The")?"en":text.starts_with(L"L'")?"fr":"es");
+        check(covered(result,begin,begin+2)&&!covered(result,begin-2,begin)&&!covered(result,begin+3,begin+4),"An operator underlay absorbed its adjacent prose copula/conjunction");}
+    for(const auto source:{L"La main droite reste ouverte; puis elle se ferme.",L"La fonction sort du domaine; la main est calme.",L"Une double valeur existe dans cette phrase; elle reste visible.",L"Un exemple (ici); puis une explication."})
+        check(analyze(source,"fr").fragments.empty(),"An ordinary French homonym or punctuation became C++ presentation");
+    for(const auto source:{L"The main point is to return home; read the next section.",L"A long explanation; another ordinary clause.",L"First ; next. This isn't code!",L"See (details); then continue.",L"Calculate the comparisons; do not simply print constant ones.",L"A clog blocks the pipe; clean it."})
+        check(analyze(source,"en").fragments.empty(),"An ordinary English homonym or clause punctuation became C++ presentation");
+    for(const auto op:{L"+=",L"-=",L"*=",L"/=",L"%=",L"&=",L"|=",L"^=",L"<<=",L">>=",L"<=",L">=",L"##"}){
+        check(analyze(op,"en").fragments.empty(),"An English graphical operator spelling became semantic code without its original context");
+        const auto named=L"operator "+std::wstring(op);check(covered(analyze(named,"en"),9,named.size()),"An explicitly named English operator lost its exact backdrop");}
+    check(analyze(L"!ready","en").fragments.empty()&&covered(analyze(L"!ready","fr"),0,1)&&covered(analyze(L"!ready","es"),0,1),
+        "The original-language frontends' different logical-negation ownership was flattened");
+    check(covered(analyze(L"--","fr"),0,2)&&covered(analyze(L"--","en"),0,2)&&analyze(L"::","es").fragments.empty(),
+        "A graphical French/English dash or ordinary Spanish colon pair acquired the wrong semantic role");
+    check(covered(analyze(L"operador ::","es"),9,11)&&covered(analyze(L"custom_name","es"),0,11)&&covered(analyze(LR"("a\n")","es"),0,5),
+        "A named sign, observed identifier or complete escaped literal lost its exact source atom");
+    check(!overlaps({10,11},analyze(L"carácter q)").fragments),"An explanatory closing parenthesis acquired a technical backdrop");
+    check(analyze(LR"(u8R"delimiter_demasiado_largo(include "return")").fragments==std::vector<Range>{{4,29}},
+        "An invalid prefixed raw-string spelling bypassed the canonical codeEnd word boundary");
+    check(covered(analyze(L"ÉCRIS ; pour terminer.","fr"),6,7)&&analyze(L"ÉCRIS ; pour terminer.","es").fragments.empty()&&
+        analyze(L"ÉCRIS ; pour terminer.","en").fragments.empty()&&explicit_semicolon(L"AÑADE ; para terminar.",6),
+        "Original-language Unicode cues were flattened instead of matching their canonical frontend");
+    for(const auto locale:{"fr-FR","fr-CA","FR-fr","fr_CA"})check(analyze(L"ÉCRIS ; pour terminer.",locale).fragments==std::vector<Range>{{6,7}},
+        "An explicit French BCP-47 locale did not retain the canonical Android French range");
+    for(const auto locale:{"en-US","en-GB","en-AU","EN-us","en_GB"}){
+        check(analyze(L"place ;",locale).fragments==std::vector<Range>{{6,7}}&&analyze(L"The main point is to return home; read the next section.",locale).fragments.empty(),
+            "An explicit English BCP-47 locale fell back to Spanish technical contexts");}
+    {
+        const std::wstring source=L"😀 Avant `std::cout` puis ```cpp\nint count{3};\n``` fin.";const auto spans=inline_code_spans(source);
+        check(spans.wrappers.size()==4&&spans.fragments.size()==2&&source.substr(spans.fragments[1].first,spans.fragments[1].second-spans.fragments[1].first)==L"cpp\nint count{3};\n",
+            "Android fenced-code projection changed the visible language tag, newline or original UTF-16 owners");
+        check(inline_code_spans(L"Des ticks `   ` et ```\n \n``` restent visibles.").wrappers.empty()&&inline_code_spans(L"`sans fermeture").wrappers.empty(),
+            "Blank or unfinished code delimiters were hidden even though Android keeps them visible");
+        check(inline_code_spans(LR"(La formule `\(x+1\)` reste mathématique.)").wrappers.empty(),
+            "A technical delimiter crossing mathematics changed the formula's original presentation");
+    }
+    for(const auto source:{L"La instrucción no tiene su ;.",L"¿Conviene quitar sólo el ;, o cambiar el texto?",L"Escribe ; para terminar.",L"La operación exige ;.",L"La asignación se rechaza por faltar ;.",L"Cada operación termina en ;.",L"Se acepta una operación terminada en ;.",L"Descarta hasta el primer ;.",L"El búfer contiene ; después del operando.",L"El lector entrega 6 y ;.",L"8 y ; se reconocen.",L"Cada signo +, -, *, /, (, ) o ; es otro token.",L"Prueba también [ 1 ; 3 ].",L"La operación devuelve ; al nivel superior.",L"El token siguiente puede ser ;.",L"La recuperación llega al primer ;.",L"El análisis comprueba ;.",L"El resultado se acepta después de ;.",L"La validación de ; precede al resultado.",L"Los signos ; y = internos pertenecen a la expresión.",L"El operador ; termina la instrucción.",L"El literal y ; termina la instrucción.",L"Si ; ya salió del origen, conserva esa unidad.",L"La regla operación→sentencia ; termina aquí.",L"Signo: ; y Fin.",L"Si encuentra +, -, ; o final, conserva el token.",L"La gramática inicial de sólo sumas y final ; conserva sus reglas.",L"Esta etapa acepta números, +, -, final ; y separadores."}){
+        const auto text=std::wstring_view(source);const auto at=text.find(L';');check(explicit_semicolon(text,at)&&covered(analyze(text),at,at+1),"An established Android metalinguistic semicolon lost its source underlay");}
+    for(const auto source:{L"La instrucción termina; después sigue.",L"Cambiar el texto; luego probar.",L"El texto ;continuará.",L"Primero ; después sigue.",L"First ; next. This isn't code!",L"Je lis ; puis je continue.",L"Il ajoute ; ensuite, il vérifie.",L"N'ajoute pas ; à chaque ligne ; conserve la prose.",L"6000 + 300 + 8 = 6308 ; no hay decenas.",L"El resultado final ; después sigue."}){
+        const auto text=std::wstring_view(source);const auto at=text.find_last_of(L';');check(!explicit_semicolon(text,at),"Ordinary clause punctuation acquired a technical-sign role");}
 }
-int main() {
+void technical_range_stress(){
+    using namespace lgaed::presentation::technical_prose;
+    const std::wstring token(20000,L'a');
+    const std::array<std::wstring,10> sources{{token,L"Lee https://example.org/"+token+L"?std::cout después.",
+        L"$"+token+L" ` sin cierre",L"`"+token+L"`",L"#include <"+token+L">",L"std::"+token+L" después.",
+        L"El literal \""+token+L"\\\" queda sin cierre.",L"return "+std::wstring(20000,L'9')+L";",L"return"+std::wstring(20000,L' ')+L"0;",L"El literal \""+token+L"\\n\"."}};
+    for(std::size_t index=0;index<sources.size();++index){
+        std::cout<<"Technical-range stress case "<<index<<" ("<<sources[index].size()<<" UTF-16 units)\n"<<std::flush;
+        for(const auto locale:{"es","en","fr"}){const auto before=sources[index];const auto result=analyze(sources[index],locale);
+            check(sources[index]==before,"Technical-range stress changed its original source");
+            for(const auto& [first,last]:result.fragments)check(first<last&&last<=sources[index].size(),"Technical-range stress produced an invalid UTF-16 range");}
+    }
+    const auto header=L"#include <"+token+L">";const auto included=analyze(header);check(included.fragments.size()==1&&included.fragments[0]==Range{0,header.size()},
+        "The bounded regex projection truncated a long header instead of preserving its original offsets");
+    std::cout<<"Long technical tokens, incomplete delimiters and protected URLs: PASS\n";
+}
+std::string fixture_text(std::string_view value){std::string result;for(std::size_t at=0;at<value.size();++at){auto next=value[at];if(next=='\\'){
+        check(++at<value.size(),"Incomplete range-fixture escape");next=value[at];switch(next){case 'n':next='\n';break;case 'r':next='\r';break;case 't':next='\t';break;case '\\':break;default:throw std::runtime_error("Invalid range-fixture escape");}}
+    result+=next;}return result;}
+std::vector<lgaed::presentation::technical_prose::Range> fixture_ranges(std::string_view value){
+    if(value=="-")return {};
+    std::vector<lgaed::presentation::technical_prose::Range> result;for(std::size_t begin=0;begin<value.size();){const auto colon=value.find(':',begin),comma=value.find(',',begin);
+        check(colon!=value.npos&&(comma==value.npos||colon<comma),"Invalid range fixture");
+        result.emplace_back(std::stoull(std::string(value.substr(begin,colon-begin))),std::stoull(std::string(value.substr(colon+1,comma==value.npos?value.size()-colon-1:comma-colon-1))));
+        if(comma==value.npos)break;begin=comma+1;}return result;}
+std::string fixture_ranges_text(std::span<const lgaed::presentation::technical_prose::Range> ranges){std::string result;for(const auto& [first,last]:ranges){if(!result.empty())result+=',';result+=std::to_string(first)+':'+std::to_string(last);}return result.empty()?"-":result;}
+int technical_range_parity(const char* path,const char* diagnostics){
+    using namespace lgaed::presentation;std::ifstream input(path,std::ios::binary);check(static_cast<bool>(input),"Cannot open canonical Android range fixture");
+    std::ofstream output;if(diagnostics){output.open(diagnostics,std::ios::binary|std::ios::trunc);check(static_cast<bool>(output),"Cannot open range-parity diagnostics");}
+    std::size_t checked=0,failed=0;std::string line;
+    while(std::getline(input,line)){if(line.empty()||line.front()=='#')continue;if(line.back()=='\r')line.pop_back();std::array<std::string_view,4> cells;std::size_t begin=0;
+        for(int cell=0;cell<3;++cell){const auto end=line.find('\t',begin);check(end!=line.npos,"Incomplete Android range fixture");cells[cell]=std::string_view(line).substr(begin,end-begin);begin=end+1;}cells[3]=std::string_view(line).substr(begin);
+        const auto source=wide(fixture_text(cells[1]));const auto expected=fixture_ranges(cells[2]),expected_wrappers=fixture_ranges(cells[3]);
+        const auto actual=technical_prose::analyze(source,cells[0]);const auto wrappers=technical_prose::inline_code_spans(source).wrappers;++checked;
+        if(expected!=actual.fragments||expected_wrappers!=wrappers){++failed;
+            const auto detail=line+"\t"+fixture_ranges_text(actual.fragments)+"\t"+fixture_ranges_text(wrappers)+'\n';if(output)output<<detail;
+            if(failed<=12)std::cerr<<"Android parity mismatch "<<checked<<": "<<detail;
+        }
+    }
+    std::cout<<"Canonical Android range parity: "<<checked<<" cases, "<<failed<<" mismatches\n";return failed?1:0;
+}
+}
+int main(int argc,char** argv) {
+    if(argc>1){try{
+        if(argc==2&&std::string_view(argv[1])=="--technical-stress"){technical_range_stress();return 0;}
+        if((argc==3||argc==4)&&std::string_view(argv[1])=="--android-parity")return technical_range_parity(argv[2],argc==4?argv[3]:nullptr);
+        return 2;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
     const auto module = LoadLibraryW(L"Msftedit.dll");
     if (!module) return 2;
     try {
         using namespace lgaed::presentation;
+        technical_range_contract();
+        std::cout<<"Android technical ranges: contextual names, syntax, symbols, protected math/URLs and prose neighbors: PASS\n";
         Window parent{CreateWindowExW(0, L"STATIC", L"RichEdit QA", WS_OVERLAPPEDWINDOW,
             0, 0, 640, 480, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr)};
         check(parent.value != nullptr, "Cannot create QA parent");
@@ -272,6 +381,15 @@ int main() {
             check(emphasized.yHeight==270&&(emphasized.dwEffects&CFE_BOLD)&&(emphasized.dwEffects&CFE_ITALIC)
                 && technical.yHeight==270&&std::wstring(technical.szFaceName)==reader_theme::code_font_face(),
                 "Readable body typography flattened emphasis or changed the inline code face/size");
+            set_rich_text(editor.value,"return 0;");
+            std::array<CHARFORMAT2W,9> return_with_space;
+            for(LONG at=0;at<9;++at){return_with_space[at]=character(editor.value,at);
+                check(std::wstring_view(return_with_space[at].szFaceName)==reader_theme::code_font_face(),
+                    "A prose return statement lost its existing code font");}
+            set_rich_text(editor.value,"return\t0;");
+            for(LONG at=0;at<9;++at)check(std::wstring_view(character(editor.value,at).szFaceName)==return_with_space[at].szFaceName,
+                "A tab-separated prose return statement changed its existing code font");
+            check(edit_text(editor.value)=="return\t0;","Styling a tab-separated return statement changed its source");
             set_rich_text(editor.value,"Una pregunta",{},false,RichTextRole::heading);
             check(character(editor.value,0).yHeight==345&&(character(editor.value,0).dwEffects&CFE_BOLD),
                 "Headings and questions lost the 23sp bold hierarchy");
@@ -295,6 +413,88 @@ int main() {
             CHARRANGE after_hit{};SendMessageW(editor.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after_hit));
             check(after_hit.cpMin==preserved.cpMin&&after_hit.cpMax==preserved.cpMax,"Pure text hit testing changed the source selection");
             SendMessageW(editor.value,EM_SETZOOM,0,0);
+        }
+        {
+            reader_theme::apply(editor.value,reader_theme::Surface::canvas);
+            for(const auto role:{RichTextRole::body,RichTextRole::prompt,RichTextRole::heading,RichTextRole::lesson_title}){
+                set_rich_text(editor.value,"std::cout",{},false,role,"es");const auto style=character(editor.value,0);
+                if(reader_theme::palette().high_contrast)check(style.dwEffects&CFE_AUTOBACKCOLOR,"A semantic role replaced the system high-contrast background");
+                else{
+                    const auto surface=reader_theme::background(editor.value);const auto ink=role==RichTextRole::body?RGB(205,208,215):RGB(255,255,255);
+                    // Android's view.currentTextColor is the tint reference:
+                    // 8/255 foreground over 247/255 surface, integer floor.
+                    const auto expected=RGB((GetRValue(ink)*8+GetRValue(surface)*247)/255,(GetGValue(ink)*8+GetGValue(surface)*247)/255,(GetBValue(ink)*8+GetBValue(surface)*247)/255);
+                    check(!(style.dwEffects&CFE_AUTOBACKCOLOR)&&style.crBackColor==expected,"A semantic role did not retain Android's exact current-text-color background tint");
+                }
+            }
+            if(!reader_theme::palette().high_contrast){
+                reader_theme::set_text_color(editor.value,RGB(235,239,245));set_rich_text(editor.value,"std::cout");
+                const auto surface=reader_theme::background(editor.value);const auto expected=RGB((235*8+GetRValue(surface)*247)/255,(239*8+GetGValue(surface)*247)/255,(245*8+GetBValue(surface)*247)/255);
+                check(character(editor.value,0).crBackColor==expected&&reader_theme::foreground(editor.value)==RGB(235,239,245),
+                    "The legacy paragraph tint replaced an explicit mathematics-widget foreground reference");
+                reader_theme::set_text_color(editor.value,std::nullopt);
+            }
+            const std::string source="𐐀 Lee std::cout y continúa con C++. El operador es << y conserva. No añadas ; a cualquier línea; luego lee.";
+            const std::array<lgaed::curriculum::Emphasis,2> emphasis{{{"std::cout",0,"bold_italic"},{"C++",0,"italic"}}};
+            set_rich_text(editor.value,source,emphasis,false,RichTextRole::body,"es");
+            const auto visible=wide(source);check(edit_text(editor.value)==source,"The semantic backdrop changed source bytes or Unicode narration offsets");
+            std::vector<technical_prose::Range> expected;
+            for(const auto token:{L"std::cout",L"<<"}){const auto at=visible.find(token);expected.emplace_back(at,at+std::wstring_view(token).size());}
+            expected.emplace_back(visible.find(L';'),visible.find(L';')+1);
+            for(std::size_t at=0;at<visible.size();++at){
+                const bool decorated=technical_prose::overlaps({at,at+1},expected)&&!reader_theme::palette().high_contrast;
+                const auto style=character(editor.value,static_cast<LONG>(at));
+                check(((style.dwEffects&CFE_AUTOBACKCOLOR)==0)==decorated,"The Android backdrop missed a technical glyph or spilled into adjacent prose/C++");
+                check(!(style.dwEffects&CFE_UNDERLINE),"The Android background was replaced with a typographic underline");
+            }
+            const auto technical=character(editor.value,static_cast<LONG>(visible.find(L"std::cout"))),language=character(editor.value,static_cast<LONG>(visible.find(L"C++")));
+            check((technical.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&technical.yHeight==270&&std::wstring_view(technical.szFaceName)==reader_theme::code_font_face(),
+                "Adding a semantic background changed an existing inline face, size or authored emphasis");
+            check((language.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&(language.dwEffects&CFE_AUTOBACKCOLOR)&&std::wstring_view(language.szFaceName)==L"Roboto",
+                "The C++ exception lost its existing bold/italic prose treatment");
+            for(const int zoom:{75,100,150,200}){
+                set_rich_text(editor.value,source,emphasis);SendMessageW(editor.value,EM_SETZOOM,zoom,100);
+                std::vector<POINTL> positions;for(std::size_t at=0;at<visible.size();++at){POINTL point{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),at);positions.push_back(point);}
+                const auto lines=SendMessageW(editor.value,EM_GETLINECOUNT,0,0);
+                // Removing just native background ink supplies an independent
+                // geometry reference; the semantic decoration must be metric-free.
+                CHARRANGE all{0,-1};SendMessageW(editor.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
+                CHARFORMAT2W plain{};plain.cbSize=sizeof(plain);plain.dwMask=CFM_BACKCOLOR;plain.dwEffects=CFE_AUTOBACKCOLOR;
+                SendMessageW(editor.value,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&plain));
+                for(std::size_t at=0;at<visible.size();++at){POINTL point{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),at);
+                    check(point.x==positions[at].x&&point.y==positions[at].y,"A semantic backdrop changed native text measurements at a supported zoom");}
+                check(lines==SendMessageW(editor.value,EM_GETLINECOUNT,0,0),"A background-only span changed native wrapping");
+            }
+            SendMessageW(editor.value,EM_SETZOOM,0,0);
+            set_rich_text(editor.value,"Prosa normal sin decoración.");
+            check(character(editor.value,0).dwEffects&CFE_AUTOBACKCOLOR,"Reusing a rich-text control retained an obsolete semantic backdrop");
+            for(const auto locale:{"en","fr"}){
+                const std::string prose=locale==std::string_view("en")?"The main point is to return home; read the next section.":"La main droite reste ouverte; puis elle se ferme.";
+                set_rich_text(editor.value,prose,{},false,RichTextRole::body,locale);
+                for(std::size_t at=0;at<wide(prose).size();++at)check(character(editor.value,static_cast<LONG>(at)).dwEffects&CFE_AUTOBACKCOLOR,
+                    "An explicit English/French locale treated an ordinary homonym as technical prose");
+            }
+            const std::string protected_text=R"(Consulta https://example.org/std::cout?a=2 y \(std::cout + 2\), después `std::cout`.)";
+            set_rich_text(editor.value,protected_text);const auto protected_visible=wide(edit_text(editor.value));
+            for(const auto part:{LR"(https://example.org/std::cout?a=2)",LR"(\(std::cout + 2\))"}){const auto begin=protected_visible.find(part);
+                for(auto at=begin;at<begin+std::wstring_view(part).size();++at)check(character(editor.value,static_cast<LONG>(at)).dwEffects&CFE_AUTOBACKCOLOR,
+                    "Protected mathematics or a URL acquired a technical backdrop");}
+            set_rich_text(editor.value,R"(std::cout << "C++";)" ,{},true);
+            for(std::size_t at=0;at<wide(edit_text(editor.value)).size();++at)check(character(editor.value,static_cast<LONG>(at)).dwEffects&CFE_AUTOBACKCOLOR,
+                "A source-code editor acquired the prose-only semantic background");
+            const std::string fenced="😀 Avant ```cpp\r\nstd::cout << \"C++\";\r\n``` après et `return 0;`.";
+            const std::string projected="😀 Avant cpp\nstd::cout << \"C++\";\n après et return 0;.";
+            const std::array<lgaed::curriculum::Emphasis,1> fence_emphasis{{{"std::cout",0,"bold_italic"}}};
+            set_rich_text(editor.value,fenced,fence_emphasis,false,RichTextRole::body,"fr");
+            check(edit_text(editor.value)==projected,"Fenced technical prose stripped a language tag/newline or retained an Android-hidden wrapper");
+            const auto fence_at=wide(projected).find(L"std::cout");const auto fenced_style=character(editor.value,static_cast<LONG>(fence_at));
+            check((fenced_style.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&((fenced_style.dwEffects&CFE_AUTOBACKCOLOR)!=0)==reader_theme::palette().high_contrast,
+                "Hiding triple delimiters shifted Unicode/CRLF authored emphasis or the technical background");
+            for(const auto text:{"Ticks `   ` et ```\n \n``` visibles.","`sans fermeture","La formule `\\(x+1\\)` reste mathématique."}){
+                set_rich_text(editor.value,text,{},false,RichTextRole::body,"fr");check(edit_text(editor.value)==text,"Blank, mathematical or incomplete wrappers changed their visible source");}
+            set_rich_text(editor.value,fenced,{},true);
+            check(edit_text(editor.value)=="😀 Avant ```cpp\nstd::cout << \"C++\";\n``` après et `return 0;`.",
+                "An actual source-code block acquired the prose-only delimiter projection");
         }
         {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
@@ -387,9 +587,9 @@ int main() {
             const auto check_range=[&](std::wstring_view context,std::size_t offset,std::size_t count,COLORREF ink){
                 const auto visible=wide(edit_text(editor.value));const auto start=visible.find(context);
                 check(start!=visible.npos&&offset+count<=context.size(),"The technical-character regression lost its source context");
-                for(auto index=start+offset;index<start+offset+count;++index)
-                    check(character(editor.value,static_cast<LONG>(index)).crTextColor==ink,
-                        "A technical character lost its Android ink or colored neighboring prose punctuation");
+                for(auto index=start+offset;index<start+offset+count;++index){const auto actual=character(editor.value,static_cast<LONG>(index)).crTextColor;
+                    if(actual!=ink)std::cerr<<"Technical-character diagnostics: context="<<utf8(context)<<", offset="<<index-start<<", actual="<<actual<<", expected="<<ink<<'\n';
+                    check(actual==ink,"A technical character lost its Android ink or colored neighboring prose punctuation");}
             };
             const std::string lesson=R"text(𐐀 Dentro de un literal, \n representa un salto de línea. Su escritura en el código utiliza una barra inversa y la letra n, pero el texto producido contiene un carácter de control. No se muestran la barra inversa ni la letra n: juntas forman el escape.)text";
             const std::array<lgaed::curriculum::Emphasis,2> emphasis{{
@@ -453,7 +653,13 @@ int main() {
             set_rich_text(editor.value,ordinary_quotes);
             check_range(wide(ordinary_quotes),0,wide(ordinary_quotes).size(),base);
             const std::string prose=R"text(La letra número, letra nombre, carácter nñ, carácter n2, carácter n_1; la n y una a. \nueva, \tarea, \z y alfa\n; superletra n y áletra n.)text";
-            set_rich_text(editor.value,prose);check_range(wide(prose),0,wide(prose).size(),base);
+            set_rich_text(editor.value,prose);const auto prose_wide=wide(prose);const auto identifier_at=prose_wide.find(L"n_1;");
+            // The canonical Android oracle owns this exact four-unit atom
+            // (66:70): the complete underscored ID plus its terminator. It must
+            // not revive the old single-letter match inside nñ/n2/n_1.
+            check_range(prose_wide,0,identifier_at,base);check_range(L"n_1;",0,3,identifier_ink);
+            check_range(L"n_1;",3,1,high_contrast?base:RGB(216,216,216));
+            check_range(prose_wide,identifier_at+4,prose_wide.size()-identifier_at-4,base);
             const std::string statement=R"text(En std::cout << "letra n: \n";, la letra n: sigue.)text";
             set_rich_text(editor.value,statement);
             check_range(LR"("letra n: \n")",0,std::wstring_view(LR"("letra n: \n")").size(),string_ink);

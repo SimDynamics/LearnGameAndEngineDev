@@ -29,32 +29,114 @@ std::wstring raw_text(HWND window){
 }
 }
 struct CodeGutter::Impl {
-    HWND window=nullptr;HFONT font=nullptr;int width=0,line_height=1,original_margin=0;
-    bool updating=false,revealing_caret=false,client_pointer=false,native_selection=false;
+    HWND window=nullptr,band_window=nullptr;HFONT font=nullptr;int width=0,line_height=1,original_margin=0;
+    bool updating=false,publishing_scroll=false,revealing_caret=false,client_pointer=false,native_selection=false,native_theme_before=false;
+    bool restore_clip_siblings=false,setting_clip_style=false;
     std::optional<COLORREF> background_color,foreground_color;
     int right_padding=3,horizontal_padding=8;
     std::vector<LONG> starts{0};
-    explicit Impl(HWND target):window(target){RECT format{};SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));original_margin=format.left;}
-    ~Impl(){if(window&&IsWindow(window)){RemoveWindowSubclass(window,subclass,subclass_id);RemovePropW(window,property);
-        SendMessageW(window,EM_SETMARGINS,EC_LEFTMARGIN,MAKELPARAM(original_margin,0));InvalidateRect(window,nullptr,FALSE);}
+    mutable std::optional<CodeGutterSnapshot> committed_geometry;
+    explicit Impl(HWND target):window(target),native_theme_before(presentation::reader_theme::native_scrollbar_theme(target)){
+        RECT format{};SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));original_margin=format.left;
+        restore_clip_siblings=(GetWindowLongPtrW(window,GWL_STYLE)&WS_CLIPSIBLINGS)!=0;}
+    ~Impl(){if(band_window&&IsWindow(band_window))DestroyWindow(band_window);
+        if(window&&IsWindow(window)){RemoveWindowSubclass(window,subclass,subclass_id);RemovePropW(window,property);
+        SendMessageW(window,EM_SETMARGINS,EC_LEFTMARGIN,MAKELPARAM(original_margin,0));
+        const auto style=GetWindowLongPtrW(window,GWL_STYLE);
+        const auto restored=restore_clip_siblings?style|WS_CLIPSIBLINGS:style&~static_cast<LONG_PTR>(WS_CLIPSIBLINGS);
+        if(style!=restored)SetWindowLongPtrW(window,GWL_STYLE,restored);
+        presentation::reader_theme::use_native_scrollbar_theme(window,native_theme_before);InvalidateRect(window,nullptr,FALSE);}
         if(font)DeleteObject(font);}
+    static LRESULT CALLBACK band_proc(HWND band,UINT message,WPARAM wp,LPARAM lp){
+        auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(band,GWLP_USERDATA));
+        if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);
+            SetWindowLongPtrW(band,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));self->band_window=band;return TRUE;}
+        if(!self)return DefWindowProcW(band,message,wp,lp);
+        if(message==WM_NCDESTROY){SetWindowLongPtrW(band,GWLP_USERDATA,0);if(self->band_window==band)self->band_window=nullptr;return DefWindowProcW(band,message,wp,lp);}
+        if(message==WM_NCHITTEST)return HTTRANSPARENT;
+        if(message==WM_MOUSEACTIVATE)return MA_NOACTIVATE;
+        if(message==WM_ERASEBKGND)return 1;
+        if(message==WM_WINDOWPOSCHANGING&&lp&&self->window&&IsWindow(self->window)){
+            auto& position=*reinterpret_cast<WINDOWPOS*>(lp);RECT client{};GetClientRect(self->window,&client);
+            POINT origin{};MapWindowPoints(self->window,GetParent(band),&origin,1);
+            position.x=origin.x;position.y=origin.y;position.cx=self->fixed_width();position.cy=client.bottom;
+            position.flags&=~(SWP_NOMOVE|SWP_NOSIZE);
+        }
+        if(message==WM_PRINTCLIENT){self->paint_fixed_surface(reinterpret_cast<HDC>(wp));return 0;}
+        if(message==WM_PAINT){
+            PAINTSTRUCT paint{};const auto target=BeginPaint(band,&paint);RECT client{};GetClientRect(band,&client);
+            const auto memory=target?CreateCompatibleDC(target):nullptr;
+            const auto bitmap=memory&&client.right>0&&client.bottom>0?CreateCompatibleBitmap(target,client.right,client.bottom):nullptr;
+            if(bitmap){const auto old=SelectObject(memory,bitmap);self->paint_fixed_surface(memory);
+                BitBlt(target,paint.rcPaint.left,paint.rcPaint.top,paint.rcPaint.right-paint.rcPaint.left,paint.rcPaint.bottom-paint.rcPaint.top,
+                    memory,paint.rcPaint.left,paint.rcPaint.top,SRCCOPY);SelectObject(memory,old);DeleteObject(bitmap);}
+            else if(target)self->paint_fixed_surface(target);
+            if(memory)DeleteDC(memory);EndPaint(band,&paint);return 0;
+        }
+        return DefWindowProcW(band,message,wp,lp);
+    }
+    void position_band(){
+        if(!band_window||!window)return;RECT client{};GetClientRect(window,&client);
+        const auto parent=GetParent(window);if(GetParent(band_window)!=parent)SetParent(band_window,parent);
+        POINT origin{};MapWindowPoints(window,parent,&origin,1);
+        const auto visible=(GetWindowLongPtrW(window,GWL_STYLE)&WS_VISIBLE)!=0;
+        SetWindowPos(band_window,HWND_TOP,origin.x,origin.y,fixed_width(),client.bottom,
+            SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOREDRAW|SWP_NOCOPYBITS|(visible?SWP_SHOWWINDOW:SWP_HIDEWINDOW));
+        InvalidateRect(band_window,nullptr,FALSE);
+    }
+    void create_band(){
+        static const bool registered=[] {
+            WNDCLASSEXW type{};type.cbSize=sizeof(type);type.hInstance=GetModuleHandleW(nullptr);type.lpfnWndProc=band_proc;
+            type.lpszClassName=L"LearnGameAndEngineDev.FixedCodeNumbers";
+            if(!RegisterClassExW(&type))throw std::runtime_error("Cannot register the fixed code number surface");return true;
+        }();
+        (void)registered;setting_clip_style=true;SetWindowLongPtrW(window,GWL_STYLE,GetWindowLongPtrW(window,GWL_STYLE)|WS_CLIPSIBLINGS);setting_clip_style=false;
+        RECT client{};GetClientRect(window,&client);
+        // A sibling is outside RichEdit's ScrollWindowEx surface. A child,
+        // even with WS_CLIPCHILDREN, is erased by its native pixel copy.
+        if(!CreateWindowExW(WS_EX_NOPARENTNOTIFY|WS_EX_NOACTIVATE,L"LearnGameAndEngineDev.FixedCodeNumbers",L"",WS_CHILD|WS_CLIPSIBLINGS|WS_DISABLED,
+            0,0,std::min<LONG>(width,client.right),client.bottom,GetParent(window),nullptr,GetModuleHandleW(nullptr),this))
+            throw std::runtime_error("Cannot create the fixed code number surface");
+        position_band();
+    }
+    void publish_scroll(){
+        if(updating||publishing_scroll||!window||!IsWindowVisible(window))return;
+        const auto target=window;const auto context=reinterpret_cast<DWORD_PTR>(this);publishing_scroll=true;
+        // ScrollWindowEx has already copied native pixels. Complete the new
+        // client and fixed margin within this viewport event, rather than
+        // exposing their intermediate copy until the next paint-queue turn.
+        RedrawWindow(target,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW|RDW_NOERASE|RDW_ALLCHILDREN);
+        DWORD_PTR attached=0;
+        if(GetWindowSubclass(target,subclass,subclass_id,&attached)&&attached==context){
+            if(const auto band=reinterpret_cast<Impl*>(attached)->band_window)UpdateWindow(band);
+            if(GetWindowSubclass(target,subclass,subclass_id,&attached)&&attached==context)
+                reinterpret_cast<Impl*>(attached)->publishing_scroll=false;
+        }
+    }
     int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96);}
-    void invalidate()const{if(!window)return;RECT bounds{};GetClientRect(window,&bounds);bounds.right=width;InvalidateRect(window,&bounds,FALSE);}
-    RECT text_viewport()const{
+    RECT text_viewport(bool source_rows=false)const{
         RECT client{},format{};GetClientRect(window,&client);SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
         int numerator=0,denominator=0;SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
         if(numerator<=0||denominator<=0){numerator=1;denominator=1;}
         // RichEdit zooms the formatting insets with the document. Its client
         // remains larger than the area in which glyphs are actually drawn.
-        RECT result{};result.left=std::clamp<LONG>(MulDiv(format.left,numerator,denominator),0,client.right);
-        result.top=std::clamp<LONG>(MulDiv(format.top,numerator,denominator),0,client.bottom);
-        result.right=std::clamp<LONG>(client.right-MulDiv(client.right-format.right,numerator,denominator),result.left,client.right);
-        result.bottom=std::clamp<LONG>(client.bottom-MulDiv(client.bottom-format.bottom,numerator,denominator),result.top,client.bottom);
+        // Native TextServices truncates fractional insets; MulDiv rounds and
+        // can paint the fixed band over the first legitimate source pixel.
+        // Derive this from the formatting insets, not paragraph zero: that
+        // paragraph may be far outside the viewport or have its own indent.
+        const auto scaled=[&](LONG inset){return static_cast<LONG>(static_cast<long long>(inset)*numerator/denominator);};
+        RECT result{};result.left=std::clamp<LONG>(scaled(format.left),0,client.right);
+        // Vertical layout rounds its first row origin. At 150%, a 7px top
+        // inset starts at 11px; truncating it to 10 admits a partial row.
+        result.top=std::clamp<LONG>(source_rows?MulDiv(format.top,numerator,denominator):scaled(format.top),0,client.bottom);
+        result.right=std::clamp<LONG>(client.right-scaled(client.right-format.right),result.left,client.right);
+        result.bottom=std::clamp<LONG>(client.bottom-scaled(client.bottom-format.bottom),result.top,client.bottom);
         return result;
     }
+    LONG fixed_width()const{RECT client{};GetClientRect(window,&client);return std::min<LONG>(client.right,std::max<LONG>(width,text_viewport().left));}
     struct VisibleRows{LONG top=0,bottom=0;};
     VisibleRows complete_rows()const{
-        const auto viewport=text_viewport();VisibleRows result{viewport.top,viewport.bottom};
+        const auto viewport=text_viewport(true);VisibleRows result{viewport.top,viewport.bottom};
         const auto count=SendMessageW(window,EM_GETLINECOUNT,0,0);
         auto line=std::max<LRESULT>(0,SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0)-1);
         bool complete=false;
@@ -95,7 +177,7 @@ struct CodeGutter::Impl {
         else if(line>0){const auto previous=SendMessageW(window,EM_LINEINDEX,line-1,0);POINTL above{};
             if(previous>=0){SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&above),previous);
                 if(point.y>above.y)height=point.y-above.y;}}
-        const auto viewport=text_viewport();if(height>viewport.bottom-viewport.top)return;
+        const auto viewport=text_viewport(true);if(height>viewport.bottom-viewport.top)return;
         const auto shift=point.y<viewport.top?point.y-viewport.top:point.y+height>viewport.bottom?point.y+height-viewport.bottom:0;
         if(!shift)return;
         POINT scroll{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));scroll.y=std::max(0L,scroll.y+shift);
@@ -136,6 +218,7 @@ struct CodeGutter::Impl {
             // complete again, or move a fixed margin. Remove the old overlay
             // from the whole client before drawing its new geometry.
             InvalidateRect(window,nullptr,FALSE);
+            if(band_window){position_band();InvalidateRect(band_window,nullptr,FALSE);}
         }catch(...){updating=false;throw;}
     }
     CodeGutterSnapshot snapshot()const{
@@ -145,13 +228,24 @@ struct CodeGutter::Impl {
         const auto first_line=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
         const auto first_character=static_cast<LONG>(std::max<LRESULT>(0,SendMessageW(window,EM_LINEINDEX,first_line,0)));
         auto begin=std::upper_bound(starts.begin(),starts.end(),first_character);if(begin!=starts.begin())--begin;
+        std::optional<LONG> previous_y;
         for(auto item=begin;item!=starts.end();++item){POINTL location{};
             SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&location),*item);
+            // During a frozen edit TextServices can temporarily report the
+            // first row's position for every paragraph. Publishing those
+            // coordinates stacks all labels on top of one another. Keep the
+            // last committed rows until native layout is strictly ordered.
+            if(previous_y&&location.y<=*previous_y){
+                if(committed_geometry)return *committed_geometry;
+                result.visible.clear();return result;
+            }
+            previous_y=location.y;
             if(location.y>=area.bottom)break;
             if(location.y+line_height>0)result.visible.push_back({static_cast<std::size_t>(item-starts.begin())+1,*item,location});}
+        committed_geometry=result;
         return result;
     }
-    void paint(HDC dc)const{
+    void paint(HDC dc,bool numbers=true)const{
         if(!dc||!window)return;const auto saved=SaveDC(dc);RECT client{};GetClientRect(window,&client);
         const auto viewport=text_viewport();
         RECT reserved=client;reserved.right=std::min<LONG>(client.right,std::max<LONG>(width,viewport.left));
@@ -168,24 +262,79 @@ struct CodeGutter::Impl {
         if(!IsRectEmpty(&top))FillRect(dc,&top,editor_fill);
         if(!IsRectEmpty(&bottom))FillRect(dc,&bottom,editor_fill);
         DeleteObject(editor_fill);
-        RECT area=client;area.right=width;
+        if(numbers)paint_band(dc);RestoreDC(dc,saved);
+    }
+    void paint_fixed_surface(HDC dc)const{
+        if(!dc||!window)return;RECT area{};GetClientRect(window,&area);area.right=fixed_width();
+        const auto fill=CreateSolidBrush(presentation::reader_theme::background(window));FillRect(dc,&area,fill);DeleteObject(fill);
+        paint_band(dc);
+    }
+    void paint_band(HDC dc)const{
+        if(!dc||!window)return;const auto saved=SaveDC(dc);RECT client{};GetClientRect(window,&client);
+        const auto viewport=text_viewport();RECT area=client;area.right=std::min<LONG>(client.right,width);
         IntersectClipRect(dc,area.left,area.top,area.right,area.bottom);
         const auto colors=presentation::reader_theme::palette();const auto background=colors.high_contrast?presentation::reader_theme::background(window):background_color.value_or(presentation::reader_theme::background(window));
         const auto fill=CreateSolidBrush(background);FillRect(dc,&area,fill);DeleteObject(fill);
         SetTextColor(dc,colors.high_contrast?GetSysColor(COLOR_WINDOWTEXT):foreground_color.value_or(
             presentation::reader_theme::applied(window)?colors.muted:GetSysColor(COLOR_GRAYTEXT)));SetBkMode(dc,TRANSPARENT);
         if(font)SelectObject(dc,font);
-        IntersectClipRect(dc,0,visible.top,width,visible.bottom);
-        // The band already contains only complete native display rows. GDI's
-        // font cell can differ by a pixel; it must not reject a native row.
-        for(const auto& line:snapshot().visible){if(line.text_position.y<visible.top||line.text_position.y>=visible.bottom)continue;
+        // Every paragraph intersecting the native viewport keeps its label,
+        // even when only part of the number is visible at a vertical edge.
+        // Source-row masking must not make the number column lose a label.
+        IntersectClipRect(dc,0,viewport.top,width,viewport.bottom);
+        for(const auto& line:snapshot().visible){
             const auto label=std::to_wstring(line.number);RECT bounds{0,line.text_position.y,width-px(right_padding),line.text_position.y+line_height};
             DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&bounds,DT_RIGHT|DT_TOP|DT_SINGLELINE|DT_NOPREFIX|DT_NOCLIP);}
         RestoreDC(dc,saved);
     }
+    static LRESULT paint_client(HWND window,DWORD_PTR data){
+        const bool caret_hidden=GetFocus()==window&&HideCaret(window)!=FALSE;
+        PAINTSTRUCT paint{};const auto target=BeginPaint(window,&paint);
+        if(!target){if(caret_hidden)ShowCaret(window);return 0;}
+        RECT client{};GetClientRect(window,&client);
+        const auto memory=CreateCompatibleDC(target);
+        const auto bitmap=memory&&client.right>0&&client.bottom>0?CreateCompatibleBitmap(target,client.right,client.bottom):nullptr;
+        if(memory&&bitmap){
+            const auto old=SelectObject(memory,bitmap);
+            const auto background=CreateSolidBrush(presentation::reader_theme::background(window));
+            FillRect(memory,&client,background);DeleteObject(background);
+            // Compose the native document and fixed overlay off screen. The
+            // old native WM_PAINT followed by GetDC exposed an erased gutter
+            // (and temporarily uncovered source pixels) between both draws.
+            DefSubclassProc(window,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT);
+            DWORD_PTR attached=0;
+            if(GetWindowSubclass(window,subclass,subclass_id,&attached)&&attached==data)
+                reinterpret_cast<Impl*>(attached)->paint(memory,false);
+            BitBlt(target,paint.rcPaint.left,paint.rcPaint.top,paint.rcPaint.right-paint.rcPaint.left,
+                paint.rcPaint.bottom-paint.rcPaint.top,memory,paint.rcPaint.left,paint.rcPaint.top,SRCCOPY);
+            SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);
+        }else{
+            if(bitmap)DeleteObject(bitmap);if(memory)DeleteDC(memory);
+            // Preserve native rendering if the temporary surface cannot be
+            // allocated; no text, selection or history depends on the buffer.
+            DefSubclassProc(window,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(target),PRF_CLIENT);
+            DWORD_PTR attached=0;
+            if(GetWindowSubclass(window,subclass,subclass_id,&attached)&&attached==data)
+                reinterpret_cast<Impl*>(attached)->paint(target,false);
+        }
+        EndPaint(window,&paint);if(caret_hidden)ShowCaret(window);
+        // This path replaces native WM_PAINT in the subclass chain. Restore
+        // its nonclient refresh once the composed client frame is complete;
+        // offscreen WM_PRINTCLIENT must never repaint the real scrollbar.
+        presentation::reader_theme::refresh_scrollbars(window);return 0;
+    }
     static LRESULT CALLBACK subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR data){
         auto& self=*reinterpret_cast<Impl*>(data);
-        if(message==WM_NCDESTROY){RemoveWindowSubclass(window,subclass,subclass_id);RemovePropW(window,property);self.window=nullptr;return DefSubclassProc(window,message,wp,lp);}
+        if(message==WM_NCDESTROY){if(self.band_window&&IsWindow(self.band_window))DestroyWindow(self.band_window);
+            RemoveWindowSubclass(window,subclass,subclass_id);RemovePropW(window,property);self.window=nullptr;return DefSubclassProc(window,message,wp,lp);}
+        if(message==WM_STYLECHANGING&&wp==static_cast<WPARAM>(GWL_STYLE)&&lp&&self.band_window){
+            auto& style=*reinterpret_cast<STYLESTRUCT*>(lp);
+            if(!self.setting_clip_style&&((style.styleOld^style.styleNew)&WS_CLIPSIBLINGS))
+                self.restore_clip_siblings=(style.styleNew&WS_CLIPSIBLINGS)!=0;
+            style.styleNew|=WS_CLIPSIBLINGS;
+        }
+        if(message==WM_ERASEBKGND)return 1; // The composed client includes its complete background.
+        if(message==WM_PAINT)return paint_client(window,data);
         const bool selection_message=message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK||message==WM_LBUTTONUP||
             (message==WM_MOUSEMOVE&&(wp&MK_LBUTTON));
         CHARRANGE previous_selection{};
@@ -212,13 +361,11 @@ struct CodeGutter::Impl {
                 reveal_selection=was_selection||self.native_selection;
             }
             if(message==WM_LBUTTONUP){self.client_pointer=false;self.native_selection=false;}
-            if(message==WM_PAINT){const auto dc=GetDC(window);if(dc){self.paint(dc);ReleaseDC(window,dc);}}
-            else if(message==WM_PRINTCLIENT)self.paint(reinterpret_cast<HDC>(wp));
+            if(message==WM_PRINTCLIENT)self.paint(reinterpret_cast<HDC>(wp));
             else if(message==WM_SETFONT||message==EM_SETZOOM||message==WM_DPICHANGED_AFTERPARENT||
                 (message==EM_SETCHARFORMAT&&lp&&(wp==SCF_DEFAULT||wp==SCF_ALL)&&
                     (reinterpret_cast<const CHARFORMAT2W*>(lp)->dwMask&(CFM_SIZE|CFM_FACE|CFM_CHARSET|CFM_BOLD|CFM_ITALIC))))self.refresh(false,true);
             else if(message==WM_SETTEXT||message==EM_SETTEXTEX||message==EM_STREAMIN||message==EM_REPLACESEL||message==WM_CHAR||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR||message==WM_UNDO||message==EM_UNDO||message==EM_REDO)self.refresh(true,false);
-            else if(may_scroll)self.invalidate();
             if(may_scroll){POINT after{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
                 const bool typing=message==WM_CHAR&&(wp>=L' '||wp==L'\r'||wp==L'\n'||wp==L'\t'||wp==L'\b');
                 const bool navigation=message==WM_KEYDOWN&&((wp>=VK_PRIOR&&wp<=VK_DOWN)||wp==VK_BACK||wp==VK_DELETE||wp==VK_RETURN);
@@ -230,10 +377,23 @@ struct CodeGutter::Impl {
                 // old band/text pixels copied into the document on the return
                 // movement. Redraw the affected viewport after a real offset
                 // change; the native document, selection and offsets stay intact.
-                if(before.x!=after.x||before.y!=after.y)InvalidateRect(window,nullptr,FALSE);
+                if(before.x!=after.x||before.y!=after.y){
+                    InvalidateRect(window,nullptr,FALSE);
+                    if(self.band_window)InvalidateRect(self.band_window,nullptr,FALSE);
+                    const bool native_scroll=message==WM_HSCROLL||message==WM_VSCROLL||message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL;
+                    if(native_scroll)self.publish_scroll();
+                }
             }
-            if(message==WM_SIZE||message==EM_SETRECT||message==EM_SETRECTNP||message==EM_SETTARGETDEVICE)
+            if(message==WM_SHOWWINDOW&&self.band_window)SetWindowPos(self.band_window,nullptr,0,0,0,0,
+                SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOREDRAW|(wp?SWP_SHOWWINDOW:SWP_HIDEWINDOW));
+            if(message==WM_WINDOWPOSCHANGED)self.position_band();
+            if(message==WM_SIZE||message==EM_SETRECT||message==EM_SETRECTNP||message==EM_SETTARGETDEVICE){
+                self.position_band();if(self.band_window)InvalidateRect(self.band_window,nullptr,FALSE);
                 InvalidateRect(window,nullptr,FALSE);
+                // The owner can be committing many rows with SWP_NOREDRAW.
+                // Let its final viewport paint publish this geometry; a
+                // synchronous child paint here can flush its parent mid-layout.
+            }
         }catch(...){/* Margin failure must never change or reject the source edit. */}
         return result;
     }
@@ -244,13 +404,19 @@ CodeGutter::CodeGutter(HWND window){
     impl_=std::make_unique<Impl>(window);
     if(!SetWindowSubclass(window,Impl::subclass,subclass_id,reinterpret_cast<DWORD_PTR>(impl_.get())))throw std::runtime_error("Cannot attach native gutter");
     if(!SetPropW(window,property,reinterpret_cast<HANDLE>(this)))throw std::runtime_error("Cannot expose native gutter state");
+    presentation::reader_theme::use_native_scrollbar_theme(window);
     impl_->refresh(true,true);
+    impl_->create_band();
 }
 CodeGutter::~CodeGutter()=default;
 CodeGutterSnapshot CodeGutter::snapshot()const{return impl_->snapshot();}
+void CodeGutter::refresh_content(){impl_->refresh(true,false);}
 void CodeGutter::set_appearance(COLORREF background,COLORREF foreground,int right_padding,int horizontal_padding){
+    right_padding=std::clamp(right_padding,0,32);horizontal_padding=std::clamp(horizontal_padding,0,64);
+    if(impl_->background_color==background&&impl_->foreground_color==foreground&&
+        impl_->right_padding==right_padding&&impl_->horizontal_padding==horizontal_padding)return;
     impl_->background_color=background;impl_->foreground_color=foreground;
-    impl_->right_padding=std::clamp(right_padding,0,32);impl_->horizontal_padding=std::clamp(horizontal_padding,0,64);
+    impl_->right_padding=right_padding;impl_->horizontal_padding=horizontal_padding;
     impl_->refresh(false,false);
 }
 CodeGutterSnapshot code_gutter_snapshot(HWND window){const auto gutter=reinterpret_cast<const CodeGutter*>(GetPropW(window,property));return gutter?gutter->snapshot():CodeGutterSnapshot{};}

@@ -3,6 +3,8 @@
 #include "core/lesson.hpp"
 
 #include <windows.h>
+#include <cstddef>
+#include <utility>
 
 namespace lgaed::presentation {
 // Android sp at font scale 1 are logical pixels, not Windows points.
@@ -35,5 +37,6 @@ void style_cpp(HWND edit);
 // Display-only inline delimiters are hidden; original lesson strings remain untouched.
 void set_rich_text(HWND edit, std::string_view text,
     std::span<const curriculum::Emphasis> emphasis = {}, bool code = false,
-    RichTextRole role = RichTextRole::body);
+    RichTextRole role = RichTextRole::body, std::string_view locale = "es",
+    std::span<const std::pair<std::size_t,std::size_t>> mathematics = {});
 } // namespace lgaed::presentation

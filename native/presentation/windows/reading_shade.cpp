@@ -2,6 +2,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/native_math_text.hpp"
+#include "presentation/windows/programming_technical_ranges.hpp"
 #include <richedit.h>
 #include <richole.h>
 #include <tom.h>
@@ -14,8 +15,8 @@ std::wstring native_text(HWND edit){GETTEXTLENGTHEX length{GTL_NUMCHARS|GTL_PREC
     text.resize(static_cast<std::size_t>(SendMessageW(edit,EM_GETTEXTEX,reinterpret_cast<WPARAM>(&request),reinterpret_cast<LPARAM>(text.data()))));return text;}
 struct Transaction {
     HWND window;CHARRANGE selection{};POINT scroll{};LRESULT events=0,modified=0;
-    ITextDocument* document=nullptr;bool suspend=false,frozen=false,redraw=false;
-    explicit Transaction(HWND edit):window(edit){
+    ITextDocument* document=nullptr;bool suspend=false,frozen=false,redraw=false,readonly=false;
+    explicit Transaction(HWND edit,bool formatting=false):window(edit){
         SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
         SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         events=SendMessageW(window,EM_GETEVENTMASK,0,0);modified=SendMessageW(window,EM_GETMODIFY,0,0);
@@ -27,12 +28,18 @@ struct Transaction {
         // formatting and selection painting without hiding the child window.
         // The legacy path is retained only for controls without usable TOM.
         if(!frozen){redraw=(GetWindowLongPtrW(window,GWL_STYLE)&WS_VISIBLE)!=0;if(redraw)SendMessageW(window,WM_SETREDRAW,FALSE,0);}
+        // TOM rejects color writes on readonly lesson text with E_ACCESSDENIED.
+        // Unlock only within this synchronous, frozen formatting transaction;
+        // otherwise every word falls back to moving the visible UI selection.
+        readonly=formatting&&document&&(GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY)!=0;
+        if(readonly)SendMessageW(window,EM_SETREADONLY,FALSE,0);
     }
     ~Transaction(){
         CHARRANGE current{};SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
         if(current.cpMin!=selection.cpMin||current.cpMax!=selection.cpMax)
             SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
         SendMessageW(window,EM_SETMODIFY,modified,0);
+        if(readonly)SendMessageW(window,EM_SETREADONLY,TRUE,0);
         if(document){long count=0;if(suspend)document->Undo(tomResume,&count);if(frozen)document->Unfreeze(&count);document->Release();}
         if(redraw){SendMessageW(window,WM_SETREDRAW,TRUE,0);InvalidateRect(window,nullptr,FALSE);}
         // Unfreeze can reflow the native document and round its scroll offset
@@ -44,6 +51,19 @@ struct Transaction {
         SendMessageW(window,EM_SETEVENTMASK,0,events);
     }
 };
+struct OriginalInk {COLORREF color=0,background=0;bool automatic=false,automatic_background=true;};
+bool original_ink(ITextDocument* document,long at,OriginalInk& ink){
+    if(!document)return false;
+    ITextRange* range=nullptr;ITextFont* font=nullptr;
+    if(FAILED(document->Range(at,at+1,&range))||!range)return false;
+    const auto queried=range->GetFont(&font);range->Release();
+    if(FAILED(queried)||!font)return false;
+    long foreground=tomUndefined,background=tomUndefined;
+    const auto front=font->GetForeColor(&foreground),back=font->GetBackColor(&background);font->Release();
+    if(FAILED(front)||FAILED(back)||foreground==tomUndefined||background==tomUndefined)return false;
+    ink.automatic=foreground==tomAutoColor;ink.color=ink.automatic?0:static_cast<COLORREF>(foreground);
+    ink.automatic_background=background==tomAutoColor;ink.background=ink.automatic_background?0:static_cast<COLORREF>(background);return true;
+}
 void color(HWND edit,ITextDocument* document,long start,long end,COLORREF color,bool automatic=false){
     if(end<=start)return;
     // A UI selection expands to complete OfficeMath objects. A TOM range can
@@ -59,26 +79,48 @@ ReadingShade::ReadingShade(HWND window,std::string source):window_(window),sourc
         map_=mathematical->source_to_native;
         if(map_.size()!=source_.size()+1||!std::ranges::is_sorted(map_)||map_.back()!=displayed_.size())return;
     }else{
-        std::wstring expected;std::size_t i=0;
-        while(i<source_.size()){map_[i]=expected.size();if(source_[i]==L'`'){const auto end=source_.find(L'`',i+1);if(end!=source_.npos){for(auto j=i+1;j<end;++j){map_[j]=expected.size();if(source_[j]!=L'\r'||j+1>=end||source_[j+1]!=L'\n')expected+=source_[j]==L'\n'?L'\r':source_[j];}map_[end]=expected.size();i=end+1;continue;}}
-            if(source_[i]!=L'\r'||i+1>=source_.size()||source_[i+1]!=L'\n')expected+=source_[i]==L'\n'?L'\r':source_[i];++i;
-        }
-        map_.back()=expected.size();if(expected!=displayed_)return;
+        const auto project=[&](std::span<const technical_prose::Range> wrappers){
+            std::wstring expected;std::size_t hidden=0;
+            for(std::size_t at=0;at<source_.size();++at){map_[at]=expected.size();
+                while(hidden<wrappers.size()&&wrappers[hidden].second<=at)++hidden;
+                if(hidden<wrappers.size()&&wrappers[hidden].first<=at)continue;
+                if(source_[at]!=L'\r'||at+1>=source_.size()||source_[at+1]!=L'\n')expected+=source_[at]==L'\n'?L'\r':source_[at];
+            }
+            map_.back()=expected.size();return expected;
+        };
+        // A real code field keeps its literal backticks. Prose hides only the
+        // same trusted1/3-character wrappers used by the original renderer;
+        // fence tags and all interior UTF16/newline units remain source-owned.
+        if(project({})!=displayed_){const auto spans=technical_prose::inline_code_spans(source_);
+            if(project(spans.wrappers)!=displayed_)return;}
     }
     Transaction transaction(window_);
-    for(long at=0;at<static_cast<long>(displayed_.size());++at){CHARRANGE selection{at,at+1};SendMessageW(window_,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(window_,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
-        const bool automatic=(format.dwEffects&CFE_AUTOCOLOR)!=0;if(!ink_.empty()&&ink_.back().color==format.crTextColor&&ink_.back().automatic==automatic)ink_.back().end=at+1;else ink_.push_back({at,at+1,format.crTextColor,automatic});}
+    for(long at=0;at<static_cast<long>(displayed_.size());++at){OriginalInk ink;
+        // Reading a TOM range is allowed on readonly text and leaves the UI
+        // selection untouched, including while changing narration segments.
+        if(!original_ink(transaction.document,at,ink)){
+            CHARRANGE selection{at,at+1};SendMessageW(window_,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(window_,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
+            ink.automatic=(format.dwEffects&CFE_AUTOCOLOR)!=0;ink.color=ink.automatic?0:format.crTextColor;
+            ink.automatic_background=(format.dwEffects&CFE_AUTOBACKCOLOR)!=0;ink.background=ink.automatic_background?0:format.crBackColor;
+        }
+        if(!ink_.empty()&&ink_.back().color==ink.color&&ink_.back().automatic==ink.automatic&&ink_.back().background==ink.background&&
+            ink_.back().automatic_background==ink.automatic_background)ink_.back().end=at+1;
+        else ink_.push_back({at,at+1,ink.color,ink.background,ink.automatic,ink.automatic_background});}
     valid_=true;
 }
 ReadingShade::~ReadingShade(){restore();}
 bool ReadingShade::matches(HWND window,std::string_view source)const{return valid_&&window==window_&&IsWindow(window_)&&wide(source)==source_&&native_text(window_)==displayed_;}
 void ReadingShade::read_through(std::size_t source){
     if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_)return;const auto boundary=static_cast<long>(map_[std::min(source,map_.size()-1)]);if(boundary==boundary_)return;
-    Transaction transaction(window_);
-    const auto gray=reader_theme::unread_color(reader_theme::background(window_));
+    Transaction transaction(window_,true);
+    const auto dim=[&](long start,long end){
+        for(const auto& ink:ink_)if(ink.end>start&&ink.start<end)
+            color(window_,transaction.document,std::max(ink.start,start),std::min(ink.end,end),
+                reader_theme::unread_color(ink.automatic_background?reader_theme::background(window_):ink.background));
+    };
     if(boundary_<0){
         // On first use the prefix already has its original syntax colors.
-        color(window_,transaction.document,boundary,static_cast<long>(displayed_.size()),gray);
+        dim(boundary,static_cast<long>(displayed_.size()));
     }else if(boundary>boundary_){
         // Restore only the newly read characters, never the unchanged prefix
         // or unread lines below the current word.
@@ -86,13 +128,13 @@ void ReadingShade::read_through(std::size_t source){
             color(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.color,ink.automatic);
     }else{
         // Seeking backward dims only the interval that became unread again.
-        color(window_,transaction.document,boundary,boundary_,gray);
+        dim(boundary,boundary_);
     }
     boundary_=boundary;
 }
 void ReadingShade::restore(){
     if(!valid_||boundary_<0||!IsWindow(window_)||native_text(window_)!=displayed_)return;
-    Transaction transaction(window_);
+    Transaction transaction(window_,true);
     for(const auto& ink:ink_)if(ink.end>boundary_)
         color(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.color,ink.automatic);
     boundary_=-1;

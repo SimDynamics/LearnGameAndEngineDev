@@ -1,5 +1,6 @@
 #include "platform/windows/narration_player.hpp"
 #include "platform/windows/winrt_apartment.hpp"
+#include "core/narration_speed.hpp"
 #include <windows.h>
 #include <shlwapi.h>
 #include <winrt/Windows.Foundation.h>
@@ -28,7 +29,7 @@ struct NarrationPlayer::Impl {
 NarrationPlayer::NarrationPlayer():impl_(std::make_unique<Impl>()){}
 NarrationPlayer::~NarrationPlayer(){try{(void)impl_->release();}catch(...) {}}
 void NarrationPlayer::play(const std::filesystem::path& file,double milliseconds,double rate){
-    ensure_winrt_apartment();(void)impl_->release();impl_->requested=std::max(0.0,milliseconds);impl_->rate=std::clamp(rate,.5,2.0);
+    ensure_winrt_apartment();(void)impl_->release();impl_->requested=std::max(0.0,milliseconds);impl_->rate=narration::clamp_playback_rate(rate);
     std::wstring uri(32768,L'\0');DWORD count=static_cast<DWORD>(uri.size());if(FAILED(UrlCreateFromPathW(file.c_str(),uri.data(),&count,0)))throw std::runtime_error("No se pudo abrir la grabación de voz.");uri.resize(count);
     impl_->events=std::make_shared<Impl::Events>();const auto events=impl_->events;
     impl_->player=MediaPlayer();impl_->player.AutoPlay(false);impl_->player.AudioCategory(MediaPlayerAudioCategory::Speech);
@@ -40,7 +41,8 @@ void NarrationPlayer::play(const std::filesystem::path& file,double milliseconds
 }
 void NarrationPlayer::tick(){impl_->tick();}
 void NarrationPlayer::seek(double value){impl_->requested=std::max(0.0,value);if(impl_->player&&impl_->started){impl_->events->ended.store(false);impl_->seeking=true;impl_->player.PlaybackSession().Position(std::chrono::milliseconds(static_cast<std::int64_t>(impl_->requested)));}}
-void NarrationPlayer::set_rate(double value){impl_->rate=std::clamp(value,.5,2.0);if(impl_->player&&impl_->started)impl_->player.PlaybackSession().PlaybackRate(impl_->rate);}
+void NarrationPlayer::set_rate(double value){impl_->rate=narration::clamp_playback_rate(value);if(impl_->player&&impl_->started)impl_->player.PlaybackSession().PlaybackRate(impl_->rate);}
+double NarrationPlayer::playback_rate()const{return impl_->player&&impl_->started?impl_->player.PlaybackSession().PlaybackRate():impl_->rate;}
 double NarrationPlayer::position()const{return impl_->position();}
 bool NarrationPlayer::ended()const{return impl_->events&&impl_->events->ended.load();}
 bool NarrationPlayer::ready()const{return impl_->player&&impl_->started&&!impl_->seeking;}

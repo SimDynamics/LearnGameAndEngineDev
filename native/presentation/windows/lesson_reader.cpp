@@ -1,4 +1,5 @@
 #include "presentation/windows/lesson_reader.hpp"
+#include "core/narration_speed.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/reader_theme.hpp"
@@ -19,6 +20,8 @@
 #include <array>
 #include <atomic>
 #include <cmath>
+#include <cwchar>
+#include <iterator>
 #include <condition_variable>
 #include <limits>
 #include <map>
@@ -42,6 +45,20 @@ bool promoted_pointer_mouse(){
 }
 std::string guid(){GUID id{};CoCreateGuid(&id);wchar_t value[40]{};StringFromGUID2(id,value,40);return utf8(value);}
 bool setting_bool(const state::StateData& data,const char* key,bool fallback){const auto value=state::find(data,"lesson_narration_settings",key);return value&&std::holds_alternative<bool>(*value)?std::get<bool>(*value):fallback;}
+bool owns_arrow_keys(HWND target,HWND view,HWND bar,const MSG& message){
+    if(!target||target==bar||IsChild(bar,target)||!IsChild(view,target))return false;
+    for(auto item=target;item&&item!=view;item=GetParent(item)){
+        wchar_t name[128]{};GetClassNameW(item,name,128);
+        if(_wcsicmp(name,L"EDIT")==0||_wcsnicmp(name,L"RichEdit",8)==0||
+            _wcsicmp(name,L"LearnGameAndEngineDev.MathExpressionEditor")==0)return true;
+        for(const auto kind:{L"ComboBox",L"ComboBoxEx32",L"ComboLBox",L"ListBox",L"SysListView32",L"SysTreeView32",
+                L"msctls_trackbar32",L"msctls_updown32",L"ScrollBar",L"ToolbarWindow32",L"BUTTON"})
+            if(_wcsicmp(name,kind)==0)return true;
+        auto query=message;query.hwnd=item;
+        if(SendMessageW(item,WM_GETDLGCODE,message.wParam,reinterpret_cast<LPARAM>(&query))&(DLGC_WANTARROWS|DLGC_WANTALLKEYS))return true;
+    }
+    return false;
+}
 }
 struct LessonReader::Impl {
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
@@ -102,7 +119,7 @@ struct LessonReader::Impl {
             if(selected==installed.end())configuration_error=voice.empty()?tr("No hay una voz de Windows instalada para este idioma.","No Windows voice is installed for this language.","Aucune voix Windows n’est installée pour cette langue."):tr("La voz de Windows seleccionada no está disponible para este idioma.","The selected Windows voice is unavailable for this language.","La voix Windows sélectionnée n’est pas disponible pour cette langue.");
             else voice=selected->id;
         }
-        const auto stored=state::find(preferences,"lesson_narration_settings","rate");rate=stored&&std::holds_alternative<double>(*stored)?std::clamp(std::get<double>(*stored),.5,2.):1;
+        const auto stored=state::find(preferences,"lesson_narration_settings","rate");rate=stored&&std::holds_alternative<double>(*stored)?narration::clamp_playback_rate(std::get<double>(*stored)):1;
         if(window){const std::array labels{tr("Retroceder 3 segundos","Back 3 seconds","Reculer de 3 secondes"),tr("Retroceder 5 segundos","Back 5 seconds","Reculer de 5 secondes"),tr("Adelantar 5 segundos","Forward 5 seconds","Avancer de 5 secondes"),tr("Adelantar 3 segundos","Forward 3 seconds","Avancer de 3 secondes"),tr("Reproducir o pausar","Play or pause","Lire ou mettre en pause"),tr("Velocidad de lectura","Playback speed","Vitesse de lecture"),tr("Reiniciar lectura","Restart reading","Recommencer la lecture")};for(std::size_t i=0;i<buttons.size();++i)if(buttons[i])SetWindowTextW(buttons[i],wide(labels[i]).c_str());ShowWindow(window,enabled&&visible?SW_SHOW:SW_HIDE);attach_lesson_reader_bar(view,window,enabled&&visible?bar_height:0);} }
     void save(bool ended=false){if(key.empty()||owner.empty()||!has_plan)return;
         if(player.allocated())position.milliseconds=static_cast<std::int64_t>(std::llround(player.position()));position.finished=ended;
@@ -483,20 +500,49 @@ struct LessonReader::Impl {
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
         else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();answer_priority.reset();previous_priority.reset();listened.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
+    void change_playback_rate(double value){
+        value=narration::clamp_playback_rate(value);if(rate==value)return;
+        rate=value;mutate([&](state::StateData& preferences){preferences.preferences["lesson_narration_settings"]["rate"]=rate;});
+        if(player.allocated())player.set_rate(rate);update_buttons();
+    }
+    void step_playback_rate(bool faster){
+        const auto& values=narration::playback_rates;
+        if(faster){const auto next=std::upper_bound(values.begin(),values.end(),rate);change_playback_rate(next==values.end()?values.back():*next);}
+        else{const auto next=std::lower_bound(values.begin(),values.end(),rate);change_playback_rate(next==values.begin()?values.front():*std::prev(next));}
+    }
     bool dispatch_shortcut(const MSG& message){
-        if(message.message!=WM_KEYDOWN)return false;
+        const bool speed_key=message.wParam==VK_F9||message.wParam==VK_F10;
+        const bool arrow_key=message.wParam==VK_LEFT||message.wParam==VK_UP||message.wParam==VK_DOWN||message.wParam==VK_RIGHT;
+        const bool down=message.message==WM_KEYDOWN||message.message==WM_SYSKEYDOWN;
+        const bool up=message.message==WM_KEYUP||message.message==WM_SYSKEYUP;
+        if(speed_key){if(!down&&!up)return false;}
+        // With no focused child, USER sends function keys to the active root
+        // as WM_SYSKEYDOWN even without Alt. The modifier/context guards below
+        // still reserve actual Alt combinations for their normal system action.
+        else if(!down)return false;
         std::size_t index=0;switch(message.wParam){
         case VK_F1:index=4;break;case VK_F2:index=6;break;
-        case VK_F5:index=0;break;case VK_F6:index=1;break;
-        case VK_F7:index=2;break;case VK_F8:index=3;break;
+        case VK_F5:case VK_LEFT:index=0;break;case VK_F6:case VK_UP:index=1;break;
+        case VK_F7:case VK_DOWN:index=2;break;case VK_F8:case VK_RIGHT:index=3;break;
+        case VK_F9:case VK_F10:index=5;break;
         default:return false;
         }
         for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN})
             if(GetKeyState(modifier)&0x8000)return false;
+        if((message.message==WM_SYSKEYDOWN||message.message==WM_SYSKEYUP)&&(message.lParam&(1LL<<29)))return false;
         const auto root=GetAncestor(view,GA_ROOT);
         if(!enabled||!visible||!IsWindowVisible(view)||!IsWindowVisible(window)||
             !IsWindowEnabled(root)||!IsWindowEnabled(view)||!IsWindowEnabled(window)||
             !message.hwnd||(message.hwnd!=root&&message.hwnd!=view&&!IsChild(view,message.hwnd)))return false;
+        // Arrow aliases yield to native cursor/selection and interactive controls,
+        // including readonly text. Function-key shortcuts keep their existing scope.
+        if(arrow_key&&(owns_arrow_keys(GetFocus(),view,window,message)||owns_arrow_keys(message.hwnd,view,window,message)))return false;
+        if(speed_key){
+            // F10's unmodified system-key release must not reach USER's menu
+            // activation. Repeats adjust speed until its endpoint, never wrap.
+            if(down&&IsWindowEnabled(buttons[5]))step_playback_rate(message.wParam==VK_F10);
+            return true;
+        }
         // Bit 30 distinguishes autorepeat from a new press. Consume repeats so
         // F1 cannot alternate play/pause or fall through to native Help handling.
         if(!(message.lParam&(1LL<<30))&&IsWindowEnabled(buttons[index]))
@@ -528,12 +574,12 @@ struct LessonReader::Impl {
         case WM_ERASEBKGND:return 1;
         case WM_PAINT:self->paint();return 0;
         case WM_COMMAND:if(HIWORD(wp)==BN_CLICKED){const auto id=LOWORD(wp)-button_base;switch(id){case 0:self->seek(-3);break;case 1:self->seek(-5);break;case 2:self->seek(5);break;case 3:self->seek(3);break;case 4:self->toggle();break;
-            case 5:{static constexpr double values[]{.5,1,1.5,2};auto it=std::ranges::find(values,self->rate);const auto index=it==std::end(values)?1:static_cast<std::size_t>(it-std::begin(values));self->rate=values[(index+1)%4];self->mutate([&](state::StateData& preferences){preferences.preferences["lesson_narration_settings"]["rate"]=self->rate;});if(self->player.allocated())self->player.set_rate(self->rate);self->update_buttons();break;}
+            case 5:{const auto& values=narration::playback_rates;const auto it=std::ranges::find(values,self->rate);const auto index=it==values.end()?1:static_cast<std::size_t>(it-values.begin());self->change_playback_rate(values[(index+1)%values.size()]);break;}
             case 6:self->restart();break;default:break;}return 0;}break;
         case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);const auto index=static_cast<std::size_t>(item.CtlID-button_base);if(index>=self->buttons.size())return FALSE;
             auto bounds=item.rcItem;const auto palette=reader_theme::palette(window);FillRect(item.hDC,&bounds,reader_theme::brush(reader_theme::Surface::card));InflateRect(&bounds,-self->px(11),-self->px(11));
             static constexpr Icon icons[]{Icon::rewind3,Icon::rewind5,Icon::forward5,Icon::forward3,Icon::speaker,Icon::play,Icon::reset};
-            if(index==5){const auto previous=SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,reader_theme::accent_ink(window,palette.card));const auto caption=self->rate==.5?L"0.5X":self->rate==1?L"1X":self->rate==1.5?L"1.5X":L"2X";auto caption_bounds=item.rcItem;DrawTextW(item.hDC,caption,-1,&caption_bounds,DT_SINGLELINE|DT_CENTER|DT_VCENTER);SelectObject(item.hDC,previous);}
+            if(index==5){const auto previous=SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,reader_theme::accent_ink(window,palette.card));wchar_t caption[32]{};std::swprintf(caption,std::size(caption),L"%gX",self->rate);auto caption_bounds=item.rcItem;DrawTextW(item.hDC,caption,-1,&caption_bounds,DT_SINGLELINE|DT_CENTER|DT_VCENTER);SelectObject(item.hDC,previous);}
             else draw_icon(item.hDC,bounds,icons[index],index==4?(self->wanted?palette.accent:RGB(255,255,255)):index==6?RGB(170,174,183):RGB(255,255,255));
             if(item.itemState&ODS_FOCUS)reader_theme::paint_keyboard_focus(item.hwndItem,item.hDC,item.rcItem,palette.muted);return TRUE;}
         case WM_LBUTTONDOWN:{self->drag_start={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&self->drag_start);RECT rect{};GetWindowRect(window,&rect);self->bar_start={rect.left,rect.top};ScreenToClient(self->view,&self->bar_start);self->drag_at=GetTickCount64();self->dragging=true;self->drag_moved=false;self->drag_rejected=false;self->drag_requires_hold=promoted_pointer_mouse();self->pressed_button=nullptr;SetCapture(window);return 0;}
@@ -576,6 +622,7 @@ LessonReaderSnapshot LessonReader::snapshot()const{
     value.playing=self.wanted&&self.player.ready();value.allocated=self.player.allocated();value.planned=self.has_plan;
     value.preparing=self.planning;value.finished=self.finished;value.waiting_gate=self.waiting_gate;value.index=self.current();
     value.offset=self.player.allocated()?static_cast<std::int64_t>(std::llround(self.player.position())):self.position.milliseconds;
+    value.rate=self.rate;value.playback_rate=self.player.ready()?self.player.playback_rate():0;
     value.heard_through=self.position.heard_through;value.error=self.error;value.key=self.key;
     for(const auto& part:self.parts){LessonReaderSegmentSnapshot segment;
         segment.region=part.region.key;segment.source=part.sentence.text;segment.spoken=part.sentence.spoken;segment.target=part.region.target;

@@ -703,6 +703,60 @@ void passive_mouse_tests(HWND host) {
         "Destroying mathematics omitted origin-specific gesture cleanup");
     std::cout<<"PASS passive mathematics mouse delegation: original subclass/coordinates, optional handling, no answer mutation, interactive isolation and origin lifecycle cleanup\n";
 }
+void mathematical_labels_keep_their_content_locale(HWND host){
+    const std::string prompt="The main idea uses std::cout.";
+    const std::string label="The main idea calls std::cout.";
+    const std::string formula="The main idea: std::cout and \\(main+1\\).";
+    const auto format=[&](HWND target,const std::string& original,std::size_t byte){
+        const auto unit=wide(std::string_view(original).substr(0,byte)).size();
+        const auto mapping=native_math_text_mapping(target,original);
+        const auto at=mapping?mapping->source_to_native.at(unit):unit;
+        CHARRANGE before{},selected{static_cast<LONG>(at),static_cast<LONG>(at+1)};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
+        SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));CHARFORMAT2W ink{};ink.cbSize=sizeof(ink);
+        SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&ink));SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return ink;
+    };
+    for(const auto locale:{"en","fr"}){
+        auto raw=simple_block(R"({"id":"number","type":"math_numeric_input","label":"The main idea calls std::cout."})");
+        raw.SetNamedValue(L"prompt",JsonValue::CreateStringValue(wide(prompt)));
+        JsonObject representation;representation.SetNamedValue(L"type",JsonValue::CreateStringValue(L"text"));representation.SetNamedValue(L"text",JsonValue::CreateStringValue(wide(formula)));
+        JsonArray representations;representations.Append(representation);raw.SetNamedValue(L"representations",representations);
+        int changes=0;MathPuzzleCallbacks callbacks;callbacks.changed=[&]{++changes;};
+        MathPuzzleView view(host,winrt::to_string(raw.Stringify()),locale,"",std::move(callbacks));view.layout(0,0,700);view.set_text_scale(125);
+        const auto fields=edits(view.window());require(fields.size()==1,"The locale fixture did not create its original numeric answer");
+        const auto input=fields.front();replace(input,"12.5");CHARRANGE answer_selection{1,3};SendMessageW(input,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&answer_selection));
+        std::vector<std::pair<HWND,std::string>> labels;
+        for(const auto& source:{prompt,label,formula}){HWND target=nullptr;for(const auto& region:view.reading_regions())if(region.source_text==source)target=region.target;
+            require(target,"A locale-sensitive mathematical prompt/label lost its reading region");labels.emplace_back(target,source);}
+        const auto inline_mapping=native_math_text_mapping(labels.back().first,formula);
+        require(inline_mapping&&inline_mapping->built_up,"The locale fixture did not exercise its actual inline native formula");
+        const auto check_labels=[&]{for(const auto& [target,source]:labels){
+            const auto plain=format(target,source,0),main=format(target,source,source.find("main")),code=format(target,source,source.find("std::cout"));
+            require((main.dwEffects&CFE_AUTOBACKCOLOR)&&main.crTextColor==plain.crTextColor&&std::wstring_view(main.szFaceName)==plain.szFaceName,
+                "English/French ordinary main prose acquired a Spanish technical background, ink or font");
+            require(((code.dwEffects&CFE_AUTOBACKCOLOR)!=0)==reader_theme::palette(target).high_contrast,
+                "An English/French std::cout mention lost its actual technical background");
+            if(source==formula)require(format(target,source,source.find("\\(")+2).dwEffects&CFE_AUTOBACKCOLOR,
+                "A protected formula acquired the programming underlay");
+        }};
+        check_labels();const auto saved=view.answers_json(),identity=view.answer_identity_json();const auto original_changes=changes;
+        std::vector<CHARFORMAT2W> before;for(const auto& [target,source]:labels){before.push_back(format(target,source,source.find("std::cout")));CHARRANGE selection{1,3};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));}
+        int layouts=0;view.set_expression_request([&](std::string_view request){const auto query=JsonObject::Parse(wide(request));
+            require(query.GetNamedString(L"action")==L"text_layout","Installing the locale fixture requested unrelated mathematics work");++layouts;return std::string(R"({"fragments":[]})");});
+        require(layouts>=2,"The late mathematics callback did not reformat the actual prompt and label");check_labels();
+        for(std::size_t index=0;index<labels.size();++index){const auto& [target,source]=labels[index];const auto after=format(target,source,source.find("std::cout"));
+            CHARRANGE selection{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));int numerator=0,denominator=0;
+            SendMessageW(target,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            require(after.crBackColor==before[index].crBackColor&&after.crTextColor==before[index].crTextColor&&
+                (after.dwEffects&CFE_AUTOBACKCOLOR)==(before[index].dwEffects&CFE_AUTOBACKCOLOR)&&selection.cpMin==1&&selection.cpMax==3&&
+                denominator>0&&numerator*100==denominator*125,"Refreshing expression support changed the localized background, ink, selection or text zoom");
+        }
+        CHARRANGE selected{};SendMessageW(input,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        require(edits(view.window()).front()==input&&edit_text(input)=="12.5"&&selected.cpMin==answer_selection.cpMin&&selected.cpMax==answer_selection.cpMax&&
+            view.answers_json()==saved&&view.answer_identity_json()==identity&&changes==original_changes,
+            "Refreshing localized mathematical labels replaced an answer field or changed its original draft/caret/state");
+    }
+    std::cout<<"PASS English/French mathematical prose and std::cout backgrounds retain content locale, protected formula, native inputs, caret and state after late empty-fragment support\n";
+}
 }
 
 int main(int argc,char** argv) {
@@ -710,6 +764,7 @@ int main(int argc,char** argv) {
     try {
         lgaed::windows::ensure_winrt_apartment(); INITCOMMONCONTROLSEX common{sizeof(common),ICC_BAR_CLASSES}; InitCommonControlsEx(&common); Host host;
         require(host.window != nullptr,"Cannot create isolated QA host"); tom_probe(host.window);
+        if(argc>1&&std::string_view(argv[1])=="--locale-technical"){mathematical_labels_keep_their_content_locale(host.window);return 0;}
         canvas_viewport_tests(host.window);
         structured_input_tests(host.window);
         android_control_parity_tests(host.window);
@@ -724,6 +779,7 @@ int main(int argc,char** argv) {
         field_column_parity_tests(host.window);
         rigid_angle_copy_tests(host.window);
         automatic_mathematics_tests(host.window);
+        mathematical_labels_keep_their_content_locale(host.window);
         slider_and_coordinate_draft_tests(host.window);
         passive_mouse_tests(host.window);
         if (argc > 1 && std::string_view(argv[1]) == "--visual") {

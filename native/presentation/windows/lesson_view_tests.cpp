@@ -11,6 +11,8 @@
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "core/retirement_test_fixture.hpp"
+#include "core/narration_state.hpp"
+#include "core/view_preferences.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/narration_worker.hpp"
 #include "native_build_config.hpp"
@@ -29,6 +31,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -289,9 +292,23 @@ struct Fixture {
             SendMessageW(pane,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(delta)),0);
             SCROLLINFO after{sizeof(after),SIF_POS}; GetScrollInfo(pane,SB_VERT,&after);
             if (after.nPos != initial.nPos) {
-                RECT dirty{}, client{}; GetClientRect(pane,&client);
-                require(GetUpdateRect(pane,&dirty,FALSE) && EqualRect(&dirty,&client),
-                        "Moving rows did not invalidate the complete old viewport background");
+                RECT client{};GetClientRect(pane,&client);
+                const auto exposed=CreateRectRgnIndirect(&client),pending=CreateRectRgn(0,0,0,0),child_region=CreateRectRgn(0,0,0,0);
+                require(exposed&&pending&&child_region,"Cannot observe the lesson's exposed background region");
+                const auto pending_kind=GetUpdateRgn(pane,pending,FALSE);
+                // WS_CLIPCHILDREN legitimately leaves no parent update when
+                // one long source covers the entire viewport. Require every
+                // exposed background pixel, including shaped child corners,
+                // to be dirty rather than demanding hidden parent pixels.
+                for(auto child=GetWindow(pane,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT))if(IsWindowVisible(child)){
+                    RECT bounds{};GetWindowRect(child,&bounds);POINT origin{bounds.left,bounds.top};ScreenToClient(pane,&origin);
+                    if(GetWindowRgn(child,child_region)==ERROR)SetRectRgn(child_region,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top);
+                    OffsetRgn(child_region,origin.x,origin.y);CombineRgn(exposed,exposed,child_region,RGN_DIFF);
+                }
+                CombineRgn(exposed,exposed,pending,RGN_DIFF);RECT missing{};const auto uncovered=GetRgnBox(exposed,&missing);
+                DeleteObject(child_region);DeleteObject(pending);DeleteObject(exposed);
+                require(pending_kind!=ERROR&&uncovered==NULLREGION,
+                        "Moving rows left exposed viewport background outside its repaint region");
                 RECT viewport{}; GetWindowRect(pane,&viewport);
                 for (const auto& snapshot : before) {
                     RECT child{}, visible{}; GetWindowRect(snapshot.item,&child);
@@ -1210,10 +1227,47 @@ void native_compiler_editor_overflow_bars(){
     }
     std::cout<<"PASS compiler editor/stdin native overflow in lessons and Laboratory, wrap, shrinking, offsets and Undo\n";
 }
+void native_compiler_short_sources_keep_a_usable_height(){
+    const std::string seven_lines="#include <iostream>\n\nint main() {\n    std::cout << \"Texto\";\n    return 0;\n}\n";
+    const std::string shorter="int main() {\n}\n";
+    bool stable=true;
+    for(const int scale:{75,100,150}){
+        Fixture fixture([scale](state::StateData& data,const curriculum::Lesson&){appearance::save_global_text_scale(data,scale);},
+            [&](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({"id":"cpp_fundamentals__qa__compiler_height","title":"Espacio de edición estable","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main() {}"}]}]})json");
+                model.pages[0].blocks[0].initial_code=seven_lines;return model;});
+        const auto source=fixture.control(0,10);const auto dpi=static_cast<int>(GetDpiForWindow(source));
+        const auto px=[dpi](int logical){return MulDiv(logical,dpi,96);};
+        POINTL first{},second{};SendMessageW(source,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+        const auto second_line=SendMessageW(source,EM_LINEINDEX,1,0);require(second_line>=0,"The seven-line editor fixture lost its actual native line geometry");
+        SendMessageW(source,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),second_line);
+        const auto minimum=std::clamp(static_cast<int>(second.y-first.y)*10+px(32),px(220),px(320));
+        int original_height=0;
+        const auto check=[&](std::string_view stage){RECT bounds{};GetWindowRect(source,&bounds);const auto height=static_cast<int>(bounds.bottom-bounds.top);
+            if(!original_height)original_height=height;
+            stable=stable&&height>=minimum-1&&height<=px(320)+1&&height==original_height;
+            std::cout<<"INFO compiler viewport scale="<<scale<<" stage="<<stage<<" actual="<<height<<" minimum="<<minimum
+                <<" initial="<<original_height<<" lines="<<SendMessageW(source,EM_GETLINECOUNT,0,0)<<'\n';};
+        check("seven lines");fixture.replace(0,10,shorter);check("shorter source");fixture.replace(0,10,"");check("empty source");
+        require(SendMessageW(source,WM_UNDO,0,0),"The source height test lost its real Undo history");pump(fixture.host);
+        require(fixture.text(0,10)==shorter,"Undo changed the shortened compiler draft");check("Undo");
+        require(SendMessageW(source,EM_REDO,0,0),"The source height test lost its real Redo history");pump(fixture.host);
+        require(fixture.text(0,10).empty(),"Redo changed the empty compiler draft");check("Redo");
+        fixture.replace(0,10,seven_lines);fixture.click(0,35);check("wrap");
+        CHARRANGE selection{4,9};SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,0);pump(fixture.host);check("resize");
+        fixture.click(0,20);require(fixture.fullscreen(),"The compiler viewport test did not enter actual fullscreen");fixture.escape();check("fullscreen return");
+        CHARRANGE after{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+        require(fixture.control(0,10)==source&&fixture.text(0,10)==seven_lines&&after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax,
+            "Keeping the compiler usable changed its source HWND, draft or selection");
+    }
+    require(stable,"A short compiler source collapsed below its ten-line/220dp editing space or changed height while shortening");
+    std::cout<<"PASS short compiler sources: seven/three/empty lines, Undo/Redo, wrap, resize and fullscreen return retain a usable ten-line viewport at75/100/150percent zoom\n";
+}
 void native_compiler_output_overflow_bars(){
     Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_compiler_console_overflow","title":"Salida real","pages":[{"blocks":[
         {"type":"cpp_compiler","initialCode":"#include <iostream>\n#include <string>\nint main() { for (int i=0;i<40;++i) std::cout << std::string(400,'x') << '\\n'; }\n"}]}]})json");});
     const auto console=fixture.control(0,14),action=fixture.control(0,11);
+    require(reader_theme::native_scrollbar_theme(console),"The compiler console retained a competing nonclient scrollbar painter");
     require(!(GetWindowLongPtrW(console,GWL_STYLE)&(WS_HSCROLL|WS_VSCROLL)),"An empty compiler console reserves native scrollbars");
     fixture.click(0,11);wait_for(fixture.host,[&]{return IsWindowEnabled(action);},"Large real compiler output did not finish");
     require(fixture.text(0,14).size()==std::size_t{40*401}&&(GetWindowLongPtrW(console,GWL_STYLE)&WS_HSCROLL)&&(GetWindowLongPtrW(console,GWL_STYLE)&WS_VSCROLL),
@@ -1868,6 +1922,17 @@ void premium_attempt_indicator(){
 }
 void text_sequence_lesson_all_pages() {
     constexpr std::string_view lesson_id = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato";
+    constexpr std::array<std::string_view,4> retired_ids{
+        "ejecucion_original_texto_secuencia_y_formato_consigna","ejecucion_original_texto_secuencia_y_formato_editor",
+        "block_0007_0002","block_0007_0003"};
+    const auto archived_code=[](const curriculum::Lesson& lesson,std::string_view identity)->const curriculum::Block&{
+        const auto found=std::ranges::find(lesson.retired_blocks,identity,&curriculum::Block::stable_id);
+        require(found!=lesson.retired_blocks.end()&&found->type==BlockType::code&&found->language=="cpp"&&!found->code.empty(),
+            "A retired report reference lost its exact authored C++ program");
+        require(!curriculum::stable_block_position(lesson,identity)&&curriculum::active_block_successor(lesson,identity).has_value(),
+            "A retired report reference became active or lost its reachable successor");
+        return *found;
+    };
     const auto load = [](const curriculum::Lesson&) {
         return windows::load_lesson(std::filesystem::path(build::source_root) /
             "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json");
@@ -1881,7 +1946,11 @@ void text_sequence_lesson_all_pages() {
         const auto regions = lesson_reading_regions(fixture.view);
         // A historical bookmark may point at the comparison page while all
         // of its references remain locked. That page must narrate no answers.
-        require(!regions.empty() || (page==7 && !descendant(fixture.view,id(2,1)) && !descendant(fixture.view,id(3,1))),
+        bool locked_comparison=current.page_id=="page_0007";
+        if(locked_comparison)for(std::size_t index=0;index<fixture.lesson.pages.at(page).blocks.size();++index)
+            if(!curriculum::reference_activity(fixture.lesson,fixture.lesson.pages.at(page).blocks[index])
+                    ||descendant(fixture.view,id(index,0)))locked_comparison=false;
+        require(!regions.empty() || locked_comparison,
             "Opening the text/sequence lesson lost its available narration regions");
         // Exercise real RichEdit selection callbacks after construction as well
         // as the formatting callbacks emitted while each page is being built.
@@ -1901,6 +1970,14 @@ void text_sequence_lesson_all_pages() {
         Fixture fixture({},load);
         require(fixture.lesson.pages.size() == 8,"The text/sequence regression must cover all eight authored pages");
         const auto original_json = fixture.lesson.raw_json;
+        require(fixture.lesson.retired_blocks.size()==retired_ids.size(),"The actual report lesson lost one of its four conserved retirements");
+        for(const auto identity:retired_ids)require(curriculum::retired_block(fixture.lesson,identity)
+            &&!curriculum::stable_block_position(fixture.lesson,identity),"A conserved retired report block reentered the active lesson");
+        const auto one_literal=archived_code(fixture.lesson,"block_0007_0002").code;
+        const auto three_instructions=archived_code(fixture.lesson,"block_0007_0003").code;
+        require(one_literal!=three_instructions&&one_literal.find("\"Informe\\nZona Este\\nFin\"")!=std::string::npos
+            &&three_instructions.find("\"Informe\\n\"")!=std::string::npos&&three_instructions.find("\"Zona Este\\n\"")!=std::string::npos,
+            "The archived reference programs no longer exercise both independent report constructions");
         for (std::size_t page = 0; page < 8; ++page) {
             std::cout << "QA actual text/sequence lesson page " << page + 1 << "/8\n";
             verify_page(fixture,page);
@@ -1934,7 +2011,19 @@ void text_sequence_lesson_all_pages() {
                 const auto second=curriculum::stable_block_position(fixture.lesson,"block_0006_0006");
                 require(first&&second&&first->page==page&&second->page==page
                     &&fixture.lesson.compiler_puzzles_required&&fixture.lesson.activity_after.size()==1
-                    &&fixture.lesson.retired_blocks.size()==2,"The integrated report page lost its two useful required objectives");
+                    &&std::ranges::count(fixture.lesson.pages[page].blocks,BlockType::cpp_compiler,&curriculum::Block::type)==2,
+                    "The integrated report page lost its two useful required objectives");
+                const auto& first_objective=fixture.lesson.pages[first->page].blocks[first->block];
+                const auto& second_objective=fixture.lesson.pages[second->page].blocks[second->block];
+                const std::vector<std::string> expected_outputs{"Informe\nZona Este\nFin","Informe\nZona Este\nFin\n"};
+                for(const auto* objective:{&first_objective,&second_objective})require(objective->output_check
+                    &&objective->output_check->input_comparison==curriculum::TextComparison::exact&&objective->output_check->cases.size()==1
+                    &&objective->output_check->cases[0].standard_input.empty()&&objective->output_check->cases[0].outputs==expected_outputs,
+                    "A useful report objective lost its exact three-line output or optional final newline");
+                require(curriculum::activity_prerequisites(fixture.lesson,second_objective)==std::vector<curriculum::StatePosition>{*first}
+                    &&fixture.lesson.reference_after.size()==1&&fixture.lesson.reference_after[0].activity==second_objective.stable_id
+                    &&fixture.lesson.reference_after[0].blocks==std::vector<std::string>{"block_0007_0000","block_0007_0001","block_0007_0004"},
+                    "The useful report chain or its current comparison references lost their stable dependency owners");
                 const auto first_editor=fixture.control(first->block,10);
                 const auto hidden_from_reader=[&](std::size_t index){return std::ranges::none_of(lesson_reading_regions(fixture.view),
                     [&](const auto& region){return region.block_index==index;});};
@@ -1943,7 +2032,6 @@ void text_sequence_lesson_all_pages() {
                 fixture.run(first->block);
                 require(fixture.text(first->block,4).starts_with("✗ Incorrecto")&&!descendant(fixture.view,id(second->block,10)),
                     "Executing the unchanged displayed report falsely completed its construction");
-                const auto one_literal=fixture.lesson.pages[7].blocks[2].code;
                 fixture.replace(first->block,10,one_literal+"esto no compila\n");fixture.run(first->block);
                 require(fixture.text(first->block,4).empty()&&!descendant(fixture.view,id(second->block,10)),
                     "A compile failure falsely completed the current report objective");
@@ -1954,7 +2042,6 @@ void text_sequence_lesson_all_pages() {
                 const auto second_editor=fixture.control(second->block,10);
                 fixture.run(second->block);
                 require(fixture.text(second->block,4).starts_with("✗ Incorrecto"),"The second useful construction inherited another compiler's success");
-                const auto three_instructions=fixture.lesson.pages[7].blocks[3].code;
                 fixture.replace(second->block,10,three_instructions);fixture.run(second->block);
                 require(fixture.text(second->block,14)=="Informe\nZona Este\nFin"&&fixture.text(second->block,4).starts_with("✓ Correcto")
                     &&fixture.control(second->block,10)==second_editor&&fixture.text(first->block,10)==one_literal,
@@ -1962,19 +2049,26 @@ void text_sequence_lesson_all_pages() {
                 require(!curriculum::stable_block_position(fixture.lesson,"ejecucion_original_texto_secuencia_y_formato_editor"),
                     "Current report navigation reactivated its retired redundant editor");
             } else if (page == 7) {
-                require(fixture.text(2,1) == fixture.lesson.pages[7].blocks[2].code
-                        && fixture.text(3,1) == fixture.lesson.pages[7].blocks[3].code,
-                    "The completed compiler chain failed to reveal its exact authored comparison references");
-                // Android LessonActivity.addCode() assigns 8dp top/24dp
-                // bottom margins outside each card. RichEdit's 16dp bottom
-                // fill is inside the first card and must not swallow the gap.
-                RECT first_body{},next_header{};
-                GetWindowRect(fixture.control(2,1),&first_body);
-                GetWindowRect(fixture.control(3,16),&next_header);
-                const auto dpi=static_cast<int>(GetDpiForWindow(fixture.view));
-                const int expected=MulDiv(16+24+8,dpi,96);
-                require(std::abs(next_header.top-first_body.bottom-expected)<=1,
-                    "Two adjacent authored C++ references lost Android's separate card margins");
+                require(fixture.lesson.pages[page].stable_id=="page_0007"&&fixture.lesson.pages[page].blocks.size()==3,
+                    "The current comparison page lost its three retained prose references");
+                const auto regions=lesson_reading_regions(fixture.view);
+                for(const auto identity:{"block_0007_0000","block_0007_0001","block_0007_0004"}){
+                    const auto at=curriculum::stable_block_position(fixture.lesson,identity);
+                    require(at&&at->page==page,"A useful comparison reference lost its stable current position");
+                    const auto& reference=fixture.lesson.pages[at->page].blocks[at->block];
+                    require(fixture.text(at->block,0)==reference.text&&std::ranges::any_of(regions,[&](const auto& region){
+                            return region.block_index==at->block&&region.source_text==reference.text&&region.target==fixture.control(at->block,0);}),
+                        "The completed compiler chain failed to reveal its exact retained comparison text and narration");
+                    require(!descendant(fixture.view,id(at->block,1))&&!descendant(fixture.view,id(at->block,16)),
+                        "The retired comparison programs still created native code cards on the current prose page");
+                }
+                for(const auto identity:retired_ids)require(std::ranges::none_of(regions,[&](const auto& region){
+                    return region.key.find('/'+std::string(identity)+'/')!=std::string::npos;}),
+                    "A retired execution or reference program leaked into current comparison narration");
+                fixture.reopen();verify_page(fixture,page);
+                require(archived_code(fixture.lesson,"block_0007_0002").code==one_literal
+                    &&archived_code(fixture.lesson,"block_0007_0003").code==three_instructions,
+                    "Reopening the completed comparison page changed either conserved reference program");
             }
             if (page + 1 < 8) fixture.next();
         }
@@ -2786,7 +2880,81 @@ void compiler_puzzle_completion_and_navigation() {
 }
 }
 
+namespace {
+struct NarrationLayoutTrace {
+    unsigned geometry=0,formatting=0,erases=0;
+    std::vector<HWND> targets;
+    static LRESULT CALLBACK proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+        auto& trace=*reinterpret_cast<NarrationLayoutTrace*>(raw);
+        if(message==WM_SIZE||message==EM_SETRECT||message==EM_SETRECTNP||message==EM_SETMARGINS)++trace.geometry;
+        if(message==WM_SETFONT||message==EM_SETZOOM||message==EM_SETTARGETDEVICE||message==EM_SETCHARFORMAT)++trace.formatting;
+        if(message==WM_ERASEBKGND)++trace.erases;
+        return DefSubclassProc(item,message,wp,lp);
+    }
+    explicit NarrationLayoutTrace(std::initializer_list<HWND> items):targets(items) {
+        for(const auto item:targets)require(SetWindowSubclass(item,proc,0x4e415252,reinterpret_cast<DWORD_PTR>(this)),"Cannot observe native narration repaints");
+    }
+    ~NarrationLayoutTrace(){for(const auto item:targets)if(IsWindow(item))RemoveWindowSubclass(item,proc,0x4e415252);}
+    void clear(){geometry=formatting=erases=0;}
+    std::string counts()const{return "geometry="+std::to_string(geometry)+" formatting="+std::to_string(formatting)+" erases="+std::to_string(erases);}
+};
+void narration_checkpoints_do_not_reformat_or_reflow_the_page() {
+    Fixture f({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"cpp_fundamentals__qa__narration_repaint","title":"Narración y vista estable","pages":[{"blocks":[
+        {"type":"paragraph","text":"Uno dos tres. Conserva el contenido al guardar la lectura."},
+        {"type":"code","code":"#include <iostream>\nint main() {\n    std::cout << \"Texto de ejemplo\";\n}\n"},
+        {"type":"cpp_compiler","initialCode":"#include <iostream>\nint main() {\n    std::cout << \"Texto del editor\";\n}\n"}
+    ]}]})json");});
+    const auto paragraph=f.control(0,0),example=f.control(1,1),editor=f.control(2,10),pane=GetParent(paragraph);
+    const auto initial=f.text(2,10);f.replace(2,10,initial+"// conservar Undo de la edición\n");
+    const auto source=f.text(2,10),example_source=f.text(1,1);CHARRANGE selection{4,12};
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));pump(f.host);
+    const auto before_scroll=[&]{POINT value{};SendMessageW(editor,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&value));return value;}();
+    NarrationLayoutTrace trace{pane,paragraph,example,editor};
+    const auto quiet=[&](std::string_view stage,const std::function<void(state::StateData&)>& change){
+        trace.clear();update_lesson_preferences(f.view,change);pump(f.host);
+        require(trace.geometry==0&&trace.formatting==0&&trace.erases==0,
+            std::string("A nonvisual narration update repainted/reformatted the page: ")+std::string(stage)+" "+trace.counts());
+        CHARRANGE after{};POINT scroll{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));SendMessageW(editor,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        require(after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&scroll.x==before_scroll.x&&scroll.y==before_scroll.y&&
+            f.text(2,10)==source&&f.text(1,1)==example_source,"A narration checkpoint moved the editor or changed its source/selection");
+    };
+    quiet("begin",[](state::StateData& data){auto history=narration::begin(narration::read_history(data),"qa-narration-key","qa-owner",{}, {},"qa-page");narration::write_history(data,history);});
+    for(const auto milliseconds:{1201,2402,3603})quiet("checkpoint",[&](state::StateData& data){
+        auto history=narration::checkpoint(narration::read_history(data),"qa-narration-key","qa-owner",{0,milliseconds,0,false});narration::write_history(data,history);});
+    quiet("rate/voice/flow",[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=1.5;
+        data.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string("em_alex");data.preferences["learning_flow_settings"]["qa_flow_choice"]=true;});
+    quiet("another course",[](state::StateData& data){appearance::save_course_text_scale(data,"unrelated_course",false,125);
+        appearance::save_course_wrap(data,"unrelated_course",true);});
+    quiet("same effective scale",[](state::StateData& data){appearance::save_course_text_scale(data,"cpp_fundamentals",true,125);});
+    quiet("retired editing bar shortcuts",[](state::StateData& data){data.preferences["keyboard_shortcut_settings"]["cpp_shortcuts"]=std::string(R"(["std::cout","<<",";"])");});
+    const auto state=f.saved();const auto history=narration::read_history(state);
+    require(history.entries.size()==1&&history.entries[0].position.milliseconds==3603&&
+        std::get<double>(*state::find(state,"lesson_narration_settings","rate"))==1.5,"A quiet narration update was not persisted");
+    bool rejected=false;const auto before_rejection=f.saved();
+    try{update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["learning_progress"]["qa_forbidden"]=true;});}
+    catch(const std::invalid_argument&){rejected=true;}
+    require(rejected&&f.saved()==before_rejection,"Avoiding redraw weakened the protection of student progress");
+    trace.clear();update_lesson_preferences(f.view,[](state::StateData& data){appearance::save_global_text_scale(data,150);});pump(f.host);
+    int numerator=0,denominator=0;SendMessageW(editor,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+    require(trace.formatting>0&&denominator>0&&numerator*100==denominator*150,"A real scale preference no longer reformats the live editor");
+    trace.clear();update_lesson_preferences(f.view,[](state::StateData& data){appearance::save_course_wrap(data,"cpp_fundamentals",true);});pump(f.host);
+    require(!(GetWindowLongPtrW(editor,GWL_STYLE)&ES_AUTOHSCROLL)&&trace.formatting>0,"A real wrap preference no longer updates the live editor");
+    update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["appearance_settings"]["route_accent_blue_programming"]=std::int64_t{123};});pump(f.host);
+    const auto colors=reader_theme::palette(f.view);require(colors.high_contrast||colors.accent==RGB(228,50,123),"A real route accent preference no longer repaints its current controls");
+    update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("en");});pump(f.host);
+    require(accessible_name(f.control(110))=="Back"&&f.text(2,10)==source&&f.text(1,1)==example_source,
+        "Refreshing the interface language lost labels or changed authored code");
+    update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["native_windows"]["ui_language"]=std::string("es");});pump(f.host);
+    require(accessible_name(f.control(110))=="Volver","Returning to Spanish did not refresh the live interface");
+    require(f.text(2,10)==source&&SendMessageW(editor,WM_UNDO,0,0)&&f.text(2,10)==initial,
+        "Quiet checkpoint persistence or later real view updates discarded source Undo");
+    require(SendMessageW(editor,EM_REDO,0,0)&&f.text(2,10)==source,"Checkpoint persistence discarded source Redo");
+    std::cout<<"PASS narration checkpoints: persisted begin/1200ms history/rate/voice/flow without page geometry, font, zoom or erase work; real scale/wrap/accent, protected progress, source/selection/Undo/Redo retained\n";
+}
+}
+
 int main(int argc,char* argv[]) {
+    const bool scroll_repaint_only=argc==2&&std::string_view(argv[1])=="--scroll-repaint";
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
@@ -2796,7 +2964,9 @@ int main(int argc,char* argv[]) {
     const bool dependent_puzzles_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool editor_overflow_only=argc==2&&std::string_view(argv[1])=="--editor-overflow";
     const bool answer_overflow_only=argc==2&&std::string_view(argv[1])=="--answer-overflow";
-    if(argc>1&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only)return 2;
+    const bool narration_repaint_only=argc==2&&std::string_view(argv[1])=="--narration-repaint";
+    const bool compiler_height_only=argc==2&&std::string_view(argv[1])=="--compiler-height";
+    if(argc>1&&!scroll_repaint_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -2804,6 +2974,9 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(scroll_repaint_only){simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
+        if(compiler_height_only){native_compiler_short_sources_keep_a_usable_height();return 0;}
+        if(narration_repaint_only){narration_checkpoints_do_not_reformat_or_reflow_the_page();return 0;}
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}
         if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
@@ -2831,6 +3004,7 @@ int main(int argc,char* argv[]) {
         native_solved_answer_style();
         native_answer_end_viewport();
         native_compiler_editor_overflow_bars();
+        native_compiler_short_sources_keep_a_usable_height();
         native_compiler_output_overflow_bars();
         lesson_interface_languages();
         laboratory_interface_parity();

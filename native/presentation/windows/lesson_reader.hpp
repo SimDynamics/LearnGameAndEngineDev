@@ -24,6 +24,7 @@ struct LessonReaderSnapshot {
     bool playing = false,allocated = false,planned = false,preparing = false,finished = false,waiting_gate = false;
     std::size_t index = 0;
     std::int64_t offset = 0,heard_through = 0;
+    double rate = 1,playback_rate = 0;
     std::string error,key;
     std::vector<LessonReaderSegmentSnapshot> segments;
 };
@@ -45,7 +46,8 @@ public:
     void seek_seconds(int);
     void restart();
     // Called before dialog dispatch so focused RichEdit controls cannot swallow
-    // the unmodified reader keys. Activates the existing buttons once per press.
+    // reader keys. F9/F10 step speed with clamped repeats; other actions fire once.
+    // Left/Up/Down/Right alias F5/F6/F7/F8 only outside text/interactive controls.
     [[nodiscard]] bool dispatch_shortcut(const MSG&);
     [[nodiscard]] HWND bar()const;
     // Observes UI-thread state only. Does not tick media, advance reading or save.

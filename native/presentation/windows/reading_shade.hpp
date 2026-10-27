@@ -16,7 +16,7 @@ public:
     void restore();
     [[nodiscard]] std::size_t length()const noexcept{return source_.size();}
 private:
-    struct Ink{long start,end;COLORREF color;bool automatic;};
+    struct Ink{long start,end;COLORREF color,background;bool automatic,automatic_background;};
     HWND window_;std::wstring source_,displayed_;std::vector<std::size_t> map_;std::vector<Ink> ink_;
     long boundary_=-1;bool valid_=false;
 };

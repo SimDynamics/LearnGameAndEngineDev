@@ -254,7 +254,7 @@ void CppProjectView::Impl::open_history(){
                         "Aucune révision pour le moment. Enregistrez les fichiers actuels pour les comparer ou récupérer un fichier précis plus tard. Le brouillon est sauvegardé séparément.")
                     :ui("Elige una revisión para comparar sus archivos con el borrador actual. Recuperar un archivo conserva los demás cambios. Una revisión guardada no es un programa construido.",
                         "Choose a revision to compare its files with the current draft. Recovering one file preserves other changes. A saved revision is not a built program.",
-                        "Choisissez une révision pour comparer ses fichiers au brouillon actuel. Récupérer un fichier conserve les autres modifications. Une révision enregistrée n’est pas un programme construit."));
+                        "Choisissez une révision pour comparer ses fichiers au brouillon actuel. Récupérer un fichier conserve les autres modifications. Une révision enregistrée n’est pas un programme construit."),{},false,RichTextRole::body,language);
                 heading_style(root.heading);SendMessageW(root.body,LB_RESETCONTENT,0,0);
                 for(const auto& revision:revisions){const auto label=wide(revision.label+"\n"+revision.id.substr(0,12)+" · "+local_date(revision.created_at,language));
                     SendMessageW(root.body,LB_ADDSTRING,0,reinterpret_cast<LPARAM>(label.c_str()));}
@@ -290,7 +290,7 @@ void CppProjectView::Impl::open_history(){
                 Dialog choices;choices.title=ui("Archivos de la revisión","Revision files","Fichiers de la révision");choices.close_text=root.close_text;
                 choices.create(root.window,dialogs);choices.heading=choices.control(MSFTEDIT_CLASS,"",ES_MULTILINE|ES_READONLY,504);
                 set_rich_text(choices.heading,revision.label+" · "+revision.id.substr(0,12)+"\n"+ui("Estado del borrador respecto a esta revisión:",
-                    "Draft status relative to this revision:","État du brouillon par rapport à cette révision :"));heading_style(choices.heading);
+                    "Draft status relative to this revision:","État du brouillon par rapport à cette révision :"),{},false,RichTextRole::body,language);heading_style(choices.heading);
                 choices.body=create_card_list(choices.window,505,card_activated);SendMessageW(choices.body,WM_SETFONT,reinterpret_cast<WPARAM>(choices.font),TRUE);
                 for(const auto& item:statuses){const auto label=wide(item.path+"\n"+(item.change==windows::CppHistoryChange::unchanged?ui("Sin cambios","Unchanged","Inchangé")
                     :item.change==windows::CppHistoryChange::added?ui("Añadido en el borrador","Added in the draft","Ajouté au brouillon")

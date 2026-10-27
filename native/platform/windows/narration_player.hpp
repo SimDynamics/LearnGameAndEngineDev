@@ -10,6 +10,8 @@ public:
     void play(const std::filesystem::path&,double milliseconds,double rate=1);
     void seek(double milliseconds);
     void set_rate(double);
+    // The actual MediaPlaybackSession rate once playback has started.
+    [[nodiscard]] double playback_rate()const;
     [[nodiscard]] double position()const;
     [[nodiscard]] bool ended()const;
     [[nodiscard]] bool ready()const;

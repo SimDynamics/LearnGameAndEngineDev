@@ -51,6 +51,11 @@ void paint_scrollbars(HWND window,HDC window_dc);
 // SetScrollInfo can redraw the native frame without sending WM_NCPAINT.
 // Call after changing a custom viewport's range; no scroll state is changed.
 void refresh_scrollbars(HWND window);
+// Opt in to a single USER-rendered RichEdit scrollbar theme. No custom
+// nonclient overlay is drawn; high contrast keeps the Windows default theme.
+// If Windows cannot open the requested theme, its system theme stays in charge.
+void use_native_scrollbar_theme(HWND window,bool enabled = true);
+[[nodiscard]] bool native_scrollbar_theme(HWND window);
 // A custom viewport can keep USER's scroll range for keyboard/accessibility
 // while drawing no native scrollbar frame. Suppress its frame before native
 // nonclient layout/painting; hiding it after SetScrollInfo is visibly too late.

@@ -372,6 +372,12 @@ struct LessonView {
         const auto locale = interface_language(data);
         return std::string(locale == "fr" ? fr : locale == "en" ? en : es);
     }
+    void set_rich_text(HWND target,std::string_view text,std::span<const curriculum::Emphasis> emphasis={},
+        bool code=false,RichTextRole role=RichTextRole::body,std::string_view locale={},
+        std::span<const std::pair<std::size_t,std::size_t>> mathematics={}) const {
+        const auto selected=locale.empty()?std::string(interface_language(data)):std::string(locale);
+        presentation::set_rich_text(target,text,emphasis,code,role,selected,mathematics);
+    }
     std::string verdict_text(bool correct) const {
         return correct ? ui("Correcto","Correct","Correct") : ui("Incorrecto","Incorrect","Incorrect");
     }
@@ -408,6 +414,13 @@ struct LessonView {
     }
     std::string course_id() const { const auto end=lesson.id.find("__");return end==std::string::npos?std::string{}:lesson.id.substr(0,end); }
     int content_text_scale() const { return appearance::text_scale(data,course_id()); }
+    int compiler_source_minimum_height(HWND source) const {
+        // Keep writing space when a student shortens or clears a program.
+        // Match Android's 220dp floor while preserving ten native line boxes
+        // at the current font/zoom, within the embedded editor's 320dp cap.
+        return std::clamp(MulDiv(edit_line_height(source,content_text_scale())*10,96,
+            static_cast<int>(GetDpiForWindow(source)))+32,220,320);
+    }
     const curriculum::Block& block(std::size_t index) const { return lesson.pages.at(page).blocks.at(index); }
     std::string key(std::size_t index) const { return curriculum::exercise_key(lesson, block(index)); }
     std::string draft_key(std::size_t index) const { return curriculum::draft_key(route, lesson, block(index)); }
@@ -1021,14 +1034,15 @@ struct LessonView {
             | (editable ? WS_VSCROLL | WS_HSCROLL | ES_AUTOHSCROLL : ES_READONLY), id);
         reader_theme::apply(result,laboratory()?reader_theme::Surface::screen:editable ? reader_theme::Surface::field
             : code ? reader_theme::Surface::card : reader_theme::Surface::canvas);
+        if(code)reader_theme::use_native_scrollbar_theme(result);
         SendMessageW(result, EM_SETEVENTMASK, 0, ENM_REQUESTRESIZE | ENM_CHANGE | ENM_SELCHANGE);
         SendMessageW(result, EM_EXLIMITTEXT, 0, 2 * 1024 * 1024);
-        set_rich_text(result, text, emphasis, code, role);
+        set_rich_text(result, text, emphasis, code, role, lesson.locale);
         if(!code&&!editable){
             const bool block_prose=id>=1000&&((id-1000)%100==0||(id-1000)%100==19);
             if(route=="math_physics"&&(id==lesson_heading_id||block_prose))
-                (void)set_original_math_text(result,text,block_prose?math_mode(static_cast<std::size_t>((id-1000)/100)):"auto",hooks.math_editor_request,emphasis,role);
-            else (void)set_native_math_inline_text(result,text,emphasis,role);
+                (void)set_original_math_text(result,text,block_prose?math_mode(static_cast<std::size_t>((id-1000)/100)):"auto",hooks.math_editor_request,emphasis,role,lesson.locale);
+            else (void)set_native_math_inline_text(result,text,emphasis,role,lesson.locale);
         }
         SendMessageW(result,EM_SETZOOM,content_text_scale(),100);
         if (editable) {SendMessageW(result, EM_SETTARGETDEVICE, 0, 1);wrap_modes[result]=false;}
@@ -1096,13 +1110,22 @@ struct LessonView {
             std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer||vm.source==answer||vm.input==answer;}))return;
         syncing_answer_viewport=true;
         struct SyncGuard { bool& value; ~SyncGuard(){value=false;} } guard{syncing_answer_viewport};
-        if(final_edit&&std::ranges::any_of(controls,[answer](const auto& vm){return vm.answer==answer;})){
+        const bool compiler_source=!laboratory()&&!fullscreen_block&&
+            std::ranges::any_of(controls,[answer](const auto& vm){return vm.source==answer;});
+        if(final_edit&&(compiler_source||std::ranges::any_of(controls,[answer](const auto& vm){return vm.answer==answer;}))){
             // Assisted edits and history format while frozen. Only now can an
             // autoheight answer measure its final lines. Reposition following
             // rows if that height changed; cursor-only events stay lightweight.
             const auto body=std::ranges::find_if(rows,[answer](const auto& row){return row.cells.size()==1&&row.cells[0]==answer;});
             if(body!=rows.end()){
-                const auto fitted=update_answer_scrollbars(answer,16,0,16,true);
+                if(compiler_source){
+                    body->logical_height=compiler_source_minimum_height(answer);
+                    // The source's EN_CHANGE was processed inside Freeze.
+                    // Refresh its requested height only after native layout
+                    // settles, rather than keeping the previous program's size.
+                    SendMessageW(answer,EM_REQUESTRESIZE,0,0);
+                }
+                const auto fitted=update_answer_scrollbars(answer,16,compiler_source?16:0,16,true);
                 auto expected=std::max(px(body->logical_height),fitted);
                 if(body->size_to_text)expected=std::max(expected,body->requested_height);
                 if(body->max_logical_height)expected=std::min(expected,px(body->max_logical_height));
@@ -1744,22 +1767,35 @@ struct LessonView {
         const auto* next_shortcuts = state::find(candidate,"keyboard_shortcut_settings","cpp_shortcuts");
         const bool shortcuts_changed = (!previous_shortcuts != !next_shortcuts)
             || (previous_shortcuts && next_shortcuts && *previous_shortcuts != *next_shortcuts);
+        const bool scale_changed = appearance::text_scale(candidate,course_id()) != content_text_scale();
+        const bool wrap_changed = !laboratory() && appearance::code_wrap(candidate,course_id()) != code_wrap();
+        const auto accent_route=laboratory()?std::string_view{}:std::string_view(route);
+        const auto next_accent=reader_theme::appearance_accent(candidate,accent_route);
+        const bool accent_changed = next_accent != reader_theme::appearance_accent(data,accent_route);
         store.save(candidate); data = std::move(candidate); dirty = false;
-        reader_theme::set_accent(window,reader_theme::appearance_accent(data,laboratory()?std::string_view{}:std::string_view(route)));
-        SendMessageW(page_status,PBM_SETBARCOLOR,0,reader_theme::palette(window).accent);
-        const auto was_updating = updating; updating = true;
-        for (std::size_t index = 0; index < controls.size(); ++index) {
-            apply_wrap(controls[index].source);
-            apply_wrap(controls[index].simulated_code);
-            if (block(index).type == BlockType::fill_code) apply_wrap(controls[index].answer);
-            if(controls[index].order_view)controls[index].order_view->set_wrap(code_wrap());
-            if(controls[index].fill)controls[index].fill->set_wrap(code_wrap());
+        // Narration checkpoints arrive during playback. Persist their history
+        // without resetting zoom, layout or every child window's painting.
+        // Compare effective course preferences so unrelated courses are quiet.
+        if (accent_changed) {
+            reader_theme::set_accent(window,next_accent);
+            SendMessageW(page_status,PBM_SETBARCOLOR,0,reader_theme::palette(window).accent);
         }
-        refresh_wrap_buttons();
+        const auto was_updating = updating; updating = true;
+        if (wrap_changed) {
+            for (std::size_t index = 0; index < controls.size(); ++index) {
+                apply_wrap(controls[index].source);
+                apply_wrap(controls[index].simulated_code);
+                if (block(index).type == BlockType::fill_code) apply_wrap(controls[index].answer);
+                if(controls[index].order_view)controls[index].order_view->set_wrap(code_wrap());
+                if(controls[index].fill)controls[index].fill->set_wrap(code_wrap());
+            }
+            refresh_wrap_buttons();
+        }
         if (shortcuts_changed && editing_bar) editing_bar->set_shortcuts(parse_state_shortcuts(data));
         if (interface_changed) refresh_interface_labels();
-        update_fonts();
-        updating = was_updating; reflow();
+        if (scale_changed || interface_changed) update_fonts();
+        updating = was_updating;
+        if (scale_changed || wrap_changed || interface_changed || (shortcuts_changed && editing_bar)) reflow();
         if (interface_changed) notify_content();
     }
     void cancel_run() {
@@ -1921,9 +1957,9 @@ struct LessonView {
                       : (dark ? (block(index).type==BlockType::math_puzzle?RGB(240,166,166):RGB(240,150,150))
                               : RGB(160,35,35));
         reader_theme::set_text_color(controls.at(index).feedback,ink);
-        set_rich_text(controls.at(index).feedback, text);
-        if(route=="math_physics")(void)set_original_math_text(controls.at(index).feedback,text,math_mode(index),hooks.math_editor_request);
-        else (void)set_native_math_inline_text(controls.at(index).feedback,text);
+        set_rich_text(controls.at(index).feedback, text,{},false,RichTextRole::body,lesson.locale);
+        if(route=="math_physics")(void)set_original_math_text(controls.at(index).feedback,text,math_mode(index),hooks.math_editor_request,{},RichTextRole::body,lesson.locale);
+        else (void)set_native_math_inline_text(controls.at(index).feedback,text,{},RichTextRole::body,lesson.locale);
         if(block(index).type!=BlockType::math_puzzle){
             const auto target=controls.at(index).feedback;
             CHARRANGE previous{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
@@ -2252,7 +2288,7 @@ struct LessonView {
             apply_wrap(vm.source);
             if(laboratory()){reader_theme::apply(vm.source,reader_theme::Surface::compiler_editor);reader_theme::set_text_color(vm.source,RGB(230,237,243));}
             style_cpp(vm.source);
-            rows.push_back({{vm.source}, {0}, laboratory()?200:96, !laboratory(),0,laboratory()?0:320});
+            rows.push_back({{vm.source}, {0}, laboratory()?200:220, !laboratory(),0,laboratory()?0:320});
             if(laboratory())rows.back().padding_after=20;
             if(vm.project&&vm.project->configuration_window()){
                 SetWindowLongPtrW(vm.project->configuration_window(),GWLP_ID,control_id(index,6));
@@ -2579,6 +2615,8 @@ struct LessonView {
                 const auto line_height=next_line>=0?std::max<LONG>(1,second.y-first.y):px(21*content_text_scale()/100);
                 row.logical_height=std::max(200,MulDiv(line_height*10,96,static_cast<int>(GetDpiForWindow(window)))+32);row.requested_height=0;
             }
+            if(!laboratory()&&!fullscreen_block&&block_index<controls.size()&&row.cells.front()==controls[block_index].source)
+                row.logical_height=compiler_source_minimum_height(row.cells.front());
             int x = left+inset;
             int control_height=0;
             int readonly_nonclient_height=0;
@@ -2999,6 +3037,16 @@ struct LessonView {
         request.request_id = ++request_id; request.revision = vm.revision;
         if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&!block(index).output_check)action=windows::CppRunRequest::Action::execute;
         request.action=action;running_action=action;
+        // Disabling the focused run button leaves the active app without a
+        // keyboard target. Hand focus back synchronously; completion must not
+        // reclaim it if the student switches to another control or app.
+        const auto root=GetAncestor(window,GA_ROOT);
+        if(vm.compile&&GetFocus()==vm.compile&&GetActiveWindow()==root&&GetForegroundWindow()==root&&
+            vm.source&&IsWindowVisible(vm.source)&&IsWindowEnabled(vm.source)){
+            POINT before{},after{};SendMessageW(vm.source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+            SetFocus(vm.source);SendMessageW(vm.source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+            if(before.x!=after.x||before.y!=after.y)SendMessageW(vm.source,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+        }
         running_block = index; running_input = request.stdin_utf8;running_program=request;refresh_project_actions(index);
         EnableWindow(vm.compile, FALSE);
         if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index, "", false);
