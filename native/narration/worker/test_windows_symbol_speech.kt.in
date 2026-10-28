@@ -112,6 +112,42 @@ fun main() {
             "Citation handling changed a non-citation or unfinished group: $untouched")
     }
 
+
+    // prepareImpl trims whitespace before punctuation after emitting source owners.
+    fun outputCanonical(value: String) = normalized(value).replace(Regex(" +([,.;:!?])"), "$1")
+    // A backtick is display decoration, not proof that an output label is code.
+    for (source in listOf(
+        "Pulsa «Compilar, ejecutar y comprobar». El objetivo de esta actividad es `Llaves: 11`, con salto final opcional.",
+        "La salida es `Llaves: 11`.",
+        "El programa debe mostrar `Puntos: 3`.",
+        "La salida esperada es `Objetos: 8`.")) {
+        val output = SpanishTechnicalSpeech.prepare(source).text
+        verify("dos puntos" !in output && Regex("(?:Llaves|Puntos|Objetos), ").containsMatchIn(output),
+            "Output colon was named instead of paused: $source => $output")
+        val pieces = mutableListOf<Triple<Int,Int,String>>()
+        val traced = SpanishTechnicalSpeech.prepareObserved(source) { first, last, value ->
+            pieces += Triple(first,last,value)
+        }
+        verify(outputCanonical(traced.text) == outputCanonical(output) &&
+            outputCanonical(pieces.joinToString("") { it.third }) == outputCanonical(output),
+            "Output colon changed observed speech: $source; $pieces")
+        val colon = source.indexOf(':')
+        verify(pieces.any { it.first == colon && it.second == colon + 1 && it.third == ", " } &&
+            pieces.all { it.first in 0..source.length && it.second in it.first..source.length },
+            "Output colon lost exact source ownership: $source; $pieces")
+        val reading = SpanishTechnicalSpeech.prepareForReading(source) { _,_,_ -> }.text
+        verify(reading == SpanishTechnicalSpeech.prepareForKokoro(source).text && "dos puntos" !in reading,
+            "Foreground/background output-label speech diverged: $source")
+    }
+    for (source in listOf("El signo `:` separa los campos.", "La etiqueta `salida:` pertenece al código.",
+        "`std::cout << \"Llaves: 11\";`", "`condicion ? uno : dos`")) {
+        val spoken = SpanishTechnicalSpeech.prepare(source).text
+        verify("dos puntos" in spoken, "A genuinely technical colon lost its name: $source => $spoken")
+    }
+    val namespaced = SpanishTechnicalSpeech.prepare("El objetivo es `std::cout << 11;`.").text
+    verify("operador de resolución de ámbito" in namespaced,
+        "Output context wrongly turned a real C++ expression into prose: $namespaced")
+
     check(failures.isEmpty()) { failures.joinToString("\n") }
     println("PASS $assertions Windows technical-speech assertions: delimiters, empty literals, double diagonal in prose/code/strings, single quotes/slashes, URLs, math, named letters, provenance and Kokoro preparation")
 }

@@ -3,6 +3,19 @@ package com.learngraphicsprogramming.app.narration
 /** Windows reading refinements, applied by the generated host frontend only.
  * The displayed source, Android implementation and stored recordings stay intact. */
 internal object WindowsNarrationSpeechRules {
+    /** Only a prose-introduced displayed output value, never a code statement,
+     * symbol explanation, URL, type qualification or a fenced source listing. */
+    private val outputValueCue = Regex(
+        "(?iu)(?:\\bsalida(?:\\s+(?:esperada|exacta|solicitada|del programa))?\\s*(?:es|será|:|=)|" +
+        "\\bobjetivo(?:\\s+de\\s+(?:esta\\s+)?actividad)?\\s+es|" +
+        "\\b(?:debe\\s+)?(?:mostrar|muestra|imprimir|imprime)|\\bresultado\\s+(?:esperado\\s+)?es)\\s*$")
+
+    fun isDisplayedOutputValue(text: String, opening: Int, value: String): Boolean {
+        if (!value.any(Char::isLetter) || ':' !in value || "::" in value || "://" in value ||
+                value.any { it in "\\\"'`{}[]();#<>=?" }) return false
+        return outputValueCue.containsMatchIn(text.substring((opening - 160).coerceAtLeast(0), opening))
+    }
+
     private val namedLetter = Regex("(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:letra|carácter|caracter)[ \\t]+$")
 
     /** A named ASCII letter is one technical token; its following colon is prose.
