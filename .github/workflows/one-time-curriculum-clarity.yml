@@ -1,0 +1,100 @@
+name: One-time curriculum clarity update
+on:
+  push:
+    branches: [Codex]
+    paths: [.github/workflows/one-time-curriculum-clarity.yml]
+permissions:
+  contents: write
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Apply and validate only the approved paragraph and master instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY_PATCH'
+          from pathlib import Path
+          import hashlib
+          import json
+          import copy
+          import subprocess
+
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+
+          def blob(data):
+              return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+
+          def replace_once(text, old, new):
+              require(text.count(old) == 1, 'Missing or ambiguous content anchor: ' + old[:80])
+              return text.replace(old, new)
+
+          lesson = Path('app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json')
+          master = Path('docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt')
+          lesson_bytes = lesson.read_bytes()
+          master_bytes = master.read_bytes()
+          require(blob(lesson_bytes) == 'e82fa54155fbdda23689de8fedff7fac5938dc9d', 'Lesson changed; no overwrite.')
+          require(blob(master_bytes) == '0d188c38a0ca690d358b3c0883d0dbcb2d4e47cc', 'Master instructions changed; no overwrite.')
+          source = lesson_bytes.decode('utf-8')
+          master_source = master_bytes.decode('utf-8')
+          old_paragraph = "Una declaración introduce un nombre e indica su tipo. Si también es una definición, determina el objeto que se creará cuando se ejecute esa parte del programa, aunque no se indique un valor inicial. En int filas = 5;, la instrucción declara el nombre filas, define un objeto de tipo int y establece que comenzará con el valor 5 (Stroustrup, 2024)."
+          accepted = "Una declaración introduce un nombre e indica su tipo. En `int filas;`, la propia declaración es también una **definición**: `int` indica el tipo y `filas` identifica la variable, sin necesidad de proporcionar un valor inicial. Cuando esta definición se ejecuta dentro de una función, comienza la existencia del objeto correspondiente. En `int filas = 5;`, la definición incluye además la inicialización del objeto con el valor `5` (Stroustrup, 2024)."
+          old_emphasis = "Si también es una definición, determina el objeto que se creará cuando se ejecute esa parte del programa, aunque no se indique un valor inicial"
+          new_emphasis = "la propia declaración es también una definición"
+          anchor = "No conserves expresiones ambiguas o descontextualizadas de las fuentes simplemente porque parezcan correctas. Comprueba su significado original y asegúrate de que la explicación conserve un sentido claro, preciso y comprensible dentro de la lección. No inventes interpretaciones para resolver ambigüedades."
+          addition = "INTRODUCCIÓN DE CONCEPTOS, REFERENTES Y ACCIONES CONCRETAS\n\nNo dejes conceptos al aire ni des por presentado un término porque ya aparezca escrito, coloreado o en negritas. Antes de utilizar un nombre técnico nuevo, o en su primera aparición, explica qué significa, identifica el elemento concreto al que se refiere en el ejemplo y aclara su función. Comprueba lo que el estudiante realmente ha aprendido antes; no presupongas conocimientos de páginas o cursos posteriores.\n\nLa explicación debe permitir reconocer qué instrucción, operación o parte del ejemplo realiza la acción descrita. Evita definiciones circulares como «una definición establece el objeto» si todavía no se ha mostrado qué declaración constituye esa definición. No obligues al estudiante a adivinar qué se define, qué se inicializa, qué valor interviene o a qué elemento remite «ese recurso».\n\nDistingue las acciones y los momentos cuando confundirlos cambie el significado: escribir una instrucción, compilarla y ejecutarla no son lo mismo. Cuando un ejemplo reúna dos acciones, explica lo necesario para que una no parezca condición de la otra. En el caso tratado, mostrar solamente int filas = 5; no debe hacer creer que proporcionar el valor 5 es lo que convierte la declaración en una definición.\n\nPrecisión no significa adelantar temas profundos mientras se enseñan fundamentos. Introduce únicamente lo necesario para comprender el concepto actual, con referentes concretos y un ejemplo suficiente. No sustituyas una ambigüedad por vocabulario nuevo sin explicar ni por advertencias repetitivas de que algo «solo sirve para razonar». Si una precisión depende de un contexto, indica ese contexto brevemente en lugar de generalizar indebidamente.\n\nEJEMPLO DE REDACCIÓN PRECISA APROBADA\n\nUna declaración introduce un nombre e indica su tipo. En `int filas;`, la propia declaración es también una **definición**: `int` indica el tipo y `filas` identifica la variable, sin necesidad de proporcionar un valor inicial. Cuando esta definición se ejecuta dentro de una función, comienza la existencia del objeto correspondiente. En `int filas = 5;`, la definición incluye además la inicialización del objeto con el valor `5` (Stroustrup, 2024).\n\nLa precisión del ejemplo consiste en identificar la instrucción que define la variable y distinguir esa acción de proporcionar su valor inicial. Conserva ese nivel de claridad sin convertir el párrafo en una exposición de todos los casos del lenguaje. Al integrarlo en la app, conserva el formato técnico y utiliza el mecanismo de énfasis compatible, no marcas visibles que el renderizador no admita.\n\nDOS CASOS QUE NO DEBEN REPETIRSE\n\n«El inicializador prepara el objeto con ese valor antes de que lo utilicemos (Stroustrup, 2024).» Esta frase apareció después de int cascos = 6; sin introducir «inicializador» ni identificar a qué parte de la declaración se refería. No basta con nombrarlo: hay que explicar el término y señalar su referente en ese ejemplo, distinguiendo la notación de inicialización, el literal entero 6 y el valor inicial, sin atribuirles indistintamente la misma función.\n\n«La diferencia se reconoce mirando el argumento de la salida: cascos consulta la variable, mientras que \"cascos\" mostraría ese nombre como texto fijo.» Esta frase utilizó «argumento de la salida» sin presentar el concepto ni identificar qué elemento del ejemplo desempeñaba ese papel. Si se introduce «argumento», debe explicarse su relación con la función que interviene y qué expresión se le proporciona. No basta con afirmar «aquí lo llamamos argumento de salida», inventar una acepción ni eliminar el término para ocultar la explicación pendiente. Verifica el significado técnico y añade la aclaración mínima adecuada al nivel.\n\nAl corregir estos casos, conserva el contenido correcto, los ejemplos, la práctica y su estructura. Ajusta el pasaje que causa la ambigüedad y, solo cuando sea necesario, su introducción inmediata; no rehagas párrafos enteros ni añadas teoría ajena al objetivo por una precisión localizada."
+          old_item = "2. Explicaciones claras, suficientes, originales y sin adelantos injustificados."
+          new_item = "2. Explicaciones claras, suficientes, originales y sin adelantos injustificados; términos nuevos introducidos antes de usarlos o en su primera aparición, referentes concretos identificados y acciones diferenciadas sin ambigüedad."
+          new_paragraph = accepted.replace('`', '').replace('**', '')
+          before = json.loads(source)
+          require(before['pages'][0]['blocks'][1]['text'].split('\n\n')[0] == old_paragraph, 'Wrong paragraph location.')
+          require(before['pages'][0]['blocks'][1]['emphasis'][1]['text'] == old_emphasis, 'Wrong emphasis anchor.')
+          old_anchor = json.dumps(old_emphasis, ensure_ascii=False)
+          new_anchor = json.dumps(new_emphasis, ensure_ascii=False)
+          updated = replace_once(source, old_paragraph, new_paragraph)
+          updated = replace_once(updated, old_anchor, new_anchor)
+          after = json.loads(updated)
+          block = after['pages'][0]['blocks'][1]
+          require(block['text'].split('\n\n')[0] == new_paragraph, 'Approved paragraph differs.')
+          require(all(item['text'] in block['text'] for item in block['emphasis']), 'Invalid emphasis reference.')
+          restored = copy.deepcopy(after)
+          restored['pages'][0]['blocks'][1]['text'] = before['pages'][0]['blocks'][1]['text']
+          restored['pages'][0]['blocks'][1]['emphasis'][1]['text'] = old_emphasis
+          require(restored == before, 'Unrelated lesson fields changed.')
+          require(updated.replace(new_paragraph, old_paragraph).replace(new_anchor, old_anchor) == source,
+                  'Unrelated lesson bytes changed.')
+          master_updated = replace_once(master_source, anchor, anchor + '\n\n' + addition)
+          master_updated = replace_once(master_updated, old_item, new_item)
+          require(master_updated.replace(anchor + '\n\n' + addition, anchor).replace(new_item, old_item) == master_source,
+                  'Unrelated master instructions changed.')
+          require(blob(master_updated.encode('utf-8')) == '703e013c0fba047f4b374db63ef5f387e57118a9',
+                  'Repository instructions differ from the verified delivered file.')
+          lesson.write_bytes(updated.encode('utf-8'))
+          master.write_bytes(master_updated.encode('utf-8'))
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          require(changed == {str(lesson), str(master)}, 'Unexpected changed files.')
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          print('PASS: exact approved paragraph, valid JSON, valid emphasis, all other lesson fields/bytes unchanged.')
+          print('PASS: two master-instruction edits only; exact match to the delivered TXT.')
+          print('PASS: only the two authorized files changed; translations, IDs, exercises and code untouched.')
+          PY_PATCH
+      - name: Publish guarded content update and remove one-time tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="$(git ls-remote origin refs/heads/Codex | cut -f1)"
+          test "$remote" = "$GITHUB_SHA" || { echo 'Codex advanced; no overwrite.'; exit 1; }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_declarar_e_inicializar.json docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt
+          git rm .github/workflows/one-time-curriculum-clarity.yml
+          git diff --cached --check
+          git commit -m 'docs(curriculum): clarify variable definition and require introduced precise terminology'
+          git push origin HEAD:refs/heads/Codex
+          git rev-parse HEAD
