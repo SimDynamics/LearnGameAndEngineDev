@@ -1,0 +1,60 @@
+name: One-time contextual output colon verification
+on:
+  push:
+    branches: [Codex]
+    paths: [scripts/maintenance/repair_output_colons.py, .github/workflows/one-time-output-colons.yml]
+permissions:
+  contents: write
+jobs:
+  verify-and-publish:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Prepare actual Kotlin frontend and reproduce the output colon
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP 'kotlin-2.2.10'
+          $archive = Join-Path $env:RUNNER_TEMP 'kotlin.zip'
+          Invoke-WebRequest 'https://github.com/JetBrains/kotlin/releases/download/v2.2.10/kotlin-compiler-2.2.10.zip' -OutFile $archive
+          Expand-Archive $archive -DestinationPath $folder
+          $kotlinc = "$folder\kotlinc\bin\kotlinc.bat"
+          "KOTLINC=$kotlinc" >> $env:GITHUB_ENV
+          python scripts/maintenance/repair_output_colons.py tests
+          if ($LASTEXITCODE -ne 0) { throw 'Regression anchor changed.' }
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & python native/narration/worker/test_windows_symbol_speech.py --kotlinc $kotlinc 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -eq 0 -or ($output -join "`n") -notmatch 'Output colon was named instead of paused') { throw 'Original failure was not reproduced.' }
+          exit 0
+      - name: Verify actual production normalizer and provenance after repair
+        run: |
+          python scripts/maintenance/repair_output_colons.py fix
+          if ($LASTEXITCODE -ne 0) { throw 'Production anchor changed.' }
+          python -m py_compile native/narration/worker/build_worker.py
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid generator syntax.' }
+          python native/narration/worker/test_windows_symbol_speech.py --kotlinc $env:KOTLINC
+          if ($LASTEXITCODE -ne 0) { throw 'Contextual symbol regressions failed.' }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid diff.' }
+      - name: Publish verified batch and remove one-time tooling
+        run: |
+          $remote = git ls-remote origin refs/heads/Codex
+          if ($LASTEXITCODE -ne 0 -or ($remote -split '\s+')[0] -ne $env:GITHUB_SHA) { throw 'Codex advanced; no overwrite.' }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add native/narration/worker/WindowsNarrationSpeechRules.kt native/narration/worker/build_worker.py native/narration/worker/test_windows_symbol_speech.kt.in
+          git rm scripts/maintenance/repair_output_colons.py .github/workflows/one-time-output-colons.yml
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot remove transient tooling.' }
+          git diff --cached --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid staged diff.' }
+          git commit -m 'fix(windows): read expected output colons as contextual punctuation'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot save verified fix.' }
+          git push origin HEAD:refs/heads/Codex
+          if ($LASTEXITCODE -ne 0) { throw 'Push rejected; no force attempted.' }
+          git rev-parse HEAD
