@@ -17,6 +17,8 @@ def tests():
     path = WORKER / 'test_windows_symbol_speech.kt.in'
     code = path.read_text(encoding='utf-8-sig')
     extra = r'''
+    // prepareImpl trims whitespace before punctuation after emitting source owners.
+    fun outputCanonical(value: String) = normalized(value).replace(Regex(" +([,.;:!?])"), "$1")
     // A backtick is display decoration, not proof that an output label is code.
     for (source in listOf(
         "Pulsa «Compilar, ejecutar y comprobar». El objetivo de esta actividad es `Llaves: 11`, con salto final opcional.",
@@ -30,8 +32,8 @@ def tests():
         val traced = SpanishTechnicalSpeech.prepareObserved(source) { first, last, value ->
             pieces += Triple(first,last,value)
         }
-        verify(normalized(traced.text) == normalized(output) &&
-            normalized(pieces.joinToString("") { it.third }) == normalized(output),
+        verify(outputCanonical(traced.text) == outputCanonical(output) &&
+            outputCanonical(pieces.joinToString("") { it.third }) == outputCanonical(output),
             "Output colon changed observed speech: $source; $pieces")
         val colon = source.indexOf(':')
         verify(pieces.any { it.first == colon && it.second == colon + 1 && it.third == ", " } &&
