@@ -15,12 +15,17 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts/narration"))
+from prepare_english_ai_pack import verify_staged_assets
+from verify_windows_distribution import verify_runtime
+
 APP = ROOT / "app/src/main/java/com/learngraphicsprogramming/app"
 OUT = ROOT / "out/narration"
 DEPS = ROOT / "out/deps"
@@ -327,7 +332,7 @@ def math_host_sources() -> list[Path]:
     normalization_end = typesetter.index("        return when (val result =", normalization_start)
     normalization = typesetter[normalization_start:normalization_end]
     typesetter = typesetter[:normalization_start] + "        val normalized = normalizeExpression(source)\n" + typesetter[normalization_end:]
-    typesetter = typesetter[:method] + "    private fun normalizeExpression(source: String): String {\n" + normalization + "        return normalized\n    }\n\n" + typesetter[method:]
+    typesetter = typesetter[:method] + "    internal fun normalizeExpression(source: String): String {\n" + normalization + "        return normalized\n    }\n\n" + typesetter[method:]
     typesetter_source = '''package com.learngraphicsprogramming.app.math
 internal data class WindowsMathFragment(val start: Int, val end: Int, val formula: String, val literal: Boolean)
 internal class WindowsMathTextOutput : CharSequence {
@@ -644,6 +649,10 @@ def build() -> None:
     parser.add_argument("--resources", type=Path)
     parser.add_argument("--english-resources", type=Path)
     args = parser.parse_args()
+    # Use the preserved, attributed pack from this checkout. Validate before any
+    # build/download so damaged resources never become a successful runtime.
+    english = (args.english_resources or ROOT / "english_misaki/src/main/assets").resolve()
+    verify_staged_assets(english)
     java = Path(os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr")) / "bin/java.exe"
     if not java.is_file():
         raise RuntimeError("A local x64 JDK/JBR is required to compile and run the shared Kotlin frontend")
@@ -683,7 +692,6 @@ def build() -> None:
         stamp.write_text(signature, encoding="ascii")
     origin = ROOT.parent / "LearnGraphicsProgramming/build/kokoro"
     resources = (args.resources or origin / "downloads/1939ad2a8e416c0acfeecc08a694d14ef25f2231").resolve()
-    english = (args.english_resources or origin / "english-install").resolve()
     ffmpeg = shutil.which("ffmpeg")
     classpath = os.pathsep.join(map(str,[jar,*runtime]))
     original_wavs = (origin / "../first-unit-speech-export").resolve()
@@ -714,9 +722,11 @@ def build() -> None:
         pending_config = config_path.with_suffix(".json.part")
         try:
             pending_config.write_text(content, encoding="utf-8")
+            verify_runtime(pending_config, repo_root=ROOT)
             pending_config.replace(config_path)
         finally:
             pending_config.unlink(missing_ok=True)
+    verify_runtime(config_path, repo_root=ROOT)
     print(config_path)
 
 

@@ -924,7 +924,11 @@ EditorDocument CodeEditor::document() const {
 void CodeEditor::reset(EditorDocument document) {
     const auto original = wide(document.text);
     auto text = lf(original);
-    if (!impl_->multiline && text.find(L'\n') != std::wstring::npos)
+    // Enter/paste policy applies to new input, not to historical answers.
+    // Lesson fields use a multiline RichEdit even when Enter checks a one-line
+    // answer; retain older documents verbatim when that control can show them.
+    const bool display_multiline=(GetWindowLongPtrW(impl_->window,GWL_STYLE)&ES_MULTILINE)!=0;
+    if (!impl_->multiline && !display_multiline && text.find(L'\n') != std::wstring::npos)
         throw std::invalid_argument("A single-line response cannot contain line breaks");
     validate(original, document.indentation_starts);
     const auto original_end = static_cast<std::int64_t>(original.size());

@@ -11,8 +11,10 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cwchar>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -460,9 +462,9 @@ void run_multifile(const CppRunRequest& request,CppRunResult& result,const std::
     materialize(request.project_files,source);std::filesystem::create_directory(objects);const std::filesystem::path compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";std::vector<std::wstring> link{L"/nologo",L"/Fe:"+executable.wstring()};
     const auto start=std::chrono::steady_clock::now();const auto remaining=[&]{return request.compile_timeout-std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start);};
     std::size_t sequence=0;for(const auto& file:request.source_files){if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}const auto object=objects/(std::to_wstring(sequence)+L".obj");const std::vector<std::wstring> args{L"/nologo",L"/c",L"/EHsc",L"/std:c++20",L"/permissive-",L"/utf-8",L"/W4",L"/diagnostics:column",L"/I"+source.wstring(),L"/Fo:"+object.wstring(),(source/project_path(file)).wstring()};
-        merge_phase(result.compilation,run_phase(compiler,args,result.run_directory,compiler_input,L"compile-"+std::to_wstring(sequence++),remaining(),request.output_limit_bytes,true,stop),request.output_limit_bytes);if(!result.compilation.succeeded())return;link.push_back(object.wstring());}
+        merge_phase(result.compilation,run_phase(compiler,args,result.run_directory,compiler_input,L"compile-"+std::to_wstring(sequence++),remaining(),request.output_limit_bytes,true,stop,true),request.output_limit_bytes);if(!result.compilation.succeeded())return;link.push_back(object.wstring());}
     link.insert(link.end(),{L"/link",L"/INCREMENTAL:NO",L"/MACHINE:X64",L"/SUBSYSTEM:CONSOLE",L"/MANIFEST:EMBED",L"/MANIFESTUAC:level='asInvoker' uiAccess='false'"});
-    if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}merge_phase(result.compilation,run_phase(compiler,link,result.run_directory,compiler_input,L"link",remaining(),request.output_limit_bytes,true,stop),request.output_limit_bytes);
+    if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}merge_phase(result.compilation,run_phase(compiler,link,result.run_directory,compiler_input,L"link",remaining(),request.output_limit_bytes,true,stop,true),request.output_limit_bytes);
     if(result.compilation.succeeded()){result.artifact=executable;result.target_type="EXECUTABLE";result.execution=run_phase(executable,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop);}
 }
 void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
@@ -502,7 +504,110 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
     result.execution=run_phase(result.artifact,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop);
 }
 
+std::string_view trim_ascii(std::string_view text) {
+    constexpr std::string_view blanks=" \t\r\n";
+    const auto first=text.find_first_not_of(blanks);
+    return first==text.npos?std::string_view{}:text.substr(first,text.find_last_not_of(blanks)-first+1);
+}
+std::uint32_t diagnostic_number(std::string_view text) {
+    std::uint32_t value=0;
+    const auto parsed=std::from_chars(text.data(),text.data()+text.size(),value);
+    return parsed.ec==std::errc{}&&parsed.ptr==text.data()+text.size()?value:0;
+}
+// Parse the invariant MSVC code and source coordinates, never translated
+// severity labels or diagnostic prose. Only the first code on each row is a
+// primary diagnostic; a code quoted in its explanatory message is not another.
+std::vector<CppCompilerDiagnostic> compilation_errors(std::string_view stream,const std::filesystem::path& directory) {
+    std::vector<CppCompilerDiagnostic> errors;
+    while(!stream.empty()) {
+        const auto newline=stream.find('\n');const auto line=stream.substr(0,newline);
+        for(std::size_t offset=0;offset<line.size();++offset) {
+            if(offset&&line[offset-1]!=' '&&line[offset-1]!='\t')continue;
+            const auto prefix=line.substr(offset).starts_with("LNK")?3u:
+                line[offset]=='C'||line[offset]=='D'?1u:0u;
+            if(!prefix||offset+prefix+4>=line.size()||line[offset+prefix+4]!=':')continue;
+            const auto digits=line.substr(offset+prefix,4);const auto number=diagnostic_number(digits);
+            if(!number)continue;
+            const bool primary=(line[offset]=='C'&&number<4000)||(line[offset]=='D'&&number<9000)||prefix==3;
+            if(primary) {
+                CppCompilerDiagnostic diagnostic;diagnostic.code=std::string(line.substr(offset,prefix+4));
+                const auto header=line.substr(0,offset);const auto close=header.rfind(')');
+                const auto open=close==header.npos?header.npos:header.rfind('(',close);
+                if(open!=header.npos&&close>open) {
+                    const auto coordinates=header.substr(open+1,close-open-1);const auto comma=coordinates.find(',');
+                    diagnostic.line=diagnostic_number(coordinates.substr(0,comma));
+                    if(comma!=coordinates.npos)diagnostic.column=diagnostic_number(coordinates.substr(comma+1));
+                    auto source=trim_ascii(header.substr(0,open));
+                    if(source.size()>1&&source.front()=='"'&&source.back()=='"')source=source.substr(1,source.size()-2);
+                    if(!source.empty()) {
+                        diagnostic.source=std::filesystem::path(std::wstring(winrt::to_hstring(source)));
+                        if(diagnostic.source.is_relative())diagnostic.source=directory/diagnostic.source;
+                        diagnostic.source=diagnostic.source.lexically_normal();
+                    }
+                }
+                errors.push_back(std::move(diagnostic));
+            }
+            break;
+        }
+        if(newline==stream.npos)break;stream.remove_prefix(newline+1);
+    }
+    return errors;
+}
+std::vector<CppCompilerDiagnostic> compilation_errors(const CppPhaseResult& phase,const std::filesystem::path& directory) {
+    auto errors=compilation_errors(phase.stdout_bytes,directory);
+    auto extra=compilation_errors(phase.stderr_bytes,directory);
+    errors.insert(errors.end(),std::make_move_iterator(extra.begin()),std::make_move_iterator(extra.end()));return errors;
+}
+bool same_diagnostic_source(const std::filesystem::path& left,const std::filesystem::path& right) {
+    const auto first=left.lexically_normal().wstring(),second=right.lexically_normal().wstring();
+    return CompareStringOrdinal(first.c_str(),-1,second.c_str(),-1,TRUE)==CSTR_EQUAL;
+}
+void run_diagnostic(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& compiler,
+        const std::filesystem::path& compiler_input,std::stop_token stop) {
+    auto& evidence=*result.diagnostic;const auto& objective=*request.diagnostic;
+    evidence.source_sha256=state::sha256(request.source_utf8);evidence.control_sha256=state::sha256(objective.control_source_utf8);
+    const auto control=result.run_directory/L"control",candidate=result.run_directory/L"candidate";
+    std::filesystem::create_directory(control);std::filesystem::create_directory(candidate);
+    write_exact(control/L"main.cpp",objective.control_source_utf8);write_exact(candidate/L"main.cpp",request.source_utf8);
+    const auto started=std::chrono::steady_clock::now();
+    const auto remaining=[&]{return request.compile_timeout-std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started);};
+    const auto compile=[&](const std::filesystem::path& folder) {
+        if(remaining().count()<=0){CppPhaseResult exhausted;exhausted.status=CppPhaseStatus::timed_out;return exhausted;}
+        return run_phase(compiler,{L"/nologo",L"/c",L"/EHsc",L"/std:c++20",L"/permissive-",L"/utf-8",L"/W4",
+            L"/diagnostics:column",L"/Fo:"+(folder/L"main.obj").wstring(),(folder/L"main.cpp").wstring()},
+            folder,compiler_input,L"compilation",remaining(),request.output_limit_bytes,true,stop,true);
+    };
+    evidence.control=compile(control);
+    if(!evidence.control.succeeded())return;
+    if(!std::filesystem::is_regular_file(control/L"main.obj")||!std::filesystem::file_size(control/L"main.obj"))
+        throw std::runtime_error("The diagnostic control did not produce its fresh object file");
+    result.compilation=compile(candidate);evidence.errors=compilation_errors(result.compilation,candidate);
+    evidence.expected_rejection=expected_compile_diagnostic(request,result);
+}
+
 } // namespace
+
+bool expected_compile_diagnostic(const CppRunRequest& request,const CppRunResult& result) try {
+    if(!request.diagnostic||!result.diagnostic||!request.project_files.empty()||!request.source_files.empty()||!request.stdin_utf8.empty()||request.cmake||
+        request.action!=CppRunRequest::Action::compile_run||request.request_id!=result.request_id||request.revision!=result.revision||
+        !result.error_utf8.empty()||result.run_directory.empty()||!result.artifact.empty()||result.executable||!result.target_type.empty())return false;
+    const auto unused=[](const CppPhaseResult& phase){return phase.status==CppPhaseStatus::not_started&&!phase.exit_code&&phase.stdout_bytes.empty()&&phase.stderr_bytes.empty();};
+    if(!unused(result.execution)||!unused(result.configuration))return false;
+    const auto& objective=*request.diagnostic;const auto& evidence=*result.diagnostic;
+    if(objective.expected_error_code.size()!=5||objective.expected_error_code.front()!='C'||
+        diagnostic_number(std::string_view(objective.expected_error_code).substr(1))<2000||
+        diagnostic_number(std::string_view(objective.expected_error_code).substr(1))>=4000||
+        !objective.first_line||objective.last_line<objective.first_line||!evidence.control.succeeded()||
+        evidence.source_sha256!=state::sha256(request.source_utf8)||evidence.control_sha256!=state::sha256(objective.control_source_utf8)||
+        result.compilation.status!=CppPhaseStatus::completed||!result.compilation.exit_code||
+        !*result.compilation.exit_code||*result.compilation.exit_code>255)return false;
+    if(!compilation_errors(evidence.control,result.run_directory/L"control").empty())return false;
+    const auto errors=compilation_errors(result.compilation,result.run_directory/L"candidate");
+    if(errors.empty()||errors!=evidence.errors)return false;
+    const auto source=result.run_directory/L"candidate/main.cpp";
+    return std::ranges::all_of(errors,[&](const auto& item){return item.code==objective.expected_error_code&&item.column&&
+        item.line>=objective.first_line&&item.line<=objective.last_line&&same_diagnostic_source(item.source,source);});
+}catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}
 
 curriculum::OutputEvaluation evaluate_cpp_output_check(const curriculum::OutputCheck& check,
     const curriculum::FreshExecution& execution,std::uint64_t current_revision) {
@@ -538,6 +643,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     CppRunResult result;
     result.request_id = request.request_id;
     result.revision = request.revision;
+    if(request.diagnostic)result.diagnostic.emplace();
     try {
         ensure_winrt_apartment();
         if (stop.stop_requested()) {
@@ -550,6 +656,9 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             throw std::invalid_argument("Invalid educational execution limits");
         if(!request.project_files.empty())validate_request_project(request);
         else if(request.cmake||request.action!=CppRunRequest::Action::compile_run)throw std::invalid_argument("Project phase actions require projectFiles and CMake");
+        if(request.diagnostic&&(!request.project_files.empty()||!request.source_files.empty()||!request.stdin_utf8.empty()||
+                request.cmake||request.diagnostic->control_source_utf8.size()>4*1024*1024))
+            throw std::invalid_argument("A diagnostic objective requires one bounded translation unit without standard input");
         result.run_directory = create_run_directory(request);
         const auto source = result.run_directory / L"main.cpp";
         const auto input = result.run_directory / L"stdin.bin";
@@ -565,6 +674,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             utf8(build::educational_sdk_version) + "\ncompiler=" + utf8(compiler.wstring()) + "\n");
         if(request.cmake){run_cmake(request,result,input,compiler_input,stop);return result;}
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
+        if(request.diagnostic){run_diagnostic(request,result,compiler,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const std::vector<std::wstring> arguments{
             L"/nologo", L"/EHsc", L"/std:c++20", L"/permissive-", L"/utf-8", L"/W4",
@@ -572,9 +682,11 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             L"/Fo:" + (result.run_directory / L"program.obj").wstring(), source.wstring(),
             L"/link", L"/INCREMENTAL:NO", L"/MACHINE:X64", L"/SUBSYSTEM:CONSOLE",
             L"/MANIFEST:EMBED", L"/MANIFESTUAC:level='asInvoker' uiAccess='false'"};
+        // Localized MSVC diagnostics and Unicode paths need the same private
+        // UTF-8 tool console as CMake. Program execution keeps raw binary I/O.
         result.compilation = run_phase(compiler, arguments, result.run_directory,
             compiler_input, L"compilation", request.compile_timeout,
-            request.output_limit_bytes, true, stop);
+            request.output_limit_bytes, true, stop, true);
         if (result.compilation.succeeded()) {
             result.artifact=executable;result.target_type="EXECUTABLE";
             result.execution = run_phase(executable, {}, result.run_directory, input,
@@ -582,7 +694,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         }
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();
-        auto& phase = request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:
+        auto& phase = request.diagnostic?result.compilation:request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:
             request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation.succeeded() ? result.execution : result.compilation;
         phase.status = CppPhaseStatus::launch_failed;
     } catch (const winrt::hresult_error& error) {

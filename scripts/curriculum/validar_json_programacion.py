@@ -44,12 +44,12 @@ FIELDS = {
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder", "explanation", "reviewFeedback"},
     "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives", "reviewFeedback", "explanation"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
-    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck"},
+    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck", "compileCheck"},
     # Contenedor compartido ya admitido por MathPuzzleParser en ambas rutas.
     "math_puzzle": {"type", "schemaVersion", "version", "id", "prompt", "question", "representations", "tools", "responses", "feedback"},
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
-COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck"}
+COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck", "compileCheck"}
 REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
@@ -856,6 +856,7 @@ def is_source_file(path):
 def validate_cpp_compiler(block, where):
     require(isinstance(block.get("initialCode"), str), where, "initialCode debe ser texto")
     validate_cpp_output_check_contract(block, where)
+    validate_cpp_compile_check_contract(block, where)
     if "initialStandardInput" in block:
         require(isinstance(block["initialStandardInput"], str), where, "initialStandardInput debe ser texto")
 
@@ -918,6 +919,14 @@ def normalize_output_check_input(value, mode):
         text = value.strip(" \t\r\n\f\v")
         return tuple(re.split(r"[ \t\r\n\f\v]+", text)) if text else ()
     return value
+
+
+def validate_cpp_compile_check_contract(block, where):
+    """A reviewed compile-time rejection is independent of an execution oracle."""
+    try:
+        _state_layout.validate_compile_check_contract(block)
+    except (ValueError, KeyError, TypeError) as error:
+        require(False, where, f"objetivo de diagnóstico de compilación inválido: {error}")
 
 
 def validate_cpp_output_check_contract(block, where):

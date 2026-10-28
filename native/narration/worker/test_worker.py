@@ -5,12 +5,15 @@ import hashlib
 import json
 from pathlib import Path
 import queue
+import re
 import struct
 import subprocess
+import tempfile
 import threading
 import time
 import unittest
 import wave
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNTIME = ROOT / "out/narration/runtime.json"
@@ -18,14 +21,17 @@ CACHE = ROOT / "out/qa/narration-worker-tests"
 
 
 class Worker:
-    def __init__(self, missing_resources=False):
+    def __init__(self, missing_resources=False, assets_directory=None):
         self.config = json.loads(RUNTIME.read_text(encoding="utf-8"))
         arguments = list(self.config["arguments"])
         if missing_resources:
             for key in ("--resources", "--english-resources"):
                 arguments[arguments.index(key) + 1] = str(CACHE / "not-installed")
-            index = arguments.index("--original-wavs")
-            del arguments[index:index + 2]
+            if "--original-wavs" in arguments:
+                index = arguments.index("--original-wavs")
+                del arguments[index:index + 2]
+        if assets_directory is not None:
+            arguments[arguments.index("--assets") + 1] = str(assets_directory)
         self.process = subprocess.Popen([self.config["java"], *arguments], stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
             creationflags=subprocess.CREATE_NO_WINDOW)
@@ -342,6 +348,164 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
         path = r'La ruta C:\\carpeta no es una secuencia aislada.'
         spoken = " ".join(p["spokenText"] for p in self.worker.ask("plan", text=path, language="es")["segments"])
         self.assertNotIn("barra inversa barra inversa", spoken)
+
+
+class HistoricalDoraPackTest(unittest.TestCase):
+    """Explicit historical export never needs models, catalog entries or student state."""
+
+    LESSON_NAMES = ("what_is_programming", "first_contact_cpp", "program_structure")
+    LESSON_IDS = tuple("cpp_fundamentals__intro_programming__" + name for name in LESSON_NAMES)
+
+    @staticmethod
+    def recording_snapshot():
+        return {path.name: (path.stat().st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest())
+                for path in (ROOT / "app/src/main/assets/narration/prerendered").glob("*.ogg")}
+
+    @staticmethod
+    def plain_dora_key(text):
+        # This fixture has no changed technical reading or manual English term.
+        # Its identity must remain the original KokoroNarrationCache payload.
+        source = (ROOT / "app/src/main/java/com/learngraphicsprogramming/app/narration/KokoroModelManifest.kt")
+        revision = re.search(r'const val revision = "([0-9a-f]+)"', source.read_text(encoding="utf-8"))[1]
+        return hashlib.sha256("\0".join(("kokoro-wav-v1", revision, "es", "ef_dora", text)).encode()).hexdigest()
+
+    def write_fixture(self, assets):
+        folder = assets / "content/es/programming/cpp_fundamentals/intro_programming"
+        folder.mkdir(parents=True)
+        titles = ("Primera lección.", "Segunda lección.", "Tercera lección.")
+        for name, identity, title in zip(self.LESSON_NAMES, self.LESSON_IDS, titles):
+            pages = [{"blocks": [{"type": "paragraph", "text": "Una frase común."}]}]
+            if name == "what_is_programming":
+                pages[0]["blocks"].insert(0, {"type": "paragraph",
+                    "text": "Esta frase conserva su pausa: la oración sigue aquí."})
+                pages.append({"blocks": [
+                    {"type": "paragraph", "text": "Una frase común."},
+                    {"type": "order_code", "question": "Ordena los bloques.",
+                     "fragments": ["NO_NARRAR_CODIGO"], "correctOrder": [0],
+                     "explanation": "NO_NARRAR_SOLUCION"},
+                    {"type": "drag_fill_code", "question": "Completa los espacios.",
+                     "template": "NO_NARRAR_PLANTILLA", "reviewFeedback": "NO_NARRAR_ERROR"}]})
+            (folder / f"lesson_{name}.json").write_text(json.dumps(
+                {"id": identity, "title": title, "pages": pages}, ensure_ascii=False), encoding="utf-8")
+        # A broken active catalog must not select or prevent this fixed historical export.
+        (assets / "content/es/programming/index.json").write_text("not a catalog", encoding="utf-8")
+        return folder
+
+    def test_manifest_is_fixed_spanish_dora_and_preserves_every_existing_recording(self):
+        before = self.recording_snapshot()
+        worker = Worker(missing_resources=True)
+        try:
+            manifest = worker.ask("first_unit_manifest")["manifest"]
+            conflicting_preferences = worker.ask("first_unit_manifest", language="fr", voice="ff_siwis",
+                uiLanguage="en-US", page=999, lessonJson="not a lesson")["manifest"]
+            self.assertEqual(manifest, conflicting_preferences)
+            self.assertEqual((1, "cpp_fundamentals", "intro_programming"),
+                (manifest["format"], manifest["course"], manifest["unit"]))
+            self.assertEqual(list(self.LESSON_IDS), manifest["lessons"])
+            entries = manifest["entries"]
+            self.assertGreater(len(entries), 0)
+            self.assertEqual(manifest["uniqueSentences"], len(entries))
+            self.assertEqual(len(entries), len({entry["hash"] for entry in entries}))
+            for entry in entries:
+                self.assertEqual({"hash", "language", "voice", "lesson", "location"}, set(entry))
+                self.assertEqual(("es", "ef_dora"), (entry["language"], entry["voice"]))
+                self.assertRegex(entry["hash"], r"^[0-9a-f]{64}$")
+                self.assertIn(entry["lesson"], self.LESSON_IDS)
+                page = int(entry["location"].rsplit("/", 1)[1])
+                name = entry["lesson"].rsplit("__", 1)[1]
+                lesson = json.loads((ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                    f"intro_programming/lesson_{name}.json").read_text(encoding="utf-8"))
+                self.assertTrue(1 <= page <= len(lesson["pages"]))
+                self.assertEqual(f"programming/cpp_fundamentals/cpp_fundamentals__intro_programming/"
+                    f"{entry['lesson']}/{page}", entry["location"])
+            # The actual reader and the historical exporter retain the same known title key.
+            title = "¿Qué es la programación?"
+            key = worker.ask("plan", text=title, language="es", voice="ef_dora")["segments"][0]["key"]
+            self.assertEqual(self.plain_dora_key(title), key)
+            self.assertIn(key, {entry["hash"] for entry in entries})
+        finally:
+            worker.close()
+        self.assertEqual(before, self.recording_snapshot())
+
+    def test_shared_extractor_sentence_boundaries_deduplication_and_spanish_instructions(self):
+        with tempfile.TemporaryDirectory(prefix="lgaed-dora-export-") as temporary:
+            assets = Path(temporary)
+            self.write_fixture(assets)
+            worker = Worker(missing_resources=True, assets_directory=assets)
+            try:
+                manifest = worker.ask("first_unit_manifest", language="en-GB", voice="bf_emma")["manifest"]
+                instructions = ET.parse(ROOT / "app/src/main/res/values/strings.xml").getroot()
+                strings = {element.attrib.get("name"): element.text for element in instructions.findall("string")}
+                sentences = ["Primera lección.", "Esta frase conserva su pausa: la oración sigue aquí.",
+                    "Una frase común.", "Ordena los bloques.", strings["exercise_order_instruction"],
+                    "Ejercicio de código C más más.", "Completa los espacios.",
+                    strings["exercise_fill_instruction"], "Segunda lección.", "Tercera lección."]
+                self.assertEqual([self.plain_dora_key(text) for text in sentences],
+                    [entry["hash"] for entry in manifest["entries"]])
+                common = next(entry for entry in manifest["entries"]
+                    if entry["hash"] == self.plain_dora_key("Una frase común."))
+                self.assertEqual(self.LESSON_IDS[0], common["lesson"])
+                self.assertTrue(common["location"].endswith("/1"))
+            finally:
+                worker.close()
+
+    def test_malformed_or_incomplete_fixed_lesson_fails_instead_of_exporting_partial_pack(self):
+        for defect in ("missing", "identity", "empty_pages", "malformed_page"):
+            with self.subTest(defect=defect), tempfile.TemporaryDirectory(prefix="lgaed-dora-invalid-") as temporary:
+                assets = Path(temporary)
+                folder = self.write_fixture(assets)
+                path = folder / "lesson_program_structure.json"
+                lesson = json.loads(path.read_text(encoding="utf-8"))
+                if defect == "missing":
+                    path.unlink()
+                else:
+                    if defect == "identity":
+                        lesson["id"] = "another_lesson"
+                    elif defect == "empty_pages":
+                        lesson["pages"] = []
+                    else:
+                        lesson["pages"] = ["not a page object"]
+                    path.write_text(json.dumps(lesson), encoding="utf-8")
+                worker = Worker(missing_resources=True, assets_directory=assets)
+                try:
+                    worker.send("first_unit_manifest")
+                    reply = worker.receive()
+                    self.assertIn("error", reply)
+                    self.assertNotIn("manifest", reply)
+                finally:
+                    worker.close()
+
+    def test_manifest_recording_and_compatible_timings_reuse_without_models(self):
+        before = self.recording_snapshot()
+        with tempfile.TemporaryDirectory(prefix="lgaed-dora-offline-") as temporary:
+            worker = Worker(missing_resources=True)
+            try:
+                title = "¿Qué es la programación?"
+                manifest = worker.ask("first_unit_manifest")["manifest"]
+                segment = worker.ask("plan", text=title, language="es", voice="ef_dora")["segments"][0]
+                self.assertIn(segment["key"], {entry["hash"] for entry in manifest["entries"]})
+                fields = dict(text=segment["text"], preparedText=segment["preparedText"], language="es",
+                    voice="ef_dora", outputDirectory=temporary)
+                audio = worker.ask("prepare", **fields)
+                self.assertTrue(audio["cacheHit"])
+                self.assertEqual("packaged-recording", audio["audioOrigin"])
+                self.assertFalse(audio["alignmentAvailable"])
+                wav = Path(audio["wav"])
+                audio_hash = hashlib.sha256(wav.read_bytes()).hexdigest()
+                # A bounded alignment fixture checks preservation of an existing valid sidecar.
+                timings = [{"start": 0, "end": len(title), "startMs": 0.0, "endMs": audio["durationMs"]}]
+                sidecar = wav.with_name(f"{segment['key']}-{hashlib.sha256(title.encode()).hexdigest()}.timings.json")
+                sidecar.write_text(json.dumps({"audioSha256": audio_hash,
+                    "sampleCount": audio["sampleCount"], "timings": timings}), encoding="utf-8")
+                snapshot = [(path.stat().st_mtime_ns, path.read_bytes()) for path in (wav, sidecar)]
+                repeated = worker.ask("prepare", **fields)
+                self.assertEqual("cache", repeated["audioOrigin"])
+                self.assertEqual(timings, repeated["timings"])
+                self.assertTrue(repeated["alignmentAvailable"])
+                self.assertEqual(snapshot, [(path.stat().st_mtime_ns, path.read_bytes()) for path in (wav, sidecar)])
+            finally:
+                worker.close()
+        self.assertEqual(before, self.recording_snapshot())
 
 
 if __name__ == "__main__":

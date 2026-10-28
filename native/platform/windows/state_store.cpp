@@ -607,6 +607,40 @@ std::optional<std::string> choice_revision_state_update(const StateData& data,co
     }else if(!current.Size())return {};
     return utf8(current.Stringify());
 }
+std::string compile_check_key(const curriculum::Lesson& lesson) {
+    return "lesson_"+lesson.id+"_state_compile_checks_v1_"+lesson.locale;
+}
+std::map<std::string,std::string> compile_check_contracts(const curriculum::Lesson& lesson) {
+    std::map<std::string,std::string> contracts;
+    const auto collect=[&](const curriculum::Block& block){if(block.compile_check){
+        JsonArray row;row.Append(JsonValue::CreateStringValue(wide(block.stable_id)));
+        row.Append(JsonValue::CreateStringValue(wide(block.compile_check->diagnostic)));
+        row.Append(JsonValue::CreateStringValue(wide(sha256(block.initial_code))));
+        if(!contracts.emplace(block.stable_id,utf8(row.Stringify())).second)
+            throw std::runtime_error("Una comprobación de diagnóstico tiene varios propietarios.");
+    }};
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)collect(block);
+    for(const auto& block:lesson.retired_blocks)collect(block);
+    return contracts;
+}
+std::optional<std::string> compile_check_state_update(const StateData& data,const curriculum::Lesson& lesson) {
+    const auto current=compile_check_contracts(lesson);const auto key=compile_check_key(lesson);
+    if(const auto value=find(data,"learning_progress",key)){
+        if(lesson.state_layout.version!=2||!std::holds_alternative<std::string>(*value))
+            throw std::runtime_error("Falta la procedencia del diagnóstico de compilación; los datos se conservan.");
+        const auto previous=JsonArray::Parse(wide(std::get<std::string>(*value)));std::set<std::string> seen;
+        for(const auto& item:previous){
+            if(item.ValueType()!=JsonValueType::Array)throw std::runtime_error("La procedencia del diagnóstico no es válida.");
+            const auto row=item.GetArray();if(row.Size()!=3)throw std::runtime_error("La procedencia del diagnóstico está incompleta.");
+            const auto id=utf8(row.GetStringAt(0));const auto found=current.find(id);
+            if(!seen.insert(id).second||found==current.end()||found->second!=utf8(row.Stringify()))
+                throw std::runtime_error("Cambió o se retiró un objetivo de diagnóstico publicado; los datos se conservan.");
+        }
+        if(seen.size()==current.size())return {};
+    }else if(current.empty())return {};
+    JsonArray result;for(const auto& [id,row]:current)result.Append(JsonArray::Parse(wide(row)));
+    return utf8(result.Stringify());
+}
 std::string compiler_revision_key(const curriculum::Lesson& lesson) {
     return "lesson_"+lesson.id+"_state_compiler_revisions_v1_"+lesson.locale;
 }
@@ -637,6 +671,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
     const auto order_refinement_update = order_refinement_state_update(data,lesson);
     const auto choice_revision_update = choice_revision_state_update(data,lesson);
     const auto compiler_revision_update = compiler_revision_state_update(data,lesson);
+    const auto compile_check_update = compile_check_state_update(data,lesson);
     const auto old_pin_key = base + "_state_lineage_v1";
     const bool has_old_pin = find(data, "learning_progress", old_pin_key) != nullptr;
     const auto old_pin = string_value(data, "learning_progress", old_pin_key);
@@ -678,6 +713,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
         if (order_refinement_update) data.preferences["learning_progress"][order_refinement_key(lesson)] = *order_refinement_update;
         if (choice_revision_update) data.preferences["learning_progress"][choice_revision_key(lesson)] = *choice_revision_update;
         if (compiler_revision_update) data.preferences["learning_progress"][compiler_revision_key(lesson)] = *compiler_revision_update;
+        if (compile_check_update) data.preferences["learning_progress"][compile_check_key(lesson)] = *compile_check_update;
         return;
     }
     if (find(data, "learning_progress", pages_key) || find(data, "learning_progress", blocks_key) ||
@@ -686,7 +722,8 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
                                find(data,"learning_progress",retirement_history_key(lesson)) ||
                                find(data,"learning_progress",order_refinement_key(lesson)) ||
                                find(data,"learning_progress",choice_revision_key(lesson)) ||
-                               find(data,"learning_progress",compiler_revision_key(lesson)))))
+                               find(data,"learning_progress",compiler_revision_key(lesson)) ||
+                               find(data,"learning_progress",compile_check_key(lesson)))))
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
     std::vector<std::string> pages, blocks;
     const bool started = bool_value(data, base + "_started");
@@ -713,12 +750,15 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
     if (order_refinement_update) prefs[order_refinement_key(lesson)] = *order_refinement_update;
     if (choice_revision_update) prefs[choice_revision_key(lesson)] = *choice_revision_update;
     if (compiler_revision_update) prefs[compiler_revision_key(lesson)] = *compiler_revision_update;
+    if (compile_check_update) prefs[compile_check_key(lesson)] = *compile_check_update;
     if (started && !find(data, "learning_progress", base + "_page")) prefs[base + "_page"] = std::int64_t{0};
 } catch (const winrt::hresult_error&) {
     throw std::runtime_error("Los metadatos del progreso no son compatibles; no se usan direcciones visibles.");
 }
 void prepare_lesson_state(StateData& data,const curriculum::Lesson& lesson) {
-    if(lesson.state_layout.compiler_revisions.empty()&&!find(data,"learning_progress",compiler_revision_key(lesson))) {
+    windows::ensure_winrt_apartment();
+    if(lesson.state_layout.compiler_revisions.empty()&&!find(data,"learning_progress",compiler_revision_key(lesson))
+        &&compile_check_contracts(lesson).empty()&&!find(data,"learning_progress",compile_check_key(lesson))) {
         // Preserve legacy map-node lifetime and cost when no compiler
         // expansion or pinned rollback requires the new atomic adoption.
         prepare_lesson_state_staged(data,lesson);return;
@@ -726,7 +766,11 @@ void prepare_lesson_state(StateData& data,const curriculum::Lesson& lesson) {
     // All provenance and compiler receipt checks complete before publishing
     // any lineage, adoption marker or projected case. Errors preserve bytes.
     auto staged=data;prepare_lesson_state_staged(staged,lesson);
-    windows::prepare_compiler_puzzle_revisions(staged,lesson);data=std::move(staged);
+    windows::prepare_compiler_puzzle_revisions(staged,lesson);
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
+        if(block.compile_check)windows::validate_compiler_puzzle_state(staged,lesson,block);
+    for(const auto& block:lesson.retired_blocks)if(block.compile_check)windows::validate_compiler_puzzle_state(staged,lesson,block);
+    data=std::move(staged);
 }
 void validate_lesson_state(const StateData& data, const curriculum::Lesson& lesson, std::string_view route_id) try {
     auto metadata = data;

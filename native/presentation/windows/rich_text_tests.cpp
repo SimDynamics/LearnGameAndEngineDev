@@ -845,6 +845,95 @@ int main(int argc,char** argv) {
             check_range(LR"("letra n: \n")",0,std::wstring_view(LR"("letra n: \n")").size(),string_ink);
             check_range(L"la letra n: sigue",9,1,identifier_ink);check_range(L"la letra n: sigue",10,7,base);
         }
+        {
+            reader_theme::apply(editor.value,reader_theme::Surface::canvas);
+            const auto base=reader_theme::foreground(editor.value);
+            const bool high_contrast=reader_theme::palette(editor.value).high_contrast;
+            const auto identifier_ink=high_contrast?base:RGB(171,141,227);
+            const auto string_ink=high_contrast?base:RGB(122,195,141);
+            const auto check_token=[&](std::wstring_view token,COLORREF expected){
+                const auto visible=wide(edit_text(editor.value));const auto begin=visible.find(token);
+                check(begin!=visible.npos,"The authored contextual-color regression lost its original token");
+                for(auto at=begin;at<begin+token.size();++at){
+                    const auto actual=character(editor.value,static_cast<LONG>(at)).crTextColor;
+                    if(actual!=expected)std::cerr<<"Contextual-color diagnostics: token="<<utf8(token)
+                        <<", offset="<<at-begin<<", actual="<<actual<<", expected="<<expected
+                        <<", source="<<utf8(visible)<<'\n';
+                    check(actual==expected,"An authored C++ type or literal stayed gray in curriculum prose");
+                }
+            };
+            // Exact U9L5 p2 b2 question: int is the C++ type even without invented delimiters.
+            const std::string constructor_question="¿Cuál declaración describe un constructor de Punto con dos coordenadas int?";
+            set_rich_text(editor.value,constructor_question);
+            check(edit_text(editor.value)==constructor_question,"Contextual type coloring rewrote the authored question");
+            check_token(L"int",identifier_ink);
+            const std::string question=R"(En un literal válido, ¿qué representa \n?)";
+            const std::string option="Los dos caracteres visibles barra invertida y n.";
+            const auto check_option=[&](RichTextContext context,COLORREF expected){
+                set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},context);
+                check(edit_text(editor.value)==option,"Question context rewrote the original distractor");
+                check_token(L"n.",expected);
+            };
+            // Exact U1L3 escape_no_literal options[2]: its role comes from the visible question.
+            set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{question,{}});
+            const auto option_n=static_cast<LONG>(wide(option).find_last_of(L'n'));
+            check(character(editor.value,option_n).crTextColor==string_ink&&
+                character(editor.value,option_n+1).crTextColor==base,
+                "The isolated escape distractor lost its question's string ink or colored adjacent punctuation");
+            check(character(editor.value,option_n).yHeight==270&&
+                std::wstring(character(editor.value,option_n).szFaceName)==L"Roboto",
+                "Contextual escape ink changed the authored typography");
+            check_option({},base);
+            check_option({"La variable n cuenta elementos.","int n = 1;"},base);
+            check_option({{},R"code(int n = 1; // "\n" belongs to a comment)code"},base);
+            check_option({{},R"code(std::cout << "\\n";)code"},base);
+            check_option({{},R"code(std::cout << R"(\n)";)code"},base);
+            set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},
+                RichTextContext{{},R"code(std::cout << "\n";)code"});
+            check(character(editor.value,option_n).crTextColor==string_ink,
+                "An actual visible C++ string could not supply the escape's original role");
+            set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},
+                RichTextContext{{},R"code(std::cout << "Entrada\nSalida";)code"});
+            check(character(editor.value,option_n).crTextColor==string_ink,
+                "A real newline escape followed by text lost its literal role");
+            set_rich_text(editor.value,"La superletra n y áletra n siguen siendo prosa.",{},false,RichTextRole::body,"es",{},RichTextContext{question,{}});
+            check_token(L"superletra n",base);check_token(L"áletra n",base);
+            const std::string homonyms="La salida normal y a siguen siendo prosa. La variable `n` cuenta elementos.";
+            set_rich_text(editor.value,homonyms,{},false,RichTextRole::body,"es",{},
+                RichTextContext{question,"int a = 1; bool normal = true; int n = 2;"});
+            check_token(L"normal y a",base);
+            check(character(editor.value,static_cast<LONG>(wide(edit_text(editor.value)).find(L"n cuenta"))).crTextColor==identifier_ink,
+                "A variable inherited the unrelated escape's green ink");
+            set_rich_text(editor.value,"La frase \"int y char\" es prosa; intento, intérprete, áint y charlatán son palabras completas.");
+            check_token(L"int y char",base);check_token(L"intento",base);check_token(L"intérprete",base);check_token(L"áint",base);check_token(L"charlatán",base);
+            set_rich_text(editor.value,R"(La fórmula \(int + char\) y https://ejemplo.test/int/char conservan su representación.)");
+            check_token(L"int + char",base);check_token(L"https://ejemplo.test/int/char",base);
+            // Existing U11L8 authored literals already use the supported inline delimiters.
+            set_rich_text(editor.value,"Las etiquetas `'n'` y `'f'` se construyen dentro del programa.");
+            check_token(L"'n'",string_ink);check_token(L"'f'",string_ink);
+            set_rich_text(editor.value,"`char` e `int` conservan sus tipos; la categoría `'+'` es un carácter.");
+            check_token(L"char",identifier_ink);check_token(L"int",identifier_ink);check_token(L"'+'",string_ink);
+            // Exact U11L9 p4 b4: the closed list-initialization expression is the local code cue.
+            const std::string token_question="Con el búfer vacío se intenta devolver Token{'n', 14}. ¿Qué exige este contrato inicial?";
+            set_rich_text(editor.value,token_question);
+            check(edit_text(editor.value)==token_question,"List-initialization styling rewrote the original question");
+            check_token(L"Token",identifier_ink);check_token(L"'n'",string_ink);
+            for(const auto prose:{"Un Token conserva normal, a e y como palabras.",
+                "Se menciona Token{una frase y otra} en la explicación.",
+                "Se menciona Token{valor} sin un argumento literal.",
+                "Se menciona Token{'n', 14 sin cierre.",
+                "Se menciona 1Token{'n', 14} sin identidad válida.",
+                R"(La fórmula \(Token{'n', 14}\) se conserva.)",
+                "Consulta https://ejemplo.test/Token{'n',14} y conserva el vínculo."}){
+                set_rich_text(editor.value,prose,{},false,RichTextRole::body,"es",{},
+                    RichTextContext{{},"struct Token { char clase; int valor; }; int normal; int a; int y;"});
+                check_token(L"Token",base);
+            }
+            // Existing Android semantics already recognize quoted brace-containing data as a string.
+            // The new local initializer cue must preserve that ink rather than lex its interior.
+            set_rich_text(editor.value,"La frase \"Token{'n', 14}\" conserva su categoría de cadena.");
+            check_token(L"Token",string_ink);
+        }
         const std::string original = "#include <iostream>\n\nint main() {\n\tstd::cout << \"área  A\";  \n}\n";
         set_edit_text(editor.value, original);
         check(edit_text(editor.value) == original, "RichEdit did not preserve exact indentation, spaces or final LF");

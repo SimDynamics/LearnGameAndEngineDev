@@ -53,7 +53,7 @@ target_link_libraries(lgaed_smo_shader_compile PRIVATE lgaed_host_options d3dcom
 set_target_properties(lgaed_smo_shader_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS smo_hlsl_compile=2)
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/cpp_project.cpp
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/cpp_project.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
@@ -174,6 +174,62 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    add_test(NAME native.narration_english_pack COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/narration" -p test_prepare_english_ai_pack.py)
+    add_test(NAME native.narration_distribution_contract COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/narration" -p test_verify_windows_distribution.py)
+    add_test(NAME native.narration_distribution COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_SOURCE_DIR}/scripts/narration/verify_windows_distribution.py"
+        --runtime "${CMAKE_SOURCE_DIR}/out/narration/runtime.json")
+    add_test(NAME native.first_unit_manifest_export COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/narration" -p test_export_first_unit_windows.py)
+    add_test(NAME native.first_unit_dora_pack COMMAND "${Python3_EXECUTABLE}" -m unittest
+        test_worker.HistoricalDoraPackTest)
+    set_tests_properties(native.first_unit_dora_pack PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/native/narration/worker" TIMEOUT 180)
+    set_tests_properties(native.narration_english_pack native.narration_distribution_contract
+        native.narration_distribution native.first_unit_manifest_export PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_technical_context_view_tests native/presentation/windows/technical_context_view_tests.cpp)
+    target_link_libraries(lgaed_technical_context_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.technical_context_view COMMAND lgaed_technical_context_view_tests)
+    set_tests_properties(native.technical_context_view PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_exact_prediction_view_tests native/presentation/windows/exact_prediction_view_tests.cpp)
+    target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.exact_prediction_view COMMAND lgaed_exact_prediction_view_tests)
+    set_tests_properties(native.exact_prediction_view PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_legacy_response_view_tests native/presentation/windows/legacy_response_view_tests.cpp)
+    target_link_libraries(lgaed_legacy_response_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.legacy_response_view COMMAND lgaed_legacy_response_view_tests)
+    set_tests_properties(native.legacy_response_view PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_curricular_emphasis_view_tests native/presentation/windows/curricular_emphasis_view_tests.cpp)
+    target_link_libraries(lgaed_curricular_emphasis_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.curricular_emphasis COMMAND lgaed_curricular_emphasis_view_tests)
+    set_tests_properties(native.curricular_emphasis PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_editorial_matching_view_tests native/presentation/windows/editorial_matching_view_tests.cpp)
+    target_link_libraries(lgaed_editorial_matching_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.editorial_matching_view COMMAND lgaed_editorial_matching_view_tests)
+    set_tests_properties(native.editorial_matching_view PROPERTIES TIMEOUT 120)
+    add_test(NAME native.editorial_matching_fixture_source COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_editorial_matching_fixture_source.py)
+    set_tests_properties(native.editorial_matching_fixture_source PROPERTIES TIMEOUT 30)
+    set(LGAED_EDITORIAL_MATCHING_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u9-cbd9a38")
+    set(LGAED_EDITORIAL_MATCHING_FIXTURE "${LGAED_EDITORIAL_MATCHING_FIXTURE_DIR}/lesson_construir_y_comprobar_un_modelo_de_pedidos.json")
+    add_custom_command(OUTPUT "${LGAED_EDITORIAL_MATCHING_FIXTURE}"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_matching_fixture_source.py"
+            --output-dir "${LGAED_EDITORIAL_MATCHING_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_matching_fixture_source.py"
+        COMMENT "Verifying immutable U9 editorial matching fixture from local cbd9a38"
+        VERBATIM)
+    add_custom_target(lgaed_editorial_matching_fixture DEPENDS "${LGAED_EDITORIAL_MATCHING_FIXTURE}")
+    add_dependencies(lgaed_editorial_matching_view_tests lgaed_editorial_matching_fixture lgaed_narration_runtime)
+    add_executable(lgaed_curricular_order_view_tests native/presentation/windows/curricular_order_view_tests.cpp)
+    target_link_libraries(lgaed_curricular_order_view_tests PRIVATE lgaed_presentation_windows)
+    foreach(order_case RANGE 0 13)
+        add_test(NAME native.curricular_order_view.${order_case}
+            COMMAND lgaed_curricular_order_view_tests --case ${order_case})
+        set_tests_properties(native.curricular_order_view.${order_case}
+            PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    endforeach()
     set(LGAED_RETIREMENT_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u1-d1933ed")
     set(LGAED_RETIREMENT_FIXTURES
         "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_primer_programa_y_salida.json"
@@ -285,10 +341,28 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_composition_tests lgaed_narration_runtime)
     add_test(NAME native.lesson_composition COMMAND lgaed_lesson_composition_tests)
     set_tests_properties(native.lesson_composition PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_lesson_editor_mount_tests native/presentation/windows/lesson_editor_mount_tests.cpp)
+    target_link_libraries(lgaed_lesson_editor_mount_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.lesson_editor_mount COMMAND lgaed_lesson_editor_mount_tests)
+    set_tests_properties(native.lesson_editor_mount PROPERTIES TIMEOUT 180)
+    add_test(NAME native.lesson_caption_initial COMMAND lgaed_lesson_editor_mount_tests --caption-first)
+    set_tests_properties(native.lesson_caption_initial PROPERTIES TIMEOUT 45)
+    add_executable(lgaed_curricular_input_lab_tests native/presentation/windows/curricular_input_lab_tests.cpp)
+    target_link_libraries(lgaed_curricular_input_lab_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.curricular_input_lab COMMAND lgaed_curricular_input_lab_tests)
+    set_tests_properties(native.curricular_input_lab PROPERTIES TIMEOUT 180)
     add_executable(lgaed_choice_revision_view_tests native/presentation/windows/choice_revision_view_tests.cpp)
     target_link_libraries(lgaed_choice_revision_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.choice_revision_view COMMAND lgaed_choice_revision_view_tests)
     set_tests_properties(native.choice_revision_view PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_compile_diagnostic_view_tests native/presentation/windows/compile_diagnostic_view_tests.cpp)
+    target_link_libraries(lgaed_compile_diagnostic_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.compile_diagnostic_view COMMAND lgaed_compile_diagnostic_view_tests)
+    set_tests_properties(native.compile_diagnostic_view PROPERTIES TIMEOUT 240)
+    add_executable(lgaed_cpp_diagnostic_runner_tests native/platform/windows/cpp_diagnostic_runner_tests.cpp)
+    target_link_libraries(lgaed_cpp_diagnostic_runner_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.cpp_diagnostic_runner COMMAND lgaed_cpp_diagnostic_runner_tests)
+    set_tests_properties(native.cpp_diagnostic_runner PROPERTIES TIMEOUT 240)
     add_executable(lgaed_compiler_revision_view_tests native/presentation/windows/compiler_revision_view_tests.cpp)
     target_link_libraries(lgaed_compiler_revision_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.compiler_revision_view COMMAND lgaed_compiler_revision_view_tests)
@@ -324,6 +398,20 @@ if(BUILD_TESTING)
     set_tests_properties(native.dependent_puzzle_reader PROPERTIES TIMEOUT 150)
     add_test(NAME native.integrated_u1_reader COMMAND lgaed_lesson_reader_tests --integrated-u1)
     set_tests_properties(native.integrated_u1_reader PROPERTIES TIMEOUT 150)
+    add_test(NAME native.integrated_order_reader COMMAND lgaed_lesson_reader_tests --integrated-order)
+    set_tests_properties(native.integrated_order_reader PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_curricular_fraction_view_tests native/presentation/windows/curricular_fraction_view_tests.cpp)
+    target_link_libraries(lgaed_curricular_fraction_view_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_curricular_fraction_view_tests lgaed_narration_runtime)
+    add_test(NAME native.curricular_fraction COMMAND lgaed_curricular_fraction_view_tests)
+    set_tests_properties(native.curricular_fraction PROPERTIES TIMEOUT 120)
+    add_test(NAME native.math_fraction_worker COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_math_bridge.py"
+        WindowsMathBridgeTest.test_11_original_auto_typesetting_preserves_utf16_source_and_operators
+        WindowsMathBridgeTest.test_12_current_curricular_fractions_keep_complete_utf16_units
+        WindowsMathBridgeTest.test_13_windows_fraction_repair_preserves_protected_sources
+        WindowsMathBridgeTest.test_14_fraction_repair_keeps_binary_minus_outside_and_unary_minus_inside)
+    set_tests_properties(native.math_fraction_worker PROPERTIES TIMEOUT 30)
     add_executable(lgaed_math_puzzle_view_tests native/presentation/windows/math_puzzle_view_tests.cpp)
     target_link_libraries(lgaed_math_puzzle_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_math_puzzle_view_tests lgaed_narration_runtime)
@@ -574,6 +662,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.lesson_texto_secuencia PROPERTIES TIMEOUT 150)
     add_test(NAME native.lesson_texto_restauracion COMMAND lgaed_lesson_view_tests --texto-restauracion)
     set_tests_properties(native.lesson_texto_restauracion PROPERTIES TIMEOUT 150)
+    add_test(NAME native.lesson_navigation_geometry COMMAND lgaed_lesson_view_tests --navigation-geometry)
+    set_tests_properties(native.lesson_navigation_geometry PROPERTIES TIMEOUT 180)
     add_test(NAME native.compiler_puzzles COMMAND lgaed_lesson_view_tests --compiler-puzzles)
     set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 150)
     add_test(NAME native.stderr_objective COMMAND lgaed_lesson_view_tests --stderr-objective)
@@ -582,6 +672,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.u11_editorial PROPERTIES TIMEOUT 120)
     add_test(NAME native.narration_repaint COMMAND lgaed_lesson_view_tests --narration-repaint)
     set_tests_properties(native.narration_repaint PROPERTIES TIMEOUT 60)
+    add_test(NAME native.curricular_inline_feedback COMMAND lgaed_lesson_view_tests --inline-feedback)
+    set_tests_properties(native.curricular_inline_feedback PROPERTIES TIMEOUT 120)
     add_test(NAME native.compiler_editor_height COMMAND lgaed_lesson_view_tests --compiler-height)
     set_tests_properties(native.compiler_editor_height PROPERTIES TIMEOUT 60)
     add_test(NAME native.dependent_puzzles COMMAND lgaed_lesson_view_tests --dependent-puzzles)

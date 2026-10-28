@@ -38,6 +38,15 @@ El ejemplo comprueba únicamente la construcción final de esa etapa. Las ejecuc
 
 «Compilar, ejecutar y comprobar» utiliza únicamente la ejecución nueva terminada correctamente del código/proyecto, compilador, configuración y entrada capturados por esa pulsación. Nunca comprueba una salida que ya estuviera en la consola. Compilación, enlace, configuración, ejecución fallida o límites técnicos conservan sus diagnósticos y dejan la comprobación sin resultado evaluable. Los avisos de compilación y stderr se conservan sin reescribirlos.
 
+En Windows, las herramientas de compilación y enlace utilizan una consola privada
+oculta configurada en UTF-8, tanto en fuentes simples como en proyectos directos,
+CMake y rechazos intencionales. Así se conservan los acentos del diagnóstico y
+de sus rutas sin confundir la salida OEM de MSVC con texto ANSI o UTF-8. La
+captura guarda los bytes emitidos por cada herramienta. La ejecución del programa
+mantiene separados y exactos sus canales binarios de entrada, stdout y stderr,
+incluidos NUL y bytes que no formen texto UTF-8. La consola privada pertenece al
+intento; no cambia la configuración de Windows ni la del terminal del usuario.
+
 Los laboratorios CMake conservan sus controles explícitos de fases. Con `outputCheck`, la acción combinada configura si hace falta, construye el objetivo vigente mediante CMake y ejecuta un programa nuevo antes de comparar; se conservan los diagnósticos de cada fase. Un resultado restaurado por el observador del proyecto puede volver a mostrar su consola, pero nunca genera una comprobación. Sin contrato se conserva el funcionamiento de sus controles de configuración, construcción y ejecución.
 
 Editar una fuente, cabecera, selección de fuentes, entrada, configuración CMake o compilador invalida la ejecución y el veredicto. Deshacer o rehacer no recupera una ejecución antigua: hay que ejecutar de nuevo. Cambiar sólo la pestaña de archivo, sin alterar el proyecto, conserva la identidad del programa. Reiniciar invalida incluso si los bytes ya coinciden con el original. Un resultado tardío de otra revisión no habilita la comprobación. Al reabrir se conservan los borradores existentes y se requiere otra ejecución; no se guarda un historial paralelo ni se restaura un veredicto sin ejecutar.
@@ -118,6 +127,65 @@ Su valor predeterminado es `false` para mantener compatible el recorrido publica
 Al activar el contrato, cada compilador activo con `outputCheck` forma parte del progreso de su grupo histórico y debe quedar resuelto para continuar, saltar hacia delante o finalizar. En la misma página, el contenido posterior se habilita al resolver el editor anterior. Un marcador posterior vuelve al primer objetivo anterior pendiente, conservando sus datos. El lector se detiene en la consigna/editor pendiente; lee el error y se detiene, o lee el acierto y su explicación antes de continuar. Una pausa manual permanece pausada y los desplazamientos del audio no acreditan fragmentos que no se escucharon.
 
 El prototipo general sigue libre. Los bloques retirados conservan sus datos históricos y no crean controles, audio ni obligaciones activas. El contrato de Windows no cambia las reglas de ejecución o conservación Android descritas en los apartados anteriores.
+
+## Rechazos de compilación intencionales en Windows
+
+Cinco editores españoles de U9 admiten un objetivo independiente de stdout:
+
+```json
+"compileCheck": {
+  "diagnostic": "const-member-call",
+  "explanation": "La llamada requiere un objeto modificable. El programa fue rechazado antes de ejecutarse."
+}
+```
+
+`diagnostic` selecciona uno de los cinco contratos revisados. `explanation` es
+texto de acierto opcional y no vacío, redactado por Work; no se muestra ni se
+narra antes del acierto. No se infiere un objetivo de la consigna ni se activa
+automáticamente en un asset.
+
+| Lección de `datos_propios_y_estado_valido` | Editor estable | `diagnostic` | Modificación comprobada |
+| --- | --- | --- | --- |
+| `consultas_const_y_objetos_constantes` | `block_0006_0006` | `const-member-call` | Añadir `fija.cambiar_a(4,2);`, conservando `const`. |
+| `valores_por_defecto_con_significado` | `block_0012_0008` | `explicit-copy-initialization` | Añadir `Contador no_permitido = 3;`, conservando `explicit`. |
+| `valores_por_defecto_con_significado` | `block_0012_0011` | `explicit-argument-conversion` | Añadir `leer(3);`, conservando `explicit`. |
+| `valores_por_defecto_con_significado` | `block_0014_0011` | `explicit-assignment` | Añadir `destino = 3;`, conservando `explicit`. |
+| `argumentos_con_tipos_que_expresan_su_funcion` | `block_0006_0006` | `swapped-named-arguments` | Añadir `const Caja mal{Alto{4}, Ancho{3}};`, conservando el constructor `(Ancho, Alto)`. |
+
+Se incorpora únicamente al editor publicado correspondiente y a su mapa v2
+español, sin cambiar su fuente inicial completa. No se combina con `outputCheck`,
+`initialStandardInput`, `projectFiles`, `sourceFiles` ni `cmake`: esta práctica
+no pide salida, entrada estándar ni un fallo de enlace. El resto de los
+compiladores mantiene su contrato anterior.
+
+Windows utiliza el MSVC educativo configurado. Cada intento válido compara un
+control y un candidato nuevos, compilados solamente con `/c`, sin enlazarlos ni
+ejecutarlos. El control debe compilar; el candidato debe producir el rechazo
+semántico previsto, en el archivo y las líneas de la sentencia introducida.
+Los códigos primarios observados deben corresponder a ese objetivo e intervalo.
+Se preservan los diagnósticos completos sin comparar frases ni idioma de MSVC.
+Cancelación, límite técnico, timeout, herramienta ausente, control inválido,
+sintaxis ajena y enlace no acreditan el objetivo ni consumen corazones.
+
+Los elementos léxicos conservan el programa inicial salvo la sentencia
+solicitada dentro de `main`; espacios y comentarios no imponen una única
+presentación. Esto comprueba cinco modificaciones cerradas, no cualquier
+programa que falle. Quitar `const` o `explicit`, cambiar la interfaz o introducir
+otro error no cumple la práctica. El editor sigue guardando los otros
+borradores y mostrando sus diagnósticos, sin acreditarlos por ese fallo.
+
+La nueva prueba corresponde al objetivo y al programa capturados por la misma
+pulsación; no usa una consola anterior ni un booleano antiguo. Un acierto completo
+y su explicación permanecen hasta **Reiniciar código**, separados del borrador
+actual. Cambiar o volver a compilar no revoca el logro. Su acreditación propia
+controla referencias, avance y detención/continuación del lector cuando
+corresponde.
+
+La importación Android conserva datos y borradores sin fabricar pruebas Windows.
+La procedencia nativa impide adoptar después un asset que retire o cambie un
+objetivo ya incorporado; rechazarlo conserva los datos. Work integra los cinco
+contratos y completa presentación, interacción y escucha por separado. Esta
+capacidad no amplía el motor Android conservado.
 
 ## Ampliaciones revisadas con conservación en Windows
 

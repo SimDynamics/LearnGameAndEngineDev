@@ -29,8 +29,9 @@ empaqueta. El script produce archivos Opus mono a 40 kb/s (Ogg),
 compatible con Android 10 o superior. Gradle incluirá esos archivos
 en el siguiente APK sin generar audio en tiempo de ejecución.
 
-**Importante:** el repositorio no incluye las voces WAV/Opus ya generadas.
-Incorporar el lector no produce por sí mismo un pack de audio.
+**Recursos conservados:** el repositorio incluye 40 grabaciones Opus históricas
+de `ef_dora`; su presencia no acredita la cobertura completa de las lecciones
+actuales. Incorporar el lector no produce por sí mismo un pack de audio completo.
 La primera visita de una oración no empaquetada aún necesita inferencia
 en el dispositivo; las visitas posteriores aprovechan la caché privada.
 
@@ -111,14 +112,47 @@ El paquete de arranque deseado es la unidad
 - `first_contact_cpp`
 - `program_structure`
 
-**Estado del paquete:** PENDIENTE de renderizado real. El reproductor puede
-usar `app/src/main/assets/narration/prerendered/<hash>.ogg` y ya existe
-`package_prerendered_opus.py`, pero por ahora no hay archivos Ogg de esa
-unidad incluidos en el repositorio. No atribuir al APK las voces comprimidas
-hasta haber generado las grabaciones con el modelo, fonetizador, idioma y
-voz exactos de la app, validado todas las oraciones y reconstruido el APK.
+**Estado del paquete:** hay 40 grabaciones históricas conservadas, pero la
+cobertura completa del contenido actual debe comprobarse con su manifiesto.
+El reproductor puede usar `app/src/main/assets/narration/prerendered/<hash>.ogg`.
+No atribuir al APK un paquete completo hasta haber validado todas las oraciones
+con el modelo, fonetizador, idioma y voz exactos de la app y reconstruido el APK.
 
 Incluir una voz inicial por idioma es razonable; incluir cientos de voces
 y todos los cursos inflaría extraordinariamente la descarga. Los demás
 audios deben quedarse en almacenamiento privado y eventualmente usar
 paquetes opcionales si se vuelven muy grandes.
+
+### Verificación y exportación en Windows
+
+La compilación nativa verifica sin red los ocho recursos de
+`english_misaki/src/main/assets`: tamaños y hashes del contrato Kotlin,
+procedencia y ocho avisos de licencia. Esa carpeta es la ruta inglesa
+predeterminada de Windows. Un reemplazo explícito también debe conservar
+el mismo contrato y sus atribuciones.
+
+```powershell
+python scripts/narration/prepare_english_ai_pack.py --assets english_misaki/src/main/assets --verify-staged
+python scripts/narration/verify_windows_distribution.py --runtime out/narration/runtime.json
+python scripts/narration/export_first_unit_windows.py --verify-recordings
+```
+
+La distribución Windows actual utiliza las rutas locales de `runtime.json`,
+incluidos el JDK y los modelos instalados; no constituye un paquete portátil.
+Su verificador comprueba la coherencia de esas rutas y argumentos, las
+dependencias del ejecutor, los recursos ingleses, las atribuciones y los 40
+Opus conservados. Los modelos de síntesis pueden estar ausentes cuando se
+reproduce una grabación existente.
+
+El comando `first_unit_manifest` del ejecutor Kotlin extrae directamente las
+tres lecciones históricas enumeradas arriba, siempre en español con
+`ef_dora`, mediante el extractor y segmentador compartidos. No depende del
+catálogo activo ni de las preferencias del alumno. El exportador escribe ese
+manifiesto en `out/narration/first-unit/`; no genera ni reemplaza audio.
+`--verify-recordings` comprueba las grabaciones disponibles y termina con
+código 4 si alguna falta o es inválida. Puede recibir carpetas adicionales,
+solo para lectura, mediante `--recordings CARPETA`.
+
+La conservación de archivos, la reproducción técnica sin modelos y la escucha
+curricular son verificaciones distintas. Un manifiesto exportado no certifica
+por sí solo que todo el curso tenga audio ni que se haya escuchado.

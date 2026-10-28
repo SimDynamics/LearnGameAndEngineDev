@@ -42,7 +42,10 @@ std::string program(std::string_view message) {
 }
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    constexpr std::string_view diagnostic_test = "MSVC tool diagnostics preserve UTF-8 accents while program streams remain byte-exact";
+    const bool diagnostic_only = argc == 2 && std::string_view(argv[1]) == "--diagnostic-utf8";
+    if (argc > 1 && !diagnostic_only) return 2;
     const lgaed::LaunchOptions options{lgaed::ProfileId::Codex,
         L"cpp-runner-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
             std::to_wstring(GetTickCount64()), false};
@@ -63,6 +66,7 @@ int main() {
     unsigned passed = 0;
     unsigned failed = 0;
     const auto test = [&](std::string_view name, const std::function<void()>& action) {
+        if (diagnostic_only && name != diagnostic_test) return;
         try {
             action();
             ++passed;
@@ -72,6 +76,76 @@ int main() {
             std::cerr << "FAIL " << name << ": " << error.what() << '\n';
         }
     };
+
+    test(diagnostic_test, [&] {
+        const auto valid_utf8 = [](std::string_view bytes) {
+            return bytes.empty() || MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, bytes.data(),
+                static_cast<int>(bytes.size()), nullptr, 0) > 0;
+        };
+        const auto validate_tool_output = [&](std::string_view output, std::string_view error, std::string_view phase) {
+            require(valid_utf8(output) && valid_utf8(error), std::string(phase) + " produced non-UTF-8 tool diagnostics");
+            require(output.find("\xef\xbf\xbd") == output.npos && error.find("\xef\xbf\xbd") == error.npos,
+                std::string(phase) + " replaced an original diagnostic character");
+        };
+        const std::string intentional = "#error QA_error_áéíóú_ñ\nint main() {}\n";
+        const auto single = run_cpp(request(intentional));
+        require(single.error_utf8.empty() && single.compilation.status == CppPhaseStatus::completed &&
+            single.compilation.exit_code != std::uint32_t{0} && single.execution.status == CppPhaseStatus::not_started,
+            "An intentional diagnostic must remain a regular compiler failure without execution");
+        validate_tool_output(single.compilation.stdout_bytes, single.compilation.stderr_bytes, "Single-file compilation");
+        const auto single_diagnostics = single.compilation.stdout_bytes + single.compilation.stderr_bytes;
+        require(single_diagnostics.find("QA_error_áéíóú_ñ") != single_diagnostics.npos &&
+            single_diagnostics.find("Código & (espacio)") != single_diagnostics.npos,
+            "Single-file diagnostics lost the authored accent marker or Unicode path regardless of MSVC language");
+        require(read(single.run_directory / L"compilation-stdout.bin") == single.compilation.stdout_bytes &&
+            read(single.run_directory / L"compilation-stderr.bin") == single.compilation.stderr_bytes &&
+            read(single.run_directory / L"main.cpp") == intentional,
+            "Single-file tool capture rewrote diagnostic bytes or the original UTF-8 source");
+
+        auto multiple_request = request("");
+        multiple_request.project_files = {{"fuenté_ñ.cpp", intentional}};
+        multiple_request.source_files = {"fuenté_ñ.cpp"};
+        const auto multiple = run_cpp(multiple_request);
+        require(multiple.error_utf8.empty() && multiple.compilation.status == CppPhaseStatus::completed &&
+            multiple.compilation.exit_code != std::uint32_t{0} && multiple.execution.status == CppPhaseStatus::not_started,
+            "The UTF-8 project source must fail in compilation rather than execute");
+        validate_tool_output(multiple.compilation.stdout_bytes, multiple.compilation.stderr_bytes, "Multi-file compilation");
+        const auto multiple_diagnostics = multiple.compilation.stdout_bytes + multiple.compilation.stderr_bytes;
+        require(multiple_diagnostics.find("fuenté_ñ.cpp") != multiple_diagnostics.npos &&
+            multiple_diagnostics.find("QA_error_áéíóú_ñ") != multiple_diagnostics.npos,
+            "Multi-file diagnostics lost the actual accented filename or authored message");
+        require(read(multiple.run_directory / L"compile-0-stdout.bin") == multiple.compilation.stdout_bytes &&
+            read(multiple.run_directory / L"compile-0-stderr.bin") == multiple.compilation.stderr_bytes &&
+            read(multiple.run_directory / L"project/fuenté_ñ.cpp") == intentional,
+            "Multi-file tool capture rewrote diagnostic bytes or authored source");
+
+        auto link_request = request("");
+        link_request.project_files = {{"enlacé_ñ.cpp",
+            "extern int missing_utf8_link_symbol();\nint main() { return missing_utf8_link_symbol(); }\n"}};
+        link_request.source_files = {"enlacé_ñ.cpp"};
+        const auto linked = run_cpp(link_request);
+        require(linked.error_utf8.empty() && linked.compilation.status == CppPhaseStatus::completed &&
+            linked.compilation.exit_code != std::uint32_t{0} && linked.execution.status == CppPhaseStatus::not_started,
+            "The unresolved symbol must remain a regular link failure without execution");
+        const auto link_output = read(linked.run_directory / L"link-stdout.bin");
+        const auto link_error = read(linked.run_directory / L"link-stderr.bin");
+        validate_tool_output(link_output, link_error, "Direct project link");
+        require((link_output + link_error).find("Código & (espacio)") != std::string::npos,
+            "The link diagnostic lost the accented output path");
+
+        const std::string raw_output("\x82\xa2\0\xff", 4), raw_error("\xe9\xf1\x80", 3);
+        const auto binary = run_cpp(request(
+            "#include <cstdio>\n#include <fcntl.h>\n#include <io.h>\n"
+            "int main(){_setmode(_fileno(stdin),_O_BINARY);_setmode(_fileno(stdout),_O_BINARY);"
+            "_setmode(_fileno(stderr),_O_BINARY);int c;while((c=getchar())!=EOF)putchar(c);"
+            "const unsigned char error[]={0xe9,0xf1,0x80};fwrite(error,1,sizeof(error),stderr);}\n", raw_output));
+        successful(binary);
+        require(binary.execution.stdout_bytes == raw_output && binary.execution.stderr_bytes == raw_error &&
+            read(binary.run_directory / L"execution-stdout.bin") == raw_output &&
+            read(binary.run_directory / L"execution-stderr.bin") == raw_error &&
+            read(binary.run_directory / L"stdin.bin") == raw_output,
+            "Tool diagnostic encoding changed the program's separate raw stdin/stdout/stderr bytes");
+    });
 
     test("Windows output comparison accepts binary LF and CRT CRLF without changing raw output or the shared exact contract", [] {
         using namespace lgaed::curriculum;

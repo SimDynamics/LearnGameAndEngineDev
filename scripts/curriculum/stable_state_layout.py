@@ -93,6 +93,55 @@ MATH_LABEL_IDENTITY = "block_0007_0001"
 MATH_LABEL_BEFORE = "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d"
 MATH_LABEL_AFTER = "20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"
 
+# CPP_ACREDITACION_DIAGNOSTICO_INTENCIONAL: a new Windows goal for exactly
+# these five published editors. Source, owner and historical storage stay fixed.
+_DIAGNOSTIC_PREFIX = "cpp_fundamentals__datos_propios_y_estado_valido__"
+COMPILE_DIAGNOSTICS = {
+    (_DIAGNOSTIC_PREFIX + "consultas_const_y_objetos_constantes", "block_0006_0006"): {
+        "diagnostic": "const-member-call",
+        "before": "05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27",
+    },
+    (_DIAGNOSTIC_PREFIX + "valores_por_defecto_con_significado", "block_0012_0008"): {
+        "diagnostic": "explicit-copy-initialization",
+        "before": "ac0365d7452a3a6ff52a0f6c306d01815a09196f9f49e2bc90cdd4ec5dbc9fe9",
+    },
+    (_DIAGNOSTIC_PREFIX + "valores_por_defecto_con_significado", "block_0012_0011"): {
+        "diagnostic": "explicit-argument-conversion",
+        "before": "9f7db3f3a1004a235926bc12e06e9d0bf1a93b707f3ca92f6de2876677fd9c58",
+    },
+    (_DIAGNOSTIC_PREFIX + "valores_por_defecto_con_significado", "block_0014_0011"): {
+        "diagnostic": "explicit-assignment",
+        "before": "3e8eb728eac0d493c864596ec2364fe6c69ff85ce01408dd0020cec36ad6b087",
+    },
+    (_DIAGNOSTIC_PREFIX + "argumentos_con_tipos_que_expresan_su_funcion", "block_0006_0006"): {
+        "diagnostic": "swapped-named-arguments",
+        "before": "b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed",
+    },
+}
+
+
+def validate_compile_check_contract(block: dict) -> dict | None:
+    """Validate a closed goal and its complete published source, without context."""
+    if "compileCheck" not in block:
+        return None
+    require(block.get("type") == "cpp_compiler", "compileCheck belongs to a compiler editor")
+    config = block["compileCheck"]
+    require(type(config) is dict and {"diagnostic"} <= set(config) <= {"diagnostic", "explanation"},
+            "compileCheck requires a diagnostic and optional explanation only")
+    diagnostic = config["diagnostic"]
+    require(type(diagnostic) is str, "A compiler diagnostic identity must be text")
+    spec = next((spec for spec in COMPILE_DIAGNOSTICS.values() if spec["diagnostic"] == diagnostic), None)
+    require(spec is not None, "Unknown reviewed compiler diagnostic")
+    if "explanation" in config:
+        require(type(config["explanation"]) is str and bool(config["explanation"].strip()),
+                "A compiler diagnostic explanation must be nonempty text")
+    require(not ({"outputCheck", "projectFiles", "sourceFiles", "cmake", "initialStandardInput"} & block.keys()),
+            "compileCheck has no output, project or standard-input contract")
+    original = {key: value for key, value in block.items() if key != "compileCheck"}
+    require(fingerprint(original) == spec["before"], "A reviewed diagnostic must retain its exact complete initial block")
+    return spec
+
+
 # CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5: five individually reviewed
 # Spanish options. A protected digest covers every response/code field, not
 # merely this string. The whole first revision also pins its exact guidance.
@@ -228,6 +277,8 @@ def historical_compiler_reference_payload(block: dict) -> dict:
 
 def _compiler_payload(block: dict) -> dict:
     payload = deepcopy(block)
+    if validate_compile_check_contract(payload) is not None:
+        payload.pop("compileCheck")
     config = payload.get("outputCheck")
     if type(config) is dict and type(config.get("cases")) is list:
         for case in config["cases"]:
@@ -429,6 +480,9 @@ def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
     for identity, block in before.items():
         if block.get("type") != "cpp_compiler" or identity not in after:
             continue
+        if "compileCheck" in block:
+            require(after[identity].get("compileCheck") == block["compileCheck"],
+                    "A published compiler diagnostic objective cannot be removed or replaced")
         old_config, config = block.get("outputCheck"), after[identity].get("outputCheck")
         if type(old_config) is not dict or type(config) is not dict:
             continue  # Full response fingerprints protect removal/type changes.
@@ -906,8 +960,8 @@ def _validate_presentation_relationships(document: dict) -> None:
             target = blocks[activity]
             if field == "referenceAfter":
                 require(target.get("type") == "cpp_compiler", "Reference activity must be a compiler")
-                require(type(target.get("outputCheck")) is dict,
-                        "Reference activity requires an authored output check")
+                require(type(target.get("outputCheck")) is dict or type(target.get("compileCheck")) is dict,
+                        "Reference activity requires an authored compiler objective")
             else:
                 require(target.get("type") in DEPENDENT_ACTIVITY_TYPES,
                         "A dependent activity must be an exercise or compiler")
@@ -930,8 +984,9 @@ def _validate_presentation_relationships(document: dict) -> None:
                     require(positions[identity] > positions[activity],
                             "A reference must follow its activity in visual order")
                 else:
-                    require(block.get("type") == "cpp_compiler" and type(block.get("outputCheck")) is dict,
-                            "An activity prerequisite requires a compiler with an authored output check")
+                    require(block.get("type") == "cpp_compiler" and
+                            (type(block.get("outputCheck")) is dict or type(block.get("compileCheck")) is dict),
+                            "An activity prerequisite requires a compiler with an authored objective")
                     require(positions[identity] < positions[activity],
                             "An activity prerequisite must precede its activity in visual order")
 
@@ -1033,6 +1088,39 @@ def _validate_retirement_history(document: dict) -> None:
         active = before
 
 
+def _validate_compile_checks(document: dict) -> None:
+    """Bind new diagnostic goals to the exact Spanish owner in every presentation."""
+    meta = document.get("stateLayout", {})
+    annotated = any("compileCheck" in block for page in _pages(document) for block in page.get("blocks", []))
+    if not annotated and type(meta) is dict:
+        annotated = any("compileCheck" in item.get("block", {}) for item in meta.get("retired", [])) or any(
+            "compileCheck" in block for snapshot in meta.get("retirementHistory", [])
+            for page in snapshot.get("pages", []) for block in page.get("blocks", []))
+    if not annotated:
+        return
+    require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
+            "Compiler diagnostic goals require their existing Spanish stateLayout v2 family")
+    available = _all_blocks(document)
+    def owner(identity: str, block: dict) -> None:
+        spec = validate_compile_check_contract(block)
+        if spec is not None:
+            require(COMPILE_DIAGNOSTICS.get((document.get("id"), identity)) == spec,
+                    "A reviewed compiler diagnostic belongs to its exact lesson and stable editor identity")
+            proofs = [proof for proof in meta["editorial"] if proof["id"] == identity]
+            require(proofs and any(proof["beforeSha256"] == spec["before"] for proof in proofs)
+                    and proofs[-1]["afterSha256"] == fingerprint(block),
+                    "A new compiler diagnostic requires complete published before/after editorial provenance")
+    for identity, block in available.items():
+        owner(identity, block)
+    for snapshot in meta.get("retirementHistory", []):
+        for page, record in zip(snapshot["pages"], snapshot["current"]):
+            for identity, block in zip(record["blocks"], page.get("blocks", [])):
+                owner(identity, block)
+                if "compileCheck" in block:
+                    require(available[identity].get("compileCheck") == block["compileCheck"],
+                            "A historical compiler diagnostic must retain its current archived or active objective")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
@@ -1040,6 +1128,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     mapping = _validate_state_layout(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
+    _validate_compile_checks(document)
     return mapping
 
 
@@ -1048,6 +1137,35 @@ def _transition_metadata(document: dict) -> dict:
     # of an immutable origin. All other lesson metadata remains protected.
     return {k: v for k, v in document.items()
             if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | FLOW_FIELDS}
+
+
+def add_compile_check(document: dict, identity: str, explanation: str | None = None) -> dict:
+    """Prepare one reviewed new diagnostic objective, preserving the entire source."""
+    validate(document)
+    meta = document.get("stateLayout", {})
+    require(meta.get("version") == 2 and meta.get("locale") == "es",
+            "Prepare the published Spanish stateLayout v2 family before adding a diagnostic goal")
+    _identity(identity)
+    spec = COMPILE_DIAGNOSTICS.get((document.get("id"), identity))
+    require(spec is not None, "The editor is not one of the five reviewed diagnostic activities")
+    original = _blocks(document).get(identity)
+    require(original is not None, "A diagnostic goal requires its existing active editor")
+    if explanation is not None:
+        require(type(explanation) is str and bool(explanation.strip()), "A diagnostic explanation must be nonempty text")
+    if "compileCheck" in original:
+        require(explanation is None or original["compileCheck"].get("explanation") == explanation,
+                "A published diagnostic explanation cannot be overwritten by the authoring helper")
+        return deepcopy(document)
+    require(fingerprint(original) == spec["before"], "A diagnostic goal must start from its exact complete published editor")
+    result = deepcopy(document)
+    actual = _blocks(result)[identity]
+    actual["compileCheck"] = {"diagnostic": spec["diagnostic"]}
+    if explanation is not None:
+        actual["compileCheck"]["explanation"] = explanation
+    result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": fingerprint(original),
+                                             "afterSha256": fingerprint(actual)})
+    validate_transition(document, result)
+    return result
 
 
 def refine_order_lines(document: dict, identity: str) -> dict:

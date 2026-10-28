@@ -65,6 +65,17 @@ struct OutputCheck {
     TextComparison input_comparison = TextComparison::exact;
     std::vector<OutputCase> cases;
 };
+// A closed compile-time rejection is a different objective from runtime stdout.
+// The loader binds each diagnostic to its reviewed Spanish editor and source.
+struct CompileCheck {
+    std::string diagnostic, explanation;
+    bool operator==(const CompileCheck&) const = default;
+};
+struct CompileDiagnosticSource {
+    std::string control_source, candidate_source;
+    std::size_t first_line = 0, last_line = 0;
+    std::string expected_msvc_error;
+};
 // One historical grouped ordering refined into independently movable lines.
 // The complete original block remains provenance, never another active puzzle.
 struct OrderRefinement {
@@ -113,6 +124,7 @@ struct Block {
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
+    std::optional<CompileCheck> compile_check;
     std::optional<std::string> standard_input;
     CppProjectFiles project_files;
     std::vector<std::string> source_files;
@@ -170,6 +182,12 @@ struct Lesson {
     bool compiler_puzzles_required = false;
 };
 
+// Preserves the identities of existing stdout objectives while allowing the
+// separately authored compile-time diagnostic contract to gate the same flow.
+[[nodiscard]] bool has_compiler_objective(const Block&);
+// Accepts only one reviewed statement inserted at a statement boundary in main.
+// The remaining C++ tokens must be the initial source; comments/spacing may vary.
+[[nodiscard]] std::optional<CompileDiagnosticSource> prepare_compile_diagnostic_source(const Block&, std::string_view candidate);
 void validate_reference_relationships(const Lesson&);
 void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::optional<StatePosition> stable_block_position(const Lesson&, std::string_view stable_id);

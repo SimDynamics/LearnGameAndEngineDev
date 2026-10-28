@@ -40,6 +40,9 @@ std::string complete_seal(const std::string& key,std::string_view program,const 
     for(const auto& item:proofs)frame+=token(item);
     return state::sha256(frame);
 }
+std::string diagnostic_proof(const std::string& key,std::string_view program,const curriculum::Block& block) {
+    return state::sha256("compiler-diagnostic-v1/"+token(key)+token(program)+token(block.compile_check->diagnostic));
+}
 curriculum::Block historical_block(const curriculum::Block& block) {
     auto original=block;original.output_check=block.compiler_revision->previous_output_check;
     original.raw_json=block.compiler_revision->raw_json;original.compiler_revision.reset();return original;
@@ -49,13 +52,13 @@ bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& 
         left.standard_error==right.standard_error;
 }
 void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    if(!block.output_check)return;const auto key=base(lesson,block);
+    if(!curriculum::has_compiler_objective(block))return;const auto key=base(lesson,block);
     for(const auto suffix:{"program","completed","feedback"})if(const auto value=state::find(data,"native_windows",key+suffix);value&&!std::holds_alternative<std::string>(*value))
         throw std::runtime_error("Invalid compiler execution provenance; data was preserved.");
     const auto program=state::string_value(data,"native_windows",key+"program");const auto proofs=case_proofs(data,key);
-    if(!proofs.empty()&&(program.empty()||proofs.size()!=block.output_check->cases.size()))
+    if(!proofs.empty()&&(program.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())))
         throw std::runtime_error("Invalid compiler case count or captured program; data was preserved.");
-    for(std::size_t index=0;index<proofs.size();++index)if(!proofs[index].empty()&&proofs[index]!=proof(key,program,index,block.output_check->cases[index]))
+    for(std::size_t index=0;index<proofs.size();++index)if(!proofs[index].empty()&&proofs[index]!=(block.compile_check?diagnostic_proof(key,program,block):proof(key,program,index,block.output_check->cases[index])))
         throw std::runtime_error("A compiler case proof belongs to another program or objective; data was preserved.");
     if(const auto value=state::find(data,"native_windows",key+"completed")) {
         if(proofs.empty()||std::ranges::any_of(proofs,[](const auto& value){return value.empty();})||
@@ -73,20 +76,21 @@ std::string compiler_program_frame(const CppRunRequest& request) {
     return "project-v1/"+curriculum::cpp_project_frame(request.project_files,request.source_files,configuration);
 }
 bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)return false;
+    if(!curriculum::has_compiler_objective(block))return false;
     const auto key=base(lesson,block);
     const auto captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);
-    if(captured.empty()||proofs.size()!=block.output_check->cases.size()||proofs.empty())return false;
+    if(captured.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())||proofs.empty())return false;
     for(std::size_t index=0;index<proofs.size();++index)
-        if(proofs[index]!=proof(key,captured,index,block.output_check->cases[index]))return false;
+        if(proofs[index]!=(block.compile_check?diagnostic_proof(key,captured,block):proof(key,captured,index,block.output_check->cases[index])))return false;
     return state::string_value(data,"native_windows",key+"completed")==complete_seal(key,captured,proofs);
 }
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     return compiler_puzzle_completed(data,lesson,block)?state::string_value(data,"native_windows",base(lesson,block)+"feedback"):std::string{};
 }
 std::size_t compiler_puzzle_case_count(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)return 0;
+    if(!curriculum::has_compiler_objective(block))return 0;
+    if(block.compile_check)return compiler_puzzle_completed(data,lesson,block)?1:0;
     const auto key=base(lesson,block),captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);std::size_t count=0;
     for(std::size_t index=0;index<std::min(proofs.size(),block.output_check->cases.size());++index)
@@ -105,6 +109,7 @@ std::string compiler_puzzle_historical_feedback(const state::StateData& data,con
 void validate_compiler_puzzle_state(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     // Existing objectives retain their historical permissive decoding. The
     // reviewed migration validates every receipt it is about to reuse.
+    if(block.compile_check){validate_receipts(data,lesson,block);return;}
     if(!block.compiler_revision)return;
     validate_receipts(data,lesson,historical_block(block));validate_receipts(data,lesson,block);
 }
@@ -155,6 +160,21 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(complete){values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);}
     return complete;
 }
+bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
+        const CppRunRequest& captured,const CppRunResult& result,std::string_view feedback) {
+    if(compiler_puzzle_completed(data,lesson,block))return true;
+    if(!block.compile_check||!captured.diagnostic||!expected_compile_diagnostic(captured,result))return false;
+    const auto source=curriculum::prepare_compile_diagnostic_source(block,captured.source_utf8);
+    if(!source||captured.diagnostic->control_source_utf8!=source->control_source||
+        captured.diagnostic->expected_error_code!=source->expected_msvc_error||
+        captured.diagnostic->first_line!=source->first_line||captured.diagnostic->last_line!=source->last_line)return false;
+    const auto key=base(lesson,block),program=compiler_program_frame(captured);
+    const std::vector<std::string> proofs{diagnostic_proof(key,program,block)};
+    auto& values=data.preferences["native_windows"];
+    values[key+"program"]=program;values[key+"cases"]=proofs;
+    values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);
+    return true;
+}
 void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     const auto prefix=root(lesson,block);
     if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
@@ -162,7 +182,7 @@ void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& less
 }
 void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
                                       const CppRunRequest& current) {
-    if(block.output_check&&!compiler_puzzle_completed(data,lesson,block)
+    if(curriculum::has_compiler_objective(block)&&!compiler_puzzle_completed(data,lesson,block)
         &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current)) {
         // Editing revokes only an incomplete attempt of this exact objective.
         // Older objectives remain historical data when an authored requirement

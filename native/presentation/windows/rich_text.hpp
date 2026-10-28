@@ -10,6 +10,12 @@ namespace lgaed::presentation {
 // Android sp at font scale 1 are logical pixels, not Windows points.
 // A role is applied before syntax/emphasis/math formatting, never over it.
 enum class RichTextRole { body, prompt, heading, lesson_title };
+// Authored, currently visible material only. Hidden answers/solutions never
+// supply presentation context; these views do not change narration or state.
+struct RichTextContext {
+    std::string_view prose;
+    std::string_view code;
+};
 [[nodiscard]] constexpr LONG rich_text_height(RichTextRole role = RichTextRole::body) {
     return 15 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : 18);
 }
@@ -38,5 +44,5 @@ void style_cpp(HWND edit);
 void set_rich_text(HWND edit, std::string_view text,
     std::span<const curriculum::Emphasis> emphasis = {}, bool code = false,
     RichTextRole role = RichTextRole::body, std::string_view locale = "es",
-    std::span<const std::pair<std::size_t,std::size_t>> mathematics = {});
+    std::span<const std::pair<std::size_t,std::size_t>> mathematics = {}, RichTextContext context = {});
 } // namespace lgaed::presentation

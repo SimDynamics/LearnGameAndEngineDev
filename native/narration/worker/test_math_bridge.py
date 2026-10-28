@@ -149,6 +149,142 @@ class WindowsMathBridgeTest(unittest.TestCase):
         self.assertTrue(fallback[0]["literal"])
         self.assertEqual(r"\notacommand{a}", fallback[0]["formula"])
 
+    def test_12_current_curricular_fractions_keep_complete_utf16_units(self):
+        def current(relative, identifier, feedback=False):
+            path = CONTENT / relative
+            original = path.read_bytes()
+            lesson = json.loads(original.decode("utf-8-sig"))
+            matching = [block for page in lesson["pages"] for block in page["blocks"]
+                        if block.get("id") == identifier]
+            self.assertEqual(1, len(matching))
+            block = matching[0]
+            source = block["feedback"]["correct"] if feedback else block["prompt"]
+            return path, hashlib.sha256(original).digest(), source
+
+        def inspect(source, expected):
+            reply = self.worker.ask("math_editor", action="text_layout", text=source, mode="auto")
+            encoded = source.encode("utf-16-le")
+            previous = 0
+            for fragment in reply["fragments"]:
+                self.assertTrue(previous <= fragment["start"] < fragment["end"] <= len(encoded)//2)
+                fragment["original"] = encoded[fragment["start"]*2:fragment["end"]*2].decode("utf-16-le")
+                previous = fragment["end"]
+            for spelling, formula in expected.items():
+                with self.subTest(fraction=spelling):
+                    byte = source.index(spelling)
+                    first = len(source[:byte].encode("utf-16-le"))//2
+                    last = first + len(spelling.encode("utf-16-le"))//2
+                    owners = [fragment for fragment in reply["fragments"]
+                              if fragment["start"] <= first and fragment["end"] >= last]
+                    self.assertEqual(1, len(owners), (spelling, reply))
+                    self.assertFalse(owners[0]["literal"])
+                    self.assertIn(formula, owners[0]["formula"])
+            return reply["fragments"]
+
+        recovery = current(
+            "math_algebra_elemental/recuperacion_y_transferencia/"
+            "lesson_elegir_relaciones_y_recuperar_el_razonamiento_algebraico.json",
+            "dos_exigencias_y_dos_dominios")
+        rational = current(
+            "math_algebra_elemental/sistemas_lineales/"
+            "lesson_formulas_con_datos_y_una_condicion_no_nula.json",
+            "resolver_con_datos_fraccionarios")
+        # In the current asset the historic parametric slash expressions belong
+        # to correct feedback, not to the revised construction prompt.
+        parametric = current(
+            "math_algebra_elemental/sistemas_lineales/"
+            "lesson_formulas_con_datos_y_una_condicion_no_nula.json",
+            "construir_el_criterio_con_datos", feedback=True)
+        observed = inspect(recovery[2], {"5/2": r"\frac{5}{2}"})
+        relation = next(part for part in observed if "5/2" in part["original"])
+        self.assertEqual("2 ≥ 5/2", relation["original"])
+        self.assertEqual(r"2 ≥ \frac{5}{2}", relation["formula"])
+        inspect(rational[2], {
+            "x/2": r"\frac{x}{2}", "2y/3": r"\frac{2y}{3}",
+            "−3x/4": r"\frac{−3x}{4}", "y/5": r"\frac{y}{5}", "21/10": r"\frac{21}{10}",
+        })
+        inspect(parametric[2], {
+            "(du − bv)/D": r"\frac{du − bv}{D}",
+            "(av − cu)/D": r"\frac{av − cu}{D}",
+        })
+        # Supplementary characters before the same real source must shift all
+        # offsets by two UTF-16 units, not by Python/Kotlin code point counts.
+        shifted = inspect("🙂 " + recovery[2], {"5/2": r"\frac{5}{2}"})
+        self.assertEqual([(part["start"]+3, part["end"]+3, part["formula"]) for part in observed],
+                         [(part["start"], part["end"], part["formula"]) for part in shifted])
+        for path, digest, _ in (recovery, rational, parametric):
+            self.assertEqual(digest, hashlib.sha256(path.read_bytes()).digest())
+
+    def test_13_windows_fraction_repair_preserves_protected_sources(self):
+        excluded = (
+            "https://example.test/x/2?y=1",
+            "http://example.test/5/2",
+            "C:/ruta/x/2 = 1", r"C:\ruta\x\2 = 1",
+            "/tmp/x/2 = 1", "docs/x/2 = 1", "folder/(du-bv)/D = 1",
+            "x/2", "x/2=1", "archivo x/2 y carpeta a/b",
+            "x = a/2.txt", "x = a/2-archive", "x = a/2/child",
+            "x = (av − cu)/D.txt", "x = (av − cu)/D-archive", "x = (av − cu)/D/child",
+            "2026/10/28 = fecha", "28/10/2026",
+            "C++23; std::cout; " + chr(96) + "x/2 + 2y/3 = 1" + chr(96) + ".",
+            chr(96)*3 + "x/2 + 2y/3 = 1" + chr(96)*3,
+        )
+        for source in excluded:
+            with self.subTest(source=source):
+                result = self.worker.ask("math_editor", action="text_layout", text=source, mode="auto")
+                self.assertEqual([], result["fragments"])
+        for closing in (".", ",", ";", ")"):
+            source = "El par queda forzado a y = (av − cu)/D" + closing + " Fin."
+            with self.subTest(closing=closing):
+                result = self.worker.ask("math_editor", action="text_layout", text=source, mode="auto")["fragments"]
+                self.assertTrue(any(part["formula"] == r"\frac{av − cu}{D}" for part in result))
+        for source, formula, literal in (
+            (r"Antes \(\frac{x}{2}\) después.", r"\frac{x}{2}", False),
+            (r"Antes \(\notacommand{x/2 = 1}\) después.", r"\notacommand{x/2 = 1}", True),
+            (r"Antes \(x/2 = 1\) después.", "x/2 = 1", False),
+        ):
+            with self.subTest(explicit=source):
+                result = self.worker.ask("math_editor", action="text_layout", text=source, mode="auto")["fragments"]
+                self.assertEqual(1, len(result))
+                self.assertEqual(formula, result[0]["formula"])
+                self.assertEqual(literal, result[0]["literal"])
+        for mode in ("text", "inline", "block"):
+            result = self.worker.ask("math_editor", action="text_layout", text="x/2 + y/5 = 1", mode=mode)
+            if mode == "text":
+                self.assertEqual([], result["fragments"])
+            else:
+                self.assertEqual(1, len(result["fragments"]))
+                self.assertEqual("x/2 + y/5 = 1", result["fragments"][0]["formula"])
+
+    def test_14_fraction_repair_keeps_binary_minus_outside_and_unary_minus_inside(self):
+        def displayed_formula(source):
+            fragments = self.worker.ask("math_editor", action="text_layout", text=source, mode="auto")["fragments"]
+            encoded = source.encode("utf-16-le")
+            pieces = []
+            previous = 0
+            for fragment in fragments:
+                self.assertTrue(previous <= fragment["start"] < fragment["end"] <= len(encoded)//2)
+                pieces.append(encoded[previous*2:fragment["start"]*2].decode("utf-16-le"))
+                pieces.append(fragment["formula"])
+                previous = fragment["end"]
+            pieces.append(encoded[previous*2:].decode("utf-16-le"))
+            return "".join(pieces)
+
+        for minus in ("−", "-"):
+            for spacing in (" ", ""):
+                source = "En 2" + spacing + minus + "3/4 = 5/4."
+                with self.subTest(binary=source):
+                    self.assertEqual(source.replace("3/4", r"\frac{3}{4}").replace("5/4", r"\frac{5}{4}"),
+                                     displayed_formula(source))
+            for prose in ("La fracción ", "igual a "):
+                source = prose + minus + "3/4."
+                with self.subTest(unary=source):
+                    self.assertEqual(prose + r"\frac{" + minus + r"3}{4}.", displayed_formula(source))
+        # A coefficient's existing unary sign in the real current rational
+        # system remains part of its numerator (also exercised by test_12).
+        source = "Resuelve x/2 + 2y/3 = 1 y −3x/4 + y/5 = 21/10."
+        self.assertIn(r"\frac{−3x}{4}", displayed_formula(source))
+        self.assertNotIn(r"−\frac{3x}{4}", displayed_formula(source))
+
     def test_01_describes_all_real_math_blocks_without_exposing_solutions(self):
         forbidden = {"validator", "expected", "correctFeedback", "incorrectFeedback", "reviewFeedback", "solution"}
         def inspect(value):

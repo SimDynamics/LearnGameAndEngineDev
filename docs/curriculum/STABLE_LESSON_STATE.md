@@ -564,3 +564,53 @@ compilación Gradle de la app o del APK de pruebas acredita compilación, no
 ejecución. Solo una ejecución instrumentada en Android acredita las operaciones
 de Android que efectivamente probó. El informe de una publicación debe mantener
 separadas esas evidencias y declarar cualquier prueba en dispositivo pendiente.
+
+## Objetivos de diagnóstico intencional en Windows
+
+`cpp_compiler.compileCheck` incorpora un objetivo nuevo a los cinco editores
+españoles de `CPP_ACREDITACION_DIAGNOSTICO_INTENCIONAL`; sus ubicaciones y valores
+de `diagnostic` figuran en `docs/CPP_OUTPUT_CHECK.md`. No autoriza cambios
+generales de fuentes, respuestas, propietarios o mapas.
+
+El bloque inicial completo conserva `type` e `initialCode` exactamente como se
+publicaron. Cinco fingerprints anteriores y sus parejas lección/identidad
+forman el contrato cerrado. `compileCheck` declara `diagnostic` y opcionalmente
+`explanation` no vacía. No se combina con salida, entrada estándar o proyectos.
+Origen, familia, coordenadas, IDs, respuestas, borradores y traducciones no se
+regeneran ni trasladan.
+
+`add_compile_check(document, identity, explanation=None)` de
+`scripts/curriculum/stable_state_layout.py` devuelve una propuesta independiente
+con el objetivo revisado y una prueba editorial completa del bloque anterior
+al actual. No escribe assets; exige el mapa v2 español existente y el editor
+activo exacto. Es idempotente y no sobrescribe una explicación publicada. Work
+también puede añadir el contrato al documento y usar `prepare_v2` con la lección
+y la familia publicadas; la explicación puede entrar en esa misma transición,
+sin un paso intermedio artificial. Validar transición y traducciones antes de
+integrar.
+
+La proyección de estado elimina sólo un `compileCheck` validado cuyo bloque
+anterior coincide íntegramente con el hash revisado: conserva el contrato del
+borrador histórico sin confundirlo con el objetivo nuevo. La validación exige
+lección, identidad, idioma y procedencia editorial correctos también en bloques
+retirados y presentaciones históricas. `referenceAfter` y `activityAfter` admiten
+el objetivo con las mismas reglas de orden de los objetivos de stdout; no se
+crean relaciones nuevas automáticamente.
+
+Las transiciones no pueden retirar, sustituir o debilitar un `compileCheck`
+publicado. Un retiro explícito conserva el bloque completo. Incorporar después
+el objetivo no reescribe una presentación histórica anterior a él.
+
+Windows mantiene en `learning_progress` el pin
+`lesson_<lessonId>_state_compile_checks_v1_<locale>` con identidad de editor,
+objetivo y SHA-256 de la fuente inicial para objetivos activos y archivados.
+Adopción y comprobaciones son atómicas: metadatos o recibos incompatibles no
+reemplazan datos anteriores. El pin impide aceptar después un contrato retirado
+o cambiado bajo la misma identidad, incluso al cargar un asset anterior. Es
+procedencia interna, no un campo de autoría ni otra base de progreso.
+
+Las pruebas acreditan el objetivo y el programa capturados de la compilación
+nueva. Un acierto antiguo o importado desde Android no prueba el rechazo
+semántico; se conservan los datos y código sin fabricar recibos Windows.
+Reiniciar actúa sólo sobre esa actividad. La integración y aceptación visual,
+interactiva y de escucha de Work siguen siendo verificaciones independientes.

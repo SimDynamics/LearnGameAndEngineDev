@@ -51,6 +51,49 @@ private class Request(val id: String) {
     @Volatile var calculatorTask: Future<*>? = null
 }
 
+/** Historical export is explicit; the active catalog and reader preferences do not select it. */
+private object HistoricalDoraPack {
+    private const val UNIT_PREFIX = "programming/cpp_fundamentals/cpp_fundamentals__intro_programming/"
+    private val lessons = listOf(
+        "cpp_fundamentals__intro_programming__what_is_programming",
+        "cpp_fundamentals__intro_programming__first_contact_cpp",
+        "cpp_fundamentals__intro_programming__program_structure"
+    )
+
+    fun manifest(assets: File): JSONObject {
+        val entries = JSONArray()
+        val seen = mutableSetOf<String>()
+        for (lessonId in lessons) {
+            val name = lessonId.substringAfterLast("__")
+            val path = "content/es/programming/cpp_fundamentals/intro_programming/lesson_$name.json"
+            val lesson = JSONObject(File(assets,path).readText(Charsets.UTF_8))
+            check(lesson.getString("id") == lessonId) { "Incorrect historical voice-pack lesson identity: $path" }
+            val pages = lesson.getJSONArray("pages")
+            check(pages.length() > 0) { "Historical voice-pack lesson has no pages: $path" }
+            for (page in 0 until pages.length()) {
+                // Match FirstUnitNarrationPack: malformed page data is an export error.
+                pages.getJSONObject(page)
+                val texts = LessonNarrationText.page(lesson,page,NarrationLanguage.SPANISH) { type ->
+                    when (type) {
+                        "order_code", "drag_fill_code" -> WindowsNarrationInstructions.resolve(type,"es")
+                        else -> ""
+                    }
+                }
+                for (sentence in NarrationSegments.sentences(texts)) {
+                    val hash = KokoroNarrationCache.key("es","ef_dora",sentence)
+                    if (seen.add(hash)) entries.put(JSONObject()
+                        .put("hash",hash).put("language","es").put("voice","ef_dora")
+                        .put("lesson",lessonId).put("location","$UNIT_PREFIX$lessonId/${page + 1}"))
+                }
+            }
+        }
+        check(entries.length() > 0) { "Historical Spanish/Dora voice pack has no narration" }
+        return JSONObject().put("format",1).put("course","cpp_fundamentals")
+            .put("unit","intro_programming").put("lessons",JSONArray(lessons))
+            .put("uniqueSentences",entries.length()).put("entries",entries)
+    }
+}
+
 private class Backend(private val resources: File, private val englishResources: File,
                       private val assets: File, private val originalWavs: File?, private val ffmpeg: String?,
                       private val profile: String) {
@@ -159,6 +202,7 @@ private class Backend(private val resources: File, private val englishResources:
         }
         return JSONObject().put("segments",JSONArray(segments))
     }
+    fun firstUnitManifest(): JSONObject = JSONObject().put("manifest",HistoricalDoraPack.manifest(assets))
     fun cancel(request: Request) {
         request.cancelled.set(true)
         if (active === request) { engine?.cancelCurrentRun(); duration?.cancelCurrentRun(); english?.cancelCurrentRun() }
@@ -411,6 +455,7 @@ fun main(arguments: Array<String>) {
                         val result = when (command) {
                             "plan" -> backend.plan(request)
                             "curriculum_plan" -> backend.curriculumPlan(request)
+                            "first_unit_manifest" -> backend.firstUnitManifest()
                             "identity" -> backend.identity(request)
                             "prepare" -> backend.prepare(request,job)
                             "describe_math" -> WindowsMathBridge.describe(request)

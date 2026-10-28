@@ -997,6 +997,33 @@ int main(int argc,char** argv) {
         require(submitted == 1, "Multiline editor does not submit");
     });
 
+    test("Single-line answer policy preserves an older multiline document", [] {
+        unsigned submitted=0;
+        Fixture field({},true,{},false,nullptr,false,false);
+        RemovePropW(field.edit,L"lgaed.test.editor");
+        field.adapter.reset();
+        const EditorDocument historical{"\r\nRoca\tAzul\r\n",{},2,6};
+        field.adapter=std::make_unique<CodeEditor>(field.edit,historical,false,[&]{++submitted;},false,false,false);
+        SetPropW(field.edit,L"lgaed.test.editor",reinterpret_cast<HANDLE>(field.adapter.get()));
+        const auto retained=field.adapter->document();
+        require(retained.text==historical.text&&retained.selection_start==2&&retained.selection_end==6,
+            "Restoring a historical answer changed its original line breaks, tabs or selection");
+        field.key(VK_RETURN,L'\r');
+        require(submitted==1&&field.adapter->document().text==historical.text,
+            "Historical line breaks changed the current single-line Enter policy");
+        require(!field.adapter->insert_shortcut("\n")&&field.adapter->document().text==historical.text,
+            "Restoring old line breaks permitted a new multiline shortcut");
+        field.character(L'X');
+        // A new edit follows the established native LF document format. Undo
+        // still owns the exact pre-edit CRLF snapshot from the imported data.
+        require(field.adapter->document().text=="\nX\tAzul\n",
+            "Editing the restored selection changed its native text content");
+        field.adapter->undo();require(field.adapter->document().text==historical.text,
+            "Undo did not restore the entire historical answer");
+        field.adapter->redo();require(field.adapter->document().text=="\nX\tAzul\n",
+            "Redo changed the historical answer outside the edited selection");
+    });
+
     test("Physical Enter without ES_WANTRETURN inserts one plain newline without autoindent", [] {
         for (const bool assistance : {false, true}) {
             unsigned submitted = 0;

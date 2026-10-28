@@ -8,6 +8,7 @@
 #include <optional>
 #include <stop_token>
 #include <string>
+#include <vector>
 
 namespace lgaed::curriculum {
 struct OutputCheck;
@@ -32,6 +33,27 @@ struct CppPhaseResult {
     }
 };
 
+// A diagnostic objective compares two fresh compilation-only attempts. A zero
+// line interval and empty code preserve diagnostics for an unrelated edit but
+// cannot accredit a rejection. No executable is linked or run in this mode.
+struct CppDiagnosticRequest {
+    std::string control_source_utf8;
+    std::string expected_error_code;
+    std::uint32_t first_line = 0, last_line = 0;
+};
+struct CppCompilerDiagnostic {
+    std::string code;
+    std::filesystem::path source;
+    std::uint32_t line = 0, column = 0;
+    bool operator==(const CppCompilerDiagnostic&) const = default;
+};
+struct CppDiagnosticEvidence {
+    CppPhaseResult control;
+    std::vector<CppCompilerDiagnostic> errors;
+    std::string source_sha256, control_sha256;
+    bool expected_rejection = false;
+};
+
 struct CppRunRequest {
     std::uint64_t request_id = 0;
     std::uint64_t revision = 0;
@@ -48,6 +70,7 @@ struct CppRunRequest {
     std::chrono::milliseconds compile_timeout{60000};
     std::chrono::milliseconds execution_timeout{5000};
     std::size_t output_limit_bytes = 1024 * 1024;
+    std::optional<CppDiagnosticRequest> diagnostic;
 };
 
 struct CppRunResult {
@@ -61,6 +84,7 @@ struct CppRunResult {
     std::optional<std::string> executable;
     std::filesystem::path artifact;
     std::string error_utf8;
+    std::optional<CppDiagnosticEvidence> diagnostic;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
@@ -75,6 +99,10 @@ struct CppProjectAvailability {
 // request/revision results. This is bounded execution, not a security sandbox.
 [[nodiscard]] CppRunResult run_cpp(const CppRunRequest& request,
     std::stop_token stop = {});
+
+// Reparse the captured compiler streams and verify both phases and the exact
+// request/revision; a cached summary boolean is never execution evidence.
+[[nodiscard]] bool expected_compile_diagnostic(const CppRunRequest&, const CppRunResult&);
 
 // Keep capture and the shared curriculum evaluator byte-exact. At the Windows
 // boundary, also accept CRT text-mode CRLF for authored LF-only output goals.

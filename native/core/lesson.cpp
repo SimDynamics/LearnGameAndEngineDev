@@ -226,8 +226,8 @@ void validate_reference_relationships(const Lesson& lesson) {
         const auto target = stable_block_position(lesson,relation.activity);
         if (!target) throw std::invalid_argument("Reference activity does not exist");
         const auto& activity = lesson.pages[target->page].blocks[target->block];
-        if (activity.type != BlockType::cpp_compiler || !activity.output_check)
-            throw std::invalid_argument("Reference activity requires a compiler with an authored output check");
+        if (!has_compiler_objective(activity))
+            throw std::invalid_argument("Reference activity requires a compiler with an authored objective");
         if (relation.blocks.empty()) throw std::invalid_argument("Reference relationship has no presentation blocks");
         for (const auto& identity : relation.blocks) {
             if (identity == relation.activity || std::ranges::find(references,identity) != references.end())
@@ -271,8 +271,8 @@ void validate_activity_relationships(const Lesson& lesson) {
             const auto position = stable_block_position(lesson,identity);
             if (!position) throw std::invalid_argument("Activity prerequisite does not exist");
             const auto& activity = lesson.pages[position->page].blocks[position->block];
-            if (activity.type != BlockType::cpp_compiler || !activity.output_check)
-                throw std::invalid_argument("Activity prerequisite requires a compiler with an authored output check");
+            if (!has_compiler_objective(activity))
+                throw std::invalid_argument("Activity prerequisite requires a compiler with an authored objective");
             if (position->page > target->page || (position->page == target->page && position->block >= target->block))
                 throw std::invalid_argument("An activity prerequisite must precede its dependent activity in visual order");
         }
@@ -292,7 +292,7 @@ std::vector<StatePosition> activity_prerequisites(const Lesson& lesson, const Bl
     return result;
 }
 bool compiler_is_puzzle_prerequisite(const Lesson& lesson, const Block& compiler) {
-    if (compiler.type != BlockType::cpp_compiler || !compiler.output_check || lesson.activity_after.empty()) return false;
+    if (!has_compiler_objective(compiler) || lesson.activity_after.empty()) return false;
     std::map<std::string,BlockType> types;
     for (const auto& page : lesson.pages) for (const auto& block : page.blocks) types.emplace(block.stable_id,block.type);
     std::map<std::string,std::vector<std::string_view>> successors;
@@ -315,14 +315,18 @@ bool compiler_is_puzzle_prerequisite(const Lesson& lesson, const Block& compiler
     return false;
 }
 std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
-    if (activity.type != BlockType::cpp_compiler || !activity.output_check)
-        throw std::invalid_argument("Only an authored compiler output check can unlock a reference");
+    if (!has_compiler_objective(activity))
+        throw std::invalid_argument("Only an authored compiler objective can unlock a reference");
     std::string result = "reference-objective-v1/";
     const auto token = [&](std::string_view text) { result += std::to_string(text.size()) + ':'; result += text; };
     token(lesson.id); token(lesson.locale); token(activity.stable_id);
     token(activity.address.addition_namespace);
     token(std::to_string(activity.address.page)); token(std::to_string(activity.address.block));
     token(activity.initial_code); token(activity.language);
+    if (activity.compile_check) {
+        token("compile-check-v1"); token(activity.compile_check->diagnostic);
+        return result;
+    }
     // Keep historical single-file identities byte-for-byte compatible. A
     // project objective additionally owns all authored files and build inputs.
     if(!activity.project_files.empty()){token("cpp-project-v1");token(cpp_project_frame(activity.project_files,activity.source_files,activity.cmake));}

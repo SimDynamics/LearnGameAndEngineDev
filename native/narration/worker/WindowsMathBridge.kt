@@ -240,7 +240,7 @@ internal object WindowsMathBridge {
     private fun textLayout(request: JSONObject): JSONObject {
         val source=request.getString("text");val mode=request.optString("mode","auto")
         val key=mode+'\u0000'+source
-        val fragments=textLayouts[key]?:WindowsMathTypesetting.render(source,mode).fragments.toList().also {
+        val fragments=textLayouts[key]?:WindowsMathFractionLayout.render(source,mode).also {
             if(textLayouts.size>=2048)textLayouts.remove(textLayouts.keys.first())
             textLayouts[key]=it
         }

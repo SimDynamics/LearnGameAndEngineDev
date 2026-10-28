@@ -377,7 +377,21 @@ struct LessonView {
         bool code=false,RichTextRole role=RichTextRole::body,std::string_view locale={},
         std::span<const std::pair<std::size_t,std::size_t>> mathematics={}) const {
         const auto selected=locale.empty()?std::string(interface_language(data)):std::string(locale);
-        presentation::set_rich_text(target,text,emphasis,code,role,selected,mathematics);
+        RichTextContext context;
+        std::string visible_code;
+        const auto id=GetDlgCtrlID(target);
+        if(!code&&route=="programming"&&id>=1000){
+            const auto index=static_cast<std::size_t>((id-1000)/100);
+            if(index<controls.size()&&controls[index].rendered&&!controls[index].locked){
+                const auto& current=block(index);
+                // Only the visible question/current source can disambiguate a
+                // mention. Never use answers or unrevealed feedback as context.
+                context.prose=current.question;
+                if(controls[index].source){visible_code=edit_text(controls[index].source);context.code=visible_code;}
+                else context.code=current.code;
+            }
+        }
+        presentation::set_rich_text(target,text,emphasis,code,role,selected,mathematics,context);
     }
     std::string verdict_text(bool correct) const {
         return correct ? ui("Correcto","Correct","Correct") : ui("Incorrecto","Incorrect","Incorrect");
@@ -712,7 +726,7 @@ struct LessonView {
             auto& result=archived.regions;const auto proofs=completion_snapshot(historical);
             const auto available=[&](std::size_t index,const curriculum::Block& current){
                 if(historical.compiler_puzzles_required)for(std::size_t prior=0;prior<index;++prior){const auto& candidate=historical.pages[page].blocks[prior];
-                    if(candidate.type==BlockType::cpp_compiler&&candidate.output_check&&!windows::compiler_puzzle_completed(data,historical,candidate))return false;}
+                    if(curriculum::has_compiler_objective(candidate)&&!windows::compiler_puzzle_completed(data,historical,candidate))return false;}
                 if(const auto dependency=curriculum::reference_activity(historical,current)){
                     const auto& owner=historical.pages[dependency->page].blocks[dependency->block];
                     const auto found=proofs.find(owner.stable_id);if(found==proofs.end()||!found->second)return false;
@@ -825,7 +839,7 @@ struct LessonView {
                     if (found == result.end() || !found->second) { available = false; break; }
                 }
             const auto receipt = state::string_value(data,"native_windows",reference_key(current));
-            result[current.stable_id] = available && current.output_check &&
+            result[current.stable_id] = available && curriculum::has_compiler_objective(current) &&
                 (windows::compiler_puzzle_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current)));
         }
         return result;
@@ -847,7 +861,7 @@ struct LessonView {
         return found != proofs.end() && found->second;
     }
     static bool compiler_completion_required(const curriculum::Lesson& model,const curriculum::Block& activity) {
-        return activity.type==BlockType::cpp_compiler&&activity.output_check
+        return curriculum::has_compiler_objective(activity)
             &&(model.compiler_puzzles_required||curriculum::compiler_is_puzzle_prerequisite(model,activity));
     }
     std::size_t resolve_entry_page(std::size_t requested) const {
@@ -870,7 +884,7 @@ struct LessonView {
     bool reference_available(const curriculum::Block& reference) const {
         if(lesson.compiler_puzzles_required)for(const auto& prior:lesson.pages.at(page).blocks){
             if(&prior==&reference)break;
-            if(prior.type==BlockType::cpp_compiler&&prior.output_check&&!windows::compiler_puzzle_completed(data,lesson,prior))return false;
+            if(curriculum::has_compiler_objective(prior)&&!windows::compiler_puzzle_completed(data,lesson,prior))return false;
         }
         const auto dependency = curriculum::reference_activity(lesson,reference);
         return !dependency || activity_completed(lesson.pages[dependency->page].blocks[dependency->block]);
@@ -989,6 +1003,11 @@ struct LessonView {
         }
         if (changed) {
             std::stable_sort(rows.begin(),rows.end(),[](const auto& left, const auto& right) {
+                // Navigation shares the non-block ID range with the heading,
+                // but belongs after every active block when rows are revealed.
+                const bool left_navigation=GetDlgCtrlID(left.cells.front())==continue_id;
+                const bool right_navigation=GetDlgCtrlID(right.cells.front())==continue_id;
+                if(left_navigation||right_navigation)return !left_navigation&&right_navigation;
                 const auto a = row_block(left), b = row_block(right);
                 if (a == std::numeric_limits<std::size_t>::max()) return b != a;
                 return b != std::numeric_limits<std::size_t>::max() && a < b;
@@ -1599,7 +1618,9 @@ struct LessonView {
                     :ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));
                 name(31,ui("Seleccionar canal de la consola","Choose console channel","Choisir le canal de la console"));
                 if (vm.input) set_rich_text(find_item(control_id(index,17)),ui("Entrada","Input","Entrée"));
-                SetWindowTextW(vm.compile,wide(current.output_check
+                SetWindowTextW(vm.compile,wide(current.compile_check
+                    ? ui("Compilar y comprobar diagnóstico","Compile and check diagnostic","Compiler et vérifier le diagnostic")
+                    : current.output_check
                     ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
                     : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                     : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter")).c_str());
@@ -1644,6 +1665,14 @@ struct LessonView {
         if(vm.input){const auto visible=edit_text(vm.input);request.stdin_utf8=visible==vm.input_visual?vm.input_original:visible;}
         request.projects_directory=environment.paths.projects;request.project_key=draft_key(index);
         if(vm.project)vm.project->snapshot(request);
+        if(block(index).compile_check){
+            windows::CppDiagnosticRequest check;check.control_source_utf8=block(index).initial_code;
+            if(const auto source=curriculum::prepare_compile_diagnostic_source(block(index),request.source_utf8)){
+                check.control_source_utf8=source->control_source;check.expected_error_code=source->expected_msvc_error;
+                check.first_line=static_cast<std::uint32_t>(source->first_line);check.last_line=static_cast<std::uint32_t>(source->last_line);
+            }
+            request.diagnostic=std::move(check);
+        }
         return request;
     }
     void refresh_project_actions(std::size_t index) {
@@ -1951,7 +1980,7 @@ struct LessonView {
         }
         text=formatted;
         controls.at(index).feedback_source = std::string(text); controls.at(index).feedback_correct = correct;
-        if(controls.at(index).compile&&block(index).output_check)
+        if(controls.at(index).compile&&curriculum::has_compiler_objective(block(index)))
             reader_theme::completed_control(controls.at(index).compile,correct&&!text.empty());
         controls.at(index).feedback_generated_verdict = generated_verdict;
         controls.at(index).feedback_default_review = uses_default_review;
@@ -2346,7 +2375,8 @@ struct LessonView {
                 vm.input_original = saved.input; vm.input_visual = edit_text(vm.input);
                 rows.push_back({{vm.input}, {0}, 74, false});
             }
-            vm.compile = button(current.output_check ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
+            vm.compile = button(current.compile_check ? ui("Compilar y comprobar diagnóstico","Compile and check diagnostic","Compiler et vérifier le diagnostic")
+                : current.output_check ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
                 : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                 : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter"), control_id(index, 11), {0, ActionType::run, index});
             rows.push_back({{vm.compile}, {0}, 48, false});
@@ -2356,7 +2386,9 @@ struct LessonView {
                 vm.status=rich("",control_id(index,34));rows.push_back({{vm.status},{0},0,true});
                 rows.back().padding_before=8;rows.back().padding_after=8;
                 reader_theme::set_text_color(vm.status,reader_theme::palette(window).high_contrast?reader_theme::foreground(vm.status):RGB(174,180,190));
-                set_rich_text(vm.status,ui("Listo para ejecutar.","Ready to Run.","Prêt pour l’exécution."));
+                set_rich_text(vm.status,current.compile_check
+                    ?ui("Listo para comprobar el diagnóstico de compilación.","Ready to check the compilation diagnostic.","Prêt à vérifier le diagnostic de compilation.")
+                    :ui("Listo para ejecutar.","Ready to Run.","Prêt pour l’exécution."));
             }
             for (const auto& [part,type] : std::array<std::pair<int,ActionType>,9>{{
                 {70,ActionType::copy_source},{71,ActionType::copy_console},{72,ActionType::clear_console},
@@ -2601,6 +2633,7 @@ struct LessonView {
         const int left = std::max(margin, (static_cast<int>(area.right) - width) / 2);
         struct Placement { HWND item; int x, y, width, height; bool fixed=false; HWND parent=nullptr;int origin=0; };
         std::vector<Placement> placements;
+        std::vector<HWND> toolbar_captions;
         std::map<HWND,POINT> editor_positions;
         simulated_card_surfaces.clear();math_card_surfaces.clear();toolbar_surfaces.clear();console_surfaces.clear();std::map<std::size_t,std::size_t> card_surfaces;
         // A RichEdit's requested height depends on its final width. Measure
@@ -2765,10 +2798,8 @@ struct LessonView {
                 }
                 placements.push_back({row.cells[i],x,top,cell_width,std::max(0,cell_height),fixed});
                 const int part=(GetDlgCtrlID(row.cells[i])-1000)%100;
-                if((row.card_header||row.toolbar)&&(part==16||part==30||part==38)){
-                    RECT content{laboratory()?px(14):0,laboratory()?px(20):std::max(0,(height-edit_line_height(row.cells[i],content_text_scale()))/2),cell_width,std::max(0,height)};
-                    SendMessageW(row.cells[i],EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
-                }
+                if((row.card_header||row.toolbar)&&(part==16||part==30||part==38))
+                    toolbar_captions.push_back(row.cells[i]);
                 x += cell_width + gap;
             }
             const bool separate_response=block_index<controls.size()&&
@@ -2859,6 +2890,15 @@ struct LessonView {
             if(deferred&&!EndDeferWindowPos(deferred))deferred=nullptr;}
             if(!deferred)for(const auto* item:items)SetWindowPos(item->item,nullptr,item->x,
                 item->y-(item->fixed?0:item->origin?item->origin:scroll),item->width,item->height,placement_flags);
+        }
+        // RichEdit preserves formatting insets when its client size changes.
+        // Setting this rectangle at the provisional measurement height can
+        // therefore clip the first caption after its final, smaller placement.
+        for(const auto caption:toolbar_captions){
+            RECT content{};GetClientRect(caption,&content);
+            content.left=laboratory()?px(14):0;
+            content.top=laboratory()?px(20):std::max(0L,(content.bottom-edit_line_height(caption,content_text_scale()))/2);
+            SendMessageW(caption,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
         }
         for(const auto& vm:controls){
             const auto sync=[&](HWND item,int top_padding,int right_padding,int bottom_padding,int left_padding=-1){
@@ -3075,8 +3115,11 @@ struct LessonView {
                 windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),program_snapshot(index));
                 if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index, "", false);
                 vm.console_channels = {};
-                updating = true; set_rich_text(vm.console,ui("El programa cambió. Ejecuta de nuevo para obtener una salida actual.",
-                    "The program changed. Run it again to obtain current output.","Le programme a changé. Exécute-le à nouveau pour obtenir une sortie actuelle."));
+                updating = true; set_rich_text(vm.console,block(index).compile_check
+                    ?ui("El código cambió. Compila de nuevo para comprobar el diagnóstico actual.",
+                        "The code changed. Compile again to check the current diagnostic.","Le code a changé. Recompilez pour vérifier le diagnostic actuel.")
+                    :ui("El programa cambió. Ejecuta de nuevo para obtener una salida actual.",
+                        "The program changed. Run it again to obtain current output.","Le programme a changé. Exécute-le à nouveau pour obtenir une sortie actuelle."));
                 if (sender == vm.source) style_cpp(vm.source);
                 updating = false; mark_dirty(); reflow(); return;
             }
@@ -3109,7 +3152,9 @@ struct LessonView {
             :action==windows::CppRunRequest::Action::build?ui("Construyendo el objetivo…","Building the target…","Construction de la cible…")
             :action==windows::CppRunRequest::Action::compile_run?ui("Compilando y ejecutando...","Compiling and running...","Compilation et exécution en cours...")
             :ui("Ejecutando el objetivo construido…","Running the built target…","Exécution de la cible construite…"));
-        else if(!laboratory()&&vm.status)set_rich_text(vm.status,ui("Compilando y ejecutando...","Compiling and running...","Compilation et exécution en cours..."));
+        else if(!laboratory()&&vm.status)set_rich_text(vm.status,block(index).compile_check
+            ?ui("Comprobando el diagnóstico de compilación…","Checking the compilation diagnostic…","Vérification du diagnostic de compilation…")
+            :ui("Compilando y ejecutando...","Compiling and running...","Compilation et exécution en cours..."));
         worker = std::jthread([this, request = std::move(request)](std::stop_token stop) {
             windows::CppRunResult result;
             try{
@@ -3132,6 +3177,44 @@ struct LessonView {
         if (worker.joinable()) worker.join();
         auto& vm = controls.at(index); EnableWindow(vm.compile, TRUE);refresh_project_actions(index);
         if (result->revision != vm.revision) return;
+        if(block(index).compile_check){
+            vm.console_channels={};
+            auto diagnostics=diagnostic_text(result->compilation.stdout_bytes+result->compilation.stderr_bytes);
+            const bool control_valid=result->diagnostic&&result->diagnostic->control.succeeded();
+            if(result->diagnostic&&!control_valid){
+                diagnostics=ui("Comprobación del programa inicial:\n","Initial program check:\n","Vérification du programme initial :\n")
+                    +diagnostic_text(result->diagnostic->control.stdout_bytes+result->diagnostic->control.stderr_bytes)
+                    +(diagnostics.empty()?"":"\n"+diagnostics);
+            }
+            if(!result->error_utf8.empty())diagnostics+=(diagnostics.empty()?"":"\n")+result->error_utf8;
+            vm.console_channels[2]=std::move(diagnostics);console_present(index,2);
+            if(vm.status)set_rich_text(vm.status,!control_valid||result->compilation.status!=windows::CppPhaseStatus::completed
+                ?ui("No se pudo completar la comprobación del diagnóstico.","The diagnostic check could not be completed.","La vérification du diagnostic n’a pas pu être terminée.")
+                :result->compilation.succeeded()
+                    ?ui("Compilación aceptada. El programa no se ejecutó.","Compilation accepted. The program was not run.","Compilation acceptée. Le programme n’a pas été exécuté.")
+                    :ui("Compilación rechazada. El programa no se ejecutó.","Compilation rejected. The program was not run.","Compilation rejetée. Le programme n’a pas été exécuté."));
+            if(!windows::compiler_puzzle_completed(data,lesson,block(index))){
+                const bool correct=windows::expected_compile_diagnostic(running_program,*result);
+                if(correct){
+                    auto text=verdict_text(true)+"\n"+(block(index).compile_check->explanation.empty()
+                        ?ui("El compilador rechazó la operación solicitada; el programa no llegó a ejecutarse.",
+                            "The compiler rejected the requested operation; the program did not run.",
+                            "Le compilateur a rejeté l’opération demandée ; le programme n’a pas été exécuté.")
+                        :block(index).compile_check->explanation);
+                    if(windows::record_compiler_diagnostic_case(data,lesson,block(index),running_program,*result,text)){
+                        feedback(index,text,true,true);if(hooks.feedback_changed)hooks.feedback_changed(window,index,true);
+                        if(has_references(block(index)))data.preferences["native_windows"][reference_key(block(index))]=reference_seal(block(index));
+                        mark_dirty();flush();refresh_references();
+                    }
+                }else if(control_valid&&result->compilation.succeeded()){
+                    feedback(index,verdict_text(false)+"\n"+ui("Esta compilación fue aceptada; aún falta obtener el rechazo solicitado.",
+                        "This compilation was accepted; the requested rejection is still pending.",
+                        "Cette compilation a été acceptée ; le rejet demandé reste à obtenir."),false,true);
+                    if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
+                }
+            }
+            reflow();return;
+        }
         std::string output;
         const bool cmake=block(index).cmake.has_value();
         const bool configuration_failed=cmake&&result->configuration.status!=windows::CppPhaseStatus::not_started&&!result->configuration.succeeded();

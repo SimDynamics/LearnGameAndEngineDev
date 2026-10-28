@@ -28,6 +28,8 @@ void validate_compiler_puzzle_state(const state::StateData&, const curriculum::L
 // only when every authored input/target passed with the same captured program.
 [[nodiscard]] bool record_compiler_puzzle_case(state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest&, const curriculum::FreshExecution&, std::string_view feedback);
+[[nodiscard]] bool record_compiler_diagnostic_case(state::StateData&, const curriculum::Lesson&,
+    const curriculum::Block&, const CppRunRequest&, const CppRunResult&, std::string_view feedback);
 void invalidate_compiler_puzzle_attempt(state::StateData&, const curriculum::Lesson&, const curriculum::Block&,
                                        const CppRunRequest& current);
 void reset_compiler_puzzle(state::StateData&, const curriculum::Lesson&, const curriculum::Block&);

@@ -4,6 +4,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "native_build_config.hpp"
 
@@ -18,6 +19,7 @@
 #include <locale>
 #include <map>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -143,6 +145,29 @@ FileHashes hashes(const std::filesystem::path& folder) {
             state::sha256(state::read_bytes(file.path()));
     }
     return result;
+}
+
+std::string canonical_payload(std::string_view json) {
+    // Reuse the existing complete v2 QA framing, which sorts object keys but
+    // retains exact string bytes, array order, every field and each JSON type.
+    // The lesson loader already validates these payloads' integral numbers.
+    std::string result;
+    test::compile_check_test_canonical(winrt::Windows::Data::Json::JsonValue::Parse(winrt::to_hstring(json)),result);
+    return result;
+}
+
+void archived_json_comparison_preserves_every_value() {
+    constexpr std::string_view original=R"({"type":"code","code":" int n = 2;\n\t","extra":{"enabled":true,"values":[1,2],"missing":null}})";
+    constexpr std::string_view reordered=R"( { "extra": { "missing": null, "values": [1, 2], "enabled": true }, "code": " int n = 2;\n\t", "type": "code" } )";
+    const auto expected=canonical_payload(original);
+    require(expected==canonical_payload(reordered),"Archived JSON comparison depends on pretty-printing or object property order");
+    for(const auto changed:{
+        R"({"type":"code","code":"int n = 2;\n\t","extra":{"enabled":true,"values":[1,2],"missing":null}})",
+        R"({"type":"code","code":" int n = 2;\n\t","extra":{"enabled":false,"values":[1,2],"missing":null}})",
+        R"({"type":"code","code":" int n = 2;\n\t","extra":{"enabled":true,"values":[2,1],"missing":null}})",
+        R"({"type":"code","code":" int n = 2;\n\t","extra":{"enabled":true,"values":[1,2]}})"})
+        require(expected!=canonical_payload(changed),"Archived JSON comparison ignored code whitespace, nested values, array order or a removed field");
+    std::cout<<"PASS archived JSON: property order/formatting equivalent, exact code strings and all nested values protected\n";
 }
 
 std::string crlf(std::string_view source) {
@@ -413,7 +438,32 @@ void imported_stdout_success_does_not_accredit_a_new_runtime_stderr_goal() {
 void imported_pre_retirement_state_opens_current_asset() {
     const auto published=test::load_pre_retirement_lesson("lesson_primer_programa_y_salida.json");
     const auto current=windows::load_lesson(published.source_path);
-    require(current.compiler_puzzles_required&&current.retired_blocks.size()==2,"The import integration test requires the current retired asset");
+    const auto asset_hash=state::sha256(state::read_bytes(published.source_path));
+    // Work subsequently archived the two comparison reference programs as a
+    // separate batch. Preserve all four exact historical payloads; counting
+    // only the original compiler/consigna retirement no longer describes the
+    // active lesson, and must not turn valid import into a failing fixture.
+    const std::set<std::string> expected_retired{
+        "ejecucion_original_consigna","ejecucion_original_editor","block_0005_0002","block_0005_0008"};
+    std::set<std::string> actual_retired,layout_retired;
+    for(const auto& archived:current.retired_blocks){
+        actual_retired.insert(archived.stable_id);
+        const auto original=curriculum::stable_block_position(published,archived.stable_id);
+        require(original.has_value(),"The current import fixture archived an identity absent from its immutable historical lesson: "+archived.stable_id);
+        const auto& historical=published.pages[original->page].blocks[original->block].raw_json;
+        const bool equivalent=canonical_payload(archived.raw_json)==canonical_payload(historical);
+        std::cout<<"Archived import payload "<<archived.stable_id<<": historical-UTF8-bytes="<<historical.size()
+            <<" current-UTF8-bytes="<<archived.raw_json.size()<<" raw-equal="<<(archived.raw_json==historical)
+            <<" canonical-equal="<<equivalent<<'\n';
+        require(equivalent,"The current import fixture changed the complete historical payload: "+archived.stable_id);
+        require(!curriculum::stable_block_position(current,archived.stable_id),
+            "The current import fixture reactivated an archived historical identity");
+    }
+    for(const auto& archived:current.state_layout.retired)layout_retired.insert(archived.id);
+    require(current.compiler_puzzles_required&&actual_retired==expected_retired&&layout_retired==expected_retired
+        &&current.retired_blocks.size()==expected_retired.size()
+        &&current.state_layout.retired.size()==expected_retired.size(),
+        "The current import fixture lost one of the two original execution blocks or two preserved reference programs");
     View view(current);ExportFixture exported(view.environment.paths.projects/L"exportacion anterior al retiro",published);
     const auto untouched=hashes(exported.folder);
     view.click(104);view.path(exported.folder);view.click(203);
@@ -436,6 +486,15 @@ void imported_pre_retirement_state_opens_current_asset() {
             &&active_draft.input==exported.drafts[1].input,
             "Importing into the integrated asset lost independent archived/active sources or inputs");
         require(hashes(exported.folder)==untouched,"The current-asset import rewrote its historical source export");
+        require(state::sha256(state::read_bytes(published.source_path))==asset_hash,
+            "The current-asset import modified the authored lesson");
+        for(const auto& retired:current.retired_blocks){
+            require(!curriculum::stable_block_position(view.lesson,retired.stable_id),
+                "Importing or reopening reactivated an archived compiler, consigna or reference");
+            const auto retained=std::ranges::find(view.lesson.retired_blocks,retired.stable_id,&curriculum::Block::stable_id);
+            require(retained!=view.lesson.retired_blocks.end()&&canonical_payload(retained->raw_json)==canonical_payload(retired.raw_json),
+                "Importing or reopening discarded or rewrote a historical archive payload");
+        }
         struct Probe{bool leaked=false;} probe;
         EnumChildWindows(view.view,[](HWND window,LPARAM context)->BOOL{auto& probe=*reinterpret_cast<Probe*>(context);
             if(window_text(window).find("versión original")!=std::string::npos)probe.leaked=true;return !probe.leaked;
@@ -466,7 +525,7 @@ void imported_pre_retirement_state_opens_current_asset() {
         +"; status="+edit_text(view.control(goal->block,34)));
     view.reopen();preserved();require(edit_text(view.control(goal->block,4)).starts_with("✓ Correcto"),
         "The imported current objective lost its persistent fresh success");
-    std::cout<<"PASS published export to integrated U1: archived and active drafts preserved, retired HWND absent, opaque success uncredited and fresh current execution retained\n";
+    std::cout<<"PASS published export to integrated U1: all four archived compiler/consigna/reference payloads conserved, independent drafts preserved, retired HWND absent, opaque success uncredited and fresh current execution retained\n";
 }
 
 } // namespace
@@ -477,6 +536,7 @@ int main() {
     host.lpszClassName = L"LgaedImportViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        archived_json_comparison_preserves_every_value();
         imported_stdout_success_does_not_accredit_a_new_runtime_stderr_goal();
         imported_pre_retirement_state_opens_current_asset();
         View view;

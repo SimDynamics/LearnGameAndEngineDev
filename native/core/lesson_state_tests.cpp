@@ -4,6 +4,7 @@
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
@@ -632,6 +633,113 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
     }
     std::cout<<"PASS four reviewed compiler expansions: native empty/partial/completed proofs and reopen, unchanged-case reuse, new outputs, Edit/Undo and Reset; Android drafts/pins retained without invented native credit or reserved-domain import\n";
 }
+void diagnostic_contracts_preserve_native_and_imported_state(const std::filesystem::path& base) {
+    using namespace lgaed;using namespace curriculum;using namespace windows;
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
+    std::size_t index=0;
+    for(const auto& plan:test::compile_check_cases){
+        const auto before=load_lesson(folder/plan.filename),current=test::with_compile_check(before,plan.identity,plan.diagnostic);
+        const auto position=stable_block_position(current,plan.identity);require(position.has_value(),"Missing native diagnostic owner");
+        const auto& block=current.pages[position->page].blocks[position->block];
+        StateData data;prepare_lesson_state(data,before);
+        data.preferences["diagnostic_opaque"]["keep"]=std::string(" \t preserved\r\n");
+        Response old;old.correct=true;old.answer="old opaque response";put_response(data,before,before.pages[position->page].blocks[position->block],old);
+        Draft draft;draft.source=block.initial_code+"\n// personal draft\n";draft.input=" \t untouched stdin\r\n";
+        draft.selection_start=2;draft.selection_end=9;const auto key=draft_key("programming",current,block);put_draft(data,key,draft);
+        const auto original=data;prepare_lesson_state(data,current);validate_lesson_state(data,current);
+        for(const auto& [domain,values]:original.preferences)for(const auto& [name,value]:values)
+            require(find(data,domain,name)&&*find(data,domain,name)==value,"Adopting a diagnostic rewrote prior student data");
+        require(!compiler_puzzle_completed(data,current,block)&&get_draft(data,key,"").source==draft.source,
+            "An opaque success became diagnostic proof or the current source was replaced");
+        const auto pin="lesson_"+current.id+"_state_compile_checks_v1_es";
+        require(find(data,"learning_progress",pin),"The diagnostic objective lacks rollback protection");
+        const auto adopted=data;prepare_lesson_state(data,current);require(data==adopted,"Diagnostic adoption is not idempotent");
+        auto rollback=data;rejects([&]{prepare_lesson_state(rollback,before);});require(rollback==data,"Refusing diagnostic rollback changed saved data");
+        auto corrupt=data;corrupt.preferences["learning_progress"][pin]=std::string("[[\"wrong\",\"goal\",\"hash\"]]");
+        const auto invalid=corrupt;rejects([&]{prepare_lesson_state(corrupt,current);});require(corrupt==invalid,"Rejecting a corrupt diagnostic pin changed data");
+        auto bad_receipt=data;const auto receipt="compiler-puzzle/v1/es/"+current.id+'/'+exercise_key(current,block)+'/'+sha256(reference_objective_frame(current,block))+'/';
+        bad_receipt.preferences["native_windows"][receipt+"program"]=std::int64_t{4};
+        const auto malformed=bad_receipt;rejects([&]{prepare_lesson_state(bad_receipt,current);});require(bad_receipt==malformed,"Corrupt diagnostic receipt partially adopted metadata");
+        const auto name=std::to_string(index++);StateStore store(base/("diagnostic-"+name));(void)store.load();store.save(data);
+        auto reopened=store.load();validate_lesson_state(reopened,current);require(reopened==data,"Diagnostic native reopen changed provenance or drafts");
+        const auto exported=base/("diagnostic-export-"+name);export_preferences(exported,data,true);
+        const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,current);
+        commit_android_import(preview,base/("diagnostic-import-"+name));StateStore imported_store(base/("diagnostic-import-"+name));
+        auto imported=imported_store.load();validate_lesson_state(imported,current);
+        for(const auto& [domain,values]:data.preferences)for(const auto& [entry,value]:values)
+            require(find(imported,domain,entry)&&*find(imported,domain,entry)==value,"Android diagnostic import changed original typed data");
+        require(!compiler_puzzle_completed(imported,current,block)&&get_draft(imported,key,"").source==draft.source,
+            "Android import manufactured diagnostic success or changed code");
+        reset_compiler_puzzle(reopened,current,block);prepare_lesson_state(reopened,current);
+        require(find(reopened,"learning_progress",pin)&&!compiler_puzzle_completed(reopened,current,block),"Reset removed diagnostic provenance or invented credit");
+        ++groups;
+    }
+    {
+        // Work adds these three objectives to one existing lesson. Begin with
+        // the lexically last owner so later adoption cannot rely on appending
+        // rows to the old serialized pin or on the order of editorial changes.
+        const auto before=load_lesson(folder/"lesson_valores_por_defecto_con_significado.json");
+        StateData data;prepare_lesson_state(data,before);
+        data.preferences["diagnostic_chain"]["text"]=std::string(" \t retained\r\n");
+        data.preferences["diagnostic_chain"]["count"]=std::int64_t{7};
+        data.preferences["diagnostic_chain"]["flag"]=true;
+        for(const auto plan_index:{1u,2u,3u}) {
+            const auto& plan=test::compile_check_cases[plan_index];
+            const auto position=stable_block_position(before,plan.identity);require(position.has_value(),"Missing cumulative diagnostic owner");
+            const auto& block=before.pages[position->page].blocks[position->block];
+            Draft draft;draft.source=block.initial_code+"\n// independently retained "+plan.identity+"\t\r\n";
+            draft.input=" \t dormant input\r\n";draft.selection_start=2;draft.selection_end=9;
+            put_draft(data,draft_key("programming",before,block),draft);
+            Response old;old.correct=true;old.answer="opaque prior answer for "+std::string(plan.identity);put_response(data,before,block,old);
+        }
+        const auto seeded=data;
+        const auto& first_plan=test::compile_check_cases[3];
+        const auto first=test::with_compile_check(before,first_plan.identity,first_plan.diagnostic);
+        prepare_lesson_state(data,first);validate_lesson_state(data,first);
+        const auto pin="lesson_"+before.id+"_state_compile_checks_v1_es";
+        const auto first_rows=winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(string_value(data,"learning_progress",pin)));
+        require(first_rows.Size()==1,"The first cumulative diagnostic did not adopt one exact pin row");
+        const auto retained_row=first_rows.GetAt(0).Stringify();
+        const auto preserves_previous=[&](const StateData& previous){
+            for(const auto& [domain,values]:previous.preferences)for(const auto& [name,value]:values) {
+                if(domain=="learning_progress"&&name==pin)continue;
+                require(find(data,domain,name)&&*find(data,domain,name)==value,"Extending a diagnostic pin changed previous student data");
+            }
+        };
+        preserves_previous(seeded);
+        const auto first_state=data;
+        const auto second=test::with_compile_check(first,test::compile_check_cases[1].identity,test::compile_check_cases[1].diagnostic);
+        prepare_lesson_state(data,second);validate_lesson_state(data,second);preserves_previous(first_state);
+        const auto second_rows=winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(string_value(data,"learning_progress",pin)));
+        require(second_rows.Size()==2,"Adding an earlier diagnostic owner did not extend the existing pin");
+        const auto second_state=data;
+        const auto all=test::with_compile_check(second,test::compile_check_cases[2].identity,test::compile_check_cases[2].diagnostic);
+        prepare_lesson_state(data,all);validate_lesson_state(data,all);preserves_previous(second_state);
+        const auto all_rows=winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(string_value(data,"learning_progress",pin)));
+        bool retained_first=false;for(const auto& row:all_rows)retained_first|=row.Stringify()==retained_row;
+        require(all_rows.Size()==3&&retained_first,
+            "Adopting all three diagnostics changed or replaced the first goal's original pin row");
+        for(const auto plan_index:{1u,2u,3u}) {
+            const auto& plan=test::compile_check_cases[plan_index];const auto position=stable_block_position(all,plan.identity);
+            const auto& block=all.pages[position->page].blocks[position->block];
+            require(!compiler_puzzle_completed(data,all,block)&&
+                get_draft(data,draft_key("programming",all,block),"").source==get_draft(seeded,draft_key("programming",before,block),"").source,
+                "Cumulative diagnostic adoption invented a success or overwrote an independent source draft");
+        }
+        auto opposite=test::with_compile_check(before,test::compile_check_cases[2].identity,test::compile_check_cases[2].diagnostic);
+        opposite=test::with_compile_check(opposite,test::compile_check_cases[1].identity,test::compile_check_cases[1].diagnostic);
+        opposite=test::with_compile_check(opposite,first_plan.identity,first_plan.diagnostic);
+        auto alternative=seeded;prepare_lesson_state(alternative,opposite);
+        require(string_value(alternative,"learning_progress",pin)==string_value(data,"learning_progress",pin),
+            "The final three-goal diagnostic pin depended on authoring/adoption order");
+        StateStore store(base/"diagnostic-cumulative");(void)store.load();store.save(data);auto reopened=store.load();
+        validate_lesson_state(reopened,all);require(reopened==data,"Reopening a three-goal diagnostic lesson changed its cumulative pin or drafts");
+        const auto preserved=reopened;rejects([&]{prepare_lesson_state(reopened,first);});
+        require(reopened==preserved,"Refusing to downgrade three diagnostic goals to the first goal partially changed saved data");
+        ++groups;
+    }
+    std::cout<<"PASS five diagnostic contracts: prior opaque success stays unproved, exact draft/typed-data preservation, native reopen, Android import, corrupt receipts, atomic rollback pins and Reset; three-goal adoption is monotonic and order-independent\n";
+}
 }
 int main(int argc, char** argv) {
     try {
@@ -645,6 +753,7 @@ int main(int argc, char** argv) {
         reviewed_order_equivalences_preserve_history(base);
         reviewed_choice_revisions_preserve_responses(base);
         reviewed_compiler_expansions_preserve_execution_history(base);
+        diagnostic_contracts_preserve_native_and_imported_state(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");
         initial.preferences["types"]["français_élève"] = std::string("cœur, niño, std::cout, 𝑥");

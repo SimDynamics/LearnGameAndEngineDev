@@ -108,7 +108,7 @@ CatalogProgress catalog_lesson_page_progress(const state::StateData& data,const 
         return type == BlockType::multiple_choice || type == BlockType::fill_code ||
             type == BlockType::output_prediction || type == BlockType::order_code ||
             type == BlockType::drag_fill_code || type == BlockType::inline_fill_code || type == BlockType::math_puzzle
-            || (lesson.compiler_puzzles_required&&type==BlockType::cpp_compiler&&block.output_check);
+            || (lesson.compiler_puzzles_required&&has_compiler_objective(block));
     };
     struct Group { std::string id; std::vector<const Block*> blocks; };
     std::vector<Group> groups;

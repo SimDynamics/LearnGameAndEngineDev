@@ -14,6 +14,7 @@
 #include <winrt/Windows.Data.Json.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <limits>
@@ -177,9 +178,52 @@ void reject_unmapped_reviewed_math(const JsonArray& pages) {
             "The reviewed mathematical label requires its published v2 identity and proof");
     }
 }
+struct ReviewedCompileCheck {
+    std::string_view lesson, identity, diagnostic, source_sha256, payload_sha256;
+};
+const std::array<ReviewedCompileCheck,5>& reviewed_compile_checks() {
+    static constexpr std::array<ReviewedCompileCheck,5> values{{
+        {"cpp_fundamentals__datos_propios_y_estado_valido__consultas_const_y_objetos_constantes","block_0006_0006","const-member-call",
+            "1274ec3ea9af32c3e1bd1476e05fccff6ce78ca9eea984bc646a976d0d01d448","05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27"},
+        {"cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado","block_0012_0008","explicit-copy-initialization",
+            "d00845dfe9b5e26b22ea330e60ffa4c688f62600e270ba8025f193f385d1ff8e","ac0365d7452a3a6ff52a0f6c306d01815a09196f9f49e2bc90cdd4ec5dbc9fe9"},
+        {"cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado","block_0012_0011","explicit-argument-conversion",
+            "22e81e9eecd45003f9d5c7d533f6a20417259ffbc0f053e01fae970c651673ef","9f7db3f3a1004a235926bc12e06e9d0bf1a93b707f3ca92f6de2876677fd9c58"},
+        {"cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado","block_0014_0011","explicit-assignment",
+            "3fa4838a63863d92e57912b0f3101d423f523040155672447af08608c126bed5","3e8eb728eac0d493c864596ec2364fe6c69ff85ce01408dd0020cec36ad6b087"},
+        {"cpp_fundamentals__datos_propios_y_estado_valido__argumentos_con_tipos_que_expresan_su_funcion","block_0006_0006","swapped-named-arguments",
+            "f84caa30d3a6dd9cdcc741adbadba33f4e139416608247ab650cbd6eff02cd53","b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed"}
+    }};return values;
+}
+const ReviewedCompileCheck* reviewed_compile_check(std::string_view diagnostic) {
+    const auto& values=reviewed_compile_checks();
+    const auto found=std::ranges::find(values,diagnostic,&ReviewedCompileCheck::diagnostic);
+    return found==values.end()?nullptr:&*found;
+}
+CompileCheck read_compile_check(const JsonObject& source) {
+    allowed_keys(source,{"diagnostic","explanation"});
+    CompileCheck result{text(source,"diagnostic"),optional_text(source,"explanation")};
+    require(reviewed_compile_check(result.diagnostic)!=nullptr,"Unknown reviewed compilation diagnostic");
+    if(source.HasKey(L"explanation")){const auto wording=key(result.explanation);require(std::ranges::any_of(wording,[](wchar_t c){return !narration_space(c);}),"Blank compilation diagnostic explanation");}
+    return result;
+}
+void validate_compile_check_payload(const JsonObject& source) {
+    require(text(source,"type")=="cpp_compiler","A compilation diagnostic belongs to a compiler");
+    for(const auto field:{L"outputCheck",L"projectFiles",L"sourceFiles",L"cmake",L"initialStandardInput"})
+        require(!source.HasKey(field),"A reviewed compilation diagnostic requires its single source without a runtime objective or input");
+    const auto check=read_compile_check(source.GetNamedObject(L"compileCheck"));
+    const auto spec=reviewed_compile_check(check.diagnostic);
+    const auto original=JsonObject::Parse(source.Stringify());original.Remove(L"compileCheck");
+    require(sha256(text(original,"initialCode"))==spec->source_sha256&&fingerprint(original)==spec->payload_sha256,
+        "A reviewed compilation diagnostic cannot alter its initial source or original block");
+}
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
     const auto type = text(value, "type");
+    if(value.HasKey(L"compileCheck")) {
+        validate_compile_check_payload(value);
+        value.Remove(L"compileCheck");
+    }
     if (type == "heading" || type == "paragraph" || type == "note") {
         value.Remove(L"text"); if (value.HasKey(L"emphasis")) value.Remove(L"emphasis");
     } else if (type == "multiple_choice" || type == "fill_code" || type == "output_prediction" || type == "order_code" ||
@@ -689,6 +733,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
             const auto digest=state_fingerprint(block);
+            if(block.HasKey(L"compileCheck")) {
+                const auto spec=reviewed_compile_check(text(block.GetNamedObject(L"compileCheck"),"diagnostic"));
+                require(spec&&result.version==2&&locale=="es"&&lesson_id==spec->lesson&&id==spec->identity,
+                    "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
+                require(editorial.contains(id)&&seen.at(id).contains(std::string(spec->payload_sha256)),
+                    "A reviewed compilation diagnostic needs its original published editorial provenance");
+            }
             if(reviewed_choice_payload(digest))require(result.version==2&&locale=="es"&&revised_choices.contains(id)&&
                 revised_choices.at(id)->lesson==lesson_id,"A reviewed option belongs to its original v2 snapshot and owner");
             if(reviewed_compiler_payload(digest))require(result.version==2&&locale=="es"&&revised_compilers.contains(id)&&
@@ -844,6 +895,7 @@ Block read_block(const JsonObject& value,std::string_view original) {
         "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy"};
     require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
+    if(value.HasKey(L"compileCheck"))validate_compile_check_payload(value);
     result.id = optional_text(value, "id"); result.text = optional_text(value, "text"); result.question = optional_text(value, "question");
     result.code = optional_text(value, "code"); result.initial_code = optional_text(value, "initialCode"); result.language = optional_text(value, "language");
     result.explanation = optional_text(value, "explanation");
@@ -855,6 +907,15 @@ Block read_block(const JsonObject& value,std::string_view original) {
                 "Per-option review feedback requires a multiple-choice string array");
             result.review_feedback_options=strings(feedback.GetArray(),true,false);
         }
+    }
+    if(result.type==BlockType::inline_fill_code)for(const auto* field:{L"reviewFeedback",L"explanation"})if(value.HasKey(field)){
+        const auto authored=value.GetNamedString(field);
+        const std::wstring_view visible(authored.c_str(),authored.size());
+        // CppExerciseFeedback accepts an absent field, but a present string
+        // must be nonblank under Kotlin's isWhitespace || isSpaceChar policy.
+        // Validate before creating/evaluating a puzzle; preserve authored bytes.
+        require(std::ranges::any_of(visible,[](wchar_t character){return !narration_space(character);}),
+            "Inline fill reviewFeedback/explanation must not be blank");
     }
     if (value.HasKey(L"emphasis")) for (const auto& emphasis : array(value, "emphasis")) {
         const auto item = emphasis.GetObject();
@@ -931,6 +992,7 @@ Block read_block(const JsonObject& value,std::string_view original) {
         }else{require(!value.HasKey(L"cmake")&&!value.HasKey(L"sourceFiles"),"Project metadata requires projectFiles");require(!result.initial_code.empty(), "Compiler block requires its source");}
         if (value.HasKey(L"initialStandardInput")) result.standard_input = text(value, "initialStandardInput");
         if (value.HasKey(L"outputCheck")) result.output_check = read_output_check(value.GetNamedObject(L"outputCheck"),result.cmake.has_value());
+        if(value.HasKey(L"compileCheck"))result.compile_check=read_compile_check(value.GetNamedObject(L"compileCheck"));
         if (!result.standard_input && result.output_check && std::ranges::any_of(result.output_check->cases,
             [](const auto& item) { return !item.standard_input.empty(); })) result.standard_input = "";
     }
@@ -1027,11 +1089,21 @@ void resolve_addresses(Lesson& lesson) {
                 block.choice_revision=*choice->second;
             }
             if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end())block.compiler_revision=*compiler->second;
+            if(block.compile_check) {
+                const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
+                require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
+                    "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
+            }
         }
     }
     for (const auto& retired : layout.retired) {
         auto block = read_block(JsonObject::Parse(winrt::to_hstring(retired.raw_json)),retired.raw_json);
         block.stable_id = retired.id; block.address = addresses.at(retired.id);
+        if(block.compile_check) {
+            const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
+            require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
+                "An archived compilation diagnostic belongs to its original Spanish v2 editor");
+        }
         lesson.retired_blocks.push_back(std::move(block));
     }
     for (auto& snapshot : layout.retirement_history) {
@@ -1045,6 +1117,11 @@ void resolve_addresses(Lesson& lesson) {
             for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
                 auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
+                if(block.compile_check) {
+                    const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
+                    require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
+                        "A historical compilation diagnostic belongs to its original Spanish v2 editor");
+                }
                 // A reading snapshot made before the split retains grouped
                 // cards and their original response. Only an already-refined
                 // snapshot uses the later composition representation.
@@ -1163,7 +1240,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                 if (text(block,"type") == "cpp_compiler") {
                     const auto identity = lesson.state_layout.version ? lesson.state_layout.current[p].blocks[b] :
                         "block_" + std::to_string(p) + '_' + std::to_string(b);
-                    if((lesson.compiler_puzzles_required||!lesson.state_layout.retirement_history.empty()||goal_owners.contains(identity))&&block.HasKey(L"outputCheck")) {
+                    if(block.HasKey(L"compileCheck")||((lesson.compiler_puzzles_required||!lesson.state_layout.retirement_history.empty()||goal_owners.contains(identity))&&block.HasKey(L"outputCheck"))) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
                         page.blocks.push_back(read_block(block,raw));

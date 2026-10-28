@@ -2,6 +2,7 @@
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
@@ -9,6 +10,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -922,10 +924,181 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
     }
     std::cout<<"PASS four exact compiler expansions: immutable originals, distinct execution goals, original families/addresses and forged archive/payload/owner/proof rejection\n";
 }
+void reviewed_compile_diagnostics_require_the_intended_source_change() {
+    using namespace lgaed;
+    using namespace winrt::Windows::Data::Json;
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
+    for(const auto& plan:test::compile_check_cases) {
+        const auto path=folder/plan.filename;const auto bytes=state::read_bytes(path);
+        const auto original=windows::load_lesson(path);
+        const auto position=stable_block_position(original,plan.identity);
+        check(position.has_value(),"A reviewed compile diagnostic lost its original editor");
+        const auto& prior=original.pages[position->page].blocks[position->block];
+        check(!has_compiler_objective(prior),"A free historical compiler was silently assigned a new objective");
+        const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic,"The program was not executed.");
+        const auto& block=lesson.pages[position->page].blocks[position->block];
+        check(has_compiler_objective(block)&&block.compile_check&&!block.output_check&&
+                block.initial_code==prior.initial_code&&lesson.state_layout.signatures==original.state_layout.signatures&&
+                exercise_key(lesson,block)==exercise_key(original,prior)&&
+                draft_key("programming",lesson,block)==draft_key("programming",original,prior),
+            "Adding the compile diagnostic changed an original program, response or draft address");
+        const auto metadata=windows::parse_lesson_progress_metadata(lesson.raw_json);
+        check(metadata.pages[position->page].blocks[position->block].compile_check==block.compile_check,
+            "The catalog projection discarded the compiler diagnostic objective");
+        const auto alternative=test::with_compile_check(original,plan.identity,plan.diagnostic,"Different editorial explanation.");
+        check(reference_objective_frame(lesson,block)==reference_objective_frame(alternative,alternative.pages[position->page].blocks[position->block]),
+            "Editing only the diagnostic explanation changed execution proof identity");
+        auto candidate=block.initial_code;const auto insertion=candidate.rfind("    return 0;");
+        check(insertion!=candidate.npos,"The reviewed diagnostic source lost its own final return");
+        candidate.insert(insertion,std::string("    ")+plan.statement+'\n');
+        const auto prepared=prepare_compile_diagnostic_source(block,candidate);
+        check(prepared&&prepared->candidate_source==candidate&&prepared->expected_msvc_error==plan.error&&
+                prepared->first_line==prepared->last_line&&prepared->first_line>1&&
+                std::ranges::count(prepared->control_source,'\n')==std::ranges::count(candidate,'\n')&&
+                prepared->control_source.substr(0,insertion)==candidate.substr(0,insertion)&&
+                prepared->control_source.substr(insertion+4+std::string_view(plan.statement).size())==candidate.substr(insertion+4+std::string_view(plan.statement).size()),
+            "The diagnostic control altered surrounding source, physical rows or candidate identity");
+        check(!prepare_compile_diagnostic_source(block,prepared->control_source)&&
+                !prepare_compile_diagnostic_source(block,block.initial_code),
+            "The initial/control program counted as obtaining the intentional rejection");
+        check(prepare_compile_diagnostic_source(block,"// comment containing "+std::string(plan.statement)+"\n"+candidate).has_value(),
+            "An irrelevant comment changed the reviewed token contract");
+        auto duplicate=candidate;duplicate.insert(insertion,std::string(plan.statement)+'\n');
+        auto malformed=candidate;malformed.insert(insertion,"not_valid_cpp ???;\n");
+        auto directive=candidate;directive.insert(0,"#line 900 \"forged.cpp\"\n");
+        auto commented=block.initial_code;commented.insert(insertion,std::string("// ")+plan.statement+'\n');
+        auto in_expression=block.initial_code;in_expression.insert(insertion+11,plan.statement);
+        auto before_main=block.initial_code;before_main.insert(before_main.find("int main()"),std::string(plan.statement)+'\n');
+        auto changed=candidate;replace_once(changed,"return 0;","return 1;");
+        for(const auto& invalid:{duplicate,malformed,directive,commented,in_expression,before_main,changed,candidate+"// splice\\\n",candidate+std::string(1,'\0')})
+            check(!prepare_compile_diagnostic_source(block,invalid),
+                "An unrelated source edit, nonstatement insertion, duplicate, comment or directive satisfied a reviewed diagnostic");
+        auto incompatible=block;incompatible.standard_input="";
+        check(!prepare_compile_diagnostic_source(incompatible,candidate),"A diagnostic gained runtime input semantics");
+        if(std::string_view(plan.diagnostic)=="const-member-call") {
+            auto mutable_object=candidate;replace_once(mutable_object,"const Dimension fija","Dimension fija");
+            check(!prepare_compile_diagnostic_source(block,mutable_object),"Removing const was accepted as the const rejection activity");
+            auto inside_declaration=block.initial_code;
+            inside_declaration.insert(inside_declaration.find("fija{2, 5}")+std::string_view("fija{2, 5}").size(),plan.statement);
+            check(!prepare_compile_diagnostic_source(block,inside_declaration),"A diagnostic statement inserted before a declaration's semicolon was accepted");
+            auto multiline=block.initial_code;multiline.insert(insertion,"    fija /* comment */ . cambiar_a (\n4 , 2\n) ;\n");
+            const auto spanned=prepare_compile_diagnostic_source(block,multiline);
+            check(spanned&&spanned->last_line==spanned->first_line+2,"Whitespace/comments or multiline diagnostic location were lost");
+        }else if(std::string_view(plan.diagnostic).starts_with("explicit-")) {
+            auto implicit=candidate;replace_once(implicit,"explicit Contador","Contador");
+            check(!prepare_compile_diagnostic_source(block,implicit),"Removing explicit was accepted as its rejection activity");
+        }else {
+            auto swapped=candidate;replace_once(swapped,"Caja(Ancho ancho, Alto alto)","Caja(Alto alto, Ancho ancho)");
+            check(!prepare_compile_diagnostic_source(block,swapped),"Changing the named-argument interface satisfied the swapped-argument activity");
+        }
+        for(const auto mode:{"unknown","blank","unknown-key","input","output","project","source","owner","proof","unmapped"}) {
+            const auto root=JsonObject::Parse(winrt::to_hstring(lesson.raw_json)),layout=root.GetNamedObject(L"stateLayout");
+            const auto source=root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject()
+                .GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
+            const auto contract=source.GetNamedObject(L"compileCheck");
+            if(std::string_view(mode)=="unknown")contract.Insert(L"diagnostic",JsonValue::CreateStringValue(L"any-build-error"));
+            if(std::string_view(mode)=="blank")contract.Insert(L"explanation",JsonValue::CreateStringValue(L" \t\r\n"));
+            if(std::string_view(mode)=="unknown-key")contract.Insert(L"acceptAnyFailure",JsonValue::CreateBooleanValue(true));
+            if(std::string_view(mode)=="input")source.Insert(L"initialStandardInput",JsonValue::CreateStringValue(L""));
+            if(std::string_view(mode)=="output")source.Insert(L"outputCheck",JsonObject::Parse(L"{\"cases\":[{\"standardInput\":\"\",\"outputs\":[\"\"]}]}"));
+            if(std::string_view(mode)=="project")source.Insert(L"projectFiles",JsonArray{});
+            if(std::string_view(mode)=="source")source.Insert(L"initialCode",JsonValue::CreateStringValue(L"int main(){}"));
+            if(std::string_view(mode)=="owner")root.Insert(L"id",JsonValue::CreateStringValue(L"unreviewed_owner"));
+            const auto editorial=layout.GetNamedArray(L"editorial");
+            if(std::string_view(mode)=="proof")editorial.RemoveAtEnd();
+            else editorial.GetAt(editorial.Size()-1).GetObject().Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(test::compile_check_test_fingerprint(source))));
+            if(std::string_view(mode)=="unmapped")root.Remove(L"stateLayout");
+            const auto invalid=winrt::to_string(root.Stringify());
+            rejects([&]{(void)windows::parse_lesson_json(invalid);},"An unreviewed compiler diagnostic bypassed source/owner/schema/provenance validation");
+            rejects([&]{(void)windows::parse_lesson_progress_metadata(invalid);},"Catalog projection accepted an unreviewed compiler diagnostic");
+        }
+        auto flow=lesson;flow.reference_after.clear();flow.activity_after.clear();
+        Block reference;reference.type=BlockType::paragraph;reference.stable_id="qa_diagnostic_reference";
+        Block puzzle;puzzle.type=BlockType::multiple_choice;puzzle.stable_id="qa_diagnostic_puzzle";
+        flow.pages.push_back({"qa_after_diagnostic",{reference,puzzle},{}});
+        flow.reference_after.push_back({block.stable_id,{reference.stable_id}});
+        flow.activity_after.push_back({puzzle.stable_id,{block.stable_id}});
+        validate_reference_relationships(flow);validate_activity_relationships(flow);
+        check(compiler_is_puzzle_prerequisite(flow,block)&&
+                reference_activity(flow,flow.pages.back().blocks.front())==position&&
+                activity_prerequisites(flow,flow.pages.back().blocks.back())==std::vector<StatePosition>{*position},
+            "A compiler diagnostic could not own the existing reference, prerequisite and reader gate");
+        check(state::read_bytes(path)==bytes,"Diagnostic QA changed an authored lesson asset");
+    }
+    std::cout<<"PASS five compile diagnostic contracts: original owners/sources/addresses, catalog/objective identity, one real statement inside main, comments/multiline ranges, interface protection and forged contract refusal\n";
+}
+void inline_feedback_optional_contract_tests() {
+    using namespace winrt::Windows::Data::Json;
+    using lgaed::windows::parse_lesson_json;
+    const auto assets=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
+    struct Location {const char* file;std::size_t page,block;};
+    const std::array<Location,9> locations{{
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3},
+        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4},
+        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4},
+        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5},
+        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4},
+        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1}
+    }};
+    const auto isolated=[](const JsonObject& block){return parse_lesson_json(
+        "{\"id\":\"qa_inline_feedback_contract\",\"title\":\"QA\",\"pages\":[{\"blocks\":["+
+        winrt::to_string(block.Stringify())+"]}]}");};
+    std::vector<Block> current;
+    for(const auto& location:locations){
+        const auto path=assets/location.file;const auto bytes=lgaed::state::read_bytes(path);
+        const auto lesson=lgaed::windows::load_lesson(path);
+        const auto& block=lesson.pages.at(location.page).blocks.at(location.block);
+        check(block.type==BlockType::inline_fill_code,"The authored inline-feedback location changed its exercise family");
+        const auto authored=JsonObject::Parse(winrt::to_hstring(block.raw_json));
+        check(!block.review_feedback.empty()&&!block.explanation.empty()&&
+            block.review_feedback==winrt::to_string(authored.GetNamedString(L"reviewFeedback"))&&
+            block.explanation==winrt::to_string(authored.GetNamedString(L"explanation")),
+            "The current inline-feedback parser lost an authored guide or complete success explanation");
+        auto wrong=block.answers;wrong.front()="QA_INCORRECT_INLINE_ANSWER";
+        check(!evaluate_hole_answers(block,wrong).correct&&evaluate_hole_answers(block,wrong).feedback==block.review_feedback&&
+            evaluate_hole_answers(block,block.answers).correct&&evaluate_hole_answers(block,block.answers).feedback==block.explanation,
+            "An inline exercise exposed the success explanation before success or lost its specific incorrect guide");
+        for(std::size_t hole=0;hole<block.answer_alternatives.size();++hole)
+            for(const auto& alternative:block.answer_alternatives[hole]){
+                auto answers=block.answers;answers[hole]=alternative;
+                check(evaluate_hole_answers(block,answers).correct&&evaluate_hole_answers(block,answers).feedback==block.explanation,
+                    "Adding inline feedback changed an authored per-hole alternative");
+            }
+        auto absent=JsonObject::Parse(winrt::to_hstring(block.raw_json));absent.Remove(L"reviewFeedback");absent.Remove(L"explanation");
+        const auto optional=isolated(absent).pages.front().blocks.front();
+        check(evaluate_hole_answers(optional,optional.answers).correct&&evaluate_hole_answers(optional,optional.answers).feedback.empty()&&
+            !evaluate_hole_answers(optional,wrong).correct&&evaluate_hole_answers(optional,wrong).feedback.empty(),
+            "Absent optional inline feedback changed the historical verdict or invented authored content");
+        check(lgaed::state::read_bytes(path)==bytes,"Inline-feedback QA modified an authored lesson asset");
+        current.push_back(block);
+    }
+    std::cout<<"PASS current inline-feedback fields, complete guides/explanations, answers/alternatives and optional absence across nine actual locations\n";
+    for(const auto& block:current)for(const auto* field:{L"reviewFeedback",L"explanation"}){
+        for(const auto* blank:{L"",L" \t\r\n",L"\u00a0",L"\u2007",L"\u202f",L"\u2028",L"\u3000",L"\u001c"}){
+            auto malformed=JsonObject::Parse(winrt::to_hstring(block.raw_json));
+            malformed.Insert(field,JsonValue::CreateStringValue(blank));
+            rejects([&]{(void)isolated(malformed);},"A present blank inline guide/explanation was accepted instead of failing before an answer could be evaluated");
+        }
+        // Kotlin Char.isWhitespace || Character.isSpaceChar excludes these format characters.
+        // They remain authored bytes; the parser must not silently normalize them away.
+        for(const auto* nonblank:{L"Guía válida.",L"\u200b",L"\ufeff",L"\u0085"}){
+            auto valid=JsonObject::Parse(winrt::to_hstring(block.raw_json));
+            valid.Insert(field,JsonValue::CreateStringValue(nonblank));
+            const auto retained=isolated(valid).pages.front().blocks.front();
+            check((std::wstring_view(field)==L"reviewFeedback"?retained.review_feedback:retained.explanation)==winrt::to_string(nonblank),
+                "Inline feedback changed non-whitespace authored characters or applied another blank-text policy");
+        }
+    }
+    std::cout<<"PASS optional inline feedback rejects only present Kotlin-blank fields before evaluation\n";
+}
 int main() {
     try {
         using lgaed::windows::parse_lesson_json;
         const auto root = std::filesystem::path(lgaed::build::source_root);
+        inline_feedback_optional_contract_tests();
         const auto path = root / "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
         // Exact published input for migration/legacy-coordinate regressions.
         const auto lesson = lgaed::test::load_pre_retirement_lesson(path.filename().string());
@@ -934,6 +1107,7 @@ int main() {
         reviewed_order_equivalences_are_source_bound();
         reviewed_choice_revisions_preserve_the_published_contract();
         reviewed_compiler_expansions_keep_the_original_contract();
+        reviewed_compile_diagnostics_require_the_intended_source_change();
         reviewed_matching_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();

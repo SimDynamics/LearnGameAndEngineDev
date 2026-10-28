@@ -553,6 +553,121 @@ bool named_string_character(std::wstring_view text,std::size_t start,std::size_t
     };
     return contains(string_context)||(contains(slash_context)&&contains(control_context));
 }
+std::vector<technical_prose::Range> quoted_prose_ranges(std::wstring_view text) {
+    std::vector<technical_prose::Range> result;
+    for(std::size_t at=0;at<text.size();++at){
+        const auto quote=text[at];
+        if(quote!=L'"'&&quote!=L'\''&&quote!=L'“'&&quote!=L'«')continue;
+        auto end=technical_prose::closed_quote_end(text,at,text.size());
+        if(quote==L'“'||quote==L'«'){
+            const auto closing=text.find(quote==L'“'?L'”':L'»',at+1);
+            end=closing==text.npos?text.npos:closing+1;
+        }
+        if(end==text.npos)continue;
+        result.emplace_back(at,end);at=end-1;
+    }
+    return result;
+}
+std::vector<technical_prose::Range> unambiguous_cpp_types(std::wstring_view text,std::string_view locale) {
+    std::vector<technical_prose::Range> result;
+    if(technical_prose::canonical_locale(locale)!="es")return result;
+    const auto quoted=quoted_prose_ranges(text);
+    for(std::size_t at=0;at<text.size();){
+        if(!identifier_start(text[at])){++at;continue;}
+        const auto begin=at++;while(at<text.size()&&identifier_part(text[at]))++at;
+        const auto word=text.substr(begin,at-begin);
+        // These exact C++ type spellings have no ordinary Spanish homonym.
+        // auto/final/do and arbitrary names from visible code remain contextual.
+        if((word==L"int"||word==L"char")&&technical_prose::boundary(text,begin,at)&&
+            !technical_prose::overlaps({begin,at},quoted))result.emplace_back(begin,at);
+    }
+    return result;
+}
+std::vector<technical_prose::Range> direct_cpp_initializers(std::wstring_view text) {
+    std::vector<technical_prose::Range> result;
+    const auto quoted=quoted_prose_ranges(text);
+    for(std::size_t at=0;at<text.size();){
+        if(!identifier_start(text[at])){++at;continue;}
+        const auto begin=at++;while(at<text.size()&&identifier_part(text[at]))++at;
+        if(at==text.size()||text[at]!=L'{'||!technical_prose::boundary(text,begin,at)||technical_prose::overlaps({begin,at},quoted))continue;
+        const auto end=technical_prose::balanced_end(text,at,L'{',L'}');
+        if(end==at)continue;
+        auto argument=at+1;bool literal=false,valid=true;
+        while(argument<end-1){
+            while(argument<end-1&&technical_prose::space(text[argument]))++argument;
+            if(argument==end-1)break;
+            if(text[argument]==L'"'||text[argument]==L'\''){
+                const auto close=technical_prose::closed_quote_end(text,argument,end-1);
+                if(close==text.npos){valid=false;break;}argument=close;literal=true;
+            }else if(identifier_start(text[argument])){
+                const auto first=argument++;while(argument<end-1&&identifier_part(text[argument]))++argument;
+                const auto word=text.substr(first,argument-first);
+                literal=literal||word==L"true"||word==L"false"||word==L"nullptr";
+            }else{
+                if(text[argument]==L'+'||text[argument]==L'-')++argument;
+                if(argument==end-1||!technical_prose::digit(text[argument])){valid=false;break;}
+                ++argument;
+                while(argument<end-1){
+                    const auto value=text[argument];
+                    if(identifier_part(value)||value==L'.'||value==L'\'')++argument;
+                    else if((value==L'+'||value==L'-')&&std::wstring_view(L"eEpP").find(text[argument-1])!=text.npos)++argument;
+                    else break;
+                }
+                literal=true;
+            }
+            while(argument<end-1&&technical_prose::space(text[argument]))++argument;
+            if(argument==end-1)break;
+            if(text[argument++]!=L','){valid=false;break;}
+        }
+        // A closed literal-bearing initializer is its own local code cue.
+        // A bare known name, prose in braces or an unfinished group is not.
+        if(valid&&literal&&(end==text.size()||technical_mention_boundary(text[end])))result.emplace_back(begin,end);
+    }
+    return result;
+}
+std::vector<technical_prose::Range> contextual_string_characters(HWND edit,std::wstring_view source,RichTextContext context) {
+    static const std::wregex descriptive_letter(
+        LR"((?:letras?|car[aáÁ]cter(?:es)?)[ \t]+([A-Za-z])|barra(?:s)?[ \t]+(?:inversa(?:s)?|invertida(?:s)?)[ \t]+y[ \t]+(?:la[ \t]+letra[ \t]+)?([A-Za-z]))",
+        std::regex_constants::icase);
+    // Feedback/status updates commonly contain no character description. Do
+    // not lex a large visible program for those unrelated formatting passes.
+    if((context.prose.empty()&&context.code.empty())||!std::regex_search(source.begin(),source.end(),descriptive_letter))return {};
+    std::set<wchar_t> literal_letters;
+    const auto observe=[&](std::wstring_view text,bool literal){
+        for(std::size_t at=0;at+1<text.size();++at)if(text[at]==L'\\'){
+            if(literal){
+                // C++ escapes consume pairs: "\\\\n" is a backslash followed by n,
+                // whereas "Entrada\\nSalida" contains an actual newline escape.
+                if(std::wstring_view(L"ntr0abfv").find(text[at+1])!=std::wstring_view::npos)literal_letters.insert(text[at+1]);
+                ++at;continue;
+            }
+            const auto end=escape_mention_end(text,at);
+            if(end>at+1&&std::wstring_view(L"ntr0abfv").find(text[end-1])!=std::wstring_view::npos&&
+                named_string_character(text,end-1,end))literal_letters.insert(text[end-1]);
+            if(end>at)at=end-1;
+        }
+    };
+    observe(wide(context.prose),false);
+    const auto code=wide(context.code);
+    for(const auto& ink:cpp_ink(edit,code))if(code[ink.start]==L'"'||code[ink.start]==L'\''){
+        if(code[ink.start]==L'"'&&technical_prose::has(technical_prose::tail(code,ink.start,4),LR"((?:u8|u|U|L)?R$)"))continue;
+        observe(std::wstring_view(code).substr(ink.start,ink.end-ink.start),true);
+    }
+    std::vector<technical_prose::Range> result;
+    if(literal_letters.empty())return result;
+    // The option names the visible spelling of an escape; a bare variable n
+    // or a same-named identifier elsewhere never inherits a literal's ink.
+    const auto quoted=quoted_prose_ranges(source);
+    for(std::regex_iterator<std::wstring_view::const_iterator> match(source.begin(),source.end(),descriptive_letter),last;
+            match!=last;++match){
+        const auto group=(*match)[1].matched?1:2;
+        const auto cue=static_cast<std::size_t>(match->position());
+        const auto begin=static_cast<std::size_t>(match->position(group)),end=begin+1;
+        if((cue==0||technical_mention_boundary(source[cue-1]))&&(end==source.size()||technical_mention_boundary(source[end]))&&
+            literal_letters.contains(source[begin])&&!technical_prose::overlaps({begin,end},quoted))result.emplace_back(begin,end);
+    }
+    return result;
+}
 std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::wstring_view text) {
     std::vector<std::pair<std::size_t,std::size_t>> result;
     // A standalone escape in prose describes the contents of a literal. Its
@@ -831,7 +946,7 @@ void style_cpp(HWND edit) {
     apply_cpp(edit, source);
 }
 void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role,
-    std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics) {
+    std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context) {
     std::string displayed;
     std::vector<std::size_t> mapping(text.size() + 1);
     std::vector<std::pair<std::size_t,std::size_t>> fragments;
@@ -873,6 +988,16 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         if(begin_byte==std::string_view::npos||end_byte==std::string_view::npos)throw std::invalid_argument("A mathematical range splits a UTF-16 character");
         displayed_mathematics.emplace_back(wide(std::string_view(displayed).substr(0,mapping[begin_byte])).size(),wide(std::string_view(displayed).substr(0,mapping[end_byte])).size());}}
     auto semantic=code?technical_prose::Analysis{}:technical_prose::analyze(source,locale,inline_fragments,displayed_mathematics);
+    const auto contextual_strings=code?std::vector<technical_prose::Range>{}:contextual_string_characters(edit,source,context);
+    if(!code){
+        for(const auto& range:unambiguous_cpp_types(source,locale))
+            if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
+        for(const auto& range:direct_cpp_initializers(source))
+            if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
+        for(const auto& range:contextual_strings)
+            if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
+        std::ranges::sort(semantic.fragments);
+    }
     const bool has_background=!reader_theme::palette().high_contrast;
     const auto backed=[&](std::size_t start,std::size_t end){return has_background&&std::ranges::any_of(semantic.fragments,[&](const auto& part){return part.first<=start&&part.second>=end;});};
     const auto protected_text=[&](std::size_t start,std::size_t end){return technical_prose::overlaps({start,end},semantic.protected_ranges);};
@@ -935,6 +1060,8 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         // literal keep string ink. Do not change its face, text or source offsets.
         quoted_literals=inline_string_literals(source);
         for(const auto& [begin,end]:quoted_literals)
+            if(!protected_text(begin,end))format(edit,begin,end,cpp_color(edit,CppInk::string,backed(begin,end)));
+        for(const auto& [begin,end]:contextual_strings)
             if(!protected_text(begin,end))format(edit,begin,end,cpp_color(edit,CppInk::string,backed(begin,end)));
     }
     for (const auto& range : curriculum::emphasis_ranges(text, emphasis)) {

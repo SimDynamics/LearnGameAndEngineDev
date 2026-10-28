@@ -6,6 +6,7 @@
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/card_list.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
@@ -47,6 +48,31 @@ curriculum::StatePosition identity_position(const curriculum::Lesson& lesson,std
 COLORREF color(HWND target,LONG offset){CHARRANGE before{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
     CHARRANGE range{offset,offset+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));CHARFORMAT2W format{};format.cbSize=sizeof(format);
     SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return format.crTextColor;
+}
+std::string verify_feedback_recording(const LessonReaderSegmentSnapshot& part) {
+    const auto bytes = state::read_bytes(part.recording);
+    const auto u16 = [&](std::size_t at) { return unsigned(bytes[at]) | (unsigned(bytes[at + 1]) << 8); };
+    const auto u32 = [&](std::size_t at) { return u16(at) | (u16(at + 2) << 16); };
+    const auto marker = [&](std::size_t at, std::string_view expected) {
+        return std::equal(expected.begin(), expected.end(), bytes.begin() + at);
+    };
+    check(bytes.size() > 44 && marker(0, "RIFF") && marker(8, "WAVE") && marker(12, "fmt ")
+        && marker(36, "data") && u16(20) == 1 && u16(22) == 1 && u32(24) == 24000
+        && u16(34) == 16 && u32(40) == bytes.size() - 44 && (bytes.size() - 44) % 2 == 0,
+        "A feedback segment has no real mono 24 kHz PCM16 recording");
+    check(std::ranges::any_of(bytes.begin() + 44, bytes.end(), [](auto sample) { return sample != 0; })
+        && std::abs(part.duration_ms - (bytes.size() - 44) / 48.) <= 1 && !part.timings.empty(),
+        "A feedback recording is silent, mistimed or lacks word alignment");
+    double previous = 0;
+    for (const auto& timing : part.timings) {
+        check(timing.start < timing.end && timing.end <= wide(part.source).size()
+            && std::isfinite(timing.start_ms) && std::isfinite(timing.end_ms)
+            && timing.start_ms >= previous && timing.end_ms >= timing.start_ms
+            && timing.end_ms <= part.duration_ms + 1,
+            "A feedback word has invalid source or real-audio timing");
+        previous = timing.start_ms;
+    }
+    return state::sha256(bytes);
 }
 void pointer_message(HWND target,UINT message,WPARAM keys,LPARAM point,bool touch){
     const auto previous=SetMessageExtraInfo(touch?static_cast<LPARAM>(0xff515780u):0);
@@ -102,11 +128,11 @@ curriculum::Lesson compiler_model(bool required=false){
 }
 struct Fixture{
     WindowsEnvironment environment;HWND host=nullptr,view=nullptr;std::unique_ptr<LessonReader> reader;
-    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0):
+    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false):
         environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})){
         check(!std::filesystem::exists(environment.paths.root),"QA profile already exists");
         if(!private_audio)environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";initialize_profile_directories(environment.paths);
-        host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Native real Kokoro reader QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+        host=CreateWindowExW(WS_EX_CONTROLPARENT|(hidden_host?WS_EX_NOACTIVATE:0),L"STATIC",L"Native real Kokoro reader QA",WS_OVERLAPPEDWINDOW|(hidden_host?0:WS_VISIBLE),
             40,40,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create reader QA window");
         auto lesson=supplied?std::move(*supplied):model(exercise,after,language);
         if(initial_page){state::StateStore store(environment.paths.root);auto data=store.load();state::prepare_lesson_state(data,lesson);
@@ -318,6 +344,48 @@ void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& 
     check(lesson_page_state(f.view).index==compiler.page,"The current useful compiler did not restore its own page");
     f.answer(predicted.answers.at(0),prediction.block);f.reader->restart();f.reader->pause();
     check(f.snapshot().heard_through==0,"A pre-answered current prediction invented listening credit");
+    const auto accepted_prediction = state::get_response(read_lesson_state(f.view), lesson, predicted);
+    check(accepted_prediction && accepted_prediction->correct
+        && !windows::compiler_puzzle_completed(read_lesson_state(f.view), lesson, goal),
+        "The initial bare-verdict fixture lost its prediction or already completed the compiler");
+    // The actual initial program prints Zona inicial. It matches neither the
+    // requested Caja recibida nor the separately authored Zona segura guide.
+    f.run_program(compiler.block);
+    const auto bare = f.snapshot();
+    const auto bare_part = bare.segments[bare.index];
+    const auto bare_regions = lesson_reading_regions(f.view);
+    const auto bare_region = std::ranges::find_if(bare_regions, [&](const auto& region) {
+        return region.block_index == compiler.block && region.feedback;
+    });
+    check(bare_region != bare_regions.end() && bare_region->source_text == "✗ Incorrecto"
+        && !bare_region->correct && !bare_region->solved && bare_part.feedback && !bare_part.correct
+        && bare_part.block == compiler.block && bare_part.target == bare_region->target
+        && bare_part.source == "✗ Incorrecto" && bare_part.start == 0
+        && bare_part.end == wide(bare_region->source_text).size() && bare.offset == 0
+        && edit_text(bare_part.target) == "✗ Incorrecto"
+        && std::ranges::count_if(bare.segments, [&](const auto& part) {
+            return part.block == compiler.block && part.feedback;
+        }) == 1,
+        "An unmatched current output omitted Incorrecto or attached an unrelated guide/success explanation");
+    const auto bare_audio_hash = verify_feedback_recording(bare_part);
+    f.reader->toggle();
+    wait([&] { const auto value = f.snapshot();
+        return value.playing && value.index == bare.index && value.offset > 30;
+    }, "the current bare Incorrecto verdict really plays");
+    wait([&] { const auto value = f.snapshot();
+        return !value.playing && !value.allocated && !value.preparing && value.index == bare.index;
+    }, "the current bare Incorrecto verdict ends and stops pending");
+    const auto after_bare = f.snapshot();
+    const auto preserved_prediction = state::get_response(read_lesson_state(f.view), lesson, predicted);
+    check(!after_bare.finished && after_bare.offset + 1 >= bare_part.duration_ms
+        && !windows::compiler_puzzle_completed(read_lesson_state(f.view), lesson, goal)
+        && preserved_prediction && preserved_prediction->correct
+        && preserved_prediction->answer == accepted_prediction->answer
+        && preserved_prediction->raw_json == accepted_prediction->raw_json
+        && std::ranges::none_of(after_bare.segments, [&](const auto& part) { return part.block == following.block; })
+        && state::sha256(state::read_bytes(bare_part.recording)) == bare_audio_hash,
+        "A bare incorrect verdict granted completion, lost the accepted prediction or changed its recording");
+    std::cout << "PASS current U1L2 p5 initial execution: bare Incorrecto has real PCM/word timing, no invented explanation, stops pending and preserves prediction achievement\n";
     f.edit_program(wrong_code,compiler.block);f.ready();f.run_program(compiler.block);
     const auto wrong=f.snapshot();
     check(wrong.segments[wrong.index].feedback&&!wrong.segments[wrong.index].correct&&wrong.segments[wrong.index].block==compiler.block
@@ -355,6 +423,215 @@ void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& 
         "Explicit compiler Reset lost the prediction answer or retained unavailable later narration");
     std::cout<<"PASS current integrated U1 reader: archived original absent, useful compiler required, native wrong/correct feedback, exact released restore, sticky achievement and scoped Reset\n";
 }
+void integrated_order_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
+    const auto asset_hash = state::sha256(state::read_bytes(path));
+    const auto lesson = windows::load_lesson(path);
+    const auto position = identity_position(lesson, "block_0003_0002");
+    const auto& goal = lesson.pages[position.page].blocks[position.block];
+    const auto following = identity_position(lesson, "block_0003_0003");
+    check(position.page == 3 && position.block == 2 && goal.type == curriculum::BlockType::order_code
+        && goal.fragments.size() == 5 && !goal.review_feedback.empty() && !goal.explanation.empty(),
+        "The current U1L2 order reader fixture lost its authored puzzle or feedback");
+    Fixture f(backend, false, true, true, "es", lesson, false, 1, true);
+    check(!IsWindowVisible(f.host), "The focal order narration QA exposed a desktop window");
+    const auto reopen = [&](std::optional<std::size_t> initial_page = {}) {
+        f.reader.reset();
+        check(flush_lesson_view(f.view), "Cannot save the actual lesson before closing its view");
+        DestroyWindow(f.view); f.view = nullptr;
+        if (initial_page) {
+            // This sets only the focal QA starting page, as Fixture does. It
+            // never solves pending activities to bypass forward navigation.
+            state::StateStore store(f.environment.paths.root);
+            auto data = store.load();
+            state::save_current_page(data, lesson, *initial_page);
+            store.save(data);
+        }
+        f.view = create_lesson_view(f.host, f.environment, lesson);
+        check(f.view != nullptr, "Cannot reopen the current order lesson in its isolated saved profile");
+        MoveWindow(f.view, 0, 0, 980, 720, TRUE);
+        LessonViewHooks hooks;
+        hooks.before_page_change = [&](HWND) { if (f.reader) f.reader->pause(); };
+        hooks.content_changed = [&](HWND) { if (f.reader) f.reader->content_changed(); };
+        hooks.feedback_changed = [&](HWND, std::size_t block, bool correct) { if (f.reader) f.reader->feedback(block, correct); };
+        set_lesson_view_hooks(f.view, std::move(hooks));
+        f.reader = std::make_unique<LessonReader>(f.view, f.environment, backend, [] {});
+        f.ready();
+    };
+
+    // These are two genuinely played positions on other current pages, not
+    // fabricated listening credit or imported student history.
+    std::vector<narration::Bookmark> other_positions;
+    // Backward page selection is valid with unanswered activities; forward
+    // selection would correctly require unrelated earlier puzzles to be solved.
+    for (const std::size_t page : {1u, 0u}) {
+        f.page(page);
+        f.reader->toggle();
+        wait([&] { const auto value = f.snapshot(); return value.playing && value.offset > 180; },
+            "a real paused position on another current U1L2 page");
+        f.reader->pause();
+        const auto paused = f.snapshot();
+        const auto history = narration::read_history(read_lesson_state(f.view));
+        const auto saved = std::ranges::find(history.entries, paused.key, &narration::Bookmark::key);
+        check(saved != history.entries.end() && saved->position.milliseconds == paused.offset
+            && !saved->position.finished, "A real other-page pause was not saved exactly");
+        other_positions.push_back(*saved);
+    }
+    reopen(position.page);
+    const auto control = [&](int part) { return child(f.view, 1000 + static_cast<int>(position.block) * 100 + part); };
+    const auto move_up = [&](std::size_t fragment) {
+        const auto row = GetDlgItem(control(5), 100 + static_cast<int>(fragment));
+        check(row != nullptr, "The authored order puzzle lost a real fragment card");
+        SendMessageW(row, WM_SYSKEYDOWN, VK_UP, LPARAM{1} << 29);
+        pump();
+    };
+    const auto submit = [&] {
+        check(IsWindowEnabled(control(3)), "The real reordered puzzle did not enable Check");
+        SendMessageW(control(3), BM_CLICK, 0, 0);
+        f.reader->pause();
+        f.ready();
+        check(!f.snapshot().playing && !f.snapshot().allocated,
+            "Order feedback generation overrode the following explicit pause");
+    };
+    struct Recording { std::filesystem::path path; std::string hash; };
+    std::vector<Recording> recordings;
+    const auto verify_audio = [&](const LessonReaderSegmentSnapshot& part) {
+        recordings.push_back({part.recording, verify_feedback_recording(part)});
+    };
+    const auto verify_feedback = [&](bool correct, const std::string& body) {
+        const auto regions = lesson_reading_regions(f.view);
+        const auto region = std::ranges::find_if(regions, [&](const auto& item) {
+            return item.block_index == position.block && item.feedback;
+        });
+        const auto source = std::string(correct ? "✓ Correcto\n\n" : "✗ Incorrecto\n\n") + body;
+        check(region != regions.end() && region->source_text == source && region->target == control(4)
+            && region->correct == correct && region->solved == correct,
+            "The current order puzzle did not expose exactly its complete authored feedback");
+        const auto plan = backend->plan(source, "es");
+        const auto snapshot = f.snapshot();
+        std::vector<std::size_t> indices;
+        for (std::size_t index = 0; index < snapshot.segments.size(); ++index) {
+            const auto& part = snapshot.segments[index];
+            if (part.feedback && part.block == position.block) {
+                const auto at = indices.size();
+                check(at < plan.size() && part.region == region->key && part.correct == correct
+                    && part.target == region->target && part.source == plan[at].text
+                    && part.start == plan[at].start && part.end == plan[at].end
+                    && wide(source).substr(part.start, part.end - part.start) == wide(part.source),
+                    "The current order reader truncated or reordered an authored feedback sentence");
+                verify_audio(part);
+                indices.push_back(index);
+            }
+        }
+        check(!indices.empty() && indices.size() == plan.size() && snapshot.index == indices.front()
+            && snapshot.offset == 0, "Fresh order feedback did not start its complete original script at zero");
+        return indices;
+    };
+    const auto preserve_other_positions = [&] {
+        const auto history = narration::read_history(read_lesson_state(f.view));
+        check(history.entries.size() == 3, "The current order page did not retain exactly three real page slots");
+        for (const auto& before : other_positions) {
+            const auto after = std::ranges::find(history.entries, before.key, &narration::Bookmark::key);
+            check(after != history.entries.end() && *after == before,
+                "Order feedback or reopening changed another actual page's saved position");
+        }
+    };
+
+    move_up(1); // A real, changed but still incorrect order: 1,0,2,3,4.
+    submit();
+    const auto wrong_indices = verify_feedback(false, goal.review_feedback);
+    auto response = state::get_response(read_lesson_state(f.view), lesson, goal);
+    check(response && !response->correct && state::response_reviewed(*response, goal)
+        && response->order == std::vector<std::int64_t>{1, 0, 2, 3, 4},
+        "The real incorrect ordering did not retain its reviewed answer without achievement");
+    const auto wrong_response = *response;
+    std::vector<bool> wrong_heard(wrong_indices.size(), false);
+    const auto observe_wrong = [&](const LessonReaderSnapshot& value) {
+        for (std::size_t i = 0; i < wrong_indices.size(); ++i)
+            if (value.playing && value.index == wrong_indices[i]) wrong_heard[i] = true;
+    };
+    f.reader->toggle();
+    wait([&] {
+        const auto value = f.snapshot(); observe_wrong(value);
+        return value.playing && value.segments[value.index].feedback
+            && value.segments[value.index].source.find("Distingue") != std::string::npos && value.offset > 200;
+    }, "the actual authored order guide plays with real word timing");
+    f.reader->pause();
+    const auto paused = f.snapshot();
+    preserve_other_positions();
+    const auto history_before_reopen = narration::read_history(read_lesson_state(f.view));
+    reopen(); // Actual acceptance: use the automatically saved page unchanged.
+    const auto restored = f.snapshot();
+    response = state::get_response(read_lesson_state(f.view), lesson, goal);
+    check(lesson_page_state(f.view).index == position.page && restored.key == paused.key
+        && restored.index == paused.index && restored.offset == paused.offset
+        && restored.heard_through == paused.heard_through && !restored.finished
+        && !restored.playing && !restored.allocated && response && !response->correct
+        && response->order == wrong_response.order && response->raw_json == wrong_response.raw_json
+        && response->reviewed_answer_identity == wrong_response.reviewed_answer_identity
+        && narration::read_history(read_lesson_state(f.view)) == history_before_reopen,
+        "Reopening the whole current lesson lost its exact paused guide, response or three-position history");
+    const auto silence_until = GetTickCount64() + 200;
+    wait([&] { const auto value = f.snapshot();
+        check(!value.playing && !value.allocated && value.offset == paused.offset,
+            "The reopened current order guide started playing without an explicit request");
+        return GetTickCount64() >= silence_until;
+    }, "a reopened authored guide remains paused", 2000);
+    for (const auto& recording : recordings)
+        check(state::sha256(state::read_bytes(recording.path)) == recording.hash,
+            "Reopening the current order guide changed an existing valid recording");
+    f.reader->toggle();
+    check(f.snapshot().allocated && std::abs(f.snapshot().offset - paused.offset) <= 1,
+        "Resuming the reopened actual guide restarted its recording");
+    wait([&] { const auto value = f.snapshot(); observe_wrong(value);
+        return !value.playing && !value.allocated && !value.preparing
+            && value.index == wrong_indices.back();
+    }, "the complete actual order guide finishes and stops for a retry");
+    const auto stopped = f.snapshot();
+    response = state::get_response(read_lesson_state(f.view), lesson, goal);
+    check(std::ranges::all_of(wrong_heard, [](bool heard) { return heard; })
+        && stopped.offset + 1 >= stopped.segments[stopped.index].duration_ms && !stopped.finished
+        && response && !response->correct,
+        "The authored wrong order guide was skipped, continued beyond the puzzle or granted achievement");
+
+    auto order = wrong_response.order;
+    for (std::size_t target = 0; target < goal.correct_order.size(); ++target) {
+        auto at = static_cast<std::size_t>(std::ranges::find(order,
+            static_cast<std::int64_t>(goal.correct_order[target])) - order.begin());
+        check(at < order.size(), "The authored correct order no longer names a real fragment");
+        while (at > target) { move_up(static_cast<std::size_t>(order[at])); std::swap(order[at], order[at - 1]); --at; }
+    }
+    submit();
+    const auto correct_indices = verify_feedback(true, goal.explanation);
+    response = state::get_response(read_lesson_state(f.view), lesson, goal);
+    check(response && response->correct && response->reviewed_answer_identity.empty()
+        && std::ranges::equal(response->order, goal.correct_order, [](std::int64_t actual, std::size_t expected) {
+            return actual == static_cast<std::int64_t>(expected);
+        }),
+        "The real corrected order did not earn its authored achievement");
+    std::vector<bool> correct_heard(correct_indices.size(), false);
+    f.reader->toggle();
+    wait([&] {
+        const auto value = f.snapshot();
+        for (std::size_t i = 0; i < correct_indices.size(); ++i)
+            if (value.playing && value.index == correct_indices[i]) correct_heard[i] = true;
+        return value.playing && value.segments[value.index].block == following.block && value.offset > 150;
+    }, "the complete actual order explanation is heard before the next authored puzzle");
+    f.reader->pause();
+    const auto continued = f.snapshot();
+    check(std::ranges::all_of(correct_heard, [](bool heard) { return heard; })
+        && continued.heard_through > static_cast<std::int64_t>(correct_indices.back()) && !continued.finished,
+        "The actual order reader continued before hearing every success sentence or completed an unanswered page");
+    preserve_other_positions();
+    for (const auto& recording : recordings)
+        check(state::sha256(state::read_bytes(recording.path)) == recording.hash,
+            "The current order feedback flow changed an existing valid recording");
+    check(state::sha256(state::read_bytes(path)) == asset_hash && !IsWindowVisible(f.host),
+        "The focal order reader QA modified its authored asset or exposed a desktop window");
+    std::cout << "PASS current U1L2 p4 order reader: complete authored wrong guide and success explanation, real PCM/timings, retry stop, full-view exact silent restoration and three real page positions\n";
+}
+
 void extended_reader_playback_rates(const std::shared_ptr<windows::NarrationWorker>& backend){
     Fixture f(backend,false,true,true,"es",compiler_model());const auto initial=f.snapshot();
     std::vector<std::pair<std::filesystem::path,std::filesystem::file_time_type>> recordings;
@@ -660,11 +937,12 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
 int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
     const bool dependencies_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
+    const bool integrated_order_only=argc==2&&std::string_view(argv[1])=="--integrated-order";
     const bool rates_only=argc==2&&std::string_view(argv[1])=="--rates";
     const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
-    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
+    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -674,6 +952,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(compiler_focus_only){checked_compilation_keeps_keyboard_reader_control(backend);return 0;}
         if(rates_only){extended_reader_playback_rates(backend);return 0;}
         if(integrated_only){integrated_u1_reader_flow(backend);return 0;}
+        if(integrated_order_only){integrated_order_reader_flow(backend);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
         extended_reader_playback_rates(backend);
@@ -682,6 +961,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         dependent_puzzle_reader_bookmarks(backend);
         independent_feedback_does_not_complete_a_pending_compiler(backend);
         integrated_u1_reader_flow(backend);
+        integrated_order_reader_flow(backend);
         {
             Fixture f(backend,true);KeyboardStateScope keyboard;ReaderCommandProbe probe(f.reader->bar());
             const auto edit=child(f.view,1102),play=GetDlgItem(f.reader->bar(),6504);SetFocus(edit);

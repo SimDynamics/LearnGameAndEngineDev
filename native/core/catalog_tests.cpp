@@ -5,6 +5,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "native_build_config.hpp"
 
 #include <winrt/Windows.Data.Json.h>
@@ -117,6 +118,44 @@ void compiler_puzzles_keep_captured_success_until_explicit_reset() {
     windows::reset_compiler_puzzle(data,lesson,block);
     check(!windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==0&&data.preferences.at("learning_progress")==before,
         "Reset retained the compiler achievement or altered independent answers");
+}
+void required_compile_diagnostics_remain_pending_in_catalog_progress() {
+    using namespace lgaed;using namespace curriculum;
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
+    for(const auto& plan:test::compile_check_cases) {
+        const auto original=windows::load_lesson(folder/plan.filename);
+        const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic);
+        const auto position=stable_block_position(lesson,plan.identity);
+        check(position.has_value()&&lesson.compiler_puzzles_required,"Catalog diagnostic QA lost its required original editor");
+        const auto& diagnostic=lesson.pages[position->page].blocks[position->block];
+        state::StateData data;
+        auto& values=data.preferences["learning_progress"];const auto prefix="lesson_"+lesson.id;
+        values[prefix+"_started"]=true;values[prefix+"_completed"]=true;
+        std::vector<std::string> pages,blocks;
+        for(const auto& page:lesson.state_layout.origin)pages.push_back(page.id);
+        for(const auto& page:lesson.pages)for(const auto& block:page.blocks)blocks.push_back(block.stable_id);
+        values[prefix+"_read_pages_v2_es"]=pages;values[prefix+"_read_blocks_v2_es"]=blocks;
+        state::put_response(data,lesson,diagnostic,state::Response{"historical opaque success",true});
+        const auto retained=data;bool asked=false;
+        // This unit isolates catalog grouping with its completion callback. It
+        // writes no compiler receipts and does not claim a native compilation.
+        const auto pending=[&](const Block& block){if(block.stable_id==plan.identity){asked=true;return false;}return true;};
+        const auto before=catalog_lesson_page_progress(data,lesson,pending);
+        check(asked&&before.completed+1==before.total,
+            "A visited/completed page or opaque old answer bypassed a required compile diagnostic in the catalog");
+        const auto verified=catalog_lesson_page_progress(data,lesson,[](const Block&){return true;});
+        check(verified.completed==verified.total&&verified.total==before.total,
+            "A supplied completed diagnostic failed to complete its historical catalog group");
+        const auto metadata=windows::parse_lesson_progress_metadata(lesson.raw_json);
+        check(catalog_lesson_page_progress(data,metadata,pending).completed==before.completed,
+            "Catalog metadata dropped the pending compile diagnostic requirement");
+        auto optional=lesson;optional.compiler_puzzles_required=false;
+        check(catalog_lesson_page_progress(data,optional,pending).completed==verified.completed,
+            "An optional diagnostic changed historical catalog counting without mandatory mode");
+        check(data==retained&&!windows::compiler_puzzle_completed(data,lesson,diagnostic),
+            "Inspecting catalog progress changed student data or manufactured diagnostic proof");
+    }
+    std::cout<<"PASS five required compile diagnostics in catalog: opaque flags/read coverage stay pending, completion callback and metadata preserve groups, no native proof invented\n";
 }
 void stable_progress_groups_survive_splits_reordering_and_new_activities() {
     using namespace lgaed;
@@ -250,6 +289,7 @@ int main() {
         page_progress_matches_android_without_crediting_unanswered_puzzles();
         dependent_puzzles_keep_historical_progress_without_granting_execution_proofs();
         compiler_puzzles_keep_captured_success_until_explicit_reset();
+        required_compile_diagnostics_remain_pending_in_catalog_progress();
         stable_progress_groups_survive_splits_reordering_and_new_activities();
         unit_percentage_weights_lessons_like_android_and_keeps_completion_counts();
         catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads();

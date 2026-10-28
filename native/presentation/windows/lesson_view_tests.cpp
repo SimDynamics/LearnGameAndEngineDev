@@ -140,7 +140,7 @@ struct Fixture {
     bool supplied_model = false;
     HWND host = nullptr, view = nullptr;
     explicit Fixture(const std::function<void(state::StateData&, const curriculum::Lesson&)>& initialize = {},
-        const std::function<curriculum::Lesson(const curriculum::Lesson&)>& load_model = {})
+        const std::function<curriculum::Lesson(const curriculum::Lesson&)>& load_model = {},bool hidden=false)
         : environment(resolve_windows_environment({ProfileId::Codex,
             L"native-lesson-view-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()), false})),
         content(std::filesystem::path(build::source_root) / "app/src/main/assets/content") {
@@ -157,8 +157,8 @@ struct Fixture {
         initial_data.preferences["native_windows"]["ui_language"]=std::string("es");
         if (initialize) initialize(initial_data,lesson);
         seed_store.save(initial_data);
-        host = CreateWindowExW(WS_EX_CONTROLPARENT, L"LgaedLessonViewTests", L"Native lesson integration QA",
-            WS_OVERLAPPEDWINDOW|WS_VISIBLE, 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+        host = CreateWindowExW(WS_EX_CONTROLPARENT|(hidden?WS_EX_NOACTIVATE:0), L"LgaedLessonViewTests", L"Native lesson integration QA",
+            WS_OVERLAPPEDWINDOW|(hidden?0:WS_VISIBLE), 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
         require(host != nullptr, "Cannot create native QA host");
         open();
     }
@@ -2285,6 +2285,19 @@ void real_retirement_pages_preserve_all_eight_useful_editors() {
 }
 void integrated_u1_compilers_require_all_eight_real_executions() {
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion";
+    struct VerifiedSolution { std::string_view filename,editor,reference; };
+    // Work may archive a displayed reference without changing the exercise.
+    // Keep this QA plan explicit: a stored expected output is not a program.
+    constexpr std::array<VerifiedSolution,8> solutions{{
+        {"lesson_primer_programa_y_salida.json","block_0004_0002","block_0005_0002"},
+        {"lesson_primer_programa_y_salida.json","block_0005_0006","block_0005_0008"},
+        {"lesson_texto_secuencia_y_formato.json","block_0006_0002","block_0007_0002"},
+        {"lesson_texto_secuencia_y_formato.json","block_0006_0006","block_0007_0003"},
+        {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0003","block_0006_0002"},
+        {"lesson_fuente_compilacion_y_diagnostico.json","block_0003_0008",""},
+        {"lesson_resolver_probar_y_recuperar.json","block_0003_0002","block_0005_0002"},
+        {"lesson_resolver_probar_y_recuperar.json","block_0005_0006","block_0005_0008"}
+    }};
     std::size_t completed=0;
     for(const auto filename:{"lesson_primer_programa_y_salida.json","lesson_texto_secuencia_y_formato.json",
             "lesson_fuente_compilacion_y_diagnostico.json","lesson_resolver_probar_y_recuperar.json"}){
@@ -2324,20 +2337,24 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
                 "A current useful compiler was hidden or its own pending goal did not block advancement");
             f.run(position.block);
             require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),"An unchanged initial program falsely completed the requested construction/repair");
+            const auto plan=std::ranges::find_if(solutions,[&](const auto& item){return item.filename==filename&&item.editor==compiler.stable_id;});
+            require(plan!=solutions.end(),"No verified solution plan for "+f.lesson.id+" / "+compiler.stable_id);
             std::string solution;
-            if(compiler.stable_id=="block_0006_0002"||compiler.stable_id=="block_0006_0006"){
-                const auto reference=curriculum::stable_block_position(f.lesson,compiler.stable_id=="block_0006_0002"?"block_0007_0002":"block_0007_0003");
-                require(reference.has_value(),"The report construction lost its authored reference program");
-                solution=f.lesson.pages[reference->page].blocks[reference->block].code;
-            }else if(compiler.stable_id=="block_0003_0008"){
+            if(plan->reference.empty()){
                 solution=compiler.initial_code;const std::string line="std::cout << \"Revision inicial\"\n";
                 const auto missing=solution.find(line);require(missing!=solution.npos,"The independent repair no longer contains its intended missing semicolon");
                 solution.insert(missing+line.size()-1,";");
-            }else for(const auto& relation:f.lesson.reference_after)if(relation.activity==compiler.stable_id)
-                for(const auto& identity:relation.blocks){const auto reference=curriculum::stable_block_position(f.lesson,identity);
-                    const auto& block=f.lesson.pages[reference->page].blocks[reference->block];
-                    if(block.type==BlockType::code&&block.code.find("int main")!=std::string::npos){solution=block.code;break;}}
-            require(!solution.empty(),"A current useful compiler has no verified authored solution in this QA plan");
+            }else{
+                const curriculum::Block* reference=nullptr;
+                if(const auto active=curriculum::stable_block_position(f.lesson,plan->reference))
+                    reference=&f.lesson.pages[active->page].blocks[active->block];
+                else if(const auto archived=std::ranges::find(f.lesson.retired_blocks,plan->reference,&curriculum::Block::stable_id);
+                        archived!=f.lesson.retired_blocks.end())reference=&*archived;
+                require(reference&&reference->type==BlockType::code&&reference->language=="cpp"&&reference->code.find("int main")!=std::string::npos,
+                    "Missing authored C++ solution "+f.lesson.id+" / "+compiler.stable_id+" / "+std::string(plan->reference));
+                solution=reference->code;
+            }
+            require(!solution.empty(),"Empty verified solution for "+f.lesson.id+" / "+compiler.stable_id);
             f.replace(position.block,10,solution);f.run(position.block);
             require(f.text(position.block,4).starts_with("✓ Correcto")&&windows::compiler_puzzle_completed(f.saved(),f.lesson,compiler),
                 "A fresh current reference execution did not complete its own required objective");
@@ -2352,6 +2369,88 @@ void integrated_u1_compilers_require_all_eight_real_executions() {
     }
     require(completed==8,"The integrated U1 acceptance did not execute all eight useful compiler objectives");
     std::cout<<"PASS all eight integrated useful U1 compilers: mandatory gate, independent real execution, authored solutions, opaque history, reopen and scoped Reset\n";
+}
+void completed_compilers_keep_navigation_after_active_content() {
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json";
+    const auto original_hash=state::sha256(state::read_bytes(path));
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,3);
+        data.preferences["navigation_geometry_qa"]["unchanged"]=std::string(" \t original preference\r\n");
+        // Only earlier quiz responses isolate entry to the actual construction.
+        // Neither compiler receives synthetic completion or program receipts.
+        for(std::size_t page=0;page<3;++page)for(const auto& block:lesson.pages[page].blocks){
+            if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::fill_code&&block.type!=BlockType::output_prediction)continue;
+            state::Response answer;answer.correct=true;
+            if(block.correct_index)answer.selected=static_cast<std::int64_t>(*block.correct_index);
+            if(!block.answers.empty())answer.answer=block.answers.front();
+            state::put_response(data,lesson,block,answer);
+        }
+    },[&](const curriculum::Lesson&){return windows::load_lesson(path);},true);
+    require(!IsWindowVisible(f.host),"Navigation geometry QA exposed or activated the desktop");
+    require(f.page()==3,"Navigation geometry QA did not restore the actual U1L5 construction");
+    const auto first=curriculum::stable_block_position(f.lesson,"block_0003_0002");
+    const auto last=curriculum::stable_block_position(f.lesson,"block_0005_0006");
+    require(first&&last&&first->page==3&&last->page==5,"The two useful U1L5 compilers changed ownership");
+    const auto reference=[&](std::string_view identity){
+        const auto archived=std::ranges::find(f.lesson.retired_blocks,identity,&curriculum::Block::stable_id);
+        require(archived!=f.lesson.retired_blocks.end()&&archived->type==BlockType::code&&archived->language=="cpp"
+            &&archived->code.find("int main")!=std::string::npos,"Missing preserved authored navigation QA solution");
+        return archived->code;
+    };
+    const auto source_b=reference("block_0005_0002"),source_c=reference("block_0005_0008");
+    const auto untouched=f.saved().preferences.at("navigation_geometry_qa");
+    const auto verify=[&](std::string_view stage){
+        const auto next=f.control(117),pane=GetParent(next);RECT footer{};GetWindowRect(next,&footer);
+        require((GetWindowLongPtrW(next,GWL_STYLE)&WS_VISIBLE)&&footer.bottom>footer.top,
+            "The end-of-content navigation action disappeared");
+        std::size_t rows=0;
+        for(auto child=GetWindow(pane,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT)){
+            if(child==next||!(GetWindowLongPtrW(child,GWL_STYLE)&WS_VISIBLE))continue;
+            const auto control=GetDlgCtrlID(child);if(control<1000&&control!=990)continue;
+            RECT bounds{};GetWindowRect(child,&bounds);if(bounds.bottom<=bounds.top||bounds.right<=bounds.left)continue;
+            ++rows;
+            require(footer.top>=bounds.bottom,"Navigation moved before active content: page="+std::to_string(f.page()+1)
+                +" stage="+std::string(stage)+" control="+std::to_string(control)+" content_bottom="+std::to_string(bounds.bottom)
+                +" navigation_top="+std::to_string(footer.top));
+        }
+        require(rows>0,"Navigation geometry QA did not inspect active content rows");
+        require(window_text(next)==(f.page()+1==f.lesson.pages.size()?"Finalizar lección":"Continuar"),
+            "Navigation lost its page-specific label");
+        require(!IsWindowVisible(f.host)&&f.saved().preferences.at("navigation_geometry_qa")==untouched,
+            "Navigation layout exposed the desktop or changed unrelated preferences");
+    };
+    const auto& first_goal=f.lesson.pages[first->page].blocks[first->block];
+    const auto& last_goal=f.lesson.pages[last->page].blocks[last->block];
+    verify("initial construction");f.run(first->block);verify("incorrect construction");
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal),"The untouched construction accredited navigation QA");
+    f.replace(first->block,10,source_b);f.run(first->block);verify("correct construction reveals note and choice");
+    require(windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal)&&f.text(first->block,4).starts_with("✓ Correcto"),
+        "The actual construction did not execute its preserved authored solution");
+    require(!lesson_page_state(f.view).can_next,"Compiler completion bypassed the remaining current multiple choice");
+    f.solve(4);verify("current choice solved");
+    require(lesson_page_state(f.view).can_next,"The completed construction and choice did not unlock Continue");
+    f.reopen();verify("construction reopened");
+    require(f.text(first->block,10)==source_b&&windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal),
+        "Construction reopen lost its source or persistent achievement");
+    f.next();verify("recovery page");
+    for(std::size_t index=0;index<f.lesson.pages[f.page()].blocks.size();++index)
+        if(f.lesson.pages[f.page()].blocks[index].type==BlockType::multiple_choice){f.solve(index);verify("recovery choice solved");}
+    f.next();verify("initial final compiler");
+    require(f.page()==5&&!IsWindowEnabled(f.control(117)),"The final compiler was bypassed before its own execution");
+    f.run(last->block);verify("incorrect final compiler");
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,last_goal)&&!IsWindowEnabled(f.control(117)),"Turno B falsely completed the requested Turno C change");
+    f.replace(last->block,10,source_c);f.run(last->block);verify("correct final compiler reveals explanation");
+    require(windows::compiler_puzzle_completed(f.saved(),f.lesson,last_goal)&&IsWindowEnabled(f.control(117)),
+        "The actual changed-turn execution did not unlock Finish");
+    f.reopen();verify("final compiler reopened");
+    require(f.text(last->block,10)==source_c&&f.text(last->block,4).starts_with("✓ Correcto")&&IsWindowEnabled(f.control(117)),
+        "Reopening lost the final source or correct feedback");
+    f.click(last->block,12);verify("final compiler Reset hides explanation");f.reopen();verify("Reset reopened");
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,last_goal)&&!IsWindowEnabled(f.control(117))
+        &&windows::compiler_puzzle_completed(f.saved(),f.lesson,first_goal)&&f.text(last->block,10)==last_goal.initial_code,
+        "Reset changed another compiler achievement or failed to restore the final pending goal");
+    require(state::sha256(state::read_bytes(path))==original_hash,"Navigation QA changed an authored lesson asset");
+    std::cout<<"PASS actual U1L5 p4/p6: hidden owned host, real authored compile/error/success, revealed note/choice/explanation, Continue/Finish after all content, source/achievements retained on reopen, scoped Reset and original unrelated preferences/assets\n";
 }
 void retired_reading_regions_are_empty_during_import_and_return_after_cancel() {
     // A presentation-only retirement on a copy of page zero exercises the
@@ -2572,6 +2671,153 @@ void integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtim
         "Reset failed to revoke only the diagnostic objective and preserve its independent constructor");
     require(state::sha256(state::read_bytes(path))==asset_hash,"The integrated diagnostic QA modified an authored lesson asset");
     std::cout<<"PASS current integrated U8L3: real independent constructor, false/true MSVC executions, exact stable stdout, separate variable stderr, historical proof isolation, build rejection, reader/reference gates, reopen, sticky success and scoped Reset\n";
+}
+void integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report() {
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json";
+    const auto asset_hash=state::sha256(state::read_bytes(path));
+    const auto published=windows::load_lesson(path);
+    const auto constructor=curriculum::stable_block_position(published,"block_0004_0004");
+    const auto diagnostic=curriculum::stable_block_position(published,"block_0004_0007");
+    const auto constructor_reference=curriculum::stable_block_position(published,"block_0005_0001");
+    const auto diagnostic_reference=curriculum::stable_block_position(published,"block_0005_0008");
+    const auto frontier=curriculum::stable_block_position(published,"block_0005_0006");
+    const auto frontier_reference=curriculum::stable_block_position(published,"block_0005_0010");
+    require(constructor&&constructor->page==4&&constructor->block==4
+        &&diagnostic&&diagnostic->page==4&&diagnostic->block==7
+        &&constructor_reference&&constructor_reference->page==5&&constructor_reference->block==1
+        &&diagnostic_reference&&diagnostic_reference->page==5&&diagnostic_reference->block==8
+        &&frontier&&frontier->page==5&&frontier->block==6
+        &&frontier_reference&&frontier_reference->page==5&&frontier_reference->block==10
+        &&published.compiler_puzzles_required,"The current U10L4 compiler/reference identities or required status changed");
+    const auto& constructor_goal=published.pages[4].blocks[4];
+    const auto& diagnostic_goal=published.pages[4].blocks[7];
+    require(constructor_goal.output_check&&diagnostic_goal.output_check
+        &&diagnostic_goal.output_check->cases.size()==1
+        &&diagnostic_goal.output_check->cases[0].standard_error==curriculum::StandardErrorExpectation::non_blank
+        &&diagnostic_goal.output_check->cases[0].outputs==std::vector<std::string>{"Fallos elegidos:2\n"},
+        "The integrated U10L4 objective lost its authored stable stdout and independent stderr requirement");
+    const auto constructor_source=published.pages[5].blocks[1].code;
+    const auto diagnostic_source=published.pages[5].blocks[8].code;
+    const auto frontier_source=published.pages[5].blocks[10].code;
+    require(!constructor_source.empty()&&!diagnostic_source.empty()&&!frontier_source.empty(),
+        "The real U10L4 reference programs are missing");
+    // Silence only the report in the actual defective reference. Its selected
+    // cases, random generator, deliberate > comparison and stdout stay intact.
+    auto silent_source=diagnostic_source;
+    constexpr std::string_view main_start="int main() {";
+    const auto main_offset=silent_source.find(main_start);
+    require(main_offset!=silent_source.npos&&silent_source.find("std::cerr")!=silent_source.npos,
+        "The authored U10L4 report cannot be isolated without rewriting its program");
+    silent_source.insert(main_offset+main_start.size(),"\n    std::cerr.setstate(std::ios_base::failbit);");
+    const auto expected_stdout=diagnostic_goal.output_check->cases[0].outputs.front();
+    Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);
+        // Isolate the real compiler dependency without inventing any compiler
+        // completion: both the constructor and the report must execute below.
+        for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+            if(block.type!=BlockType::output_prediction&&block.type!=BlockType::multiple_choice)continue;
+            state::Response answer;answer.correct=true;
+            if(block.type==BlockType::output_prediction)answer.answer=block.answers.at(0);
+            else answer.selected=static_cast<std::int64_t>(*block.correct_index);
+            state::put_response(data,curriculum::exercise_key(lesson,block),answer);
+        }
+        state::save_current_page(data,lesson,4);
+    },[&](const curriculum::Lesson&){return published;});
+    require(f.page()==4&&!descendant(f.view,id(7,10))&&!lesson_page_state(f.view).can_next,
+        "The U10L4 report editor escaped its independent constructor prerequisite");
+    f.run(4);
+    require(f.text(4,4).starts_with("✗ Incorrecto")&&!descendant(f.view,id(7,10)),
+        "Running the incomplete real U10L4 constructor unlocked the dependent report");
+    f.replace(4,10,constructor_source);f.run(4);
+    require(windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[4])
+        &&descendant(f.view,id(7,10))&&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,5),
+        "The actual U10L4 constructor failed to unlock only its dependent editor");
+    f.replace(7,10,silent_source);f.run(7);
+    require(f.text(7,14)==expected_stdout&&f.text(7,4).starts_with("✗ Incorrecto")
+        &&f.text(7,4).find("falta el diagnóstico solicitado en stderr")!=std::string::npos
+        &&!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[7])
+        &&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,5),
+        "The real U10L4 stdout-only reference completed its two-channel objective or revealed its later references");
+    SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(7,79),BN_CLICKED),0);pump(f.host);
+    require(f.text(7,14)==expected_stdout,"Silencing U10L4 runtime stderr fabricated a selectable report");
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){
+        return region.block_index==7&&region.is_exercise&&!region.solved;}),
+        "The U10L4 stdout-only result released its reader boundary");
+    f.reopen();
+    require(f.page()==4&&f.text(7,10)==silent_source&&f.text(7,14).empty()
+        &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[4])
+        &&!lesson_page_state(f.view).can_next,"Reopening lost the independent constructor/draft or invented a complete U10L4 report");
+    f.replace(7,10,"#error QA_U10L4_BUILD_DIAGNOSTIC\nint main(){}\n");f.run(7);
+    require(f.text(7,4).empty()&&f.text(7,14).find("QA_U10L4_BUILD_DIAGNOSTIC")!=std::string::npos
+        &&!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[7])
+        &&!lesson_page_state(f.view).can_next,"U10L4 build diagnostics accredited its successful runtime report");
+    f.replace(7,10,diagnostic_source);f.run(7);
+    const auto complete=f.text(7,4);
+    require(complete=="✓ Correcto\n\n"+diagnostic_goal.output_check->cases[0].explanation
+        &&f.text(7,14)==expected_stdout&&lesson_page_state(f.view).can_next,
+        "The unchanged real U10L4 reference did not complete its current two-channel objective");
+    SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(7,79),BN_CLICKED),0);pump(f.host);
+    const auto report=f.text(7,14);
+    constexpr std::string_view summary_prefix="Fallos generados:";
+    const auto summary=report.rfind(summary_prefix);
+    require(summary!=report.npos,"The authored U10L4 runtime report lost its generated-case summary");
+    const auto count=report.substr(summary+summary_prefix.size());
+    require(!count.empty()&&std::ranges::all_of(count,[](unsigned char value){return value>='0'&&value<='9';}),
+        "The U10L4 runtime report did not retain its variable generated-case count");
+    std::size_t reported_cases=0;
+    for(std::size_t offset=0;(offset=report.find("Caso:",offset))!=report.npos&&offset<summary;offset+=5)++reported_cases;
+    require(std::stoul(count)==reported_cases,"The actual U10L4 summary disagrees with its own reported cases");
+    // No exact generated count is prescribed: standard libraries may produce
+    // different samples. The lesson owns the stable selected-case stdout.
+    f.reopen();
+    require(f.text(7,10)==diagnostic_source&&f.text(7,4)==complete&&f.text(7,14).empty()
+        &&lesson_page_state(f.view).can_next,"The actual U10L4 report proof/draft did not persist independently of its transient console");
+    f.next();
+    const auto reference_status=[&](std::string_view phase){const auto saved=f.saved();
+        std::cout<<"U10L4 references "<<phase<<": page="<<f.page()
+            <<" heading7="<<(descendant(f.view,id(7,0))!=nullptr)
+            <<" code8="<<(descendant(f.view,id(8,1))!=nullptr)
+            <<" code10="<<(descendant(f.view,id(10,1))!=nullptr)
+            <<" report-complete="<<windows::compiler_puzzle_completed(saved,f.lesson,f.lesson.pages[4].blocks[7])
+            <<" frontier-complete="<<windows::compiler_puzzle_completed(saved,f.lesson,f.lesson.pages[5].blocks[6])<<'\n';};
+    reference_status("before independent frontier");
+    require(f.page()==5,"The completed U10L4 report did not unlock the actual next page");
+    require(windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[7]),
+        "Entering the U10L4 reference page lost its completed two-channel proof");
+    require(!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[5].blocks[6]),
+        "Completing the U10L4 report accredited the independent frontier activity");
+    // In the authored order this mandatory frontier editor precedes BOTH
+    // later references. Its sequential gate still applies to the already
+    // completed report's reference; owner completion does not bypass it.
+    require(!descendant(f.view,id(7,0)),"The U10L4 report heading bypassed the earlier mandatory frontier editor");
+    require(!descendant(f.view,id(8,1)),"The U10L4 report reference bypassed the earlier mandatory frontier editor");
+    require(!descendant(f.view,id(10,1)),"The independent U10L4 frontier reference was revealed before its execution");
+    f.replace(6,10,frontier_source);f.run(6);
+    reference_status("after independent frontier");
+    const auto& frontier_goal=f.lesson.pages[5].blocks[6];
+    require(windows::compiler_puzzle_completed(f.saved(),f.lesson,frontier_goal),
+        "The independent U10L4 frontier reference failed to complete its own published output contract");
+    require(frontier_goal.output_check&&f.text(6,14)==frontier_goal.output_check->cases[0].outputs.front(),
+        "The real U10L4 frontier execution changed its own authored stdout");
+    require(descendant(f.view,id(7,0)),"The completed U10L4 sequential prerequisites did not reveal the report heading");
+    require(descendant(f.view,id(8,1)),"The completed U10L4 report did not release its own reference code");
+    require(descendant(f.view,id(10,1)),"The independent U10L4 frontier achievement did not release its own reference");
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==8;}),
+        "The revealed U10L4 report reference was missing from its narration regions");
+    f.select_page(4);f.replace(7,10,silent_source);f.run(7);
+    require(f.text(7,4)==complete&&f.text(7,14)==expected_stdout&&lesson_page_state(f.view).can_next,
+        "A later silent U10L4 execution revoked the completed two-channel achievement");
+    f.reopen();
+    require(f.text(7,4)==complete&&f.text(7,10)==silent_source,
+        "Reopening lost the U10L4 achievement or overwrote its later independent draft");
+    f.click(7,12);
+    require(f.text(7,4).empty()&&!windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[7])
+        &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[4].blocks[4])
+        &&windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[5].blocks[6])
+        &&f.text(4,10)==constructor_source&&!lesson_page_state(f.view).can_next&&!navigate_lesson_view(f.view,5),
+        "Reset failed to revoke only the real U10L4 report while preserving its independent constructor");
+    require(state::sha256(state::read_bytes(path))==asset_hash,"The integrated U10L4 QA modified its authored lesson asset");
+    std::cout<<"PASS current integrated U10L4: real constructor and defective reference, stdout-only rejection, variable runtime report, build rejection, own reader/reference gates, reopen, sticky success and scoped Reset\n";
 }
 void u11_editorial_preserves_prediction_and_compiler_history() {
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json";
@@ -2953,6 +3199,108 @@ void narration_checkpoints_do_not_reformat_or_reflow_the_page() {
 }
 }
 
+void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() {
+    struct Plan { const char* filename; std::size_t page,block; std::vector<std::string> incorrect; };
+    const Plan plans[]{
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"}},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"}},
+        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"}},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"}},
+        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4,{"recibidos","sobres_recibidos"}},
+        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"}},
+        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""}},
+        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"}},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1,{"<<","\"Carga\""}},
+    };
+    std::size_t alternatives=0;
+    for(const auto& plan:plans){
+        const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/plan.filename;
+        const auto hash=state::sha256(state::read_bytes(path));
+        Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
+            state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,plan.page);
+            // These synthetic receipts isolate the actual inline control from
+            // preceding compiler gates. They certify no C++ execution, and the
+            // target answer itself always comes through its real native fields.
+            for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+                if(block.type!=BlockType::cpp_compiler||!block.output_check)continue;
+                windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
+                for(const auto& item:block.output_check->cases){
+                    curriculum::FreshExecution result{1,true,true,0,item.standard_input,item.outputs.front()};
+                    result.executable=item.executable;
+                    if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)result.standard_error="QA prerequisite only";
+                    (void)windows::record_compiler_puzzle_case(data,lesson,block,request,result,"Synthetic inline QA prerequisite only");
+                }
+            }
+            data.preferences["inline_feedback_qa"]["unrelated"]=std::string(" \t preserve\r\n");
+        },[&](const curriculum::Lesson&){return windows::load_lesson(path);},true);
+        const auto& block=f.lesson.pages.at(plan.page).blocks.at(plan.block);
+        require(block.type==BlockType::inline_fill_code&&!block.review_feedback.empty()&&!block.explanation.empty(),
+            "A registered inline feedback location no longer identifies its authored contract");
+        require(plan.incorrect.size()==block.answers.size()&&!curriculum::evaluate_hole_answers(block,plan.incorrect).correct,
+            "The focal incorrect answer must exercise the authored evaluator");
+        const auto unchanged=f.saved().preferences.at("inline_feedback_qa");
+        const auto field=[&](std::size_t index){const auto value=GetDlgItem(f.control(plan.block,5),100+static_cast<int>(index));
+            require(value!=nullptr,"A registered inline hole is missing");return value;};
+        const auto replace=[&](const std::vector<std::string>& values){
+            for(std::size_t index=0;index<values.size();++index){const auto target=field(index);require(IsWindowEnabled(target),"An editable inline hole is locked");
+                const auto text=wide(values[index]);SendMessageW(target,EM_SETSEL,0,-1);
+                SendMessageW(target,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(text.c_str()));pump(f.host);
+                require(edit_text(target)==values[index],"An inline field changed the exact submitted characters");}
+        };
+        const auto verify_fields=[&](const std::vector<std::string>& values,bool enabled){
+            for(std::size_t index=0;index<values.size();++index)require(edit_text(field(index))==values[index]
+                &&(IsWindowEnabled(field(index))!=FALSE)==enabled,"Reopening lost an inline answer or its completion lock");
+        };
+        const auto feedback_narration=[&](bool correct,std::string_view expected){
+            std::string script;for(const auto& region:lesson_reading_regions(f.view))if(region.target==f.control(plan.block,4))script+=region.source_text;
+            require(script==std::string(correct?"✓ Correcto\n\n":"✗ Incorrecto\n\n")+std::string(expected),
+                "The inline narration source omitted current feedback or added hidden solution text");
+        };
+        // These registered prose fields use backticks solely as inline-code
+        // delimiters. RichEdit hides them for display; the narration assertion
+        // above independently requires the complete original authored source.
+        const auto visible=[](std::string value){std::erase(value,'`');return value;};
+        require(f.page()==plan.page&&f.text(plan.block,4).empty()&&!IsWindowEnabled(f.control(plan.block,3)),
+            "An unanswered inline exercise displayed feedback or enabled an empty submission");
+        for(const auto& region:lesson_reading_regions(f.view))require(region.target!=f.control(plan.block,4),
+            "An unanswered inline exercise exposed feedback to narration");
+        verify_fields(std::vector<std::string>(block.answers.size()),true);
+        replace(plan.incorrect);f.reopen();verify_fields(plan.incorrect,true);
+        const auto draft=state::get_response(f.saved(),f.lesson,block);
+        require(draft&&!draft->correct&&!state::response_reviewed(*draft,block)&&f.text(plan.block,4).empty(),
+            "Reopening an unsubmitted inline draft invented an evaluated attempt");
+        f.click(plan.block,3);const auto wrong=f.text(plan.block,4);
+        require(wrong=="✗ Incorrecto\n\n"+visible(block.review_feedback)
+            &&wrong.find(visible(block.explanation))==std::string::npos,"An incorrect inline attempt lost its authored guide or exposed the solution");
+        feedback_narration(false,block.review_feedback);const auto reviewed=state::get_response(f.saved(),f.lesson,block);
+        require(reviewed&&!reviewed->correct&&state::response_reviewed(*reviewed,block),"The rejected inline attempt was not persisted as reviewed");
+        f.reopen();verify_fields(plan.incorrect,true);require(f.text(plan.block,4)==wrong,"Restoration changed the exact authored rejection feedback");
+        feedback_narration(false,block.review_feedback);
+        replace(block.answers);require(f.text(plan.block,4).empty(),"A corrected inline draft retained feedback for a different answer");
+        f.click(plan.block,3);const auto correct=f.text(plan.block,4);
+        require(correct=="✓ Correcto\n\n"+visible(block.explanation),
+            "The accepted inline answer lost its complete current explanation");
+        feedback_narration(true,block.explanation);verify_fields(block.answers,false);
+        f.reopen();verify_fields(block.answers,false);require(f.text(plan.block,4)==correct,"Restoration changed current success feedback");
+        feedback_narration(true,block.explanation);
+        f.click(plan.block,12);verify_fields(std::vector<std::string>(block.answers.size()),true);
+        require(f.text(plan.block,4).empty(),"Explicit inline Reset retained the previous verdict");
+        for(std::size_t index=0;index<block.answer_alternatives.size();++index)for(const auto& option:block.answer_alternatives[index]){
+            if(option==block.answers[index])continue;auto answer=block.answers;answer[index]=option;
+            require(curriculum::evaluate_hole_answers(block,answer).correct,"A published inline alternative became invalid");
+            replace(answer);f.click(plan.block,3);verify_fields(answer,false);
+            require(f.text(plan.block,4)==correct,"An admitted inline alternative lost the same complete explanation");
+            f.reopen();verify_fields(answer,false);require(f.text(plan.block,4)==correct,"Reopening changed a valid alternative's completion");
+            f.click(plan.block,12);++alternatives;
+        }
+        require(!IsWindowVisible(f.host)&&f.saved().preferences.at("inline_feedback_qa")==unchanged
+            &&hash==state::sha256(state::read_bytes(path)),"Inline QA changed a curricular asset, unrelated state or the user's desktop");
+        std::cout<<"PASS actual inline feedback "<<plan.filename<<" p"<<plan.page+1<<" b"<<plan.block+1
+            <<": draft/rejection/correction/success/Reset/reopen and exact feedback narration sources\n";
+    }
+    std::cout<<"PASS nine registered inline controls and "<<alternatives<<" additional authored alternatives; no synthesis or human listening claimed\n";
+}
+
 int main(int argc,char* argv[]) {
     const bool scroll_repaint_only=argc==2&&std::string_view(argv[1])=="--scroll-repaint";
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
@@ -2966,7 +3314,9 @@ int main(int argc,char* argv[]) {
     const bool answer_overflow_only=argc==2&&std::string_view(argv[1])=="--answer-overflow";
     const bool narration_repaint_only=argc==2&&std::string_view(argv[1])=="--narration-repaint";
     const bool compiler_height_only=argc==2&&std::string_view(argv[1])=="--compiler-height";
-    if(argc>1&&!scroll_repaint_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only)return 2;
+    const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
+    const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
+    if(argc>1&&!scroll_repaint_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -2974,6 +3324,8 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(inline_feedback_only){current_inline_feedback_uses_authored_controls_and_restores_each_attempt();return 0;}
+        if(navigation_geometry_only){completed_compilers_keep_navigation_after_active_content();return 0;}
         if(scroll_repaint_only){simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
         if(compiler_height_only){native_compiler_short_sources_keep_a_usable_height();return 0;}
         if(narration_repaint_only){narration_checkpoints_do_not_reformat_or_reflow_the_page();return 0;}
@@ -2981,13 +3333,14 @@ int main(int argc,char* argv[]) {
         if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
         if(u11_editorial_only){u11_editorial_preserves_prediction_and_compiler_history();return 0;}
-        if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();return 0;}
+        if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
-        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();compiler_puzzle_completion_and_navigation();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
         runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();
         integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();
+        integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();
         long_prediction_cards_keep_independent_bounds();
         long_lesson_bands_keep_independent_hit_targets();
         initial_readonly_source_layout();
