@@ -75,12 +75,19 @@ jobs:
           once('        const auto viewport=text_viewport();RECT area=client;area.right=std::min<LONG>(client.right,width);',
                '        RECT area=client;area.right=std::min<LONG>(client.right,width);')
           path.write_text(text,encoding='utf-8',newline='\n')
+          path=Path('native/presentation/windows/code_gutter_tests.cpp')
+          text=path.read_text(encoding='utf-8')
+          old='const auto inset=MulDiv(16,100,zoom),display_inset=MulDiv(inset,zoom,100);'
+          assert text.count(old)==1
+          text=text.replace(old,'const auto inset=MulDiv(16,100,zoom);const LONG display_inset=0;')
+          text=text.replace('at its exact padded edge','at its exact client edge')
+          path.write_text(text,encoding='utf-8',newline='\n')
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Native formatting guard anchor changed.' }
           $qa = Join-Path $env:RUNNER_TEMP 'editor-viewport-qa'
           foreach ($mode in @('Debug','Release')) {
             $build = Join-Path $qa $mode
-            $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $build + '" -G Ninja -DCMAKE_BUILD_TYPE=' + $mode + ' && cmake --build "' + $build + '" --parallel 2 && ctest --test-dir "' + $build + '" --output-on-failure'
+            $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $build + '" -G Ninja -DCMAKE_BUILD_TYPE=' + $mode + ' && cmake --build "' + $build + '" --parallel 2 && ctest --test-dir "' + $build + '" --output-on-failure --verbose'
             cmd /d /s /c $cmd
             if ($LASTEXITCODE -ne 0) { throw "Native editor verification failed: $mode" }
           }
