@@ -1,4 +1,5 @@
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/editor_render_transaction.hpp"
 #include "presentation/windows/code_gutter.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
@@ -400,6 +401,7 @@ struct CodeEditor::Impl {
             ~ApplyingScope(){target=previous;}
         } applying_scope{applying,previous_applying};
         applying=true;
+        presentation::editor_render::Scope rendering(window);
         {
             // Keep the actual edit and the parent's syntax formatting in the
             // same native paint transaction. Nested formatters balance their
@@ -861,11 +863,19 @@ struct CodeEditor::Impl {
                         static_cast<std::size_t>(self.pending_edit->cpMax) < self.now().text.size())
                     ++self.pending_edit->cpMax;
             }
-            const auto result = DefSubclassProc(window, message, wparam, lparam);
+            std::optional<presentation::editor_render::Scope> rendering;
+            if(mutating&&!self.applying)rendering.emplace(window);
+            LRESULT result=0;
+            if(mutating&&!self.applying){
+                FrozenText frozen(window);
+                result=DefSubclassProc(window,message,wparam,lparam);
+            }else result=DefSubclassProc(window,message,wparam,lparam);
             if (message == WM_SETFONT) self.tab_stops();
             if (mutating) {
                 self.capture();
                 self.pending_edit.reset();
+                if(!self.applying)if(const auto parent=GetParent(window))
+                    SendMessageW(parent,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),reinterpret_cast<LPARAM>(window));
             }
             return result;
         } catch (...) {
@@ -945,6 +955,15 @@ bool CodeEditor::handle_key_message(const MSG& message) {
     DWORD_PTR data=0;
     if(!GetWindowSubclass(message.hwnd,Impl::subclass,1,&data)||!data)return false;
     auto& editor=*reinterpret_cast<Impl*>(data);
+    if(message.wParam==VK_RETURN&&editor.multiline){
+        if(message.message==WM_KEYUP){editor.suppress_enter_char=false;return true;}
+        if(!IsWindowEnabled(message.hwnd)||(GetWindowLongPtrW(message.hwnd,GWL_STYLE)&ES_READONLY))return false;
+        // Use the existing newline transaction before dialog/default-button
+        // routing. No TranslateMessage follows a handled key, so insert once.
+        editor.capture();
+        SendMessageW(message.hwnd,WM_KEYDOWN,VK_RETURN,message.lParam);
+        return true;
+    }
     if(message.message==WM_KEYUP) {
         if(editor.literal_quote_key&&*editor.literal_quote_key==message.wParam) {
             editor.literal_quote_key.reset();return true;

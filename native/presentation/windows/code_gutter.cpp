@@ -1,4 +1,5 @@
 #include "presentation/windows/code_gutter.hpp"
+#include "presentation/windows/editor_render_transaction.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
 
@@ -32,6 +33,7 @@ struct CodeGutter::Impl {
     HWND window=nullptr,band_window=nullptr;HFONT font=nullptr;int width=0,line_height=1,original_margin=0;
     bool updating=false,publishing_scroll=false,revealing_caret=false,client_pointer=false,native_selection=false,native_theme_before=false;
     bool restore_clip_siblings=false,setting_clip_style=false;
+    bool pending_content=false,pending_metrics=false,setting_format=false;int wheel_remainder=0;
     std::optional<COLORREF> background_color,foreground_color;
     int right_padding=3,horizontal_padding=8;
     std::vector<LONG> starts{0};
@@ -63,6 +65,7 @@ struct CodeGutter::Impl {
             position.flags&=~(SWP_NOMOVE|SWP_NOSIZE);
         }
         if(message==WM_PRINTCLIENT){self->paint_fixed_surface(reinterpret_cast<HDC>(wp));return 0;}
+        if(message==WM_PAINT&&presentation::editor_render::active(self->window)){ValidateRect(band,nullptr);return 0;}
         if(message==WM_PAINT){
             PAINTSTRUCT paint{};const auto target=BeginPaint(band,&paint);RECT client{};GetClientRect(band,&client);
             const auto memory=target?CreateCompatibleDC(target):nullptr;
@@ -100,7 +103,7 @@ struct CodeGutter::Impl {
         position_band();
     }
     void publish_scroll(){
-        if(updating||publishing_scroll||!window||!IsWindowVisible(window))return;
+        if(updating||publishing_scroll||!window||!IsWindowVisible(window)||presentation::editor_render::active(window))return;
         const auto target=window;const auto context=reinterpret_cast<DWORD_PTR>(this);publishing_scroll=true;
         // ScrollWindowEx has already copied native pixels. Complete the new
         // client and fixed margin within this viewport event, rather than
@@ -134,30 +137,16 @@ struct CodeGutter::Impl {
         return result;
     }
     LONG fixed_width()const{RECT client{};GetClientRect(window,&client);return std::min<LONG>(client.right,std::max<LONG>(width,text_viewport().left));}
-    struct VisibleRows{LONG top=0,bottom=0;};
-    VisibleRows complete_rows()const{
-        const auto viewport=text_viewport(true);VisibleRows result{viewport.top,viewport.bottom};
-        const auto count=SendMessageW(window,EM_GETLINECOUNT,0,0);
-        auto line=std::max<LRESULT>(0,SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0)-1);
-        bool complete=false;
-        for(;line<count;++line){const auto character=SendMessageW(window,EM_LINEINDEX,line,0);if(character<0)break;
-            POINTL position{};SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&position),character);
-            if(position.y>=viewport.bottom)break;
-            auto height=line_height;
-            if(line+1<count){const auto next=SendMessageW(window,EM_LINEINDEX,line+1,0);POINTL below{};
-                if(next>=0){SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&below),next);
-                    if(below.y>position.y)height=below.y-position.y;}}
-            else if(line>0){const auto previous=SendMessageW(window,EM_LINEINDEX,line-1,0);POINTL above{};
-                if(previous>=0){SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&above),previous);
-                    if(position.y>above.y)height=position.y-above.y;}}
-            if(position.y+height<=viewport.top)continue;
-            if(position.y>=viewport.top&&position.y+height<=viewport.bottom)complete=true;
-            else if(position.y<viewport.top)result.top=std::max(result.top,position.y+height);
-            else result.bottom=std::min(result.bottom,position.y);
-        }
-        // A field shorter than one glyph cannot show a complete row. Keep
-        // native rendering usable in that degenerate temporary resize.
-        return complete?result:VisibleRows{viewport.top,viewport.bottom};
+    void edge_to_edge_format(){
+        if(setting_format||!IsWindow(window))return;
+        RECT client{},format{};GetClientRect(window,&client);SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        if(client.bottom<=0||(format.top==0&&format.bottom==client.bottom))return;
+        // RichEdit formatting insets are permanent clipping planes, unlike
+        // Android's scrollable content padding. Keep only horizontal margins.
+        format.top=0;format.bottom=client.bottom;
+        setting_format=true;
+        SendMessageW(window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+        setting_format=false;
     }
     void reveal_caret(){
         if(revealing_caret||GetFocus()!=window)return;
@@ -184,8 +173,11 @@ struct CodeGutter::Impl {
         revealing_caret=true;SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));revealing_caret=false;
     }
     void refresh(bool content,bool metrics){
-        if(updating||!window)return;updating=true;
+        if(updating||!window)return;
+        if(presentation::editor_render::active(window)){pending_content|=content;pending_metrics|=metrics;return;}
+        updating=true;
         try{
+            edge_to_edge_format();
             if(content){const auto text=raw_text(window);starts.assign(1,0);
                 for(std::size_t i=0;i<text.size();++i)if(text[i]==L'\r'||text[i]==L'\n'){
                     if(text[i]==L'\r'&&i+1<text.size()&&text[i+1]==L'\n')++i;
@@ -223,6 +215,7 @@ struct CodeGutter::Impl {
     }
     CodeGutterSnapshot snapshot()const{
         CodeGutterSnapshot result;if(!window||!IsWindow(window))return result;
+        if(presentation::editor_render::active(window)&&committed_geometry)return *committed_geometry;
         result.active=true;result.width=width;result.logical_lines=starts.size();
         RECT area{};GetClientRect(window,&area);
         const auto first_line=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
@@ -254,13 +247,7 @@ struct CodeGutter::Impl {
         // formatting margin. Keep the text gap fixed beside the number band.
         const auto editor_fill=CreateSolidBrush(presentation::reader_theme::background(window));
         FillRect(dc,&reserved,editor_fill);
-        const auto visible=complete_rows();
-        // Keep whole display rows at both vertical edges. Partial rows are
-        // blank until native scrolling brings the complete row into view;
-        // source positions, selection and native offsets remain unchanged.
-        const RECT top{width,0,client.right,visible.top},bottom{width,visible.bottom,client.right,client.bottom};
-        if(!IsRectEmpty(&top))FillRect(dc,&top,editor_fill);
-        if(!IsRectEmpty(&bottom))FillRect(dc,&bottom,editor_fill);
+        // Leave partially visible source glyphs to native client clipping.
         DeleteObject(editor_fill);
         if(numbers)paint_band(dc);RestoreDC(dc,saved);
     }
@@ -271,7 +258,7 @@ struct CodeGutter::Impl {
     }
     void paint_band(HDC dc)const{
         if(!dc||!window)return;const auto saved=SaveDC(dc);RECT client{};GetClientRect(window,&client);
-        const auto viewport=text_viewport();RECT area=client;area.right=std::min<LONG>(client.right,width);
+        RECT area=client;area.right=std::min<LONG>(client.right,width);
         IntersectClipRect(dc,area.left,area.top,area.right,area.bottom);
         const auto colors=presentation::reader_theme::palette();const auto background=colors.high_contrast?presentation::reader_theme::background(window):background_color.value_or(presentation::reader_theme::background(window));
         const auto fill=CreateSolidBrush(background);FillRect(dc,&area,fill);DeleteObject(fill);
@@ -281,7 +268,7 @@ struct CodeGutter::Impl {
         // Every paragraph intersecting the native viewport keeps its label,
         // even when only part of the number is visible at a vertical edge.
         // Source-row masking must not make the number column lose a label.
-        IntersectClipRect(dc,0,viewport.top,width,viewport.bottom);
+        IntersectClipRect(dc,0,client.top,width,client.bottom);
         for(const auto& line:snapshot().visible){
             const auto label=std::to_wstring(line.number);RECT bounds{0,line.text_position.y,width-px(right_padding),line.text_position.y+line_height};
             DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&bounds,DT_RIGHT|DT_TOP|DT_SINGLELINE|DT_NOPREFIX|DT_NOCLIP);}
@@ -333,6 +320,30 @@ struct CodeGutter::Impl {
                 self.restore_clip_siblings=(style.styleNew&WS_CLIPSIBLINGS)!=0;
             style.styleNew|=WS_CLIPSIBLINGS;
         }
+        if(message==presentation::editor_render::committed_message){
+            const bool metrics=self.pending_metrics;self.pending_metrics=false;self.pending_content=false;
+            self.refresh(true,metrics);self.publish_scroll();return 0;
+        }
+        if(message==WM_PAINT&&presentation::editor_render::active(window)){ValidateRect(window,nullptr);return 0;}
+        RECT formatting{};
+        if((message==EM_SETRECT||message==EM_SETRECTNP)&&lp){
+            formatting=*reinterpret_cast<const RECT*>(lp);RECT client{};GetClientRect(window,&client);
+            formatting.top=0;formatting.bottom=client.bottom;lp=reinterpret_cast<LPARAM>(&formatting);
+        }
+        if(message==WM_MOUSEWHEEL&&!(LOWORD(wp)&(MK_CONTROL|MK_SHIFT))){
+            SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE};
+            if(GetScrollInfo(window,SB_VERT,&range)&&range.nPage&&range.nMax-range.nMin+1>static_cast<int>(range.nPage)){
+                UINT lines=3;SystemParametersInfoW(SPI_GETWHEELSCROLLLINES,0,&lines,0);
+                self.wheel_remainder+=static_cast<short>(HIWORD(wp));
+                const int turns=self.wheel_remainder/WHEEL_DELTA;self.wheel_remainder%=WHEEL_DELTA;
+                if(lines==WHEEL_PAGESCROLL){for(int n=0;n<std::abs(turns);++n)SendMessageW(window,EM_SCROLL,turns>0?SB_PAGEUP:SB_PAGEDOWN,0);}
+                else if(turns&&lines)SendMessageW(window,EM_LINESCROLL,0,static_cast<LPARAM>(-turns*static_cast<int>(std::min<UINT>(lines,1000))));
+                // Native smooth-wheel animation can bypass our sibling gutter.
+                // Use its line/page scroll API, then publish the same viewport.
+                if(turns){InvalidateRect(window,nullptr,FALSE);if(self.band_window)InvalidateRect(self.band_window,nullptr,FALSE);self.publish_scroll();}
+                return 0;
+            }
+        }
         if(message==WM_ERASEBKGND)return 1; // The composed client includes its complete background.
         if(message==WM_PAINT)return paint_client(window,data);
         const bool selection_message=message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK||message==WM_LBUTTONUP||
@@ -346,7 +357,7 @@ struct CodeGutter::Impl {
                 presentation::rich_text_hit_test(window,{static_cast<short>(LOWORD(lp)),static_cast<short>(HIWORD(lp))}));
         }
         const bool client_was_pressed=self.client_pointer,was_selection=self.native_selection;
-        const bool may_scroll=message==WM_SIZE||message==WM_VSCROLL||message==WM_HSCROLL||message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL||message==WM_IME_REQUEST||
+        const bool may_scroll=message==WM_TIMER||message==EM_SCROLL||message==WM_SIZE||message==WM_VSCROLL||message==WM_HSCROLL||message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL||message==WM_IME_REQUEST||
             message==EM_SETSCROLLPOS||message==EM_LINESCROLL||message==EM_SCROLLCARET||message==WM_KEYDOWN||message==WM_CHAR||
             message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK||message==WM_LBUTTONUP||(message==WM_MOUSEMOVE&&(wp&MK_LBUTTON))||message==EM_EXSETSEL||message==EM_SETSEL;
         POINT before{};if(may_scroll)SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
@@ -380,7 +391,8 @@ struct CodeGutter::Impl {
                 if(before.x!=after.x||before.y!=after.y){
                     InvalidateRect(window,nullptr,FALSE);
                     if(self.band_window)InvalidateRect(self.band_window,nullptr,FALSE);
-                    const bool native_scroll=message==WM_HSCROLL||message==WM_VSCROLL||message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL;
+                    const bool native_scroll=message==WM_HSCROLL||message==WM_VSCROLL||message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL||
+                        message==EM_SETSCROLLPOS||message==EM_LINESCROLL||message==EM_SCROLL||message==WM_TIMER||message==WM_MOUSEMOVE;
                     if(native_scroll)self.publish_scroll();
                 }
             }
@@ -388,6 +400,7 @@ struct CodeGutter::Impl {
                 SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOREDRAW|(wp?SWP_SHOWWINDOW:SWP_HIDEWINDOW));
             if(message==WM_WINDOWPOSCHANGED)self.position_band();
             if(message==WM_SIZE||message==EM_SETRECT||message==EM_SETRECTNP||message==EM_SETTARGETDEVICE){
+                self.edge_to_edge_format();
                 self.position_band();if(self.band_window)InvalidateRect(self.band_window,nullptr,FALSE);
                 InvalidateRect(window,nullptr,FALSE);
                 // The owner can be committing many rows with SWP_NOREDRAW.

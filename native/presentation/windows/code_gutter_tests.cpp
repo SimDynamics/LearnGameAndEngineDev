@@ -81,7 +81,7 @@ void source_origin_is_not_masked(bool readonly){
         SendMessageW(field.edit,EM_SETZOOM,zoom,100);
         RECT format{},client{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));GetClientRect(field.edit,&client);
         format.top=MulDiv(16,100,zoom);format.right=client.right-MulDiv(16,100,zoom);format.bottom=client.bottom-MulDiv(16,100,zoom);
-        SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+        SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
         for(const bool bottom:{false,true})for(const LONG horizontal:{0,40,105,0}){
             SendMessageW(field.edit,WM_VSCROLL,bottom?SB_BOTTOM:SB_TOP,0);
             POINT requested{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&requested));requested.x=horizontal;
@@ -158,7 +158,7 @@ void code_scroll_repaint(bool readonly){
     RECT native_format{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&native_format));
     RECT content{};GetClientRect(field.edit,&content);content.left=native_format.left;
     content.top=MulDiv(16,100,zoom);content.right-=MulDiv(16,100,zoom);content.bottom-=MulDiv(16,100,zoom);
-    SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+    SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&content));
     RedrawWindow(field.host,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW|RDW_ALLCHILDREN);pump();
     for(const LONG x:{180,25,120,0}){
         POINT desired{x,37};SendMessageW(field.edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&desired));pump();UpdateWindow(field.edit);
@@ -204,7 +204,7 @@ void code_vertical_edges(bool readonly){
         RECT native_format{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&native_format));
         RECT area{};GetClientRect(field.edit,&area);RECT format=area;format.left=native_format.left;
         format.top=MulDiv(16,100,zoom);format.right-=MulDiv(16,100,zoom);format.bottom-=MulDiv(16,100,zoom);
-        SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+        SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
         CHARFORMAT2W style{};style.cbSize=sizeof(style);SendMessageW(field.edit,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&style));
         const auto dc=GetDC(field.edit);const auto font=CreateFontW(-MulDiv(MulDiv(style.yHeight,GetDeviceCaps(dc,LOGPIXELSY),1440),zoom,100),
             0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,style.bCharSet,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,style.bPitchAndFamily,style.szFaceName);
@@ -237,10 +237,10 @@ void partial_number_edges(bool readonly){
     for(const int zoom:{75,100,150,200}){
         SendMessageW(field.edit,EM_SETZOOM,zoom,100);
         const auto native_inset=MulDiv(16,100,zoom);
-        const auto display_inset=static_cast<LONG>(static_cast<long long>(native_inset)*zoom/100);
+        const LONG display_inset=0;
         const auto configure=[&]{RECT area{},format{};GetClientRect(field.edit,&area);SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
             format.top=native_inset;format.right=area.right-native_inset;format.bottom=area.bottom-native_inset;
-            SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,WM_VSCROLL,SB_TOP,0);};
+            SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,WM_VSCROLL,SB_TOP,0);};
         const auto position=[&](LONG line){const auto character=SendMessageW(field.edit,EM_LINEINDEX,line,0);check(character>=0,"Missing native paragraph for a partial-number edge");
             POINTL point{};SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),character);return point;};
         MoveWindow(field.edit,0,0,500,420,TRUE);configure();RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();
@@ -274,77 +274,34 @@ void partial_number_edges(bool readonly){
     }
 }
 void code_whole_rows(bool readonly,bool wrap=false){
-    const auto text=source(24);Fixture field(text,true,true,wrap?180:500,wrap);presentation::set_rich_text(field.edit,text,{},true);
+    // Regression now follows Android: clipped source rows remain visible,
+    // rather than erasing them to enforce whole-line-only presentation.
+    const auto text=source(24);Fixture field(text,true,true,wrap?180:500,wrap);
+    presentation::set_rich_text(field.edit,text,{},true);
     if(readonly)SendMessageW(field.edit,EM_SETREADONLY,TRUE,0);
-    set_code_gutter_appearance(field.edit,RGB(20,20,20),RGB(111,119,130),3,3);
     ShowWindow(field.host,SW_SHOWNOACTIVATE);SetWindowPos(field.host,HWND_TOPMOST,40,40,650,380,SWP_NOACTIVATE);
-    std::size_t partial_rows=0;
-    for(const int zoom:{75,100,150,200}){
-        SendMessageW(field.edit,EM_SETZOOM,zoom,100);RECT area{};GetClientRect(field.edit,&area);
-        RECT native_format{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&native_format));
-        RECT format=area;format.left=native_format.left;format.top=MulDiv(11,100,zoom);
-        format.right-=MulDiv(16,100,zoom);format.bottom-=MulDiv(27,100,zoom);SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+    SetFocus(field.host);
+    for(int zoom:{75,100,150,200}){
+        SendMessageW(field.edit,EM_SETZOOM,zoom,100);
+        RECT client{},format{};GetClientRect(field.edit,&client);SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        format.top=11;format.bottom=client.bottom-27;SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
         SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
-        POINT viewport_scroll{};POINTL viewport_origin{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&viewport_scroll));
-        SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&viewport_origin),0);
-        const auto viewport_top=std::clamp<LONG>(viewport_origin.y+viewport_scroll.y,0,area.bottom);
-        const auto viewport_bottom=std::clamp(area.bottom-static_cast<LONG>(static_cast<long long>(area.bottom-format.bottom)*zoom/100),viewport_top,area.bottom);
-        SCROLLINFO range{sizeof(range),SIF_ALL};GetScrollInfo(field.edit,SB_VERT,&range);
-        const auto maximum=std::max(range.nMin,range.nMax-static_cast<int>(range.nPage)+1);
-        for(const int position:{std::max(1,maximum/3),std::max(1,maximum/2),std::max(1,maximum-1)}){
-            SendMessageW(field.edit,WM_VSCROLL,MAKEWPARAM(SB_THUMBPOSITION,position),0);
+        check(format.top==0&&format.bottom==client.bottom,"Code retained an invisible vertical formatting inset");
+        for(LONG y:{7,23,57,91}){
+            POINT requested{0,y};SendMessageW(field.edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&requested));
             RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();
-            POINT before{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
-            const ClientPixels pixels(field.edit);const auto gutter=code_gutter_snapshot(field.edit);
-            const auto background=presentation::reader_theme::background(field.edit);
-            const auto band=presentation::reader_theme::palette().high_contrast?background:RGB(20,20,20);
-            const auto count=SendMessageW(field.edit,EM_GETLINECOUNT,0,0);bool full_ink=false;LONG reveal=-1;
-            for(LRESULT line=0;line<count;++line){const auto character=SendMessageW(field.edit,EM_LINEINDEX,line,0);if(character<0)break;
-                POINTL top{},next{};SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&top),character);
-                auto height=1;const auto next_character=SendMessageW(field.edit,EM_LINEINDEX,line+1,0);
-                if(next_character>=0){SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),next_character);height=std::max(1L,next.y-top.y);}
-                else if(line>0){const auto prior_character=SendMessageW(field.edit,EM_LINEINDEX,line-1,0);SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),prior_character);height=std::max(1L,top.y-next.y);}
-                if(top.y+height<=0||top.y>=pixels.height)continue;
-                const bool partial=top.y<viewport_top||top.y+height>viewport_bottom;if(partial){++partial_rows;reveal=static_cast<LONG>(character);}
-                for(int y=std::max(0L,top.y);y<std::min<LONG>(pixels.height,top.y+height);++y)for(int column=0;column<pixels.width;++column){
-                    const auto color=pixel_color(pixels.values[static_cast<std::size_t>(y)*pixels.width+column]);
-                    if(partial&&column>=gutter.width){if(color!=background){if(!readonly&&!wrap)pixels.save("gutter-partial.ppm");
-                        std::cerr<<"Partial source: readonly="<<readonly<<", wrap="<<wrap<<", zoom="<<zoom<<", line="<<line<<", row="<<top.y<<','<<top.y+height
-                            <<", viewport="<<viewport_top<<','<<viewport_bottom<<", format="<<format.top<<','<<format.bottom<<", scroll="<<before.y
-                            <<", pixel="<<column<<','<<y<<", color="<<color<<", expected="<<background<<'\n';}
-                        check(color==background,"A partial source row remained clipped at its padded formatting edge");}
-                    else if(column>=format.left&&color!=background)full_ink=true;
-                }
-                const auto numbered=std::ranges::find(gutter.visible,character,&CodeGutterLine::character);
-                if(!partial&&numbered!=gutter.visible.end()){
-                    std::size_t number_ink=0;
-                    for(int y=top.y+height/4;y<top.y+height*3/4;++y)for(int column=0;column<gutter.width;++column)
-                        if(pixel_color(pixels.values[static_cast<std::size_t>(y)*pixels.width+column])!=band)++number_ink;
-                    check(number_ink>0,"A complete native source row lost its line number near the padded edge");
-                }
+            const auto gutter=code_gutter_snapshot(field.edit);Raster composed(field.edit),native(field.edit,true);
+            const auto left=std::max<LONG>(gutter.width+10,format.left*zoom/100+1);
+            std::size_t ink=0,different=0;const auto background=presentation::reader_theme::background(field.edit);
+            for(int row=0;row<client.bottom;++row)for(int x=left;x<client.right;++x){
+                const auto original=GetPixel(native.dc,x,row);if(original!=background)++ink;
+                if(GetPixel(composed.dc,x,row)!=original)++different;
             }
-            check(full_ink,"Whole-row masking blanked the complete visible source rows");
-            POINT after{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
-            check(before.x==after.x&&before.y==after.y,"Whole-row rendering changed the native scroll offset");
-            if(reveal>=0){SetFocus(field.edit);CHARRANGE cursor{reveal,reveal};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&cursor));
-                SendMessageW(field.edit,EM_SCROLLCARET,0,0);pump();
-                const auto line=SendMessageW(field.edit,EM_LINEFROMCHAR,reveal,0),next_character=SendMessageW(field.edit,EM_LINEINDEX,line+1,0);
-                POINTL caret_row{},below{};SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&caret_row),reveal);
-                if(next_character>=0)SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&below),next_character);
-                else{const auto prior=SendMessageW(field.edit,EM_LINEINDEX,line-1,0);SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&below),prior);below.y=caret_row.y+(caret_row.y-below.y);}
-                check(caret_row.y>=viewport_top&&below.y<=viewport_bottom,"Caret navigation left its source line in a masked partial row at the padded formatting edge");
-                if(!readonly){const auto document=field.editor->document();POINT undo_scroll{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&undo_scroll));
-                    SendMessageW(field.edit,WM_CHAR,L'x',1);check(field.editor->document().text!=document.text,"Typing into the revealed code line failed");
-                    field.editor->undo();const auto restored=field.editor->document();POINT restored_scroll{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&restored_scroll));
-                    check(restored.text==document.text&&restored.selection_start==document.selection_start&&restored.selection_end==document.selection_end
-                        &&restored_scroll.x==undo_scroll.x&&restored_scroll.y==undo_scroll.y,"Whole-row viewport changed Undo text, selection or its exact scroll");}
-                SetFocus(field.host);
-            }
+            check(ink>0&&!different,"Partially visible source glyphs differ from the native renderer");
         }
     }
-    check(partial_rows>0,"The whole-row fixture did not exercise a real intermediate partially visible line");
     check(field.editor->document().text==text&&code_gutter_snapshot(field.edit).logical_lines==24,
-        "Whole visual rows changed source paragraphs, their numbering or characters");
+        "Partial-line clipping changed source characters or logical numbering");
 }
 void scrollbar_release_keeps_viewport(bool readonly){
     const auto text=source(30);Fixture field(text,true,true,500,false);presentation::set_rich_text(field.edit,text,{},true);
@@ -383,7 +340,7 @@ void scrollbar_release_keeps_viewport(bool readonly){
     SetFocus(field.host);
     MoveWindow(field.edit,0,0,500,280,TRUE);RECT format{};GetClientRect(field.edit,&format);
     format.left=code_gutter_snapshot(field.edit).width+10;format.top=16;format.bottom-=16;format.right-=16;
-    SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));pump();UpdateWindow(field.edit);
+    SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));pump();UpdateWindow(field.edit);
     const ClientPixels resized(field.edit);RedrawWindow(field.edit,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW);pump();
     const ClientPixels repainted(field.edit);check(std::equal(resized.values.begin(),resized.values.end(),repainted.values.begin(),
         [](DWORD left,DWORD right){return (left&0xffffff)==(right&0xffffff);}),
@@ -401,10 +358,10 @@ void lesson_number_at_exact_edge(bool readonly){
     ShowWindow(field.host,SW_SHOWNOACTIVATE);SetWindowPos(field.host,HWND_TOPMOST,40,40,1000,600,SWP_NOACTIVATE);
     for(const int zoom:{75,100,150,200}){
         SendMessageW(field.edit,EM_SETZOOM,zoom,100);SendMessageW(field.edit,EM_SHOWSCROLLBAR,SB_HORZ,FALSE);
-        const auto inset=MulDiv(16,100,zoom),display_inset=MulDiv(inset,zoom,100);
+        const auto inset=MulDiv(16,100,zoom);const LONG display_inset=0;
         const auto configure=[&]{RECT client{},format{};GetClientRect(field.edit,&client);SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
             format.top=inset;format.right=client.right-inset;format.bottom=client.bottom-inset;
-            SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,WM_VSCROLL,SB_TOP,0);};
+            SendMessageW(field.edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));SendMessageW(field.edit,WM_VSCROLL,SB_TOP,0);};
         configure();RedrawWindow(field.host,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW|RDW_ALLCHILDREN);pump();
         for(const int rows:{3,4,5,6,7}){
             const auto next=SendMessageW(field.edit,EM_LINEINDEX,rows,0);POINTL boundary{};SendMessageW(field.edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&boundary),next);
@@ -455,14 +412,14 @@ int main(int argc,char** argv){const bool scroll_only=argc==2&&std::string_view(
     test("Readonly code preserves complete first and final lines at 75-200 percent",[]{code_vertical_edges(true);});
     test("Editable line numbers retain their visible pixels at both partial viewport edges",[]{partial_number_edges(false);});
     test("Readonly line numbers retain their visible pixels at both partial viewport edges",[]{partial_number_edges(true);});
-    test("Editable code shows whole intermediate rows and reveals its caret without changing Undo",[]{code_whole_rows(false);});
-    test("Readonly code shows whole intermediate rows and reveals selection",[]{code_whole_rows(true);});
-    test("Wrapped editable code masks only partial visual rows and preserves complete paragraphs",[]{code_whole_rows(false,true);});
-    test("Wrapped readonly code masks only partial visual rows and preserves complete paragraphs",[]{code_whole_rows(true,true);});
+    test("Editable code preserves partially visible source rows",[]{code_whole_rows(false);});
+    test("Readonly code preserves partially visible source rows",[]{code_whole_rows(true);});
+    test("Wrapped editable code retains partial visual rows and complete paragraphs",[]{code_whole_rows(false,true);});
+    test("Wrapped readonly code retains partial visual rows and complete paragraphs",[]{code_whole_rows(true,true);});
     test("Editable code scrollbar release preserves the offscreen caret and new viewport geometry",[]{scrollbar_release_keeps_viewport(false);});
     test("Readonly code scrollbar release preserves selection and new viewport geometry",[]{scrollbar_release_keeps_viewport(true);});
-    test("Editable lesson code numbers every complete native row at its exact padded edge",[]{lesson_number_at_exact_edge(false);});
-    test("Readonly lesson code numbers every complete native row at its exact padded edge",[]{lesson_number_at_exact_edge(true);});
+    test("Editable lesson code numbers every complete native row at its exact client edge",[]{lesson_number_at_exact_edge(false);});
+    test("Readonly lesson code numbers every complete native row at its exact client edge",[]{lesson_number_at_exact_edge(true);});
     if(scroll_only){FreeLibrary(rich);std::cout<<passed<<" passed, "<<failed<<" failed\n";return failed?1:0;}
     test("Gutter applies only to assisted multiline code",[]{Fixture code("int main() {}"),single("std::cout",false),input("A\n B",true,false);
         check(code_gutter_snapshot(code.edit).active,"C++ multiline editor omitted its gutter");

@@ -13,12 +13,10 @@ struct CodeGutterSnapshot {
     std::size_t logical_lines=0;
     std::vector<CodeGutterLine> visible;
 };
-// Paints the fixed RichEdit margin and whole-row viewport edges. It owns no
-// text, selection, history or input window; existing input routing stays in place.
-// The fixed band/gap never scroll with source pixels. A viewport shows whole
-// display rows inside its zoomed formatting insets without changing scroll offsets;
-// caret navigation/input reveals its complete row when necessary. Paragraph
-// numbers retain their visible portion at either native viewport edge.
+// Fixed logical-line numbers share the native code viewport. Partial
+// glyphs and numbers are naturally clipped at its actual client edges.
+// Owns no text, selection, history or input window. Caret navigation still
+// reveals its complete row, without permanently masking partial source rows.
 class CodeGutter {
 public:
     explicit CodeGutter(HWND rich_edit);

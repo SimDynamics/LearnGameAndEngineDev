@@ -1,4 +1,5 @@
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/editor_render_transaction.hpp"
 #include "presentation/windows/programming_technical_ranges.hpp"
 #include "presentation/windows/reader_theme.hpp"
 
@@ -339,13 +340,14 @@ public:
     }
 };
 struct FormatTransaction {
+    editor_render::Scope rendering;
     HWND edit;
     CHARRANGE selection{};
     POINT scroll{};
     LRESULT events = 0, modified = 0;
     ITextDocument* document = nullptr;
     bool suspended = false, frozen = false, redraw = false;
-    explicit FormatTransaction(HWND target) : edit(target) {
+    explicit FormatTransaction(HWND target) : rendering(target), edit(target) {
         SendMessageW(edit, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&selection));
         SendMessageW(edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&scroll));
         events = SendMessageW(edit, EM_GETEVENTMASK, 0, 0);
