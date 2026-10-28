@@ -1,0 +1,66 @@
+name: One-time native editor viewport verification
+on:
+  push:
+    branches: [Codex]
+    paths: [scripts/maintenance/repair_editor_viewport.py, .github/workflows/one-time-editor-viewport.yml]
+permissions:
+  contents: write
+jobs:
+  verify-and-publish:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Prepare real editor controls without models or learner state
+        run: |
+          python scripts/maintenance/repair_editor_viewport.py prepare
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare native regression.' }
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'MSVC unavailable.' }
+          "VCVARS=$vs\VC\Auxiliary\Build\vcvars64.bat" >> $env:GITHUB_ENV
+      - name: Reproduce native clipping and paint failures
+        run: |
+          $qa = Join-Path $env:RUNNER_TEMP 'editor-viewport-qa'
+          $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $qa + '\Debug" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build "' + $qa + '\Debug" --target code_editor_viewport --parallel 2'
+          cmd /d /s /c $cmd
+          if ($LASTEXITCODE -ne 0) { throw 'Original controls failed to compile.' }
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & "$qa\Debug\code_editor_viewport.exe" 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -ne 1 -or ($output -join "`n") -notmatch 'Partial source rows were erased') { throw 'The reported partial-line defect was not reproduced.' }
+          exit 0
+      - name: Apply guarded fixes and verify actual controls in Debug and Release
+        run: |
+          python scripts/maintenance/repair_editor_viewport.py fix
+          if ($LASTEXITCODE -ne 0) { throw 'A production anchor changed.' }
+          $qa = Join-Path $env:RUNNER_TEMP 'editor-viewport-qa'
+          foreach ($mode in @('Debug','Release')) {
+            $build = Join-Path $qa $mode
+            $cmd = 'call "' + $env:VCVARS + '" && cmake -S "' + $qa + '" -B "' + $build + '" -G Ninja -DCMAKE_BUILD_TYPE=' + $mode + ' && cmake --build "' + $build + '" --parallel 2 && ctest --test-dir "' + $build + '" --output-on-failure'
+            cmd /d /s /c $cmd
+            if ($LASTEXITCODE -ne 0) { throw "Native editor verification failed: $mode" }
+          }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid diff.' }
+      - name: Save verified editor batch and remove one-time tooling
+        run: |
+          $remote = git ls-remote origin refs/heads/Codex
+          if ($LASTEXITCODE -ne 0 -or ($remote -split '\s+')[0] -ne $env:GITHUB_SHA) { throw 'Codex advanced; no overwrite.' }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CMakeLists.txt native/presentation/windows/code_editor.cpp native/presentation/windows/code_gutter.cpp native/presentation/windows/code_gutter.hpp native/presentation/windows/rich_text.cpp native/presentation/windows/code_gutter_tests.cpp native/presentation/windows/editor_render_transaction.hpp native/presentation/windows/code_editor_viewport_tests.cpp
+          git rm scripts/maintenance/repair_editor_viewport.py .github/workflows/one-time-editor-viewport.yml
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot remove one-time tooling.' }
+          git diff --cached --check
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid staged diff.' }
+          git commit -m 'fix(windows): synchronize editor frames and gutter scrolling, retain partial lines and route smart Enter'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot save verified editor changes.' }
+          git push origin HEAD:refs/heads/Codex
+          if ($LASTEXITCODE -ne 0) { throw 'Push rejected; no force attempted.' }
+          git rev-parse HEAD
