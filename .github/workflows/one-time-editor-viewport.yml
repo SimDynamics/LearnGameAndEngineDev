@@ -20,6 +20,23 @@ jobs:
         run: |
           python scripts/maintenance/repair_editor_viewport.py prepare
           if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare native regression.' }
+          @'
+          from pathlib import Path
+          import os
+          root=Path.cwd()
+          qa=Path(os.environ['RUNNER_TEMP'])/'editor-viewport-qa'
+          path=qa/'CMakeLists.txt'
+          text=path.read_text(encoding='utf-8')
+          anchor=' "'+root.as_posix()+'/native/core/lesson.cpp"'
+          assert text.count(anchor)==1
+          text=text.replace(anchor,anchor+'\n "'+root.as_posix()+'/native/core/cpp_project.cpp"')
+          path.write_text(text,encoding='utf-8',newline='\n')
+          path=root/'native/presentation/windows/code_editor_viewport_tests.cpp'
+          text=path.read_text(encoding='utf-8')
+          text=text.replace('key.message=WM_KEYUP;windows::CodeEditor::handle_key_message(key);','key.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(key);')
+          path.write_text(text,encoding='utf-8',newline='\n')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot complete native dependencies.' }
           $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           if (-not $vs) { throw 'MSVC unavailable.' }
           "VCVARS=$vs\VC\Auxiliary\Build\vcvars64.bat" >> $env:GITHUB_ENV
@@ -39,6 +56,27 @@ jobs:
         run: |
           python scripts/maintenance/repair_editor_viewport.py fix
           if ($LASTEXITCODE -ne 0) { throw 'A production anchor changed.' }
+          @'
+          from pathlib import Path
+          path=Path('native/presentation/windows/code_gutter.cpp')
+          text=path.read_text(encoding='utf-8')
+          def once(old,new):
+              global text
+              assert text.count(old)==1,old
+              text=text.replace(old,new)
+          once('bool pending_content=false,pending_metrics=false;int wheel_remainder=0;',
+               'bool pending_content=false,pending_metrics=false,setting_format=false;int wheel_remainder=0;')
+          once('    void edge_to_edge_format(){\n        RECT client{},format{};',
+               '    void edge_to_edge_format(){\n        if(setting_format||!IsWindow(window))return;\n        RECT client{},format{};')
+          once('        if(format.top==0&&format.bottom==client.bottom)return;',
+               '        if(client.bottom<=0||(format.top==0&&format.bottom==client.bottom))return;')
+          once('        format.top=0;format.bottom=client.bottom;\n        SendMessageW(window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));',
+               '        format.top=0;format.bottom=client.bottom;\n        setting_format=true;\n        SendMessageW(window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));\n        setting_format=false;')
+          once('        const auto viewport=text_viewport();RECT area=client;area.right=std::min<LONG>(client.right,width);',
+               '        RECT area=client;area.right=std::min<LONG>(client.right,width);')
+          path.write_text(text,encoding='utf-8',newline='\n')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Native formatting guard anchor changed.' }
           $qa = Join-Path $env:RUNNER_TEMP 'editor-viewport-qa'
           foreach ($mode in @('Debug','Release')) {
             $build = Join-Path $qa $mode
