@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/profile.hpp"
 #include "core/narration_state.hpp"
 #include "core/attempts.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -20,6 +21,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <map>
 #include <set>
 #include <stdexcept>
 
@@ -126,6 +128,164 @@ void qa_compiler_prerequisite(state::StateData& data, const curriculum::Lesson& 
     }
     require(windows::compiler_puzzle_completed(data, lesson, block),
         "The explicit QA prerequisite receipt did not satisfy its original objective");
+}
+
+void prepare_visual_profile(std::wstring_view token) {
+    require(is_valid_qa_instance(token), "Unsafe matching visual QA instance token");
+    const auto source = std::filesystem::path(build::source_root)
+        / "app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido" / filename;
+    const auto asset_hash = state::sha256(state::read_bytes(source));
+    const auto lesson = windows::load_lesson(source);
+    const auto& target = matching_block(lesson);
+    require(target.type == curriculum::BlockType::math_puzzle && lesson.compiler_puzzles_required,
+        "The matching visual target lost its current type or published global compiler policy");
+    const std::set<std::string> global_required{
+        "block_0001_0002", "block_0001_0007", "block_0004_0002", "block_0006_0006", "block_0006_0009"};
+    const std::set<std::string> direct_required{"block_0006_0006", "block_0006_0009"};
+    std::set<std::string> actual_global, actual_direct;
+    for (std::size_t page = 0; page < 7; ++page) for (const auto& block : lesson.pages[page].blocks)
+        if (curriculum::has_compiler_objective(block)) actual_global.insert(block.stable_id);
+    for (const auto at : curriculum::activity_prerequisites(lesson, target))
+        actual_direct.insert(lesson.pages[at.page].blocks[at.block].stable_id);
+    require(actual_global == global_required && actual_direct == direct_required,
+        "The matching visual QA requires exactly five prior global gates and its two original direct owners");
+    const auto environment = resolve_windows_environment({ProfileId::Codex, std::wstring(token), false});
+    require(environment.paths.root.parent_path().filename() == L"qa"
+        && environment.paths.root.parent_path().parent_path().filename() == L"Codex"
+        && environment.paths.root.filename() == token,
+        "Matching visual QA resolved outside the selected isolated Codex QA directory");
+    state::require_safe_path(environment.paths.root);
+    require(!std::filesystem::exists(environment.paths.root), "Matching visual QA refuses to reuse or overwrite an existing profile");
+    std::filesystem::create_directories(environment.paths.root.parent_path());
+    require(std::filesystem::create_directory(environment.paths.root), "Another process already created this matching QA profile");
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    const auto empty = store.load();
+    require(empty.preferences.empty(), "The newly reserved matching QA profile unexpectedly contains prior data");
+    state::StateData data;
+    state::prepare_lesson_state(data, lesson);
+    // The five prior global compiler gates are explicit synthetic QA receipts,
+    // including the matching activity's two direct owners. No run or answer is
+    // claimed; only this later page's presentation is being isolated.
+    for (const auto& page : lesson.pages) for (const auto& block : page.blocks)
+        if (global_required.contains(block.stable_id)) qa_compiler_prerequisite(data, lesson, block);
+    state::save_current_page(data, lesson, 7);
+    auto& preferences = data.preferences["native_windows"];
+    preferences["ui_language"] = std::string("es");
+    preferences["content_language"] = std::string("es");
+    preferences["catalog/locale"] = std::string("es");
+    preferences["catalog/route"] = std::string("programming");
+    preferences["catalog/course"] = std::string("cpp_fundamentals");
+    const auto unit_end = lesson.id.rfind("__");
+    require(unit_end != std::string::npos, "The matching lesson has no catalog unit identity");
+    preferences["catalog/unit"] = lesson.id.substr(0, unit_end);
+    preferences["navigation/lesson"] = lesson.id;
+    // Prepare only the current sentence, avoiding unrelated long reference-code
+    // recordings during this visual-only QA. This is an isolated preference.
+    data.preferences["lesson_narration_settings"]["kokoro_advance_generation"] = false;
+    for (const auto& page : lesson.pages) for (const auto& block : page.blocks) {
+        require(!state::get_response(data, lesson, block), "Matching visual preparation invented a quiz response or achievement");
+        if (block.type == curriculum::BlockType::cpp_compiler) {
+            const bool seeded = global_required.contains(block.stable_id);
+            require(windows::compiler_puzzle_completed(data, lesson, block) == seeded,
+                "Matching visual preparation credited an unrelated compiler objective");
+            if (!seeded) require(windows::compiler_puzzle_case_count(data, lesson, block) == 0,
+                "An unrelated compiler acquired a partial QA receipt");
+        }
+    }
+    require(narration::read_history(data).entries.empty(), "Matching visual preparation fabricated reading history");
+    state::validate_lesson_state(data, lesson);
+    store.save(data);
+    const auto saved = store.load();
+    require(saved == data && state::current_page(saved, lesson) == 7 && !state::get_response(saved, lesson, target),
+        "Matching visual QA did not preserve its unanswered page exactly");
+    require(state::sha256(state::read_bytes(source)) == asset_hash, "Matching visual preparation changed the authored asset");
+    std::cout << "profile=Codex\nqa_instance=" << utf8(token)
+        << "\ndata_root=" << utf8(environment.paths.root.native()) << "\nlesson=" << lesson.id
+        << "\ntarget=" << target.stable_id << "\npage=8\npage_index=7\nblock=2"
+        << "\nsynthetic_prerequisites=block_0001_0002,block_0001_0007,block_0004_0002,block_0006_0006,block_0006_0009"
+        << "\ndirect_owners=block_0006_0006,block_0006_0009\ncompiler_executions=none"
+        << "\nquiz_responses=none\ntarget_completed=0\nreading_history=none\nadvance_generation=0\nwindows_created=0\n";
+}
+
+void inspect_visual_profile(std::wstring_view token) {
+    require(is_valid_qa_instance(token), "Unsafe matching inspection QA token");
+    const auto environment = resolve_windows_environment({ProfileId::Codex, std::wstring(token), false});
+    const auto& root = environment.paths.root;
+    require(root.parent_path().filename() == L"qa" && root.parent_path().parent_path().filename() == L"Codex"
+        && root.filename() == token, "Matching inspection resolved outside the selected Codex QA profile");
+    const auto state_root = root / L"state", active = state_root / L"active/state.bin";
+    state::require_safe_path(state_root);
+    require(std::filesystem::is_directory(state_root) && std::filesystem::is_regular_file(active),
+        "Matching inspection requires an existing QA profile and complete active state");
+    const auto tree = [&] {
+        std::map<std::string, std::string> entries;
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(state_root)) {
+            state::require_safe_path(entry.path());
+            const auto name = utf8(entry.path().lexically_relative(state_root).generic_wstring());
+            if (entry.is_directory()) entries.emplace(name, "directory");
+            else {
+                require(entry.is_regular_file(), "Matching inspection refuses a special state-tree entry");
+                entries.emplace(name, "file:" + state::sha256(state::read_bytes(entry.path())));
+            }
+        }
+        return entries;
+    };
+    const auto tree_hash = [](const auto& entries) {
+        std::string framed;
+        for (const auto& [name, value] : entries)
+            framed += std::to_string(name.size()) + ":" + name + std::to_string(value.size()) + ":" + value;
+        return state::sha256(framed);
+    };
+    const auto before = tree();
+    const auto source = std::filesystem::path(build::source_root)
+        / "app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido" / filename;
+    const auto asset_hash = state::sha256(state::read_bytes(source));
+    const auto lesson = windows::load_lesson(source);
+    const auto& target = matching_block(lesson);
+    // Constructor/load are read-only. Never initialize directories, prepare
+    // compatibility metadata, save, validate through a worker, or create HWNDs.
+    state::StateStore store(root);
+    const auto data = store.load();
+    state::validate_lesson_state(data, lesson);
+    const auto response = state::get_response(data, lesson, target);
+    const auto history = narration::read_history(data);
+    require(history.entries.size() <= 3, "Matching inspection found an unbounded reading history");
+    JsonObject result;
+    const auto string_field = [&](const wchar_t* name, const std::string& value) {
+        result.Insert(name, JsonValue::CreateStringValue(wide(value)));
+    };
+    string_field(L"qa_instance", utf8(token));
+    string_field(L"asset_sha256", asset_hash);
+    string_field(L"state_sha256", before.at("active/state.bin").substr(5));
+    result.Insert(L"current_page", JsonValue::CreateNumberValue(static_cast<double>(state::current_page(data, lesson) + 1)));
+    result.Insert(L"response_present", JsonValue::CreateBooleanValue(response.has_value()));
+    string_field(L"response_payload_sha256", response ? state::sha256(response->raw_json) : "");
+    string_field(L"answer", response ? response->answer : "");
+    result.Insert(L"correct", JsonValue::CreateBooleanValue(response && response->correct));
+    string_field(L"active_key", history.active_key);
+    string_field(L"active_owner", history.active_owner);
+    JsonArray entries;
+    for (const auto& bookmark : history.entries) {
+        JsonObject entry;
+        entry.Insert(L"key", JsonValue::CreateStringValue(wide(bookmark.key)));
+        entry.Insert(L"page", JsonValue::CreateStringValue(wide(bookmark.page)));
+        entry.Insert(L"segment", JsonValue::CreateNumberValue(static_cast<double>(bookmark.position.segment)));
+        entry.Insert(L"offset_ms", JsonValue::CreateNumberValue(static_cast<double>(bookmark.position.milliseconds)));
+        entry.Insert(L"heard_through", JsonValue::CreateNumberValue(static_cast<double>(bookmark.position.heard_through)));
+        entry.Insert(L"finished", JsonValue::CreateBooleanValue(bookmark.position.finished));
+        // Ownership belongs to the active key, not independently to every slot.
+        entry.Insert(L"owner", JsonValue::CreateStringValue(wide(bookmark.key == history.active_key ? history.active_owner : "")));
+        entries.Append(entry);
+    }
+    result.Insert(L"history", entries);
+    const auto after = tree();
+    require(before == after && state::sha256(state::read_bytes(source)) == asset_hash,
+        "QA state tree or asset changed during inspection; no stable snapshot is claimed");
+    string_field(L"state_tree_sha256_before", tree_hash(before));
+    string_field(L"state_tree_sha256_after", tree_hash(after));
+    result.Insert(L"read_only", JsonValue::CreateBooleanValue(true));
+    std::cout << utf8(result.Stringify()) << '\n';
 }
 
 class MountedLesson {
@@ -324,7 +484,22 @@ void run_case(const curriculum::Lesson& legacy, const curriculum::Lesson& curren
 }
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc != 1) {
+        const bool prepare = argc == 3 && std::string_view(argv[1]) == "--prepare-visual";
+        const bool inspect = argc == 3 && std::string_view(argv[1]) == "--inspect-visual";
+        const bool shape = prepare || inspect;
+        const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
+        const std::wstring token(raw.begin(), raw.end());
+        if (!shape || !is_valid_qa_instance(token)) {
+            std::cerr << "Usage: editorial_matching_view_tests [--prepare-visual <safe-new-QA-token> | --inspect-visual <safe-existing-QA-token>]\n";
+            return 2;
+        }
+        // This branch only performs JSON/state/file operations. Native windows
+        // and worker validation remain owned by the unchanged normal regression.
+        try { if (inspect) inspect_visual_profile(token); else prepare_visual_profile(token); return 0; }
+        catch (const std::exception& error) { std::cerr << "Visual QA operation failed: " << error.what() << '\n'; return 1; }
+    }
     const auto ole = OleInitialize(nullptr);
     if (FAILED(ole)) return 2;
     INITCOMMONCONTROLSEX common{sizeof(common), ICC_STANDARD_CLASSES};

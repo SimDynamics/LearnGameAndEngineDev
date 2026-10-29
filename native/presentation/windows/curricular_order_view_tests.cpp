@@ -1,4 +1,6 @@
 #include "core/attempts.hpp"
+#include "core/narration_state.hpp"
+#include "core/view_preferences.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
@@ -14,9 +16,12 @@
 #include <array>
 #include <charconv>
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <numeric>
 #include <optional>
+#include <map>
+#include <set>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -68,12 +73,14 @@ const std::array plans{
     Plan{"texto_interpretacion_y_flujos/lesson_una_tabla_persistente_de_nombres.json","block_0004_0002",3,5,{},{}},
 };
 
-void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson){
+void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson& lesson,
+    const std::set<std::string>* selected=nullptr){
     // These synthetic receipts ONLY isolate the ordering controls and preserve
     // the real activityAfter/compiler gates. They do not claim a compilation.
     // No ordering response, arrangement or achievement is seeded.
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
-        if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)continue;
+        if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check
+            ||(selected&&!selected->contains(block.stable_id)))continue;
         windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
         for(const auto& item:block.output_check->cases){
@@ -85,6 +92,145 @@ void seed_compiler_prerequisites(state::StateData& data,const curriculum::Lesson
         }
         check(windows::compiler_puzzle_completed(data,lesson,block),"Cannot isolate ordering from its compiler prerequisites");
     }
+}
+
+
+// Preparation and inspection never create a native window or dispatch a test
+// action. Real ordering input is owned by the separately launched QA app.
+std::size_t visual_case_index(std::string_view input){
+    std::size_t index=0;const auto parsed=std::from_chars(input.data(),input.data()+input.size(),index);
+    check(parsed.ec==std::errc{}&&parsed.ptr==input.data()+input.size()&&index<plans.size(),
+        "The visual case index must be an integer from 0 through 13");return index;
+}
+std::filesystem::path visual_asset(const Plan& plan){
+    return std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/plan.filename;
+}
+std::set<std::string> visual_prerequisites(const curriculum::Lesson& lesson,curriculum::StatePosition target){
+    std::set<std::string> result;
+    for(std::size_t page=0;page<=target.page;++page)for(const auto& block:lesson.pages.at(page).blocks){
+        if(page<target.page&&curriculum::has_compiler_objective(block)
+            &&(lesson.compiler_puzzles_required||curriculum::compiler_is_puzzle_prerequisite(lesson,block)))result.insert(block.stable_id);
+        // Restoring a later page checks all of its declared activity owners,
+        // including the ones used by neighboring puzzles on that same page.
+        for(const auto at:curriculum::activity_prerequisites(lesson,block))
+            result.insert(lesson.pages.at(at.page).blocks.at(at.block).stable_id);
+    }
+    for(bool changed=true;changed;){changed=false;const auto prior=result;
+        for(const auto& identity:prior){const auto at=curriculum::stable_block_position(lesson,identity);
+            check(at.has_value(),"A visual prerequisite lost its authored identity");
+            const auto& block=lesson.pages.at(at->page).blocks.at(at->block);
+            check(block.type==curriculum::BlockType::cpp_compiler&&block.output_check,
+                "Visual preparation cannot invent an unimplemented compiler prerequisite");
+            for(const auto dependency:curriculum::activity_prerequisites(lesson,block))
+                changed=result.insert(lesson.pages.at(dependency.page).blocks.at(dependency.block).stable_id).second||changed;
+        }
+    }
+    return result;
+}
+WindowsEnvironment visual_environment(std::wstring_view token){
+    check(is_valid_qa_instance(token),"Unsafe visual ordering QA token");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,std::wstring(token),false});
+    check(environment.paths.root.parent_path().filename()==L"qa"
+        &&environment.paths.root.parent_path().parent_path().filename()==L"Codex"
+        &&environment.paths.root.filename()==token,"Visual ordering must stay in its exact isolated Codex QA directory");
+    state::require_safe_path(environment.paths.root);return environment;
+}
+void check_visual_contract(const curriculum::Lesson& lesson,const Plan& plan,curriculum::StatePosition at){
+    const auto& target=lesson.pages.at(at.page).blocks.at(at.block);
+    check(target.type==curriculum::BlockType::order_code&&target.order_refinement
+        &&target.fragments.size()==plan.pieces&&target.order_refinement->original_fragments.size()==plan.old_pieces
+        &&target.order_equivalence_groups==plan.equivalent_groups,"The visual ordering no longer matches its audited refinement");
+    for(const auto& fragment:target.fragments)check(fragment.find_first_of("\r\n")==std::string::npos,
+        "The visual ordering still contains a physical piece with multiple source lines");
+}
+void prepare_visual_profile(std::size_t index,std::wstring_view token){
+    const auto& plan=plans.at(index);const auto asset=visual_asset(plan);const auto asset_hash=state::sha256(state::read_bytes(asset));
+    const auto lesson=windows::load_lesson(asset);const auto at=curriculum::stable_block_position(lesson,plan.identity);
+    check(at.has_value(),"The visual ordering target lost its stable identity");check_visual_contract(lesson,plan,*at);
+    const auto prerequisites=visual_prerequisites(lesson,*at);const auto environment=visual_environment(token);
+    check(!std::filesystem::exists(environment.paths.root),"Visual ordering refuses to reuse or overwrite an existing profile");
+    std::filesystem::create_directories(environment.paths.root.parent_path());
+    check(std::filesystem::create_directory(environment.paths.root),"Another process reserved the visual QA profile");
+    initialize_profile_directories(environment.paths);state::StateStore store(environment.paths.root);
+    check(store.load().preferences.empty(),"The newly reserved visual ordering QA already contains state");
+    state::StateData data;state::prepare_lesson_state(data,lesson);seed_compiler_prerequisites(data,lesson,&prerequisites);
+    state::save_current_page(data,lesson,at->page);auto& preferences=data.preferences["native_windows"];
+    preferences["ui_language"]=std::string("es");preferences["content_language"]=std::string("es");
+    preferences["catalog/locale"]=std::string("es");preferences["catalog/route"]=std::string("programming");
+    preferences["catalog/course"]=std::string("cpp_fundamentals");
+    const auto separator=lesson.id.rfind("__");check(separator!=lesson.id.npos,"The visual ordering has no catalog unit identity");
+    preferences["catalog/unit"]=lesson.id.substr(0,separator);preferences["navigation/lesson"]=lesson.id;
+    data.preferences["lesson_narration_settings"]["kokoro_advance_generation"]=false;
+    auto& provenance=data.preferences["curricular_order_visual_qa"];
+    provenance["version"]=std::int64_t{1};provenance["case_index"]=static_cast<std::int64_t>(index);provenance["asset_sha256"]=asset_hash;
+    provenance["target"]=std::string(plan.identity);provenance["synthetic_prerequisites"]=std::vector<std::string>(prerequisites.begin(),prerequisites.end());
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+        check(!state::get_response(data,lesson,block),"Visual preparation invented a quiz response");
+        if(block.type==curriculum::BlockType::cpp_compiler){
+            check(!state::get_draft(data,curriculum::draft_key("programming",lesson,block),"").has_saved,
+                "Visual preparation invented a compiler draft");
+            check(windows::compiler_puzzle_completed(data,lesson,block)==prerequisites.contains(block.stable_id),
+                "Visual preparation credited an unrelated compiler objective");
+        }
+    }
+    check(narration::read_history(data).entries.empty(),"Visual preparation invented a reading bookmark");
+    state::validate_lesson_state(data,lesson);store.save(data);check(store.load()==data,"Saving visual ordering changed its prepared state");
+    check(state::sha256(state::read_bytes(asset))==asset_hash,"Visual preparation modified the curricular asset");
+    std::cout<<"profile=Codex\nqa_instance="<<utf8(token)<<"\ndata_root="<<utf8(environment.paths.root.native())
+        <<"\ncase_index="<<index<<"\nlesson="<<lesson.id<<"\nasset_sha256="<<asset_hash<<"\ntarget="<<plan.identity
+        <<"\npage="<<at->page+1<<"\npage_index="<<at->page<<"\nblock="<<at->block+1<<"\npieces="<<plan.pieces
+        <<"\nsynthetic_prerequisites=";for(const auto& identity:prerequisites)std::cout<<identity<<',';
+    std::cout<<"\ncompiler_executions=none\nquiz_responses=none\ndrafts=none\nreading_history=none\nwindows_created=0\n";
+}
+std::map<std::filesystem::path,std::string> visual_hashes(const std::filesystem::path& folder){
+    state::require_safe_path(folder);check(std::filesystem::is_directory(folder),"The visual QA active state directory is absent");
+    std::map<std::filesystem::path,std::string> result;
+    for(const auto& entry:std::filesystem::recursive_directory_iterator(state::native_io_path(folder))){
+        state::require_safe_path(entry.path());if(entry.is_regular_file())
+            result.emplace(std::filesystem::relative(entry.path(),state::native_io_path(folder)),state::sha256(state::read_bytes(entry.path())));
+    }return result;
+}
+void verify_visual_profile(std::size_t index,std::wstring_view token){
+    const auto environment=visual_environment(token);const auto& plan=plans.at(index);const auto asset=visual_asset(plan);
+    const auto asset_hash=state::sha256(state::read_bytes(asset));const auto lesson=windows::load_lesson(asset);
+    const auto at=curriculum::stable_block_position(lesson,plan.identity);check(at.has_value(),"The visual verifier lost its authored target");
+    check_visual_contract(lesson,plan,*at);const auto active=environment.paths.root/L"state/active";
+    const auto hashes_before=visual_hashes(active);check(hashes_before.contains("state.bin"),"The verifier requires an existing exact QA state");
+    state::StateStore store(environment.paths.root);const auto data=store.load();
+    check(state::integer_value(data,"curricular_order_visual_qa","version")==1
+        &&state::integer_value(data,"curricular_order_visual_qa","case_index",-1)==static_cast<std::int64_t>(index)
+        &&state::string_value(data,"curricular_order_visual_qa","asset_sha256")==asset_hash
+        &&state::string_value(data,"curricular_order_visual_qa","target")==plan.identity,
+        "The verifier refuses an unrelated QA profile or a changed authored asset");
+    state::validate_lesson_state(data,lesson);const auto prerequisites=visual_prerequisites(lesson,*at);
+    const auto stored=state::find(data,"curricular_order_visual_qa","synthetic_prerequisites");
+    check(stored&&std::holds_alternative<std::vector<std::string>>(*stored)
+        &&std::get<std::vector<std::string>>(*stored)==std::vector<std::string>(prerequisites.begin(),prerequisites.end()),
+        "The verifier found different synthetic prerequisite provenance");
+    const auto& target=lesson.pages.at(at->page).blocks.at(at->block);const auto response=state::get_response(data,lesson,target);
+    check(state::current_page(data,lesson)==at->page,"The visual QA no longer restores the selected ordering page");
+    check(!state::find(data,"learning_progress",curriculum::exercise_key(lesson,target)),
+        "A new physical ordering overwrote its historical grouped response slot");
+    std::size_t draft_count=0;
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+        if(block.stable_id!=target.stable_id)check(!state::get_response(data,lesson,block),"The isolated visual QA contains an unrelated quiz response");
+        if(block.type!=curriculum::BlockType::cpp_compiler)continue;
+        check(windows::compiler_puzzle_completed(data,lesson,block)==prerequisites.contains(block.stable_id),
+            "The visual QA changed an independent compiler prerequisite or credited another objective");
+        const auto draft=state::get_draft(data,curriculum::draft_key("programming",lesson,block),"");
+        if(draft.has_saved){++draft_count;std::cout<<"compiler_draft="<<block.stable_id<<";source_sha256="<<state::sha256(draft.source)
+            <<";input_sha256="<<state::sha256(draft.input)<<";input_bytes="<<draft.input.size()
+            <<";selection="<<draft.selection_start<<','<<draft.selection_end<<";indentation_sha256="<<state::sha256(draft.indentation_json)<<'\n';}
+    }
+    check(store.load()==data&&visual_hashes(active)==hashes_before&&state::sha256(state::read_bytes(asset))==asset_hash,
+        "The read-only visual verifier changed QA state, archive files or the authored asset");
+    std::cout<<"PASS isolated visual ordering checkpoint\ncase_index="<<index<<"\nqa_instance="<<utf8(token)<<"\nlesson="<<lesson.id
+        <<"\nasset_sha256="<<asset_hash<<"\nstate_sha256="<<hashes_before.at("state.bin")<<"\ntarget="<<plan.identity
+        <<"\npage="<<at->page+1<<"\npieces="<<plan.pieces<<"\nresponse_status="
+        <<(!response?"untouched":response->correct?"correct":state::response_reviewed(*response,target)?"incorrect-reviewed":"unreviewed-draft")
+        <<"\nresponse_json="<<(response?response->raw_json:"absent")<<"\nresponse_sha256="<<(response?state::sha256(response->raw_json):"absent")
+        <<"\norder=";if(response)for(const auto piece:response->order)std::cout<<piece<<',';
+    std::cout<<"\ncompiler_drafts="<<draft_count<<"\nother_quiz_responses=0\nhistorical_grouped_slot=absent\nreadonly=1\nwindows_created=0\n";
 }
 
 struct View {
@@ -245,6 +391,151 @@ std::vector<std::vector<std::size_t>> reviewed_variants(const curriculum::Block&
     return result;
 }
 
+struct ScrollSnapshot {
+    int width=0,height=0,pane_width=0,pane_height=0,position=0,extent=0,page=0;
+    RECT order{},source{},matching{};
+    std::array<RECT,3> matching_sources{};
+};
+ScrollSnapshot scroll_snapshot(HWND view,std::size_t block){
+    const auto order=descendant(view,control_id(block,5));
+    check(order!=nullptr,"The scroll probe lost its real ordering host");
+    auto pane=GetParent(order);
+    while(pane&&GetParent(pane)!=view)pane=GetParent(pane);
+    check(pane&&pane!=view,"The scroll probe lost the lesson viewport ancestor");RECT area{},viewport{};GetClientRect(view,&area);GetClientRect(pane,&viewport);
+    SCROLLINFO info{sizeof(info),SIF_ALL};check(GetScrollInfo(pane,SB_VERT,&info)!=FALSE,"Cannot inspect the lesson's native scroll range");
+    ScrollSnapshot result;result.width=area.right;result.height=area.bottom;result.pane_width=viewport.right;result.pane_height=viewport.bottom;
+    result.position=info.nPos;result.extent=info.nMax+1;result.page=static_cast<int>(info.nPage);
+    const auto relative=[&](HWND item){RECT bounds{};if(item){GetWindowRect(item,&bounds);MapWindowPoints(nullptr,view,reinterpret_cast<POINT*>(&bounds),2);}return bounds;};
+    result.order=relative(order);result.source=relative(GetDlgItem(order,100));const auto matching=descendant(view,control_id(block-1,5));result.matching=relative(matching);
+    for(std::size_t index=0;index<result.matching_sources.size();++index)result.matching_sources[index]=relative(descendant(matching,106+static_cast<int>(index)*2));return result;
+}
+void print_scroll_snapshot(std::string_view label,const ScrollSnapshot& value){
+    std::cout<<"SCROLL "<<label<<" view="<<value.width<<'x'<<value.height<<" pane="<<value.pane_width<<'x'<<value.pane_height
+        <<" pos="<<value.position<<" extent="<<value.extent<<" page="<<value.page<<" order_top="<<value.order.top
+        <<" source_top="<<value.source.top<<" matching_height="<<value.matching.bottom-value.matching.top<<'\n'<<std::flush;
+}
+void print_matching_text_geometry(HWND view,std::size_t block,std::string_view phase){
+    const auto matching=descendant(view,control_id(block-1,5));
+    std::cout<<"MATCHING "<<phase<<'\n';
+    EnumChildWindows(matching,[](HWND item,LPARAM)->BOOL{wchar_t name[40]{};GetClassNameW(item,name,40);
+        if(_wcsnicmp(name,L"RichEdit",8)!=0)return TRUE;
+        RECT area{},format{};GetClientRect(item,&area);SendMessageW(item,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        auto text=edit_text(item);std::ranges::replace(text,'\n',' ');std::ranges::replace(text,'\r',' ');
+        std::cout<<"CELL id="<<GetDlgCtrlID(item)<<" client="<<area.right<<'x'<<area.bottom
+            <<" format="<<format.left<<','<<format.top<<','<<format.right<<','<<format.bottom
+            <<" lines="<<SendMessageW(item,EM_GETLINECOUNT,0,0)<<" text="<<text<<'\n';return TRUE;},0);
+    std::cout<<std::flush;
+}
+struct ScrollConstructionTrace {
+    inline static thread_local ScrollConstructionTrace* active=nullptr;
+    struct Event {UINT message=0;ScrollSnapshot value;};std::array<Event,32> events{};std::size_t count=0;HHOOK hook=nullptr;bool inside=false;
+    ScrollConstructionTrace(){check(active==nullptr,"Another scroll-construction probe is active");active=this;
+        hook=SetWindowsHookExW(WH_CALLWNDPROCRET,observe,nullptr,GetCurrentThreadId());
+        if(!hook){active=nullptr;throw std::runtime_error("Cannot observe zero-size lesson construction");}}
+    ~ScrollConstructionTrace(){if(hook)UnhookWindowsHookEx(hook);active=nullptr;}
+    static LRESULT CALLBACK observe(int code,WPARAM wp,LPARAM lp){auto* self=active;
+        if(code>=0&&self&&!self->inside&&self->count<self->events.size()){
+            const auto& call=*reinterpret_cast<CWPRETSTRUCT*>(lp);wchar_t name[80]{};GetClassNameW(call.hwnd,name,80);
+            if(std::wstring_view(name)==L"LearnGameAndEngineDev.LessonView"&&(call.message==WM_CREATE||call.message==WM_SIZE)
+                &&descendant(call.hwnd,control_id(5,5))){
+                self->inside=true;self->events[self->count++]={call.message,scroll_snapshot(call.hwnd,5)};self->inside=false;
+            }
+        }
+        return CallNextHookEx(nullptr,code,wp,lp);
+    }
+    void print()const{for(std::size_t i=0;i<count;++i)print_scroll_snapshot(events[i].message==WM_CREATE?"after-WM_CREATE":"after-WM_SIZE",events[i].value);}
+};
+struct MatchingMeasureTrace {
+    inline static thread_local MatchingMeasureTrace* active=nullptr;
+    struct Event {UINT message=0;RECT area{},format{},requested{};int lines=0,height=-1;};
+    std::array<Event,96> events{};std::size_t count=0;HWND matching=nullptr;HHOOK hook=nullptr;bool inside=false;
+    explicit MatchingMeasureTrace(HWND target):matching(target){check(active==nullptr,"Another matching measure trace is active");active=this;
+        hook=SetWindowsHookExW(WH_CALLWNDPROC,observe,nullptr,GetCurrentThreadId());
+        if(!hook){active=nullptr;throw std::runtime_error("Cannot observe the actual matching RichEdit measurement");}}
+    ~MatchingMeasureTrace(){if(hook)UnhookWindowsHookEx(hook);active=nullptr;}
+    static LRESULT CALLBACK observe(int code,WPARAM wp,LPARAM lp){auto* self=active;
+        if(code>=0&&self&&!self->inside&&self->count<self->events.size()){
+            const auto& call=*reinterpret_cast<CWPSTRUCT*>(lp);HWND source=nullptr;int height=-1;
+            if(call.message==WM_NOTIFY&&call.hwnd==self->matching&&call.lParam){const auto* note=reinterpret_cast<NMHDR*>(call.lParam);
+                if(note->code==EN_REQUESTRESIZE&&note->idFrom==106){source=note->hwndFrom;const auto* request=reinterpret_cast<REQRESIZE*>(call.lParam);height=request->rc.bottom-request->rc.top;}}
+            else if(GetDlgCtrlID(call.hwnd)==106&&IsChild(self->matching,call.hwnd)
+                &&(call.message==WM_SIZE||call.message==EM_SETRECTNP||call.message==EM_REQUESTRESIZE))source=call.hwnd;
+            if(source){self->inside=true;auto& event=self->events[self->count++];event.message=call.message;event.height=height;
+                GetClientRect(source,&event.area);SendMessageW(source,EM_GETRECT,0,reinterpret_cast<LPARAM>(&event.format));
+                event.lines=static_cast<int>(SendMessageW(source,EM_GETLINECOUNT,0,0));
+                if(call.message==EM_SETRECTNP&&call.lParam)event.requested=*reinterpret_cast<RECT*>(call.lParam);self->inside=false;}
+        }return CallNextHookEx(nullptr,code,wp,lp);
+    }
+    void print()const{for(std::size_t i=0;i<count;++i){const auto& event=events[i];const auto label=event.message==WM_NOTIFY?"EN_REQUESTRESIZE":event.message==WM_SIZE?"WM_SIZE":event.message==EM_SETRECTNP?"EM_SETRECTNP":"EM_REQUESTRESIZE";
+        std::cout<<"MEASURE cell106 "<<label<<" client="<<event.area.right<<'x'<<event.area.bottom<<" format="<<event.format.left<<','<<event.format.top<<','<<event.format.right<<','<<event.format.bottom
+            <<" lines="<<event.lines<<" request_height="<<event.height<<" set_rect="<<event.requested.left<<','<<event.requested.top<<','<<event.requested.right<<','<<event.requested.bottom<<'\n';}std::cout<<std::flush;}
+};
+void current_order_scroll_restoration_case(int percentage,bool verbose){
+    const auto& plan=plans.at(10);active_case=std::string(plan.filename)+" / scroll restoration";
+    active_step="preserve the real U6L20 page position across zero-size construction";
+    const auto asset=visual_asset(plan);const auto digest=state::sha256(state::read_bytes(asset));const auto lesson=windows::load_lesson(asset);
+    const auto at=curriculum::stable_block_position(lesson,plan.identity);check(at.has_value(),"The scroll target lost its stable identity");
+    View fixture(lesson,*at);const auto dpi=GetDpiForWindow(fixture.view);const auto px=[&](int value){return MulDiv(value,static_cast<int>(dpi),96);};
+    update_lesson_preferences(fixture.view,[&](auto& data){appearance::save_course_text_scale(data,"cpp_fundamentals",false,percentage);});
+    std::cout<<"SCROLL case dpi="<<dpi<<" text_scale="<<percentage<<" qa="<<utf8(fixture.environment.paths.root.filename().native())<<'\n'<<std::flush;
+    const auto width=px(900),height=px(720);MoveWindow(fixture.view,0,0,width,height,TRUE);pump();
+    fixture.arrange({3,2,0,4,5,6,7,1});
+    for(const auto narrow:{100,330}){
+        MoveWindow(fixture.view,0,0,px(narrow),height,TRUE);pump();MoveWindow(fixture.view,0,0,width,height,TRUE);pump();
+        const auto first=scroll_snapshot(fixture.view,at->block);
+        SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,MAKELPARAM(width,height));pump();const auto settled=scroll_snapshot(fixture.view,at->block);
+        check(first.extent==settled.extent&&EqualRect(&first.matching,&settled.matching)&&EqualRect(&first.order,&settled.order),
+            "The first wide layout retained the narrow matching height until a later resize");
+        check(std::ranges::equal(first.matching_sources,settled.matching_sources,[](const auto& a,const auto& b){return EqualRect(&a,&b)!=FALSE;}),
+            "A source tile retained a stale narrow-width height until a second layout");
+    }
+    SendMessageW(fixture.view,WM_VSCROLL,SB_BOTTOM,0);pump();
+    const auto before=scroll_snapshot(fixture.view,at->block);print_scroll_snapshot("before-close",before);if(verbose)print_matching_text_geometry(fixture.view,at->block,"before-close");
+    check(before.position>px(500),"The authored matching/order page did not exercise a saved position near its end");
+    const auto saved=fixture.saved();const auto response=state::get_response(saved,lesson,fixture.block());
+    check(response&&!response->correct,"The scroll fixture lost its unreviewed real ordering draft");
+    check(!state::get_response(saved,lesson,lesson.pages.at(at->page).blocks.at(at->block-1)),"The scroll fixture invented a matching answer");
+    const auto raw=response->raw_json;const auto scroll_key="scroll/"+lesson.id+"/"+lesson.pages.at(at->page).stable_id;
+    const auto saved_dp=state::integer_value(saved,"native_windows",scroll_key,-1);
+    std::cout<<"SCROLL saved_dp="<<saved_dp<<" response_sha256="<<state::sha256(raw)<<" matching=unanswered\n"<<std::flush;
+    check(std::abs(px(static_cast<int>(saved_dp))-before.position)<=1,"The initial save did not retain its DPI-normalized position");
+    DestroyWindow(fixture.view);fixture.view=nullptr;
+    ScrollSnapshot constructed,after;
+    {
+        std::optional<ScrollConstructionTrace> trace;if(verbose)trace.emplace();fixture.view=create_lesson_view(fixture.host,fixture.environment,lesson);
+        constructed=scroll_snapshot(fixture.view,at->block);if(verbose)print_scroll_snapshot("after-create-zero-size",constructed);
+        std::optional<MatchingMeasureTrace> measure;if(verbose)measure.emplace(descendant(fixture.view,control_id(at->block-1,5)));
+        MoveWindow(fixture.view,0,0,width,height,TRUE);pump();after=scroll_snapshot(fixture.view,at->block);if(verbose){trace->print();measure->print();}
+    }
+    print_scroll_snapshot("after-real-layout",after);
+    if(verbose)print_matching_text_geometry(fixture.view,at->block,"after-real-layout");
+    SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,MAKELPARAM(width,height));pump();
+    const auto repeated=scroll_snapshot(fixture.view,at->block);
+    if(verbose){print_scroll_snapshot("after-repeat-layout",repeated);print_matching_text_geometry(fixture.view,at->block,"after-repeat-layout");}
+    check(repeated.extent==after.extent&&EqualRect(&repeated.order,&after.order)&&EqualRect(&repeated.matching,&after.matching),
+        "A second identical layout changed the first restored matching/order geometry");
+    const auto restored=read_lesson_state(fixture.view);const auto current=state::get_response(restored,lesson,fixture.block());
+    check(current&&current->raw_json==raw&&fixture.order()==std::vector<std::size_t>({3,2,0,4,5,6,7,1}),"Scroll restoration altered its exact authored order payload");
+    check(!state::get_response(restored,lesson,lesson.pages.at(at->page).blocks.at(at->block-1)),"Reopening invented a matching answer");
+    check(lesson_page_state(fixture.view).index==at->page&&state::sha256(state::read_bytes(asset))==digest,"Scroll restoration changed the page or authored asset");
+    check(after.width==before.width&&after.height==before.height&&after.pane_width==before.pane_width&&after.pane_height==before.pane_height,
+        "The scroll fixture compared different final viewport sizes");
+    const auto same_rect=[](const RECT& a,const RECT& b){return std::abs(a.left-b.left)<=1&&std::abs(a.top-b.top)<=1&&std::abs(a.right-b.right)<=1&&std::abs(a.bottom-b.bottom)<=1;};
+    check(std::abs(after.position-before.position)<=1&&after.extent==before.extent&&after.page==before.page
+        &&same_rect(after.order,before.order)&&same_rect(after.source,before.source)&&same_rect(after.matching,before.matching),
+        "Reopening the current U6L20 matching/order page lost its saved scroll or final control geometry");
+    check(std::ranges::equal(before.matching_sources,after.matching_sources,same_rect),
+        "Reopening changed an individual matching source tile's measured rectangle");
+    fixture.retained();std::cout<<"PASS current U6L20 saved scroll/extent, matching/order geometry, exact draft and unanswered matching across zero-size creation\n";
+}
+void current_order_scroll_restoration(bool verbose=false){
+    struct DpiScope {DPI_AWARENESS_CONTEXT previous=nullptr;explicit DpiScope(DPI_AWARENESS_CONTEXT value):previous(SetThreadDpiAwarenessContext(value)){
+        check(previous!=nullptr,"Cannot exercise the lesson scroll in both DPI contexts");}~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}};
+    for(const auto context:{DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED,DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2}){
+        DpiScope scope(context);for(const auto scale:{75,100,150})current_order_scroll_restoration_case(scale,verbose&&scale==100);
+    }
+}
+
 void current_curricular_orderings(std::optional<std::size_t> selected_case){
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     std::size_t groups=0,pieces=0,dragged=0,reviewed=0,additional=0,identical=0,executed=0;
@@ -274,6 +565,7 @@ void current_curricular_orderings(std::optional<std::size_t> selected_case){
             fixture.reset();fixture.arrange(equivalent);fixture.submit(true);fixture.locked();++identical;
         }
         fixture.reset();
+        if(case_index==10)current_order_scroll_restoration();
         check(state::sha256(state::read_bytes(path))==digest,"Ordering QA changed authored JSON, identifiers or stateLayout");
         check(dragged-previous_dragged==plan.pieces&&reviewed-previous_reviewed==plan.reviewed_orders
             &&additional-previous_additional==(plan.reviewed_orders?plan.reviewed_orders-1:0)
@@ -291,9 +583,17 @@ void current_curricular_orderings(std::optional<std::size_t> selected_case){
 }
 }
 
-int main(int argc,char* argv[]){const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
+int main(int argc,char* argv[]){
+    if(argc>1&&(std::string_view(argv[1])=="--prepare-visual"||std::string_view(argv[1])=="--verify-visual")){
+        if(argc!=4){std::cerr<<"Usage: curricular_order_view_tests [--prepare-visual|--verify-visual <case 0..13> <safe-QA-token>]\n";return 2;}
+        try{const auto index=visual_case_index(argv[2]);const std::string_view raw(argv[3]);const std::wstring token(raw.begin(),raw.end());
+            if(std::string_view(argv[1])=="--prepare-visual")prepare_visual_profile(index,token);else verify_visual_profile(index,token);return 0;}
+        catch(const std::exception& error){std::cerr<<"Visual ordering QA: "<<error.what()<<'\n';return 1;}
+    }
+    const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
     try{std::optional<std::size_t> selected;
+        if(argc==2&&std::string_view(argv[1])=="--scroll-restore"){current_order_scroll_restoration(true);OleUninitialize();return 0;}
         if(argc!=1){
             check(argc==3&&std::string_view(argv[1])=="--case","Usage: curricular_order_view_tests [--case 0..13]");
             const std::string_view input(argv[2]);std::size_t index=0;

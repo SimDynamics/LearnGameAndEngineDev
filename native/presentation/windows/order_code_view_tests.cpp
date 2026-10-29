@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <string_view>
 namespace {
 void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
 void click(HWND row){SendMessageW(row,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(10,10));SendMessageW(row,WM_LBUTTONUP,0,MAKELPARAM(10,10));}
@@ -16,6 +17,130 @@ CHARFORMAT2W character(HWND row,LONG position){CHARRANGE old{},selected{position
     SendMessageW(row,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));CHARFORMAT2W result{};result.cbSize=sizeof(result);
     SendMessageW(row,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&result));SendMessageW(row,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&old));return result;}
 void pump(){MSG event{};while(PeekMessageW(&event,nullptr,0,0,PM_REMOVE)){if(event.message==WM_QUIT)continue;TranslateMessage(&event);DispatchMessageW(&event);}}
+void drag_commits_after_releasing_capture(HWND host){
+    using namespace lgaed::presentation;
+    const auto dpi=GetDpiForWindow(host);const auto px=[&](int value){return MulDiv(value,static_cast<int>(dpi),96);};
+    for(const auto finish:{WM_LBUTTONUP,WM_CANCELMODE,WM_CAPTURECHANGED,WM_MOUSEWHEEL,WM_MOUSEHWHEEL}){
+        const auto pane=CreateWindowExW(0,L"STATIC",L"Feedback reflow QA",WS_CHILD,px(10),px(10),px(720),px(500),host,nullptr,GetModuleHandleW(nullptr),nullptr);
+        check(pane!=nullptr,"Cannot create the hidden feedback-reflow parent");
+        int changes=0;bool published_with_capture=false,published_with_translucency=false;
+        std::vector<std::size_t> published;OrderCodeView* active=nullptr;
+        {
+            OrderCodeView view(pane,{"line_0;","line_1;","line_2;","line_3;"},{},[&]{
+                ++changes;published=active->order();
+                const auto source=GetDlgItem(active->window(),100);
+                published_with_capture=published_with_capture||GetCapture()==source;
+                published_with_translucency=published_with_translucency||(GetWindowLongPtrW(source,GWL_EXSTYLE)&WS_EX_LAYERED)!=0;
+                // Removing rejected feedback at the bottom clamps the lesson
+                // scroll and moves the whole puzzle. Reproduce that response
+                // to a change without relying on a particular lesson's height.
+                SetWindowPos(pane,nullptr,px(10),px(90),0,0,SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+            });active=&view;
+            MoveWindow(view.window(),0,0,px(700),view.height_for_width(px(700)),FALSE);pump();
+            const auto source=GetDlgItem(view.window(),100);
+            const auto at=[&](POINT point){ScreenToClient(source,&point);return MAKELPARAM(point.x,point.y);};
+            RECT parent_before{};GetWindowRect(pane,&parent_before);
+            SendMessageW(source,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(12),px(8)));
+            SendMessageW(source,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(px(20),px(8)));
+            check(changes==0&&view.order()==std::vector<std::size_t>({0,1,2,3}),
+                "Dragging within the source card published a false change and removed reviewed feedback");
+            SendMessageW(source,WM_LBUTTONUP,0,MAKELPARAM(px(20),px(8)));
+            check(changes==0&&GetCapture()!=source,"A no-op drag published a change or retained capture");
+            SendMessageW(source,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(12),px(8)));
+            RECT target{};GetWindowRect(GetDlgItem(view.window(),101),&target);
+            SendMessageW(source,WM_MOUSEMOVE,MK_LBUTTON,at({target.left+px(12),target.top+px(8)}));
+            check(view.order()==std::vector<std::size_t>({1,0,2,3}),"A pending drag did not update its visible cards immediately");
+            RECT during{};GetWindowRect(pane,&during);
+            check(changes==0&&EqualRect(&during,&parent_before),"A drag published feedback and moved the parent before release");
+            GetWindowRect(GetDlgItem(view.window(),103),&target);const POINT end{target.left+px(12),target.top+px(8)};
+            SendMessageW(source,WM_MOUSEMOVE,MK_LBUTTON,at(end));
+            check(changes==0&&view.order()==std::vector<std::size_t>({1,2,3,0}),"A second drag movement lost its original screen destination");
+            const auto keys=finish==WM_MOUSEWHEEL||finish==WM_MOUSEHWHEEL?MAKEWPARAM(MK_LBUTTON,-WHEEL_DELTA):0;
+            SendMessageW(source,finish,keys,finish==WM_LBUTTONUP?at(end):0);
+            check(changes==1&&published==view.order()&&!published_with_capture&&!published_with_translucency,
+                "A finished or cancelled drag did not publish its final arrangement once after restoring capture and style");
+            GetWindowRect(pane,&during);
+            check(during.top!=parent_before.top&&GetCapture()!=source&&!(GetWindowLongPtrW(source,GWL_EXSTYLE)&WS_EX_LAYERED),
+                "Feedback reflow did not wait for a completed drag or left its capture/style behind");
+            SendMessageW(source,WM_LBUTTONUP,0,at(end));check(changes==1,"An extra release became a second drag commit or a tap");
+        }
+        DestroyWindow(pane);
+    }
+    int changes=0;auto view=std::make_unique<OrderCodeView>(host,std::vector<std::string>{"first;","second;","third;"},std::vector<std::size_t>{},[&]{++changes;});
+    MoveWindow(view->window(),px(10),px(10),px(700),view->height_for_width(px(700)),FALSE);pump();
+    const auto begin_drag=[&]{const auto source=GetDlgItem(view->window(),100),target=GetDlgItem(view->window(),102);RECT a{},b{};
+        GetWindowRect(source,&a);GetWindowRect(target,&b);SendMessageW(source,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(12),px(8)));
+        SendMessageW(source,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(px(12),b.top-a.top+px(8)));return source;};
+    auto source=begin_drag();check(changes==0,"An active drag published before a reset");view->reset();
+    check(changes==1&&view->order()==std::vector<std::size_t>({0,1,2})&&GetCapture()!=source,
+        "Reset published an obsolete drag draft or retained its pending capture");
+    changes=0;source=begin_drag();view->set_enabled(false);
+    check(changes==1&&view->order()==std::vector<std::size_t>({1,2,0})&&GetCapture()!=source,
+        "Disabling a pending drag lost its final arrangement or published it twice");
+    view->set_enabled(true);view->reset();changes=0;source=begin_drag();view.reset();
+    check(changes==0&&GetCapture()!=source,"Destruction published a drag into its disappearing owner or retained capture");
+    view=std::make_unique<OrderCodeView>(host,std::vector<std::string>{"first;","second;","third;"},std::vector<std::size_t>{},[&]{++changes;});
+    MoveWindow(view->window(),0,0,px(700),view->height_for_width(px(700)),FALSE);changes=0;
+    click(GetDlgItem(view->window(),100));
+    check(changes==1&&view->order()==std::vector<std::size_t>({0,1,2}),"A deliberate first tap no longer starts a sequence at its existing position");
+    SendMessageW(GetDlgItem(view->window(),102),WM_SYSKEYDOWN,VK_UP,0);
+    check(changes==2&&view->order()==std::vector<std::size_t>({0,2,1}),"Keyboard ordering no longer publishes immediately");view.reset();
+    for(const auto finish:{WM_LBUTTONUP,WM_CANCELMODE,WM_CAPTURECHANGED,WM_MOUSEWHEEL,WM_MOUSEHWHEEL}){
+        changes=0;view=std::make_unique<OrderCodeView>(host,std::vector<std::string>{"first;","second;","third;"},std::vector<std::size_t>{},[&]{++changes;view.reset();});
+        MoveWindow(view->window(),0,0,px(700),view->height_for_width(px(700)),FALSE);
+        source=begin_drag();const auto keys=finish==WM_MOUSEWHEEL||finish==WM_MOUSEHWHEEL?MAKEWPARAM(MK_LBUTTON,-WHEEL_DELTA):0;
+        SendMessageW(source,finish,keys,0);
+        check(!view&&changes==1&&!IsWindow(source)&&GetCapture()!=source,
+            "A release callback could not destroy its owner safely after restoring the gesture");
+    }
+    std::cout<<"PASS drag commit: stable parent until release, no-op, final draft, capture loss/cancel/wheel, Reset, disable and destruction\n";
+}
+void fast_drag_reaches_its_target(HWND host){
+    using namespace lgaed::presentation;
+    int changes=0;OrderCodeView view(host,{"line_0;","line_1;","line_2;","line_3;"},{},[&]{++changes;});
+    const auto dpi=GetDpiForWindow(host);const auto px=[&](int value){return MulDiv(value,static_cast<int>(dpi),96);};
+    MoveWindow(view.window(),px(10),px(10),px(700),view.height_for_width(px(700)),TRUE);pump();
+    const auto origin=GetDlgItem(view.window(),100),target=GetDlgItem(view.window(),103);
+    RECT destination{};GetWindowRect(target,&destination);
+    const POINT end{destination.left+px(12),destination.top+px(8)};
+    const auto at=[&](POINT point){ScreenToClient(origin,&point);return MAKELPARAM(point.x,point.y);};
+    SetFocus(origin);const auto began=GetTickCount64();
+    SendMessageW(origin,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(12),px(8)));
+    check(GetCapture()==origin,"A fast native drag did not capture its source");
+    // No hold or sleep: a full-card displacement is still a drag when its
+    // first move arrives before the old20ms cutoff.
+    const auto delay=GetTickCount64()-began;check(delay<20,"The fast-drag fixture exceeded its intended event boundary");
+    SendMessageW(origin,WM_MOUSEMOVE,MK_LBUTTON,at(end));
+    const auto after_move=view.order();
+    BYTE opacity=0;DWORD flags=0;
+    check(GetLayeredWindowAttributes(origin,nullptr,&opacity,&flags)&&opacity==140&&(flags&LWA_ALPHA),
+        "A fast drag lost the existing source opacity");
+    SendMessageW(origin,WM_LBUTTONUP,0,at(end));
+    const auto duration=GetTickCount64()-began;
+    std::cout<<"Fast drag first movement delay="<<delay<<"ms; complete gesture="<<duration<<"ms\n";
+    check(after_move==std::vector<std::size_t>({1,2,3,0}),"A fast full-card drag was ignored instead of moving its source to the pointed row");
+    check(view.order()==std::vector<std::size_t>({1,2,3,0})&&changes==1,
+        "Releasing a fast drag performed an extra click-to-order");
+    check(GetCapture()!=origin&&!(GetWindowLongPtrW(origin,GWL_EXSTYLE)&WS_EX_LAYERED),
+        "A fast drag retained capture or source translucency");
+    click(GetDlgItem(view.window(),102));
+    check(view.order()==std::vector<std::size_t>({2,1,3,0}),
+        "A fast drag advanced the next-tap sequence instead of preserving its first destination");
+    view.reset();const auto jitter_row=GetDlgItem(view.window(),102);
+    SendMessageW(jitter_row,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(12),px(8)));
+    SendMessageW(jitter_row,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(px(14),px(9)));
+    SendMessageW(jitter_row,WM_LBUTTONUP,0,MAKELPARAM(px(14),px(9)));
+    check(view.order()==std::vector<std::size_t>({2,0,1,3})&&!(GetWindowLongPtrW(jitter_row,GWL_EXSTYLE)&WS_EX_LAYERED),
+        "Small pointer jitter stopped being a normal next-position tap");
+    for(const auto cancel:{WM_CANCELMODE,WM_CAPTURECHANGED,WM_MOUSEWHEEL,WM_MOUSEHWHEEL}){
+        view.reset();const auto pending=GetDlgItem(view.window(),102);const auto unchanged=view.order();
+        SendMessageW(pending,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(12),px(8)));
+        SendMessageW(pending,cancel,cancel==WM_MOUSEWHEEL||cancel==WM_MOUSEHWHEEL?MAKEWPARAM(MK_LBUTTON,-WHEEL_DELTA):0,0);
+        SendMessageW(pending,WM_LBUTTONUP,0,MAKELPARAM(px(12),px(8)));
+        check(view.order()==unchanged&&GetCapture()!=pending&&!(GetWindowLongPtrW(pending,GWL_EXSTYLE)&WS_EX_LAYERED),
+            "Cancel, capture loss or wheel scrolling became a release-time tap or retained capture");
+    }
+}
 struct Drawing {
     HDC dc=nullptr;HBITMAP bitmap=nullptr;HGDIOBJ previous=nullptr;
     DWORD* pixels=nullptr;int width=1,height=1;
@@ -57,12 +182,17 @@ struct ReentrantPaint {
     }
 };
 }
-int main(){using namespace lgaed::presentation;
+int main(int argc,char** argv){using namespace lgaed::presentation;
+    const bool drag_commit_only=argc==2&&std::string_view(argv[1])=="--drag-commit";
+    if(argc>1&&!drag_commit_only)return 2;
     struct DpiScope{DPI_AWARENESS_CONTEXT previous=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}} dpi_scope;
     check(SUCCEEDED(OleInitialize(nullptr)),"Cannot initialize the application's native OLE apartment");struct OleScope{~OleScope(){OleUninitialize();}} apartment;
     INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
-    const auto host=CreateWindowExW(0,L"STATIC",L"Code order QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,40,40,800,640,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    const auto host=CreateWindowExW(0,L"STATIC",L"Code order QA",WS_OVERLAPPEDWINDOW|(drag_commit_only?0:WS_VISIBLE),40,40,800,640,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
     try{
+        drag_commits_after_releasing_capture(host);
+        if(drag_commit_only){DestroyWindow(host);return 0;}
+        fast_drag_reaches_its_target(host);
         const std::vector<std::string> source{"std::cout << \"Acceso autorizado\";","#include <iostream>","return 0;\n}","int main() {"};
         const auto dpi=static_cast<int>(GetDpiForWindow(host));const auto px=[&](int value){return MulDiv(value,dpi,96);};
         MoveWindow(host,40,40,px(800),px(640),TRUE);
@@ -144,7 +274,7 @@ int main(){using namespace lgaed::presentation;
         view.reset();const auto origin=GetDlgItem(view.window(),100),target=GetDlgItem(view.window(),103);
         RECT a{},b{};GetWindowRect(origin,&a);GetWindowRect(target,&b);
         SendMessageW(origin,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(12,8));
-        // Exercise the real20ms boundary using the same clock as the gesture.
+        // Also retain the sustained-drag path after the fast gesture above.
         // Sleep(25) can span only one coarse GetTickCount64 tick on Windows.
         const auto ready=GetTickCount64()+20;while(GetTickCount64()<ready)Sleep(1);
         SendMessageW(origin,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(12,b.top-a.top+8));

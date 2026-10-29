@@ -25,6 +25,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <set>
 #include <stdexcept>
 
 namespace {
@@ -423,6 +424,180 @@ void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& 
         "Explicit compiler Reset lost the prediction answer or retained unavailable later narration");
     std::cout<<"PASS current integrated U1 reader: archived original absent, useful compiler required, native wrong/correct feedback, exact released restore, sticky achievement and scoped Reset\n";
 }
+void integrated_matching_reader_bookmarks(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    using namespace winrt::Windows::Data::Json;
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json";
+    const auto asset_hash=state::sha256(state::read_bytes(path));const auto lesson=windows::load_lesson(path);
+    const auto position=identity_position(lesson,"block_0007_0001");
+    const auto& goal=lesson.pages[position.page].blocks[position.block];
+    check(position.page==7&&position.block==1&&goal.type==curriculum::BlockType::math_puzzle,
+        "The actual editorial matching reader identity moved");
+    const auto authored=JsonObject::Parse(wide(goal.raw_json));
+    const auto spec=authored.GetNamedArray(L"responses").GetAt(0).GetObject();
+    const auto expected=spec.GetNamedObject(L"validator").GetNamedObject(L"expected");
+    const auto incorrect_body=utf8(authored.GetNamedObject(L"feedback").GetNamedString(L"incorrect"));
+    const auto correct_body=utf8(authored.GetNamedObject(L"feedback").GetNamedString(L"correct"));
+    const std::string revised="Construcción desde código y unidades que termina normalmente";
+    const std::string source_suffix="contratos/source/construccion";
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"integrated-matching-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    check(!std::filesystem::exists(environment.paths.root),"Matching reader QA requires a new private profile");
+    initialize_profile_directories(environment.paths);
+    state::StateData initial;state::prepare_lesson_state(initial,lesson);
+    // Explicit compiler receipts isolate this later page only. No execution or
+    // matching answer is invented, and later compiler objectives stay pending.
+    std::set<std::string> direct_prerequisites;
+    for(const auto entry:curriculum::activity_prerequisites(lesson,goal))
+        direct_prerequisites.insert(lesson.pages[entry.page].blocks[entry.block].stable_id);
+    check(direct_prerequisites==std::set<std::string>{"block_0006_0006","block_0006_0009"},
+        "The current matching activity no longer has exactly its two authored direct owners");
+    check(lesson.compiler_puzzles_required,"Matching reader QA must preserve the published global compiler gate");
+    std::set<std::string> prerequisite_ids;
+    for(std::size_t page=0;page<position.page;++page)for(const auto& block:lesson.pages[page].blocks)
+        if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check){
+            windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
+            request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
+            for(const auto& item:block.output_check->cases){
+                curriculum::FreshExecution execution{1,true,true,0,item.standard_input,item.outputs.front()};
+                execution.executable=item.executable;
+                if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)execution.standard_error="QA prerequisite only";
+                (void)windows::record_compiler_puzzle_case(initial,lesson,block,request,execution,"Synthetic QA prerequisite only; no execution");
+            }
+            check(windows::compiler_puzzle_completed(initial,lesson,block),"Cannot isolate the matching page's prior compiler objective");
+            prerequisite_ids.insert(block.stable_id);
+        }
+    check(prerequisite_ids==std::set<std::string>{"block_0001_0002","block_0001_0007","block_0004_0002","block_0006_0006","block_0006_0009"}
+        &&!state::get_response(initial,lesson,goal),"Matching QA must isolate exactly the five prior global compiler gates without an invented answer");
+    state::save_current_page(initial,lesson,position.page);
+    initial.preferences["matching_reader_qa"]["opaque"]=std::string(" \t preserved\n");
+    auto& settings=initial.preferences["lesson_narration_settings"];
+    settings["engine"]=std::string("KOKORO");settings["language"]=std::string("es");
+    settings["kokoro_voice:es"]=std::string("ef_dora");settings["rate"]=3.;settings["kokoro_advance_generation"]=false;
+    initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    state::StateStore store(environment.paths.root);(void)store.load();store.save(initial);
+    const auto host=CreateWindowExW(WS_EX_CONTROLPARENT|WS_EX_NOACTIVATE,L"STATIC",L"Hidden actual matching reader QA",
+        WS_OVERLAPPEDWINDOW,0,0,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(host!=nullptr,"Cannot create hidden matching reader host");
+    HWND view=nullptr;std::unique_ptr<LessonReader> reader;
+    struct Cleanup{HWND host;HWND& view;std::unique_ptr<LessonReader>& reader;
+        ~Cleanup(){reader.reset();if(view){(void)flush_lesson_view(view);DestroyWindow(view);}DestroyWindow(host);}} cleanup{host,view,reader};
+    const auto snapshot=[&]{auto value=reader->snapshot();check(value.error.empty(),"Real matching reader error: "+value.error);return value;};
+    const auto open=[&]{
+        LessonViewHooks hooks;
+        hooks.before_page_change=[&](HWND){if(reader)reader->pause();};
+        hooks.content_changed=[&](HWND){if(reader)reader->content_changed();};
+        hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(reader)reader->feedback(block,correct);};
+        hooks.validate_math=[&](std::string_view block,std::string_view answers,std::string_view language,std::stop_token stop){
+            return backend->validate_math(block,answers,language,stop);};
+        view=create_lesson_view(host,environment,lesson,std::move(hooks));
+        check(view!=nullptr,"Cannot mount actual matching reader view");MoveWindow(view,0,0,980,720,TRUE);pump();
+        check(lesson_page_state(view).index==position.page&&!IsWindowVisible(host),"Matching reader QA lost its authored page or exposed the desktop");
+        reader=std::make_unique<LessonReader>(view,environment,backend,[]{});
+        wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&value.segments[value.index].available;},
+            "the actual matching current sentence is synthesized");
+    };
+    const auto reopen=[&]{reader.reset();check(flush_lesson_view(view),"Cannot persist actual matching reader before close");
+        DestroyWindow(view);view=nullptr;open();};
+    const auto region=[&](std::string_view suffix){const auto regions=lesson_reading_regions(view);
+        const auto found=std::ranges::find_if(regions,[&](const auto& value){return value.key.ends_with(suffix);});
+        check(found!=regions.end(),"Missing actual matching narration card "+std::string(suffix));return *found;};
+    const auto current_label=[&]{const auto label=region(source_suffix);
+        check(label.source_text==revised&&edit_text(label.target)==revised,"Actual matching label retained its obsolete editorial wording");};
+    struct Recording{std::filesystem::path path;std::string hash;};std::vector<Recording> recordings;
+    const auto record=[&](const LessonReaderSegmentSnapshot& part){recordings.push_back({part.recording,verify_feedback_recording(part)});};
+    const auto restore_pause=[&](const LessonReaderSnapshot& paused,const std::optional<state::Response>& response){
+        const auto history=narration::read_history(read_lesson_state(view));
+        const auto saved=std::ranges::find(history.entries,paused.key,&narration::Bookmark::key);
+        check(saved!=history.entries.end()&&saved->position.segment==static_cast<std::int64_t>(paused.index)&&saved->position.milliseconds==paused.offset
+            &&saved->position.heard_through==paused.heard_through&&!saved->position.finished,
+            "Actual matching playback failed to create an exact real bookmark");
+        const auto recording=paused.segments[paused.index].recording;reopen();current_label();
+        const auto restored=snapshot();const auto restored_response=state::get_response(read_lesson_state(view),lesson,goal);
+        check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset
+            &&restored.heard_through==paused.heard_through&&!restored.playing&&!restored.allocated&&!restored.finished
+            &&restored.segments[restored.index].recording==recording&&narration::read_history(read_lesson_state(view))==history
+            &&bool(restored_response)==bool(response)&&(!response||restored_response->raw_json==response->raw_json),
+            "Reopening the entire matching view lost its current source-bound pause or response");
+        const auto until=GetTickCount64()+150;
+        wait([&]{const auto value=snapshot();check(!value.playing&&!value.allocated&&value.offset==paused.offset,
+                "The restored matching bookmark started itself");return GetTickCount64()>=until;},"matching restoration stays paused",2000);
+        reader->toggle();check(snapshot().allocated&&std::abs(snapshot().offset-paused.offset)<=1,
+            "Actual matching bookmark resume restarted its recording");
+    };
+    open();current_label();
+    check(narration::read_history(read_lesson_state(view)).entries.empty(),"Matching narration began with fabricated listening history");
+    reader->toggle();wait([&]{const auto value=snapshot();return value.playing&&value.segments[value.index].region.ends_with(source_suffix)
+        &&value.offset>200;},"real narration reaches the revised construction label",90000);
+    reader->pause();const auto label_pause=snapshot();record(label_pause.segments[label_pause.index]);
+    check(label_pause.segments[label_pause.index].source==revised&&!label_pause.segments[label_pause.index].feedback,
+        "The label bookmark belongs to another current sentence");
+    restore_pause(label_pause,{});
+    wait([&]{const auto value=snapshot();return value.playing&&value.index==label_pause.index&&value.offset>label_pause.offset+100;},
+        "the restored current construction-label recording really resumes");reader->pause();
+
+    // Exercise native source/target cards, not a prepared matching answer.
+    const auto tap=[&](std::string_view key){const auto target=region(key).target;
+        SendMessageW(target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));SendMessageW(target,WM_LBUTTONUP,0,MAKELPARAM(4,4));pump();};
+    auto wrong=JsonObject::Parse(expected.Stringify());const auto construction=wrong.GetNamedValue(L"construccion");
+    wrong.Insert(L"construccion",wrong.GetNamedValue(L"transicion"));wrong.Insert(L"transicion",construction);
+    for(const auto& pair:wrong){tap("contratos/source/"+utf8(pair.Key()));tap("contratos/target/"+utf8(pair.Value().GetString()));}
+    check(IsWindowEnabled(child(view,1103)),"A complete actual matching attempt did not enable Check");
+    SendMessageW(child(view,1103),BM_CLICK,0,0);reader->pause();
+    wait([&]{const auto response=state::get_response(read_lesson_state(view),lesson,goal);const auto value=snapshot();
+        return response&&!response->correct&&state::response_reviewed(*response,goal)&&value.planned&&!value.segments.empty()
+            &&value.segments[value.index].feedback&&value.segments[value.index].available;},"native matching rejection and its real current recording");
+    const auto wrong_response=state::get_response(read_lesson_state(view),lesson,goal);
+    const auto guide=edit_text(child(view,1104));
+    check(guide.find(incorrect_body)!=std::string::npos&&guide.find(correct_body)==std::string::npos,
+        "The actual rejected matching control lost its complete guide or exposed the successful explanation");
+    const auto feedback_regions=lesson_reading_regions(view);const auto feedback=std::ranges::find_if(feedback_regions,
+        [&](const auto& value){return value.feedback&&value.block_index==position.block;});
+    check(feedback!=feedback_regions.end()&&feedback->source_text==guide&&!feedback->correct,
+        "The rejected matching reader has another source or verdict than the visible guide");
+    const auto guide_plan=backend->plan(guide,"es");const auto guide_snapshot=snapshot();std::vector<std::size_t> guide_indices;
+    for(std::size_t at=0;at<guide_snapshot.segments.size();++at)if(guide_snapshot.segments[at].feedback&&guide_snapshot.segments[at].block==position.block){
+        const auto index=guide_indices.size();check(index<guide_plan.size()&&guide_snapshot.segments[at].source==guide_plan[index].text,
+            "The real matching guide was truncated or reordered");guide_indices.push_back(at);}
+    check(guide_indices.size()==guide_plan.size()&&!guide_indices.empty()&&!snapshot().playing&&!snapshot().allocated,
+        "The native matching feedback did not preserve manual pause or all authored sentences");
+    std::vector<bool> heard(guide_indices.size(),false);
+    const auto observe=[&](const LessonReaderSnapshot& value){for(std::size_t at=0;at<guide_indices.size();++at)
+        if(value.playing&&value.index==guide_indices[at])heard[at]=true;};
+    reader->toggle();wait([&]{const auto value=snapshot();observe(value);return value.playing&&value.segments[value.index].feedback
+        &&value.segments[value.index].source.find("Distingue")!=std::string::npos&&value.offset>200;},"actual matching guide plays before pause");
+    reader->pause();const auto guide_pause=snapshot();record(guide_pause.segments[guide_pause.index]);
+    restore_pause(guide_pause,wrong_response);
+    wait([&]{const auto value=snapshot();observe(value);const auto& current=value.segments[value.index];
+        // With advance generation disabled, arriving at the final sentence can
+        // precede its synthesis. That transition is not the completed stop.
+        return !value.playing&&!value.allocated&&!value.preparing&&value.index==guide_indices.back()
+            &&current.available&&current.duration_ms>0&&value.offset+1>=current.duration_ms;},
+        "restored matching guide finishes its available final recording and stops for retry");
+    const auto stopped=snapshot();const auto response=state::get_response(read_lesson_state(view),lesson,goal);
+    std::string heard_flags;for(const auto value:heard)heard_flags+=value?'1':'0';
+    check(std::ranges::all_of(heard,[](bool value){return value;})&&!stopped.finished&&response&&!response->correct
+        &&response->raw_json==wrong_response->raw_json&&stopped.offset+1>=stopped.segments[stopped.index].duration_ms,
+        "Actual matching guide resume boundary: heard="+heard_flags+" finished="+std::to_string(stopped.finished)
+        +" correct="+std::to_string(response&&response->correct)+" payload_equal="+std::to_string(response&&response->raw_json==wrong_response->raw_json)
+        +" offset="+std::to_string(stopped.offset)+" duration="+std::to_string(stopped.segments[stopped.index].duration_ms)
+        +" index="+std::to_string(stopped.index)+" last="+std::to_string(guide_indices.back()));
+    for(const auto at:guide_indices)record(stopped.segments[at]);
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
+        if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check){
+            const auto data=read_lesson_state(view);
+            check(windows::compiler_puzzle_case_count(data,lesson,block)==windows::compiler_puzzle_case_count(initial,lesson,block)
+                &&windows::compiler_puzzle_completed(data,lesson,block)==prerequisite_ids.contains(block.stable_id),
+                "Matching playback changed a prior QA compiler receipt or credited another objective");
+        }
+    for(const auto& recording:recordings)check(state::sha256(state::read_bytes(recording.path))==recording.hash,
+        "Matching restoration changed a compatible real recording");
+    check(read_lesson_state(view).preferences.at("matching_reader_qa")==initial.preferences.at("matching_reader_qa")
+        &&state::sha256(state::read_bytes(path))==asset_hash&&!IsWindowVisible(host),
+        "Actual matching reader changed unrelated preferences, content or the desktop");
+    std::cout<<"PASS current U9L13 matching reader: revised label and native rejected guide have actual PCM/word timing and real paused playback; whole-view bookmark restoration/resume, unchanged response/recordings and retry stop; five earlier global compiler receipts explicitly synthetic (two direct matching owners), no historical-label listening, bookmark-list UI or visual acceptance claimed\n";
+}
+
 void integrated_order_reader_flow(const std::shared_ptr<windows::NarrationWorker>& backend) {
     const auto path = std::filesystem::path(build::source_root) /
         "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
@@ -708,8 +883,34 @@ void checked_compilation_keeps_keyboard_reader_control(const std::shared_ptr<win
     Fixture f(backend,false,true,true,"es",lesson);KeyboardStateScope keyboard;f.reader->pause();
     const auto source=child(f.view,1110),compile=child(f.view,1111),feedback=child(f.view,1104);
     const auto original_source=edit_text(source);CHARRANGE selection{4,9};
-    SetForegroundWindow(f.host);SetActiveWindow(f.host);SetFocus(source);
+    const auto foreground_before=GetForegroundWindow();
+    const auto foreground_requested=SetForegroundWindow(f.host);
+    // Windows may deny a background test's initial activation request. Give
+    // its visible QA window time to be activated; the exact focus assertion
+    // below still has to hold before any native shortcut or compilation.
+    const auto foreground_deadline=GetTickCount64()+30000;
+    while(GetForegroundWindow()!=f.host&&GetTickCount64()<foreground_deadline){
+        pump();MsgWaitForMultipleObjects(0,nullptr,FALSE,20,QS_ALLINPUT);
+    }
+    // Establish child focus only after the real top-level activation.
+    if(!foreground_requested&&GetForegroundWindow()==f.host){
+        const auto activation_settled=GetTickCount64()+250;
+        do{pump();MsgWaitForMultipleObjects(0,nullptr,FALSE,20,QS_ALLINPUT);}
+        while(GetTickCount64()<activation_settled);
+    }
+    const auto active_before=SetActiveWindow(f.host);SetFocus(source);
     SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SetFocus(compile);pump();
+    if(GetForegroundWindow()!=f.host||GetActiveWindow()!=f.host||GetFocus()!=compile){
+        std::cout<<"compile-focus precondition: process="<<GetCurrentProcessId()<<" thread="<<GetCurrentThreadId()
+            <<" SetForegroundWindow="<<foreground_requested<<" SetActiveWindow.previous="<<active_before<<'\n';
+        const auto describe=[](std::string_view label,HWND window){std::array<wchar_t,256> name{};GetClassNameW(window,name.data(),static_cast<int>(name.size()));
+            DWORD process=0;const auto thread=GetWindowThreadProcessId(window,&process);
+            std::cout<<"compile-focus "<<label<<": hwnd="<<window<<" class="<<utf8(name.data())<<" process="<<process<<" thread="<<thread
+                <<" visible="<<IsWindowVisible(window)<<" enabled="<<IsWindowEnabled(window)<<" iconic="<<IsIconic(window)<<'\n';};
+        describe("foreground before request",foreground_before);describe("foreground after pump",GetForegroundWindow());
+        describe("active after pump",GetActiveWindow());describe("focus after pump",GetFocus());
+        describe("expected host",f.host);describe("expected compile",compile);
+    }
     check(GetForegroundWindow()==f.host&&GetActiveWindow()==f.host&&GetFocus()==compile,
         "Cannot establish actual foreground/focused compile-button preconditions");
     struct KeyResult{UINT key;HWND target;bool dispatched;};std::vector<KeyResult> keys;
@@ -938,11 +1139,12 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool dependencies_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
     const bool integrated_order_only=argc==2&&std::string_view(argv[1])=="--integrated-order";
+    const bool integrated_matching_only=argc==2&&std::string_view(argv[1])=="--integrated-matching";
     const bool rates_only=argc==2&&std::string_view(argv[1])=="--rates";
     const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
-    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
+    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -953,6 +1155,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(rates_only){extended_reader_playback_rates(backend);return 0;}
         if(integrated_only){integrated_u1_reader_flow(backend);return 0;}
         if(integrated_order_only){integrated_order_reader_flow(backend);return 0;}
+        if(integrated_matching_only){integrated_matching_reader_bookmarks(backend);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
         extended_reader_playback_rates(backend);

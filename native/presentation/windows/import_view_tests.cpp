@@ -3,6 +3,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/android_import.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "core/compile_check_test_fixture.hpp"
 #include "core/retirement_test_fixture.hpp"
@@ -195,6 +196,217 @@ std::string byte_difference(std::string_view expected, std::string_view actual) 
         std::to_string(std::count(actual.begin(), actual.end(), '\r')) + " LF=" +
         std::to_string(std::count(expected.begin(), expected.end(), '\n')) + "->" +
         std::to_string(std::count(actual.begin(), actual.end(), '\n'));
+}
+
+struct StderrFixturePlan {
+    std::string_view folder,filename,lesson_id,owner,owner_reference,target,target_reference;
+    std::size_t page;
+};
+
+StderrFixturePlan stderr_fixture_plan(std::string_view name) {
+    if(name=="u8")return {"excepciones_y_recuperacion","lesson_limites_comprobados_y_tipos_de_captura.json",
+        "cpp_fundamentals__excepciones_y_recuperacion__limites_comprobados_y_tipos_de_captura",
+        "block_0002_0005","block_0003_0005","block_0002_0008","",2};
+    if(name=="u10")return {"aleatoriedad_y_reproducibilidad","lesson_combinar_ensayos_generados_y_casos_elegidos.json",
+        "cpp_fundamentals__aleatoriedad_y_reproducibilidad__combinar_ensayos_generados_y_casos_elegidos",
+        "block_0004_0004","block_0005_0001","block_0004_0007","block_0005_0008",4};
+    throw std::invalid_argument("The isolated stderr import fixture must select u8 or u10");
+}
+
+std::filesystem::path stderr_fixture_asset(const StderrFixturePlan& plan) {
+    return std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/plan.folder/plan.filename;
+}
+
+void prepare_stderr_export(std::string_view name,std::wstring_view token) {
+    require(is_valid_qa_instance(token),"Unsafe new Android export token");
+    const auto plan=stderr_fixture_plan(name);const auto source=stderr_fixture_asset(plan);
+    const auto asset_hash=state::sha256(state::read_bytes(source));const auto lesson=windows::load_lesson(source);
+    require(lesson.id==plan.lesson_id&&lesson.compiler_puzzles_required,"The stderr export asset identity or required policy changed");
+    const auto locate=[&](std::string_view identity){const auto at=curriculum::stable_block_position(lesson,identity);
+        require(at.has_value(),"The stderr export lost an authored stable owner, target or reference");return *at;};
+    const auto owner_at=locate(plan.owner),target_at=locate(plan.target),reference_at=locate(plan.owner_reference);
+    const auto& owner=lesson.pages[owner_at.page].blocks[owner_at.block];
+    const auto& target=lesson.pages[target_at.page].blocks[target_at.block];
+    const auto& reference=lesson.pages[reference_at.page].blocks[reference_at.block];
+    require(owner_at.page==plan.page&&target_at.page==plan.page&&owner.type==BlockType::cpp_compiler&&
+        target.type==BlockType::cpp_compiler&&reference.type==BlockType::code&&!reference.code.empty()&&target.output_check&&
+        target.output_check->cases.size()==1&&target.output_check->cases[0].standard_error==curriculum::StandardErrorExpectation::non_blank,
+        "The stderr export no longer describes the current independent compiler objectives");
+    const auto prerequisites=curriculum::activity_prerequisites(lesson,target);
+    require(prerequisites.size()==1&&prerequisites.front()==owner_at,"The stderr target no longer has exactly its original constructor");
+    auto target_source=target.initial_code;
+    if(name=="u8")require(target_source.find("mostrarDiagnostico{false}")!=target_source.npos&&
+        target.output_check->cases[0].outputs==std::vector<std::string>{"Indice invalido:Fin"},"The actual U8 false flag or stable stdout changed");
+    else {
+        const auto report_at=locate(plan.target_reference);const auto& report=lesson.pages[report_at.page].blocks[report_at.block];
+        require(report.type==BlockType::code&&!report.code.empty()&&target.output_check->cases[0].outputs==std::vector<std::string>{"Fallos elegidos:2\n"},
+            "The actual U10 defective report reference or stable stdout changed");
+        target_source=report.code;constexpr std::string_view main_start="int main() {";const auto start=target_source.find(main_start);
+        require(start!=target_source.npos&&target_source.find("std::cerr")!=target_source.npos,"Cannot isolate the current authored U10 stderr report");
+        target_source.insert(start+main_start.size(),"\n    std::cerr.setstate(std::ios_base::failbit);");
+    }
+    state::StateData original;state::prepare_lesson_state(original,lesson);state::save_current_page(original,lesson,plan.page);
+    const auto save_draft=[&](const curriculum::Block& block,const std::string& code){state::Draft draft;draft.source=code;draft.input=" \t\r\n    ";
+        const auto document=windows::predefined_code_document(code);draft.indentation_json=state::make_indentation_metadata(code,document.indentation_starts);
+        const auto caret=code.find("std::cout");require(caret!=code.npos,"The actual imported source lost its exact selection token");
+        draft.selection_start=static_cast<std::int64_t>(wide(std::string_view(code).substr(0,caret)).size());draft.selection_end=draft.selection_start+9;
+        state::put_draft(original,curriculum::draft_key("programming",lesson,block),draft);return draft;};
+    const auto owner_draft=save_draft(owner,reference.code),target_draft=save_draft(target,target_source);
+    state::Response old;old.answer=" Correcto antiguo de stdout (QA sintética)\t\r\n ";old.correct=true;
+    state::put_response(original,lesson,target,old);
+    const auto opaque_key=state::response_storage_key(lesson,target);
+    const auto opaque_json=state::string_value(original,"learning_progress",opaque_key);
+    state::validate_lesson_state(original,lesson);
+    require(!original.preferences.contains("native_windows"),"The Android fixture must not export any Windows metadata or receipts");
+    const auto parent=(std::filesystem::path(build::source_root)/"out/qa").lexically_normal();
+    const auto folder=parent/(L"stderr-export-"+std::wstring(token));
+    require(folder.is_absolute()&&folder.parent_path()==parent&&folder.filename().wstring()==L"stderr-export-"+std::wstring(token),
+        "The synthetic Android export must stay inside its exact new out/qa child");
+    state::require_safe_path(folder);require(!std::filesystem::exists(folder),"The synthetic export refuses to overwrite an existing fixture");
+    std::filesystem::create_directories(parent);require(std::filesystem::create_directory(folder),"Another process created the export fixture first");
+    export_preferences(folder,original);const auto untouched=hashes(folder);const auto preview=state::inspect_android_export(folder);
+    state::validate_lesson_state(preview.data,lesson);
+    require(preview.data==original&&state::current_page(preview.data,lesson)==plan.page&&hashes(folder)==untouched&&
+        !preview.data.preferences.contains("native_windows")&&!std::filesystem::exists(folder/L"shared_prefs/native_windows.xml"),
+        "The Android preview changed source preferences, the historical page or provenance");
+    for(const auto& item:preview.files)require(item.relative_path.parent_path()==L"shared_prefs"&&item.relative_path.extension()==L".xml"&&
+        untouched.at(item.relative_path)==item.sha256,"The prepared export contains unexpected files or changed source hashes");
+    std::string export_frame;for(const auto& [path,hash]:untouched)export_frame+=path.generic_string()+'\n'+hash+'\n';
+    const auto preserved=[&](const curriculum::Block& block,const state::Draft& expected){
+        const auto draft=state::get_draft(preview.data,curriculum::draft_key("programming",lesson,block),"");
+        require(draft.source==expected.source&&draft.input==expected.input&&draft.indentation_json==expected.indentation_json&&
+            draft.selection_start==expected.selection_start&&draft.selection_end==expected.selection_end,
+            "XML inspection rewrote exact source/input whitespace, indentation or UTF16 selection");};
+    preserved(owner,owner_draft);preserved(target,target_draft);
+    const auto imported_old=state::get_response(preview.data,lesson,target);
+    require(imported_old&&imported_old->correct&&imported_old->answer==old.answer&&
+        state::string_value(preview.data,"learning_progress",opaque_key)==opaque_json,"The opaque historical stdout response changed");
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)if(curriculum::has_compiler_objective(block))
+        require(!windows::compiler_puzzle_completed(preview.data,lesson,block)&&windows::compiler_puzzle_case_count(preview.data,lesson,block)==0,
+            "An opaque Android result manufactured a Windows execution receipt");
+    require(state::sha256(state::read_bytes(source))==asset_hash,"Preparing an export changed the actual curricular asset");
+    std::cout<<"export="<<utf8(folder.native())<<"\nfixture=synthetic-android-stderr\nlesson="<<lesson.id<<"\nasset_sha256="<<asset_hash
+        <<"\npage="<<plan.page+1<<"\npage_index="<<plan.page<<"\nowner="<<plan.owner<<"\nowner_reference="<<plan.owner_reference
+        <<"\nowner_draft_sha256="<<state::sha256(owner_draft.source)<<"\ntarget="<<plan.target<<"\ntarget_variant="<<(name=="u8"?"false":"silent-authored-reference")
+        <<"\ntarget_draft_sha256="<<state::sha256(target_draft.source)<<"\nopaque_response_key="<<opaque_key
+        <<"\nopaque_response_sha256="<<state::sha256(opaque_json)<<"\nexport_sha256="<<state::sha256(export_frame)<<"\nxml_files="<<preview.files.size()
+        <<"\nwindows_receipts=0\nnative_windows_xml=0\ncompiler_executions=none\nwindows_created=0\n";
+}
+
+void prepare_import_catalog(std::string_view name,std::wstring_view token) {
+    require(is_valid_qa_instance(token),"Unsafe new import catalog QA token");
+    const auto plan=stderr_fixture_plan(name);const auto source=stderr_fixture_asset(plan);
+    const auto asset_hash=state::sha256(state::read_bytes(source));const auto lesson=windows::load_lesson(source);
+    require(lesson.id==plan.lesson_id,"The isolated import catalog asset identity changed");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,std::wstring(token),false});
+    require(environment.paths.root.parent_path().filename()==L"qa"&&environment.paths.root.parent_path().parent_path().filename()==L"Codex"&&
+        environment.paths.root.filename()==token,"The import catalog must be a new isolated Codex QA profile");
+    state::require_safe_path(environment.paths.root);require(!std::filesystem::exists(environment.paths.root),"The catalog helper refuses to reuse an existing QA profile");
+    std::filesystem::create_directories(environment.paths.root.parent_path());
+    require(std::filesystem::create_directory(environment.paths.root),"Another process reserved the catalog QA profile first");
+    initialize_profile_directories(environment.paths);state::StateStore store(environment.paths.root);
+    require(store.load().preferences.empty(),"The new import catalog unexpectedly contains earlier data");
+    state::StateData data;auto& preferences=data.preferences["native_windows"];
+    preferences["ui_language"]=std::string("es");preferences["content_language"]=std::string("es");preferences["catalog/locale"]=std::string("es");
+    preferences["catalog/route"]=std::string("programming");preferences["catalog/course"]=std::string("cpp_fundamentals");
+    const auto unit=lesson.id.rfind("__");require(unit!=lesson.id.npos,"The current lesson has no catalog unit identity");
+    preferences["catalog/unit"]=lesson.id.substr(0,unit);
+    require(data.preferences.size()==1&&preferences.size()==6&&state::can_import_android_profile(data),"Catalog-only QA must remain eligible for Android import");
+    store.save(data);require(store.load()==data&&state::can_import_android_profile(store.load()),"Saving the catalog invented progress or invalidated import");
+    require(state::sha256(state::read_bytes(source))==asset_hash,"Preparing the catalog modified its curricular asset");
+    std::cout<<"profile=Codex\nqa_instance="<<utf8(token)<<"\ndata_root="<<utf8(environment.paths.root.native())
+        <<"\ncatalog_unit="<<lesson.id.substr(0,unit)<<"\nchoose_lesson="<<(name=="u8"?3:4)
+        <<"\npreferences=native_windows-only\nnavigation_lesson=absent\nprogress_drafts_responses_receipts=none\nimport_eligible=1\nwindows_created=0\n";
+}
+
+void verify_stderr_import(std::string_view name,std::wstring_view qa_token,std::wstring_view export_token) {
+    require(is_valid_qa_instance(qa_token)&&is_valid_qa_instance(export_token),"The read-only verifier accepts only safe explicit QA tokens");
+    const auto plan=stderr_fixture_plan(name);const auto source=stderr_fixture_asset(plan);
+    const auto asset_hash=state::sha256(state::read_bytes(source));const auto lesson=windows::load_lesson(source);
+    require(lesson.id==plan.lesson_id&&lesson.compiler_puzzles_required,"The read-only verifier lost its actual curricular identity");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,std::wstring(qa_token),false});
+    const auto qa_root=environment.paths.root;
+    require(qa_root.parent_path().filename()==L"qa"&&qa_root.parent_path().parent_path().filename()==L"Codex"&&qa_root.filename()==qa_token,
+        "The verifier must never inspect an original student profile");
+    const auto export_parent=(std::filesystem::path(build::source_root)/"out/qa").lexically_normal();
+    const auto exported=export_parent/(L"stderr-export-"+std::wstring(export_token));
+    require(exported.is_absolute()&&exported.parent_path()==export_parent&&std::filesystem::is_directory(exported)&&
+        std::filesystem::is_directory(qa_root),"The verifier requires both exact existing isolated QA roots");
+    const auto safe_hashes=[](const std::filesystem::path& folder){state::require_safe_path(folder);
+        for(const auto& entry:std::filesystem::recursive_directory_iterator(state::native_io_path(folder)))state::require_safe_path(entry.path());
+        return hashes(folder);};
+    const auto active=qa_root/L"state/active";state::require_safe_path(active);
+    require(std::filesystem::is_regular_file(active/L"state.bin")&&std::filesystem::is_directory(active/L"android"),
+        "The QA profile has no completed Android import to verify");
+    const auto original_export=safe_hashes(exported),original_active=safe_hashes(active);
+    const auto preview=state::inspect_android_export(exported);
+    std::string import_manifest="LearnGameAndEngineDev.android-import.v1\n";
+    for(const auto& [path,hash]:original_export)import_manifest+=hash+' '+path.generic_string()+'\n';
+    auto expected_archive=original_export;expected_archive.emplace(".import-manifest.txt",state::sha256(import_manifest));
+    require(!preview.data.preferences.contains("native_windows")&&state::current_page(preview.data,lesson)==plan.page&&
+        safe_hashes(active/L"android")==expected_archive,"The archived Android metadata/files or exact import manifest differ from the source export");
+    const auto manifest_bytes=state::read_bytes(active/L"android/.import-manifest.txt");
+    require(std::string(manifest_bytes.begin(),manifest_bytes.end())==import_manifest,
+        "The imported QA archive lost its exact generated provenance manifest");
+    state::StateStore store(qa_root);const auto data=store.load();
+    const auto locate=[&](std::string_view identity){const auto at=curriculum::stable_block_position(lesson,identity);
+        require(at.has_value(),"The verifier lost an actual compiler owner, target or reference");return *at;};
+    const auto owner_at=locate(plan.owner),target_at=locate(plan.target),reference_at=locate(plan.owner_reference);
+    const auto& owner=lesson.pages[owner_at.page].blocks[owner_at.block];const auto& target=lesson.pages[target_at.page].blocks[target_at.block];
+    const auto& reference=lesson.pages[reference_at.page].blocks[reference_at.block];
+    require(owner_at.page==plan.page&&target_at.page==plan.page&&owner.type==BlockType::cpp_compiler&&target.type==BlockType::cpp_compiler&&
+        reference.type==BlockType::code&&!owner.standard_input&&!target.standard_input,
+        "The imported stderr activities no longer have their original unrequested stdin contract");
+    const auto owner_key=curriculum::draft_key("programming",lesson,owner),target_key=curriculum::draft_key("programming",lesson,target);
+    const auto original_owner=state::get_draft(preview.data,owner_key,""),original_target=state::get_draft(preview.data,target_key,"");
+    const auto saved_owner=state::get_draft(data,owner_key,""),saved_target=state::get_draft(data,target_key,"");
+    const std::string hidden_input=" \t\r\n    ";
+    const auto verify_input=[&](const std::string& key,const state::Draft& original,const state::Draft& saved){
+        require(original.has_saved&&saved.has_saved&&original.input==hidden_input&&saved.input==hidden_input&&
+            state::string_value(preview.data,"cpp_lesson_drafts",key+"/inputSha256")==state::sha256(hidden_input)&&
+            state::string_value(data,"cpp_lesson_drafts",key+"/inputSha256")==state::sha256(hidden_input),
+            "An unrequested imported draft input lost its exact eight bytes or original digest");};
+    verify_input(owner_key,original_owner,saved_owner);verify_input(target_key,original_target,saved_target);
+    require(original_owner.source==reference.code&&saved_owner.source==reference.code&&
+        saved_owner.selection_start==original_owner.selection_start&&saved_owner.selection_end==original_owner.selection_end&&
+        saved_owner.indentation_json==original_owner.indentation_json,
+        "The imported constructor source, original selection or indentation metadata changed");
+    std::string initial,enabled;
+    if(name=="u8") {
+        initial=target.initial_code;enabled=initial;constexpr std::string_view flag="mostrarDiagnostico{false}";const auto at=enabled.find(flag);
+        require(at!=enabled.npos,"The U8 import verifier lost its authored false flag");enabled.replace(at,flag.size(),"mostrarDiagnostico{true}");
+    } else {
+        const auto report_at=locate(plan.target_reference);const auto& report=lesson.pages[report_at.page].blocks[report_at.block];
+        require(report.type==BlockType::code,"The U10 import verifier lost its authored report source");enabled=report.code;initial=enabled;
+        constexpr std::string_view main_start="int main() {";const auto at=initial.find(main_start);
+        require(at!=initial.npos,"The U10 report no longer contains its exact authored main");
+        initial.insert(at+main_start.size(),"\n    std::cerr.setstate(std::ios_base::failbit);");
+    }
+    require(original_target.source==initial&&(saved_target.source==initial||saved_target.source==enabled),
+        "The target source differs from the exact imported or explicitly edited GUI variant");
+    const auto response_key=state::response_storage_key(lesson,target);
+    const auto old=state::get_response(preview.data,lesson,target),saved=state::get_response(data,lesson,target);
+    require(old&&old->correct&&saved&&saved->correct&&saved->answer==old->answer&&
+        state::string_value(data,"learning_progress",response_key)==state::string_value(preview.data,"learning_progress",response_key),
+        "Fresh Windows completion rewrote the opaque historical stdout response");
+    unsigned completed=0;
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)if(curriculum::has_compiler_objective(block)) {
+        require(!windows::compiler_puzzle_completed(preview.data,lesson,block)&&windows::compiler_puzzle_case_count(preview.data,lesson,block)==0,
+            "The Android export contained an invented Windows execution receipt");
+        const bool expected=block.stable_id==plan.owner||block.stable_id==plan.target;
+        require(windows::compiler_puzzle_completed(data,lesson,block)==expected&&windows::compiler_puzzle_case_count(data,lesson,block)==(expected?1u:0u),
+            "The imported QA lacks either current real completion or credited another compiler objective");
+        if(expected)++completed;
+    }
+    require(completed==2&&store.load()==data&&safe_hashes(exported)==original_export&&safe_hashes(active)==original_active&&
+        state::sha256(state::read_bytes(source))==asset_hash,"Read-only import verification changed state, original export, archive files or asset");
+    std::string export_frame;for(const auto& [path,hash]:original_export)export_frame+=path.generic_string()+'\n'+hash+'\n';
+    std::cout<<"PASS isolated stderr import conservation\nqa_instance="<<utf8(qa_token)<<"\nexport="<<utf8(exported.native())
+        <<"\nlesson="<<lesson.id<<"\nasset_sha256="<<asset_hash<<"\nexport_sha256="<<state::sha256(export_frame)
+        <<"\nstate_sha256="<<original_active.at("state.bin")<<"\nowner="<<plan.owner<<"\ntarget="<<plan.target
+        <<"\ntarget_variant="<<(saved_target.source==initial?"imported-stdout-only":"explicit-GUI-two-channel")
+        <<"\nhidden_input_hex=20090d0a20202020\nowner_selection="<<saved_owner.selection_start<<','<<saved_owner.selection_end
+        <<"\nopaque_response=unchanged\narchive=byte-exact\ncompleted_windows_objectives=2\nother_objective_receipts=0\nreadonly=1\nwindows_created=0\n";
 }
 
 struct ExportFixture {
@@ -530,7 +742,15 @@ void imported_pre_retirement_state_opens_current_asset() {
 
 } // namespace
 
-int main() {
+int main(int argc,char** argv) {
+    if(argc>1){
+        const bool prepare_export=argc==4&&std::string_view(argv[1])=="--prepare-stderr-export";
+        const bool prepare_catalog=argc==4&&std::string_view(argv[1])=="--prepare-import-catalog";
+        const bool verify_import=argc==5&&std::string_view(argv[1])=="--verify-stderr-import";
+        if(!prepare_export&&!prepare_catalog&&!verify_import){std::cerr<<"Usage: import_view_tests [--prepare-stderr-export|--prepare-import-catalog <u8|u10> <safe-new-token>] or [--verify-stderr-import <u8|u10> <QA-token> <export-token>]\n";return 2;}
+        try{if(verify_import)verify_stderr_import(argv[2],wide(argv[3]),wide(argv[4]));else if(prepare_export)prepare_stderr_export(argv[2],wide(argv[3]));else prepare_import_catalog(argv[2],wide(argv[3]));return 0;}
+        catch(const std::exception& error){std::cerr<<"FAIL isolated stderr import preparation: "<<error.what()<<'\n';return 1;}
+    }
     INITCOMMONCONTROLSEX controls{sizeof(controls), ICC_STANDARD_CLASSES}; InitCommonControlsEx(&controls);
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr);
     host.lpszClassName = L"LgaedImportViewTests";

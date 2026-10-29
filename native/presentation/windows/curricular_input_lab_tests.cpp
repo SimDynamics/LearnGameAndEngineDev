@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/profile.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
@@ -53,8 +54,90 @@ std::string window_text(HWND window) {
 }
 curriculum::StatePosition position(const curriculum::Lesson& lesson, std::string_view identity) {
     const auto found = curriculum::stable_block_position(lesson, identity);
-    check(found.has_value(), "A published U2L9 laboratory identity is missing");
+    check(found.has_value(), "A published curricular compiler identity is missing");
     return *found;
+}
+
+void prepare_visual_profile(std::wstring_view token, bool u3 = false) {
+    phase = u3 ? "prepare new isolated U3 stdout visual QA" : "prepare new isolated U2L9 visual QA";
+    check(is_valid_qa_instance(token), "Unsafe visual QA instance token");
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/cpp_fundamentals" /
+        (u3 ? "expresiones_y_decisiones/lesson_validez_y_cortocircuito.json"
+            : "objetos_y_estado/lesson_leer_una_entrada_conocida.json");
+    const auto asset_hash = state::sha256(state::read_bytes(path));
+    const auto lesson = windows::load_lesson(path);
+    const auto target = position(lesson, u3 ? "cero_y_totales_validos_editor" : "block_0009_0003");
+    const auto reference = u3 ? target : position(lesson, "block_0010_0001");
+    const auto& compiler = lesson.pages[target.page].blocks[target.block];
+    const auto& authored_reference = lesson.pages[reference.page].blocks[reference.block];
+    check(compiler.type == curriculum::BlockType::cpp_compiler && compiler.output_check
+        && compiler.output_check->input_comparison == curriculum::TextComparison::tokens
+        && compiler.output_check->cases.size() == 4 && !lesson.compiler_puzzles_required
+        && curriculum::activity_prerequisites(lesson, compiler).empty(),
+        "The visual QA target lost its current independent optional four-case contract");
+    check(u3 ? target.page == 6 && target.block == 6 && compiler.standard_input == "0 4" && !compiler.initial_code.empty()
+        : target.page == 9 && target.block == 3 && reference.page == 10 && reference.block == 1
+            && compiler.standard_input == "Iris 4 2" && authored_reference.type == curriculum::BlockType::code
+            && authored_reference.language == "cpp" && !authored_reference.code.empty(),
+        "The selected visual QA source, input or audited position changed");
+    const auto environment = resolve_windows_environment({ProfileId::Codex, std::wstring(token), false});
+    check(environment.paths.root.parent_path().filename() == L"qa"
+        && environment.paths.root.parent_path().parent_path().filename() == L"Codex"
+        && environment.paths.root.filename() == token,
+        "Visual QA resolved outside the isolated Codex QA directory");
+    state::require_safe_path(environment.paths.root);
+    check(!std::filesystem::exists(environment.paths.root), "Visual QA refuses to reuse or overwrite an existing profile");
+    std::filesystem::create_directories(environment.paths.root.parent_path());
+    check(std::filesystem::create_directory(environment.paths.root), "Another process already created this QA profile");
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    const auto empty = store.load();
+    check(empty.preferences.empty(), "The newly reserved QA profile unexpectedly contains previous state");
+    state::StateData data;
+    state::prepare_lesson_state(data, lesson);
+    state::save_current_page(data, lesson, target.page);
+    auto& preferences = data.preferences["native_windows"];
+    preferences["ui_language"] = std::string("es");
+    preferences["content_language"] = std::string("es");
+    preferences["catalog/locale"] = std::string("es");
+    preferences["catalog/route"] = std::string("programming");
+    preferences["catalog/course"] = std::string("cpp_fundamentals");
+    const auto unit_end = lesson.id.rfind("__");
+    check(unit_end != std::string::npos, "The selected laboratory has no catalog unit identity");
+    preferences["catalog/unit"] = lesson.id.substr(0, unit_end);
+    preferences["navigation/lesson"] = lesson.id;
+    // U2 uses its authored later reference as an explicit QA-only draft;
+    // U3 keeps its original initialCode. Neither setup executes a program or
+    // credits any prerequisite, response or goal.
+    state::Draft draft;
+    draft.source = u3 ? compiler.initial_code : authored_reference.code;
+    draft.input = *compiler.standard_input;
+    const auto draft_key = curriculum::draft_key("programming", lesson, compiler);
+    state::put_draft(data, draft_key, draft);
+    for (const auto& page : lesson.pages) for (const auto& block : page.blocks) {
+        check(!state::get_response(data, lesson, block), "Preparing visual QA invented a quiz response");
+        if (block.type == curriculum::BlockType::cpp_compiler)
+            check(windows::compiler_puzzle_case_count(data, lesson, block) == 0
+                && !windows::compiler_puzzle_completed(data, lesson, block),
+                "Preparing visual QA invented a compiler receipt or achievement");
+    }
+    state::validate_lesson_state(data, lesson);
+    store.save(data);
+    const auto saved = store.load();
+    const auto restored = state::get_draft(saved, draft_key, "");
+    check(saved == data && state::current_page(saved, lesson) == target.page
+        && restored.has_saved && restored.source == draft.source && restored.input == *compiler.standard_input,
+        "The prepared QA profile did not preserve its uncredited reference draft and input exactly");
+    check(state::sha256(state::read_bytes(path)) == asset_hash, "Preparing visual QA changed the authored asset");
+    std::cout << "profile=Codex\nqa_instance=" << utf8(token)
+        << "\ndata_root=" << utf8(environment.paths.root.native()) << "\nlesson=" << lesson.id
+        << "\ntarget=" << compiler.stable_id << "\npage=" << target.page + 1 << "\npage_index=" << target.page
+        << "\nblock=" << target.block + 1 << "\nsource_reference=" << (u3 ? "none" : authored_reference.stable_id)
+        << "\nsource_seed=" << (u3 ? "authored-initialCode-not-an-execution" : "authored-reference-draft-only-not-an-execution")
+        << "\ninput=" << *compiler.standard_input
+        << "\nsynthetic_prerequisites=none\nquiz_responses=none\ncompiler_receipts=none"
+        << "\ntarget_completed=0\ncompiler_puzzles_required=0\nwindows_created=0\n";
 }
 
 struct View {
@@ -128,7 +211,8 @@ struct View {
                 if (entry.is_directory()) result.insert(entry.path());
         return result;
     }
-    void run(std::string_view source, std::string_view input, std::string_view expected) {
+    std::filesystem::path run(std::string_view source, std::string_view input, std::string_view expected,
+        std::string_view expected_raw = {}) {
         const auto before = run_directories();
         const auto button = control(block, 11);
         check(IsWindowEnabled(button) && window_text(button) == "Compilar, ejecutar y comprobar",
@@ -155,11 +239,12 @@ struct View {
             "The laboratory did not use the configured MSVC compiler and a real executable");
         check(bytes(directory / L"main.cpp") == source && bytes(directory / L"stdin.bin") == input,
             "The compiler did not capture the exact authored source and current prepared input");
-        check(bytes(directory / L"execution-stdout.bin") == expected && text(14) == expected
+        check(bytes(directory / L"execution-stdout.bin") == (expected_raw.empty() ? expected : expected_raw) && text(14) == expected
             && bytes(directory / L"execution-stderr.bin").empty(),
             "The actual program's binary output or visible console differs from the exact requested output");
         check(!IsWindowVisible(host), "A laboratory execution exposed the QA host");
         ++executions;
+        return directory;
     }
 };
 
@@ -264,10 +349,132 @@ void current_three_input_laboratory() {
         "The focal input QA lost a fresh execution, changed authored bytes or exposed the desktop");
     std::cout << "PASS current U2L9 p10b4: seven fresh native MSVC runs, Iris/Leo/Vera/Sol exact binary outputs, token whitespace variants, four-case progress, repeated input, exact source/input/achievement reopen and p11 reference; no required-policy activation or other objective credit\n";
 }
+
+void current_u3_stdout_transport() {
+    phase = "load current U3 zero-and-totals stdout objective";
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_validez_y_cortocircuito.json";
+    const auto asset_hash = state::sha256(state::read_bytes(path));
+    const auto lesson = windows::load_lesson(path);
+    const auto target = position(lesson, "cero_y_totales_validos_editor");
+    const auto& compiler = lesson.pages[target.page].blocks[target.block];
+    check(target.page == 6 && target.block == 6 && compiler.type == curriculum::BlockType::cpp_compiler
+        && compiler.output_check && compiler.output_check->input_comparison == curriculum::TextComparison::tokens
+        && compiler.output_check->cases.size() == 4 && compiler.standard_input == "0 4"
+        && !compiler.initial_code.empty() && !lesson.compiler_puzzles_required
+        && curriculum::activity_prerequisites(lesson, compiler).empty(),
+        "The current U3 optional stdout objective lost its exact position, initial source, input or four-case contract");
+    struct Case { std::string_view input, output, raw; };
+    constexpr std::array<Case, 4> cases{{
+        {"0 4", "1\nGrupos: 0", "1\r\nGrupos: 0"},
+        {"1 4", "0\nGrupos: 0", "0\r\nGrupos: 0"},
+        {"28 6", "0\nGrupos: 4", "0\r\nGrupos: 4"},
+        {"120 12", "1\nGrupos: 10", "1\r\nGrupos: 10"}
+    }};
+    for (std::size_t index = 0; index < cases.size(); ++index) {
+        const auto& published = compiler.output_check->cases[index];
+        check(published.standard_input == cases[index].input && !published.explanation.empty()
+            && published.outputs == std::vector<std::string>{std::string(cases[index].output), std::string(cases[index].output) + '\n'},
+            "The U3 authored LF outputs, optional final break or current success explanations changed");
+    }
+    View fixture(lesson, target);
+    const auto initial = fixture.saved();
+    const auto unrelated = initial.preferences.at("input_lab_qa_unrelated");
+    const auto draft_key = curriculum::draft_key("programming", lesson, compiler);
+    const auto source = compiler.initial_code;
+    const auto retained = [&](std::size_t count, std::string_view input) {
+        const auto saved = fixture.saved();
+        const auto draft = state::get_draft(saved, draft_key, "");
+        check(lesson_page_state(fixture.view).index == target.page && fixture.text(10) == source
+            && fixture.text(15) == input && saved.preferences.at("input_lab_qa_unrelated") == unrelated
+            && windows::compiler_puzzle_case_count(saved, lesson, compiler) == count
+            && windows::compiler_puzzle_completed(saved, lesson, compiler) == (count == cases.size()),
+            "The U3 current page, unchanged source/input, independent case progress or preference was lost");
+        if (count) check(draft.has_saved && draft.source == source && draft.input == input,
+            "The U3 actual source/input editors lost their exact persisted draft");
+        for (const auto& page : lesson.pages) for (const auto& other : page.blocks)
+            if (other.type == curriculum::BlockType::cpp_compiler && other.stable_id != compiler.stable_id)
+                check(windows::compiler_puzzle_case_count(saved, lesson, other) == 0
+                    && !windows::compiler_puzzle_completed(saved, lesson, other),
+                    "The focal U3 regression manufactured another compiler's achievement");
+    };
+    retained(0, *compiler.standard_input);
+    for (std::size_t index = 0; index < cases.size(); ++index) {
+        const auto& item = cases[index];
+        phase = "U3 native MSVC execution " + std::to_string(index + 1) + ": " + std::string(item.input);
+        fixture.replace(15, item.input);
+        const auto run_directory = fixture.run(source, item.input, item.output, item.raw);
+        const auto raw = bytes(run_directory / L"execution-stdout.bin");
+        curriculum::FreshExecution execution;
+        execution.source_revision = 1;
+        execution.compilation_succeeded = execution.execution_succeeded = true;
+        execution.exit_code = 0;
+        execution.standard_input = bytes(run_directory / L"stdin.bin");
+        execution.standard_output = raw;
+        const auto exact = curriculum::evaluate_output_check(*compiler.output_check, execution, 1);
+        const auto native = windows::evaluate_cpp_output_check(*compiler.output_check, execution, 1);
+        check(exact.verdict == curriculum::OutputVerdict::incorrect
+            && native.verdict == curriculum::OutputVerdict::correct && native.stdout_correct
+            && native.feedback == compiler.output_check->cases[index].explanation
+            && execution.standard_output == raw && bytes(run_directory / L"execution-stdout.bin") == item.raw,
+            "The current U3 CRT CRLF capture was rejected, rewritten or credited by a weakened shared LF contract");
+        if (!index) {
+            // One curricular negative checks that accepting CRT separators
+            // does not flatten this lesson's two required output lines.
+            const auto separator = execution.standard_output.find("\r\n");
+            check(separator != std::string::npos, "The actual first U3 program emitted no native line separator");
+            execution.standard_output.erase(separator, 2);
+            check(windows::evaluate_cpp_output_check(*compiler.output_check, execution, 1).verdict
+                == curriculum::OutputVerdict::incorrect,
+                "The current U3 objective accepted its two required lines concatenated");
+        }
+        retained(index + 1, item.input);
+        if (index + 1 < cases.size())
+            check(fixture.text(4).empty() && fixture.text(34) == "Caso correcto. Casos comprobados: "
+                + std::to_string(index + 1) + " de 4.",
+                "A native U3 execution lost its partial case count or invented complete feedback");
+        if (index == 1) {
+            phase = "restore the two genuine U3 partial receipts";
+            fixture.reopen(); retained(2, item.input);
+            check(fixture.text(4).empty(), "Reopening two U3 cases invented the final achievement");
+        }
+    }
+    phase = "restore the four-case U3 achievement and exact original source/input";
+    const auto feedback = "✓ Correcto\n\n" + compiler.output_check->cases.back().explanation;
+    check(fixture.text(4) == feedback, "The completed U3 objective lost its exact final case explanation");
+    fixture.reopen(); retained(cases.size(), cases.back().input);
+    check(fixture.text(4) == feedback, "The U3 final verdict/explanation did not survive reopening");
+    bool reading = false;
+    for (const auto& region : lesson_reading_regions(fixture.view))
+        if (region.target == fixture.control(target.block, 4)) {
+            reading = true;
+            check(region.feedback && region.correct && region.source_text == feedback,
+                "The restored U3 feedback's reader source differs from its completed visible result");
+        }
+    check(reading && fixture.executions == 4 && !IsWindowVisible(fixture.host)
+        && state::sha256(state::read_bytes(path)) == asset_hash,
+        "The U3 QA lost a fresh run, changed the authored asset or exposed the desktop");
+    std::cout << "PASS current U3 p7b7 zero/totals: four real native MSVC runs of unchanged initialCode, exact raw CRLF stdout and stdin/source captures, shared LF contract unchanged, Windows verdicts and current feedback, four-case partial/full reopen, source/input/other state preserved; no synthetic receipts or desktop/listening acceptance\n";
+}
 }
 
-int main() {
+int main(int argc, char** argv) {
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
+    const bool u3_stdout = argc == 2 && std::string_view(argv[1]) == "--u3-stdout";
+    if (argc != 1 && !u3_stdout) {
+        const bool shape = argc == 3 && (std::string_view(argv[1]) == "--prepare-visual"
+            || std::string_view(argv[1]) == "--prepare-u3-visual");
+        const auto raw = shape ? std::string_view(argv[2]) : std::string_view{};
+        const std::wstring token(raw.begin(), raw.end());
+        if (!shape || !is_valid_qa_instance(token)) {
+            std::cerr << "Usage: curricular_input_lab_tests [--u3-stdout | --prepare-visual <safe-new-QA-token> | --prepare-u3-visual <safe-new-QA-token>]\n";
+            return 2;
+        }
+        // Preparation performs only JSON/state/file operations. The original
+        // regression remains responsible for all native control initialization.
+        try { prepare_visual_profile(token, std::string_view(argv[1]) == "--prepare-u3-visual"); return 0; }
+        catch (const std::exception& error) { std::cerr << "Visual QA preparation failed: " << error.what() << '\n'; return 1; }
+    }
     const auto apartment = OleInitialize(nullptr);
     if (FAILED(apartment)) return 2;
     INITCOMMONCONTROLSEX common{sizeof(common), ICC_STANDARD_CLASSES}; InitCommonControlsEx(&common);
@@ -275,7 +482,8 @@ int main() {
     int result = 0;
     try {
         check(rich != nullptr, "Cannot load RichEdit for the current input laboratory");
-        reader_theme::prepare_fonts(); current_three_input_laboratory();
+        reader_theme::prepare_fonts();
+        if (u3_stdout) current_u3_stdout_transport(); else current_three_input_laboratory();
     } catch (const std::exception& error) { std::cerr << "FAIL current input laboratory: " << error.what() << '\n'; result = 1; }
     if (rich) FreeLibrary(rich);
     OleUninitialize(); return result;

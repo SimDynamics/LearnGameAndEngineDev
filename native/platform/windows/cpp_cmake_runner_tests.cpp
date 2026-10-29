@@ -99,6 +99,70 @@ target_include_directories(parts PRIVATE include)
     auto unicode=request;unicode.project_files={{"Á.cpp","int x;"},{"á.cpp","int y;"}};unicode.cmake.reset();unicode.source_files={"Á.cpp"};const auto collision=run_cpp(unicode);check(!collision.error_utf8.empty()&&collision.run_directory.empty(),"Windows Unicode case collision overwrote a source file");
     auto direct=request;direct.cmake.reset();direct.source_files={"one/value.cpp","two/value.cpp","main.cpp"};direct.project_files={{"one/value.cpp","int first(){return 6;}"},{"two/value.cpp","int second(){return 7;}"},{"main.cpp","#include <cstdio>\nint first();int second();int main(){std::printf(\"%d\",first()+second());}"}};direct.action=CppRunRequest::Action::compile_run;const auto multiple=run_cpp(direct);ran(multiple);check(multiple.execution.stdout_bytes=="13","Distinct same-basename translation units collided or failed to link");
     {
+        // Exercise both real project execution paths with ordinary C++ LF
+        // output. The Windows alternative belongs to comparison, not capture.
+        auto multiline=direct;multiline.request_id=100;multiline.project_key+="/stdout-line-endings";
+        multiline.project_files[2].second=
+            "#include <iostream>\nint first();\nint second();\n"
+            "int main() {\n    int input{}, extra_space{};\n    std::cin >> input >> extra_space;\n"
+            "    std::cout << input + first() + second() << \"\\nFin\";\n"
+            "    if (extra_space) std::cout << ' ';\n    std::cerr << \" \\tdiagnostico\\n \";\n}\n";
+        const std::string inputs[]{" \t7 0\n "," \t7 1\n "};
+        for(const bool use_cmake:{false,true}) {
+            auto current=multiline;const std::string kind=use_cmake?"CMake":"Direct multi-file";
+            if(use_cmake) {
+                current.project_files.push_back({"CMakeLists.txt",
+                    "cmake_minimum_required(VERSION 3.20)\nproject(LineEndings LANGUAGES CXX)\n"
+                    "add_executable(line_endings main.cpp one/value.cpp two/value.cpp)\n"});
+                current.source_files.clear();current.cmake=curriculum::CmakeConfig{"line_endings",{},"Debug"};
+            }
+            curriculum::OutputCheck goal;
+            for(const auto& input:inputs) {
+                curriculum::OutputCase item;item.standard_input=input;item.outputs={"20\nFin"};
+                if(use_cmake)item.executable="line_endings";
+                item.standard_error=curriculum::StandardErrorExpectation::non_blank;goal.cases.push_back(item);
+            }
+            const auto original_files=current.project_files;
+            for(unsigned extra_space=0;extra_space<2;++extra_space) {
+                ++current.request_id;current.stdin_utf8=inputs[extra_space];
+                const auto result=run_cpp(current);ran(result);
+                const auto raw=std::string("20\r\nFin")+(extra_space?" ":"");
+                const std::string error=" \tdiagnostico\r\n ";
+                check(result.execution.stdout_bytes==raw&&result.execution.stderr_bytes==error&&
+                    read(result.run_directory/L"execution-stdout.bin")==raw&&
+                    read(result.run_directory/L"execution-stderr.bin")==error&&
+                    read(result.run_directory/L"stdin.bin")==current.stdin_utf8,
+                    kind+" rewrote raw CRLF, significant spaces/TAB, stdin or separate stderr");
+                const auto source=use_cmake?inspect_cpp_project(current).workspace/L"p":result.run_directory/L"project";
+                for(const auto& [name,text]:original_files)check(read(source/std::filesystem::path(name))==text,
+                    kind+" rewrote an authored project source or configuration");
+                curriculum::FreshExecution observed;observed.source_revision=result.revision;
+                observed.compilation_succeeded=result.compilation.succeeded();observed.execution_succeeded=result.execution.succeeded();
+                observed.exit_code=static_cast<int>(result.execution.exit_code.value_or(0xffffffffu));
+                observed.standard_input=current.stdin_utf8;observed.standard_output=result.execution.stdout_bytes;
+                observed.standard_error=result.execution.stderr_bytes;observed.executable=result.executable;
+                check(evaluate_cpp_output_check(goal,observed,current.revision).verdict==
+                    (extra_space?curriculum::OutputVerdict::incorrect:curriculum::OutputVerdict::correct),
+                    kind+" rejected native CRLF for an LF goal or accepted an added final space");
+                if(!extra_space) {
+                    auto tabbed=observed;tabbed.standard_output+='\t';
+                    check(evaluate_cpp_output_check(goal,tabbed,current.revision).verdict==curriculum::OutputVerdict::incorrect,
+                        kind+" accepted an extra TAB in its exact multiline output");
+                }
+                check(curriculum::evaluate_output_check(goal,observed,current.revision).verdict==curriculum::OutputVerdict::incorrect,
+                    kind+" changed the shared exact LF contract to accept raw CRLF");
+                check(observed.standard_output==raw&&observed.standard_error==error&&observed.standard_input==inputs[extra_space]&&
+                    current.project_files==original_files&&goal.cases.size()==2,
+                    kind+" comparison changed captured bytes, original sources, input or LF goals");
+                for(unsigned index=0;index<2;++index)check(goal.cases[index].standard_input==inputs[index]&&
+                    goal.cases[index].outputs==std::vector<std::string>{"20\nFin"}&&goal.cases[index].standard_error==curriculum::StandardErrorExpectation::non_blank&&
+                    goal.cases[index].executable==(use_cmake?std::optional<std::string>{"line_endings"}:std::nullopt),
+                    kind+" comparison changed an exact LF output, input, target or stderr requirement");
+            }
+        }
+        std::cout<<"PASS real direct multi-file and CMake multiline CRLF capture, Windows LF verdict, final-space rejection and exact source/stdin/stdout/stderr preservation\n";
+    }
+    {
         const auto workspace=inspect_cpp_project(request).workspace,manifest=workspace/L"identity.sha256",record=workspace/L"retained.fixture";
         const auto identity=read(manifest);const auto source_stamp=std::filesystem::last_write_time(workspace/L"p/src/main.cpp");
         {std::ofstream kept(record,std::ios::binary);kept<<"owned record preserved";}

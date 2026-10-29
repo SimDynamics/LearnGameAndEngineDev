@@ -26,7 +26,7 @@ struct OrderCodeView::Impl {
     std::vector<int> requested_heights;
     std::vector<RECT> cards;
     std::function<void()> changed;
-    POINT down{};ULONGLONG began=0;bool dragging=false,enabled=true,wrap=false,translucent=false;LONG_PTR pressed_style=0;std::size_t next_tap=0;
+    POINT down{};bool dragging=false,drag_changed=false,enabled=true,wrap=false,translucent=false;LONG_PTR pressed_style=0;std::size_t next_tap=0;
     int percentage=100,width=1,height=1,content_width=1,horizontal=0,gutter=18,number_pixels=0;
     Impl(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,std::function<void()> callback)
         :fragments(std::move(source)),changed(std::move(callback)){
@@ -63,7 +63,7 @@ struct OrderCodeView::Impl {
         }
         ordered=std::move(order);
     }
-    ~Impl(){release();if(host&&IsWindow(host))DestroyWindow(host);if(number_font)DeleteObject(number_font);if(font)DeleteObject(font);if(rich)FreeLibrary(rich);}
+    ~Impl(){release(false);if(host&&IsWindow(host))DestroyWindow(host);if(number_font)DeleteObject(number_font);if(font)DeleteObject(font);if(rich)FreeLibrary(rich);}
     int px(int n)const{return MulDiv(n,static_cast<int>(GetDpiForWindow(host)),96);}
     std::size_t position(HWND row)const{return static_cast<std::size_t>(std::ranges::find(ordered,static_cast<std::size_t>(GetDlgCtrlID(row)-100))-ordered.begin());}
     int prepare_number_font(){
@@ -172,14 +172,23 @@ struct OrderCodeView::Impl {
             DrawTextW(dc,label.c_str(),-1,&rect,DT_RIGHT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);}
         SelectObject(dc,old);
     }
-    void move(std::size_t from,std::size_t to){
+    void move(std::size_t from,std::size_t to,bool tap=false){
         if(!enabled||from>=ordered.size()||to>=ordered.size())return;
+        if(from==to&&!tap)return;
         if(from!=to){const auto value=ordered[from];ordered.erase(ordered.begin()+from);ordered.insert(ordered.begin()+to,value);layout(width);}
-        if(changed)changed();
+        // Publishing clears reviewed feedback and can clamp the lesson's
+        // bottom scroll. Keep those screen destinations stable while the
+        // pointer is captured; the final arrangement is published on release.
+        // A deliberate tap still starts a sequence even at its current index.
+        if(dragging)drag_changed=true;else if(changed)changed();
     }
-    void release(){const auto item=pressed;pressed=nullptr;dragging=false;
+    void release(bool publish=true){const auto item=pressed;const bool notify=publish&&drag_changed;
+        pressed=nullptr;dragging=false;drag_changed=false;
         if(item&&translucent&&IsWindow(item)){SetLayeredWindowAttributes(item,0,255,LWA_ALPHA);SetWindowLongPtrW(item,GWL_EXSTYLE,pressed_style);RedrawWindow(item,nullptr,nullptr,RDW_INVALIDATE|RDW_FRAME);}
-        translucent=false;if(item&&GetCapture()==item)ReleaseCapture();}
+        translucent=false;if(item&&GetCapture()==item)ReleaseCapture();
+        // ReleaseCapture synchronously sends WM_CAPTURECHANGED. All gesture
+        // state must already be clear, and owner callbacks may destroy us.
+        if(notify&&changed){const auto callback=changed;callback();}}
     static LRESULT CALLBACK child(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR data){
         auto& self=*reinterpret_cast<Impl*>(data);
         if(message==WM_NCDESTROY){RemoveWindowSubclass(item,child,1);return DefSubclassProc(item,message,wp,lp);}
@@ -195,25 +204,30 @@ struct OrderCodeView::Impl {
         if(message==WM_SYSKEYDOWN&&(wp==VK_UP||wp==VK_DOWN)){
             const auto at=self.position(item);if(wp==VK_UP&&at)self.move(at,at-1);else if(wp==VK_DOWN&&at+1<self.ordered.size())self.move(at,at+1);return 0;}
         if(message==WM_LBUTTONDOWN){if(!self.enabled)return 0;self.pressed=item;self.dragging=false;
-            self.down={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(item,&self.down);self.began=GetTickCount64();SetFocus(item);SetCapture(item);return 0;}
+            self.down={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(item,&self.down);SetFocus(item);SetCapture(item);return 0;}
         if(message==WM_MOUSEMOVE&&self.pressed==item&&(wp&MK_LBUTTON)){
             POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(item,&point);
-            if(!self.dragging&&GetTickCount64()-self.began>=20&&(std::abs(point.x-self.down.x)>self.px(4)||std::abs(point.y-self.down.y)>self.px(4))){
+            // A clear displacement is a drag even when DOWN/MOVE/UP arrive
+            // within one clock tick. A hold cutoff turned fast drags into
+            // nextTapPosition clicks and moved the source to an unrelated row.
+            if(!self.dragging&&(std::abs(point.x-self.down.x)>self.px(4)||std::abs(point.y-self.down.y)>self.px(4))){
                 self.dragging=true;self.pressed_style=GetWindowLongPtrW(item,GWL_EXSTYLE);SetWindowLongPtrW(item,GWL_EXSTYLE,self.pressed_style|WS_EX_LAYERED);
                 self.translucent=SetLayeredWindowAttributes(item,0,140,LWA_ALPHA)!=FALSE;if(!self.translucent)SetWindowLongPtrW(item,GWL_EXSTYLE,self.pressed_style);}
             if(self.dragging)for(std::size_t to=0;to<self.ordered.size();++to){RECT bounds{};GetWindowRect(self.rows[self.ordered[to]],&bounds);
                 if(PtInRect(&bounds,point)){self.move(self.position(item),to);break;}}
             return 0;}
         if(message==WM_LBUTTONUP&&self.pressed==item){const bool drag=self.dragging;self.release();
-            if(!drag&&self.next_tap<self.ordered.size())self.move(self.position(item),self.next_tap++);return 0;}
+            if(!drag&&self.next_tap<self.ordered.size())self.move(self.position(item),self.next_tap++,true);return 0;}
         if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE){self.release();return 0;}
-        if(message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL){self.release();return SendMessageW(self.host,message,wp,lp);}
+        if(message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL){const auto owner=self.host;self.release();
+            return IsWindow(owner)?SendMessageW(owner,message,wp,lp):0;}
         return DefSubclassProc(item,message,wp,lp);
     }
     static LRESULT CALLBACK procedure(HWND item,UINT message,WPARAM wp,LPARAM lp){
         auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(item,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);self->host=item;SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(item,message,wp,lp);
+        if(message==WM_DESTROY)self->release(false);
         if(message==WM_NOTIFY){const auto note=reinterpret_cast<NMHDR*>(lp);if(note&&note->code==EN_REQUESTRESIZE&&note->idFrom>=100&&note->idFrom-100<self->requested_heights.size()){
             const auto size=reinterpret_cast<REQRESIZE*>(lp);self->requested_heights[note->idFrom-100]=size->rc.bottom-size->rc.top;return 0;}}
         if(message==WM_HSCROLL||message==WM_MOUSEHWHEEL){SCROLLINFO info{sizeof(info),SIF_TRACKPOS};GetScrollInfo(item,SB_HORZ,&info);
@@ -243,5 +257,5 @@ void OrderCodeView::set_enabled(bool value){impl_->enabled=value;if(!value)impl_
 void OrderCodeView::set_text_scale(int value){impl_->percentage=std::clamp(value,25,400);for(const auto row:impl_->rows)SendMessageW(row,EM_SETZOOM,impl_->percentage,100);impl_->layout(impl_->width);}
 void OrderCodeView::set_wrap(bool value){impl_->wrap=value;for(const auto row:impl_->rows)SendMessageW(row,EM_SETTARGETDEVICE,0,value?0:1);impl_->layout(impl_->width);}
 void OrderCodeView::restart_tap_sequence(){impl_->next_tap=0;}
-void OrderCodeView::reset(){set_completed(false);impl_->ordered=impl_->original;impl_->next_tap=0;impl_->layout(impl_->width);if(impl_->changed)impl_->changed();}
+void OrderCodeView::reset(){impl_->release(false);set_completed(false);impl_->ordered=impl_->original;impl_->next_tap=0;impl_->layout(impl_->width);if(impl_->changed)impl_->changed();}
 }

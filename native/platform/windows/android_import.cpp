@@ -292,7 +292,8 @@ bool can_import_android_profile(const StateData& data) {
     for (const auto& [domain,values] : data.preferences) {
         if (domain != "native_windows") return false;
         for (const auto& [key,value] : values) {
-            (void)value;
+            // main records this destination before the first student edit.
+            if (key == "navigation/lesson" && std::holds_alternative<std::string>(value)) continue;
             if (!key.starts_with("catalog/") && key != "ui_language" && key != "content_language") return false;
         }
     }

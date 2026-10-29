@@ -892,7 +892,8 @@ int main(int argc, char** argv) {
         navigation_only.preferences["native_windows"]["catalog/v1/es/programming/cpp_fundamentals///selection"] = std::int64_t{4};
         navigation_only.preferences["native_windows"]["ui_language"] = std::string("fr");
         navigation_only.preferences["native_windows"]["content_language"] = std::string("es");
-        require(can_import_android_profile({}) && can_import_android_profile(navigation_only), "Untouched/catalog-only profile cannot import");
+        navigation_only.preferences["native_windows"]["navigation/lesson"] = std::string("cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida");
+        require(can_import_android_profile({}) && can_import_android_profile(navigation_only), "Untouched/catalog/active-lesson navigation cannot import");
         for (const auto domain : {"learning_progress","cpp_lesson_drafts","narration_settings","unknown"}) {
             auto real_data = navigation_only; real_data.preferences[domain]["preserve"] = std::string("user data");
             require(!can_import_android_profile(real_data), "Import eligibility silently permits a non-UI domain");
@@ -903,8 +904,29 @@ int main(int argc, char** argv) {
             require(sha256(read_bytes(target / "state/active/state.bin")) == before && seed.load() == real_data,
                     "Refusing a non-UI domain changed previous student data");
         }
-        auto unknown_ui = navigation_only; unknown_ui.preferences["native_windows"]["reference-proof/v1/es/programming/test/0/0"] = std::string("not UI");
-        require(!can_import_android_profile(unknown_ui), "An unknown native key qualified as navigation-only"); ++groups;
+        const auto refused_native_state = [&](const StateData& blocked, std::string_view name) {
+            require(!can_import_android_profile(blocked), "A non-navigation native key or malformed active lesson qualified for import");
+            const auto target = base / ("blocked-native-" + std::string(name));
+            StateStore seed(target); (void)seed.load(); seed.save(blocked);
+            const auto before = sha256(read_bytes(target / "state/active/state.bin"));
+            rejects([&] { commit_android_import(preview,target); });
+            require(sha256(read_bytes(target / "state/active/state.bin")) == before && seed.load() == blocked,
+                "Refusing a native key or malformed navigation value changed previous state");
+        };
+        std::size_t refused_key = 0;
+        for (const auto blocked_key : {"navigation/otro","navigation/lesson-extra","scroll/qa/page_0000",
+                "compiler-puzzle/v1/qa/program","reference-proof/v1/es/programming/test/0/0"}) {
+            auto unknown_ui = navigation_only;
+            unknown_ui.preferences["native_windows"][blocked_key] = std::string("not navigation-only data");
+            refused_native_state(unknown_ui,"key-" + std::to_string(refused_key++));
+        }
+        const std::vector<Value> malformed_lessons{std::int64_t{7},0.5,true,std::vector<std::string>{"lesson"}};
+        for (std::size_t index = 0; index < malformed_lessons.size(); ++index) {
+            auto malformed = navigation_only;
+            malformed.preferences["native_windows"]["navigation/lesson"] = malformed_lessons[index];
+            refused_native_state(malformed,"lesson-value-" + std::to_string(index));
+        }
+        ++groups;
 
         const auto navigated_target = base / "navigated-import-profile";
         StateStore navigated_seed(navigated_target); (void)navigated_seed.load(); navigated_seed.save(navigation_only);
@@ -912,6 +934,9 @@ int main(int argc, char** argv) {
         auto merged_expected = preview.data; merged_expected.preferences["native_windows"] = navigation_only.preferences.at("native_windows");
         StateStore navigated_store(navigated_target);
         require(navigated_store.load() == merged_expected, "Import after browsing lost UI preferences or changed imported progress/drafts");
+        require(string_value(navigated_store.load(),"native_windows","navigation/lesson")
+            == string_value(navigation_only,"native_windows","navigation/lesson"),
+            "Import changed the exact active-lesson navigation destination");
         for (const auto& file : preview.files)
             require(sha256(read_bytes(navigated_target / "state/active/android" / file.relative_path)) == file.sha256,
                     "Import after browsing changed archived Android bytes");

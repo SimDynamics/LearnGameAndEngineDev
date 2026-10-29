@@ -3479,10 +3479,7 @@ struct LessonView {
         if (id == import_id) { import_state(); return; }
         if(id==finish_id){(void)finish_lesson();return;}
         if(id==continue_id){if(page+1<lesson.pages.size())change_page(page+1);else (void)finish_lesson();return;}
-        if (id == menu_id) {
-            if(hooks.settings_requested)PostMessageW(window,header_action_message,settings_id,0);
-            else open_menu();return;
-        }
+        if (id == menu_id) { open_menu(); return; }
         if(id==back_id){(void)navigate_back();return;}
         if (id == reader_id || id == language_id || id == attempts_id || id == settings_id) {
             if(id==attempts_id&&attempt_state.premium)return;

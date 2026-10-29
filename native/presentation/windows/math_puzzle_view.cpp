@@ -1227,8 +1227,13 @@ struct MathPuzzleView::Impl {
             for (const auto& cell : row.cells) if (cell.text || (GetWindowLongPtrW(cell.window,GWL_STYLE) & BS_MULTILINE) || editors.contains(cell.window)) {
                 const auto cell_width = cell.width ? px(cell.width) : flexible;
                 if (cell.text) {
-                    SetWindowPos(cell.window,nullptr,0,0,cell_width,std::max(1,height),SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
-                    if(choice_labels.contains(cell.window)||cell.inset_x||cell.inset_y){RECT content{px(cell.inset_x),0,cell_width-px(cell.inset_x),std::max(1,height)};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
+                    // With a 1px measuring viewport RichEdit can retain the
+                    // previous width's wrapped height until the real placement.
+                    // This viewport is provisional; the final row still uses
+                    // its native requested height plus the existing insets.
+                    const auto measuring_height=std::max(px(48),height);
+                    SetWindowPos(cell.window,nullptr,0,0,cell_width,measuring_height,SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
+                    if(choice_labels.contains(cell.window)||cell.inset_x||cell.inset_y){RECT content{px(cell.inset_x),0,cell_width-px(cell.inset_x),measuring_height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
                     SendMessageW(cell.window,EM_REQUESTRESIZE,0,0);
                     if (const auto found = requested_heights.find(cell.window); found != requested_heights.end()) { height = std::max(height,found->second + px(cell.inset_y?cell.inset_y*2:4)); continue; }
                 }

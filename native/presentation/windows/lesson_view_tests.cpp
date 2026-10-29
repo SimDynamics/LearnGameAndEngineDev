@@ -11,6 +11,7 @@
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "core/retirement_test_fixture.hpp"
+#include "core/profile.hpp"
 #include "core/narration_state.hpp"
 #include "core/view_preferences.hpp"
 #include "platform/windows/android_import.hpp"
@@ -483,6 +484,54 @@ struct PopupCapture {
         require(native_styles || reader_theme::palette(owner).high_contrast,"The actual popup bypassed the native dark-menu helper");
     }
 };
+
+void lesson_menu_retains_import_pages_and_settings_with_hooks() {
+    for (const auto locale : {"es","en","fr"}) {
+        Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {
+            data.preferences["native_windows"]["ui_language"] = std::string(locale);
+        },[](const curriculum::Lesson&) {
+            return windows::parse_lesson_json(R"({"id":"qa_lesson_menu","title":"Contenido para el menú","pages":[
+                {"blocks":[{"type":"paragraph","text":"Página sin respuestas para comprobar el menú."}]},
+                {"blocks":[{"type":"paragraph","text":"Segunda página conservada."}]}]})");
+        },true);
+        const auto before = fixture.saved();
+        const auto pick = [locale](const char* es,const char* en,const char* fr) {
+            return std::string(std::string_view(locale)=="fr"?fr:std::string_view(locale)=="en"?en:es);
+        };
+        int settings_requests = 0;
+        HWND settings_owner = nullptr;
+        LessonViewHooks hooks;
+        hooks.settings_requested = [&](HWND owner) { ++settings_requests; settings_owner = owner; };
+        set_lesson_view_hooks(fixture.view,hooks);
+        ShowWindow(fixture.host,SW_SHOWNOACTIVATE); pump(fixture.host);
+        const auto verify_menu = [&](bool settings_available) {
+            PopupCapture capture(fixture.view);
+            fixture.click(107); capture.verified();
+            require(capture.captions.front() == pick("Importar estado Android…","Import Android state…","Importer l'état Android…")
+                && std::ranges::find(capture.commands,104u) != capture.commands.end()
+                && std::ranges::find(capture.captions,pick("Páginas","Pages","Pages")) != capture.captions.end(),
+                "The lesson gear lost its localized import command or Pages submenu");
+            const auto settings = std::ranges::find(capture.commands,114u);
+            require((settings != capture.commands.end()) == settings_available,
+                "The lesson menu lost its settings command or invented one without a callback");
+            if (settings_available) require(capture.captions[static_cast<std::size_t>(settings-capture.commands.begin())]
+                == pick("Ajustes de lectura y apariencia…","Reading and appearance settings…","Réglages de lecture et d'apparence…"),
+                "The real lesson menu settings command ignored the interface language");
+            require(settings_requests == 0 && fixture.saved() == before && fixture.page() == 0,
+                "Opening/canceling the lesson menu invoked Settings or changed lesson data");
+        };
+        verify_menu(true);
+        set_lesson_view_hooks(fixture.view,{});
+        verify_menu(false);
+        set_lesson_view_hooks(fixture.view,hooks);
+        SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(114,BN_CLICKED),0); pump(fixture.host);
+        require(settings_requests == 1 && settings_owner == fixture.view && IsWindow(fixture.view)
+            && fixture.saved() == before && fixture.page() == 0,
+            "The retained Settings command did not dispatch once through its hook with lesson state intact");
+        ShowWindow(fixture.host,SW_HIDE); pump(fixture.host);
+    }
+    std::cout << "PASS real lesson gear in es/en/fr with and without settings hook: localized Import/Pages/Settings, cancel without navigation or callback, explicit Settings dispatch once and lesson state intact\n";
+}
 
 void lesson_interface_languages() {
     for (const auto locale : {"es","en","fr"}) {
@@ -1820,7 +1869,8 @@ void physical_enter_and_attempt_fill(){
     set_lesson_attempts_state(f.view,4,8,.5,false);SendMessageW(f.view,WM_DRAWITEM,113,reinterpret_cast<LPARAM>(&draw));GdiFlush();
     const auto colors=reader_theme::palette(button);if(!colors.high_contrast){
         const auto scale=[&](int n){return MulDiv(n,static_cast<int>(GetDpiForWindow(button)),96);};
-        const int side=scale(34),left=(bounds.right-side)/2,top=bounds.bottom-side-scale(12),middle=left+side/2;
+        const int side=MulDiv(scale(43),4,5),left=(bounds.right-side)/2,top=scale(12);
+        const int middle=left+static_cast<int>(std::lround(side*.5));
         int left_accent=0,right_white=0,right_accent=0;
         for(int y=top;y<top+side;++y)for(int x=left;x<left+side;++x){const auto ink=GetPixel(dc,x,y);
             if(x<middle&&ink==colors.accent)++left_accent;
@@ -2495,6 +2545,109 @@ void multiple_input_compiler_is_one_pending_objective_until_every_case_passes() 
         "Compiling an unlisted input after completion revoked the approved puzzle");
     std::cout<<"PASS one compiler with two real inputs: partial status and reader gate, checked-case persistence, independent inputs and sticky full success\n";
 }
+void prepare_stderr_visual_profile(std::string_view scenario, std::wstring_view token) {
+    const bool u8 = scenario == "u8";
+    require((u8 || scenario == "u10") && is_valid_qa_instance(token), "Unsafe stderr visual QA scenario or instance token");
+    const auto path = std::filesystem::path(build::source_root) /
+        "app/src/main/assets/content/es/programming/cpp_fundamentals" /
+        (u8 ? "excepciones_y_recuperacion/lesson_limites_comprobados_y_tipos_de_captura.json"
+            : "aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json");
+    const auto asset_hash = state::sha256(state::read_bytes(path));
+    const auto lesson = windows::load_lesson(path);
+    const auto owner = curriculum::stable_block_position(lesson, u8 ? "block_0002_0005" : "block_0004_0004");
+    const auto target = curriculum::stable_block_position(lesson, u8 ? "block_0002_0008" : "block_0004_0007");
+    const auto reference = curriculum::stable_block_position(lesson, u8 ? "block_0003_0005" : "block_0005_0001");
+    require(owner && owner->page == (u8 ? 2u : 4u) && owner->block == (u8 ? 5u : 4u)
+        && target && target->page == owner->page && target->block == (u8 ? 8u : 7u)
+        && reference && reference->page == owner->page + 1 && reference->block == (u8 ? 5u : 1u)
+        && lesson.compiler_puzzles_required, "The current stderr QA owner, target, reference or required policy changed");
+    const auto& constructor = lesson.pages[owner->page].blocks[owner->block];
+    const auto& diagnostic = lesson.pages[target->page].blocks[target->block];
+    const auto& source = lesson.pages[reference->page].blocks[reference->block];
+    const auto prerequisites = curriculum::activity_prerequisites(lesson, diagnostic);
+    const auto source_owner = curriculum::reference_activity(lesson, source);
+    require(constructor.type == BlockType::cpp_compiler && constructor.output_check
+        && constructor.output_check->cases.size() == 1 && !constructor.initial_code.empty()
+        && diagnostic.type == BlockType::cpp_compiler && diagnostic.output_check
+        && diagnostic.output_check->cases.size() == 1 && !diagnostic.initial_code.empty()
+        && diagnostic.output_check->cases[0].standard_error == curriculum::StandardErrorExpectation::non_blank
+        && diagnostic.output_check->cases[0].outputs == std::vector<std::string>{u8 ? "Indice invalido:Fin" : "Fallos elegidos:2\n"}
+        && constructor.output_check->cases[0].outputs == std::vector<std::string>{u8 ? "2:Fin\n9:Fin\nIndice invalido:Fin\n" : "Fallos elegidos:0\nFallos generados:0"}
+        && curriculum::activity_prerequisites(lesson, constructor).empty()
+        && prerequisites.size() == 1 && prerequisites[0].page == owner->page && prerequisites[0].block == owner->block
+        && source.type == BlockType::code && source.language == "cpp" && !source.code.empty()
+        && source_owner && source_owner->page == owner->page && source_owner->block == owner->block,
+        "The current stderr QA source, stdout/stderr contracts or exact owner relationship changed");
+    // These actual pages have no earlier compiler gate. Keep earlier quizzes
+    // unanswered and let the user execute the same-page constructor genuinely.
+    for (std::size_t prior = 0; prior < owner->page; ++prior)
+        for (const auto& block : lesson.pages[prior].blocks)
+            require(!curriculum::has_compiler_objective(block), "The selected page acquired an earlier mandatory compiler");
+    const auto environment = resolve_windows_environment({ProfileId::Codex, std::wstring(token), false});
+    require(environment.paths.root.parent_path().filename() == L"qa"
+        && environment.paths.root.parent_path().parent_path().filename() == L"Codex"
+        && environment.paths.root.filename() == token, "Visual stderr QA resolved outside the isolated Codex QA directory");
+    state::require_safe_path(environment.paths.root);
+    require(!std::filesystem::exists(environment.paths.root), "Visual stderr QA refuses to reuse or overwrite an existing profile");
+    std::filesystem::create_directories(environment.paths.root.parent_path());
+    require(std::filesystem::create_directory(environment.paths.root), "Another process already reserved this visual QA profile");
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    const auto empty = store.load();
+    require(empty.preferences.empty(), "The newly reserved stderr QA profile unexpectedly contains previous state");
+    state::StateData data;
+    state::prepare_lesson_state(data, lesson);
+    state::save_current_page(data, lesson, owner->page);
+    auto& preferences = data.preferences["native_windows"];
+    preferences["ui_language"] = std::string("es");
+    preferences["content_language"] = std::string("es");
+    preferences["catalog/locale"] = std::string("es");
+    preferences["catalog/route"] = std::string("programming");
+    preferences["catalog/course"] = std::string("cpp_fundamentals");
+    const auto unit_end = lesson.id.rfind("__");
+    require(unit_end != std::string::npos, "The selected stderr lesson lost its catalog unit identity");
+    preferences["catalog/unit"] = lesson.id.substr(0, unit_end);
+    preferences["navigation/lesson"] = lesson.id;
+    // Only the earlier owner's authored reference is copied as an explicit QA
+    // draft. It still needs a real execution; the stderr editor has no draft.
+    state::Draft draft;
+    draft.source = source.code;
+    draft.input = constructor.standard_input.value_or("");
+    const auto owner_key = curriculum::draft_key("programming", lesson, constructor);
+    const auto diagnostic_key = curriculum::draft_key("programming", lesson, diagnostic);
+    state::put_draft(data, owner_key, draft);
+    for (const auto& page : lesson.pages) for (const auto& block : page.blocks) {
+        require(!state::get_response(data, lesson, block), "Preparing stderr QA invented a quiz response or achievement");
+        if (block.type == BlockType::cpp_compiler) {
+            require(windows::compiler_puzzle_case_count(data, lesson, block) == 0
+                && !windows::compiler_puzzle_completed(data, lesson, block),
+                "Preparing stderr QA invented a compiler receipt or achievement");
+            if (block.stable_id != constructor.stable_id)
+                require(!state::get_draft(data, curriculum::draft_key("programming", lesson, block), "").has_saved,
+                    "Preparing stderr QA seeded an unrelated or target compiler draft");
+        }
+    }
+    state::validate_lesson_state(data, lesson);
+    store.save(data);
+    const auto saved = store.load();
+    const auto restored = state::get_draft(saved, owner_key, "");
+    const auto untouched = state::get_draft(saved, diagnostic_key, diagnostic.initial_code);
+    require(saved == data && state::current_page(saved, lesson) == owner->page
+        && restored.has_saved && restored.source == source.code && restored.input == draft.input
+        && !untouched.has_saved && untouched.source == diagnostic.initial_code
+        && !windows::compiler_puzzle_completed(saved, lesson, constructor)
+        && !windows::compiler_puzzle_completed(saved, lesson, diagnostic),
+        "The prepared stderr QA changed its page, exact owner draft or uncredited initial target");
+    require(state::sha256(state::read_bytes(path)) == asset_hash, "Preparing stderr visual QA changed its authored asset");
+    std::cout << "profile=Codex\nqa_instance=" << utf8(token)
+        << "\ndata_root=" << utf8(environment.paths.root.native()) << "\nlesson=" << lesson.id
+        << "\npage=" << owner->page + 1 << "\npage_index=" << owner->page
+        << "\nowner=" << constructor.stable_id << "\nowner_source_reference=" << source.stable_id
+        << "\nowner_source_seed=authored-reference-draft-only-not-an-execution\ntarget=" << diagnostic.stable_id
+        << "\ntarget_source=untouched-initialCode\ntarget_draft=none\nsynthetic_prerequisites=none"
+        << "\nquiz_responses=none\ncompiler_receipts=none\ncompiler_achievements=none\nwindows_created=0\n";
+}
+
 void runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels() {
     Fixture f({},[](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({
       "id":"qa_runtime_stderr","title":"Dos canales","compilerPuzzlesRequired":true,
@@ -2819,6 +2972,120 @@ void integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_
     require(state::sha256(state::read_bytes(path))==asset_hash,"The integrated U10L4 QA modified its authored lesson asset");
     std::cout<<"PASS current integrated U10L4: real constructor and defective reference, stdout-only rejection, variable runtime report, build rejection, own reader/reference gates, reopen, sticky success and scoped Reset\n";
 }
+void u11_grammar_choice_preserves_current_feedback_and_history() {
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json";
+    const auto asset_hash=state::sha256(state::read_bytes(path));
+    const auto published=windows::load_lesson(path);
+    const auto position=curriculum::stable_block_position(published,"block_0002_0002");
+    require(position&&position->page==2&&position->block==2,"The U11L11 while choice lost its historical position");
+    const auto& choice=published.pages[2].blocks[2];
+    require(choice.type==BlockType::multiple_choice&&choice.correct_index==0&&choice.options.size()==3
+        &&choice.review_feedback_options.size()==3&&!choice.explanation.empty()
+        &&curriculum::activity_prerequisites(published,choice).empty(),
+        "The current U11L11 while choice lost its exact options, guides or independent availability");
+    const auto identity=curriculum::exercise_key(published,choice);
+    const auto anchor=published.id+"/es/"+published.pages[2].stable_id+"/"+choice.stable_id+"/part/4";
+    const auto visible=[](std::string value){std::erase(value,'`');return value;};
+    const auto initialize=[&](state::StateData& data,const curriculum::Lesson& lesson){
+        state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,2);
+        data.preferences["u11_choice_qa"]["opaque"]=std::string(" \tunchanged\n");
+        state::Response sibling;sibling.answer="QA_SIBLING_DRAFT ";
+        sibling.raw_json=R"({"opaque":{"unsubmitted":true}})";
+        state::put_response(data,lesson,lesson.pages[2].blocks[1],sibling);
+        // This source-bound synthetic bookmark checks storage preservation;
+        // no audio synthesis, heard feedback or timed restoration is claimed.
+        narration::History history;
+        history.entries.push_back({state::sha256("QA earlier explanation source"),anchor,{1,730,1,false},lesson.pages[2].stable_id});
+        narration::write_history(data,history);
+    };
+    Fixture f(initialize,[&](const curriculum::Lesson&){return published;},true);
+    const auto original=f.saved();
+    const auto history=narration::read_history(original);
+    const auto sibling=state::get_response(original,f.lesson,f.lesson.pages[2].blocks[1])->raw_json;
+    const auto unchanged=[&](Fixture& current){
+        const auto saved=current.saved();
+        require(current.page()==2&&curriculum::exercise_key(current.lesson,current.lesson.pages[2].blocks[2])==identity
+            &&saved.preferences.at("u11_choice_qa")==original.preferences.at("u11_choice_qa")
+            &&narration::read_history(saved)==history
+            &&state::get_response(saved,current.lesson,current.lesson.pages[2].blocks[1])->raw_json==sibling
+            &&!IsWindowVisible(current.host),
+            "U11L11 choice changed its page/identity, unrelated draft, bookmark, preference or desktop");
+    };
+    const auto feedback_source=[&](Fixture& current,bool correct,std::string_view body){
+        const auto expected=std::string(correct?"✓ Correcto\n\n":"✗ Incorrecto\n\n")+std::string(body);
+        const auto regions=lesson_reading_regions(current.view);
+        const auto found=std::ranges::find_if(regions,[&](const auto& region){return region.target==current.control(2,4);});
+        require(found!=regions.end()&&found->feedback&&found->correct==correct&&found->solved==correct
+            &&found->source_text==expected&&found->anchor==anchor,
+            "U11L11 reader lost the exact guide/explanation source, result boundary or stable feedback anchor");
+    };
+    const auto no_feedback=[&](Fixture& current){
+        require(current.text(2,4).empty(),"An unreviewed U11L11 choice exposed feedback");
+        for(const auto& region:lesson_reading_regions(current.view))require(region.target!=current.control(2,4),
+            "An unreviewed U11L11 choice exposed feedback to narration");
+    };
+    no_feedback(f);require(!IsWindowEnabled(f.control(2,3)),"An unanswered U11L11 choice enabled Check");
+    int feedback_events=0;
+    const auto hooks=[&]{LessonViewHooks result;result.feedback_changed=[&](HWND,std::size_t,bool){++feedback_events;};return result;};
+    set_lesson_view_hooks(f.view,hooks());
+    for(const std::int64_t selected:{1,2}){
+        f.click(2,20+static_cast<int>(selected)*2);no_feedback(f);
+        const auto draft=state::get_response(f.saved(),f.lesson,choice);
+        require(draft&&draft->selected==selected&&!draft->correct&&!state::response_reviewed(*draft,choice),
+            "A native U11L11 choice selection was not retained as an unreviewed draft");
+        const auto draft_raw=draft->raw_json;const auto before_draft=feedback_events;f.reopen();set_lesson_view_hooks(f.view,hooks());
+        no_feedback(f);require(feedback_events==before_draft&&state::get_response(f.saved(),f.lesson,choice)->raw_json==draft_raw,
+            "Reopening U11L11 submitted or rewrote an unreviewed choice draft");
+        f.click(2,3);const auto& guide=choice.review_feedback_options[static_cast<std::size_t>(selected)];
+        require(f.text(2,4)=="✗ Incorrecto\n\n"+visible(guide)&&f.text(2,4).find(visible(choice.explanation))==std::string::npos,
+            "A rejected U11L11 choice lost its selected guide or exposed the successful explanation");
+        feedback_source(f,false,guide);
+        const auto reviewed=state::get_response(f.saved(),f.lesson,choice);
+        require(reviewed&&reviewed->selected==selected&&!reviewed->correct&&state::response_reviewed(*reviewed,choice),
+            "U11L11 did not persist the actual selected rejection");
+        const auto raw=reviewed->raw_json;const auto before_restore=feedback_events;f.reopen();set_lesson_view_hooks(f.view,hooks());
+        require(feedback_events==before_restore&&f.text(2,4)=="✗ Incorrecto\n\n"+visible(guide)
+            &&state::get_response(f.saved(),f.lesson,choice)->raw_json==raw,
+            "Restoring a reviewed U11L11 choice created a new feedback event or changed its stored attempt");
+        feedback_source(f,false,guide);unchanged(f);
+    }
+    f.click(2,20);no_feedback(f);f.click(2,3);
+    const auto success="✓ Correcto\n\n"+visible(choice.explanation);
+    require(f.text(2,4)==success&&!IsWindowEnabled(f.control(2,20))&&!IsWindowEnabled(f.control(2,22))
+        &&!IsWindowEnabled(f.control(2,24)),"A correct U11L11 choice lost its complete explanation or completion lock");
+    feedback_source(f,true,choice.explanation);
+    const auto correct=state::get_response(f.saved(),f.lesson,choice);const auto before_correct=feedback_events;
+    require(correct&&correct->correct&&correct->selected==0,"The native U11L11 correct choice was not persisted");
+    f.reopen();set_lesson_view_hooks(f.view,hooks());
+    require(feedback_events==before_correct&&f.text(2,4)==success
+        &&state::get_response(f.saved(),f.lesson,choice)->raw_json==correct->raw_json,
+        "Reopening a completed U11L11 choice changed its exact response or replayed a submission event");
+    feedback_source(f,true,choice.explanation);unchanged(f);
+    f.click(2,12);no_feedback(f);
+    const auto reset=state::get_response(f.saved(),f.lesson,choice);
+    require((!reset||(!reset->correct&&reset->selected<0))&&IsWindowEnabled(f.control(2,20)),
+        "Explicit U11L11 Reset retained the choice achievement or locked the first option");
+    unchanged(f);
+    for(const std::string mode:{"correct","incorrect","draft"}){
+        std::string stored;
+        Fixture old([&](state::StateData& data,const curriculum::Lesson& lesson){
+            initialize(data,lesson);state::Response response;response.selected=mode=="correct"?0:1;response.correct=mode=="correct";
+            response.raw_json=R"({"incorrectAttempts":5,"opaque":{"priorExplanation":"QA earlier explanation source","caret":7}})";
+            if(mode=="incorrect")state::mark_response_reviewed(response,choice);
+            state::put_response(data,lesson,choice,response);
+            stored=state::get_response(data,lesson,choice)->raw_json;
+        },[&](const curriculum::Lesson&){return published;},true);
+        for(unsigned reopen=0;reopen<2;++reopen){
+            require(state::get_response(old.saved(),old.lesson,choice)->raw_json==stored,
+                "Restoring the editorial U11L11 choice rewrote historical selection, attempts or opaque data");
+            if(mode=="draft")no_feedback(old);
+            else feedback_source(old,mode=="correct",mode=="correct"?choice.explanation:choice.review_feedback_options[1]);
+            unchanged(old);if(!reopen)old.reopen();
+        }
+    }
+    require(state::sha256(state::read_bytes(path))==asset_hash,"U11L11 native choice QA modified its authored lesson asset");
+    std::cout<<"PASS current U11L11 p3b3 choice: both selected guides, unsubmitted/reviewed/correct reopen, complete success-only explanation, native result reader sources and stable anchor, historical raw attempts/opaque/bookmark, scoped Reset; no audio or visual acceptance claimed\n";
+}
 void u11_editorial_preserves_prediction_and_compiler_history() {
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json";
     const auto source_hash=state::sha256(state::read_bytes(path));
@@ -2851,7 +3118,7 @@ void u11_editorial_preserves_prediction_and_compiler_history() {
             historical=state::string_value(data,"learning_progress",key);
             const auto& other=lesson.pages[1].blocks[3];state::Response choice;choice.correct=true;choice.selected=static_cast<std::int64_t>(*other.correct_index);
             state::put_response(data,curriculum::exercise_key(lesson,other),choice);
-        },[&](const curriculum::Lesson&){return published;});
+        },[&](const curriculum::Lesson&){return published;},true);
         const auto preserved=[&]{require(state::string_value(f.saved(),"learning_progress",curriculum::exercise_key(f.lesson,f.lesson.pages[1].blocks[1]))==historical,
             "Restoring the revised U11L1 question changed a saved answer, review, attempts or opaque metadata");};
         std::string anchor;
@@ -2884,7 +3151,7 @@ void u11_editorial_preserves_prediction_and_compiler_history() {
         // explanation. Only that presentation field is removed from this QA
         // model; all current source, oracles, addresses and dependencies remain.
         old.pages[4].blocks[3].output_check->cases[0].explanation.clear();return old;
-    });
+    },true);
     const auto initial=f.lesson.pages[4].blocks[3].initial_code;
     const auto solution=published.pages[reference->page].blocks[reference->block].code;
     const auto old_objective=curriculum::reference_objective_frame(f.lesson,f.lesson.pages[4].blocks[3]);
@@ -3062,6 +3329,258 @@ void authored_dependent_puzzle_locations_protect_historical_bookmarks() {
     }
     std::cout<<"PASS 19 authored dependent-puzzle locations: QA-only relations, historical bookmarks/Pages protected, narration excluded and responses preserved across reopen\n";
 }
+
+// Independent acceptance manifest transcribed from WIN_BLOQUES_DEPENDIENTES_Y_MARCADORES.
+// Do not derive owners from activityAfter: a removed/retargeted authored edge must fail.
+struct CurrentDependentPuzzle {
+    const char* file;
+    const char* target;
+    std::vector<std::string> owners;
+};
+const std::array<CurrentDependentPuzzle,52>& current_dependent_puzzle_manifest() {
+    static const std::array<CurrentDependentPuzzle,52> manifest{{
+        {"objetos_y_estado/lesson_objetos_valores_y_tipos.json","block_0005_0006",{"block_0004_0006"}},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json","block_0007_0006",{"block_0006_0006"}},
+        {"expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json","block_0003_0003",{"block_0002_0002"}},
+        {"repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json","block_0009_0004",{"block_0008_0003"}},
+        {"repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json","relacionar_aportes_de_cada_orden",{"block_0008_0003"}},
+        {"repeticion_y_terminacion/lesson_seleccion_discreta_con_switch.json","block_0009_0005",{"block_0008_0003"}},
+        {"repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json","block_0002_0001",{"block_0001_0002"}},
+        {"repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json","block_0002_0002",{"block_0001_0002"}},
+        {"repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json","block_0005_0004",{"block_0001_0002"}},
+        {"funciones_y_contratos/lesson_referencias_para_modificar.json","block_0010_0002",{"block_0007_0004"}},
+        {"funciones_y_contratos/lesson_referencias_para_modificar.json","block_0011_0005",{"block_0007_0004"}},
+        {"funciones_y_contratos/lesson_referencias_para_modificar.json","block_0015_0002",{"block_0014_0007"}},
+        {"funciones_y_contratos/lesson_espacios_de_nombres_y_nombres_calificados.json","block_0010_0001",{"block_0007_0006"}},
+        {"funciones_y_contratos/lesson_espacios_de_nombres_y_nombres_calificados.json","block_0010_0002",{"block_0007_0006"}},
+        {"errores_y_construccion_gradual/lesson_distinguir_fallos_y_localizar_la_causa.json","block_0007_0002",{"block_0005_0004"}},
+        {"errores_y_construccion_gradual/lesson_limpiar_sin_cambiar_el_comportamiento.json","block_0007_0002",{"block_0005_0004"}},
+        {"errores_y_construccion_gradual/lesson_sesion_de_pedidos_con_errores_controlados.json","block_0002_0001",{"block_0001_0002"}},
+        {"errores_y_construccion_gradual/lesson_sesion_de_pedidos_con_errores_controlados.json","block_0002_0002",{"block_0001_0002"}},
+        {"excepciones_y_recuperacion/lesson_transferencia_con_movimientos_controlados.json","block_0002_0001",{"block_0001_0003"}},
+        {"datos_propios_y_estado_valido/lesson_colecciones_de_registros_asociados.json","block_0007_0002",{"block_0006_0005"}},
+        {"datos_propios_y_estado_valido/lesson_valores_por_defecto_con_significado.json","block_0015_0004",{"block_0014_0014"}},
+        {"datos_propios_y_estado_valido/lesson_valores_por_defecto_con_significado.json","block_0015_0005",{"block_0014_0014"}},
+        {"datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json","conteos_igualdad_en_cuatro_vectores",{"block_0005_0002"}},
+        {"datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json","block_0002_0004",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json","block_0006_0002",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json","block_0005_0004",{"block_0004_0002"}},
+        {"datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json","block_0007_0001",{"block_0006_0006","block_0006_0009"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0003_0002",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0003_0003",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0004_0001",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0004_0002",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0005_0001",{"block_0001_0002"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0011_0002",{"block_0009_0006"}},
+        {"datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json","block_0014_0002",{"block_0009_0006"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_producir_enteros_en_un_intervalo.json","block_0006_0001",{"block_0004_0003"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_combinar_ensayos_generados_y_casos_elegidos.json","block_0006_0001",{"block_0004_0004"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_construir_un_experimento_reproducible.json","block_0004_0001",{"block_0002_0004"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_construir_un_experimento_reproducible.json","block_0004_0002",{"block_0002_0004"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_seleccionar_sin_repetir_candidatos.json","block_0004_0002",{"block_0002_0005"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_seleccionar_sin_repetir_candidatos.json","block_0004_0004",{"block_0002_0005"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_seleccionar_sin_repetir_candidatos.json","block_0007_0002",{"block_0005_0005"}},
+        {"aleatoriedad_y_reproducibilidad/lesson_seleccionar_sin_repetir_candidatos.json","block_0007_0004",{"block_0005_0005"}},
+        {"texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json","block_0005_0004",{"block_0004_0003"}},
+        {"texto_interpretacion_y_flujos/lesson_lineas_y_separadores_pendientes.json","block_0005_0004",{"block_0004_0003"}},
+        {"texto_interpretacion_y_flujos/lesson_comparar_lecturas_con_la_anterior.json","block_0004_0002",{"block_0002_0005"}},
+        {"texto_interpretacion_y_flujos/lesson_comparar_lecturas_con_la_anterior.json","block_0004_0004",{"block_0002_0005"}},
+        {"texto_interpretacion_y_flujos/lesson_comparar_lecturas_con_la_anterior.json","block_0007_0002",{"block_0005_0005"}},
+        {"texto_interpretacion_y_flujos/lesson_comparar_lecturas_con_la_anterior.json","block_0007_0004",{"block_0005_0005"}},
+        {"texto_interpretacion_y_flujos/lesson_caracteres_y_clasificacion_explicita.json","block_0005_0004",{"block_0004_0003"}},
+        {"texto_interpretacion_y_flujos/lesson_estados_del_flujo_y_datos_validos.json","block_0006_0004",{"block_0005_0003"}},
+        {"texto_interpretacion_y_flujos/lesson_validar_una_operacion_y_recuperar_la_siguiente.json","block_0006_0001",{"block_0004_0004"}},
+        {"texto_interpretacion_y_flujos/lesson_tokens_con_categoria_y_valor.json","block_0005_0003",{"block_0004_0004"}}
+    }};
+    return manifest;
+}
+void current_authored_dependent_puzzles(std::size_t partition,std::size_t partitions) {
+    require(partitions>0&&partition<partitions,"Invalid current dependent-puzzle partition");
+    const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
+    const auto& manifest=current_dependent_puzzle_manifest();
+    std::map<std::string,curriculum::Lesson> models;
+    for(const auto& plan:manifest)if(!models.contains(plan.file))models.emplace(plan.file,windows::load_lesson(folder/plan.file));
+    require(models.size()==27,"The independent current dependency manifest must contain exactly27 authored lessons");
+    // Compare every actual non-compiler relation in these27 lessons, not just
+    // the listed edges. Compiler-only chains keep their independent tests.
+    std::size_t edges=0;
+    for(const auto& [file,lesson]:models){
+        std::map<std::string,std::vector<std::string>> expected,actual;
+        for(const auto& plan:manifest)if(file==plan.file)
+            require(expected.emplace(plan.target,plan.owners).second,"Duplicate target in the independent current dependency manifest");
+        for(const auto& relation:lesson.activity_after){
+            const auto at=curriculum::stable_block_position(lesson,relation.activity);
+            require(at.has_value(),"An authored dependency no longer resolves to an active target");
+            if(lesson.pages[at->page].blocks[at->block].type!=BlockType::cpp_compiler)
+                require(actual.emplace(relation.activity,relation.prerequisites).second,"A current authored puzzle repeats its prerequisite relation");
+        }
+        require(actual==expected,"Current authored dependency manifest differs (missing/changed/extra owner): "+file);
+        edges+=actual.size();
+    }
+    require(edges==52,"The current27-lesson dependency census is not52 puzzle relations");
+    const auto visible=[](std::string value){std::erase(value,'`');return value;};
+    const auto msaa=[](HWND item,bool require_provider=false,std::string* diagnostics=nullptr){
+        std::string text=require_provider?std::string{}:window_text(item);Microsoft::WRL::ComPtr<IAccessible> object;
+        const auto provider=AccessibleObjectFromWindow(item,static_cast<DWORD>(OBJID_CLIENT),IID_PPV_ARGS(object.GetAddressOf()));
+        if(diagnostics)*diagnostics="provider="+std::to_string(provider);
+        require(!require_provider||SUCCEEDED(provider),"An unlocked authored code source has no actual MSAA provider");
+        if(FAILED(provider))return text;
+        VARIANT self{};self.vt=VT_I4;self.lVal=CHILDID_SELF;bool supplied=false;
+        for(const bool value:{false,true}){BSTR result=nullptr;
+            const auto status=value?object->get_accValue(self,&result):object->get_accName(self,&result);
+            if(diagnostics)*diagnostics+=(value?" value=":" name=")+std::to_string(status);
+            if(status==S_OK){supplied=true;if(result){text+='\n';text+=utf8(std::wstring_view(result,SysStringLen(result)));}}SysFreeString(result);}
+        require(!require_provider||supplied,"An unlocked authored code source has no successful MSAA name/value result");
+        for(std::size_t at=0;(at=text.find("\r\n",at))!=std::string::npos;)text.replace(at,2,"\n");
+        // RichEdit MSAA values expose paragraph delimiters as solitary CR;
+        // canonical authored bytes are checked separately through edit_text.
+        std::ranges::replace(text,'\r','\n');
+        return text;
+    };
+    // These receipts are expressly synthetic control-isolation data. No child
+    // process is started and no compiled-program/curricular success is claimed.
+    const auto synthetic_case=[](state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& compiler,bool correct){
+        require(compiler.type==BlockType::cpp_compiler&&compiler.output_check.has_value(),"A registered owner lost its runtime output objective");
+        windows::CppRunRequest request;request.revision=1;request.source_utf8=compiler.initial_code;
+        request.project_files=compiler.project_files;request.source_files=compiler.source_files;request.cmake=compiler.cmake;
+        for(const auto& item:compiler.output_check->cases){
+            request.stdin_utf8=item.standard_input;
+            curriculum::FreshExecution execution{1,true,true,0,item.standard_input,correct?item.outputs.front():"QA_UNDECLARED_INCORRECT_OUTPUT"};
+            execution.executable=item.executable;
+            if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)execution.standard_error="Synthetic QA runtime channel";
+            if(!correct)require(windows::evaluate_cpp_output_check(*compiler.output_check,execution,1).verdict==curriculum::OutputVerdict::incorrect,
+                "The synthetic incorrect owner unexpectedly matches an authored expected output");
+            const auto completed=windows::record_compiler_puzzle_case(data,lesson,compiler,request,execution,"Synthetic QA prerequisite only; no C++ execution");
+            if(!correct)require(!completed&&windows::compiler_puzzle_case_count(data,lesson,compiler)==0,
+                "An incorrect synthetic owner gained an execution proof");
+        }
+        require(windows::compiler_puzzle_completed(data,lesson,compiler)==correct,"The synthetic owner isolation state has the wrong completion");
+    };
+    std::size_t exercised=0;
+    for(std::size_t number=partition;number<manifest.size();number+=partitions){
+        const auto& plan=manifest[number];const auto& published=models.at(plan.file);
+        const auto path=folder/plan.file;const auto hash=state::sha256(state::read_bytes(path));
+        const auto target=*curriculum::stable_block_position(published,plan.target);
+        const auto& puzzle=published.pages[target.page].blocks[target.block];
+        require(puzzle.type!=BlockType::cpp_compiler&&puzzle.type!=BlockType::heading&&puzzle.type!=BlockType::paragraph&&puzzle.type!=BlockType::note&&puzzle.type!=BlockType::code,
+            "A current dependent-puzzle target is not an authored exercise");
+        std::vector<curriculum::StatePosition> owners;
+        for(const auto& identity:plan.owners){const auto at=curriculum::stable_block_position(published,identity);
+            require(at&&at->page<target.page,"A registered current owner no longer precedes its dependent puzzle");owners.push_back(*at);}
+        const auto first_owner=std::ranges::min(owners,{},&curriculum::StatePosition::page);
+        Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
+            state::prepare_lesson_state(data,lesson);
+            for(const auto& page:lesson.pages)for(const auto& compiler:page.blocks){
+                if(compiler.type==BlockType::cpp_compiler&&compiler.output_check&&std::ranges::find(plan.owners,compiler.stable_id)==plan.owners.end())
+                    synthetic_case(data,lesson,compiler,true);
+            }
+            state::Response history;history.correct=puzzle.type!=BlockType::math_puzzle;history.answer="historical QA response";
+            if(puzzle.correct_index)history.selected=static_cast<std::int64_t>(*puzzle.correct_index);
+            if(puzzle.type==BlockType::output_prediction||puzzle.type==BlockType::fill_code)history.answer=puzzle.answers.at(0);
+            history.order.assign(puzzle.correct_order.begin(),puzzle.correct_order.end());
+            winrt::Windows::Data::Json::JsonObject raw;
+            raw.Insert(L"opaque",winrt::Windows::Data::Json::JsonValue::CreateStringValue(L"preserved historical dependency QA"));
+            if(puzzle.type==BlockType::math_puzzle)raw.Insert(L"responses",winrt::Windows::Data::Json::JsonObject{});
+            if(puzzle.type==BlockType::inline_fill_code||puzzle.type==BlockType::drag_fill_code){
+                winrt::Windows::Data::Json::JsonArray answers;
+                if(puzzle.type==BlockType::inline_fill_code)for(const auto& answer:puzzle.answers)
+                    answers.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(answer)));
+                else for(const auto slot:puzzle.correct_order)answers.Append(winrt::Windows::Data::Json::JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                raw.Insert(puzzle.type==BlockType::inline_fill_code?L"answers":L"slots",answers);
+            }
+            history.raw_json=winrt::to_string(raw.Stringify());state::put_response(data,lesson,puzzle,history);
+            data.preferences["current_dependencies_qa"]["opaque"]=std::string(" \t retained\r\n");
+            state::save_current_page(data,lesson,target.page);
+        },[&](const curriculum::Lesson&){return published;},true);
+        const auto response_key=state::response_storage_key(f.lesson,puzzle);
+        const auto response=state::string_value(f.initial_data,"learning_progress",response_key);
+        const auto opaque=f.initial_data.preferences.at("current_dependencies_qa");
+        const auto preserved=[&]{const auto current=f.saved();
+            require(state::string_value(current,"learning_progress",response_key)==response,"Current dependency projection rewrote a historical response: "+std::string(plan.target));
+            require(current.preferences.at("current_dependencies_qa")==opaque&&!IsWindowVisible(f.host),"Current dependency QA changed unrelated data or displayed a window");};
+        const auto late_reopen=[&](const std::function<void(state::StateData&)>& change){
+            f.close();state::StateStore store(f.environment.paths.root);auto data=store.load();change(data);
+            state::save_current_page(data,f.lesson,target.page);store.save(data);f.open();
+        };
+        const auto locked=[&]{
+            require(f.page()<=first_owner.page&&f.page()<target.page&&!navigate_lesson_view(f.view,target.page),
+                "Current authored historical bookmark/Pages bypassed a pending owner: "+std::string(plan.target));
+            require(!lesson_page_state(f.view).can_next,"The pending owner page incorrectly permits continuation");
+            const auto anchor='/'+std::string(plan.target)+'/';
+            require(std::ranges::none_of(lesson_reading_regions(f.view),[&](const auto& region){return region.anchor.find(anchor)!=std::string::npos||region.key.find(anchor)!=std::string::npos;}),
+                "A locked current puzzle leaked into the reader source");
+            std::vector<std::string> secrets;
+            for(const auto& authored:{puzzle.question,puzzle.code,puzzle.prompt})if(authored.size()>=16){
+                const auto candidate=visible(authored);bool shared=false;
+                for(const auto& current:f.lesson.pages[f.page()].blocks)for(const auto& allowed:{current.question,current.code,current.prompt,current.text})
+                    if(visible(allowed).find(candidate)!=std::string::npos)shared=true;
+                if(!shared)secrets.push_back(candidate);
+            }
+            struct Probe{const std::function<std::string(HWND)>* read;const std::vector<std::string>* secrets;bool leaked=false;};
+            const std::function<std::string(HWND)> read=[&](HWND item){return visible(msaa(item));};Probe probe{&read,&secrets};
+            EnumChildWindows(f.view,[](HWND item,LPARAM value)->BOOL{auto& probe=*reinterpret_cast<Probe*>(value);const auto text=(*probe.read)(item);
+                for(const auto& secret:*probe.secrets)if(text.find(secret)!=std::string::npos){probe.leaked=true;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&probe));
+            require(!probe.leaked,"A pending current puzzle leaked its exclusive authored prompt/code through a native MSAA provider");preserved();
+        };
+        std::string reader_anchor;
+        const auto unlocked=[&]{
+            require(f.page()==target.page&&descendant(f.view,id(target.block,3)),"Completing all exact current owners did not mount the authored puzzle");
+            const auto regions=lesson_reading_regions(f.view);const auto anchor='/'+std::string(plan.target)+'/';
+            const auto found=std::ranges::find_if(regions,[&](const auto& region){return region.anchor.find(anchor)!=std::string::npos||region.key.find(anchor)!=std::string::npos;});
+            require(found!=regions.end()&&found->block_index==target.block,"An unlocked current puzzle has no authored reader region: "+std::string(plan.file)+"/"+plan.target);
+            if(reader_anchor.empty())reader_anchor=found->key;else require(found->key==reader_anchor,"Reopening an unlocked puzzle changed its stable reader key");
+            require(accessible_name(f.control(target.block,3))==(puzzle.type==BlockType::math_puzzle?"Comprobar":"Correcto "+utf8(L"\u2713")),"An unlocked current puzzle lacks its native accessible current Check action");
+            if(puzzle.type==BlockType::math_puzzle){require(descendant(f.view,id(target.block,5)),"An unlocked current math puzzle has no native compound control");}
+            else {
+                if(!puzzle.question.empty())require(f.text(target.block,0)==visible(puzzle.question),"Unlocking changed the current authored question");
+                if(!puzzle.code.empty()){
+                    std::string diagnostics;const auto native=f.text(target.block,1),provided=msaa(f.control(target.block,1),true,&diagnostics);
+                    const auto escaped=[](std::string_view text){std::string result;for(const auto c:text){
+                        if(c=='\r')result+="\\r";else if(c=='\n')result+="\\n";else if(c=='\t')result+="\\t";
+                        else if(c=='\0')result+="\\0";else if(c=='\\')result+="\\\\";else result+=c;}return result;};
+                    require(native==puzzle.code&&provided.find(puzzle.code)!=std::string::npos,
+                        "An unlocked authored code source was lost by its RichEdit/MSAA provider: "+std::string(plan.file)+"/"+plan.target
+                        +" "+diagnostics+" expected["+std::to_string(puzzle.code.size())+"]="+escaped(puzzle.code)
+                        +" native["+std::to_string(native.size())+"]="+escaped(native)+" MSAA["+std::to_string(provided.size())+"]="+escaped(provided));
+                }
+            }
+            preserved();
+        };
+        locked();f.reopen();locked();
+        late_reopen([&](state::StateData& data){for(const auto at:owners){const auto& compiler=f.lesson.pages[at.page].blocks[at.block];
+            synthetic_case(data,f.lesson,compiler,false);state::Response wrong;wrong.answer="previous incorrect compiler attempt";wrong.correct=false;
+            state::put_response(data,f.lesson,compiler,wrong);}});locked();f.reopen();locked();
+        for(std::size_t owner=0;owner<owners.size();++owner){
+            late_reopen([&](state::StateData& data){const auto at=owners[owner];synthetic_case(data,f.lesson,f.lesson.pages[at.page].blocks[at.block],true);});
+            if(owner+1<owners.size())locked();else unlocked();
+        }
+        f.reopen();unlocked();
+        // Editing a genuinely mounted source must preserve its sealed synthetic
+        // success and the dependent historical response until explicit Reset.
+        const auto edited_owner=owners.front();f.select_page(edited_owner.page);
+        const auto edited=f.text(edited_owner.block,10)+"// current dependency QA edit\n";
+        const auto before_edit=f.saved();state::Preferences proofs;
+        for(const auto& [key,value]:before_edit.preferences.at("native_windows"))if(key.starts_with("compiler-puzzle/v1/"))proofs.emplace(key,value);
+        f.replace(edited_owner.block,10,edited);
+        require(windows::compiler_puzzle_completed(f.saved(),f.lesson,f.lesson.pages[edited_owner.page].blocks[edited_owner.block]),
+            "Editing a completed current owner revoked its sticky achievement");
+        late_reopen([](state::StateData&){});unlocked();
+        const auto after_edit=f.saved();for(const auto& [key,value]:proofs){const auto current=state::find(after_edit,"native_windows",key);
+            require(current&&*current==value,"Editing/reopening changed a sealed current owner proof");}
+        const auto draft=state::get_draft(after_edit,curriculum::draft_key("programming",f.lesson,f.lesson.pages[edited_owner.page].blocks[edited_owner.block]),"","");
+        require(draft.source==edited,"A current dependency reopen lost the owner's edited draft");
+        f.select_page(edited_owner.page);f.click(edited_owner.block,12);
+        late_reopen([](state::StateData&){});locked();f.reopen();locked();
+        require(state::sha256(state::read_bytes(path))==hash,"Current dependency QA changed its authored JSON asset");
+        std::cout<<"PASS current authored dependency "<<number<<' '<<plan.file<<'/'<<plan.target
+            <<": pending/incorrect/all exact owners, late restoration/Pages, native reader/MSAA, sticky source edit, scoped Reset and preserved response\n";
+        ++exercised;
+    }
+    require(exercised>0,"Current dependent-puzzle partition contains no activity");
+    std::cout<<"PASS current dependency manifest52/27; partition "<<partition<<'/'<<partitions<<" mounted "<<exercised
+        <<" real authored puzzles with expressly synthetic owner receipts; no compilation, audio synthesis, visual or curricular acceptance claimed\n";
+}
+
 void compiler_puzzle_completion_and_navigation() {
     Fixture f([](state::StateData& data,const curriculum::Lesson& lesson){
         state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,1);
@@ -3302,6 +3821,19 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
 }
 
 int main(int argc,char* argv[]) {
+    if (argc > 1 && std::string_view(argv[1]) == "--prepare-stderr-visual") {
+        const bool shape = argc == 4 && (std::string_view(argv[2]) == "u8" || std::string_view(argv[2]) == "u10");
+        const auto raw = shape ? std::string_view(argv[3]) : std::string_view{};
+        const std::wstring token(raw.begin(), raw.end());
+        if (!shape || !is_valid_qa_instance(token)) {
+            std::cerr << "Usage: lesson_view_tests --prepare-stderr-visual <u8|u10> <safe-new-QA-token>\n";
+            return 2;
+        }
+        // This preparation branch must not initialize OLE, register a window
+        // class or create native controls. Interactive verification is separate.
+        try { prepare_stderr_visual_profile(argv[2], token); return 0; }
+        catch (const std::exception& error) { std::cerr << "Stderr visual QA preparation failed: " << error.what() << '\n'; return 1; }
+    }
     const bool scroll_repaint_only=argc==2&&std::string_view(argv[1])=="--scroll-repaint";
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
@@ -3310,13 +3842,15 @@ int main(int argc,char* argv[]) {
     const bool u11_editorial_only=argc==2&&std::string_view(argv[1])=="--u11-editorial";
     const bool stderr_objective_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
     const bool dependent_puzzles_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
+    const bool current_dependent_puzzles_only=(argc==2||argc==4)&&std::string_view(argv[1])=="--current-dependent-puzzles";
     const bool editor_overflow_only=argc==2&&std::string_view(argv[1])=="--editor-overflow";
     const bool answer_overflow_only=argc==2&&std::string_view(argv[1])=="--answer-overflow";
     const bool narration_repaint_only=argc==2&&std::string_view(argv[1])=="--narration-repaint";
     const bool compiler_height_only=argc==2&&std::string_view(argv[1])=="--compiler-height";
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
-    if(argc>1&&!scroll_repaint_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only)return 2;
+    const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
+    if(argc>1&&!scroll_repaint_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -3324,6 +3858,7 @@ int main(int argc,char* argv[]) {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        if(lesson_menu_only){lesson_menu_retains_import_pages_and_settings_with_hooks();return 0;}
         if(inline_feedback_only){current_inline_feedback_uses_authored_controls_and_restores_each_attempt();return 0;}
         if(navigation_geometry_only){completed_compilers_keep_navigation_after_active_content();return 0;}
         if(scroll_repaint_only){simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
@@ -3332,9 +3867,10 @@ int main(int argc,char* argv[]) {
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}
         if(editor_overflow_only){native_compiler_editor_overflow_bars();return 0;}
         if(restoration_only){text_sequence_application_restoration();return 0;}
-        if(u11_editorial_only){u11_editorial_preserves_prediction_and_compiler_history();return 0;}
+        if(u11_editorial_only){u11_editorial_preserves_prediction_and_compiler_history();u11_grammar_choice_preserves_current_feedback_and_history();return 0;}
         if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
+        if(current_dependent_puzzles_only){current_authored_dependent_puzzles(argc==4?std::stoul(argv[2]):0,argc==4?std::stoul(argv[3]):1);return 0;}
         if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
@@ -3359,6 +3895,7 @@ int main(int argc,char* argv[]) {
         native_compiler_editor_overflow_bars();
         native_compiler_short_sources_keep_a_usable_height();
         native_compiler_output_overflow_bars();
+        lesson_menu_retains_import_pages_and_settings_with_hooks();
         lesson_interface_languages();
         laboratory_interface_parity();
         back_navigation_tests();

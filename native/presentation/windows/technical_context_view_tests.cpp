@@ -11,8 +11,10 @@
 #include <commctrl.h>
 #include <ole2.h>
 #include <richedit.h>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 namespace {
 using namespace lgaed;
@@ -115,11 +117,95 @@ void existing_curricular_mentions(){
     }
     std::cout<<"PASS twelve actual U9/U11 prose/question/option mentions against native C++ categories\n";
 }
+
+void created_buffer_feedback(){
+    const auto relative="texto_interpretacion_y_flujos/lesson_un_lector_con_buffer_de_un_token.json";
+    const auto asset=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+    const auto hash=state::sha256(state::read_bytes(asset));const auto lesson=load(relative);
+    const auto location=curriculum::stable_block_position(lesson,"block_0003_0003");
+    check(location&&location->page==3&&location->block==3,"The current U11L9 buffer contract choice moved");
+    const auto& block=lesson.pages[location->page].blocks[location->block];
+    check(block.type==curriculum::BlockType::multiple_choice&&block.correct_index==2&&block.options.size()==3
+        &&block.review_feedback_options.size()==3&&!block.explanation.empty(),
+        "The current U11L9 buffer contract lost its authored choices or feedback");
+    View fixture(lesson,location->page);
+    const auto saved=[&]{check(flush_lesson_view(fixture.view),"Cannot flush the actual buffer feedback QA");return read_lesson_state(fixture.view);};
+    const auto visible=[](std::string value){std::erase(value,'`');return value;};
+    const auto initial=saved();const auto identity=curriculum::exercise_key(lesson,block);
+    const auto compare_code=[&](HWND target,std::wstring_view token){
+        const auto reference=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE,0,0,500,100,
+            fixture.host,nullptr,GetModuleHandleW(nullptr),nullptr);
+        check(reference,"Cannot create an independent feedback C++ color reference");
+        struct Reference{HWND value;~Reference(){DestroyWindow(value);}} cleanup{reference};
+        reader_theme::apply(reference,reader_theme::Surface::card);set_rich_text(reference,utf8(token),{},true);
+        const auto source=wide(edit_text(target));const auto start=source.find(token);
+        check(start!=source.npos,"The actual buffer feedback lost its registered technical token");
+        for(std::size_t offset=0;offset<token.size();++offset)if(std::wstring_view(L" {}[],()").find(token[offset])==std::wstring_view::npos)
+            check(character(target,static_cast<LONG>(start+offset)).crTextColor==character(reference,static_cast<LONG>(offset)).crTextColor,
+                "A newly created buffer feedback token differs from its native C++ category");
+    };
+    const auto question=[&]{
+        check(edit_text(fixture.item(location->block,0))==visible(block.question),"Feedback creation rewrote the current buffer question");
+        compare_code(fixture.item(location->block,0),L"Token{'n', 14}");
+    };
+    const auto empty=[&]{
+        const auto target=fixture.item(location->block,4);
+        check(edit_text(target).empty(),"An unreviewed buffer choice exposed feedback");
+        for(const auto& region:lesson_reading_regions(fixture.view))
+            check(region.target!=target,"An unreviewed buffer choice exposed a feedback narration source");
+    };
+    const auto verify=[&](bool correct){
+        question();const auto target=fixture.item(location->block,4);
+        const auto body=correct?block.explanation:block.review_feedback_options[0];
+        const auto raw=std::string(correct?"✓ Correcto\n\n":"✗ Incorrecto\n\n")+body;
+        const auto expected=visible(raw);
+        check(edit_text(target)==expected,"The actual buffer choice omitted or mixed its full authored feedback");
+        // The retry guide's int is an unambiguous type. The successful text's
+        // member names retain their authored presentation; no arbitrary symbol
+        // category is inferred merely from another block's source code.
+        if(!correct)compare_code(target,L"int");
+        bool found=false;
+        for(const auto& region:lesson_reading_regions(fixture.view))if(region.target==target){
+            found=true;check(region.feedback&&region.correct==correct&&region.source_text==raw,
+                "The created buffer feedback lost its exact narration source or verdict");
+        }
+        check(found,"The created buffer feedback has no matching reader region");
+        const auto text=wide(expected);std::vector<COLORREF> before;
+        for(std::size_t at=0;at<text.size();++at)before.push_back(character(target,static_cast<LONG>(at)).crTextColor);
+        CHARRANGE selection{3,8};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        ReadingShade shade(target,raw);shade.read_through(0);shade.read_through(wide(raw).size());shade.restore();
+        CHARRANGE after{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+        check(after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&edit_text(target)==expected,
+            "Reader shading changed the created feedback text or selection");
+        for(std::size_t at=0;at<text.size();++at)
+            check(character(target,static_cast<LONG>(at)).crTextColor==before[at],"Reader shading changed an authored feedback ink");
+        check(curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[location->page].blocks[location->block])==identity
+            &&saved().preferences.at("native_windows")==initial.preferences.at("native_windows")&&!IsWindowVisible(fixture.host),
+            "Buffer feedback QA changed its identity, compiler receipts, preferences or the desktop");
+    };
+    question();empty();
+    SendMessageW(fixture.item(location->block,20),BM_CLICK,0,0);pump();empty();
+    SendMessageW(fixture.item(location->block,3),BM_CLICK,0,0);pump();verify(false);
+    const auto rejected=state::get_response(saved(),lesson,block);
+    check(rejected&&!rejected->correct&&state::response_reviewed(*rejected,block),"The native buffer choice did not save its reviewed rejection");
+    fixture.reopen();verify(false);
+    const auto reopened_rejected=state::get_response(saved(),lesson,block);
+    check(reopened_rejected&&reopened_rejected->raw_json==rejected->raw_json,"Reopening rewrote the rejected buffer response");
+    SendMessageW(fixture.item(location->block,24),BM_CLICK,0,0);pump();empty();
+    SendMessageW(fixture.item(location->block,3),BM_CLICK,0,0);pump();verify(true);
+    const auto correct=state::get_response(saved(),lesson,block);
+    check(correct&&correct->correct&&!IsWindowEnabled(fixture.item(location->block,3)),"The native buffer success was not retained and locked");
+    fixture.reopen();verify(true);
+    const auto reopened_correct=state::get_response(saved(),lesson,block);
+    check(reopened_correct&&reopened_correct->raw_json==correct->raw_json,"Reopening rewrote the correct buffer response");
+    check(hash==state::sha256(state::read_bytes(asset)),"Created feedback QA changed the actual U11L9 asset");
+    std::cout<<"PASS actual U11L9 p4b4 created retry/success feedback: native int and Token initializer categories, complete source/verdict, hidden-before-submit, selection/shading inks, raw rejection/correct reopen and untouched asset; no audio or desktop visual acceptance\n";
+}
 }
 int main(){const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);
     const auto module=LoadLibraryW(L"Msftedit.dll");int result=0;
-    try{check(module,"Cannot load RichEdit");reader_theme::prepare_fonts();escape_choice();constructor_question();existing_curricular_mentions();}
+    try{check(module,"Cannot load RichEdit");reader_theme::prepare_fonts();escape_choice();constructor_question();existing_curricular_mentions();created_buffer_feedback();}
     catch(const std::exception& error){std::cerr<<"FAIL technical context: "<<error.what()<<'\n';result=1;}
     if(module)FreeLibrary(module);OleUninitialize();return result;
 }
