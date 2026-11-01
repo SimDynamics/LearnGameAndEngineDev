@@ -65,6 +65,12 @@ struct WindowState {
     lgaed::curriculum::CatalogLocation context;
     lgaed::presentation::CatalogAction pending_action=lgaed::presentation::CatalogAction::settings;
     std::string startup_error;
+    ~WindowState(){
+        // Also covers a failed startup or an external DestroyWindow path. The
+        // service must unblock users before member destruction joins them.
+        if(narrator)narrator->shutdown();
+        generation.reset();reader.reset();
+    }
 };
 
 lgaed::state::StateData preferences(WindowState& state){
@@ -490,14 +496,16 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         if(wparam==audio_context_timer){try{update_audio_context(*state);}catch(const std::exception& error){OutputDebugStringW(widen_error(error).c_str());}return 0;}
         if (wparam == smoke_timer) {
             KillTimer(window, smoke_timer);
-            DestroyWindow(window);
+            PostMessageW(window, WM_CLOSE, 0, 0);
             return 0;
         }
         break;
     case WM_CLOSE:
         if(state->reader)state->reader->pause();
         if (state->lesson && !lgaed::presentation::flush_lesson_view(state->lesson)) return 0;
-        KillTimer(window,audio_context_timer);state->generation.reset();
+        KillTimer(window,audio_context_timer);
+        if(state->narrator)state->narrator->shutdown();
+        state->generation.reset();
         state->reader.reset();
         DestroyWindow(window);
         return 0;

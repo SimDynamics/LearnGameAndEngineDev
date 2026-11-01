@@ -42,7 +42,8 @@ int wmain(int argc, wchar_t** argv) {
         if (!create_vm) throw std::runtime_error("The configured runtime does not expose JNI Invocation");
         std::vector<std::string> options{
             "-Djava.class.path=" + utf8(argv[2]),"-Dfile.encoding=UTF-8",
-            "-Dstdout.encoding=UTF-8","-Dstderr.encoding=UTF-8","-Xmx2048m"};
+            "-Dstdout.encoding=UTF-8","-Dstderr.encoding=UTF-8","-Xmx2048m",
+            "--enable-native-access=ALL-UNNAMED"};
         std::vector<JavaVMOption> native_options;
         for (auto& option : options) native_options.push_back({option.data(),nullptr});
         JavaVMInitArgs settings{}; settings.version = JNI_VERSION_1_8;

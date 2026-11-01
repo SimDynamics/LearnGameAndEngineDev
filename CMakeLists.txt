@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.3.1)
+cmake_minimum_required(VERSION 4.4.5)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "Use a build preset; in-source builds would mix generated files with imported content.")
@@ -10,6 +10,8 @@ include(cmake/VerifyNativeToolchain.cmake)
 lgaed_verify_native_toolchain()
 include(cmake/VerifyNativeDependencies.cmake)
 lgaed_verify_native_dependencies()
+include(cmake/WindowsRuntimeTools.cmake)
+lgaed_select_windows_runtime_tools()
 
 # These settings apply to the host, not to future student compilation activities.
 set(CMAKE_CXX_STANDARD 20)
@@ -51,7 +53,28 @@ set_target_properties(lgaed_cpp_tool_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "$
 add_executable(lgaed_smo_shader_compile native/tools/smo_shader_compile.cpp)
 target_link_libraries(lgaed_smo_shader_compile PRIVATE lgaed_host_options d3dcompiler bcrypt)
 set_target_properties(lgaed_smo_shader_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
-set_property(GLOBAL APPEND PROPERTY JOB_POOLS smo_hlsl_compile=2)
+# Optimized HLSL compilation can be expensive. Use this Windows host's CPU and
+# available memory, keeping a 4 GiB budget per compiler and at most eight jobs.
+# Small hosts retain a conservative limit; shader flags remain IEEE-strict/O3.
+cmake_host_system_information(RESULT _lgaed_threads QUERY NUMBER_OF_LOGICAL_CORES)
+cmake_host_system_information(RESULT _lgaed_available_memory QUERY AVAILABLE_PHYSICAL_MEMORY)
+math(EXPR _lgaed_cpu_shader_jobs "${_lgaed_threads} / 2")
+math(EXPR _lgaed_memory_shader_jobs "${_lgaed_available_memory} / 4096")
+set(_lgaed_shader_jobs 8)
+foreach(_limit _lgaed_cpu_shader_jobs _lgaed_memory_shader_jobs)
+    if(${_limit} LESS _lgaed_shader_jobs)
+        set(_lgaed_shader_jobs "${${_limit}}")
+    endif()
+endforeach()
+if(_lgaed_shader_jobs LESS 1)
+    set(_lgaed_shader_jobs 1)
+endif()
+set(LGAED_SHADER_COMPILE_JOBS "${_lgaed_shader_jobs}" CACHE STRING "Concurrent optimized HLSL compiler processes")
+if(NOT LGAED_SHADER_COMPILE_JOBS MATCHES "^[1-9][0-9]*$" OR LGAED_SHADER_COMPILE_JOBS GREATER 32)
+    message(FATAL_ERROR "LGAED_SHADER_COMPILE_JOBS must be an integer from 1 to 32.")
+endif()
+set_property(GLOBAL APPEND PROPERTY JOB_POOLS "smo_hlsl_compile=${LGAED_SHADER_COMPILE_JOBS}")
+message(STATUS "Optimized HLSL compiler jobs: ${LGAED_SHADER_COMPILE_JOBS}")
 
 add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/cpp_project.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
@@ -163,6 +186,7 @@ target_link_libraries(LearnGameAndEngineDev PRIVATE
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_custom_target(lgaed_narration_runtime
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/build_worker.py"
+        --java-home "${LGAED_JAVA_HOME}" --ffmpeg "${LGAED_FFMPEG_EXECUTABLE}"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Preparing the shared Kokoro and mathematical runtime"
     VERBATIM)
@@ -279,6 +303,10 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_audio_generation_tests lgaed_narration_runtime)
     add_test(NAME native.audio_generation COMMAND lgaed_audio_generation_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
     set_tests_properties(native.audio_generation PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_narration_shutdown_tests native/platform/windows/narration_shutdown_tests.cpp)
+    target_link_libraries(lgaed_narration_shutdown_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.narration_shutdown COMMAND lgaed_narration_shutdown_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(native.narration_shutdown PROPERTIES TIMEOUT 20)
     add_executable(lgaed_narration_preferences_tests native/platform/windows/narration_preferences_tests.cpp)
     target_link_libraries(lgaed_narration_preferences_tests PRIVATE lgaed_platform_windows)
     add_dependencies(lgaed_narration_preferences_tests lgaed_narration_runtime)
@@ -446,6 +474,8 @@ if(BUILD_TESTING)
     add_test(NAME native.narration_worker COMMAND lgaed_narration_worker_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
     add_test(NAME native.math_editor_worker COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_math_editor.py")
     add_test(NAME native.math_calculator_task COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_calculator_task.py")
+    add_test(NAME native.worker_dependencies COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_worker_dependencies.py)
     set_tests_properties(native.narration_worker PROPERTIES TIMEOUT 180)
     add_executable(lgaed_system_speech_tests native/platform/windows/system_speech_tests.cpp)
     target_link_libraries(lgaed_system_speech_tests PRIVATE lgaed_platform_windows)

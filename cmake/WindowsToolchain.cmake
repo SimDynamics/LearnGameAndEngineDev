@@ -105,6 +105,15 @@ function(_lgaed_pin_tool variable path)
     endif()
     file(REAL_PATH "${path}" _lgaed_required_path)
     if(DEFINED ${variable} AND NOT "${${variable}}" STREQUAL "")
+        if(NOT EXISTS "${${variable}}")
+            # A restored cache can retain 8.3 aliases from the old Windows
+            # installation. CMake verifies the cache's source directory; the
+            # checked preset/environment above select the replacement tools.
+            # Preserve the build tree and migrate only a missing executable.
+            message(STATUS "Migrating missing ${variable}: '${${variable}}' -> '${_lgaed_required_path}'")
+            set(${variable} "${_lgaed_required_path}" CACHE FILEPATH "Pinned Windows native build tool" FORCE)
+            return()
+        endif()
         # CMake's MSVC try_compile may use the Windows 8.3 spelling of the same
         # installed executable. Resolve filesystem identity before comparing.
         file(REAL_PATH "${${variable}}" _lgaed_existing)
@@ -123,3 +132,12 @@ _lgaed_pin_tool(CMAKE_LINKER "${_lgaed_vc}/bin/Hostx64/x64/link.exe")
 _lgaed_pin_tool(CMAKE_RC_COMPILER "${_lgaed_sdk_root}/bin/${_lgaed_sdk}/x64/rc.exe")
 _lgaed_pin_tool(CMAKE_MT "${_lgaed_sdk_root}/bin/${_lgaed_sdk}/x64/mt.exe")
 _lgaed_pin_tool(CMAKE_MAKE_PROGRAM "${_lgaed_vs}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe")
+
+# CMake keeps its GUI path in an INTERNAL cache entry when the same release is
+# relocated. Keep edit_cache with the selected physical installation as well.
+get_filename_component(_lgaed_cmake_bin "${CMAKE_COMMAND}" DIRECTORY)
+set(_lgaed_cmake_gui "${_lgaed_cmake_bin}/cmake-gui.exe")
+if(NOT EXISTS "${_lgaed_cmake_gui}")
+    message(FATAL_ERROR "The shared Windows CMake installation is incomplete: ${_lgaed_cmake_gui}")
+endif()
+set(CMAKE_EDIT_COMMAND "${_lgaed_cmake_gui}" CACHE INTERNAL "Selected Windows CMake cache editor" FORCE)

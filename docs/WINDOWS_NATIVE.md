@@ -20,12 +20,69 @@ añadir `-SkipTests`. `-Fresh` solicita explícitamente a CMake renovar su cach�
 configuración dentro del árbol generado del preset; no borra fuentes ni perfiles.
 `-CleanFirst` limpia únicamente los resultados generados de ese preset antes de
 recompilar; sirve para comprobar un enlace real, sin modificar el otro checkout.
+La compilación de shaders HLSL utiliza la CPU y memoria disponibles (hasta ocho
+procesos, con un presupuesto de 4 GiB por proceso). El límite puede fijarse con
+`LGAED_SHADER_COMPILE_JOBS`; no cambia las opciones IEEE estrictas ni O3.
 
-Herramientas seleccionadas y comprobadas: paquete MSVC v145 `14.51.36231`
+Windows es un proyecto independiente de Android. Su selección de herramientas
+no está limitada por la API mínima, el bytecode ni las dependencias de Android.
+El proyecto Android independiente continúa en `LearnGraphicsProgramming`.
+
+Herramientas seleccionadas: paquete MSVC v145 `14.51.36231`
 (compilador instalado `19.51.36260.0`), host/destino x64, Windows SDK y UCRT
-`10.0.28000.0`, CMake `4.3.1-msvc1` y Ninja `1.13.2`. Se utilizan las herramientas
-de Visual Studio 2026 instaladas; no se descargan otras. Una selección incompatible
+`10.0.28000.0`, CMake `4.4.5` y Ninja `1.13.2`. MSVC, ATL y Ninja se reutilizan de
+Visual Studio 2026 estable. CMake se instala bajo `C:\LGP-Tools\CMake`.
+Una selección incompatible
 falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
+
+`toolchains/windows.versions.json` fija también Python `3.15.2`, FFmpeg `9.0.2`,
+Vulkan SDK para Windows `1.4.363.0` y el JDK completo OpenJDK `27.0.1.0.3`. El SDK de
+Vulkan se instala para el usuario con `copy_only=1`: contiene las herramientas
+y cabeceras Windows y no instala otro controlador gráfico. No se sustituyen
+por cabeceras o compiladores antiguos del NDK Android.
+FFmpeg y Vulkan SDK también se alojan bajo `C:\LGP-Tools`, en carpetas versionadas.
+Las herramientas extraídas desde Codex no se instalan en `AppData\Local\Programs`:
+Windows puede redirigir esa escritura al caché privado de la aplicación empaquetada.
+El selector y CMake comprueban las rutas físicas antes de compilar y rechazan esas
+redirecciones. Python conserva su instalación física normal bajo AppData; el JDK
+descargado por Android Studio conserva `.jdks`.
+Las recetas de reconstrucción de herramientas Android utilizan PowerShell 7.4 o
+posterior. La instalación compartida actual es PowerShell 7.6.9 mediante el MSI
+oficial, bajo `C:\Program Files\PowerShell\7`; no utilizan como requisito el
+runtime incluido en Codex. Los botones Windows continúan funcionando con
+Windows PowerShell 5.1. Las dos ediciones cumplen funciones distintas y la
+instalación MSI conserva la edición incluida en Windows.
+CTest utiliza también el Git compartido 2.56.0.windows.4 bajo `Program Files`,
+en lugar del Git que pueda incluir el proceso que abrió CMake. La preparación
+del worker recibe FFmpeg por ruta explícita y no guarda el PATH de esa aplicación
+en las reglas de compilación.
+
+`Resolve-NativeTools.ps1` encuentra y valida las instalaciones al ejecutar cada
+botón o compilación. Prepara únicamente el entorno de ese proceso y sus hijos;
+no necesita conservar una consola abierta ni cambiar el Java de otros proyectos.
+CMake resuelve las mismas rutas del manifiesto al abrir un preset desde Visual
+Studio. Las rutas utilizan las carpetas del usuario actual, sin cuentas del
+Windows anterior ni directorios de herramientas restauradas.
+Las herramientas compartidas permanecen en sus instalaciones del equipo y las
+dependencias descargadas del proyecto en sus directorios generados. Ninguna
+compilación ni ejecución depende de `Documents\Codex`, de una conversación ni
+de datos privados del agente.
+`Build-NarrationWorker.ps1` utiliza también ese selector para reconstruir el
+worker por separado. Ambos scripts de compilación restauran el entorno de la
+consola al terminar, para no cambiar el Java de otro proyecto ejecutado después.
+
+Descargar el JDK desde **Android Studio → Download JDK** y conservarlo bajo
+`%USERPROFILE%\.jdks\openjdk-27*`. La selección Oracle OpenJDK del catálogo de
+Studio ofrece el mantenimiento `27.0.1.0.3`; su entrada Temurin 27 inicial
+todavía ofrece `27+35`. El JBR incluido en Studio tiene `javac`, pero
+puede carecer de `include/jni.h`: el componente JNI de Kokoro y matemáticas
+necesita además `jni_md.h` y `jvm.dll` del JDK completo. El runtime Windows usa
+Java 27; el [compilador Kotlin `2.4.21`](https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/libraries/tools/kotlin-gradle-compiler-types/src/generated/kotlin/org/jetbrains/kotlin/gradle/dsl/JvmTarget.kt)
+admite como máximo bytecode/API Java 26,
+por eso el worker compila con ese objetivo. Esto no depende de Android.
+Las bibliotecas JVM Windows se resuelven directamente desde Maven Central
+con `native/narration/worker/dependencies.lock.json` y SHA-256, sin necesitar
+el caché Gradle ni una compilación del proyecto Android.
 
 La instalación necesita también **C++ ATL** para ese toolset
 (`Microsoft.VisualStudio.Component.VC.ATL`): el lector de voz de Windows utiliza
@@ -39,12 +96,11 @@ el sufijo `.0` identifica la familia y no demuestra la actualización instalada.
 CMake exige SDK y UCRT de esa misma familia, MSVC x64 y herramientas compatibles;
 no bloquea una compilación válida por la ausencia de un registro de desinstalación
 que puede variar entre instalaciones de Visual Studio y del SDK independiente.
-Para confirmar que está instalado el mantenimiento `.2957`, consultar
-**Configuración de Windows > Aplicaciones > Aplicaciones instaladas**,
-buscando Windows SDK/Windows Software Development Kit y su versión completa.
-Si la actualización es anterior, instalar la versión estable desde
+El selector compartido y CMake verifican el mantenimiento real de `rc.exe` y
+`mt.exe`, incluidos los builds iniciados desde Visual Studio. No dependen del
+nombre registrado del instalador. Si la actualización es anterior, instalar la versión estable desde
 https://learn.microsoft.com/windows/apps/windows-sdk/downloads y recompilar.
-Esta comprobación manual no cambia el gestor ni instala software automáticamente.
+Esta comprobación no instala software automáticamente.
 
 Cada preset genera sus propios archivos en `out/build/<preset>`; el ejecutable
 está en `bin/LearnGameAndEngineDev.exe` dentro de ese directorio. La instalación
@@ -153,11 +209,21 @@ progreso personal. Los datos que Android conserva únicamente en memoria o en
 `native/core` contiene perfiles, contratos de evaluación y modelos de estado;
 `native/platform/windows`, los adaptadores de JSON, persistencia, importación y
 ejecución; `native/presentation/windows`, los controles nativos con adaptación DPI.
-La importación conserva archivos e historial de proyectos, pero su interfaz de
-edición de múltiples archivos y restauración de revisiones aún no está migrada.
-Tampoco se ha recuperado el catálogo completo, los porcentajes de curso, Kokoro,
-la narración sincronizada, las funciones Android restantes ni el renderizado GPU.
-La implementación de este primer recorrido no acredita esas capacidades ni la aceptación curricular de Work.
+El catálogo, los proyectos de varios archivos, la narración y los laboratorios
+gráficos tienen componentes y pruebas específicos. Las comprobaciones del primer
+recorrido descritas arriba no acreditan por sí solas esas capacidades ni la
+aceptación curricular de Work.
+
+Al cerrar la aplicación, `NarrationWorker::shutdown()` detiene únicamente su
+proceso y despierta las solicitudes pendientes antes de esperar a los productores
+y lectores. El cierre no depende de que ONNX termine de cargar un modelo o
+confirme una cancelación. No envía otra solicitud por una tubería bloqueada ni
+elimina grabaciones o cachés; otro perfil conserva su propio servicio. Durante el
+uso normal, la inferencia sigue confirmando su cancelación antes de ceder su turno.
+El cierre automático de smoke utiliza la misma ruta `WM_CLOSE`. La prueba
+`native.narration_shutdown` comprueba ese ciclo con procesos de transporte
+controlados, incluyendo una preparación sin respuesta y una escritura bloqueada;
+no sustituye las pruebas de síntesis real.
 
 La ejecución educativa necesita la instalación MSVC/SDK indicada. El Job Object
 gestiona cancelación y procesos descendientes; no es un sandbox de seguridad:
@@ -169,4 +235,6 @@ final y se comparan sus bytes exactos, sin recortar datos.
 
 Work mantiene los pedidos en `PENDIENTES_RECURSOS_CURRICULARES.md`.
 Codex comunica en el chat las capacidades comprobadas y sus límites para que
-Work actualice ese único registro.
+se conserve ese único registro y retira de su copia los pedidos resueltos según
+las instrucciones del usuario. La integración o aceptación que falte permanece
+registrada.

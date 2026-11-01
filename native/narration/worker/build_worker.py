@@ -7,6 +7,7 @@ rules below, without editing Android, model weights or curricular data.
 from __future__ import annotations
 
 import argparse
+from collections import deque
 from contextlib import contextmanager
 import hashlib
 import json
@@ -16,7 +17,9 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
@@ -29,7 +32,50 @@ from verify_windows_distribution import verify_runtime
 APP = ROOT / "app/src/main/java/com/learngraphicsprogramming/app"
 OUT = ROOT / "out/narration"
 DEPS = ROOT / "out/deps"
-ORT_SHA256 = "57d8cedf6f0c8fd6d50ed65c17bf9939f55a4512f4a1f3e732023d258f262ac6"
+MAVEN_CENTRAL = "https://repo.maven.apache.org/maven2/"
+DEPENDENCY_LOCK = Path(__file__).with_name("dependencies.lock.json")
+KOTLIN_VERSION = "2.4.21"
+# Kotlin 2.4.21's highest supported bytecode/API target is 26, including when
+# the complete build/runtime JDK is 27. Keep Java helpers on the same target.
+# https://kotlinlang.org/docs/compiler-reference.html#jvm-target-version
+JVM_TARGET = "26"
+RUNTIME_ROOTS = [
+    ("org.jetbrains.kotlin", "kotlin-stdlib", KOTLIN_VERSION),
+    ("org.json", "json", "20260814"),
+    ("com.google.code.gson", "gson", "2.15.0"),
+    ("com.microsoft.onnxruntime", "onnxruntime", "1.31.1"),
+    ("org.matheclipse", "matheclipse-core", "3.2.0"),
+    ("org.jetbrains", "annotations", "26.1.0"),
+    # Windows is independent of Android's graph. Align the maintained stable
+    # releases consumed by Symja; resolve their own official POMs as well.
+    ("com.google.errorprone", "error_prone_annotations", "2.51.0"),
+    ("com.google.guava", "guava", "33.7.2-jre"),
+    ("org.apache.commons", "commons-lang3", "3.21.0"),
+    ("commons-codec", "commons-codec", "1.23.0"),
+    ("org.logicng", "logicng", "2.6.2"),
+    ("it.unimi.dsi", "fastutil-core", "8.5.19"),
+    ("org.choco-solver", "choco-solver", "6.0.2"),
+    ("com.esotericsoftware", "kryo", "5.7.1"),
+    ("com.github.freva", "ascii-table", "1.13.0"),
+    ("org.apache.logging.log4j", "log4j-api", "2.26.1"),
+    ("com.fasterxml.jackson.core", "jackson-databind", "2.22.4"),
+    ("com.fasterxml.jackson.core", "jackson-core", "2.22.4"),
+    ("com.fasterxml.jackson.core", "jackson-annotations", "2.22"),
+    ("io.pebbletemplates", "pebble", "4.1.2"),
+    ("org.jspecify", "jspecify", "1.0.1"),
+    ("args4j", "args4j", "2.37"),
+    ("org.ehcache", "sizeof", "0.4.4"),
+    ("org.objenesis", "objenesis", "3.6"),
+    ("org.slf4j", "slf4j-api", "2.0.20"),
+    ("org.jheaps", "jheaps", "0.16"),
+]
+COMPILER_ROOTS = [
+    ("org.jetbrains.kotlin", "kotlin-compiler-embeddable", KOTLIN_VERSION),
+    ("org.jetbrains.kotlin", "kotlin-stdlib", KOTLIN_VERSION),
+    ("org.jetbrains.kotlin", "kotlin-reflect", KOTLIN_VERSION),
+    ("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.11.0"),
+    ("org.jetbrains", "annotations", "26.1.0"),
+]
 PURE_NARRATION = [
     "ManualEnglishTerms", "ManualEnglishPronunciations", "ManualEnglishSpeech",
     "SpanishTechnicalSpeech", "SpanishMathSpeech", "EnglishTechnicalSpeech",
@@ -79,157 +125,242 @@ def build_lock():
                 msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
 
 
-def download_ort() -> Path:
-    path = DEPS / "onnxruntime-1.30.0.jar"
-    if path.is_file():
-        if digest(path) != ORT_SHA256:
-            raise ValueError("Existing ONNX Runtime dependency failed SHA-256; left untouched")
+class MavenResolver:
+    """Resolve this worker's fixed Maven graph, independently of Android/Gradle.
+
+    Normal builds accept only the checked-in SHA-256 lock. An explicit refresh
+    validates Central's published checksums before producing the replacement
+    lock. Breadth-first mediation follows Maven's nearest/first declaration;
+    explicit roots align shared libraries across the complete classpath.
+    """
+
+    def __init__(self, cache: Path, hashes: dict[str, str] | None):
+        self.cache = cache
+        self.hashes = hashes
+        self.observed: dict[str, str] = {}
+        self.models: dict[tuple, dict] = {}
+        self.loading: set[tuple] = set()
+
+    @staticmethod
+    def relative(coordinate, extension="pom", classifier=""):
+        group, artifact, version = coordinate
+        for value in (*coordinate, extension, classifier):
+            if value and (not re.fullmatch(r"[A-Za-z0-9_.-]+", value) or value in (".", "..")):
+                raise ValueError(f"Unsupported Maven coordinate component: {value!r}")
+        if not version or "SNAPSHOT" in version.upper() or version.upper() in ("LATEST", "RELEASE"):
+            raise ValueError(f"A fixed released Maven version is required: {coordinate}")
+        suffix = "-" + classifier if classifier else ""
+        return f"{group.replace('.', '/')}/{artifact}/{version}/{artifact}-{version}{suffix}.{extension}"
+
+    @staticmethod
+    def published_checksum(relative):
+        # Central requires SHA-1; newer publishers also supply SHA-256/512.
+        # The resulting lock always stores SHA-256 of the verified bytes.
+        for algorithm in ("sha256", "sha512", "sha1"):
+            try:
+                with urllib.request.urlopen(MAVEN_CENTRAL + relative + "." + algorithm, timeout=90) as source:
+                    value = source.read().decode("ascii").strip().split()[0].lower()
+            except urllib.error.HTTPError as failure:
+                if failure.code == 404:
+                    continue
+                raise
+            if not re.fullmatch(r"[0-9a-f]{%d}" % (hashlib.new(algorithm).digest_size * 2), value):
+                raise ValueError(f"Invalid published {algorithm} for {relative}")
+            return algorithm, value
+        raise RuntimeError(f"Central has no published checksum for {relative}")
+
+    def fetch(self, coordinate, extension="pom", classifier="") -> Path:
+        relative = self.relative(coordinate, extension, classifier)
+        path = self.cache / relative
+        expected = None if self.hashes is None else self.hashes.get(relative)
+        if self.hashes is not None and not expected:
+            raise RuntimeError(f"Dependency is absent from the Windows SHA-256 lock: {relative}")
+        published = self.published_checksum(relative) if self.hashes is None else None
+
+        def verify(candidate):
+            sha256 = digest(candidate)
+            if expected and sha256 != expected:
+                raise ValueError(f"Windows dependency failed locked SHA-256; left untouched: {candidate}")
+            if published:
+                algorithm, checksum = published
+                with candidate.open("rb") as stream:
+                    actual = hashlib.file_digest(stream, algorithm).hexdigest()
+                if actual != checksum:
+                    raise ValueError(f"Windows dependency failed published {algorithm}; left untouched: {candidate}")
+            self.observed[relative] = sha256
+
+        if path.is_file():
+            verify(path)
+            return path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=path.parent, suffix=".part", delete=False) as output:
+            partial = Path(output.name)
+            try:
+                with urllib.request.urlopen(MAVEN_CENTRAL + relative, timeout=90) as source:
+                    shutil.copyfileobj(source, output, 1024 * 1024)
+            except BaseException:
+                output.close()
+                partial.unlink(missing_ok=True)
+                raise
+        try:
+            verify(partial)
+            # The checkout build lock serializes normal builds; never replace an
+            # existing cache entry if a separate dependency refresh won a race.
+            if path.exists():
+                verify(path)
+            else:
+                partial.rename(path)
+        finally:
+            partial.unlink(missing_ok=True)
         return path
-    DEPS.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(".jar.part")
-    try:
-        url = "https://repo.maven.apache.org/maven2/com/microsoft/onnxruntime/onnxruntime/1.30.0/onnxruntime-1.30.0.jar"
-        with urllib.request.urlopen(url, timeout=90) as source, partial.open("xb") as output:
-            shutil.copyfileobj(source, output, 1024 * 1024)
-        if digest(partial) != ORT_SHA256:
-            raise ValueError("Official desktop ONNX Runtime failed SHA-256")
-        partial.rename(path)
-    finally:
-        partial.unlink(missing_ok=True)
-    return path
+
+    def model(self, coordinate):
+        if coordinate in self.models:
+            return self.models[coordinate]
+        if coordinate in self.loading:
+            raise RuntimeError(f"Cyclic Maven parent/BOM: {coordinate}")
+        self.loading.add(coordinate)
+        try:
+            tree = ET.parse(self.fetch(coordinate)).getroot()
+            for element in tree.iter():
+                element.tag = element.tag.rsplit("}", 1)[-1]
+            if tree.find("distributionManagement/relocation") is not None:
+                raise RuntimeError(f"Maven relocation requires explicit review: {coordinate}")
+            for profile in tree.findall("profiles/profile"):
+                conditional = profile.findall("dependencies/dependency") + profile.findall("dependencyManagement/dependencies/dependency")
+                if profile.find("activation") is not None and any(
+                    item.findtext("scope", "compile") not in ("test", "provided", "system") and
+                    item.findtext("optional", "false") != "true" for item in conditional
+                ):
+                    raise RuntimeError(f"Conditional Maven dependencies require explicit review: {coordinate}")
+            inherited = {"raw_properties": {}, "raw_managed": [], "raw_dependencies": []}
+            parent = tree.find("parent")
+            if parent is not None:
+                inherited = self.model(tuple(parent.findtext(key, "") for key in ("groupId", "artifactId", "version")))
+            group, artifact, version = coordinate
+            raw_properties = {**inherited["raw_properties"],
+                **{child.tag: child.text or "" for child in tree.findall("properties/*")}}
+            properties = {**raw_properties, "project.groupId": group, "project.artifactId": artifact,
+                "project.version": version, "pom.groupId": group, "pom.artifactId": artifact, "pom.version": version}
+            if parent is not None:
+                properties.update({f"project.parent.{key}": parent.findtext(key, "")
+                                   for key in ("groupId", "artifactId", "version")})
+
+            def expand(value):
+                for _ in range(40):
+                    changed = re.sub(r"\$\{([^}]+)\}", lambda found: properties.get(found[1], found[0]), value)
+                    if changed == value:
+                        break
+                    value = changed
+                if "${" in value:
+                    raise RuntimeError(f"Unresolved Maven value {value!r} in {coordinate}")
+                return value
+
+            def dependency(element):
+                result = {key: expand(element.findtext(key, "")) for key in
+                          ("groupId", "artifactId", "version", "scope", "type", "classifier", "optional")}
+                result["exclusions"] = frozenset((expand(item.findtext("groupId", "")),
+                                                  expand(item.findtext("artifactId", "")))
+                                                 for item in element.findall("exclusions/exclusion"))
+                result["key"] = (result["groupId"], result["artifactId"], result["type"] or "jar", result["classifier"])
+                return result
+
+            raw_managed = inherited["raw_managed"] + tree.findall("dependencyManagement/dependencies/dependency")
+            managed, imports = {}, []
+            for element in raw_managed:
+                item = dependency(element)
+                if item["type"] == "pom" and item["scope"] == "import":
+                    imports.append(item)
+                else:
+                    managed[item["key"]] = item
+            for item in imports:
+                for key, value in self.model((item["groupId"], item["artifactId"], item["version"]))["managed"].items():
+                    managed.setdefault(key, value)
+            raw_dependencies = inherited["raw_dependencies"] + tree.findall("dependencies/dependency")
+            dependencies = {}
+            for element in raw_dependencies:
+                # Test-only versions can depend on a publisher's test profiles;
+                # they are outside the worker's runtime graph and need no JAR.
+                if expand(element.findtext("scope", "")) in ("test", "provided", "system"):
+                    continue
+                item = dependency(element)
+                dependencies[item["key"]] = item
+            result = {"raw_properties": raw_properties, "raw_managed": raw_managed,
+                "raw_dependencies": raw_dependencies, "managed": managed,
+                "dependencies": list(dependencies.values()), "packaging": tree.findtext("packaging", "jar")}
+            self.models[coordinate] = result
+            return result
+        finally:
+            self.loading.remove(coordinate)
+
+    def closure(self, roots) -> list[Path]:
+        roots = [tuple(item) for item in roots]
+        versions = {(group, artifact): version for group, artifact, version in roots}
+        if len(versions) != len(roots):
+            raise ValueError("Duplicate Windows Maven roots")
+        queue = deque((item, frozenset(), self.model(item)["managed"]) for item in roots)
+        selected, visited, jars = {}, set(), []
+        while queue:
+            coordinate, excluded, root_management = queue.popleft()
+            group, artifact, version = coordinate
+            key = group, artifact
+            if any((g in (group, "*") and a in (artifact, "*")) for g, a in excluded):
+                continue
+            version = versions.get(key, version)
+            coordinate = group, artifact, version
+            if key in selected and selected[key] != version:
+                continue
+            visit = coordinate, excluded, id(root_management)
+            if visit in visited:
+                continue
+            visited.add(visit)
+            model = self.model(coordinate)
+            if key not in selected:
+                selected[key] = version
+                if model["packaging"] in ("jar", "bundle"):
+                    jars.append(self.fetch(coordinate, "jar"))
+                elif model["packaging"] != "pom":
+                    raise RuntimeError(f"Unsupported runtime packaging {model['packaging']}: {coordinate}")
+            for item in model["dependencies"]:
+                management = root_management.get(item["key"], model["managed"].get(item["key"], {}))
+                scope = item["scope"] or management.get("scope") or "compile"
+                optional = item["optional"] or management.get("optional") or "false"
+                if scope not in ("compile", "runtime") or optional == "true":
+                    continue
+                if item["classifier"] or (item["type"] and item["type"] not in ("jar", "pom")):
+                    raise RuntimeError(f"Unsupported runtime Maven artifact: {item['key']}")
+                child_key = item["groupId"], item["artifactId"]
+                child_version = versions.get(child_key) or management.get("version") or item["version"]
+                if not child_version:
+                    raise RuntimeError(f"Missing runtime Maven version {child_key} required by {coordinate}")
+                queue.append(((*child_key, child_version), excluded | item["exclusions"] |
+                              management.get("exclusions", frozenset()), root_management))
+        return jars
+
+
+def worker_dependencies(*, refresh=False):
+    roots = {"runtime": RUNTIME_ROOTS, "compiler": COMPILER_ROOTS}
+    lock = None if refresh else json.loads(DEPENDENCY_LOCK.read_text(encoding="utf-8"))
+    if lock is not None and (lock.get("repository") != MAVEN_CENTRAL or lock.get("roots") !=
+                             {key: [list(item) for item in value] for key, value in roots.items()}):
+        raise ValueError("Windows Maven roots changed; explicitly refresh the dependency lock")
+    resolver = MavenResolver(DEPS / "windows-maven", None if refresh else lock["sha256"])
+    resolved = {key: resolver.closure(value) for key, value in roots.items()}
+    if refresh:
+        content = {"repository": MAVEN_CENTRAL, "roots": roots, "sha256": dict(sorted(resolver.observed.items()))}
+        pending = DEPENDENCY_LOCK.with_suffix(".json.part")
+        try:
+            pending.write_text(json.dumps(content, indent=2) + "\n", encoding="utf-8", newline="\n")
+            pending.replace(DEPENDENCY_LOCK)
+        finally:
+            pending.unlink(missing_ok=True)
+    return resolved
 
 
 def cached_jar(group: str, artifact: str, version: str) -> Path:
-    base = Path(os.environ.get("USERPROFILE", str(Path.home()))) / ".gradle/caches/modules-2/files-2.1"
-    files = sorted((base / group / artifact / version).glob(f"*/{artifact}-{version}.jar"))
-    if len(files) != 1:
-        raise RuntimeError(f"Missing local build dependency {group}:{artifact}:{version}")
-    return files[0]
-
-
-def cached_dependency_closure(group: str, artifact: str, version: str) -> list[Path]:
-    """Read the original Maven runtime graph from Gradle's existing cache only.
-
-    No repository-wide jar scan, downloads, dependency upgrades or Gradle build
-    is needed. Parent/BOM management and exclusions retain the original graph.
-    """
-    base = Path(os.environ.get("USERPROFILE", str(Path.home()))) / ".gradle/caches/modules-2/files-2.1"
-    models: dict[tuple[str, str, str], tuple[dict, dict, list, str]] = {}
-
-    def model(coordinate):
-        if coordinate in models:
-            return models[coordinate]
-        g, a, v = coordinate
-        files = sorted((base / g / a / v).glob(f"*/{a}-{v}.pom"))
-        if len(files) != 1:
-            # Gradle retains Guava's intentionally empty conflict-marker jar
-            # without a POM. Verify it contains no classes before treating that
-            # resource-only artifact as a leaf; never guess for real code jars.
-            jar_files = sorted((base / g / a / v).glob(f"*/{a}-{v}.jar"))
-            # Official versioned Maven Central POMs confirm these two jars have
-            # no runtime dependencies (JavaPoet lists test dependencies only).
-            # Gradle already holds the jars but not their POMs. Keep builds
-            # offline rather than downloading duplicate metadata each time.
-            # https://repo.maven.apache.org/maven2/org/jetbrains/annotations/23.0.0/annotations-23.0.0.pom
-            # https://repo.maven.apache.org/maven2/com/squareup/javapoet/1.13.0/javapoet-1.13.0.pom
-            leaves={("org.jetbrains","annotations","23.0.0"),("com.squareup","javapoet","1.13.0")}
-            if not files and (g,a,v) in leaves and len(jar_files)==1:
-                result=({}, {}, [], "jar");models[coordinate]=result;return result
-            if not files and len(jar_files)==1:
-                with zipfile.ZipFile(jar_files[0]) as archive:
-                    if not any(name.endswith(".class") for name in archive.namelist()):
-                        result=({}, {}, [], "jar");models[coordinate]=result;return result
-            raise RuntimeError(f"Missing original cached calculator metadata {g}:{a}:{v}")
-        tree = ET.parse(files[0]).getroot()
-        for element in tree.iter():
-            element.tag = element.tag.rsplit("}", 1)[-1]
-        properties, managed = {}, {}
-        parent = tree.find("parent")
-        if parent is not None:
-            inherited = model(tuple(parent.findtext(key, "") for key in ("groupId", "artifactId", "version")))
-            properties.update(inherited[0]); managed.update(inherited[1])
-            properties.update({f"project.parent.{key}":parent.findtext(key, "") for key in ("groupId","artifactId","version")})
-        properties.update({"project.groupId": g, "project.artifactId": a, "project.version": v,
-                           "pom.groupId": g, "pom.artifactId": a, "pom.version": v})
-        properties.update({child.tag: child.text or "" for child in tree.findall("properties/*")})
-
-        def expand(value, strict=True):
-            for _ in range(20):
-                changed = re.sub(r"\$\{([^}]+)\}", lambda found: properties.get(found[1], found[0]), value)
-                if changed == value:
-                    break
-                value = changed
-            if strict and "${" in value:
-                raise RuntimeError(f"Unresolved original calculator dependency version: {value}")
-            return value
-
-        for key, value in list(properties.items()):
-            properties[key] = expand(value, strict=False)
-
-        def dependency(element):
-            value = {key: expand(element.findtext(key, fallback)) for key, fallback in
-                     (("groupId", ""), ("artifactId", ""), ("version", ""), ("scope", "compile"),
-                      ("type", "jar"), ("optional", "false"))}
-            value["exclusions"] = {(expand(item.findtext("groupId", "")), expand(item.findtext("artifactId", "")))
-                                   for item in element.findall("exclusions/exclusion")}
-            value["scope_declared"] = element.find("scope") is not None
-            return value
-
-        for element in tree.findall("dependencyManagement/dependencies/dependency"):
-            item = dependency(element)
-            if item["type"] == "pom" and item["scope"] == "import":
-                managed.update(model((item["groupId"], item["artifactId"], item["version"]))[1])
-            else:
-                managed[(item["groupId"], item["artifactId"])] = item
-        result = properties, managed, [dependency(item) for item in tree.findall("dependencies/dependency")], tree.findtext("packaging", "jar")
-        models[coordinate] = result
-        return result
-
-    initial = (group, artifact, version)
-    root_managed = model(initial)[1]
-    selected: dict[tuple[str, str], Path] = {}
-
-    def runtime_jar(g,a,v):
-        try:
-            return cached_jar(g,a,v)
-        except RuntimeError:
-            # Gradle module metadata may select an alternate runtime artifact
-            # under the same coordinate (Guava's portable Android variant).
-            # Accept only the exact locally cached file explicitly declared by
-            # that metadata, not an arbitrary different/newer dependency.
-            candidates=set()
-            for metadata in (base/g/a/v).glob(f"*/{a}-{v}.module"):
-                for variant in json.loads(metadata.read_text(encoding="utf-8")).get("variants",[]):
-                    if variant.get("attributes",{}).get("org.gradle.usage")!="java-runtime":continue
-                    for file in variant.get("files",[]):
-                        name=file.get("name","")
-                        if Path(name).name==name and name.endswith(".jar"):
-                            candidates.update((base/g/a/v).glob(f"*/{name}"))
-            if len(candidates)==1:return candidates.pop()
-            raise
-
-    def visit(coordinate, excluded=frozenset()):
-        g, a, v = coordinate
-        if (g, a) in excluded or (g, "*") in excluded or ("*", a) in excluded or (g, a) in selected:
-            return
-        _, managed, dependencies, packaging = model(coordinate)
-        if packaging in ("jar","bundle"):
-            selected[(g, a)] = runtime_jar(g, a, v)
-        for item in dependencies:
-            key = item["groupId"], item["artifactId"]
-            selected_management = root_managed.get(key) or managed.get(key) or {}
-            scope=item["scope"] if item["scope_declared"] else selected_management.get("scope",item["scope"])
-            if scope not in ("compile", "runtime") or item["optional"] == "true" or item["type"] not in ("jar", "pom"):
-                continue
-            child_version = selected_management.get("version") or item["version"]
-            if not child_version:
-                raise RuntimeError(f"Missing original calculator dependency version {key}")
-            try:
-                visit((*key, child_version), excluded | item["exclusions"] | selected_management.get("exclusions",set()))
-            except RuntimeError as failure:
-                raise RuntimeError(f"{failure} (required by {g}:{a}:{v})") from failure
-    visit(initial)
-    return list(selected.values())
+    """Compatibility accessor for fixtures, using only the Windows hash lock."""
+    lock = json.loads(DEPENDENCY_LOCK.read_text(encoding="utf-8"))
+    return MavenResolver(DEPS / "windows-maven", lock["sha256"]).fetch((group, artifact, version), "jar")
 
 
 def exact(source: str, old: str, new: str, count: int = 1) -> str:
@@ -641,31 +772,96 @@ def host_sources() -> list[Path]:
     return sources
 
 
+def launcher_native_tools() -> dict:
+    """Use the same installation selector as CMake, including direct Python builds."""
+    manifest = ROOT / "toolchains/windows.versions.json"
+    versions = json.loads(manifest.read_text(encoding="utf-8"))
+    if versions.get("schemaVersion") != 1:
+        raise RuntimeError("Unsupported Windows toolchain manifest")
+    native = versions["visualStudio"]
+    for key in ("msvcToolset", "windowsSdk"):
+        if not re.fullmatch(r"\d+(?:\.\d+)+", native[key]):
+            raise ValueError(f"Invalid pinned Windows toolchain version: {key}")
+    helper = ROOT / "scripts/windows/Resolve-NativeTools.ps1"
+    # The helper validates stable VS within versionRange, exact cl.exe version,
+    # SDK files and the shared runtime tools. Capture its child-only environment
+    # instead of trusting a potentially stale PATH inherited by direct Python.
+    quoted_helper = str(helper).replace("'", "''")
+    script = ('$ErrorActionPreference = "Stop"; '
+              '[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); '
+              f"$tools = & '{quoted_helper}'; "
+              '@{tools=$tools; environment=[Environment]::GetEnvironmentVariables("Process")} '
+              '| ConvertTo-Json -Depth 4 -Compress')
+    resolved = json.loads(subprocess.check_output(["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive",
+        "-ExecutionPolicy", "Bypass", "-Command", script], text=True, encoding="utf-8"))
+    tools = resolved["tools"]
+    if (Path(tools["Manifest"]).resolve() != manifest.resolve() or
+        tools["MSVCToolset"] != native["msvcToolset"] or tools["WindowsSdk"] != native["windowsSdk"]):
+        raise RuntimeError("Windows tool selection does not match this checkout's manifest")
+    vs_root = Path(tools["VsRoot"])
+    batch = vs_root / "VC/Auxiliary/Build/vcvarsall.bat"
+    if Path(tools["VcVars"]).resolve() != batch.resolve():
+        raise RuntimeError("Windows tool selector returned an unexpected vcvarsall path")
+    compiler = vs_root / f"VC/Tools/MSVC/{native['msvcToolset']}/bin/Hostx64/x64/cl.exe"
+    sdk_root = Path(tools["WindowsSdkRoot"])
+    rc = sdk_root / f"bin/{native['windowsSdk']}/x64/rc.exe"
+    for path in (batch, compiler, rc):
+        if not path.is_file():
+            raise RuntimeError(f"Missing pinned Windows launcher tool: {path}")
+    return {"manifest": manifest, "versions": native, "batch": batch, "compiler": compiler,
+            "sdk_root": sdk_root, "rc": rc,
+            "environment": {key.upper(): value for key, value in resolved["environment"].items()}}
+
+
+def launcher_native_environment(tools: dict) -> dict:
+    batch = tools["batch"]
+    if re.search(r'["%!?&|<>^\r\n]', str(batch)):
+        raise ValueError("Unexpected shell metacharacter in installed MSVC path")
+    native = tools["versions"]
+    setup = subprocess.run(f'cmd.exe /d /u /v:off /s /c "call "{batch}" x64 '
+        f'{native["windowsSdk"]} -vcvars_ver={native["msvcToolset"]} >nul && set"',
+        env=tools["environment"], check=True, capture_output=True, text=True, encoding="utf-16-le")
+    environment = dict(tools["environment"])
+    for line in setup.stdout.splitlines():
+        if "=" in line and not line.startswith("="):
+            key, value = line.split("=", 1)
+            environment[key.upper()] = value
+
+    def same_path(first, second):
+        return os.path.normcase(str(Path(first).resolve())) == os.path.normcase(str(Path(second).resolve()))
+
+    compiler = shutil.which("cl.exe", path=environment.get("PATH", ""))
+    rc = shutil.which("rc.exe", path=environment.get("PATH", ""))
+    toolset_root = tools["compiler"].parents[3]
+    if (not compiler or not same_path(compiler, tools["compiler"]) or
+        not same_path(environment.get("VCTOOLSINSTALLDIR", ""), toolset_root) or
+        not rc or not same_path(rc, tools["rc"]) or
+        not same_path(environment.get("WINDOWSSDKDIR", ""), tools["sdk_root"]) or
+        environment.get("WINDOWSSDKVERSION", "").rstrip("\\/") != native["windowsSdk"]):
+        raise RuntimeError("vcvarsall did not activate the exact manifest MSVC x64 toolset and Windows SDK")
+    return environment
+
+
+def launcher_fingerprint(source: Path, home: Path, tools: dict) -> str:
+    # SDK servicing keeps the same 10.0.x.0 directory. Both its declared
+    # servicing version and the actual rc.exe bytes must invalidate the wrapper.
+    inputs = [source, tools["manifest"], tools["compiler"], tools["rc"],
+              *[home / name for name in ("release", "include/jni.h", "include/win32/jni_md.h")]]
+    return hashlib.sha256((str(home) + "\n".join(str(path) + ":" + digest(path) for path in inputs)).encode()).hexdigest()
+
+
 def launcher(java: Path) -> Path:
     home = java.parent.parent
     if not (home / "include/jni.h").is_file():
         raise RuntimeError("The configured JDK must include the official JNI headers (JRE-only runtimes cannot build the native host)")
     source = ROOT / "native/narration/worker_launcher.cpp"
     output = OUT / "lgaed_narration_host.exe"
-    signature = digest(source) + str(home)
+    tools = launcher_native_tools()
+    signature = launcher_fingerprint(source, home, tools)
     stamp = OUT / "launcher-build.sha256"
     if not output.is_file() or not stamp.is_file() or stamp.read_text() != signature:
-        vswhere = Path(r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe")
-        installation = subprocess.check_output([str(vswhere),"-latest","-products","*",
-            "-requires","Microsoft.VisualStudio.Component.VC.Tools.x86.x64","-property","installationPath"],text=True).strip()
-        batch = Path(installation) / "VC/Auxiliary/Build/vcvars64.bat"
-        if re.search(r'["%!?&|<>^\r\n]', str(batch)):
-            raise ValueError("Unexpected shell metacharacter in installed MSVC path")
-        setup = subprocess.run(f'cmd.exe /d /v:off /s /c "call "{batch}" >nul && set"',
-            check=True,capture_output=True,text=True)
-        environment = {key.upper():value for key,value in os.environ.items()}
-        for line in setup.stdout.splitlines():
-            if "=" in line and not line.startswith("="):
-                key,value = line.split("=",1); environment[key.upper()] = value
-        compiler_path = shutil.which("cl.exe",path=environment["PATH"])
-        if not compiler_path:
-            raise RuntimeError("MSVC x64 compiler is missing from its configured environment")
-        command = [compiler_path,"/nologo","/std:c++20","/EHsc","/W4","/utf-8","/MD",
+        environment = launcher_native_environment(tools)
+        command = [str(tools["compiler"]),"/nologo","/std:c++20","/EHsc","/W4","/utf-8","/MD",
             f"/I{home / 'include'}",f"/I{home / 'include/win32'}",str(source),
             f"/Fo{OUT / 'worker_launcher.obj'}",f"/Fe{output}"]
         subprocess.run(command,env=environment,check=True,cwd=ROOT)
@@ -674,46 +870,69 @@ def launcher(java: Path) -> Path:
     return output
 
 
+def resolve_java_home(explicit: Path | None = None) -> Path:
+    home = (explicit or Path(os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr"))).resolve()
+    required = ("bin/java.exe", "bin/javac.exe", "bin/jar.exe", "include/jni.h",
+                "include/win32/jni_md.h", "bin/server/jvm.dll", "release")
+    missing = [name for name in required if not (home / name).is_file()]
+    if missing:
+        raise RuntimeError(f"A complete x64 JDK is required at {home}; missing: {', '.join(missing)}. "
+                           "Use Android Studio's Download JDK and pass --java-home; its bundled JRE/JBR may lack JNI headers.")
+    release = (home / "release").read_text(encoding="utf-8")
+    version = re.search(r'^JAVA_VERSION="(\d+)', release, re.MULTILINE)
+    if not version or int(version[1]) < int(JVM_TARGET):
+        raise RuntimeError(f"The Windows worker targets JVM {JVM_TARGET}; Download JDK {JVM_TARGET} or newer "
+                           "and pass its complete directory using --java-home")
+    architecture = re.search(r'^OS_ARCH="([^"]+)"', release, re.MULTILINE)
+    if not architecture or architecture[1] not in ("amd64", "x86_64", "x64"):
+        raise RuntimeError(f"The Windows native worker requires an x64 JDK, not {architecture[1] if architecture else 'an unknown architecture'}")
+    return home
+
+
+def toolchain_fingerprint(java_home: Path, compiler: list[Path]) -> str:
+    return "\n".join([str(java_home), f"jvm-target={JVM_TARGET}",
+        *[digest(java_home / name) for name in ("release", "bin/java.exe", "bin/javac.exe", "bin/server/jvm.dll")],
+        *[str(path) + ":" + digest(path) for path in compiler]])
+
+
 def build() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--resources", type=Path)
     parser.add_argument("--english-resources", type=Path)
+    parser.add_argument("--java-home", type=Path)
+    parser.add_argument("--ffmpeg", type=Path)
+    parser.add_argument("--refresh-dependencies", action="store_true",
+                        help="Verify the fixed Maven Central graph and refresh its SHA-256 lock, without running Java")
     args = parser.parse_args()
+    if args.refresh_dependencies:
+        dependencies = worker_dependencies(refresh=True)
+        print(f"Verified {len(dependencies['runtime'])} runtime and {len(dependencies['compiler'])} compiler jars: {DEPENDENCY_LOCK}")
+        return
     # Use the preserved, attributed pack from this checkout. Validate before any
     # build/download so damaged resources never become a successful runtime.
     english = (args.english_resources or ROOT / "english_misaki/src/main/assets").resolve()
     verify_staged_assets(english)
-    java = Path(os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr")) / "bin/java.exe"
-    if not java.is_file():
-        raise RuntimeError("A local x64 JDK/JBR is required to compile and run the shared Kotlin frontend")
-    ort = download_ort()
-    runtime = [cached_jar("org.jetbrains.kotlin", "kotlin-stdlib", "2.2.10"),
-               cached_jar("org.json", "json", "20240303"), cached_jar("com.google.code.gson", "gson", "2.11.0"), ort]
-    # Preserve existing speech dependency precedence. The calculator reuses the
-    # already-installed, original Symja3.2 runtime graph without replacing the
-    # tested speech jars or fetching unrelated cached libraries.
-    runtime += [path for path in cached_dependency_closure("org.matheclipse", "matheclipse-core", "3.2.0") if path not in runtime]
-    compiler = [cached_jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", "2.2.10"),
-                runtime[0], cached_jar("org.jetbrains.kotlin", "kotlin-script-runtime", "2.2.10"),
-                cached_jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),
-                cached_jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0"),
-                cached_jar("org.jetbrains", "annotations", "23.0.0")]
+    java_home = resolve_java_home(args.java_home)
+    java = java_home / "bin/java.exe"
+    dependencies = worker_dependencies()
+    runtime, compiler = dependencies["runtime"], dependencies["compiler"]
+    toolchain_signature = toolchain_fingerprint(java_home, compiler)
     sources = host_sources()
     java_sources = sorted((ROOT / "native/narration/worker/androidjson").glob("*.java"))
     java_classes = OUT / "android-json-classes"
     java_stamp = OUT / "android-json-build.sha256"
-    java_signature = "".join(digest(source) for source in java_sources)
+    java_signature = hashlib.sha256((toolchain_signature + "".join(digest(source) for source in java_sources)).encode()).hexdigest()
     if not java_stamp.is_file() or java_stamp.read_text() != java_signature:
         java_classes.mkdir(parents=True,exist_ok=True)
-        subprocess.run([str(java.parent / "javac.exe"),"-encoding","UTF-8","--release","17","-d",str(java_classes),
+        subprocess.run([str(java.parent / "javac.exe"),"-encoding","UTF-8","--release",JVM_TARGET,"-d",str(java_classes),
                         *map(str,java_sources)],check=True,cwd=ROOT)
         java_stamp.write_text(java_signature,encoding="ascii")
     jar = OUT / "kokoro-worker.jar"
-    signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)+java_signature).encode()).hexdigest()
+    signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)+java_signature+toolchain_signature).encode()).hexdigest()
     stamp = OUT / "worker-build.sha256"
     if not jar.is_file() or not stamp.is_file() or stamp.read_text() != signature:
         command = [str(java), "-cp", os.pathsep.join(map(str, compiler)),
-            "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-jvm-target", "17",
+            "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", f"-Xjdk-release={JVM_TARGET}",
             "-classpath", os.pathsep.join(map(str, [*runtime,java_classes])), "-d", str(jar), *map(str, sources)]
         result = subprocess.run(command, cwd=ROOT)
         if result.returncode:
@@ -722,7 +941,9 @@ def build() -> None:
         stamp.write_text(signature, encoding="ascii")
     origin = ROOT.parent / "LearnGraphicsProgramming/build/kokoro"
     resources = (args.resources or origin / "downloads/1939ad2a8e416c0acfeecc08a694d14ef25f2231").resolve()
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = str(args.ffmpeg.resolve(strict=True)) if args.ffmpeg else shutil.which("ffmpeg")
+    if ffmpeg and not Path(ffmpeg).is_file():
+        raise RuntimeError(f"FFmpeg must be an executable file: {ffmpeg}")
     classpath = os.pathsep.join(map(str,[jar,*runtime]))
     original_wavs = (origin / "../first-unit-speech-export").resolve()
     native_host = launcher(java)

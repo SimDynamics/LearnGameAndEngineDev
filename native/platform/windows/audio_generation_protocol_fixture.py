@@ -8,12 +8,24 @@ import json
 import sys
 import hashlib
 import wave
+import argparse
+import os
+import threading
+
+parser = argparse.ArgumentParser()
+parser.add_argument("log")
+parser.add_argument("cached_wave", nargs="?")
+parser.add_argument("--ignore-cancel", action="store_true")
+parser.add_argument("--ignore-shutdown", action="store_true")
+parser.add_argument("--hold-input-after-prepare", action="store_true")
+options = parser.parse_args()
 
 sys.stdin.reconfigure(encoding="utf-8")
 sys.stdout.reconfigure(encoding="utf-8")
-log = open(sys.argv[1], "w", encoding="utf-8", buffering=1)
+log = open(options.log, "w", encoding="utf-8", buffering=1)
+log.write(json.dumps({"command": "started", "pid": os.getpid()}) + "\n")
 pending = None
-cached_wave = sys.argv[2] if len(sys.argv) > 2 else None
+cached_wave = options.cached_wave
 cached_source = None
 
 
@@ -47,13 +59,21 @@ for line in sys.stdin:
                     durationMs=duration, cacheHit=True, timings=[])
         else:
             pending = request
+            if options.hold_input_after_prepare:
+                # Deterministically stop consuming the pipe. The native test
+                # must be able to shut down even with a real blocked writer.
+                log.write(json.dumps({"command": "input_held"}) + "\n")
+                threading.Event().wait()
     elif command == "cancel":
         log.write(json.dumps(request) + "\n")
-        if pending is not None and request.get("targetId", request["id"]) == pending["id"]:
+        if not options.ignore_cancel and pending is not None and request.get("targetId", request["id"]) == pending["id"]:
             respond(pending, error="controlled-cancelled-preparation")
             pending = None
         respond(request, cancelled=True)
     elif command == "shutdown":
+        log.write(json.dumps(request) + "\n")
+        if options.ignore_shutdown:
+            continue
         respond(request, shutdown=True)
         break
     else:

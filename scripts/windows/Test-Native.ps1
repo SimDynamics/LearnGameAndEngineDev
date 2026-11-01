@@ -9,6 +9,8 @@ param(
     [ValidateSet('Work', 'Codex')]
     [string] $ExpectedDefaultProfile = 'Codex',
 
+    [string] $ReportPath,
+
     [ValidateRange(5, 120)]
     [int] $TimeoutSeconds = 20
 )
@@ -20,7 +22,11 @@ $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $executablePath = (Resolve-Path -LiteralPath $Executable).Path
 $outputDirectory = Join-Path $repositoryRoot 'out/qa'
 [void] [System.IO.Directory]::CreateDirectory($outputDirectory)
-$reportPath = Join-Path $outputDirectory ("native-{0}.json" -f $Configuration.ToLowerInvariant())
+if (-not $ReportPath) {
+    $ReportPath = Join-Path $outputDirectory ("native-{0}.json" -f $Configuration.ToLowerInvariant())
+}
+$reportPath = [IO.Path]::GetFullPath($ReportPath)
+[void] [System.IO.Directory]::CreateDirectory((Split-Path -Parent $reportPath))
 $localData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)
 $instance = 'native-{0}-{1}-{2}' -f $Configuration.ToLowerInvariant(), $PID,
     ([Guid]::NewGuid().ToString('N').Substring(0, 8))

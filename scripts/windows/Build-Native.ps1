@@ -21,22 +21,15 @@ if (-not $Profile) {
     }
 }
 
-$vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Visual Studio Installer/vswhere is required.' }
-$vsRoot = & $vswhere -latest -version '[18.0,19.0)' -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-if ($LASTEXITCODE -ne 0 -or -not $vsRoot) { throw 'Visual Studio 2026 with C++ x64 tools was not found.' }
-$vsRoot = "$vsRoot".Trim()
-$vcvars = Join-Path $vsRoot 'VC\Auxiliary\Build\vcvarsall.bat'
-$cmake = Join-Path $vsRoot 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
-$ctest = Join-Path $vsRoot 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\ctest.exe'
-foreach ($requiredFile in @($vcvars, $cmake, $ctest,
-        (Join-Path $vsRoot 'VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64\cl.exe'))) {
-    if (-not (Test-Path -LiteralPath $requiredFile)) { throw "Required tool is missing: $requiredFile" }
+$originalToolEnvironment = @{}
+foreach ($name in @('JAVA_HOME','LGAED_JAVA_HOME','LGAED_PYTHON_EXECUTABLE','LGAED_FFMPEG_EXECUTABLE','VULKAN_SDK','PATH')) {
+    $originalToolEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
-$atlHeader = Join-Path $vsRoot 'VC\Tools\MSVC\14.51.36231\atlmfc\include\atlbase.h'
-if (-not (Test-Path -LiteralPath $atlHeader -PathType Leaf)) {
-    throw 'Windows speech requires C++ ATL. Install Microsoft.VisualStudio.Component.VC.ATL for the selected MSVC toolset in Visual Studio Installer.'
-}
+try {
+$tools = & (Join-Path $PSScriptRoot 'Resolve-NativeTools.ps1')
+$vcvars = $tools.VcVars
+$cmake = $tools.CMake
+$ctest = $tools.CTest
 
 # cmd receives only quoted, checked installation/source paths and validated parameters.
 # vcvarsall changes this child process, never the PC's persistent environment.
@@ -48,7 +41,7 @@ $cleanArgument = if ($CleanFirst) { ' --clean-first' } else { '' }
 $targetArgument = if ($Target) { " --target $Target" } else { '' }
 $commands = @(
     'chcp 65001 >nul',
-    "call `"$vcvars`" x64 10.0.28000.0 -vcvars_ver=14.51.36231",
+    "call `"$vcvars`" x64 $($tools.WindowsSdk) -vcvars_ver=$($tools.MSVCToolset)",
     "`"$cmake`" ${freshArgument}--preset $Preset -DLGAED_DEFAULT_PROFILE=$Profile",
     "`"$cmake`" --build --preset $Preset$cleanArgument$targetArgument"
 )
@@ -88,4 +81,11 @@ try {
     if ($buildExitCode -ne 0) { throw "Native configure/build/test failed ($buildExitCode). See $logFile" }
 } finally {
     if ($null -ne $buildProcess) { $buildProcess.Dispose() }
+}
+} finally {
+    foreach ($name in $originalToolEnvironment.Keys) {
+        $originalValue = $originalToolEnvironment[$name]
+        if ($null -eq $originalValue) { $originalValue = [System.Management.Automation.Language.NullString]::Value }
+        [Environment]::SetEnvironmentVariable($name, $originalValue, 'Process')
+    }
 }

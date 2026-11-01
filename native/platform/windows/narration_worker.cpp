@@ -28,30 +28,30 @@ struct PriorityState {
     std::mutex mutex;
     std::condition_variable_any changed;
     unsigned current=0,heavy=0;
-    bool background=false,inference=false;
+    bool background=false,inference=false,closed=false;
     std::stop_source cancel_background,cancel_inference;
 };
 std::function<void()> take_current(const std::shared_ptr<PriorityState>& state,std::stop_token stop) {
     std::stop_source cancel;
-    {const std::lock_guard lock(state->mutex);if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+    {const std::lock_guard lock(state->mutex);if(state->closed||stop.stop_requested())throw std::runtime_error("Lectura cancelada");
         ++state->current;if(state->background)cancel=state->cancel_background;}
     // Cancellation callbacks can write to the worker; never invoke them while
     // holding the arbitration lock needed by the acknowledgement cleanup.
     cancel.request_stop();
     std::unique_lock lock(state->mutex);
-    if(!state->changed.wait(lock,stop,[&]{return !state->background;})||stop.stop_requested()) {
+    if(!state->changed.wait(lock,stop,[&]{return state->closed||!state->background;})||state->closed||stop.stop_requested()) {
         --state->current;state->changed.notify_all();throw std::runtime_error("Lectura cancelada");
     }
     return [state]{const std::lock_guard release(state->mutex);--state->current;state->changed.notify_all();};
 }
 std::function<void()> take_heavy(const std::shared_ptr<PriorityState>& state,std::stop_token stop) {
     std::stop_source cancel_background,cancel_inference;
-    {const std::lock_guard lock(state->mutex);if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+    {const std::lock_guard lock(state->mutex);if(state->closed||stop.stop_requested())throw std::runtime_error("Lectura cancelada");
         ++state->heavy;if(state->background)cancel_background=state->cancel_background;
         if(state->inference)cancel_inference=state->cancel_inference;}
     cancel_background.request_stop();cancel_inference.request_stop();
     std::unique_lock lock(state->mutex);
-    if(!state->changed.wait(lock,stop,[&]{return !state->inference&&!state->background;})||stop.stop_requested()) {
+    if(!state->changed.wait(lock,stop,[&]{return state->closed||(!state->inference&&!state->background);})||state->closed||stop.stop_requested()) {
         --state->heavy;state->changed.notify_all();throw std::runtime_error("Lectura cancelada");
     }
     return [state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();};
@@ -61,7 +61,7 @@ struct BackgroundReservation {
     std::stop_token stop;
     BackgroundReservation(std::shared_ptr<PriorityState> value,std::stop_token cancelled):state(std::move(value)) {
         std::unique_lock lock(state->mutex);
-        if(!state->changed.wait(lock,cancelled,[&]{return !state->current&&!state->heavy&&!state->background;}))
+        if(!state->changed.wait(lock,cancelled,[&]{return state->closed||(!state->current&&!state->heavy&&!state->background);})||state->closed)
             throw std::runtime_error("Lectura cancelada");
         state->background=true;state->cancel_background=std::stop_source{};stop=state->cancel_background.get_token();
     }
@@ -72,7 +72,7 @@ struct InferenceReservation {
     std::stop_token stop;
     InferenceReservation(std::shared_ptr<PriorityState> value,std::stop_token cancelled):state(std::move(value)) {
         std::unique_lock lock(state->mutex);
-        if(!state->changed.wait(lock,cancelled,[&]{return !state->heavy&&!state->inference;})||cancelled.stop_requested())
+        if(!state->changed.wait(lock,cancelled,[&]{return state->closed||(!state->heavy&&!state->inference);})||state->closed||cancelled.stop_requested())
             throw std::runtime_error("Lectura cancelada");
         state->inference=true;state->cancel_inference=std::stop_source{};stop=state->cancel_inference.get_token();
     }
@@ -90,7 +90,8 @@ struct NarrationWorker::Impl {
     std::shared_ptr<PriorityState> priority=std::make_shared<PriorityState>();
     // Inference still has its original serialized lane. The single process's
     // lightweight editor lane can exchange replies without waiting for ONNX.
-    std::mutex request_mutex,write_mutex,start_mutex,response_mutex;
+    std::mutex request_mutex,write_mutex,start_mutex,response_mutex,shutdown_mutex;
+    std::atomic<bool> closed{false};
     std::atomic<std::uint64_t> serial{0};std::string buffered,failure;
     std::atomic<std::uint64_t> storage_budget{std::numeric_limits<std::uint64_t>::max()};
     struct Pending { std::string command,reply; bool lightweight=false; };
@@ -98,10 +99,30 @@ struct NarrationWorker::Impl {
     std::condition_variable responses;
     std::jthread pump;
     explicit Impl(std::filesystem::path file):runtime(std::move(file)){}
-    ~Impl(){if(process.value){try{ensure_winrt_apartment();JsonObject command;put(command,L"id","shutdown");put(command,L"command","shutdown");send(winrt::to_string(command.Stringify()));}catch(...){}
-        if(WaitForSingleObject(process.value,1000)==WAIT_TIMEOUT&&job.value)TerminateJobObject(job.value,0);}
-        if(pump.joinable()){pump.request_stop();pump.join();}}
-    void start(){const std::lock_guard starting(start_mutex);if(process.value){if(WaitForSingleObject(process.value,0)==WAIT_TIMEOUT)return;throw std::runtime_error("El proceso de Kokoro terminó. Cierra y vuelve a abrir la lectura.");}
+    ~Impl(){shutdown();if(pump.joinable())pump.join();}
+    void shutdown() noexcept {
+        const std::lock_guard closing(shutdown_mutex);
+        if(closed.exchange(true))return;
+        // Do not request operation stop here: its synchronous callbacks may be
+        // writing to a child that has stopped reading. Close the owned process
+        // first, without taking the writer/request locks or sending another RPC.
+        {const std::lock_guard lock(priority->mutex);priority->closed=true;}
+        priority->changed.notify_all();
+        {const std::lock_guard lock(response_mutex);failure="El servicio de narración está cerrado.";}
+        responses.notify_all();
+        {const std::lock_guard starting(start_mutex);
+            if(process.value){
+                if(!job.value||!TerminateJobObject(job.value,0))TerminateProcess(process.value,0);
+                (void)WaitForSingleObject(process.value,1000);
+            }
+            // Handles and CPU policy stay alive until callers have unwound and
+            // the reply pump has joined; closing a handle during ReadFile or a
+            // CPU scope restoration would introduce another lifetime race.
+            if(pump.joinable())pump.request_stop();
+        }
+        responses.notify_all();
+    }
+    void start(){const std::lock_guard starting(start_mutex);if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");if(process.value){if(WaitForSingleObject(process.value,0)==WAIT_TIMEOUT)return;throw std::runtime_error("El proceso de Kokoro terminó. Cierra y vuelve a abrir la lectura.");}
         ensure_winrt_apartment();if(!std::filesystem::is_regular_file(runtime))throw std::runtime_error("Kokoro aún no está preparado para Windows. Compila la aplicación con su componente de narración.");
         const auto bytes=state::read_bytes(runtime,1024*1024);const auto config=JsonObject::Parse(winrt::to_hstring(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
         const auto java=std::filesystem::path(config.GetNamedString(L"java").c_str());if(!std::filesystem::is_regular_file(java))throw std::runtime_error("No se encontró el entorno de narración configurado.");
@@ -130,7 +151,7 @@ struct NarrationWorker::Impl {
         ResumeThread(thread.value);
         pump=std::jthread([this](std::stop_token stop){read_replies(stop);});
     }
-    void send(const std::string& source){const std::lock_guard lock(write_mutex);const auto line=source+'\n';std::size_t offset=0;while(offset<line.size()){DWORD written=0;if(!WriteFile(input.value,line.data()+offset,static_cast<DWORD>(line.size()-offset),&written,nullptr)||!written)throw std::runtime_error("Kokoro cerró el canal de entrada.");offset+=written;}}
+    void send(const std::string& source){if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");const std::lock_guard lock(write_mutex);if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");const auto line=source+'\n';std::size_t offset=0;while(offset<line.size()){DWORD written=0;if(!WriteFile(input.value,line.data()+offset,static_cast<DWORD>(line.size()-offset),&written,nullptr)||!written)throw std::runtime_error("Kokoro cerró el canal de entrada.");offset+=written;}}
     void read_replies(std::stop_token stop) {
         std::stop_callback wake(stop,[&]{responses.notify_all();});
         try {ensure_winrt_apartment();while(!stop.stop_requested()){
@@ -153,6 +174,7 @@ struct NarrationWorker::Impl {
     }
     JsonObject call(JsonObject request,std::stop_token stop,std::string* original_reply=nullptr,bool lightweight=false,
                     NarrationCpuClass work=NarrationCpuClass::current_page,bool inference=false){
+        if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");
         const bool background=work==NarrationCpuClass::background;
         NarrationPriorityLease reservation(background?std::function<void()>{}:take_current(priority,stop));
         std::unique_ptr<BackgroundReservation> background_slot;
@@ -188,6 +210,7 @@ struct NarrationWorker::Impl {
         send(winrt::to_string(request.Stringify()));
         responses.notify_all();
         std::stop_callback cancel(stop,[&]{
+            if(closed.load())return;
             try{ensure_winrt_apartment();JsonObject value;put(value,L"command","cancel");put(value,L"id",id);send(winrt::to_string(value.Stringify()));}catch(...) {}
             // An interactive math request may leave immediately; its late reply
             // is discarded by ID. Inference retains the serialized wait until
@@ -196,8 +219,9 @@ struct NarrationWorker::Impl {
         });
         std::string line;
         {std::unique_lock lock(response_mutex);
-            if(!responses.wait_for(lock,std::chrono::minutes(5),[&]{return (lightweight&&stop.stop_requested())||!response->reply.empty()||!failure.empty();})){
+            if(!responses.wait_for(lock,std::chrono::minutes(5),[&]{return closed.load()||(lightweight&&stop.stop_requested())||!response->reply.empty()||!failure.empty();})){
                 TerminateJobObject(job.value,1);throw std::runtime_error("Kokoro excedió el tiempo de preparación.");}
+            if(closed.load())throw std::runtime_error("El servicio de narración está cerrado.");
             if(lightweight&&stop.stop_requested())cancelled();
             if(response->reply.empty())throw std::runtime_error(failure);line=response->reply;
         }
@@ -210,12 +234,13 @@ struct NarrationWorker::Impl {
 };
 NarrationWorker::NarrationWorker(std::filesystem::path runtime):impl_(std::make_unique<Impl>(std::move(runtime))){}
 NarrationWorker::~NarrationWorker()=default;
+void NarrationWorker::shutdown() noexcept {impl_->shutdown();}
 void NarrationWorker::set_storage_budget(std::uint64_t bytes){impl_->storage_budget.store(bytes);}
 NarrationPriorityLease NarrationWorker::current_page_lease(std::stop_token stop){return NarrationPriorityLease(take_current(impl_->priority,stop));}
 NarrationPriorityLease NarrationWorker::heavy_work_lease(std::stop_token stop){return NarrationPriorityLease(take_heavy(impl_->priority,stop));}
 std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_lease(){
     const auto state=impl_->priority;const std::lock_guard lock(state->mutex);
-    if(state->current||state->heavy||state->background||state->inference)return {};
+    if(state->closed||state->current||state->heavy||state->background||state->inference)return {};
     ++state->heavy;
     return NarrationPriorityLease([state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();});
 }

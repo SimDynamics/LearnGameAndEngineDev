@@ -50,6 +50,10 @@ public:
     explicit NarrationWorker(std::filesystem::path runtime);
     ~NarrationWorker();
     NarrationWorker(const NarrationWorker&)=delete;NarrationWorker& operator=(const NarrationWorker&)=delete;
+    // Terminal app shutdown, before joining any producer/reader that uses us.
+    // Interrupts only this worker's job, wakes callers and never waits for RPC
+    // cancellation acknowledgement. Repeated calls do not restart the service.
+    void shutdown() noexcept;
     // Reserve before planning a current page; retain until all needed audio is
     // ready, never until playback finishes. Background work is cancelled and
     // must acknowledge completion before the lease is granted. Cancellable wait.

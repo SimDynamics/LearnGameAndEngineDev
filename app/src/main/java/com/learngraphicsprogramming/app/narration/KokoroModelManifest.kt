@@ -66,7 +66,7 @@ object KokoroModelManifest {
         "ONNX export and token vocabulary (Apache-2.0 repository metadata)" to
             "$source/blob/$revision/README.md",
         "ONNX Runtime (MIT; not bundled by this manifest)" to
-            "https://github.com/microsoft/onnxruntime/blob/v1.30.0/LICENSE",
+            "https://github.com/microsoft/onnxruntime/blob/v1.31.1/LICENSE",
         "FluidAudio Spanish/French G2P (Apache-2.0; ipa-dict MIT)" to
             "https://github.com/FluidInference/FluidAudio/blob/0c0f113e8db4b862b19a99ce9fd7c9da73324f5f/ThirdPartyLicenses/KokoroAneSpanishFrenchG2P-LICENSE.md",
         "Misaki English (Apache-2.0)" to "https://github.com/hexgrad/misaki/blob/fba1236595f2d2bf21d414ba6e57d25256afada3/LICENSE",
