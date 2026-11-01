@@ -144,6 +144,52 @@ file(WRITE "${{CMAKE_BINARY_DIR}}/build.ninja" "${{rules}}")
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse((binary / "CMakeFiles").exists())
 
+    def test_real_cmake_fresh_regenerates_missing_rule_graph(self):
+        with tempfile.TemporaryDirectory(prefix="native-dependencies-fresh-", dir=REPOSITORY / "out/qa") as temporary:
+            root = Path(temporary)
+            source = root / "native"
+            binary = root / "build"
+            source.mkdir()
+            header = source / "local.hpp"
+            header.write_text("#define FIXTURE_VALUE 7\n", encoding="utf-8")
+            (source / "main.cpp").write_text('#include "local.hpp"\nint value=FIXTURE_VALUE;\n', encoding="utf-8")
+            (root / "CMakeLists.txt").write_text('''cmake_minimum_required(VERSION 4.3.1)
+project(NativeDependencyFreshFixture LANGUAGES CXX RC)
+set(CMAKE_CXX_STANDARD 20)
+include("''' + (REPOSITORY / "cmake/VerifyNativeDependencies.cmake").as_posix() + '''")
+lgaed_verify_native_dependencies()
+add_library(fixture STATIC native/main.cpp)
+target_compile_options(fixture PRIVATE /utf-8)
+''', encoding="utf-8")
+            configure = [self.cmake, "-S", root, "-B", binary, "-G", "Ninja",
+                         f"-DCMAKE_CXX_COMPILER={self.compiler}", f"-DCMAKE_MAKE_PROGRAM={self.ninja}"]
+            self.run_console(65001, configure, tool_environment=True)
+            self.run_console(65001, [self.cmake, "--build", binary], tool_environment=True)
+            original_header = header.read_bytes()
+            original_source = (source / "main.cpp").read_bytes()
+            object_file = binary / "CMakeFiles/fixture.dir/native/main.cpp.obj"
+            original_object = object_file.read_bytes()
+            original_object_time = object_file.stat().st_mtime_ns
+            # Incomplete restored metadata must not silently accept old objects.
+            (binary / "CMakeFiles/rules.ninja").unlink()
+            rejected = self.run_console(65001, configure, success=False, tool_environment=True)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn(b"Configure with -Fresh", rejected.stdout)
+            self.assertEqual(object_file.read_bytes(), original_object)
+            self.assertEqual(object_file.stat().st_mtime_ns, original_object_time)
+            # CMake --fresh removes CMakeFiles, including rules and target
+            # objects, but leaves build.ninja until its generation phase.
+            self.run_console(65001, [*configure, "--fresh"], tool_environment=True)
+            self.run_console(65001, [self.cmake, "--build", binary], tool_environment=True)
+            deps = self.run_console(65001, [self.ninja, "-C", binary, "-t", "deps"]).stdout
+            self.assertIn(b"main.cpp.obj: #deps 1,", deps)
+            self.assertIn(b"local.hpp", deps)
+            self.assertEqual(header.read_bytes(), original_header)
+            self.assertEqual((source / "main.cpp").read_bytes(), original_source)
+            os.utime(header, ns=(header.stat().st_atime_ns, object_file.stat().st_mtime_ns + 2_000_000_000))
+            pending = self.run_console(65001, [self.ninja, "-C", binary, "-n"]).stdout
+            self.assertIn(b"main.cpp.obj", pending)
+
     def test_real_cmake_generator_reopens_repaired_compiler_metadata(self):
         for codepage in (65001, 850):
             with self.subTest(codepage=codepage), tempfile.TemporaryDirectory(

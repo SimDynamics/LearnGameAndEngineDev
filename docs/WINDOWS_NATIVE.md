@@ -27,6 +27,12 @@ Herramientas seleccionadas y comprobadas: paquete MSVC v145 `14.51.36231`
 de Visual Studio 2026 instaladas; no se descargan otras. Una selección incompatible
 falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
 
+La instalación necesita también **C++ ATL** para ese toolset
+(`Microsoft.VisualStudio.Component.VC.ATL`): el lector de voz de Windows utiliza
+sus cabeceras mediante SAPI. El script comprueba su presencia antes de configurar.
+Seleccionar sólo los componentes obligatorios de «Desarrollo para el escritorio
+con C++» puede dejar ATL sin instalar.
+
 **Última actualización estable publicada del SDK:** `10.0.28000.2957` (septiembre de 2026).
 La carpeta de cabeceras, bibliotecas y herramientas continúa llamándose `10.0.28000.0`:
 el sufijo `.0` identifica la familia y no demuestra la actualización instalada.

@@ -33,6 +33,10 @@ foreach ($requiredFile in @($vcvars, $cmake, $ctest,
         (Join-Path $vsRoot 'VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64\cl.exe'))) {
     if (-not (Test-Path -LiteralPath $requiredFile)) { throw "Required tool is missing: $requiredFile" }
 }
+$atlHeader = Join-Path $vsRoot 'VC\Tools\MSVC\14.51.36231\atlmfc\include\atlbase.h'
+if (-not (Test-Path -LiteralPath $atlHeader -PathType Leaf)) {
+    throw 'Windows speech requires C++ ATL. Install Microsoft.VisualStudio.Component.VC.ATL for the selected MSVC toolset in Visual Studio Installer.'
+}
 
 # cmd receives only quoted, checked installation/source paths and validated parameters.
 # vcvarsall changes this child process, never the PC's persistent environment.

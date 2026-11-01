@@ -94,7 +94,24 @@ if ($CompilerInfo) {
         [System.IO.File]::WriteAllBytes($compilerPath, $byteEncoding.GetBytes($compilerText))
     }
 }
-if (-not (Test-Path -LiteralPath (Join-Path $binaryDirectory 'build.ninja') -PathType Leaf)) {
+$buildGraph = Join-Path $binaryDirectory 'build.ninja'
+if (-not (Test-Path -LiteralPath $buildGraph -PathType Leaf)) {
+    return
+}
+# --fresh removes CMakeFiles before configure, but leaves build.ninja until
+# generation. Its old include cannot be parsed by Ninja yet. New compiler and
+# dependency probes are expected here; only target objects could need repair.
+# Inline Ninja graphs remain valid without CMake's separate rules file.
+if (-not (Test-Path -LiteralPath (Join-Path $objectDirectory 'rules.ninja') -PathType Leaf) -and
+        [regex]::IsMatch([System.IO.File]::ReadAllText($buildGraph),
+            '(?m)^include CMakeFiles[\\/]rules\.ninja\r?$')) {
+    foreach ($target in (Get-ChildItem -LiteralPath $objectDirectory -Directory -Filter '*.dir')) {
+        foreach ($item in (Get-ChildItem -LiteralPath $target.FullName -Recurse -File)) {
+            if ($item.Name -match '\.obj(?:\.ddi)?$') {
+                throw 'Native Ninja rules are missing while target objects remain. Configure with -Fresh before building.'
+            }
+        }
+    }
     return
 }
 $dependencyCounts = [System.Collections.Generic.Dictionary[string, int]]::new([StringComparer]::OrdinalIgnoreCase)
