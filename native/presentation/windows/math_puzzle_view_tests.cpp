@@ -442,9 +442,9 @@ void automatic_mathematics_tests(HWND host){
     std::cout<<"PASS original automatic fractions/coordinates/powers, original operators/prose/C++, UTF16 source mapping, word shading and explicit plain-text exceptions\n";
 }
 void rigid_angle_copy_tests(HWND host){
-    const auto figure=[](std::string vertex,std::string first,std::string second,double x,double y,double angle,double first_distance,double second_distance){
+    const auto figure=[](std::string vertex,std::string first,std::string second,double x,double y,double angle,double first_distance,double second_distance,double unit=1.){
         JsonObject result,diagram;JsonArray points,objects;
-        const auto point=[&](const std::string& id,double px,double py){JsonObject value;value.SetNamedValue(L"id",JsonValue::CreateStringValue(wide(id)));value.SetNamedValue(L"x",JsonValue::CreateNumberValue(px));value.SetNamedValue(L"y",JsonValue::CreateNumberValue(py));JsonArray labels;labels.Append(JsonValue::CreateStringValue(wide(id)));value.SetNamedValue(L"labels",labels);points.Append(value);};
+        const auto point=[&](const std::string& id,double px,double py){JsonObject value;value.SetNamedValue(L"id",JsonValue::CreateStringValue(wide(id)));value.SetNamedValue(L"x",JsonValue::CreateNumberValue(px*unit));value.SetNamedValue(L"y",JsonValue::CreateNumberValue(py*unit));JsonArray labels;labels.Append(JsonValue::CreateStringValue(wide(id)));value.SetNamedValue(L"labels",labels);points.Append(value);};
         point(vertex,x,y);point(first,x+std::cos(angle)*first_distance,y+std::sin(angle)*first_distance);point(second,x+std::cos(angle+1)*second_distance,y+std::sin(angle+1)*second_distance);
         for(const auto& [id,endpoint]:std::vector<std::pair<std::string,std::string>>{{"first",first},{"second",second}}){JsonObject item;item.SetNamedValue(L"id",JsonValue::CreateStringValue(wide(id)));item.SetNamedValue(L"kind",JsonValue::CreateStringValue(L"ray"));JsonArray defining;defining.Append(JsonValue::CreateStringValue(wide(vertex)));defining.Append(JsonValue::CreateStringValue(wide(endpoint)));item.SetNamedValue(L"through",defining);item.SetNamedValue(L"contains",defining);objects.Append(item);}
         diagram.SetNamedValue(L"points",points);diagram.SetNamedValue(L"objects",objects);result.SetNamedValue(L"diagram",diagram);result.SetNamedValue(L"vertex",JsonValue::CreateStringValue(wide(vertex)));result.SetNamedValue(L"sides",JsonArray::Parse(LR"(["first","second"])"));result.SetNamedValue(L"region",JsonValue::CreateStringValue(L"counterclockwise"));return result;};
@@ -463,6 +463,54 @@ void rigid_angle_copy_tests(HWND host){
     SendMessageW(canvas,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(30,30));const auto expanded=GetParent(canvas);require(expanded!=view.window()&&GetParent(rotating)==expanded&&GetParent(reset)==expanded,"Expanding a rigid-angle figure detached its editing/reset controls");SendMessageW(reset,BM_CLICK,0,0);require(view.answers_json()==initial,"Expanded reset did not restore the original initial copy");SendMessageW(canvas,WM_KEYDOWN,VK_ESCAPE,0);require(GetParent(canvas)==view.window()&&GetParent(rotating)==view.window()&&view.answers_json()==initial,"Closing an expanded rigid panel lost controls or changed its placement");
     view.set_enabled(false);require(!IsWindowEnabled(canvas)&&!IsWindowEnabled(moving)&&!IsWindowEnabled(rotating)&&!IsWindowEnabled(panning)&&!IsWindowEnabled(reset),"An evaluated rigid-angle response remained editable");
     std::cout<<"PASS original rigid-angle geometry, fixed reference, whole-copy translation/rotation, view mode, reset, saved placement, fullscreen controls and solved-state freeze\n";
+
+    // The displayed construction and its gestures must not acquire a minimum
+    // world-unit scale. Exercise the real canvas without deriving a gesture
+    // from bridge-only metadata or requiring off-screen point IDs to exist.
+    std::map<std::pair<int,int>,std::pair<double,double>> normalized_motion;
+    for(const auto unit:{1.,1e-6})for(const auto width:{850,400})for(const auto text_scale:{100,150}){
+        auto scaled_validator=JsonObject::Parse(validator.Stringify());
+        scaled_validator.SetNamedValue(L"reference",figure("O","A","B",1,2,0,4,5,unit));
+        scaled_validator.SetNamedValue(L"copy",figure("V","C","D",0,0,.7,6,3,unit));
+        auto placement=scaled_validator.GetNamedObject(L"initial");placement.SetNamedValue(L"x",JsonValue::CreateNumberValue(7*unit));placement.SetNamedValue(L"y",JsonValue::CreateNumberValue(6*unit));
+        scaled_validator.SetNamedValue(L"positionTolerance",JsonValue::CreateNumberValue(.1*unit));
+        auto scaled_block=simple_block(R"({"id":"copy","type":"math_rigid_angle_copy"})");scaled_block.GetNamedArray(L"responses").GetObjectAt(0).SetNamedValue(L"validator",scaled_validator);
+        const auto scaled_raw=winrt::to_string(scaled_block.Stringify());int updates=0;
+        MathPuzzleCallbacks events;events.changed=[&]{++updates;};
+        MathPuzzleView scaled(host,scaled_raw,"es","",canonical_callbacks(events));scaled.set_text_scale(text_scale);scaled.layout(0,0,width);
+        const auto scaled_canvas=class_targets(scaled.window(),L"LearnGameAndEngineDev.MathCanvas").front();RECT area{};GetClientRect(scaled_canvas,&area);
+        const auto untouched=scaled.answers_json();const auto before=canvas_pixels(scaled_canvas);require(scaled.answers_json()==untouched&&updates==0,"Painting a scaled rigid-angle figure changed its answer");
+        const auto gesture=[&](POINT first,POINT last){SendMessageW(scaled_canvas,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(first.x,first.y));SendMessageW(scaled_canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(last.x,last.y));SendMessageW(scaled_canvas,WM_LBUTTONUP,0,MAKELPARAM(last.x,last.y));};
+        gesture({area.right/2,area.bottom/2},{area.right/2+20,area.bottom/2+10});
+        const auto translated=JsonObject::Parse(wide(scaled.answers_json())).GetNamedObject(L"copy");
+        const auto dx=(translated.GetNamedNumber(L"x")-7*unit)/unit,dy=(translated.GetNamedNumber(L"y")-6*unit)/unit;
+        require(std::isfinite(dx)&&std::isfinite(dy)&&std::hypot(dx,dy)>1e-4&&translated.GetNamedNumber(L"rotation")==.2&&canvas_pixels(scaled_canvas)!=before,
+            "A valid tiny rigid-angle construction collapsed or lost its ordinary translation/rendering");
+        const auto key=std::pair{width,text_scale};
+        if(unit==1.)normalized_motion.emplace(key,std::pair{dx,dy});
+        else{const auto expected=normalized_motion.at(key);require(std::abs(dx-expected.first)<1e-6&&std::abs(dy-expected.second)<1e-6,"The same pixel drag changed its geometric meaning after uniformly scaling a rigid-angle task");}
+        SendMessageW(caption_target(scaled.window(),L"Girar copia"),BM_CLICK,0,0);
+        gesture({area.right/6,area.bottom/5},{area.right/6+std::max(1L,area.right/50),area.bottom/5+std::max(1L,area.bottom/60)});
+        const auto rotated_answer=JsonObject::Parse(wide(scaled.answers_json())).GetNamedObject(L"copy");
+        require(rotated_answer.GetNamedNumber(L"x")==translated.GetNamedNumber(L"x")&&rotated_answer.GetNamedNumber(L"y")==translated.GetNamedNumber(L"y")&&rotated_answer.GetNamedNumber(L"rotation")!=translated.GetNamedNumber(L"rotation"),
+            "A tiny rigid-angle rotation moved its vertex or silently stopped rotating");
+        const auto preserved=scaled.answers_json();MathPuzzleView restored(host,scaled_raw,"es",preserved,canonical_callbacks());restored.set_text_scale(text_scale);restored.layout(0,0,width);
+        (void)canvas_pixels(class_targets(restored.window(),L"LearnGameAndEngineDev.MathCanvas").front());require(restored.answers_json()==preserved,"Recreating and painting a scaled rigid-angle attempt changed its exact saved placement");
+
+        JsonObject far_answer,far_placement;far_placement.SetNamedValue(L"type",JsonValue::CreateStringValue(L"rigid_angle"));far_placement.SetNamedValue(L"x",JsonValue::CreateNumberValue(1e9));far_placement.SetNamedValue(L"y",JsonValue::CreateNumberValue(-1e9));far_placement.SetNamedValue(L"rotation",JsonValue::CreateNumberValue(1.2));far_answer.SetNamedValue(L"copy",far_placement);
+        int far_updates=0;MathPuzzleCallbacks far_events;far_events.changed=[&]{++far_updates;};
+        MathPuzzleView far_view(host,scaled_raw,"es",winrt::to_string(far_answer.Stringify()),canonical_callbacks(far_events));far_view.set_text_scale(text_scale);far_view.layout(0,0,width);
+        const auto far_canvas=class_targets(far_view.window(),L"LearnGameAndEngineDev.MathCanvas").front();const auto far_saved=far_view.answers_json();const auto far_pixels=canvas_pixels(far_canvas);
+        require(canvas_pixels(far_canvas)==far_pixels&&far_view.answers_json()==far_saved&&far_updates==0,"Native rendering clamped an off-screen rigid-angle answer, invented an update or painted unstable geometry");
+        const auto far_value=JsonObject::Parse(wide(far_saved)).GetNamedObject(L"copy");require(far_value.GetNamedNumber(L"x")==1e9&&far_value.GetNamedNumber(L"y")==-1e9&&far_value.GetNamedNumber(L"rotation")==1.2,"Loading a valid far rigid-angle placement changed its stored coordinates");
+        MathPuzzleView far_restored(host,scaled_raw,"es",far_saved,canonical_callbacks());far_restored.set_text_scale(text_scale);far_restored.layout(0,0,width);(void)canvas_pixels(class_targets(far_restored.window(),L"LearnGameAndEngineDev.MathCanvas").front());
+        require(far_restored.answers_json()==far_saved,"An off-screen rigid-angle placement depended on visible point IDs when reopened");
+        const auto far_reset=caption_target(far_view.window(),L"Restablecer copia inicial");require(far_reset,"The off-screen construction lost its recovery control");SendMessageW(far_reset,BM_CLICK,0,0);
+        const auto reset_value=JsonObject::Parse(wide(far_view.answers_json())).GetNamedObject(L"copy");require(reset_value.GetNamedNumber(L"x")==7*unit&&reset_value.GetNamedNumber(L"y")==6*unit&&reset_value.GetNamedNumber(L"rotation")==.2&&far_updates==1&&canvas_pixels(far_canvas)!=far_pixels,
+            "Reset failed to recover and render the original rigid copy after a far saved placement");
+        require(winrt::to_string(scaled_block.Stringify())==scaled_raw,"Native rigid-angle QA changed its source configuration");
+    }
+    std::cout<<"PASS rigid-angle native tiny/ordinary scale parity, rotation, off-screen GDI rendering, exact recreation and explicit reset at both widths and text scales\n";
 }
 RECT rectangle_fill_bounds(HWND canvas,SIZE* outline_size=nullptr){
     RECT bounds{};GetClientRect(canvas,&bounds);const auto dc=GetDC(canvas),buffer=CreateCompatibleDC(dc);

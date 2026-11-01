@@ -34,6 +34,7 @@ using namespace winrt::Windows::Data::Json;
 constexpr wchar_t view_class[] = L"LearnGameAndEngineDev.MathPuzzle";
 constexpr wchar_t canvas_class[] = L"LearnGameAndEngineDev.MathCanvas";
 constexpr wchar_t canvas_fullscreen_class[] = L"LearnGameAndEngineDev.MathCanvasFullscreen";
+constexpr wchar_t canvas_controls_class[] = L"LearnGameAndEngineDev.MathCanvasControls";
 constexpr wchar_t content_class[]=L"LearnGameAndEngineDev.MathContent";
 constexpr int canvas_close_id=6401;
 constexpr wchar_t keyboard_context_property[]=L"LGAED.MathKeyboardContext";
@@ -124,11 +125,24 @@ struct Canvas {
     std::optional<JsonObject> number_line_click;
     POINT number_line_click_start{};
     std::string rigid_mode="move";bool rigid_dragging=false;POINT rigid_previous{};
+    bool construction_locked=false,segment_dragging=false;
+    bool segment_failed=false;
+    std::string segment_description;
+    std::optional<unsigned> segment_point;
+    POINT segment_previous{};
+    std::function<void(JsonObject)> draft_changed;
+    std::function<void()> refresh_segment_controls;
+    std::function<void()> segment_controls_layout_changed;
+    bool segment_captions_dirty=false;
+    int auxiliary_columns=3;
+    HWND auxiliary_host=nullptr;
+    std::vector<RECT> auxiliary_positions;
+    int auxiliary_scroll=0,auxiliary_extent=0,auxiliary_page=0;
     std::vector<HWND> auxiliary_controls;std::vector<RECT> auxiliary_rectangles;
     std::function<LRESULT(UINT,WPARAM,LPARAM)> auxiliary_dispatch;
     ~Canvas() { close_expanded(false);if (scaled_font) DeleteObject(scaled_font); }
     std::string tr(const char* es,const char* en,const char* fr)const{return locale.starts_with("fr")?fr:locale.starts_with("en")?en:es;}
-    void clamp_pan(){RECT client{};GetClientRect(window,&client);const auto x=std::max(0.,client.right*(zoom-1)/2),y=std::max(0.,client.bottom*(zoom-1)/2);pan_x=std::clamp(pan_x,-x,x);pan_y=std::clamp(pan_y,-y,y);}
+    void clamp_pan(){if(type=="segment_transport")return;RECT client{};GetClientRect(window,&client);const auto x=std::max(0.,client.right*(zoom-1)/2),y=std::max(0.,client.bottom*(zoom-1)/2);pan_x=std::clamp(pan_x,-x,x);pan_y=std::clamp(pan_y,-y,y);}
     POINT content_point(POINT at)const{RECT client{};GetClientRect(window,&client);return {
         static_cast<LONG>(std::lround((at.x-client.right/2.-pan_x)/zoom+client.right/2.)),
         static_cast<LONG>(std::lround((at.y-client.bottom/2.-pan_y)/zoom+client.bottom/2.))};}
@@ -141,6 +155,7 @@ struct Canvas {
         if(type=="math_number_line"||type=="number_line")return 2.4;
         if(type=="euclidean_diagram")return 1.4;
         if(type=="rigid_angle")return 1.1;
+        if(type=="segment_transport")return 1.3;
         if(type=="geometry_2d_diagram"||type=="geometry_3d_diagram"||type=="venn_diagram")return 1.2;
         if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="graph"||(type=="sliders_visual"&&text(config,L"type")=="graph"))return std::clamp((xmax-xmin)/(ymax-ymin),.6,4.);
         if(type=="sliders_visual")return 1.2;
@@ -154,22 +169,69 @@ struct Canvas {
         const auto intercept=number(values,winrt::to_hstring(text(config,L"interceptParameter",default_id(1))).c_str(),0);
         points.clear();PlotPoint first,second;first.y=intercept;second.x=1;second.y=intercept+slope;points.push_back(first);points.push_back(second);
     }
+    int segment_columns(int width,int gap=0)const{
+        int minimum=px(100);
+        for(const auto control:auxiliary_controls){const auto dc=GetDC(control);const auto font=reinterpret_cast<HFONT>(SendMessageW(control,WM_GETFONT,0,0));const auto old=SelectObject(dc,font?font:GetStockObject(DEFAULT_GUI_FONT));
+            std::wstring caption(static_cast<std::size_t>(GetWindowTextLengthW(control))+1,L'\0');caption.resize(GetWindowTextW(control,caption.data(),static_cast<int>(caption.size())));
+            for(std::size_t first=0;first<caption.size();){while(first<caption.size()&&iswspace(caption[first]))++first;auto last=first;while(last<caption.size()&&!iswspace(caption[last]))++last;if(last>first){SIZE size{};GetTextExtentPoint32W(dc,caption.data()+first,static_cast<int>(last-first),&size);minimum=std::max(minimum,static_cast<int>(size.cx)+px(28));}first=last;}
+            SelectObject(dc,old);ReleaseDC(control,dc);
+        }
+        return std::clamp((width+gap)/std::max(1,minimum+gap),1,3);
+    }
+    int segment_control_height(HWND control,int width)const{
+        const auto dc=GetDC(control);const auto font=reinterpret_cast<HFONT>(SendMessageW(control,WM_GETFONT,0,0));const auto old=SelectObject(dc,font?font:GetStockObject(DEFAULT_GUI_FONT));
+        std::wstring caption(static_cast<std::size_t>(GetWindowTextLengthW(control))+1,L'\0');caption.resize(GetWindowTextW(control,caption.data(),static_cast<int>(caption.size())));
+        RECT measured{0,0,std::max(1,width-px(28)),0};DrawTextW(dc,caption.c_str(),static_cast<int>(caption.size()),&measured,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
+        SelectObject(dc,old);ReleaseDC(control,dc);return std::max(px(48),static_cast<int>(measured.bottom-measured.top)+px(16));
+    }
+    void scroll_auxiliary(int position){
+        auxiliary_scroll=std::clamp(position,0,std::max(0,auxiliary_extent-auxiliary_page));
+        for(std::size_t index=0;index<auxiliary_controls.size()&&index<auxiliary_positions.size();++index){const auto& box=auxiliary_positions[index];MoveWindow(auxiliary_controls[index],box.left,box.top-auxiliary_scroll,box.right-box.left,box.bottom-box.top,TRUE);}
+        SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS|SIF_DISABLENOSCROLL,0,std::max(0,auxiliary_extent-1),static_cast<UINT>(std::max(1,auxiliary_page)),auxiliary_scroll};SetScrollInfo(auxiliary_host,SB_VERT,&info,TRUE);
+    }
+    void reveal_auxiliary(HWND control){
+        const auto found=std::ranges::find(auxiliary_controls,control);if(found==auxiliary_controls.end())return;const auto index=static_cast<std::size_t>(found-auxiliary_controls.begin());if(index>=auxiliary_positions.size())return;
+        const auto& box=auxiliary_positions[index];if(box.top<auxiliary_scroll)scroll_auxiliary(box.top);else if(box.bottom>auxiliary_scroll+auxiliary_page)scroll_auxiliary(box.bottom-auxiliary_page);
+    }
+    static LRESULT CALLBACK controls_proc(HWND target,UINT message,WPARAM wp,LPARAM lp){
+        auto* self=reinterpret_cast<Canvas*>(GetWindowLongPtrW(target,GWLP_USERDATA));if(message==WM_NCCREATE){self=static_cast<Canvas*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(target,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}if(!self)return DefWindowProcW(target,message,wp,lp);
+        if(message==WM_CLOSE||(message==WM_KEYDOWN&&wp==VK_ESCAPE)){self->close_expanded();return 0;}
+        if(message==WM_VSCROLL){SCROLLINFO info{sizeof(info),SIF_ALL};GetScrollInfo(target,SB_VERT,&info);int next=self->auxiliary_scroll;switch(LOWORD(wp)){case SB_LINEUP:next-=self->px(32);break;case SB_LINEDOWN:next+=self->px(32);break;case SB_PAGEUP:next-=self->auxiliary_page;break;case SB_PAGEDOWN:next+=self->auxiliary_page;break;case SB_THUMBPOSITION:case SB_THUMBTRACK:next=info.nTrackPos;break;case SB_TOP:next=0;break;case SB_BOTTOM:next=self->auxiliary_extent;break;}self->scroll_auxiliary(next);return 0;}
+        if(message==WM_MOUSEWHEEL){self->scroll_auxiliary(self->auxiliary_scroll-MulDiv(GET_WHEEL_DELTA_WPARAM(wp),self->px(48),WHEEL_DELTA));return 0;}
+        if(message==WM_ERASEBKGND){RECT box{};GetClientRect(target,&box);FillRect(reinterpret_cast<HDC>(wp),&box,reader_theme::brush(reader_theme::Surface::card));return 1;}
+        if(self->auxiliary_dispatch&&(message==WM_COMMAND||message==WM_DRAWITEM||message==WM_NOTIFY||message==WM_CTLCOLORBTN))return self->auxiliary_dispatch(message,wp,lp);
+        return DefWindowProcW(target,message,wp,lp);
+    }
     void expanded_layout(){
         if(!fullscreen)return;RECT area{};GetClientRect(fullscreen,&area);const int row=px(48),available=std::max(1,static_cast<int>(area.bottom)-row);
+        if(type=="segment_transport"&&auxiliary_host){
+            const auto width=std::max(1,static_cast<int>(area.right));const auto interior=std::max(1,width-std::max(px(18),GetSystemMetrics(SM_CXVSCROLL)));const auto gap=px(4);const auto columns=segment_columns(interior,gap);int y=0;auxiliary_positions.clear();
+            for(std::size_t first=0;first<auxiliary_controls.size();first+=columns){const auto count=static_cast<int>(std::min<std::size_t>(columns,auxiliary_controls.size()-first));const auto cell_width=std::max(1,(interior-gap*(count-1))/count);int height=px(48);for(int index=0;index<count;++index)height=std::max(height,segment_control_height(auxiliary_controls[first+index],cell_width));for(int index=0;index<count;++index)auxiliary_positions.push_back({index*(cell_width+gap),y,index*(cell_width+gap)+cell_width,y+height});y+=height+gap;}
+            auxiliary_extent=std::max(0,y-gap);const auto minimum_canvas=std::max(1,std::min(px(180),available*2/3));auxiliary_page=std::max(1,std::min(auxiliary_extent,available-minimum_canvas));
+            MoveWindow(auxiliary_host,0,0,width,auxiliary_page,TRUE);scroll_auxiliary(auxiliary_scroll);MoveWindow(window,0,auxiliary_page,width,std::max(1,available-auxiliary_page),FALSE);prepare_drawing();InvalidateRect(window,nullptr,FALSE);
+            MoveWindow(GetDlgItem(fullscreen,canvas_close_id),std::max(0L,area.right-row),available,row,row,TRUE);return;
+        }
         const auto ratio=aspect_ratio();const int width=std::max(1,std::min(static_cast<int>(area.right),static_cast<int>(available*ratio))),height=std::max(1,std::min(available,static_cast<int>(width/ratio)));
-        const int left=(area.right-width)/2,top=(available-height)/2,controls=auxiliary_controls.empty()?0:2*row;
-        if(auxiliary_controls.size()==4){for(int index=0;index<3;++index)MoveWindow(auxiliary_controls[index],left+width*index/3,top,width*(index+1)/3-width*index/3,row,TRUE);MoveWindow(auxiliary_controls[3],left,top+row,width,row,TRUE);}
+        const int left=(area.right-width)/2,top=(available-height)/2;
+        const auto columns=std::max(1,auxiliary_columns);
+        const auto row_count=(static_cast<int>(auxiliary_controls.size())+columns-1)/columns;
+        const auto control_height=type=="segment_transport"?std::max(row,px(32*text_scale/100+20)):row;
+        const auto controls=row_count*control_height;
+        for(int index=0;index<static_cast<int>(auxiliary_controls.size());++index){const int at_row=index/columns,at_column=index%columns,count=std::min(columns,static_cast<int>(auxiliary_controls.size())-at_row*columns);MoveWindow(auxiliary_controls[index],left+width*at_column/count,top+at_row*control_height,width*(at_column+1)/count-width*at_column/count,control_height,TRUE);}
         MoveWindow(window,left,top+controls,width,std::max(1,height-controls),FALSE);prepare_drawing();InvalidateRect(window,nullptr,FALSE);
         MoveWindow(GetDlgItem(fullscreen,canvas_close_id),std::max(0L,area.right-row),available,row,row,TRUE);clamp_pan();
     }
     void close_expanded(bool refresh=true){
-        if(!fullscreen)return;const auto frame=fullscreen;fullscreen=nullptr;zoom=1;pan_x=pan_y=0;panning=false;dragging.reset();
+        if(!fullscreen)return;const auto frame=fullscreen;fullscreen=nullptr;zoom=1;pan_x=pan_y=0;panning=false;dragging.reset();segment_dragging=false;segment_point.reset();
         if(GetCapture()==window)ReleaseCapture();
         if(IsWindow(window)&&IsWindow(inline_parent)){SetParent(window,inline_parent);drawing=inline_drawing;drawing_width=inline_drawing_width;drawing_height=inline_drawing_height;MoveWindow(window,inline_rectangle.left,inline_rectangle.top,inline_rectangle.right-inline_rectangle.left,inline_rectangle.bottom-inline_rectangle.top,TRUE);
             for(std::size_t index=0;index<auxiliary_controls.size();++index)if(IsWindow(auxiliary_controls[index])&&index<auxiliary_rectangles.size()){SetParent(auxiliary_controls[index],inline_parent);const auto& rect=auxiliary_rectangles[index];MoveWindow(auxiliary_controls[index],rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,TRUE);}}
+        auxiliary_host=nullptr;auxiliary_positions.clear();auxiliary_scroll=auxiliary_extent=auxiliary_page=0;
         if(IsWindow(frame))DestroyWindow(frame);if(refresh&&IsWindow(window)){drawing_width=drawing_height=0;prepare_drawing();InvalidateRect(window,nullptr,FALSE);}if(IsWindow(previous_focus)&&IsWindowEnabled(previous_focus))SetFocus(previous_focus);
     }
-    static LRESULT CALLBACK exit_key_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR){
+    static LRESULT CALLBACK exit_key_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR data){
+        auto* self=reinterpret_cast<Canvas*>(data);
+        if(self&&self->auxiliary_host&&GetParent(item)==self->auxiliary_host){if(message==WM_SETFOCUS)self->reveal_auxiliary(item);if(message==WM_MOUSEWHEEL)return SendMessageW(self->auxiliary_host,message,wp,lp);}
         if(message==WM_KEYDOWN&&wp==VK_ESCAPE){SendMessageW(GetParent(item),WM_CLOSE,0,0);return 0;}
         if(message==WM_NCDESTROY)RemoveWindowSubclass(item,exit_key_proc,id);
         return DefSubclassProc(item,message,wp,lp);
@@ -179,7 +241,9 @@ struct Canvas {
         if(message==WM_NCCREATE){self=static_cast<Canvas*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(target,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(target,message,wp,lp);
         if(message==WM_SIZE){self->expanded_layout();return 0;}
-        if(message==WM_CLOSE||(message==WM_COMMAND&&LOWORD(wp)==canvas_close_id)||(message==WM_KEYDOWN&&wp==VK_ESCAPE)){self->close_expanded();return 0;}
+        // IsDialogMessage routes Escape over ordinary controls as IDCANCEL;
+        // canvas-local Escape still arrives directly when requested by a view.
+        if(message==WM_CLOSE||(message==WM_COMMAND&&(LOWORD(wp)==canvas_close_id||LOWORD(wp)==IDCANCEL))||(message==WM_KEYDOWN&&wp==VK_ESCAPE)){self->close_expanded();return 0;}
         if(message==WM_ERASEBKGND){RECT bounds{};GetClientRect(target,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::palette(target).high_contrast?GetSysColorBrush(COLOR_WINDOW):reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));return 1;}
         if(message==WM_DRAWITEM){auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);if(item.CtlID==canvas_close_id){
             FillRect(item.hDC,&item.rcItem,reader_theme::palette(target).high_contrast?GetSysColorBrush(COLOR_WINDOW):reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));draw_icon(item.hDC,icon,Icon::close,reader_theme::palette(target).high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(190,195,205));return TRUE;}}
@@ -198,21 +262,50 @@ struct Canvas {
         if(!close){DestroyWindow(fullscreen);fullscreen=nullptr;throw std::runtime_error("Cannot create the expanded mathematics exit control");}
         reader_theme::apply(close,reader_theme::Surface::card);reader_theme::icon_button(close);
         SetWindowSubclass(close,exit_key_proc,19,0);
-        auxiliary_rectangles.clear();for(const auto item:auxiliary_controls){RECT rect{};GetWindowRect(item,&rect);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&rect),2);auxiliary_rectangles.push_back(rect);SetParent(item,fullscreen);SetWindowSubclass(item,exit_key_proc,19,0);}
+        if(type=="segment_transport"){
+            WNDCLASSEXW controls_definition{sizeof(controls_definition)};controls_definition.lpfnWndProc=controls_proc;controls_definition.hInstance=GetModuleHandleW(nullptr);controls_definition.lpszClassName=canvas_controls_class;controls_definition.hCursor=LoadCursorW(nullptr,IDC_ARROW);
+            if(!RegisterClassExW(&controls_definition)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register the mathematics controls viewport");
+            auxiliary_host=CreateWindowExW(WS_EX_CONTROLPARENT,canvas_controls_class,wide(tr("Controles de construcción","Construction controls","Commandes de construction")).c_str(),WS_CHILD|WS_VISIBLE|WS_VSCROLL|WS_CLIPCHILDREN,0,0,1,1,fullscreen,nullptr,GetModuleHandleW(nullptr),this);
+            if(!auxiliary_host)throw std::runtime_error("Cannot create the mathematics controls viewport");reader_theme::apply(auxiliary_host,reader_theme::Surface::card);
+        }
+        auxiliary_rectangles.clear();for(const auto item:auxiliary_controls){RECT rect{};GetWindowRect(item,&rect);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&rect),2);auxiliary_rectangles.push_back(rect);SetParent(item,auxiliary_host?auxiliary_host:fullscreen);SetWindowSubclass(item,exit_key_proc,19,type=="segment_transport"?reinterpret_cast<DWORD_PTR>(this):0);}
         SetParent(window,fullscreen);expanded_layout();ShowWindow(fullscreen,SW_SHOW);SetForegroundWindow(fullscreen);SetFocus(window);
     }
     void scale_text(int percentage) {
         text_scale=percentage;drawing_width=drawing_height=0;
-        const auto base=type=="euclidean_diagram"||type=="rigid_angle"||type=="geometry_2d_diagram"||type=="geometry_3d_diagram"?15:type=="venn_diagram"?14:
+        const auto base=type=="euclidean_diagram"||type=="rigid_angle"||type=="segment_transport"||type=="geometry_2d_diagram"||type=="geometry_3d_diagram"?15:type=="venn_diagram"?14:
             type=="math_number_line"||type=="number_line"?12:type=="graph"||type=="math_coordinate_graph"||type=="coordinate_graph"||(type=="sliders_visual"&&text(config,L"type")=="graph")?11:18;
         const auto next=CreateFontW(-MulDiv(base*percentage,static_cast<int>(GetDpiForWindow(window)),96*100),
             0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(next){if(scaled_font)DeleteObject(scaled_font);scaled_font=next;}InvalidateRect(window,nullptr,FALSE);
     }
-    void prepare_drawing(std::optional<JsonObject> gesture={}){
-        if(type!="euclidean_diagram"&&type!="rigid_angle")return;
-        RECT area{};GetClientRect(window,&area);if(area.right<=0||area.bottom<=0||(!gesture&&drawing_width==area.right&&drawing_height==area.bottom))return;
+    std::string segment_failure_message()const{
+        return tr("No se pudo actualizar el dibujo. El intento se conserva; vuelve a intentarlo.","The drawing could not be updated. Your attempt is preserved; please try again.","Le dessin n’a pas pu être actualisé. Votre tentative est conservée ; réessayez.");
+    }
+    void segment_failure(bool failed){
+        if(segment_failed==failed)return;segment_failed=failed;
+        const auto description=segment_description+(failed?". "+segment_failure_message():"");
+        SetWindowTextW(window,wide(description).c_str());
+        NotifyWinEvent(EVENT_OBJECT_NAMECHANGE,window,OBJID_CLIENT,CHILDID_SELF);
+        InvalidateRect(window,nullptr,FALSE);
+    }
+    bool prepare_drawing(std::optional<JsonObject> gesture={}){
+        if(type!="segment_transport"){prepare_drawing_impl(gesture);return true;}
+        // The worker is a fallible technical boundary, including when resize
+        // requests arrive through a window procedure. Publish no partial state.
+        const auto saved_state=state,saved_drawing=drawing;
+        const auto saved_width=drawing_width,saved_height=drawing_height;
+        const auto recover=[&]{state=saved_state;drawing=saved_drawing;drawing_width=saved_width;drawing_height=saved_height;segment_failure(true);};
+        try{
+            if(prepare_drawing_impl(gesture))segment_failure(false);
+            return !segment_failed;
+        }catch(const winrt::hresult_error&){recover();return false;}
+        catch(const std::exception&){recover();return false;}
+    }
+    bool prepare_drawing_impl(std::optional<JsonObject> gesture){
+        if(type!="euclidean_diagram"&&type!="rigid_angle"&&type!="segment_transport")return false;
+        RECT area{};GetClientRect(window,&area);if(area.right<=0||area.bottom<=0||(!gesture&&drawing_width==area.right&&drawing_height==area.bottom))return false;
         if(!layout_request)throw std::runtime_error("The Euclidean representation requires its original geometry layout service");
         const auto dc=GetDC(window);const auto previous=SelectObject(dc,scaled_font);TEXTMETRICW font_metrics{};GetTextMetricsW(dc,&font_metrics);
         const auto unit=static_cast<double>(GetDpiForWindow(window))/96.,edge=std::min(12*unit,std::min(area.right,area.bottom)*.08);
@@ -236,16 +329,43 @@ struct Canvas {
             value_metrics.SetNamedValue(L"lineHeight",JsonValue::CreateNumberValue(font_metrics.tmHeight+2*unit));value_metrics.SetNamedValue(L"ascent",JsonValue::CreateNumberValue(font_metrics.tmAscent));metrics.SetNamedValue(winrt::to_hstring(value),value_metrics);
         };
         const auto measure_diagram=[&](const JsonObject& diagram){for(const auto& item:array(diagram,L"points"))for(const auto& value:array(item.GetObject(),L"labels"))measure(winrt::to_string(value.GetString()));for(const auto key:{L"objects",L"circles",L"arcs"})for(const auto& item:array(diagram,key))measure(text(item.GetObject(),L"label"));};
-        if(type=="rigid_angle"){measure_diagram(object(object(config,L"reference"),L"diagram"));measure_diagram(object(object(config,L"copy"),L"diagram"));}else measure_diagram(config);
+        if(type=="rigid_angle"){measure_diagram(object(object(config,L"reference"),L"diagram"));measure_diagram(object(object(config,L"copy"),L"diagram"));}
+        else if(type=="segment_transport"){
+            for(const auto& value:array(config,L"pointLabels"))if(value.ValueType()==JsonValueType::String)measure(winrt::to_string(value.GetString()));
+            for(const auto& value:array(config,L"sources")){const auto source=value.GetObject();measure(text(source,L"label"));for(const auto key:{L"from",L"to"}){const auto point=object(source,key);measure(text(point,L"label"));for(const auto& label:array(point,L"labels"))if(label.ValueType()==JsonValueType::String)measure(winrt::to_string(label.GetString()));}}
+            const auto target=object(config,L"target");for(const auto key:{L"origin",L"end",L"through"}){const auto point=object(target,key);measure(text(point,L"label"));for(const auto& label:array(point,L"labels"))if(label.ValueType()==JsonValueType::String)measure(winrt::to_string(label.GetString()));}
+        }else measure_diagram(config);
         SelectObject(dc,previous);ReleaseDC(window,dc);
-        JsonObject request;request.SetNamedValue(L"action",string_value(type=="rigid_angle"?"rigid_layout":"diagram_layout"));request.SetNamedValue(L"config",config);
+        JsonObject request;request.SetNamedValue(L"action",string_value(type=="segment_transport"?"segment_layout":type=="rigid_angle"?"rigid_layout":"diagram_layout"));request.SetNamedValue(L"config",config);
         if(type=="rigid_angle"){request.SetNamedValue(L"placement",state);if(gesture)request.SetNamedValue(L"gesture",*gesture);}
+        if(type=="segment_transport"){request.SetNamedValue(L"state",state);if(gesture)request.SetNamedValue(L"gesture",*gesture);}
         request.SetNamedValue(L"width",JsonValue::CreateNumberValue(area.right));request.SetNamedValue(L"height",JsonValue::CreateNumberValue(area.bottom));
         request.SetNamedValue(L"unit",JsonValue::CreateNumberValue(unit));request.SetNamedValue(L"textSize",JsonValue::CreateNumberValue(15*unit*text_scale/100));request.SetNamedValue(L"labelMetrics",metrics);
-        drawing=JsonObject::Parse(winrt::to_hstring(layout_request(stringify(request))));
-        if(!drawing.HasKey(L"viewport"))throw std::runtime_error(text(drawing,L"error","The original Euclidean layout did not return its drawing"));
+        const auto next_drawing=JsonObject::Parse(winrt::to_hstring(layout_request(stringify(request))));
+        if(!next_drawing.HasKey(L"viewport"))throw std::runtime_error(text(next_drawing,L"error","The original Euclidean layout did not return its drawing"));
+        if(type=="segment_transport"&&!next_drawing.HasKey(L"state"))throw std::runtime_error("The segment construction did not return its original state");
+        drawing=next_drawing;
         if(type=="rigid_angle"&&gesture)state=object(drawing,L"placement");
+        if(type=="segment_transport"){
+            state=object(drawing,L"state");if(refresh_segment_controls)refresh_segment_controls();
+        }
         drawing_width=area.right;drawing_height=area.bottom;
+        return true;
+    }
+    std::string segment_mode()const{return text(object(state,L"interactionDraft"),L"mode","place");}
+    void segment_changed(bool semantic){
+        if(semantic){if(changed)changed(state);}else if(draft_changed)draft_changed(state);
+        if(refresh_segment_controls)refresh_segment_controls();
+        if(segment_captions_dirty){segment_captions_dirty=false;if(fullscreen)expanded_layout();else if(segment_controls_layout_changed)segment_controls_layout_changed();}
+        InvalidateRect(window,nullptr,FALSE);
+    }
+    void segment_gesture(JsonObject gesture,bool semantic=false){
+        const auto action=text(gesture,L"type");if(construction_locked&&(action=="place"||action=="move_point"))return;
+        const auto previous=state.Stringify(),previous_points=array(state,L"points").Stringify();if(!prepare_drawing(gesture))return;
+        if(previous!=state.Stringify())segment_changed(semantic&&previous_points!=array(state,L"points").Stringify());
+    }
+    void segment_zoom(POINT at,double delta){
+        JsonObject gesture,current;current.SetNamedValue(L"x",JsonValue::CreateNumberValue(at.x));current.SetNamedValue(L"y",JsonValue::CreateNumberValue(at.y));gesture.SetNamedValue(L"type",string_value("zoom"));gesture.SetNamedValue(L"current",current);gesture.SetNamedValue(L"delta",JsonValue::CreateNumberValue(delta));segment_gesture(gesture);
     }
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96); }
     RECT bounds() const {
@@ -321,8 +441,8 @@ struct Canvas {
         if(!drawing.HasKey(L"viewport"))return;
         const auto colors=reader_theme::palette(window);const auto unit=static_cast<double>(GetDpiForWindow(window))/96.;
         const auto position=[](const JsonObject& value){return POINT{static_cast<LONG>(std::lround(number(value,L"x"))),static_cast<LONG>(std::lround(number(value,L"y")))};};
-        const bool rigid=type=="rigid_angle";const auto amber=colors.high_contrast?colors.text:RGB(255,190,95);
-        const auto ink=[&](const JsonObject& item,const wchar_t* id=L"id"){return rigid&&text(item,id).starts_with("copy:")?amber:colors.accent;};
+        const bool rigid=type=="rigid_angle"||type=="segment_transport";const auto amber=colors.high_contrast?colors.text:RGB(255,190,95);
+        const auto ink=[&](const JsonObject& item,const wchar_t* id=L"id"){return rigid&&text(item,id).starts_with(type=="segment_transport"?"tool:":"copy:")?amber:colors.accent;};
         const auto stroke=CreatePen(PS_SOLID,std::max(1,static_cast<int>(std::lround(2.2*unit))),colors.accent),copy_stroke=CreatePen(PS_SOLID,std::max(1,static_cast<int>(std::lround(2.2*unit))),amber);const auto old_pen=SelectObject(dc,stroke),old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
         if(rigid){
             struct GdiRuntime{ULONG_PTR token{};GdiRuntime(){Gdiplus::GdiplusStartupInput input;Gdiplus::GdiplusStartup(&token,&input,nullptr);}~GdiRuntime(){if(token)Gdiplus::GdiplusShutdown(token);}};static GdiRuntime runtime;
@@ -389,7 +509,7 @@ struct Canvas {
                 value_font=CreateFontW(-MulDiv(15*text_scale,static_cast<int>(GetDpiForWindow(window)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
                 if(value_font)SelectObject(dc,value_font);SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));caption(coordinate_caption(value),x,y-px(21));}
             SetTextAlign(dc,alignment);RestoreDC(dc,saved);DeleteObject(axis);DeleteObject(ray);DeleteObject(background);DeleteObject(marker);DeleteObject(fill);if(value_font)DeleteObject(value_font);
-        } else if (type == "euclidean_diagram"||type=="rigid_angle") {
+        } else if (type == "euclidean_diagram"||type=="rigid_angle"||type=="segment_transport") {
             paint_euclidean(dc);
         } else if (type == "venn_diagram") {
             const auto w=client.right,h=client.bottom;const auto radius=std::min(w*.25,h*.32),center_y=h*.49,left_x=w*.4,right_x=w*.6;
@@ -482,10 +602,25 @@ struct Canvas {
                     SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));TextOutW(dc,x,y,content.c_str(),static_cast<int>(content.size()));}}
             RestoreDC(dc,saved);SelectObject(dc,previous_brush);
         } else SelectObject(dc,previous_brush);
+        if(type=="segment_transport"&&segment_failed){
+            const auto saved=SaveDC(dc);SetTextAlign(dc,TA_LEFT|TA_TOP);const auto message=wide(segment_failure_message());
+            RECT notice{px(8),px(8),std::max(px(9),static_cast<int>(client.right)-px(8)),px(8)};
+            DrawTextW(dc,message.c_str(),static_cast<int>(message.size()),&notice,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
+            auto background=notice;InflateRect(&background,px(4),px(4));FillRect(dc,&background,reader_theme::brush(reader_theme::Surface::card));
+            SetTextColor(dc,colors.high_contrast?colors.text:colors.muted);DrawTextW(dc,message.c_str(),static_cast<int>(message.size()),&notice,DT_WORDBREAK|DT_NOPREFIX);
+            RestoreDC(dc,saved);
+        }
         SelectObject(dc,previous_pen); SelectObject(dc,old_font); DeleteObject(pen); DeleteObject(grid);RestoreDC(dc,transform);
     }
     void pointer(POINT at) {
         if (!changed) return;
+        if(type=="segment_transport"){
+            if(!segment_dragging)return;JsonObject gesture,previous,current;const auto mode=segment_mode();
+            previous.SetNamedValue(L"x",JsonValue::CreateNumberValue(segment_previous.x));previous.SetNamedValue(L"y",JsonValue::CreateNumberValue(segment_previous.y));current.SetNamedValue(L"x",JsonValue::CreateNumberValue(at.x));current.SetNamedValue(L"y",JsonValue::CreateNumberValue(at.y));
+            gesture.SetNamedValue(L"type",string_value(segment_point?"move_point":mode));gesture.SetNamedValue(L"previous",previous);gesture.SetNamedValue(L"current",current);
+            if(segment_point)gesture.SetNamedValue(L"index",JsonValue::CreateNumberValue(*segment_point));
+            segment_gesture(gesture,segment_point.has_value());segment_previous=at;return;
+        }
         if(type=="rigid_angle"){
             if(!rigid_dragging)return;JsonObject gesture,previous,current;previous.SetNamedValue(L"x",JsonValue::CreateNumberValue(rigid_previous.x));previous.SetNamedValue(L"y",JsonValue::CreateNumberValue(rigid_previous.y));current.SetNamedValue(L"x",JsonValue::CreateNumberValue(at.x));current.SetNamedValue(L"y",JsonValue::CreateNumberValue(at.y));gesture.SetNamedValue(L"mode",string_value(rigid_mode));gesture.SetNamedValue(L"previous",previous);gesture.SetNamedValue(L"current",current);
             prepare_drawing(gesture);rigid_previous=at;changed(state);InvalidateRect(window,nullptr,FALSE);return;
@@ -509,18 +644,44 @@ struct Canvas {
         if (!self) return DefWindowProcW(window,message,wparam,lparam);
         if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wparam));return 0;}
         if(message==WM_LBUTTONDBLCLK){
+            // Placement clicks remain construction clicks. Enlarging has its
+            // own button, and only View mode interprets a double click as zoom.
+            if(self->type=="segment_transport"){
+                self->segment_dragging=false;self->segment_point.reset();if(GetCapture()==window)ReleaseCapture();
+                if(self->segment_mode()=="view")self->segment_zoom({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)},1);return 0;
+            }
             // Windows sends a complete first click before identifying a double
             // click. Keep zoom/expand input-neutral without delaying ordinary
             // number-line clicks or losing their existing immediate response.
             if(self->number_line_click&&self->changed){self->state=*self->number_line_click;self->changed(self->state);self->number_line_click.reset();}
             self->dragging.reset();self->panning=false;if(GetCapture()==window)ReleaseCapture();if(!self->fullscreen)self->expand();else self->toggle_zoom({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)});return 0;}
         if(message==WM_KEYDOWN&&wparam==VK_ESCAPE&&self->fullscreen){self->close_expanded();return 0;}
+        if(message==WM_KEYDOWN&&self->type=="segment_transport"&&(wparam==VK_ADD||wparam==VK_OEM_PLUS||wparam==VK_SUBTRACT||wparam==VK_OEM_MINUS)){
+            RECT area{};GetClientRect(window,&area);self->segment_zoom({area.right/2,area.bottom/2},wparam==VK_ADD||wparam==VK_OEM_PLUS?1:-1);return 0;
+        }
         if(message==WM_SIZE){self->clamp_pan();return 0;}
         if (message == WM_PAINT) { PAINTSTRUCT paint{}; const auto dc = BeginPaint(window,&paint);RECT bounds{};GetClientRect(window,&bounds);
             const auto buffer=CreateCompatibleDC(dc);const auto bitmap=CreateCompatibleBitmap(dc,std::max(1L,bounds.right),std::max(1L,bounds.bottom));const auto previous=SelectObject(buffer,bitmap);
             self->paint(buffer);BitBlt(dc,0,0,bounds.right,bounds.bottom,buffer,0,0,SRCCOPY);SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);EndPaint(window,&paint);return 0; }
         if (message == WM_ERASEBKGND) return TRUE;
         if (message == WM_LBUTTONDOWN && self->changed && IsWindowEnabled(window)) {
+            if(self->type=="segment_transport"){
+                const POINT at{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};const auto mode=self->segment_mode();
+                self->segment_previous=at;self->segment_point.reset();
+                if(mode=="place"){
+                    if(self->construction_locked)return 0;
+                    const auto active=number(object(self->state,L"interactionDraft"),L"activePoint");auto nearest=static_cast<double>(self->px(24));
+                    // Selecting the next name permits even a coincident or
+                    // too-short construction; only the evaluator judges it.
+                    if(active<array(self->state,L"points").Size())for(const auto& value:array(self->drawing,L"constructedPoints")){const auto point=value.GetObject(),center=object(point,L"center");const auto distance=std::hypot(number(center,L"x")-at.x,number(center,L"y")-at.y);if(distance<=nearest){self->segment_point=static_cast<unsigned>(number(point,L"index"));nearest=distance;}}
+                    if(!self->segment_point){
+                        JsonObject gesture,current;current.SetNamedValue(L"x",JsonValue::CreateNumberValue(at.x));current.SetNamedValue(L"y",JsonValue::CreateNumberValue(at.y));gesture.SetNamedValue(L"type",string_value("place"));gesture.SetNamedValue(L"index",JsonValue::CreateNumberValue(active));gesture.SetNamedValue(L"current",current);
+                        self->segment_gesture(gesture,true);const auto count=array(self->state,L"points").Size();if(active>=0&&active<count)self->segment_point=static_cast<unsigned>(active);
+                    }
+                    if(!self->segment_point){SetFocus(window);return 0;}
+                }
+                self->segment_dragging=true;SetFocus(window);SetCapture(window);return 0;
+            }
             POINT at=self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)});
             if(self->type=="rigid_angle"&&self->rigid_mode!="view"){self->rigid_dragging=true;self->rigid_previous=at;SetCapture(window);return 0;}
             auto nearest=static_cast<double>(self->px(32));
@@ -537,9 +698,12 @@ struct Canvas {
         if (message == WM_MOUSEMOVE && GetCapture() == window && (wparam & MK_LBUTTON)) {
             if(self->number_line_click&&(std::abs(GET_X_LPARAM(lparam)-self->number_line_click_start.x)>GetSystemMetrics(SM_CXDRAG)/2||std::abs(GET_Y_LPARAM(lparam)-self->number_line_click_start.y)>GetSystemMetrics(SM_CYDRAG)/2))self->number_line_click.reset();
             if(self->panning){self->pan_x+=GET_X_LPARAM(lparam)-self->pan_last.x;self->pan_y+=GET_Y_LPARAM(lparam)-self->pan_last.y;self->pan_last={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};self->clamp_pan();InvalidateRect(window,nullptr,FALSE);}
-            else self->pointer(self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}));return 0; }
-        if (message == WM_LBUTTONUP && GetCapture() == window) {self->rigid_dragging=false;self->panning=false;self->dragging.reset();ReleaseCapture();return 0;}
-        if(message==WM_CAPTURECHANGED){self->rigid_dragging=false;self->panning=false;self->dragging.reset();return 0;}
+            else self->pointer(self->type=="segment_transport"?POINT{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}:self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}));return 0; }
+        if (message == WM_LBUTTONUP && GetCapture() == window) {self->rigid_dragging=false;self->segment_dragging=false;self->segment_point.reset();self->panning=false;self->dragging.reset();ReleaseCapture();return 0;}
+        if(message==WM_CAPTURECHANGED){self->rigid_dragging=false;self->segment_dragging=false;self->segment_point.reset();self->panning=false;self->dragging.reset();return 0;}
+        if(message==WM_MOUSEWHEEL&&self->type=="segment_transport"&&self->segment_mode()=="view"){
+            POINT at{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};ScreenToClient(window,&at);self->segment_zoom(at,static_cast<double>(GET_WHEEL_DELTA_WPARAM(wparam))/WHEEL_DELTA);return 0;
+        }
         if (message == WM_MOUSEWHEEL) return SendMessageW(GetParent(window),message,wparam,lparam);
         return DefWindowProcW(window,message,wparam,lparam);
     }
@@ -1032,6 +1196,53 @@ struct MathPuzzleView::Impl {
                 const auto& item=cards.at(key);const auto card=rich_card(item,id+"/item/"+key,10);SetWindowTextW(card,wide(visible_label(item)).c_str());order_cards[card]={id,key};SetWindowSubclass(card,card_proc,12,reinterpret_cast<DWORD_PTR>(this));
                 rows.back().height=48;order_rows[id].push_back(rows.size()-1);
             }
+        } else if(type=="math_segment_transport"){
+            const auto config=object(spec,L"validator");auto current=response(id,"graph");
+            if(!current.HasKey(L"points"))current.SetNamedValue(L"points",JsonArray::Parse(array(object(config,L"initial"),L"points").Stringify()));
+            add_text(tr("Coloca cada punto libremente y arrástralo para corregirlo. El botón Punto recorre los nombres disponibles; no entrega sus posiciones. La herramienta conserva la longitud que tomas: muévela o gírala para comparar ambos extremos. El botón Longitud recorre las fuentes y los tramos que ya has construido.","Place each point freely and drag it to revise it. Point cycles through available names without supplying positions. The tool preserves the length you take: move or rotate it to compare both endpoints. Length cycles through sources and segments you have already constructed.","Placez librement chaque point puis déplacez-le pour le corriger. Point parcourt les noms disponibles sans fournir de positions. L’outil conserve la longueur prise : déplacez-le ou tournez-le pour comparer les deux extrémités. Longueur parcourt les sources et les segments déjà construits."),id+"/help");
+            add_text(tr("Las figuras comparten una misma escala, sin medidas ni coordenadas visibles. La herramienta es ámbar. En Vista puedes desplazar el dibujo y usar la rueda o los botones de acercar y alejar, también más allá del encuadre inicial. La comprobación admite sólo la tolerancia operativa declarada para colocar los puntos.","All figures share one scale without visible measurements or coordinates. The tool is amber. View lets you pan and use the wheel or zoom buttons, including beyond the initial framing. Checking allows only the declared operational tolerance for point placement.","Les figures partagent une même échelle sans mesures ni coordonnées visibles. L’outil est ambré. Vue permet de déplacer le dessin et de zoomer avec la molette ou les boutons, au-delà du cadrage initial. La vérification n’admet que la tolérance opérationnelle déclarée pour placer les points."),id+"/legend");
+            canvas(config,"segment_transport",current,[this,id](JsonObject value){answers.SetNamedValue(wide(id),value);change();},id);
+            auto* plot=canvases.back().get();
+            plot->draft_changed=[this,id](JsonObject value){answers.SetNamedValue(wide(id),value);if(!initializing&&callbacks.draft_changed)callbacks.draft_changed();};
+            plot->segment_description=tr("Construcción libre de puntos y transporte de longitudes, sin ejes ni coordenadas","Free point construction and length transport, without axes or coordinates","Construction libre de points et transport de longueurs, sans axes ni coordonnées");SetWindowTextW(plot->window,wide(plot->segment_description).c_str());
+            const auto stop_drag=[plot]{plot->segment_dragging=false;plot->segment_point.reset();if(GetCapture()==plot->window)ReleaseCapture();};
+            std::vector<HWND> controls;std::vector<std::pair<HWND,std::string>> mode_controls;
+            const std::vector<std::pair<std::string,std::string>> modes{{"place",tr("Colocar puntos","Place points","Placer les points")},{"move_tool",tr("Mover herramienta","Move tool","Déplacer l’outil")},{"rotate_tool",tr("Girar herramienta","Rotate tool","Tourner l’outil")},{"view",tr("Vista","View","Vue")}};
+            for(const auto& [mode,caption]:modes){const auto control=button(caption,[plot,stop_drag,mode]{if(plot->construction_locked&&mode=="place")return;stop_drag();auto draft=object(plot->state,L"interactionDraft");draft.SetNamedValue(L"mode",string_value(mode));plot->state.SetNamedValue(L"interactionDraft",draft);plot->segment_changed(false);},BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(control);mode_controls.emplace_back(control,mode);}
+            const auto point_button=button(tr("Punto","Point","Point"),[plot,stop_drag]{
+                if(plot->construction_locked)return;stop_drag();auto labels=array(plot->drawing,L"pointLabels");if(!labels.Size())labels=array(plot->config,L"pointLabels");if(!labels.Size())return;
+                auto draft=object(plot->state,L"interactionDraft");const auto available=std::min(labels.Size(),array(plot->state,L"points").Size()+1);const auto next=(static_cast<unsigned>(std::max(0.,number(draft,L"activePoint")))+1)%std::max(1u,available);draft.SetNamedValue(L"activePoint",JsonValue::CreateNumberValue(next));draft.SetNamedValue(L"mode",string_value("place"));plot->state.SetNamedValue(L"interactionDraft",draft);plot->segment_changed(false);
+            },BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(point_button);
+            const auto measurement_button=button(tr("Longitud","Length","Longueur"),[plot,stop_drag]{
+                stop_drag();const auto measurements=array(plot->drawing,L"measurements");if(!measurements.Size())return;const auto selected=text(object(object(plot->state,L"interactionDraft"),L"tool"),L"measurementId");unsigned next=0;
+                for(unsigned index=0;index<measurements.Size();++index)if(text(measurements.GetObjectAt(index),L"id")==selected){next=(index+1)%measurements.Size();break;}
+                JsonObject gesture;gesture.SetNamedValue(L"type",string_value("measure"));gesture.SetNamedValue(L"id",measurements.GetObjectAt(next).GetNamedValue(L"id"));plot->segment_gesture(gesture);
+            },BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(measurement_button);
+            const auto reset_points=button(tr("Restablecer construcción","Restore construction","Rétablir la construction"),[plot,stop_drag]{
+                if(plot->construction_locked)return;stop_drag();const auto previous_state=plot->state;const auto previous_width=plot->drawing_width,previous_height=plot->drawing_height;const auto previous_points=array(plot->state,L"points").Stringify();plot->state=JsonObject::Parse(plot->state.Stringify());plot->state.SetNamedValue(L"points",JsonArray::Parse(array(object(plot->config,L"initial"),L"points").Stringify()));auto draft=object(plot->state,L"interactionDraft");draft.SetNamedValue(L"activePoint",JsonValue::CreateNumberValue(0));plot->state.SetNamedValue(L"interactionDraft",draft);plot->drawing_width=plot->drawing_height=0;
+                if(!plot->prepare_drawing()){plot->state=previous_state;plot->drawing_width=previous_width;plot->drawing_height=previous_height;if(plot->refresh_segment_controls)plot->refresh_segment_controls();return;}
+                plot->segment_changed(previous_points!=array(plot->state,L"points").Stringify());
+            },BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(reset_points);
+            const auto reset_tool=button(tr("Restablecer herramienta","Restore tool","Rétablir l’outil"),[plot,stop_drag]{stop_drag();JsonObject gesture;gesture.SetNamedValue(L"type",string_value("reset_tool"));plot->segment_gesture(gesture);},BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(reset_tool);
+            const auto reset_view=button(tr("Restablecer vista","Restore view","Rétablir la vue"),[plot,stop_drag]{stop_drag();JsonObject gesture;gesture.SetNamedValue(L"type",string_value("reset_view"));plot->segment_gesture(gesture);},BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(reset_view);
+            for(const auto& [delta,caption]:std::vector<std::pair<int,std::string>>{{1,tr("Acercar","Zoom in","Agrandir")},{-1,tr("Alejar","Zoom out","Réduire")}}){const auto control=button(caption,[plot,delta]{RECT area{};GetClientRect(plot->window,&area);plot->segment_zoom({area.right/2,area.bottom/2},delta);},BS_PUSHBUTTON|BS_MULTILINE);controls.push_back(control);}
+            plot->auxiliary_controls=controls;
+            plot->auxiliary_dispatch=[this](UINT message,WPARAM wp,LPARAM lp){return SendMessageW(host,message,wp,lp);};
+            plot->segment_controls_layout_changed=[this]{if(callbacks.layout_changed)callbacks.layout_changed();};
+            plot->refresh_segment_controls=[plot,mode_controls,point_button,measurement_button,reset_points]{
+                const auto caption=[plot](HWND control,const std::string& value){std::wstring before(static_cast<std::size_t>(GetWindowTextLengthW(control))+1,L'\0');before.resize(GetWindowTextW(control,before.data(),static_cast<int>(before.size())));const auto after=wide(value);if(before!=after){SetWindowTextW(control,after.c_str());plot->segment_captions_dirty=true;}};
+                const auto draft=object(plot->state,L"interactionDraft");for(const auto& [control,mode]:mode_controls){reader_theme::primary_button(control,plot->segment_mode()==mode);EnableWindow(control,mode!="place"||!plot->construction_locked);}
+                auto labels=array(plot->drawing,L"pointLabels");if(!labels.Size())labels=array(plot->config,L"pointLabels");const auto selected=static_cast<unsigned>(std::max(0.,number(draft,L"activePoint")));std::string label;
+                if(selected<labels.Size()&&labels.GetAt(selected).ValueType()==JsonValueType::String)label=winrt::to_string(labels.GetStringAt(selected));
+                caption(point_button,plot->tr("Punto","Point","Point")+(label.empty()?"":": "+label));EnableWindow(point_button,!plot->construction_locked);EnableWindow(reset_points,!plot->construction_locked);
+                const auto measurement=text(object(draft,L"tool"),L"measurementId");std::string measured;const auto measurements=array(plot->drawing,L"measurements");
+                for(const auto& value:measurements){const auto item=value.GetObject();if(text(item,L"id")==measurement){measured=text(item,L"label");break;}}
+                caption(measurement_button,plot->tr("Longitud","Length","Longueur")+(measured.empty()?"":": "+measured));EnableWindow(measurement_button,measurements.Size()!=0);
+            };
+            // Keep the very same controls with their canvas in the expanded
+            // panel. No second response, view, or construction is created.
+            for(std::size_t first=0;first<controls.size();first+=3){Row row;row.height=48;row.gap_after=0;for(std::size_t index=first;index<std::min(first+3,controls.size());++index)row.cells.push_back({controls[index]});rows.insert(rows.end()-1,std::move(row));}
+            plot->refresh_segment_controls();
         } else if(type=="math_rigid_angle_copy"){
             const auto config=object(spec,L"validator");auto current=response(id,"rigid_angle");
             if(!current.HasKey(L"x")){current=JsonObject::Parse(object(config,L"initial").Stringify());current.SetNamedValue(L"type",string_value("rigid_angle"));answers.SetNamedValue(winrt::to_hstring(id),current);}
@@ -1269,7 +1480,21 @@ struct MathPuzzleView::Impl {
         if(move){for(const auto& plot:canvases)if(GetParent(plot->window)==container)plot->prepare_drawing();RedrawWindow(container,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);}
         return y+(container==host?0:px(padding_y));
     }
-    int arrange(int width,bool move=true){current_width=std::max(px(100),width);return arrange_rows(rows,host,current_width,move,6,8);}
+    int arrange(int width,bool move=true){
+        current_width=std::max(px(100),width);std::vector<Row> adaptive;std::set<const Canvas*> arranged_controls;
+        for(const auto& row:rows){
+            const Canvas* segment=nullptr;
+            if(!row.cells.empty())for(const auto& plot:canvases)if(plot->type=="segment_transport"&&std::ranges::all_of(row.cells,[&](const auto& cell){return std::ranges::find(plot->auxiliary_controls,cell.window)!=plot->auxiliary_controls.end();})){segment=plot.get();break;}
+            if(!segment){adaptive.push_back(row);continue;}
+            if(!arranged_controls.insert(segment).second)continue;
+            const auto available=std::max(1,current_width-px(12)),gap=px(8),columns=segment->segment_columns(available,gap);
+            for(std::size_t first=0;first<segment->auxiliary_controls.size();first+=columns){const auto count=static_cast<int>(std::min<std::size_t>(columns,segment->auxiliary_controls.size()-first));const auto cell_width=std::max(1,(available-gap*(count-1))/count);int measured=px(48);Row controls;controls.gap_after=0;
+                for(int index=0;index<count;++index){const auto control=segment->auxiliary_controls[first+index];measured=std::max(measured,segment->segment_control_height(control,cell_width));controls.cells.push_back({control});}
+                controls.height=MulDiv(measured,96,static_cast<int>(GetDpiForWindow(host)))+1;adaptive.push_back(std::move(controls));
+            }
+        }
+        return arrange_rows(adaptive,host,current_width,move,6,8);
+    }
     static LRESULT CALLBACK field_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
         if(message==WM_ENABLE){
@@ -1526,7 +1751,16 @@ void MathPuzzleView::set_enabled(bool enabled) {
             || std::ranges::any_of(impl_->canvases,[item](const auto& canvas) { return canvas->window == item && canvas->changed; });
         if (interactive) EnableWindow(item,enabled);
     });
-    for(const auto& canvas:impl_->canvases)if(canvas->changed)EnableWindow(canvas->window,enabled);
+    for(const auto& canvas:impl_->canvases)if(canvas->changed){
+        if(canvas->type=="segment_transport"){
+            canvas->construction_locked=!enabled;
+            // A checked construction stays fixed; comparing it with the
+            // rigid tool and navigating its view remain presentation actions.
+            EnableWindow(canvas->window,TRUE);for(const auto control:canvas->auxiliary_controls)EnableWindow(control,TRUE);
+            if(canvas->refresh_segment_controls)canvas->refresh_segment_controls();
+            if(!enabled){canvas->segment_dragging=false;canvas->segment_point.reset();if(GetCapture()==canvas->window)ReleaseCapture();}
+        }else EnableWindow(canvas->window,enabled);
+    }
     for(const auto& [canvas,fields]:impl_->graph_fields)for(std::size_t index=0;index<fields.size();++index){const auto [x,y]=fields[index];EnableWindow(x,enabled&&canvas->points[index].draggable);EnableWindow(y,enabled&&canvas->points[index].draggable);}
 }
 void MathPuzzleView::set_text_scale(int percentage) {
@@ -1540,7 +1774,7 @@ void MathPuzzleView::set_text_scale(int percentage) {
         else SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(next),FALSE);
     });
     if(impl_->font)DeleteObject(impl_->font);impl_->font=next;
-    for(const auto& canvas:impl_->canvases)canvas->scale_text(percentage);
+    for(const auto& canvas:impl_->canvases){canvas->scale_text(percentage);if(canvas->type=="segment_transport"&&canvas->fullscreen)canvas->expanded_layout();}
     impl_->requested_heights.clear();impl_->requested_widths.clear();impl_->intrinsic_widths.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
 }
 void MathPuzzleView::set_expression_request(std::function<std::string(std::string_view)> request){

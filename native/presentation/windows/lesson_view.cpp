@@ -133,6 +133,7 @@ struct BlockControls {
     std::uint64_t revision = 0;
     std::string input_original, input_visual;
     std::string feedback_source;
+    std::string math_semantic_identity;
     bool feedback_correct = false;
     bool feedback_generated_verdict = false, feedback_default_review = false;
     std::array<std::string,3> console_channels;
@@ -208,6 +209,23 @@ std::string math_answer_identity(const winrt::Windows::Data::Json::IJsonValue& v
         return Identity::array(elements);
     }
     return Identity::of_canonical(winrt::to_string(value.Stringify()));
+}
+
+std::string saved_math_answer_identity(std::string_view raw) {
+    using namespace winrt::Windows::Data::Json;
+    if(raw.empty())return {};
+    const auto stored=JsonObject::Parse(wide(raw));
+    if(!stored.HasKey(L"responses"))return {};
+    auto responses=JsonObject::Parse(stored.GetNamedObject(L"responses").Stringify());
+    for(const auto& response:responses)if(response.Value().ValueType()==JsonValueType::Object){
+        auto value=response.Value().GetObject();value.Remove(L"editorDraft");value.Remove(L"editorDrafts");value.Remove(L"interactionDraft");
+    }
+    return math_answer_identity(responses);
+}
+
+std::string saved_math_fingerprint(std::string_view raw) {
+    if(raw.empty())return {};
+    return winrt::to_string(winrt::Windows::Data::Json::JsonObject::Parse(wide(raw)).GetNamedString(L"contentFingerprint",L""));
 }
 
 bool scrolls_internally(HWND window,int axis) {
@@ -316,11 +334,18 @@ struct LessonView {
     std::mutex math_mutex;
     std::optional<MathResult> math_result;
     std::optional<std::size_t> checking_math;
-    struct RestoredMath {std::string key,raw,reply;bool valid=false,compatible=false;};
+    struct RestoredMath {
+        std::string key,raw,reply,answer_identity,content_fingerprint;
+        std::uint64_t generation=0;
+        bool valid=false,compatible=false;
+    };
     std::jthread restore_worker;
     std::mutex restore_mutex;
     std::vector<RestoredMath> restored_math;
     std::set<std::string> verified_math;
+    // Stable exercise keys survive page/view recreation. Only a real answer
+    // change, explicit check or reset can invalidate its pending restoration.
+    std::map<std::string,std::uint64_t> math_answer_generations;
     enum class DragAxis { pending, lesson_vertical, page_horizontal, editor_vertical, editor_horizontal };
     struct Drag {
         HWND origin = nullptr; POINT start{}, last{}, editor_scroll{};
@@ -1859,7 +1884,11 @@ struct LessonView {
         for(const auto& p:lesson.pages)for(const auto& b:p.blocks)if(b.type==BlockType::math_puzzle){
             const auto identity=curriculum::exercise_key(lesson,b);const auto saved=state::get_response(data,identity);
             if(saved&&((saved->correct&&!verified_math.contains(identity))||state::response_reviewed(*saved,b))){
-                pending.push_back({identity,saved->raw_json});originals.push_back(b.raw_json);
+                RestoredMath request;request.key=identity;request.raw=saved->raw_json;
+                request.answer_identity=saved_math_answer_identity(request.raw);
+                request.content_fingerprint=saved_math_fingerprint(request.raw);
+                request.generation=math_answer_generations[identity];
+                pending.push_back(std::move(request));originals.push_back(b.raw_json);
             }
         }
         if(pending.empty())return;
@@ -1888,10 +1917,15 @@ struct LessonView {
         std::vector<RestoredMath> restored;{std::lock_guard lock(restore_mutex);restored.swap(restored_math);}
         for(const auto& result:restored){
             const auto current=state::get_response(data,result.key);
-            if(!current||current->raw_json!=result.raw)continue;
+            if(!current||math_answer_generations[result.key]!=result.generation||result.answer_identity.empty()||
+                saved_math_answer_identity(current->raw_json)!=result.answer_identity||
+                saved_math_fingerprint(current->raw_json)!=result.content_fingerprint)continue;
             if(result.valid)verified_math.insert(result.key);
             for(std::size_t i=0;i<controls.size();++i)if(key(i)==result.key){
                 auto& vm=controls[i];if(!vm.math)continue;
+                // Keep the latest presentation draft and its review checksum;
+                // the worker evaluated only the unchanged mathematical answer.
+                vm.response=*current;
                 vm.response.correct=result.valid;
                 if(result.valid||(result.compatible&&!current->correct)){
                     const auto reply=JsonObject::Parse(winrt::to_hstring(result.reply));
@@ -1914,7 +1948,10 @@ struct LessonView {
             const auto field=block(index).type==BlockType::drag_fill_code?L"slots":L"answers";
             raw.Insert(field,current.GetNamedArray(field));
         }
-        if(vm.math)raw.Insert(L"responses",JsonObject::Parse(winrt::to_hstring(vm.math->answers_json())));
+        if(vm.math){
+            raw.Insert(L"responses",JsonObject::Parse(winrt::to_hstring(vm.math->answers_json())));
+            vm.math_semantic_identity=math_answer_identity(JsonObject::Parse(winrt::to_hstring(vm.math->answer_identity_json())));
+        }
         if(vm.order_view){vm.order=vm.order_view->order();vm.response.order.assign(vm.order.begin(),vm.order.end());}
         vm.response.raw_json=winrt::to_string(raw.Stringify());
     }
@@ -1923,17 +1960,44 @@ struct LessonView {
         selected_puzzle=index;
         if(checking_math==index)cancel_math();
         verified_math.erase(key(index));
+        if(controls[index].math)++math_answer_generations[key(index)];
         auto& vm=controls[index];++vm.revision;capture_composition(index);
         if(vm.order_view)vm.order_started=true;
         vm.response.correct=false;state::clear_response_review(vm.response);
         state::put_response(data, lesson, block(index), vm.response);mark_dirty();feedback(index,"",false);sync_quiz_controls(index);
         reflow();notify_content();
     }
+    void composition_draft_changed(std::size_t index){
+        if(updating||index>=controls.size()||!controls[index].math)return;
+        auto& vm=controls[index];
+        const auto identity=math_answer_identity(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(vm.math->answer_identity_json())));
+        // A control cannot preserve an old verdict by routing a changed point
+        // through the presentation-only callback. In-flight evaluation remains
+        // valid only while its actual mathematical answer stays identical.
+        if(identity!=vm.math_semantic_identity){composition_changed(index);return;}
+        const auto previous=state::get_response(data,lesson,block(index));
+        const bool reviewed=state::response_reviewed(vm.response,block(index));
+        capture_composition(index);
+        // The persisted legacy review checksum owns the complete raw payload,
+        // including presentation drafts. Refresh that checksum only after the
+        // semantic guard proves this is still the same reviewed answer.
+        if(reviewed)state::mark_response_reviewed(vm.response,block(index));
+        auto persisted=vm.response;
+        if(!persisted.correct&&previous&&previous->correct&&!verified_math.contains(key(index))&&
+            saved_math_answer_identity(previous->raw_json)==identity&&
+            saved_math_fingerprint(previous->raw_json)==saved_math_fingerprint(persisted.raw_json)) {
+            // Rendering temporarily hides an unverified success. A camera/tool
+            // update must not overwrite the persisted result while it is checked.
+            persisted.correct=true;
+        }
+        state::put_response(data,lesson,block(index),persisted);mark_dirty();
+        sync_quiz_controls(index);
+    }
     void check_math(std::size_t index){
         if(!hooks.validate_math){feedback(index,ui("La comprobación matemática no está disponible.",
             "Mathematical checking is unavailable.","La vérification mathématique est indisponible."),false);return;}
         if(!may_evaluate())return;
-        cancel_math();auto& vm=controls.at(index);capture_composition(index);
+        cancel_math();auto& vm=controls.at(index);++math_answer_generations[key(index)];capture_composition(index);
         state::put_response(data, lesson, block(index), vm.response);mark_dirty();flush();
         const auto revision=vm.revision;const auto raw=block(index).raw_json,answers=vm.math->answers_json(),locale=lesson.locale;
         auto evaluate=hooks.validate_math;checking_math=index;
@@ -2292,7 +2356,10 @@ struct LessonView {
                         toggle_fullscreen(index,false);
                     },[this,index]{
                         reset_answer(index);
+                    },[this,index]{
+                        composition_draft_changed(index);
                     }});
+            vm.math_semantic_identity=math_answer_identity(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(vm.math->answer_identity_json())));
             SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
             SetWindowSubclass(vm.math->fullscreen_button(),console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));
             rows.push_back({{vm.math->window()},{0},40,false});
@@ -3023,12 +3090,18 @@ struct LessonView {
     }
     void reset_answer(std::size_t index) {
             auto& vm=controls.at(index);
+            if(checking_math==index)cancel_math();
+            if(vm.math)++math_answer_generations[key(index)];
+            ++vm.revision;
             // Explicit reset affects only this quiz; compiler drafts and jobs stay intact.
             updating = true; vm.response = {};
             verified_math.erase(key(index));
             if (vm.answer_editor) vm.answer_editor->reset(windows::EditorDocument{});
             if(vm.fill)vm.fill->reset();
-            if(vm.math)vm.math->reset();
+            if(vm.math){
+                vm.math->reset();
+                vm.math_semantic_identity=math_answer_identity(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(vm.math->answer_identity_json())));
+            }
             if(vm.order_view)vm.order_view->reset();
             vm.order_started=false;
             for (auto choice : vm.choices) SendMessageW(choice, BM_SETCHECK, BST_UNCHECKED, 0);

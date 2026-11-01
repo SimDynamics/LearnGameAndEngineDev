@@ -529,5 +529,151 @@ class WindowsMathBridgeTest(unittest.TestCase):
             self.assertEqual(original, config)
 
 
+class WindowsRigidAngleLayoutTest(unittest.TestCase):
+    """Presentation bounds must not narrow the unchanged rigid-angle model."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.worker = Worker(missing_resources=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.worker.close()
+
+    @staticmethod
+    def fixture(scale=1.0):
+        def figure(vertex, first, second, x, y, angle, first_distance, second_distance):
+            points = [{"id": vertex, "x": x * scale, "y": y * scale, "labels": [vertex]}]
+            for name, direction, distance in ((first, angle, first_distance),
+                                              (second, angle + 1, second_distance)):
+                points.append({"id": name, "x": (x + math.cos(direction) * distance) * scale,
+                               "y": (y + math.sin(direction) * distance) * scale, "labels": [name]})
+            return {"vertex": vertex, "sides": ["first", "second"], "region": "counterclockwise",
+                    "diagram": {"points": points, "objects": [
+                        {"id": name, "kind": "ray", "through": [vertex, endpoint],
+                         "contains": [vertex, endpoint]}
+                        for name, endpoint in (("first", first), ("second", second))]}}
+
+        return {"type": "rigid_angle_copy",
+                "reference": figure("O", "A", "B", 1, 2, 0, 4, 5),
+                "copy": figure("V", "C", "D", 0, 0, .7, 6, 3),
+                "initial": {"x": 7 * scale, "y": 6 * scale, "rotation": .2},
+                "relation": "congruent", "positionTolerance": .1 * scale,
+                "directionTolerance": .01}
+
+    def draw(self, spec, **fields):
+        return self.worker.ask("math_editor", action="rigid_layout", config=spec,
+                               width=850, height=600, unit=1, textSize=15, **fields)
+
+    def evaluate(self, spec, placement):
+        block = {"type": "math_puzzle", "prompt": "Traslada y gira la copia sin deformarla.",
+                 "responses": [{"id": "copy", "type": "math_rigid_angle_copy", "validator": spec}]}
+        return self.worker.ask("validate_math", block=block, language="es",
+                               responses={"copy": {"type": "rigid_angle", **placement}})
+
+    def test_01_homogeneous_micro_scale_preserves_layout_and_geometric_verdict(self):
+        normal, tiny = self.fixture(), self.fixture(1e-6)
+        originals = copy.deepcopy((normal, tiny))
+        large = self.draw(normal)
+        small = self.draw(tiny)
+        self.assertEqual(large["viewport"], small["viewport"])
+        self.assertEqual(large["plot"], small["plot"])
+
+        def compare_points(first, second):
+            self.assertEqual(set(first), set(second))
+            for key in first:
+                self.assertAlmostEqual(first[key]["x"], second[key]["x"], delta=1e-6, msg=str(key))
+                self.assertAlmostEqual(first[key]["y"], second[key]["y"], delta=1e-6, msg=str(key))
+
+        compare_points({p["id"]: p["center"] for p in large["points"]},
+                       {p["id"]: p["center"] for p in small["points"]})
+        for field, coordinates in (("paths", ("start", "end")),
+                                   ("arrows", ("tip", "wingA", "wingB"))):
+            compare_points({(part["id"], key): part[key] for part in large[field] for key in coordinates},
+                           {(part["id"], key): part[key] for part in small[field] for key in coordinates})
+        compare_points({part["id"]: part["center"] for part in large["regions"]},
+                       {part["id"]: part["center"] for part in small["regions"]})
+        for large_region, small_region in zip(large["regions"], small["regions"]):
+            for key in ("radius", "startDegrees", "sweepDegrees"):
+                self.assertAlmostEqual(large_region[key], small_region[key], delta=1e-6)
+        self.assertCountEqual([label["text"] for label in large["labels"]],
+                              [label["text"] for label in small["labels"]])
+        for spec, scale in ((normal, 1), (tiny, 1e-6)):
+            correct = {"x": 1 * scale, "y": 2 * scale, "rotation": -.7}
+            self.assertTrue(self.evaluate(spec, correct)["correct"])
+            self.assertFalse(self.evaluate(spec, spec["initial"])["correct"])
+        self.assertEqual(originals, (normal, tiny), "Layout mutated an authored figure or tolerance")
+
+    def test_02_far_saved_placement_keeps_model_and_only_exposes_safe_render_primitives(self):
+        spec = self.fixture()
+        original = copy.deepcopy(spec)
+        normal = self.draw(spec)
+        stored = {"x": 1e9, "y": -1e9, "rotation": 1.2}
+        drawing = self.draw(spec, placement=stored)
+        self.assertEqual({"type": "rigid_angle", **stored}, drawing["placement"])
+        self.assertFalse(self.evaluate(spec, stored)["correct"])
+        viewport = drawing["viewport"]
+        margin = 32
+
+        def safe_pixel(point):
+            self.assertTrue(math.isfinite(point["x"]) and math.isfinite(point["y"]), point)
+            self.assertTrue(-margin <= point["x"] <= viewport["right"] + margin, point)
+            self.assertTrue(-margin <= point["y"] <= viewport["bottom"] + margin, point)
+
+        for field, coordinates in (("points", ("center",)), ("paths", ("start", "end")),
+                                   ("arrows", ("tip", "wingA", "wingB")),
+                                   ("circles", ("center",)), ("arcs", ("center",)),
+                                   ("regions", ("center",))):
+            for part in drawing[field]:
+                for key in coordinates:
+                    safe_pixel(part[key])
+        for label in drawing["labels"]:
+            bounds = label["bounds"]
+            self.assertTrue(0 <= bounds["left"] < bounds["right"] <= viewport["right"], label)
+            self.assertTrue(0 <= bounds["top"] < bounds["bottom"] <= viewport["bottom"], label)
+        self.assertFalse(any(point["id"].startswith("copy:") for point in drawing["points"]),
+                         "An offscreen naming marker appeared in the visible viewport")
+        self.assertFalse(any(label["id"].startswith("copy:") for label in drawing["labels"]),
+                         "A hidden copy acquired a clamped floating name")
+        reference = {p["id"]: p for p in normal["points"] if p["id"].startswith("reference:")}
+        self.assertEqual(reference, {p["id"]: p for p in drawing["points"] if p["id"].startswith("reference:")})
+        recovered = self.draw(spec, placement=stored,
+                              gesture={"mode": "move", "previous": {"x": 0, "y": 0},
+                                       "current": {"x": 100000, "y": -100000}})
+        self.assertEqual(reference, {p["id"]: p for p in recovered["points"] if p["id"].startswith("reference:")})
+        self.assertEqual(3, sum(point["id"].startswith("copy:") for point in recovered["points"]))
+        self.assertEqual(stored["rotation"], recovered["placement"]["rotation"])
+        self.assertNotEqual(stored["x"], recovered["placement"]["x"])
+        for point in recovered["points"]:
+            safe_pixel(point["center"])
+        self.assertEqual(original, spec)
+
+    def test_03_extreme_finite_saved_placement_and_rotation_remain_recoverable(self):
+        spec = self.fixture()
+        stored = {"x": 1e308, "y": -1e308, "rotation": 1.2}
+        original = copy.deepcopy(stored)
+        drawing = self.draw(spec, placement=stored)
+        self.assertEqual({"type": "rigid_angle", **stored}, drawing["placement"])
+        rotated = self.draw(spec, placement=stored,
+                            gesture={"mode": "rotate", "previous": {"x": 300, "y": 300},
+                                     "current": {"x": 320, "y": 310}})
+        self.assertEqual(stored["x"], rotated["placement"]["x"])
+        self.assertEqual(stored["y"], rotated["placement"]["y"])
+        self.assertTrue(math.isfinite(rotated["placement"]["rotation"]))
+        for snapshot in (drawing, rotated):
+            for field, coordinates in (("points", ("center",)), ("paths", ("start", "end")),
+                                       ("arrows", ("tip", "wingA", "wingB")),
+                                       ("circles", ("center",)), ("arcs", ("center",)),
+                                       ("regions", ("center",))):
+                for part in snapshot[field]:
+                    for key in coordinates:
+                        point = part[key]
+                        self.assertTrue(math.isfinite(point["x"]) and math.isfinite(point["y"]), point)
+                        self.assertTrue(-32 <= point["x"] <= 882 and -32 <= point["y"] <= 632, point)
+            self.assertFalse(any(point["id"].startswith("copy:") for point in snapshot["points"]))
+            self.assertFalse(any(label["id"].startswith("copy:") for label in snapshot["labels"]))
+        self.assertEqual(original, stored)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

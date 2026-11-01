@@ -892,7 +892,7 @@ Block read_block(const JsonObject& value,std::string_view original) {
         {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}};
     const std::set<std::string> mathematics{"math_puzzle","math_multiple_choice_single","math_multiple_choice_multi","math_numeric_input",
         "math_multi_input","math_expression_input","math_structured_answer","math_equation_fill_blanks","math_ordering_drag","math_number_line",
-        "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy"};
+        "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy","math_segment_transport"};
     require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
     if(value.HasKey(L"compileCheck"))validate_compile_check_payload(value);

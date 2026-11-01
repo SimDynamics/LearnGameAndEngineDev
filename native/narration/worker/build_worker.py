@@ -284,6 +284,34 @@ def remove_platform_method(source: str, marker: str) -> str:
     return source
 
 
+def windows_segment_contract(name: str, source: str) -> str:
+    """Opt-in host extension; canonical Android sources keep their original types.
+
+    The new construction uses the existing typed Graph answer, codec and stable
+    state. Exact anchors preserve all existing parser/validator branches.
+    """
+    if name == "MathPuzzleSpec":
+        source = exact(source, '"math_geometry_builder", "math_rigid_angle_copy"',
+                       '"math_geometry_builder", "math_rigid_angle_copy", "math_segment_transport"')
+        source = exact(source, '        "rigid_angle_copy" -> "rigid_angle"',
+                       '        "rigid_angle_copy" -> "rigid_angle"\n        "segment_transport" -> "segment_transport"')
+        source = exact(source, '            "math_rigid_angle_copy" -> "rigid_angle"',
+                       '            "math_rigid_angle_copy" -> "rigid_angle"\n            "math_segment_transport" -> "segment_transport"')
+        source = exact(source, '            "rigid_angle" -> {', '''            "segment_transport" -> {
+                require(validatorType == "segment_transport") { "A segment construction requires its own validator." }
+                lgaed.narration.windows.WindowsSegmentTransportSpec.parse(validator)
+            }
+            "rigid_angle" -> {''')
+    elif name == "MathValidators":
+        source = exact(source, '        register("rigid_angle_copy", ::rigidAngle)',
+                       '        register("rigid_angle_copy", ::rigidAngle)\n        register("segment_transport", lgaed.narration.windows.WindowsSegmentTransport::validate)')
+        source = exact(source, '            "rigid_angle_copy" -> RigidAngleCopySpec.parse(spec)',
+                       '            "rigid_angle_copy" -> RigidAngleCopySpec.parse(spec)\n            "segment_transport" -> lgaed.narration.windows.WindowsSegmentTransportSpec.parse(spec)')
+        source = exact(source, '"coordinates", "geometry", "rigid_angle_copy")',
+                       '"coordinates", "geometry", "rigid_angle_copy", "segment_transport")')
+    return source
+
+
 def math_host_sources() -> list[Path]:
     """Compile original evaluators; only resource resolution is platform-specific."""
     names = ("MathPuzzleSpec", "MathValidators", "MathAnswer", "MathShortcutResolver",
@@ -298,6 +326,7 @@ def math_host_sources() -> list[Path]:
         code = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', code)
         if name == "MathValidators":
             code = exact(code, "    fun resolveMessage(context: android.content.Context): String = uiMessage?.resolve(context) ?: message\n", "")
+        code = windows_segment_contract(name, code)
         sources.append(generated(f"{name}.kt", code))
     # Reuse Android's exact implicit-formula detector and parser. Only the
     # Spannable drawing sink becomes UTF-16 ranges plus the original AST;
@@ -449,6 +478,7 @@ internal object WindowsMathActions {
             f"            {kotlin(key)} to {kotlin(value)}" for key, value in sorted(values.items())) + "\n        )"
         for locale, values in maps.items()) + "\n    )\n"
     body += '''    fun resolve(code: String, arguments: List<Any> = emptyList(), language: String): String {
+        WindowsSegmentTransport.message(code,language)?.let { return it }
         val locale = language.substringBefore('-')
         val pattern = languages[locale]?.get(code) ?: languages.getValue("es")[code]
             ?: error("Missing original mathematical UI resource: $code")

@@ -116,3 +116,25 @@ no otra fuente de geometría. El códec y el almacén normal de `MathPuzzleRende
 el borrador parcial, los reintentos, la respuesta y su validación mediante la huella del
 bloque, incluidas reapertura y recreación. No se añade otro historial ni otra preferencia.
 Los controles quedan bloqueados tras el acierto por el mecanismo existente.
+
+## Presentación Windows y conservación numérica
+
+El adaptador Windows normaliza únicamente las coordenadas del dibujo antes de
+utilizar el trazador euclidiano compartido. Reducir homogéneamente una figura y
+su tolerancia de posición, por ejemplo por un factor de `1e-6`, conserva su
+encuadre relativo y el significado geométrico de los gestos. La configuración,
+las unidades internas, la colocación guardada y el evaluador permanecen intactos.
+
+Una copia guardada fuera del encuadre conserva su colocación exacta. El dibujo
+recorta los trazos y omite las marcas, nombres y regiones que no pueden verse;
+no convierte posiciones lejanas en enteros gráficos de Windows ni desplaza la
+respuesta para hacerla visible. Un giro evita desbordamientos en sus productos
+intermedios. Mover la copia o usar Restablecer permite recuperarla mediante los
+controles existentes; abrir o pintar el borrador no realiza esa recuperación.
+
+`WindowsRigidAngleLayoutTest` verifica escala, primitivas visibles y conservación
+de colocaciones finitas extremas mediante el worker real. `native.math_puzzle_view`
+comprueba traslación y giro, pintura GDI, reapertura exacta y Restablecer a anchos
+de 850 y 400 píxeles y escalas de texto del 100 y 150 %. Son comprobaciones
+técnicas Windows; la integración curricular y su aceptación visual y de escucha
+se mantienen separadas.

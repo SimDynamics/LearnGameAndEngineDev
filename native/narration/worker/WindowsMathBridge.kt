@@ -137,6 +137,7 @@ internal object WindowsMathBridge {
     fun editor(request: JSONObject): JSONObject {
         if(request.optString("action")=="diagram_layout")return diagramLayout(request)
         if(request.optString("action")=="rigid_layout")return rigidLayout(request)
+        if(request.optString("action")=="segment_layout")return WindowsSegmentTransport.layout(request,::drawingJson)
         if(request.optString("action")=="text_layout")return textLayout(request)
         val id=request.getString("editorId")
         require(id.length in 1..128&&id.all { it.isLetterOrDigit()||it in "_.-" }){"Invalid mathematical editor identity"}
@@ -283,24 +284,35 @@ internal object WindowsMathBridge {
         val spec=RigidAngleCopySpec.parse(request.getJSONObject("config"))
         val width=request.getDouble("width");val height=request.getDouble("height")
         val unit=request.optDouble("unit",1.0);val size=request.optDouble("textSize",15.0)
-        require(width>0&&height>0&&unit>0&&size>0&&listOf(width,height,unit,size).all(Double::isFinite))
+        require(width>=1&&height>=1&&width<=32768&&height<=32768&&unit>0&&unit<=16&&size>0&&size<=2048&&listOf(width,height,unit,size).all(Double::isFinite))
         val initialPoints=spec.reference.diagram.points.map { it.position }+spec.copy.moved(spec.initial,"").points.map { it.position }
-        val radius=max(spec.reference.radius,spec.copy.radius).coerceAtLeast(1.0)
+        val radius=max(spec.reference.radius,spec.copy.radius)
         val center=EuclideanPosition((initialPoints.minOf { it.x }+initialPoints.maxOf { it.x })/2,
             (initialPoints.minOf { it.y }+initialPoints.maxOf { it.y })/2)
         val halfWidth=max(radius,(initialPoints.maxOf { it.x }-initialPoints.minOf { it.x })/2+radius*.25)
         val halfHeight=max(radius,(initialPoints.maxOf { it.y }-initialPoints.minOf { it.y })/2+radius*.25)
-        val bounds=EuclideanRect(center.x-halfWidth,center.y-halfHeight,center.x+halfWidth,center.y+halfHeight)
+        // Normalize only drawing coordinates before using the original layout's
+        // one-unit minimum. The authored geometry and placement remain untouched.
+        val normalizer=min(halfWidth,halfHeight)*2
+        val bounds=EuclideanRect(-halfWidth/normalizer,-halfHeight/normalizer,halfWidth/normalizer,halfHeight/normalizer)
         val padding=min(max(30*unit,size*1.8),min(width,height)*.24)
-        val factor=min((width-2*padding)/(bounds.width.coerceAtLeast(1.0)*1.8),
-            (height-2*padding)/(bounds.height.coerceAtLeast(1.0)*1.8)).coerceAtLeast(1e-9)
+        val factor=min((width-2*padding)/(halfWidth*3.6),(height-2*padding)/(halfHeight*3.6))
+        require(factor.isFinite()&&factor>0&&normalizer.isFinite()&&normalizer>0)
         fun project(point: EuclideanPosition)=EuclideanPosition(width/2+(point.x-center.x)*factor,height/2-(point.y-center.y)*factor)
         fun unproject(point: EuclideanPosition)=EuclideanPosition((point.x-width/2)/factor+center.x,-(point.y-height/2)/factor+center.y)
+        fun normalized(point: EuclideanPosition)=EuclideanPosition((point.x-center.x)/normalizer,(point.y-center.y)/normalizer)
+        fun finite(point: EuclideanPosition)=point.x.isFinite()&&point.y.isFinite()
+        val renderMargin=32*unit
+        fun visible(point: EuclideanPosition)=finite(point)&&point.x>=-renderMargin&&point.x<=width+renderMargin&&point.y>=-renderMargin&&point.y<=height+renderMargin
         val original=request.optJSONObject("placement")
         var placement=if(original==null)spec.initial else RigidAnglePlacement(original.getDouble("x"),original.getDouble("y"),original.getDouble("rotation"))
         val gesture=request.optJSONObject("gesture")
         if(gesture!=null){
-            fun position(key: String)=gesture.getJSONObject(key).let { unproject(EuclideanPosition(it.getDouble("x"),it.getDouble("y"))) }
+            fun position(key: String)=gesture.getJSONObject(key).let {
+                val pixel=EuclideanPosition(it.getDouble("x"),it.getDouble("y"))
+                require(finite(pixel)&&abs(pixel.x)<=1e7&&abs(pixel.y)<=1e7) { "Invalid rigid-copy pointer coordinate" }
+                unproject(pixel)
+            }
             val before=position("previous");val after=position("current");val mode=gesture.getString("mode")
             require(mode in setOf("move","rotate","view"))
             val margin=min(padding+16*unit,min(width,height)*.4)
@@ -314,7 +326,14 @@ internal object WindowsMathBridge {
             }else if(mode=="rotate"){
                 val vertex=EuclideanPosition(placement.x,placement.y);val first=before-vertex;val second=after-vertex
                 if(hypot(first.x,first.y)*factor>=20*unit&&hypot(second.x,second.y)*factor>=20*unit){
-                    val next=placement.copy(rotation=placement.rotation+atan2(first.x*second.y-first.y*second.x,first.x*second.x+first.y*second.y))
+                    // A finite far-away saved placement must not overflow the
+                    // cross/dot products and poison a valid gesture with NaN.
+                    fun direction(value: EuclideanPosition): EuclideanPosition {
+                        val magnitude=max(abs(value.x),abs(value.y))
+                        return EuclideanPosition(value.x/magnitude,value.y/magnitude)
+                    }
+                    val one=direction(first);val two=direction(second)
+                    val next=placement.copy(rotation=placement.rotation+atan2(one.x*two.y-one.y*two.x,one.x*two.x+one.y*two.y))
                     if(spec.copy.moved(next,"").points.all { val pixel=project(it.position);pixel.x>=margin&&pixel.y>=margin&&pixel.x<=width-margin&&pixel.y<=height-margin })placement=next
                 }
             }
@@ -322,24 +341,42 @@ internal object WindowsMathBridge {
         val fixed=spec.reference.moved(spec.referencePlacement,"reference:");val moving=spec.copy.moved(placement,"copy:")
         val groups=(fixed.points+moving.points).groupBy { it.position }.values
         val owners=groups.flatMap { group -> group.map { it.id to group.first().id } }.toMap()
-        val points=groups.map { group -> group.first().copy(labels=group.flatMap { it.labels }.distinct()) }
-        val objects=(fixed.objects+moving.objects).map { value -> value.copy(definingPointIds=value.definingPointIds.map { owners.getValue(it) },contains=value.contains.map { owners.getValue(it) }.toSet()) }
+        val points=groups.mapNotNull { group ->
+            val position=group.first().position;val pixel=project(position)
+            if(!finite(pixel))return@mapNotNull null
+            group.first().copy(position=normalized(position),labels=if(finite(pixel)&&pixel.x in 0.0..width&&pixel.y in 0.0..height)group.flatMap { it.labels }.distinct()else emptyList())
+        }.filter { finite(it.position) }
+        val objects=(fixed.objects+moving.objects).filter { finite(project(it.origin)) }.map { value -> value.copy(origin=normalized(value.origin),direction=value.direction*(1/normalizer),
+            definingPointIds=value.definingPointIds.map { owners.getValue(it) },contains=value.contains.map { owners.getValue(it) }.toSet())
+        }.filter { finite(it.origin)&&finite(it.direction) }
         val diagram=EuclideanDiagram(points,objects);val metrics=request.optJSONObject("labelMetrics")
         val snapshot=if(metrics==null)EuclideanDiagramLayout.layoutInBounds(diagram,width,height,unit,size,bounds)
             else EuclideanDiagramLayout.layoutInBounds(diagram,width,height,unit,size,bounds){ text,_ ->
                 val metric=metrics.getJSONObject(text);val lines=metric.getJSONArray("lines")
                 EuclideanLabelMetrics(List(lines.length()){lines.getString(it)},metric.getDouble("width"),metric.getDouble("lineHeight"),metric.getDouble("ascent"))
             }
-        val drawing=RigidAngleLabelLayout.clear(snapshot,unit)
-        fun region(figure: RigidAngleFigure,position: RigidAnglePlacement,id: String): JSONObject {
+        // Win32 consumes these as integer pixels before its native zoom/pan.
+        // That pan is restricted to the original viewport, so hidden markers
+        // and names cannot become visible through the later transform.
+        val paths=snapshot.paths.filter { visible(it.start)&&visible(it.end) }
+        val pathIds=paths.map { it.id }.toSet()
+        val drawing=RigidAngleLabelLayout.clear(snapshot.copy(points=snapshot.points.filter { visible(it.center) },paths=paths,
+            arrows=snapshot.arrows.filter { it.objectId in pathIds&&visible(it.tip)&&visible(it.wingA)&&visible(it.wingB) },
+            labels=snapshot.labels.filter { label -> listOf(label.bounds.left,label.bounds.top,label.bounds.right,label.bounds.bottom).all(Double::isFinite)&&
+                label.bounds.left>=0&&label.bounds.top>=0&&label.bounds.right<=width&&label.bounds.bottom<=height }),unit)
+        fun region(figure: RigidAngleFigure,position: RigidAnglePlacement,id: String): JSONObject? {
             val at=project(EuclideanPosition(position.x,position.y));val first=position.rotate(figure.sides.first().direction)
+            if(!visible(at))return null
             return JSONObject().put("id",id).put("center",JSONObject().put("x",at.x).put("y",at.y))
                 .put("radius",(radius*.28*factor).coerceAtLeast(14*unit)).put("startDegrees",-Math.toDegrees(atan2(first.y,first.x)))
                 .put("sweepDegrees",Math.toDegrees(figure.sweep)*if(figure.counterclockwise)-1 else 1)
         }
-        return drawingJson(drawing).put("placement",JSONObject().put("type","rigid_angle").put("x",placement.x).put("y",placement.y).put("rotation",placement.rotation))
-            .put("regions",JSONArray().put(region(spec.reference,spec.referencePlacement,"reference:")).put(region(spec.copy,placement,"copy:")))
-            .put("factor",factor).put("copyCenter",JSONObject().put("x",project(EuclideanPosition(placement.x,placement.y)).x).put("y",project(EuclideanPosition(placement.x,placement.y)).y))
+        val result=drawingJson(drawing).put("placement",JSONObject().put("type","rigid_angle").put("x",placement.x).put("y",placement.y).put("rotation",placement.rotation))
+            .put("regions",JSONArray(listOfNotNull(region(spec.reference,spec.referencePlacement,"reference:"),region(spec.copy,placement,"copy:"))))
+            .put("factor",factor)
+        val copyCenter=project(EuclideanPosition(placement.x,placement.y))
+        if(finite(copyCenter))result.put("copyCenter",JSONObject().put("x",copyCenter.x).put("y",copyCenter.y))
+        return result
     }
     fun keyboard(request: JSONObject): JSONObject {
         val config=request.optJSONObject("config")?:JSONObject(request.getString("configJson"))
@@ -520,7 +557,21 @@ internal object WindowsMathBridge {
             .put("representations",JSONArray(spec.representations))
             .put("tools",JSONArray(spec.tools))
             .put("responses",JSONArray(spec.responses.map {
-                JSONObject().put("id",it.id).put("type",it.type).put("config",visible(it.config))
+                val config=visible(it.config) as JSONObject
+                if(it.type=="math_segment_transport") {
+                    // Give the view only authored givens and initial positions.
+                    // Steps, tolerances and calculated solution endpoints stay private.
+                    val construction=WindowsSegmentTransportSpec.parse(it.validator)
+                    fun named(value: SegmentTransportPoint)=JSONObject().put("x",value.position.x).put("y",value.position.y).put("label",value.label)
+                    config.put("sources",JSONArray(construction.sources.map { source ->
+                        JSONObject().put("id",source.id).put("from",named(source.from)).put("to",named(source.to))
+                    })).put("target",JSONObject().put("origin",named(construction.origin)).apply {
+                        construction.end?.let { value -> put("end",named(value)) }
+                            ?:put("direction",JSONObject().put("x",construction.direction.x).put("y",construction.direction.y))
+                    }).put("pointLabels",JSONArray(construction.pointLabels))
+                        .put("initial",JSONObject().put("points",JSONArray(construction.initial.map { point -> JSONObject().put("x",point.x).put("y",point.y) })))
+                }
+                JSONObject().put("id",it.id).put("type",it.type).put("config",config)
             }))
     }
 }

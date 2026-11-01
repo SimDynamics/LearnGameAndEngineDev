@@ -26,6 +26,9 @@ struct MathPuzzleCallbacks {
     std::function<void()> back_requested;
     std::function<void()> fullscreen_requested;
     std::function<void()> reset_requested;
+    // Camera/measurement changes persist without reviewing a new answer.
+    // Hosts still verify that the semantic response did not change.
+    std::function<void()> draft_changed;
 };
 // The existing curricular input configuration used by the shared math keyboard.
 [[nodiscard]] std::string math_field_keyboard_context(HWND field);
