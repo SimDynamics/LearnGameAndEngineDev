@@ -676,6 +676,58 @@ def windows_reading_source(name: str, code: str) -> str:
     return code
 
 
+def windows_math_ui_texts(source: str | None = None) -> dict[str, tuple[str, str, str]]:
+    """Bind anticipation to the same static help/legend exposed by Win32.
+
+    These are UI reading regions, not curriculum or validator data. Extracting
+    their localized literals avoids a second translation table and makes their
+    generated Kotlin bytes participate in the ordinary runtime fingerprint.
+    Fail closed if a native region moves instead of silently preparing mobile
+    instructions or omitting a newly integrated Windows control.
+    """
+    if source is None:
+        source = (ROOT / "native/presentation/windows/math_puzzle_view.cpp").read_text(encoding="utf-8-sig")
+    literal = r'"(?:[^"\\]|\\.)*"'
+    instruction = re.compile(
+        rf'add_text\(tr\(\s*({literal})\s*,\s*({literal})\s*,\s*({literal})\s*\),'
+        rf'\s*id\s*\+\s*"/(help|legend)"\s*\)')
+    result = {}
+    for response_type in ("math_segment_transport", "math_rigid_angle_copy"):
+        anchor = f'else if(type=="{response_type}")'
+        if source.count(anchor) != 1:
+            raise ValueError(f"Native Windows response anchor changed: {response_type}")
+        start = source.index(anchor)
+        end = source.find("canvas(config,", start)
+        if end < 0:
+            raise ValueError(f"Native Windows canvas anchor changed: {response_type}")
+        rows = instruction.findall(source[start:end])
+        if len(rows) != 2 or [row[3] for row in rows] != ["help", "legend"]:
+            raise ValueError(f"Native Windows help/legend reading regions changed: {response_type}")
+        for spanish, english, french, role in rows:
+            # JSON and these C++ UI literals share their supported escapes.
+            # Unsupported C++ spellings are deliberately an adaptation error.
+            values = tuple(json.loads(value) for value in (spanish, english, french))
+            if any(not value.strip() for value in values):
+                raise ValueError(f"Empty native Windows reading region: {response_type}/{role}")
+            result[f"{response_type}:{role}"] = values
+    return result
+
+
+def kotlin_literal(value: str) -> str:
+    # Kotlin strings interpolate '$'; native UI text must remain literal.
+    # Escape individual characters so a literal backslash followed by 'f' is
+    # never mistaken for JSON's form-feed escape (unsupported by Kotlin).
+    return '"' + ''.join(r"\$" if character == "$" else r"\u000c" if character == "\f"
+        else json.dumps(character, ensure_ascii=True)[1:-1] for character in value) + '"'
+
+
+def windows_math_ui_fingerprint(source: str | None = None) -> str:
+    # The visible Windows literals are explicit build inputs as well as the
+    # generated Kotlin source: changing a translation must invalidate the JAR.
+    payload = json.dumps(windows_math_ui_texts(source), ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def host_sources() -> list[Path]:
     sources = []
     for name in PURE_NARRATION:
@@ -720,8 +772,13 @@ def host_sources() -> list[Path]:
     parser = re.sub(r"^\s*fun resolveMessage\(context: android\.content\.Context\): String = uiMessage\.resolve\(context\)\n", "\n", parser, flags=re.MULTILINE)
     sources.append(generated("MathLatexParser.kt", parser))
     sources += math_host_sources()
-    sources += [APP / "CodeExerciseLanguage.kt", APP / "math/MathPuzzleUiInstructions.kt",
-                APP / "narration/LessonNarrationText.kt"]
+    sources += [APP / "CodeExerciseLanguage.kt", APP / "narration/LessonNarrationText.kt"]
+    math_ui = (APP / "math/MathPuzzleUiInstructions.kt").read_text(encoding="utf-8-sig")
+    math_ui = exact(math_ui,
+        '        "math_rigid_angle_copy" -> listOf(resolve(RIGID_ANGLE_HELP), resolve(RIGID_ANGLE_LEGEND))',
+        '        "math_rigid_angle_copy" -> listOf(resolve(RIGID_ANGLE_HELP), resolve(RIGID_ANGLE_LEGEND))\n'
+        '        "math_segment_transport" -> listOf(resolve("math_segment_transport:help"), resolve("math_segment_transport:legend"))')
+    sources.append(generated("MathPuzzleUiInstructions.kt", math_ui))
     script = (APP / "narration/LessonNarrationScript.kt").read_text(encoding="utf-8-sig")
     sources.append(generated("LessonNarrationScript.kt", script[:script.index("internal object NarrationScriptSegments")]))
     instructions = (APP / "narration/NarrationUiInstructions.kt").read_text(encoding="utf-8-sig")
@@ -732,6 +789,14 @@ def host_sources() -> list[Path]:
         mapping[constant[1]] = value
     body = 'package lgaed.narration.windows\ninternal object WindowsNarrationInstructions {\n'
     body += '    fun resolve(type: String, language: String): String {\n'
+    body += '        val native = when(type) {\n'
+    for key, (spanish, english, french) in windows_math_ui_texts().items():
+        body += (f'            {kotlin_literal(key)} -> when {{\n'
+                 f'                language.startsWith("fr") -> {kotlin_literal(french)}\n'
+                 f'                language.startsWith("en") -> {kotlin_literal(english)}\n'
+                 f'                else -> {kotlin_literal(spanish)}\n'
+                 '            }\n')
+    body += '            else -> null\n        }\n        if(native != null) return native\n'
     body += '        if(type == "note") return MathLocaleResources.resolve("lesson_note",listOf(""),language)\n'
     body += '        val resource = when(type) {\n' + ''.join(
         f'            "{key}" -> "{value}"\n' for key,value in mapping.items())
@@ -928,7 +993,8 @@ def build() -> None:
                         *map(str,java_sources)],check=True,cwd=ROOT)
         java_stamp.write_text(java_signature,encoding="ascii")
     jar = OUT / "kokoro-worker.jar"
-    signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)+java_signature+toolchain_signature).encode()).hexdigest()
+    signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)
+        + windows_math_ui_fingerprint() + java_signature + toolchain_signature).encode()).hexdigest()
     stamp = OUT / "worker-build.sha256"
     if not jar.is_file() or not stamp.is_file() or stamp.read_text() != signature:
         command = [str(java), "-cp", os.pathsep.join(map(str, compiler)),
