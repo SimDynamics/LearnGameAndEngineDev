@@ -1,8 +1,8 @@
 #pragma once
 // QA only: reviewed proposals are built in memory. Never write curriculum assets.
 #include "core/lesson.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
-#include <algorithm>
 #include <algorithm>
 #include <stdexcept>
 #include <winrt/Windows.Data.Json.h>
@@ -42,18 +42,72 @@ inline const std::vector<ChoiceRevisionCase>& choice_revision_cases() {
     };
     return cases;
 }
+inline const ChoiceRevisionCase& choice_revision_case(const curriculum::Lesson& lesson,std::string_view identity) {
+    const auto& cases=choice_revision_cases();
+    const auto entry=std::ranges::find_if(cases,[&](const auto& item){const std::string_view file=item.filename;
+        return item.identity==identity&&lesson.id.ends_with("__"+std::string(file.substr(7,file.size()-12)));});
+    if(entry==cases.end())throw std::runtime_error("Unknown QA choice revision identity/lesson");
+    return *entry;
+}
+// Reconstruct only the QA state before this one reviewed option change. Other
+// integrated changes stay active; this is not a past publication of the lesson.
+// Both live and archived blocks have independent immutable full-payload pins.
+inline curriculum::Lesson choice_revision_before(const curriculum::Lesson& integrated,std::string_view identity) {
+    using namespace winrt::Windows::Data::Json;
+    const auto& entry=choice_revision_case(integrated,identity);
+    const auto validated=windows::parse_lesson_json(integrated.raw_json,integrated.locale);
+    const auto position=curriculum::stable_block_position(validated,identity);
+    if(!position)throw std::runtime_error("Missing integrated QA choice identity");
+    const auto root=JsonObject::Parse(winrt::to_hstring(validated.raw_json)),layout=root.GetNamedObject(L"stateLayout");
+    const auto blocks=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks");
+    const auto current=blocks.GetObjectAt(static_cast<unsigned>(position->block));
+    if(compile_check_test_fingerprint(current)!=entry.after_full)
+        throw std::runtime_error("The integrated choice differs from its independently pinned current payload");
+    const auto& active=validated.pages[position->page].blocks[position->block];
+    if(!active.choice_revision||active.choice_revision->sha256!=entry.before_full)
+        throw std::runtime_error("The integrated choice has no authenticated complete original");
+    JsonArray retained;JsonObject archive;unsigned records=0;
+    for(const auto& value:layout.GetNamedArray(L"choiceRevisions")){
+        const auto record=value.GetObject();
+        if(winrt::to_string(record.GetNamedString(L"id"))!=identity){retained.Append(value);continue;}
+        archive=record.GetNamedObject(L"block");++records;
+    }
+    if(records!=1||compile_check_test_fingerprint(archive)!=entry.before_full)
+        throw std::runtime_error("Choice QA requires exactly one complete pinned original");
+    JsonArray proofs;unsigned removed=0;
+    for(const auto& value:layout.GetNamedArray(L"editorial")){
+        const auto proof=value.GetObject();
+        if(winrt::to_string(proof.GetNamedString(L"id"))==identity
+            &&winrt::to_string(proof.GetNamedString(L"beforeSha256"))==entry.before_full
+            &&winrt::to_string(proof.GetNamedString(L"afterSha256"))==entry.after_full){++removed;continue;}
+        proofs.Append(value);
+    }
+    if(removed!=1)throw std::runtime_error("Choice QA requires its exact terminal editorial transition");
+    blocks.SetAt(static_cast<unsigned>(position->block),archive);layout.Insert(L"editorial",proofs);
+    if(retained.Size())layout.Insert(L"choiceRevisions",retained);else layout.Remove(L"choiceRevisions");
+    auto result=windows::parse_lesson_json(winrt::to_string(root.Stringify()),integrated.locale);
+    result.source_path=integrated.source_path;
+    const auto& previous=result.pages[position->page].blocks[position->block];
+    if(previous.choice_revision||compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(previous.raw_json)))!=entry.before_full)
+        throw std::runtime_error("Choice QA failed to restore the distinct authenticated previous state");
+    return result;
+}
 inline std::string choice_revision_json(const curriculum::Lesson& original,std::string_view identity) {
     using namespace winrt::Windows::Data::Json;
     const auto position=curriculum::stable_block_position(original,identity);
-    const auto& cases=choice_revision_cases();
-    const auto entry=std::ranges::find_if(cases,[&](const auto& item){return item.identity==identity;});
-    if(!position||entry==cases.end())throw std::runtime_error("Unknown QA choice revision");
+    const auto& reviewed=choice_revision_case(original,identity);const auto* entry=&reviewed;
+    if(!position)throw std::runtime_error("Unknown QA choice revision");
     const auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
     const auto layout=root.GetNamedObject(L"stateLayout");
     const auto block=root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
+    if(original.pages[position->page].blocks[position->block].choice_revision
+        ||compile_check_test_fingerprint(block)!=entry->before_full)
+        throw std::runtime_error("Choice QA transition requires its pinned unrevised source, never an integrated no-op");
     const auto old=JsonObject::Parse(block.Stringify());
     block.GetNamedArray(L"options").SetAt(static_cast<unsigned>(entry->option),JsonValue::CreateStringValue(winrt::to_hstring(entry->replacement)));
     if(entry->feedback)block.GetNamedArray(L"reviewFeedback").SetAt(static_cast<unsigned>(entry->option),JsonValue::CreateStringValue(winrt::to_hstring(entry->feedback)));
+    if(compile_check_test_fingerprint(block)!=entry->after_full)
+        throw std::runtime_error("Choice QA proposal differs from the independently pinned integrated payload");
     const auto records=layout.HasKey(L"choiceRevisions")?layout.GetNamedArray(L"choiceRevisions"):JsonArray{};
     JsonObject record;record.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(identity)));record.Insert(L"block",old);records.Append(record);
     layout.Insert(L"choiceRevisions",records);

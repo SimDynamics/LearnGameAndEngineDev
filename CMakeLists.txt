@@ -275,6 +275,21 @@ if(BUILD_TESTING)
         COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
         VERBATIM)
     add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
+    add_test(NAME native.diagnostic_fixture_source COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_diagnostic_fixture_source.py)
+    set_tests_properties(native.diagnostic_fixture_source PROPERTIES TIMEOUT 30)
+    set(LGAED_DIAGNOSTIC_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/diagnostics-7862f10")
+    set(LGAED_DIAGNOSTIC_FIXTURES
+        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_consultas_const_y_objetos_constantes.json"
+        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_valores_por_defecto_con_significado.json"
+        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_argumentos_con_tipos_que_expresan_su_funcion.json")
+    add_custom_command(OUTPUT ${LGAED_DIAGNOSTIC_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
+            --output-dir "${LGAED_DIAGNOSTIC_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
+        COMMENT "Verifying immutable pre-diagnostic fixtures from local 7862f10"
+        VERBATIM)
+    add_custom_target(lgaed_diagnostic_fixtures DEPENDS ${LGAED_DIAGNOSTIC_FIXTURES})
     set(LGAED_ORDER_LINE_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/order-lines")
     add_custom_command(OUTPUT "${LGAED_ORDER_LINE_FIXTURE_DIR}/manifest.json"
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/order_line_fixture_source.py"
@@ -823,6 +838,10 @@ if(BUILD_TESTING)
     foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
             lgaed_lesson_reader_tests lgaed_lesson_view_tests lgaed_import_view_tests)
         add_dependencies(${fixture_consumer} lgaed_retirement_fixtures)
+    endforeach()
+    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
+            lgaed_compile_diagnostic_view_tests)
+        add_dependencies(${fixture_consumer} lgaed_diagnostic_fixtures)
     endforeach()
     foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_lesson_state_tests lgaed_state_tests
             lgaed_lesson_composition_tests)

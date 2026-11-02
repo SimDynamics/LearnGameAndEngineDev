@@ -107,10 +107,27 @@ void five_real_diagnostic_views(){
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
     std::size_t completed=0;
     for(const auto& plan:test::compile_check_cases){const auto path=folder/plan.filename;const auto asset_hash=state::sha256(state::read_bytes(path));
-        const auto original=windows::load_lesson(path);const std::string explanation="El rechazo previsto se comprobó sin ejecutar el programa.";
+        // Integration and adoption have separate sources. Today's complete
+        // authored explanation is checked independently; the transition still
+        // begins with the exact immutable pre-contract source, never a no-op.
+        const auto integrated=windows::load_lesson(path);
+        const auto integrated_position=curriculum::stable_block_position(integrated,plan.identity);
+        check(integrated_position.has_value(),"An integrated diagnostic lost its current owner");
+        const auto& authored=integrated.pages[integrated_position->page].blocks[integrated_position->block];
+        check(authored.compile_check&&authored.compile_check->diagnostic==plan.diagnostic
+            &&!authored.compile_check->explanation.empty()&&!authored.output_check,
+            "The current diagnostic contract or its complete authored explanation is missing");
+        const auto original=test::load_pre_compile_check_lesson(plan.filename);
+        const auto explanation=authored.compile_check->explanation;
         const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic,explanation);
         const auto position=curriculum::stable_block_position(lesson,plan.identity);check(position.has_value(),"Reviewed diagnostic owner is missing");
         const auto& target=lesson.pages[position->page].blocks[position->block];
+        check(*position==*integrated_position&&target.compile_check==authored.compile_check
+            &&test::compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(target.raw_json)))
+                ==test::compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(authored.raw_json)))
+            &&curriculum::exercise_key(lesson,target)==curriculum::exercise_key(integrated,authored)
+            &&curriculum::draft_key("programming",lesson,target)==curriculum::draft_key("programming",integrated,authored),
+            "Historical adoption does not exactly reconstruct the current diagnostic block, explanation or storage identity");
         state::StateData data;state::prepare_lesson_state(data,original);seed_other_objectives(data,lesson);
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["diagnostic_qa_unrelated"]["keep"]=std::string(" \t preserved preference\r\n");
@@ -164,7 +181,7 @@ void five_real_diagnostic_views(){
         reader_goal(fixture.view,position->block,false);explanation_region(fixture.view,position->block,explanation,false);retained();
         check(state::sha256(state::read_bytes(path))==asset_hash,"A diagnostic UI test changed authored lesson bytes");++completed;
     }
-    std::cout<<"PASS "<<completed<<" hidden real U9 diagnostic editors: fresh initial/error/expected rejection, no runtime, sticky credit/draft/selection, gates, scoped Reset, original preferences/hearts/assets; other stdout receipts explicitly synthetic\n";
+    std::cout<<"PASS "<<completed<<" hidden real U9 diagnostic editors: immutable pre-contract adoption exactly reconstructs each current authored block/explanation; fresh initial/error/expected rejection, no runtime, sticky credit/draft/selection, gates, scoped Reset, original preferences/hearts/assets; other stdout receipts explicitly synthetic\n";
 }
 }
 int main(){const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;

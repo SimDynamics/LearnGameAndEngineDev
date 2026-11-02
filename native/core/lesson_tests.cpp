@@ -352,11 +352,18 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
     using namespace winrt::Windows::Data::Json;
     const auto folder=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
     for(const auto& plan:lgaed::test::choice_revision_cases()) {
-        const auto before=lgaed::windows::load_lesson(folder/plan.filename);
+        const auto integrated=lgaed::windows::load_lesson(folder/plan.filename);
+        const auto before=lgaed::test::choice_revision_before(integrated,plan.identity);
         const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);
+        rejects([&]{(void)lgaed::test::revise_choice_lesson(integrated,plan.identity);},
+            "An integrated choice was accepted as a new historical transition");
         const auto metadata=lgaed::windows::parse_lesson_progress_metadata(current.raw_json);
         const auto position=stable_block_position(current,plan.identity);check(position.has_value(),"Reviewed choice lost its stable identity");
         const auto& old=before.pages[position->page].blocks[position->block];const auto& block=current.pages[position->page].blocks[position->block];
+        const auto live=stable_block_position(integrated,plan.identity);
+        check(live==position&&lgaed::test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))==
+                lgaed::test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(integrated.pages[live->page].blocks[live->block].raw_json)))
+            &&old.options!=block.options,"Historical choice revision did not reproduce the distinct current authored payload");
         check(block.choice_revision&&block.choice_revision->original_options==old.options&&block.choice_revision->original_review_feedback_options==old.review_feedback_options
             &&block.choice_revision->original_question==old.question&&block.choice_revision->original_explanation==old.explanation
             &&block.choice_revision->original_correct_index==old.correct_index&&block.choice_revision->sha256==plan.before_full,
@@ -409,7 +416,9 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
         }
         for(const auto change:{"snapshot","snapshot-prose","missing","duplicate","extra","identity","lesson","proof","option","order","correct","review","origin","unmapped","v1","locale"}) {
             const auto root=JsonObject::Parse(winrt::to_hstring(current.raw_json));const auto layout=root.GetNamedObject(L"stateLayout");
-            const auto record=layout.GetNamedArray(L"choiceRevisions").GetAt(0).GetObject();
+            const auto records=layout.GetNamedArray(L"choiceRevisions");
+            const auto record=records.GetAt(records.Size()-1).GetObject();
+            check(winrt::to_string(record.GetNamedString(L"id"))==plan.identity,"Choice negative case targets another revision archive");
             const auto puzzle=root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
             const auto target=std::string_view(change);
             if(target=="snapshot")record.GetNamedObject(L"block").GetNamedArray(L"options").SetAt(0,JsonValue::CreateStringValue(L"Changed original"));
@@ -863,10 +872,18 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
     using namespace winrt::Windows::Data::Json;using namespace lgaed;
     const auto directory=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
     for(const auto& plan:test::compiler_revision_cases()) {
-        const auto before=windows::load_lesson(directory/plan.filename);const auto position=stable_block_position(before,plan.identity);
+        const auto integrated=windows::load_lesson(directory/plan.filename);
+        const auto before=test::compiler_revision_before(integrated,plan.identity);const auto position=stable_block_position(before,plan.identity);
         check(position.has_value(),"A reviewed compiler disappeared from its published identity");
         const auto current=test::revise_compiler_lesson(before,plan.identity);const auto& old=before.pages[position->page].blocks[position->block];
         const auto& block=current.pages[position->page].blocks[position->block];
+        rejects([&]{(void)test::revise_compiler_lesson(integrated,plan.identity);},
+            "An integrated compiler was accepted as a new historical transition");
+        const auto live=stable_block_position(integrated,plan.identity);
+        check(live==position&&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))==
+                test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(integrated.pages[live->page].blocks[live->block].raw_json)))
+            &&reference_objective_frame(before,old)!=reference_objective_frame(current,block),
+            "Historical compiler expansion did not reproduce the distinct current authored payload");
         check(block.compiler_revision&&block.compiler_revision->sha256==plan.before_full&&block.compiler_revision->current_payload==plan.after_full&&
             block.compiler_revision->previous_output_check.cases.size()==old.output_check->cases.size(),"The complete compiler expansion archive did not reach the model");
         check(current.state_layout.lineage==before.state_layout.lineage&&exercise_key(current,block)==exercise_key(before,old)&&
@@ -902,15 +919,17 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
             const auto reference_mode=std::string_view(mode).starts_with("reference-")||std::string_view(mode)=="compiler-only";
             if(reference_mode&&!plan.reference_identity)continue;
             const auto invalid=JsonObject::Parse(winrt::to_hstring(json));const auto metadata=invalid.GetNamedObject(L"stateLayout");
+            const auto records=metadata.GetNamedArray(L"compilerRevisions");
+            const auto expansion=records.GetAt(records.Size()-1).GetObject();
+            check(winrt::to_string(expansion.GetNamedString(L"id"))==plan.identity,"Compiler negative case targets another revision archive");
             const auto target=invalid.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
             if(std::string_view(mode)=="archive")metadata.Remove(L"compilerRevisions");
-            if(std::string_view(mode)=="snapshot")metadata.GetNamedArray(L"compilerRevisions").GetAt(0).GetObject().GetNamedObject(L"block").Insert(L"initialCode",JsonValue::CreateStringValue(L"unreviewed"));
+            if(std::string_view(mode)=="snapshot")expansion.GetNamedObject(L"block").Insert(L"initialCode",JsonValue::CreateStringValue(L"unreviewed"));
             if(std::string_view(mode)=="payload")target.GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetAt(0).GetObject().Insert(L"standardInput",JsonValue::CreateStringValue(L"unreviewed"));
             if(std::string_view(mode)=="owner")invalid.Insert(L"id",JsonValue::CreateStringValue(L"another_owner"));
             if(std::string_view(mode)=="proof")metadata.GetNamedArray(L"editorial").RemoveAtEnd();
             if(std::string_view(mode)=="unmapped")invalid.Remove(L"stateLayout");
             if(reference_mode) {
-                const auto expansion=metadata.GetNamedArray(L"compilerRevisions").GetAt(0).GetObject();
                 const auto reference_position=stable_block_position(current,plan.reference_identity);
                 const auto reference=invalid.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(reference_position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(reference_position->block)).GetObject();
                 if(std::string_view(mode)=="reference-archive")expansion.Remove(L"references");
@@ -930,13 +949,24 @@ void reviewed_compile_diagnostics_require_the_intended_source_change() {
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
     for(const auto& plan:test::compile_check_cases) {
         const auto path=folder/plan.filename;const auto bytes=state::read_bytes(path);
-        const auto original=windows::load_lesson(path);
+        const auto integrated=windows::load_lesson(path);
+        const auto original=test::load_pre_compile_check_lesson(plan.filename);
         const auto position=stable_block_position(original,plan.identity);
         check(position.has_value(),"A reviewed compile diagnostic lost its original editor");
         const auto& prior=original.pages[position->page].blocks[position->block];
         check(!has_compiler_objective(prior),"A free historical compiler was silently assigned a new objective");
-        const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic,"The program was not executed.");
+        const auto live=stable_block_position(integrated,plan.identity);
+        check(live==position,"The integrated diagnostic moved from its stable historical identity");
+        const auto& authored=integrated.pages[live->page].blocks[live->block];
+        check(authored.compile_check&&authored.compile_check->diagnostic==plan.diagnostic&&!authored.compile_check->explanation.empty(),
+            "The current authored diagnostic lost its contract or Work explanation");
+        const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic,authored.compile_check->explanation);
         const auto& block=lesson.pages[position->page].blocks[position->block];
+        check(test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))==
+            test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(authored.raw_json))),
+            "Historical adoption did not reconstruct the complete integrated diagnostic payload");
+        rejects([&]{(void)test::with_compile_check(integrated,plan.identity,plan.diagnostic);},
+            "A diagnostic was silently adopted twice");
         check(has_compiler_objective(block)&&block.compile_check&&!block.output_check&&
                 block.initial_code==prior.initial_code&&lesson.state_layout.signatures==original.state_layout.signatures&&
                 exercise_key(lesson,block)==exercise_key(original,prior)&&

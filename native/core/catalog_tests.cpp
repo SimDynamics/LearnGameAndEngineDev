@@ -123,8 +123,14 @@ void required_compile_diagnostics_remain_pending_in_catalog_progress() {
     using namespace lgaed;using namespace curriculum;
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
     for(const auto& plan:test::compile_check_cases) {
-        const auto original=windows::load_lesson(folder/plan.filename);
-        const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic);
+        const auto original=test::load_pre_compile_check_lesson(plan.filename);
+        const auto integrated=windows::load_lesson(folder/plan.filename);
+        const auto live=stable_block_position(integrated,plan.identity);
+        check(live.has_value(),"The integrated catalog diagnostic lost its stable owner");
+        const auto& authored=integrated.pages[live->page].blocks[live->block];
+        check(authored.compile_check&&authored.compile_check->diagnostic==plan.diagnostic&&!authored.compile_check->explanation.empty(),
+            "The catalog diagnostic no longer has its current authored contract and explanation");
+        const auto lesson=test::with_compile_check(original,plan.identity,plan.diagnostic,authored.compile_check->explanation);
         const auto position=stable_block_position(lesson,plan.identity);
         check(position.has_value()&&lesson.compiler_puzzles_required,"Catalog diagnostic QA lost its required original editor");
         const auto& diagnostic=lesson.pages[position->page].blocks[position->block];
@@ -250,8 +256,9 @@ void catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads() {
 void choice_revision_reset_keeps_exact_scope_and_provenance(){
     using namespace lgaed;
     const auto& plan=test::choice_revision_cases().front();
-    const auto original=windows::load_lesson(std::filesystem::path(build::source_root)/
+    const auto integrated=windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
+    const auto original=test::choice_revision_before(integrated,plan.identity);
     const auto revised=test::revise_choice_lesson(original,plan.identity);const auto at=curriculum::stable_block_position(revised,plan.identity);
     check(at.has_value(),"Choice reset fixture lost its activity");const auto& block=revised.pages[at->page].blocks[at->block];
     const auto legacy=curriculum::exercise_key(revised,block),current=state::response_storage_key(revised,block);

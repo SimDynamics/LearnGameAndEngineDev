@@ -75,7 +75,9 @@ void compiler_revisions_keep_prior_progress(){
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
     std::size_t scenarios=0;
     for(const auto& plan:plans){const auto path=folder/plan.filename;const auto original_hash=state::sha256(state::read_bytes(path));
-        const auto original=windows::load_lesson(path),revised=test::revise_compiler_lesson(original,plan.identity);
+        const auto integrated=windows::load_lesson(path);
+        const auto original=test::compiler_revision_before(integrated,plan.identity);
+        const auto revised=test::revise_compiler_lesson(original,plan.identity);
         const auto position=curriculum::stable_block_position(original,plan.identity);check(position.has_value(),"The reviewed compiler identity is missing");
         const auto& old=original.pages[position->page].blocks[position->block];const auto& current=revised.pages[position->page].blocks[position->block];
         for(const std::string mode:{"empty","partial","complete"}){

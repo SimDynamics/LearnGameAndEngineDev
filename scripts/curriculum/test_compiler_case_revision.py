@@ -315,18 +315,62 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                         layout.validate(current)
 
     def test_cli_never_overwrites_source_or_an_existing_proposal(self):
-        lesson, identity = next(iter(layout.COMPILER_CASE_REVISIONS))
-        source = contract.ROOT / (PREFIX + asset_path(lesson)); source_bytes = source.read_bytes()
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "proposal.json"
-            command = [sys.executable, str(Path(layout.__file__)), "revise-compiler-cases", str(source), "--locale", "es",
-                       "--base-ref", BASELINE, "--identity", identity, "--output", str(output)]
-            result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
-            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            proposal = output.read_bytes(); self.assertEqual(revised(lesson, identity), json.loads(proposal))
-            again = subprocess.run(command, cwd=contract.ROOT, capture_output=True)
-            self.assertNotEqual(0, again.returncode); self.assertEqual(proposal, output.read_bytes())
-        self.assertEqual(source_bytes, source.read_bytes())
+        for (lesson, identity), spec in layout.COMPILER_CASE_REVISIONS.items():
+            with self.subTest(lesson=lesson, source="current integrated asset"):
+                source = contract.ROOT / (PREFIX + asset_path(lesson)); source_bytes = source.read_bytes()
+                current = json.loads(source_bytes); layout.validate(current)
+                archives = [entry for entry in current["stateLayout"]["compilerRevisions"] if entry["id"] == identity]
+                self.assertEqual(1, len(archives))
+                self.assertEqual(spec["before"], layout.fingerprint(archives[0]["block"]))
+                self.assertIn({"id": identity, "beforeSha256": spec["before"], "afterSha256": spec["after"]},
+                              current["stateLayout"]["editorial"])
+                # This is the already integrated source, not a historical
+                # transition. Its exact proposal must retain every subsequent
+                # editorial/choice revision, rather than reconstruct the older
+                # document from which that compiler expansion was first made.
+                with tempfile.TemporaryDirectory() as directory:
+                    output = Path(directory) / "proposal.json"
+                    command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-compiler-cases", str(source),
+                               "--locale", "es", "--base-ref", BASELINE, "--identity", identity, "--output", str(output)]
+                    result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                    proposal = output.read_bytes(); self.assertEqual(current, json.loads(proposal))
+                    again = subprocess.run(command, cwd=contract.ROOT, capture_output=True)
+                    self.assertNotEqual(0, again.returncode); self.assertEqual(proposal, output.read_bytes())
+                    overwrite_source = subprocess.run(command[:-1] + [str(source)], cwd=contract.ROOT, capture_output=True)
+                    self.assertNotEqual(0, overwrite_source.returncode)
+                    self.assertEqual(proposal, output.read_bytes())
+                self.assertEqual(source_bytes, source.read_bytes())
+
+    def test_cli_really_expands_archived_sources_without_overwriting_their_files(self):
+        for (lesson, identity), spec in layout.COMPILER_CASE_REVISIONS.items():
+            with self.subTest(lesson=lesson, source="verified historical snapshot"):
+                original_bytes = published_bytes(lesson); original = json.loads(original_bytes)
+                layout.validate(original)
+                self.assertEqual(spec["before"], layout.fingerprint(block(original, identity)))
+                expected = revised(lesson, identity)
+                self.assertNotEqual(original, expected)  # A no-op cannot prove adoption.
+                self.assertEqual(spec["after"], layout.fingerprint(block(expected, identity)))
+                layout.validate_transition(original, expected)
+                with tempfile.TemporaryDirectory() as directory:
+                    source = Path(directory) / "historical-source.json"
+                    previous = Path(directory) / "published-reference.json"
+                    output = Path(directory) / "proposal.json"
+                    # New, temporary QA files only; never roll back the asset.
+                    source.write_bytes(original_bytes); previous.write_bytes(original_bytes)
+                    command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-compiler-cases", str(source),
+                               "--previous", str(previous), "--identity", identity, "--output", str(output)]
+                    result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                    proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
+                    again = subprocess.run(command, cwd=contract.ROOT, capture_output=True)
+                    self.assertNotEqual(0, again.returncode); self.assertEqual(proposal, output.read_bytes())
+                    for protected in (source, previous):
+                        overwrite = subprocess.run(command[:-1] + [str(protected)], cwd=contract.ROOT, capture_output=True)
+                        self.assertNotEqual(0, overwrite.returncode)
+                        self.assertEqual(original_bytes, protected.read_bytes())
+                    self.assertEqual(original_bytes, source.read_bytes()); self.assertEqual(original_bytes, previous.read_bytes())
+                    self.assertEqual(proposal, output.read_bytes())
 
 
 if __name__ == "__main__":

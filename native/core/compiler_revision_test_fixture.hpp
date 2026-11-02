@@ -1,6 +1,7 @@
 #pragma once
 // QA only: proposals are assembled in memory, never written to authored assets.
 #include "core/lesson.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include <algorithm>
 #include <stdexcept>
@@ -37,14 +38,84 @@ inline const std::vector<CompilerRevisionCase>& compiler_revision_cases() {
             "    probar(\"99+1;\");\n    probar(\"0-99-1;\");\n    probar(\"99+2-2;\");\n    probar(\"0-99-2+2;\");\n"}
     };return cases;
 }
+inline const CompilerRevisionCase& compiler_revision_case(const curriculum::Lesson& lesson,std::string_view identity) {
+    const auto& cases=compiler_revision_cases();
+    const auto entry=std::ranges::find_if(cases,[&](const auto& value){const std::string_view file=value.filename;
+        return value.identity==identity&&lesson.id.ends_with("__"+std::string(file.substr(7,file.size()-12)));});
+    if(entry==cases.end())throw std::runtime_error("Unknown QA compiler revision identity/lesson");
+    return *entry;
+}
+// QA projection immediately before this compiler's reviewed expansion. Complete
+// archived blocks and references are authenticated independently of live data;
+// unrelated integrated changes are intentionally retained, not dated backwards.
+inline curriculum::Lesson compiler_revision_before(const curriculum::Lesson& integrated,std::string_view identity) {
+    using namespace winrt::Windows::Data::Json;
+    const auto& entry=compiler_revision_case(integrated,identity);
+    const auto validated=windows::parse_lesson_json(integrated.raw_json,integrated.locale);
+    const auto position=curriculum::stable_block_position(validated,identity);
+    if(!position)throw std::runtime_error("Missing integrated QA compiler identity");
+    const auto root=JsonObject::Parse(winrt::to_hstring(validated.raw_json)),layout=root.GetNamedObject(L"stateLayout");
+    const auto blocks=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks");
+    if(compile_check_test_fingerprint(blocks.GetObjectAt(static_cast<unsigned>(position->block)))!=entry.after_full)
+        throw std::runtime_error("The integrated compiler differs from its independently pinned current payload");
+    const auto& active=validated.pages[position->page].blocks[position->block];
+    if(!active.compiler_revision||active.compiler_revision->sha256!=entry.before_full)
+        throw std::runtime_error("The integrated compiler has no authenticated complete original");
+    JsonArray retained;JsonObject record;unsigned records=0;
+    for(const auto& value:layout.GetNamedArray(L"compilerRevisions")){
+        const auto candidate=value.GetObject();
+        if(winrt::to_string(candidate.GetNamedString(L"id"))!=identity){retained.Append(value);continue;}
+        record=candidate;++records;
+    }
+    if(records!=1||compile_check_test_fingerprint(record.GetNamedObject(L"block"))!=entry.before_full)
+        throw std::runtime_error("Compiler QA requires exactly one complete pinned original");
+    const auto remove_proof=[&](std::string_view id,std::string_view before,std::string_view after){
+        JsonArray proofs;unsigned removed=0;
+        for(const auto& value:layout.GetNamedArray(L"editorial")){
+            const auto proof=value.GetObject();
+            if(winrt::to_string(proof.GetNamedString(L"id"))==id
+                &&winrt::to_string(proof.GetNamedString(L"beforeSha256"))==before
+                &&winrt::to_string(proof.GetNamedString(L"afterSha256"))==after){++removed;continue;}
+            proofs.Append(value);
+        }
+        if(removed!=1)throw std::runtime_error("Compiler QA requires its exact terminal editorial transition");
+        layout.Insert(L"editorial",proofs);
+    };
+    if(entry.reference_identity){
+        const auto at=curriculum::stable_block_position(validated,entry.reference_identity);
+        if(!at||active.compiler_revision->references.size()!=1||!record.HasKey(L"references")
+            ||record.GetNamedArray(L"references").Size()!=1)
+            throw std::runtime_error("Compiler QA lost its complete reviewed reference archive");
+        const auto archive=record.GetNamedArray(L"references").GetObjectAt(0);
+        const auto reference_blocks=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(at->page)).GetNamedArray(L"blocks");
+        if(winrt::to_string(archive.GetNamedString(L"id"))!=entry.reference_identity
+            ||compile_check_test_fingerprint(archive.GetNamedObject(L"block"))!=entry.reference_before
+            ||compile_check_test_fingerprint(reference_blocks.GetObjectAt(static_cast<unsigned>(at->block)))!=entry.reference_after)
+            throw std::runtime_error("Compiler QA reference differs from its independent before/after pins");
+        reference_blocks.SetAt(static_cast<unsigned>(at->block),archive.GetNamedObject(L"block"));
+        remove_proof(entry.reference_identity,entry.reference_before,entry.reference_after);
+    }else if(!active.compiler_revision->references.empty()||record.HasKey(L"references"))
+        throw std::runtime_error("Compiler QA contains an unreviewed reference archive");
+    blocks.SetAt(static_cast<unsigned>(position->block),record.GetNamedObject(L"block"));
+    remove_proof(identity,entry.before_full,entry.after_full);
+    if(retained.Size())layout.Insert(L"compilerRevisions",retained);else layout.Remove(L"compilerRevisions");
+    auto result=windows::parse_lesson_json(winrt::to_string(root.Stringify()),integrated.locale);
+    result.source_path=integrated.source_path;
+    const auto& previous=result.pages[position->page].blocks[position->block];
+    if(previous.compiler_revision||compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(previous.raw_json)))!=entry.before_full)
+        throw std::runtime_error("Compiler QA failed to restore the distinct authenticated previous state");
+    return result;
+}
 inline std::string compiler_revision_json(const curriculum::Lesson& original,std::string_view identity) {
     using namespace winrt::Windows::Data::Json;
-    const auto position=curriculum::stable_block_position(original,identity);const auto& cases=compiler_revision_cases();
-    const auto entry=std::ranges::find_if(cases,[&](const auto& value){const std::string_view file=value.filename;
-        return value.identity==identity&&original.id.ends_with("__"+std::string(file.substr(7,file.size()-12)));});
-    if(!position||entry==cases.end())throw std::runtime_error("Unknown QA compiler revision");
+    const auto position=curriculum::stable_block_position(original,identity);
+    const auto& reviewed=compiler_revision_case(original,identity);const auto* entry=&reviewed;
+    if(!position)throw std::runtime_error("Unknown QA compiler revision");
     const auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json)),layout=root.GetNamedObject(L"stateLayout");
     const auto block=root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject();
+    if(original.pages[position->page].blocks[position->block].compiler_revision
+        ||compile_check_test_fingerprint(block)!=entry->before_full)
+        throw std::runtime_error("Compiler QA transition requires its pinned unexpanded source, never an integrated no-op");
     const auto old=JsonObject::Parse(block.Stringify());const auto outputs=block.GetNamedObject(L"outputCheck").GetNamedArray(L"cases");
     if(entry->suffix) {
         const auto expected=outputs.GetAt(0).GetObject().GetNamedArray(L"outputs");
@@ -54,15 +125,21 @@ inline std::string compiler_revision_json(const curriculum::Lesson& original,std
         expected.Append(JsonValue::CreateStringValue(winrt::to_hstring(std::string(input[1]==':'?"Datos adicionales":"Formato invalido")+" | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n")));
         item.Insert(L"outputs",expected);outputs.Append(item);
     }
+    if(compile_check_test_fingerprint(block)!=entry->after_full)
+        throw std::runtime_error("Compiler QA proposal differs from the independently pinned integrated payload");
     const auto records=layout.HasKey(L"compilerRevisions")?layout.GetNamedArray(L"compilerRevisions"):JsonArray{};
     JsonObject record;record.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(identity)));record.Insert(L"block",old);
     if(entry->reference_identity) {
         const auto reference_position=curriculum::stable_block_position(original,entry->reference_identity);
         if(!reference_position)throw std::runtime_error("Missing original QA compiler reference");
         const auto reference=root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(reference_position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(reference_position->block)).GetObject();
+        if(compile_check_test_fingerprint(reference)!=entry->reference_before)
+            throw std::runtime_error("Compiler QA requires its independently pinned previous reference");
         const auto original_reference=JsonObject::Parse(reference.Stringify());auto code=winrt::to_string(reference.GetNamedString(L"code"));
         const auto insertion=code.rfind("    return 0;\n}\n");if(insertion==std::string::npos)throw std::runtime_error("Missing final QA main return");
         code.insert(insertion,entry->calls);reference.Insert(L"code",JsonValue::CreateStringValue(winrt::to_hstring(code)));
+        if(compile_check_test_fingerprint(reference)!=entry->reference_after)
+            throw std::runtime_error("Compiler QA proposal differs from the independently pinned integrated reference");
         JsonArray archives;JsonObject archive;archive.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(entry->reference_identity)));archive.Insert(L"block",original_reference);archives.Append(archive);record.Insert(L"references",archives);
         JsonObject reference_proof;reference_proof.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(entry->reference_identity)));
         reference_proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(entry->reference_before)));

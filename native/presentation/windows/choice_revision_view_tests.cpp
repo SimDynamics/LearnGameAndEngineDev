@@ -69,7 +69,9 @@ void reviewed_choices_preserve_the_displayed_response(){
     std::size_t groups=0;
     for(const auto& plan:test::choice_revision_cases()){
         const auto source=folder/plan.filename;const auto hash=state::sha256(state::read_bytes(source));
-        const auto original=windows::load_lesson(source);const auto revised=test::revise_choice_lesson(original,plan.identity);
+        const auto integrated=windows::load_lesson(source);
+        const auto original=test::choice_revision_before(integrated,plan.identity);
+        const auto revised=test::revise_choice_lesson(original,plan.identity);
         const auto position=curriculum::stable_block_position(original,plan.identity);check(position.has_value(),"The reviewed choice lost its historical address");
         const auto index=position->block;const auto& old=original.pages[position->page].blocks[index];const auto& current=revised.pages[position->page].blocks[index];
         const auto legacy=curriculum::exercise_key(original,old),sidecar=state::response_storage_key(revised,current);
@@ -156,8 +158,9 @@ void ordinary_choices_keep_their_own_controls(){
 }
 void archived_reading_keeps_choice_provenance(){
     const auto& plan=test::choice_revision_cases().front();
-    const auto original=windows::load_lesson(std::filesystem::path(build::source_root)/
+    const auto integrated=windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
+    const auto original=test::choice_revision_before(integrated,plan.identity);
     const auto position=curriculum::stable_block_position(original,plan.identity);check(position.has_value(),"The archive reading choice is missing");
     const auto& old=original.pages[position->page].blocks[position->block];
     std::string retiring;for(const auto& block:original.pages[position->page].blocks)

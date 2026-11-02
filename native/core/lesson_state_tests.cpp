@@ -482,7 +482,8 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
     const auto content=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content";
     for(std::size_t index=0;index<lgaed::test::choice_revision_cases().size();++index) {
         const auto& plan=lgaed::test::choice_revision_cases()[index];
-        const auto before=lgaed::windows::load_lesson(content/"es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
+        const auto integrated=lgaed::windows::load_lesson(content/"es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
+        const auto before=lgaed::test::choice_revision_before(integrated,plan.identity);
         const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);const auto position=stable_block_position(current,plan.identity);
         require(position.has_value(),"A reviewed choice lost its published identity");
         const auto& block=current.pages[position->page].blocks[position->block];const auto& old_block=before.pages[position->page].blocks[position->block];
@@ -509,12 +510,22 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
             validate_lesson_state(data,current);prepare_lesson_state(data,current);const auto adopted=data;
             const auto pin="lesson_"+current.id+"_state_choice_revisions_v1_es";
             require(find(data,"learning_progress",pin)&&string_value(data,"learning_progress",original_key)==original_raw,"Choice provenance pin replaced original response metadata");
-            auto no_pin=data;no_pin.preferences["learning_progress"].erase(pin);require(no_pin==untouched,"Adopting a choice revision rewrote unrelated preferences or historical state");
+            auto prior_pin=data;
+            if(const auto value=find(untouched,"learning_progress",pin))prior_pin.preferences["learning_progress"][pin]=*value;
+            else prior_pin.preferences["learning_progress"].erase(pin);
+            require(prior_pin==untouched,"Adopting a choice revision rewrote unrelated preferences or historical state");
             prepare_lesson_state(data,current);require(data==adopted,"Choice revision adoption is not idempotent");
             auto rollback=data;rejects([&]{prepare_lesson_state(rollback,before);});require(rollback==data,"Rejecting a removed revision changed saved data");
             const auto name=std::to_string(index)+'-'+mode;StateStore store(base/("choice-"+name));(void)store.load();store.save(data);
             auto reopened=store.load();validate_lesson_state(reopened,current);require(reopened==data,"Historical choice changed during normal persistence/reopening");
-            const auto exported=base/("choice-export-"+name);export_preferences(exported,data);const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+            // Other integrated compiler revisions retain Windows-only adoption
+            // receipts. They must not be disguised as an Android export.
+            if(data.preferences.contains("native_windows")) {
+                const auto reserved=base/("choice-native-export-"+name);export_preferences(reserved,data);
+                rejects([&]{(void)inspect_android_export(reserved);});
+            }
+            auto android=data;android.preferences.erase("native_windows");
+            const auto exported=base/("choice-export-"+name);export_preferences(exported,android);const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
             const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,current);
             require(get_response(preview.data,current,block)->historical_choice&&string_value(preview.data,"learning_progress",original_key)==original_raw,
                 "Imported choice lost its original blob or was silently promoted to current text");
@@ -549,7 +560,9 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
     using namespace lgaed;using namespace curriculum;using namespace windows;
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
     for(std::size_t index=0;index<test::compiler_revision_cases().size();++index) {
-        const auto& plan=test::compiler_revision_cases()[index];const auto before=load_lesson(folder/plan.filename);
+        const auto& plan=test::compiler_revision_cases()[index];
+        const auto integrated=load_lesson(folder/plan.filename);
+        const auto before=test::compiler_revision_before(integrated,plan.identity);
         const auto current=test::revise_compiler_lesson(before,plan.identity);const auto position=stable_block_position(current,plan.identity);
         require(position.has_value(),"The expanded compiler lost its historical identity");
         const auto& old=before.pages[position->page].blocks[position->block];const auto& block=current.pages[position->page].blocks[position->block];
@@ -636,9 +649,23 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
 void diagnostic_contracts_preserve_native_and_imported_state(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
+    const auto adopt=[&](const Lesson& before,const test::CompileCheckCase& plan){
+        const auto integrated=load_lesson(folder/plan.filename);
+        const auto live=stable_block_position(integrated,plan.identity),at=stable_block_position(before,plan.identity);
+        require(live&&live==at,"Diagnostic adoption lost its current/historical stable owner");
+        const auto& authored=integrated.pages[live->page].blocks[live->block];
+        require(authored.compile_check&&authored.compile_check->diagnostic==plan.diagnostic&&!authored.compile_check->explanation.empty(),
+            "The current diagnostic contract or full Work explanation is absent");
+        const auto result=test::with_compile_check(before,plan.identity,plan.diagnostic,authored.compile_check->explanation);
+        const auto& block=result.pages[at->page].blocks[at->block];
+        require(test::compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(block.raw_json)))==
+            test::compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(authored.raw_json))),
+            "Diagnostic state QA did not reconstruct the complete current authored block");
+        return result;
+    };
     std::size_t index=0;
     for(const auto& plan:test::compile_check_cases){
-        const auto before=load_lesson(folder/plan.filename),current=test::with_compile_check(before,plan.identity,plan.diagnostic);
+        const auto before=test::load_pre_compile_check_lesson(plan.filename),current=adopt(before,plan);
         const auto position=stable_block_position(current,plan.identity);require(position.has_value(),"Missing native diagnostic owner");
         const auto& block=current.pages[position->page].blocks[position->block];
         StateData data;prepare_lesson_state(data,before);
@@ -678,7 +705,7 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
         // Work adds these three objectives to one existing lesson. Begin with
         // the lexically last owner so later adoption cannot rely on appending
         // rows to the old serialized pin or on the order of editorial changes.
-        const auto before=load_lesson(folder/"lesson_valores_por_defecto_con_significado.json");
+        const auto before=test::load_pre_compile_check_lesson("lesson_valores_por_defecto_con_significado.json");
         StateData data;prepare_lesson_state(data,before);
         data.preferences["diagnostic_chain"]["text"]=std::string(" \t retained\r\n");
         data.preferences["diagnostic_chain"]["count"]=std::int64_t{7};
@@ -694,7 +721,7 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
         }
         const auto seeded=data;
         const auto& first_plan=test::compile_check_cases[3];
-        const auto first=test::with_compile_check(before,first_plan.identity,first_plan.diagnostic);
+        const auto first=adopt(before,first_plan);
         prepare_lesson_state(data,first);validate_lesson_state(data,first);
         const auto pin="lesson_"+before.id+"_state_compile_checks_v1_es";
         const auto first_rows=winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(string_value(data,"learning_progress",pin)));
@@ -708,12 +735,12 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
         };
         preserves_previous(seeded);
         const auto first_state=data;
-        const auto second=test::with_compile_check(first,test::compile_check_cases[1].identity,test::compile_check_cases[1].diagnostic);
+        const auto second=adopt(first,test::compile_check_cases[1]);
         prepare_lesson_state(data,second);validate_lesson_state(data,second);preserves_previous(first_state);
         const auto second_rows=winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(string_value(data,"learning_progress",pin)));
         require(second_rows.Size()==2,"Adding an earlier diagnostic owner did not extend the existing pin");
         const auto second_state=data;
-        const auto all=test::with_compile_check(second,test::compile_check_cases[2].identity,test::compile_check_cases[2].diagnostic);
+        const auto all=adopt(second,test::compile_check_cases[2]);
         prepare_lesson_state(data,all);validate_lesson_state(data,all);preserves_previous(second_state);
         const auto all_rows=winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(string_value(data,"learning_progress",pin)));
         bool retained_first=false;for(const auto& row:all_rows)retained_first|=row.Stringify()==retained_row;
@@ -726,12 +753,16 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
                 get_draft(data,draft_key("programming",all,block),"").source==get_draft(seeded,draft_key("programming",before,block),"").source,
                 "Cumulative diagnostic adoption invented a success or overwrote an independent source draft");
         }
-        auto opposite=test::with_compile_check(before,test::compile_check_cases[2].identity,test::compile_check_cases[2].diagnostic);
-        opposite=test::with_compile_check(opposite,test::compile_check_cases[1].identity,test::compile_check_cases[1].diagnostic);
-        opposite=test::with_compile_check(opposite,first_plan.identity,first_plan.diagnostic);
+        auto opposite=adopt(before,test::compile_check_cases[2]);
+        opposite=adopt(opposite,test::compile_check_cases[1]);
+        opposite=adopt(opposite,first_plan);
         auto alternative=seeded;prepare_lesson_state(alternative,opposite);
         require(string_value(alternative,"learning_progress",pin)==string_value(data,"learning_progress",pin),
             "The final three-goal diagnostic pin depended on authoring/adoption order");
+        const auto integrated=load_lesson(folder/"lesson_valores_por_defecto_con_significado.json");
+        validate_lesson_state(data,integrated);
+        const auto all_adopted=data;prepare_lesson_state(data,integrated);
+        require(data==all_adopted,"Today's integrated three-goal lesson changed the independently adopted pins or student state");
         StateStore store(base/"diagnostic-cumulative");(void)store.load();store.save(data);auto reopened=store.load();
         validate_lesson_state(reopened,all);require(reopened==data,"Reopening a three-goal diagnostic lesson changed its cumulative pin or drafts");
         const auto preserved=reopened;rejects([&]{prepare_lesson_state(reopened,first);});

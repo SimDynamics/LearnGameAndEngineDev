@@ -183,10 +183,28 @@ class CompilerDiagnosticTest(unittest.TestCase):
             with self.assertRaises(layout.LayoutError): layout.validate(newer)
 
     def test_helper_never_writes_assets_and_returns_independent_proposals(self):
-        for lesson, identity in layout.COMPILE_DIAGNOSTICS:
-            path = contract.ROOT / (PREFIX + asset_path(lesson)); before = path.read_bytes()
-            proposed = layout.add_compile_check(published(lesson), identity)
-            block(proposed, identity)["initialCode"] = "Caller changed its own proposal"
-            self.assertEqual(before, path.read_bytes()); self.assertEqual(json.loads(before), published(lesson))
+        for (lesson, identity), spec in layout.COMPILE_DIAGNOSTICS.items():
+            path = contract.ROOT / (PREFIX + asset_path(lesson)); asset_bytes = path.read_bytes()
+            historical = published(lesson); layout.validate(historical)
+            self.assertNotIn("compileCheck", block(historical, identity))
+            self.assertEqual(spec["before"], layout.fingerprint(block(historical, identity)))
+            current = json.loads(asset_bytes); layout.validate(current)
+            self.assertEqual(spec["diagnostic"], block(current, identity)["compileCheck"]["diagnostic"])
+            for label, source in (("verified historical snapshot", historical), ("current integrated asset", current)):
+                with self.subTest(identity=identity, source=label):
+                    untouched = deepcopy(source); proposed = layout.add_compile_check(source, identity)
+                    layout.validate_transition(source, proposed)
+                    if label == "verified historical snapshot":
+                        self.assertNotEqual(source, proposed)  # The adoption must actually add the goal.
+                        self.assertEqual(dict(block(source, identity), compileCheck={"diagnostic": spec["diagnostic"]}),
+                                         block(proposed, identity))
+                    else:
+                        # Already authored goals are retained, including their
+                        # explanation. This check is independence/idempotence,
+                        # not evidence of a historical-to-current transition.
+                        self.assertEqual(source, proposed)
+                    block(proposed, identity)["initialCode"] = "Caller changed its own proposal"
+                    self.assertEqual(untouched, source)
+                    self.assertEqual(asset_bytes, path.read_bytes())
 
 if __name__ == "__main__": unittest.main()
