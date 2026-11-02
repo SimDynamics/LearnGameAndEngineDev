@@ -155,6 +155,9 @@ struct StateRetirementHistory {
     std::vector<ActivityAfter> activity_after;
     std::string raw_json, sha256;
 };
+// Authenticated presentation before one explicit editorial return. It is
+// archival reading provenance, never another active activity or state slot.
+struct StateEditorialReturn { std::string id, previous_raw_json; };
 struct StateLayout {
     int version = 0;
     std::string locale;
@@ -169,6 +172,9 @@ struct StateLayout {
     std::vector<OrderRefinement> order_refinements;
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
+    std::vector<StateEditorialReturn> editorial_returns;
+    // Computed by the loader; ordinary state preparation does not reparse JSON.
+    bool has_editorial_returns = false;
 };
 struct Lesson {
     std::string id, title, locale, raw_json;

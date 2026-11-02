@@ -742,6 +742,32 @@ struct LessonView {
         return result;
     }
 
+    std::vector<LessonReadingArchive> editorial_reading_archives() const {
+        if(import_open||!pane||!IsWindow(pane)||lesson.state_layout.editorial_returns.empty())return {};
+        auto regions=reading_regions();std::vector<LessonReadingArchive> archives;
+        const auto identity=page_state().narration_page_identity;
+        for(auto prior=lesson.state_layout.editorial_returns.rbegin();prior!=lesson.state_layout.editorial_returns.rend();++prior){
+            const auto at=curriculum::stable_block_position(lesson,prior->id);
+            if(!at||at->page!=page)continue;
+            const auto type=block(at->block).type;
+            if(type!=BlockType::heading&&type!=BlockType::paragraph&&type!=BlockType::note)continue;
+            const auto previous=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(prior->previous_raw_json));
+            const auto old_type=previous.GetNamedString(L"type");
+            if(old_type!=L"heading"&&old_type!=L"paragraph"&&old_type!=L"note")continue;
+            const auto anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+prior->id+"/part/0";
+            const auto target=find_item(control_id(at->block,0));
+            const auto region=std::ranges::find_if(regions,[&](const auto& item){
+                return item.block_index==at->block&&!item.feedback&&item.anchor==anchor&&item.target==target;
+            });
+            if(region==regions.end())continue;
+            // Keep the current HWND and stable anchor. Archived data changes
+            // only this prose source; it creates no controls or old feedback.
+            region->source_text=winrt::to_string(previous.GetNamedString(L"text"));
+            archives.push_back({identity,regions});
+        }
+        return archives;
+    }
+
     std::vector<LessonReadingArchive> retired_reading_archives() const {
         if(import_open||!pane||!IsWindow(pane))return {};
         std::vector<LessonReadingArchive> archives;
@@ -3829,7 +3855,8 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case lesson_page_navigate_message: return !view->import_open && view->change_page(static_cast<std::size_t>(wparam));
         case lesson_reading_regions_message:
             if(lparam){
-                if(wparam==4)*reinterpret_cast<std::vector<LessonReadingArchive>*>(lparam)=view->retired_reading_archives();
+                if(wparam==5)*reinterpret_cast<std::vector<LessonReadingArchive>*>(lparam)=view->editorial_reading_archives();
+                else if(wparam==4)*reinterpret_cast<std::vector<LessonReadingArchive>*>(lparam)=view->retired_reading_archives();
                 else *reinterpret_cast<std::vector<LessonReadingRegion>*>(lparam)=wparam==3?view->retired_reading_regions():view->reading_regions(static_cast<int>(wparam));
             }return 1;
         case lesson_view_hooks_message:
@@ -3988,6 +4015,10 @@ std::vector<LessonReadingRegion> retired_lesson_reading_regions(HWND window){
 std::vector<LessonReadingArchive> retired_lesson_reading_archives(HWND window){
     std::vector<LessonReadingArchive> result;
     if(window)SendMessageW(window,lesson_reading_regions_message,4,reinterpret_cast<LPARAM>(&result));return result;
+}
+std::vector<LessonReadingArchive> editorial_lesson_reading_archives(HWND window){
+    std::vector<LessonReadingArchive> result;
+    if(window)SendMessageW(window,lesson_reading_regions_message,5,reinterpret_cast<LPARAM>(&result));return result;
 }
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks) {
     if (window) SendMessageW(window,lesson_view_hooks_message,0,reinterpret_cast<LPARAM>(&hooks));

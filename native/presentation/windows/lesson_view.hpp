@@ -91,6 +91,9 @@ inline constexpr UINT lesson_options_action_message = WM_APP + 190;
 // Each retirement batch retains its exact prior page identity and script.
 // Archived text is used only to prove a stored bookmark, never for playback.
 [[nodiscard]] std::vector<LessonReadingArchive> retired_lesson_reading_archives(HWND window);
+// Authenticated earlier prose, cumulatively reverted in reverse editorial
+// order. This is bookmark evidence only; playback uses current regions.
+[[nodiscard]] std::vector<LessonReadingArchive> editorial_lesson_reading_archives(HWND window);
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks);
 // The caller owns the reader bar. It must be a child of the lesson view; the
 // bar overlays the viewport, as on Android; it never reserves a footer.

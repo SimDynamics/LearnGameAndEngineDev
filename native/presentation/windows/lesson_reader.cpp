@@ -7,6 +7,7 @@
 #include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/icons.hpp"
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/programming_technical_ranges.hpp"
 #include "platform/windows/narration_player.hpp"
 #include "platform/windows/system_speech.hpp"
 #include "platform/windows/state_store.hpp"
@@ -69,7 +70,7 @@ public:
 struct LessonReader::Impl {
     struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;};
-    struct LegacyPlan{std::string key;std::vector<Part> parts;};
+    struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false;};
     struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
         bool playback_validation=false,recording_changed=false;std::uint64_t validation_serial=0;std::shared_ptr<AudioReadLease> playback_lease;};
     // Android's answered-block priority is playback permission, not listening
@@ -324,6 +325,31 @@ struct LessonReader::Impl {
         ++epoch;prioritize(at);start_audio_preparation();update_buttons();
     }
     static std::string part_id(const Part& part){return (part.region.anchor.empty()?part.region.key:part.region.anchor)+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
+    // This alias is limited to authenticated pre-return reading archives. A
+    // complete region must have exactly the same visible text; only inline
+    // wrappers actually hidden by the renderer may differ. Partial sentence
+    // strings are insufficient because a sentence may begin inside a wrapper.
+    static bool same_editorial_passage(const Part& before,const Part& after){
+        if(before.region.anchor.empty()||before.region.anchor!=after.region.anchor
+            ||before.region.feedback||after.region.feedback||before.region.is_exercise||after.region.is_exercise)return false;
+        struct Visible{std::wstring text;std::vector<std::size_t> positions;};
+        const auto project=[](std::string_view source){
+            const auto text=wide(source);const auto wrappers=technical_prose::inline_code_spans(text).wrappers;
+            Visible result;result.positions.reserve(text.size()+1);std::size_t wrapper=0;
+            for(std::size_t index=0;index<text.size();++index){
+                result.positions.push_back(result.text.size());
+                while(wrapper<wrappers.size()&&wrappers[wrapper].second<=index)++wrapper;
+                if(wrapper<wrappers.size()&&wrappers[wrapper].first<=index&&index<wrappers[wrapper].second)continue;
+                result.text+=text[index];
+            }
+            result.positions.push_back(result.text.size());return result;
+        };
+        const auto old=project(before.region.source_text),now=project(after.region.source_text);
+        return old.text==now.text&&before.sentence.start<=before.sentence.end&&after.sentence.start<=after.sentence.end
+            &&before.sentence.end<old.positions.size()&&after.sentence.end<now.positions.size()
+            &&old.positions[before.sentence.start]==now.positions[after.sentence.start]
+            &&old.positions[before.sentence.end]==now.positions[after.sentence.end];
+    }
     void changed(){if(!IsWindow(view))return;const auto page=lesson_page_state(view);const auto next_page=page.lesson_id+'/'+page.locale+'/'+page.page_id;
         const auto next_regions=lesson_reading_regions(view);std::string next_signature=next_page;
         for(const auto& region:next_regions)next_signature+='\0'+region.key+'\0'+region.source_text;
@@ -355,10 +381,11 @@ struct LessonReader::Impl {
         auto retired_archives=retired_lesson_reading_archives(view);
         std::erase_if(retired_archives,[&](const auto& archived){return std::ranges::none_of(history.entries,[&](const auto& entry){return entry.page==archived.page_identity;});});
         const bool has_bookmark=std::ranges::any_of(history.entries,[&](const auto& entry){return entry.page==current_page;});
+        const auto editorial_archives=has_bookmark?editorial_lesson_reading_archives(view):std::vector<LessonReadingArchive>{};
         const auto legacy_title=page.index>0&&(has_bookmark||!retired_archives.empty())?page.lesson_title:std::string{};
         const auto legacy_snapshot=has_bookmark?legacy_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
         const auto pre_caption_snapshot=has_bookmark?pre_caption_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title,legacy_snapshot,pre_caption_snapshot,retired_archives,history](std::stop_token stop){
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title,legacy_snapshot,pre_caption_snapshot,retired_archives,editorial_archives,history](std::stop_token stop){
             try{auto page_priority=backend->current_page_lease(stop);
                 std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
                 for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop)){
@@ -366,10 +393,10 @@ struct LessonReader::Impl {
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                 Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;
                 if(std::ranges::none_of(history.entries,[&](const auto& entry){return entry.key==resume_key;})){
-                    const auto add_legacy=[&](std::vector<Part> old,const std::string& old_page){
+                    const auto add_legacy=[&](std::vector<Part> old,const std::string& old_page,bool editorial_formatting=false){
                         std::vector<windows::NarrationSegment> script;for(const auto& part:old)script.push_back(part.sentence);
                         const auto old_key=backend->identity(old_page,lang,selected_voice,script,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
-                        if(old_key!=resume_key&&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.key==old_key;}))plan.legacy.push_back({old_key,std::move(old)});
+                        if(old_key!=resume_key&&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.key==old_key;}))plan.legacy.push_back({old_key,std::move(old),editorial_formatting});
                     };
                     std::vector<Part> prefix;
                     if(!legacy_title.empty()){
@@ -381,7 +408,9 @@ struct LessonReader::Impl {
                     std::vector<LessonReadingArchive> prior_scripts;
                     prior_scripts.push_back({current_page,pre_caption_snapshot});prior_scripts.push_back({current_page,legacy_snapshot});
                     prior_scripts.insert(prior_scripts.end(),retired_archives.begin(),retired_archives.end());
-                    for(const auto& prior:prior_scripts){const auto& prior_snapshot=prior.regions;
+                    const auto first_editorial=prior_scripts.size();
+                    prior_scripts.insert(prior_scripts.end(),editorial_archives.begin(),editorial_archives.end());
+                    for(std::size_t prior_index=0;prior_index<prior_scripts.size();++prior_index){const auto& prior=prior_scripts[prior_index];const auto& prior_snapshot=prior.regions;
                     if(prior_snapshot.empty())continue;
                     const bool old_programming=prior.page_identity!=current_page||prior_snapshot.size()!=snapshot.size()||!std::ranges::equal(prior_snapshot,snapshot,[](const auto& a,const auto& b){return a.key==b.key&&a.source_text==b.source_text;});
                     if(old_programming&&!prior_snapshot.empty()){
@@ -392,7 +421,7 @@ struct LessonReader::Impl {
                             else{std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop)){
                                 const auto occurrence=occurrences[sentence.prepared]++;old.push_back({region,std::move(sentence),{},occurrence});}}
                         }
-                        add_legacy(old,prior.page_identity);if(!prefix.empty()){auto with_title=prefix;with_title.insert(with_title.end(),old.begin(),old.end());add_legacy(std::move(with_title),prior.page_identity);}
+                        add_legacy(old,prior.page_identity,prior_index>=first_editorial);if(!prefix.empty()){auto with_title=prefix;with_title.insert(with_title.end(),old.begin(),old.end());add_legacy(std::move(with_title),prior.page_identity,prior_index>=first_editorial);}
                     }
                     }
                 }
@@ -429,8 +458,12 @@ struct LessonReader::Impl {
                     if(active!=parts.end()){position.segment=active-parts.begin();position.milliseconds=0;position.finished=false;found_position=true;}
                 }
                 for(std::size_t previous=found_position?0:old_at+1;previous>0;--previous){const auto& old_part=legacy.parts[previous-1];
-                    const auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==part_id(old_part);});if(found==parts.end())continue;
+                    auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==part_id(old_part);});
+                    if(found==parts.end()&&legacy.editorial_formatting)
+                        found=std::ranges::find_if(parts,[&](const auto& part){return same_editorial_passage(old_part,part);});
+                    if(found==parts.end())continue;
                     const auto mapped=static_cast<std::size_t>(found-parts.begin());found_position=true;
+                    if(part_id(*found)!=part_id(old_part))position.heard_prefix.reset();
                     if(previous-1==old_at)position.segment=static_cast<std::int64_t>(mapped);
                     else{position.segment=static_cast<std::int64_t>(std::min(mapped+1,parts.size()-1));position.milliseconds=0;position.finished=false;}
                     break;

@@ -539,6 +539,7 @@ private:
         return cursor;
     }
 };
+Block read_block(const JsonObject& value,std::string_view original);
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -698,14 +699,53 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     std::map<std::string, std::string> editorial;
     std::map<std::string,std::set<std::pair<std::string,std::string>>> editorial_edges;
     std::map<std::string, std::set<std::string>> seen;
+    std::map<std::string,std::vector<std::string>> editorial_nodes;
+    std::map<std::string,JsonObject> return_actual_blocks;
     if (result.version == 2) {
-        for (const auto& value : array(metadata, "editorial")) {
-            const auto change = value.GetObject(); allowed_keys(change, {"id", "beforeSha256", "afterSha256"}, true);
+        JsonArray prefix;const auto revisions=array(metadata,"editorial");
+        require(revisions.Size()<=100000,"Too many editorial proofs");
+        for (const auto& value : revisions) {
+            const auto change = value.GetObject();
+            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo"});
+            for(const auto field:{L"id",L"beforeSha256",L"afterSha256"})require(change.HasKey(field),"Incomplete editorial record");
             const auto id = text(change, "id"), before = text(change, "beforeSha256"), after = text(change, "afterSha256");
             require(result.signatures.contains(id) && valid_hash(before) && valid_hash(after) && before != after, "Invalid editorial record");
-            if (!seen.contains(id)) seen[id].insert(before);
-            require((!editorial.contains(id) || editorial.at(id) == before) && !seen[id].contains(after), "Broken editorial chain");
+            if (!seen.contains(id)){seen[id].insert(before);editorial_nodes[id].push_back(before);}
+            require(!editorial.contains(id) || editorial.at(id) == before,"Broken editorial chain");
+            if(change.HasKey(L"returnTo")){
+                const auto target=change.GetNamedObject(L"returnTo");allowed_keys(target,{"revision","historySha256","previousBlock"},true);
+                const auto revision=integer(target.GetNamedValue(L"revision"),100000);
+                const auto history=text(target,"historySha256");
+                const auto& nodes=editorial_nodes.at(id);
+                require(seen[id].contains(after)&&revision+1<nodes.size()&&nodes[revision]==after,
+                    "An editorial return must identify an earlier occurrence of the same identity");
+                JsonObject provenance;
+                provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                provenance.Insert(L"locale",JsonValue::CreateStringValue(key(result.locale)));
+                provenance.Insert(L"editorial",prefix);
+                require(valid_hash(history)&&history==fingerprint(provenance),"Editorial return history differs from its complete ordered prefix");
+                const auto previous=target.GetNamedObject(L"previousBlock");
+                require(fingerprint(previous)==before,"Editorial return must archive its complete preceding block");
+                if(return_actual_blocks.empty()){
+                    for(std::size_t p=0;p<result.current.size();++p){
+                        const auto blocks=array(pages.GetObjectAt(static_cast<unsigned>(p)),"blocks");
+                        for(std::size_t b=0;b<result.current[p].blocks.size();++b)
+                            return_actual_blocks.emplace(result.current[p].blocks[b],blocks.GetObjectAt(static_cast<unsigned>(b)));
+                    }
+                    for(const auto& retired:result.retired)
+                        return_actual_blocks.emplace(retired.id,JsonObject::Parse(key(retired.raw_json)));
+                }
+                const auto active=return_actual_blocks.find(id);
+                require(active!=return_actual_blocks.end()&&text(previous,"type")==text(active->second,"type")
+                    &&state_fingerprint(previous)==state_fingerprint(active->second),
+                    "Editorial return archive changed the current owner's protected contract");
+                const auto previous_raw=utf8(previous.Stringify());
+                (void)read_block(previous,previous_raw);
+                result.editorial_returns.push_back({id,previous_raw});
+                result.has_editorial_returns=true;
+            }else require(!seen[id].contains(after),"Broken editorial chain");
             seen[id].insert(after); editorial[id] = after;
+            editorial_nodes[id].push_back(after);prefix.Append(value);
             editorial_edges[id].emplace(before,after);
         }
     }

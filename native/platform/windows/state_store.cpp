@@ -684,6 +684,65 @@ std::optional<std::string> compiler_revision_state_update(const StateData& data,
     }else if(!current.Size())return {};
     return utf8(current.Stringify());
 }
+std::string editorial_returns_key(const curriculum::Lesson& lesson) {
+    return "lesson_"+lesson.id+"_state_editorial_returns_v1_"+lesson.locale;
+}
+bool has_editorial_return(const curriculum::Lesson& lesson) {
+    return lesson.state_layout.has_editorial_returns;
+}
+// Same canonical framing as the content loader/Python fingerprint, including
+// the complete previousBlock archive. Object property order is immaterial.
+void editorial_edge_canonical(const IJsonValue& value,std::string& output,unsigned depth=0) {
+    if(depth>64)throw std::runtime_error("La prueba del retorno editorial es demasiado profunda.");
+    const auto string=[&](const winrt::hstring& text){const auto bytes=utf8(text);output+='s'+std::to_string(bytes.size())+':'+bytes;};
+    if(value.ValueType()==JsonValueType::String)string(value.GetString());
+    else if(value.ValueType()==JsonValueType::Null)output+='z';
+    else if(value.ValueType()==JsonValueType::Boolean)output+=value.GetBoolean()?'t':'f';
+    else if(value.ValueType()==JsonValueType::Array){
+        output+='[';for(const auto& item:value.GetArray())editorial_edge_canonical(item,output,depth+1);output+=']';
+    }
+    else if(value.ValueType()==JsonValueType::Object){
+        output+='{';std::map<std::wstring,IJsonValue> sorted;
+        for(const auto& property:value.GetObject())sorted.emplace(std::wstring(property.Key()),property.Value());
+        for(const auto& [name,item]:sorted){string(winrt::hstring(name));editorial_edge_canonical(item,output,depth+1);}output+='}';
+    }else if(value.ValueType()==JsonValueType::Number){
+        const auto number=value.GetNumber();
+        if(!std::isfinite(number)||std::abs(number)>9007199254740991.0||std::trunc(number)!=number)
+            throw std::runtime_error("La prueba editorial necesita números enteros exactos.");
+        output+='n'+std::to_string(static_cast<std::int64_t>(number))+';';
+    }else throw std::runtime_error("La prueba del retorno editorial contiene tipos no compatibles.");
+}
+std::optional<std::string> editorial_returns_state_update(const StateData& data,const curriculum::Lesson& lesson) {
+    const auto key=editorial_returns_key(lesson);const auto stored=find(data,"learning_progress",key);
+    if(!stored&&!has_editorial_return(lesson))return {};
+    const auto& layout=lesson.state_layout;
+    if(layout.version!=2||layout.locale!=lesson.locale||layout.raw_json.empty())
+        throw std::runtime_error("Falta la historia del retorno editorial; los datos se conservan.");
+    if(stored&&!find(data,"learning_progress","lesson_"+lesson.id+"_state_lineage_v2_"+lesson.locale))
+        throw std::runtime_error("La procedencia del retorno editorial no tiene su familia de estado; los datos se conservan.");
+    const auto proofs=object(layout.raw_json).GetNamedArray(L"editorial");
+    if(proofs.Size()>100000)throw std::runtime_error("La historia editorial supera el límite permitido.");
+    JsonArray current;std::optional<std::uint32_t> first_return;
+    for(const auto& proof:proofs){
+        if(!first_return&&proof.GetObject().HasKey(L"returnTo"))first_return=current.Size();
+        std::string frame;editorial_edge_canonical(proof,frame);current.Append(JsonValue::CreateStringValue(wide(sha256(frame))));
+    }
+    if(!first_return)throw std::runtime_error("Se retiró el retorno editorial publicado; los datos se conservan.");
+    if(stored){
+        const auto raw=std::get_if<std::string>(stored);
+        if(!raw||raw->empty())throw std::runtime_error("La procedencia guardada del retorno editorial no es válida.");
+        const auto previous=JsonArray::Parse(wide(*raw));
+        if(previous.Size()<=*first_return||previous.Size()>current.Size())
+            throw std::runtime_error("La historia del retorno editorial está truncada o no corresponde a su publicación.");
+        for(std::uint32_t index=0;index<previous.Size();++index){
+            const auto value=previous.GetAt(index);
+            if(value.ValueType()!=JsonValueType::String||value.GetString()!=current.GetStringAt(index))
+                throw std::runtime_error("Cambió el orden o el contenido de una prueba editorial publicada; los datos se conservan.");
+        }
+        if(previous.Size()==current.Size())return {};
+    }
+    return utf8(current.Stringify());
+}
 }
 static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesson& lesson) try {
     windows::ensure_winrt_apartment();
@@ -695,6 +754,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
     const auto choice_revision_update = choice_revision_state_update(data,lesson);
     const auto compiler_revision_update = compiler_revision_state_update(data,lesson);
     const auto compile_check_update = compile_check_state_update(data,lesson);
+    const auto editorial_returns_update = editorial_returns_state_update(data,lesson);
     const auto old_pin_key = base + "_state_lineage_v1";
     const bool has_old_pin = find(data, "learning_progress", old_pin_key) != nullptr;
     const auto old_pin = string_value(data, "learning_progress", old_pin_key);
@@ -737,6 +797,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
         if (choice_revision_update) data.preferences["learning_progress"][choice_revision_key(lesson)] = *choice_revision_update;
         if (compiler_revision_update) data.preferences["learning_progress"][compiler_revision_key(lesson)] = *compiler_revision_update;
         if (compile_check_update) data.preferences["learning_progress"][compile_check_key(lesson)] = *compile_check_update;
+        if (editorial_returns_update) data.preferences["learning_progress"][editorial_returns_key(lesson)] = *editorial_returns_update;
         return;
     }
     if (find(data, "learning_progress", pages_key) || find(data, "learning_progress", blocks_key) ||
@@ -746,7 +807,8 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
                                find(data,"learning_progress",order_refinement_key(lesson)) ||
                                find(data,"learning_progress",choice_revision_key(lesson)) ||
                                find(data,"learning_progress",compiler_revision_key(lesson)) ||
-                               find(data,"learning_progress",compile_check_key(lesson)))))
+                               find(data,"learning_progress",compile_check_key(lesson)) ||
+                               find(data,"learning_progress",editorial_returns_key(lesson)))))
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
     std::vector<std::string> pages, blocks;
     const bool started = bool_value(data, base + "_started");
@@ -774,6 +836,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
     if (choice_revision_update) prefs[choice_revision_key(lesson)] = *choice_revision_update;
     if (compiler_revision_update) prefs[compiler_revision_key(lesson)] = *compiler_revision_update;
     if (compile_check_update) prefs[compile_check_key(lesson)] = *compile_check_update;
+    if (editorial_returns_update) prefs[editorial_returns_key(lesson)] = *editorial_returns_update;
     if (started && !find(data, "learning_progress", base + "_page")) prefs[base + "_page"] = std::int64_t{0};
 } catch (const winrt::hresult_error&) {
     throw std::runtime_error("Los metadatos del progreso no son compatibles; no se usan direcciones visibles.");
@@ -781,9 +844,10 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
 void prepare_lesson_state(StateData& data,const curriculum::Lesson& lesson) {
     windows::ensure_winrt_apartment();
     if(lesson.state_layout.compiler_revisions.empty()&&!find(data,"learning_progress",compiler_revision_key(lesson))
-        &&compile_check_contracts(lesson).empty()&&!find(data,"learning_progress",compile_check_key(lesson))) {
-        // Preserve legacy map-node lifetime and cost when no compiler
-        // expansion or pinned rollback requires the new atomic adoption.
+        &&compile_check_contracts(lesson).empty()&&!find(data,"learning_progress",compile_check_key(lesson))
+        &&!find(data,"learning_progress",editorial_returns_key(lesson))&&!has_editorial_return(lesson)) {
+        // Preserve legacy map-node lifetime when no compiler expansion,
+        // editorial return or pinned rollback requires atomic adoption.
         prepare_lesson_state_staged(data,lesson);return;
     }
     // All provenance and compiler receipt checks complete before publishing

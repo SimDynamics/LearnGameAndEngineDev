@@ -757,9 +757,11 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             identity = successors[identity]
     editorial = meta["editorial"]
     require(type(editorial) is list and len(editorial) <= 100_000, "Malformed editorial proof")
+    actual = _all_blocks(document)
     chains = {}
-    for proof in editorial:
-        require(type(proof) is dict and set(proof) == {"id", "beforeSha256", "afterSha256"},
+    for ordinal, proof in enumerate(editorial):
+        fields = {"id", "beforeSha256", "afterSha256"}
+        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo"},
                 "Malformed editorial proof")
         identity = _identity(proof["id"])
         require(identity in storage, "Unknown editorial identity")
@@ -769,9 +771,26 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(chains[identity][-1] == before, "Broken editorial proof chain")
         else:
             chains[identity] = [before]
-        require(after not in chains[identity], "Cyclic editorial proof")
+        if after in chains[identity]:
+            require("returnTo" in proof, "Cyclic editorial proof requires an explicit return")
+            target = proof["returnTo"]
+            require(type(target) is dict and set(target) == {"revision", "historySha256", "previousBlock"},
+                    "Malformed editorial return")
+            revision = target["revision"]
+            require(type(revision) is int and 0 <= revision < len(chains[identity]) - 1
+                    and chains[identity][revision] == after,
+                    "An editorial return must target an earlier revision of its own identity")
+            require(_digest(target["historySha256"]) == fingerprint({
+                "lessonId": document["id"], "locale": meta["locale"], "editorial": editorial[:ordinal]}),
+                "Editorial return history does not match its complete published prefix")
+            previous_block = target["previousBlock"]
+            require(type(previous_block) is dict and fingerprint(previous_block) == before,
+                    "An editorial return must archive its complete exact previous block")
+            require(state_fingerprint(previous_block) == state_fingerprint(actual[identity]),
+                    "An editorial return previous block cannot change its protected owner contract")
+        else:
+            require("returnTo" not in proof, "A new editorial payload cannot claim a return")
         chains[identity].append(after)
-    actual = _all_blocks(document)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
     for identity, original in refined.items():
@@ -801,7 +820,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
 
 
 def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
-               previous: dict | None = None) -> dict:
+               previous: dict | None = None, *, editorial_returns: dict[str, int] | None = None) -> dict:
     """Anchor real language histories, without changing any translated source file.
 
     Source prose may be revised in its published slots; all moves are an explicit
@@ -813,6 +832,12 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
     require(type(locale) is str and locale in LOCALES and locale in family_documents,
             "Missing published locale source")
     require(set(family_documents) <= LOCALES, "Unsupported language family")
+    require(editorial_returns is None or type(editorial_returns) is dict,
+            "Editorial returns must map stable identities to earlier revision numbers")
+    requested_returns = dict(editorial_returns or {})
+    for identity, revision in requested_returns.items():
+        _identity(identity)
+        require(type(revision) is int and revision >= 0, "An editorial return revision must be a nonnegative integer")
     previous = family_documents[locale] if previous is None else previous
     anchored = [source["stateLayout"]["family"] for source in family_documents.values()
                 if type(source.get("stateLayout")) is dict and source["stateLayout"].get("version") == 2]
@@ -828,16 +853,30 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
         require(type(document.get("stateLayout")) is dict and document["stateLayout"].get("version") == 2,
                 "Published v2 metadata cannot be removed or regenerated")
         result = deepcopy(document)
+        require(not requested_returns or result["stateLayout"].get("editorial") == previous["stateLayout"]["editorial"],
+                "Explicit editorial returns require the unchanged published proof prefix")
         if result["stateLayout"].get("editorial") == previous["stateLayout"]["editorial"]:
             before, after = _all_blocks(previous), _all_blocks(result)
             for identity, block in before.items():
                 require(identity in after, "An existing activity was removed")
                 if fingerprint(block) != fingerprint(after[identity]):
-                    result["stateLayout"]["editorial"].append({
+                    proof = {
                         "id": identity, "beforeSha256": fingerprint(block),
-                        "afterSha256": fingerprint(after[identity])})
+                        "afterSha256": fingerprint(after[identity])}
+                    if identity in requested_returns:
+                        prior = [edge for edge in previous["stateLayout"]["editorial"] if edge["id"] == identity]
+                        nodes = ([prior[0]["beforeSha256"]] + [edge["afterSha256"] for edge in prior]) if prior else []
+                        revision = requested_returns.pop(identity)
+                        require(revision < len(nodes) - 1 and nodes[revision] == proof["afterSha256"],
+                                "An explicit editorial return must restore its exact earlier payload")
+                        proof["returnTo"] = {"revision": revision, "historySha256": fingerprint({
+                            "lessonId": result["id"], "locale": locale, "editorial": result["stateLayout"]["editorial"]}),
+                            "previousBlock": deepcopy(block)}
+                    result["stateLayout"]["editorial"].append(proof)
+        require(not requested_returns, "Editorial return identity is unknown or its payload did not change")
         validate_transition(previous, result)
         return result
+    require(not requested_returns, "Editorial returns require an existing published v2 history")
     baseline = prepare(previous)
     require(len(_pages(document)) == len(baseline["pages"]), "Historical pages cannot be added or removed")
     require(all(len(a.get("blocks", [])) == len(b.get("blocks", []))
@@ -1454,12 +1493,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     "Mathematical payloads must preserve their historical JSON key order and values")
         old_hash, new_hash = fingerprint(block), fingerprint(actual)
         proofs = appended.get(identity, [])
-        if old_hash == new_hash:
-            require(not proofs, "An unchanged block cannot acquire an invented editorial history")
-        else:
+        if old_hash != new_hash or proofs:
             require(proofs and proofs[0]["beforeSha256"] == old_hash
                     and proofs[-1]["afterSha256"] == new_hash,
                     "A simultaneous editorial revision needs its explicit published before/after proof")
+            require(old_hash != new_hash or any("returnTo" in proof for proof in proofs),
+                    "An unchanged block cannot acquire an invented editorial history")
         require(new_hash not in owners or identity in owners[new_hash],
                 "Published content was assigned to another identity without a verified move")
 
@@ -1815,8 +1854,20 @@ def main() -> None:
     parser.add_argument("--additions", type=Path,
                         help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
     parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
+    parser.add_argument("--editorial-return", action="append", default=[], metavar="ID:REVISION",
+                        help="Explicit earlier payload of the same identity; prepare with --locale and Git --base-ref only")
     args = parser.parse_args()
     try:
+        editorial_returns = {}
+        for value in args.editorial_return:
+            identity, separator, revision = value.rpartition(":")
+            require(separator and re.fullmatch(r"0|[1-9][0-9]*", revision) is not None,
+                    "Use --editorial-return ID:REVISION with a nonnegative revision number")
+            _identity(identity)
+            require(identity not in editorial_returns, "An editorial return identity cannot be repeated")
+            editorial_returns[identity] = int(revision)
+        require(not editorial_returns or (args.action == "prepare" and args.base_ref is not None),
+                "Explicit editorial returns require prepare with --locale and Git --base-ref")
         if args.action == "check-tree":
             require(args.base_ref is not None, "check-tree requires --base-ref with the verified remote HEAD")
             report = check_repository(args.source, args.base_ref)
@@ -1840,7 +1891,8 @@ def main() -> None:
             previous, family = load(args.previous), None
         require(args.additions is None or args.plan is not None, "Activity additions require an explicit --plan")
         if args.action == "prepare":
-            result = prepare_v2(source, locale, family, previous) if family is not None else prepare(source)
+            require(not editorial_returns or family is not None, "Explicit editorial returns require a verified v2 language family")
+            result = prepare_v2(source, locale, family, previous, editorial_returns=editorial_returns) if family is not None else prepare(source)
             if args.plan is not None:
                 result = reorder(result, load(args.plan), load(args.additions) if args.additions else None)
         elif args.action == "reorder":

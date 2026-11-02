@@ -290,6 +290,28 @@ if(BUILD_TESTING)
         COMMENT "Verifying immutable pre-diagnostic fixtures from local 7862f10"
         VERBATIM)
     add_custom_target(lgaed_diagnostic_fixtures DEPENDS ${LGAED_DIAGNOSTIC_FIXTURES})
+    set(LGAED_EDITORIAL_RETURN_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/editorial-return-1fe0975")
+    set(LGAED_EDITORIAL_RETURN_FIXTURE "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}/lesson_estado_asignacion_y_copia.json")
+    add_custom_command(OUTPUT "${LGAED_EDITORIAL_RETURN_FIXTURE}"
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_return_fixture_source.py"
+            --output-dir "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_return_fixture_source.py"
+        COMMENT "Verifying immutable pre-markup U2L3 editorial return fixture from local 1fe0975"
+        VERBATIM)
+    add_custom_target(lgaed_editorial_return_fixture DEPENDS "${LGAED_EDITORIAL_RETURN_FIXTURE}")
+    add_test(NAME native.editorial_return_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_editorial_return.py)
+    set_tests_properties(native.editorial_return_authoring PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_editorial_return_tests native/core/editorial_return_tests.cpp)
+    target_link_libraries(lgaed_editorial_return_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_editorial_return_tests lgaed_editorial_return_fixture)
+    add_test(NAME native.editorial_return COMMAND lgaed_editorial_return_tests)
+    set_tests_properties(native.editorial_return PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_editorial_return_view_tests native/presentation/windows/editorial_return_view_tests.cpp)
+    target_link_libraries(lgaed_editorial_return_view_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_editorial_return_view_tests lgaed_editorial_return_fixture lgaed_narration_runtime)
+    add_test(NAME native.editorial_return_view COMMAND lgaed_editorial_return_view_tests)
+    set_tests_properties(native.editorial_return_view PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     set(LGAED_ORDER_LINE_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/order-lines")
     add_custom_command(OUTPUT "${LGAED_ORDER_LINE_FIXTURE_DIR}/manifest.json"
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/order_line_fixture_source.py"
@@ -849,6 +871,10 @@ if(BUILD_TESTING)
             add_dependencies(${fixture_consumer} lgaed_order_line_fixtures)
         endif()
     endforeach()
+    add_custom_target(lgaed_editorial_return_checks DEPENDS
+        LearnGameAndEngineDev lgaed_editorial_return_tests lgaed_editorial_return_view_tests
+        lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
+        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests)
     add_custom_target(lgaed_windows_settings_checks DEPENDS
         lgaed_current_reference_reader_tests
         lgaed_math_narration_plan_tests lgaed_cmake_curricular_targets_tests

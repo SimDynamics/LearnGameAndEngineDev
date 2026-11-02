@@ -157,6 +157,65 @@ y contrasta el resultado con el archivo publicado. La firma de estado del bloque
 debe permanecer igual. El validador curricular sigue autorizando las revisiones:
 no se flexibilizan respuestas ni código.
 
+### Retorno editorial explícito en Windows
+
+Una revisión puede recuperar exactamente la presentación de una revisión anterior
+del mismo bloque. No se restauran los metadatos antiguos ni se quitan pruebas de
+la lista `editorial`: se añade una arista nueva. Las aristas ordinarias siguen
+rechazando firmas repetidas y toda arista sigue exigiendo un cambio real.
+
+El retorno añade a su arista el campo opcional
+`returnTo: {revision: N, historySha256: "…", previousBlock: BLOQUE_PREVIO_COMPLETO}`.
+`revision` es un entero que señala
+un nodo anterior de la cadena de **esa misma identidad**: cero corresponde al
+`beforeSha256` de su primera arista y los nodos siguientes a sus sucesivos
+`afterSha256`. La firma de destino debe coincidir con ese nodo y la firma de
+partida con el extremo actual. El campo no sirve para aprobar un destino nuevo,
+un cambio de identidad o un cambio de respuesta, programa u otro dato protegido.
+
+`previousBlock` conserva el bloque completo inmediatamente anterior a esa
+arista. Su huella debe ser exactamente `beforeSha256` y su contrato protegido
+debe coincidir con el bloque actual de la misma identidad. La herramienta lo
+copia del documento anterior; no se reconstruye a partir de una firma. Esto
+permite comprobar el guion de lectura anterior incluso cuando quitar formato
+cambia la preparación lingüística o los límites de sus frases.
+
+`historySha256` utiliza `fingerprint` sobre el objeto
+`{lessonId: ID_DE_LECCION, locale: IDIOMA, editorial: PREFIJO_COMPLETO}`. El prefijo
+incluye, en su orden publicado, **todas** las aristas globales anteriores al nuevo
+retorno, también las de otros bloques. Así la prueba queda vinculada al
+propietario, idioma y procedencia completa. No se interpreta el ordinal como
+una posición dentro de esa lista global.
+
+El autor solicita los retornos mediante el argumento de `prepare_v2`
+`editorial_returns={identidad: revision}` o la opción repetible de `prepare`
+`--editorial-return identidad:revision`. La herramienta calcula la prueba y
+conserva el origen, familia, direcciones y prefijo anterior. No marca retornos
+automáticamente al encontrar un ciclo. Un salto de publicación A a A→B→A se
+acepta sólo con la cadena añadida completa, conectada a los dos documentos y
+con el retorno explícito válido.
+
+Para una región textual visible, el lector puede contrastar ese guion archivado
+con un marcador existente. Si sólo cambian delimitadores que el renderizador
+oculta y el pasaje conserva sus límites visibles, traslada la posición al pasaje
+actual dentro del mismo hueco del historial. No reproduce el archivo anterior
+ni añade otro marcador. Los otros dos huecos permanecen intactos. Las grabaciones
+existentes se conservan; sólo se reutilizan cuando son compatibles. Una fuente
+o grabación distinta no hereda certificados de escucha del archivo anterior.
+
+Windows adopta un registro adicional por lección e idioma al encontrar un
+retorno: `lesson_<id>_state_editorial_returns_v1_<locale>`. Guarda un array JSON
+con las firmas canónicas de todas las aristas publicadas. Las ampliaciones deben
+conservarlo como prefijo exacto; recortarlo, reordenarlo, corromperlo o volver a
+metadatos anteriores se rechaza sin modificar los datos. La adopción inicial
+desde versiones anteriores añade esa protección sin reemplazar respuestas,
+borradores, posiciones ni cobertura de lectura. El restablecimiento del progreso
+conserva esta procedencia, como las otras fijaciones de estado.
+
+Este contrato pertenece al cargador y herramientas Windows. La app Android
+independiente conserva su contrato anterior. El retorno editorial tampoco
+declara implementado el color neutro ni el subrayado tipográfico.
+
 ### Corrección exacta de un rótulo matemático en Windows
 
 `CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO` admite exclusivamente en
