@@ -646,7 +646,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor contiene el modelo conocido. Dentro de main añade únicamente Contador no_permitido = 3; y pulsa Compilar y ejecutar. Conserva explicit en el constructor.\n\nLa compilación debe rechazar la conversión implícita desde int. No se ejecuta un programa ni se espera un veredicto de salida. Relaciona el diagnóstico con la declaración añadida; su redacción puede variar entre compiladores.",
+          "text": "Este editor contiene el modelo conocido. Dentro de main añade únicamente Contador no_permitido = 3; y pulsa Compilar y comprobar diagnóstico. Conserva explicit en el constructor.\n\nLa compilación debe rechazar la conversión implícita desde int. No se ejecuta un programa ni se espera un veredicto de salida. Relaciona el diagnóstico con la declaración añadida; su redacción puede variar entre compiladores.",
           "emphasis": [
             {
               "text": "Contador no_permitido = 3;"
@@ -661,7 +661,11 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la declaración indicada.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la declaración indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "explicit-copy-initialization",
+            "explanation": "Contador no_permitido = 3; necesita una conversión implícita desde int para inicializar el objeto. El constructor explicit no permite esa conversión. El rechazo ocurre al compilar; no se ejecutó el programa ni se lanzó ContadorInvalido."
+          }
         },
         {
           "type": "heading",
@@ -669,7 +673,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor independiente añade leer(3); dentro de main y pulsa Compilar y ejecutar. Conserva la firma const Contador& y el constructor explicit.\n\nEl argumento escrito tiene tipo int y la llamada necesitaría una conversión implícita para obtener el Contador que recibe la función. La compilación debe rechazarla. No se espera una excepción de ejecución ni una salida del programa.",
+          "text": "En este editor independiente añade leer(3); dentro de main y pulsa Compilar y comprobar diagnóstico. Conserva la firma const Contador& y el constructor explicit.\n\nEl argumento escrito tiene tipo int y la llamada necesitaría una conversión implícita para obtener el Contador que recibe la función. La compilación debe rechazarla. No se espera una excepción de ejecución ni una salida del programa.",
           "emphasis": [
             {
               "text": "leer(3);"
@@ -681,7 +685,11 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la llamada indicada.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la llamada indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "explicit-argument-conversion",
+            "explanation": "En leer(3), el argumento tiene tipo int y el parámetro requiere un Contador mediante const Contador&. El constructor explicit no permite la conversión implícita necesaria para esa llamada. El rechazo ocurre al compilar, antes de ejecutar el programa."
+          }
         },
         {
           "type": "heading",
@@ -1002,7 +1010,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Dentro de main, después de crear destino, añade destino = 3; y pulsa Compilar y ejecutar. Conserva el constructor explicit, el objeto existente y la comprobación numérica.\n\nLa compilación debe rechazar la conversión implícita desde int que necesitaría esa asignación. No se espera ejecución ni una ContadorInvalido tratada por catch.",
+          "text": "Dentro de main, después de crear destino, añade destino = 3; y pulsa Compilar y comprobar diagnóstico. Conserva el constructor explicit, el objeto existente y la comprobación numérica.\n\nLa compilación debe rechazar la conversión implícita desde int que necesitaría esa asignación. No se espera ejecución ni una ContadorInvalido tratada por catch.",
           "emphasis": [
             {
               "text": "destino = 3;"
@@ -1014,7 +1022,11 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Añade la asignación indicada.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Añade la asignación indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "explicit-assignment",
+            "explanation": "destino ya es un objeto Contador. Asignarle 3 necesitaría convertir implícitamente ese int en un Contador, y el constructor explicit no permite esa conversión. La asignación se rechaza al compilar; no se ejecuta la comprobación que podría lanzar ContadorInvalido."
+          }
         },
         {
           "type": "heading",
@@ -3349,6 +3361,36 @@
         "id": "block_0015_0003",
         "beforeSha256": "311f277562a8aa4cf81daa936fc3518cb457eaad6e83361e5bb9c60297021fda",
         "afterSha256": "9d4c03b9c0ebf22b4301ab20c402bf2478abdea567bc4721dfb311ddeb9ed56b"
+      },
+      {
+        "id": "block_0012_0008",
+        "beforeSha256": "ac0365d7452a3a6ff52a0f6c306d01815a09196f9f49e2bc90cdd4ec5dbc9fe9",
+        "afterSha256": "5f1324f4e69a65a25e90c7a47365223be02124c3be7fa3745294e5b7b3116415"
+      },
+      {
+        "id": "block_0012_0011",
+        "beforeSha256": "9f7db3f3a1004a235926bc12e06e9d0bf1a93b707f3ca92f6de2876677fd9c58",
+        "afterSha256": "3b4cf265a3a317e627313e677477973249ea452812a9dbbbc95e7c5a6339b6ee"
+      },
+      {
+        "id": "block_0014_0011",
+        "beforeSha256": "3e8eb728eac0d493c864596ec2364fe6c69ff85ce01408dd0020cec36ad6b087",
+        "afterSha256": "4e034c6aac0b2d3c5855fd6214c02436d9b0ff87f93706b641bbdfb4f728c968"
+      },
+      {
+        "id": "block_0012_0007",
+        "beforeSha256": "9192f77f876c18afe19f446113b39fdbed5d7d2ce8ac15f9140c92c64922c70a",
+        "afterSha256": "880ac77311a290947202a8deb189ff23e549045b5f24e6fb3112d98e3331587e"
+      },
+      {
+        "id": "block_0012_0010",
+        "beforeSha256": "102df9f45c062df308b237b58cdd9ab7ce2abc2feec2301b383cfddda5328188",
+        "afterSha256": "b6709b488bbf4e224c02d77eda6e3f5a1b2eb7c66f4f23f7b13a10fb29ac9d42"
+      },
+      {
+        "id": "block_0014_0010",
+        "beforeSha256": "9172bfcbfd7f924dcb340cde04782d59b77425dcead9b09e0b2652f1c333a70b",
+        "afterSha256": "49f5273487e603566500fbdb72559a837d04c442fb9225b7f8b63b46dfcb91cc"
       }
     ]
   },

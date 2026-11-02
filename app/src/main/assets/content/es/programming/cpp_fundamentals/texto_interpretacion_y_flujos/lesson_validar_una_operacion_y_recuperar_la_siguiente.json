@@ -300,14 +300,14 @@
           "options": [
             "Porque int acepta x después de una primera lectura fallida.",
             "Porque la línea ya se obtuvo del flujo exterior y el fallo pertenece a otro objeto lector.",
-            "Porque devolver false borra automáticamente todos los flujos del programa."
+            "Porque el bucle vuelve a construir el flujo exterior en cada vuelta."
           ],
           "correctIndex": 1,
           "explanation": "Cada objeto conserva su propio estado. El flujo exterior avanzó hasta la frontera de la línea y no sufrió el fallo de extracción del flujo local.",
           "reviewFeedback": [
             "Una lectura fallida no cambia las reglas del tipo int. Distingue la representación solicitada de los objetos que conservan el estado de lectura.",
             "Distingue qué objeto obtiene las líneas de cuál interpreta sus caracteres.",
-            "Devolver un valor booleano no restablece automáticamente otros objetos. Sigue qué flujo utiliza cada operación y qué efecto tienen realmente las instrucciones."
+            "Localiza dónde se construye origen y dónde se crea el flujo local de análisis. Distingue qué objeto se reutiliza en el bucle y cuál se crea para una sola línea."
           ]
         }
       ]
@@ -1378,6 +1378,32 @@
         "id": "block_0006_0002",
         "beforeSha256": "2c4687ac264a22ddddd8334608f11c341fd5e08c0d3283be83c037aaccdda969",
         "afterSha256": "2c1fc45d16f8c4abbd3d1913f359f8e3245a201386a310596946827effa47166"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "c694da695d8cb9b889ece1b22570c0e25cfcb37c004a3b22d71f3862a61d373f",
+        "afterSha256": "5dfe0ec554c75abe71df341c5fda4a0c68fa41747bb2d9bbefb753ef0f636713"
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Una línea con x falla en el istringstream local. ¿Por qué la siguiente línea puede analizarse sin llamar a clear en el flujo exterior?",
+          "options": [
+            "Porque int acepta x después de una primera lectura fallida.",
+            "Porque la línea ya se obtuvo del flujo exterior y el fallo pertenece a otro objeto lector.",
+            "Porque devolver false borra automáticamente todos los flujos del programa."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada objeto conserva su propio estado. El flujo exterior avanzó hasta la frontera de la línea y no sufrió el fallo de extracción del flujo local.",
+          "reviewFeedback": [
+            "Una lectura fallida no cambia las reglas del tipo int. Distingue la representación solicitada de los objetos que conservan el estado de lectura.",
+            "Distingue qué objeto obtiene las líneas de cuál interpreta sus caracteres.",
+            "Devolver un valor booleano no restablece automáticamente otros objetos. Sigue qué flujo utiliza cada operación y qué efecto tienen realmente las instrucciones."
+          ]
+        }
       }
     ]
   },

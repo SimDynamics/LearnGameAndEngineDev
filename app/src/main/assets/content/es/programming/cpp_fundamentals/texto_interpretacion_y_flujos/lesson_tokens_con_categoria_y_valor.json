@@ -182,14 +182,14 @@
           "options": [
             "Dos tokens numéricos, con valores 1 y 8.",
             "Un token numérico con valor 18, porque todo flujo agrupa dígitos automáticamente.",
-            "Un diagnóstico porque 8 no pertenece al intervalo de un dígito."
+            "Un token numérico de valor 1; el segundo dígito queda descartado al devolver el primero."
           ],
           "correctIndex": 0,
           "explanation": "La función retorna al reconocer cada dígito. Reunir varios exige otra regla; el comportamiento actual debe quedar explícito en vez de atribuirle una capacidad que no se construyó.",
           "reviewFeedback": [
             "Sigue dónde retorna cada llamada y desde qué posición continúa la siguiente.",
             "La función utiliza get para obtener un carácter y retorna al reconocerlo. Localiza la operación que tendría que reunir varios dígitos antes de atribuirle ese comportamiento.",
-            "Compara el carácter leído con las dos fronteras que utiliza la condición de reconocimiento de dígitos."
+            "Distingue terminar una llamada de consumir el resto del flujo. Sigue desde qué posición empieza la llamada siguiente."
           ]
         },
         {
@@ -216,7 +216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un inspector que conserve el contrato anterior y admita además el signo `%`. El inspector reconoce ese signo; todavía no calcula el resto de una división.\n\nEl resultado de cada llamada al lector determina el informe:\n• Un número produce `Numero: N`, sustituyendo N por su valor.\n• Un signo produce `Signo: C`, sustituyendo C por el carácter reconocido.\n• El final del texto produce `Fin` y termina ese informe.\n• Un carácter no admitido produce `Error: Caracter no admitido` y detiene ese informe, sin añadir `Fin`.\n\nCada mensaje ocupa una línea y termina con un salto de línea. No añadas títulos ni líneas vacías entre informes.\n\nLa batería completa forma un solo programa. Define `probar(const std::string& texto)` para crear un flujo nuevo y ejecutar un inspector por llamada. Desde `main`, llama a esa función con estos siete textos, en este orden:\n1. `\"7%2;\"`\n2. `\"\"`\n3. `\" \\t\\n\"`\n4. `\"0;\"`\n5. `\"9+1;\"`\n6. `\"f\"`\n7. `\"1 2\"`\n\nEn el tercer texto, `\\t` y `\\n` representan un tabulador y un salto de línea reales, después de un espacio. Usa Compilar, ejecutar y comprobar cuando el mismo programa contenga todas las llamadas.",
+          "text": "Construye un inspector que conserve el contrato anterior y admita además el signo `%`. El inspector reconoce ese signo; todavía no calcula el resto de una división.\n\nEl resultado de cada llamada al lector determina el informe:\n• Un número produce `Numero: N`, sustituyendo N por su valor.\n• Un signo produce `Signo: C`, sustituyendo C por el carácter reconocido.\n• El final del texto produce `Fin` y termina ese informe.\n• Un carácter no admitido produce `Error: Caracter no admitido` y detiene ese informe, sin añadir `Fin`.\n\nCada mensaje ocupa una línea y termina con un salto de línea. No añadas títulos ni líneas vacías entre informes.\n\nLa batería completa forma un solo programa. Define `probar(const std::string& texto)` para crear un flujo nuevo y ejecutar un inspector por llamada. Desde `main`, llama a esa función con estos ocho textos, en este orden:\n1. `\"7%2;\"`\n2. `\"\"`\n3. `\" \\t\\n\"`\n4. `\"0;\"`\n5. `\"9+1;\"`\n6. `\"f\"`\n7. `\"1 2\"`\n8. `\"8-4*(2)/1;\"`\n\nEn el tercer texto, `\\t` y `\\n` representan un tabulador y un salto de línea reales, después de un espacio. Usa Compilar, ejecutar y comprobar cuando el mismo programa contenga todas las llamadas.",
           "emphasis": [
             {
               "text": "admita además el signo",
@@ -227,7 +227,7 @@
               "style": "bold"
             },
             {
-              "text": "estos siete textos, en este orden",
+              "text": "estos ocho textos, en este orden",
               "style": "bold"
             },
             {
@@ -271,7 +271,7 @@
               {
                 "standardInput": "",
                 "outputs": [
-                  "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\n"
+                  "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\n"
                 ]
               }
             ]
@@ -279,7 +279,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La comprobación contrasta los siete informes de la batería. Cada número y signo reconocido debe consumir su carácter; el token final detiene el inspector sin exigir que se haya consumido otro carácter.\n\nLa coincidencia de la salida no demuestra por sí sola cómo se representan los tokens dentro del programa. En la revisión posterior importa también mantener combinaciones coherentes de categoría y valor y utilizar el miembro correspondiente al presentar cada resultado.",
+          "text": "La comprobación contrasta los ocho informes de la batería. El último texto comprueba que se conservan también los signos `-`, `*`, `/`, `(` y `)`, sin calcular la expresión. Cada número y signo reconocido debe consumir su carácter; el token final detiene el inspector sin exigir que se haya consumido otro carácter.\n\nLa coincidencia de la salida no demuestra por sí sola cómo se representan los tokens dentro del programa. En la revisión posterior importa también mantener combinaciones coherentes de categoría y valor y utilizar el miembro correspondiente al presentar cada resultado.",
           "emphasis": [
             {
               "text": "el token final detiene el inspector",
@@ -344,14 +344,14 @@
           "options": [
             "Los tres fallan al reconocer el primer carácter.",
             "? falla al reconocer; 2**3, al combinar tokens; 4/0 exige rechazar cero antes del cálculo.",
-            "El inspector de tokens calcula los tres resultados y los convierte en cero."
+            "Los tres se rechazan al combinar tokens, porque todo error de una expresión es de gramática."
           ],
           "correctIndex": 1,
           "explanation": "Reconocer unidades, verificar su estructura y validar el dominio del cálculo son responsabilidades diferentes. Este inspector todavía no ejecuta división ni resto.",
           "reviewFeedback": [
             "Analiza el primer carácter de cada texto con las condiciones del lector. No atribuyas un fallo de reconocimiento a una comprobación que se realiza en otra etapa.",
             "Distingue reconocer una unidad, comprobar su combinación y aceptar los valores con los que se calcula.",
-            "El cero que acompaña a ciertos tokens es un miembro inicializado, no un resultado calculado. Localiza si este inspector ejecuta alguna operación aritmética de esas expresiones."
+            "Un orden de unidades permitido puede incumplir las condiciones de una operación. Distingue su forma de los valores con los que se intenta calcular."
           ]
         },
         {
@@ -379,7 +379,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n    return 0;\n}\n"
         }
       ]
     }
@@ -1259,6 +1259,106 @@
         "id": "block_0001_0002",
         "beforeSha256": "8e70f8b7a83597ac5497f4b4b3af5a9dc9f84aef4085871efc1d030bf329a799",
         "afterSha256": "00bca0403e9f1571d23aae539ff7f80dc310ae8136551868de19a497df5d1ca2"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9b28a5432859a50e1d336098022614188ad75f81eb7cb2db87284b98838efca1",
+        "afterSha256": "4d598fee502105e520f800f975a57486947851153339a448ea92cdff768ac400"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91",
+        "afterSha256": "123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "a0633caa9e65905eb3216a603cc7bfcb23b766fcad3715756d47c08796f2940e",
+        "afterSha256": "0800175e415321a20eb95403a67778d11549225a67ba9732cc9358a031138629"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ddd301c6c0a3c53e70ac18b616b2a3a1aae584590cf7b9e632d550088f6bde5a",
+        "afterSha256": "4d2480ce9aa48f34eb3b1777ab5d0ad88524436faa22cf666a0abb3c010edb46"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7a59b45a9b4392ed2eac1681e1005c915b30a9c7b9aec067f0aa5d0a50303ab7",
+        "afterSha256": "7c0412b448a13cf40682f96dbd7d10f8297ff48ea345a06347a4848c09e1a0ce"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "f67356278395cfa03fa6bf7317fa471d6b5eebcb21fdeff2128b1f61440d61db",
+        "afterSha256": "8fd285fe168e4b8ce9482e5d0d747d055b031464141221ba9e1a428046b2fa37"
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Con esta primera versión, ¿qué entrega el lector al recibir \"18\"?",
+          "options": [
+            "Dos tokens numéricos, con valores 1 y 8.",
+            "Un token numérico con valor 18, porque todo flujo agrupa dígitos automáticamente.",
+            "Un diagnóstico porque 8 no pertenece al intervalo de un dígito."
+          ],
+          "correctIndex": 0,
+          "explanation": "La función retorna al reconocer cada dígito. Reunir varios exige otra regla; el comportamiento actual debe quedar explícito en vez de atribuirle una capacidad que no se construyó.",
+          "reviewFeedback": [
+            "Sigue dónde retorna cada llamada y desde qué posición continúa la siguiente.",
+            "La función utiliza get para obtener un carácter y retorna al reconocerlo. Localiza la operación que tendría que reunir varios dígitos antes de atribuirle ese comportamiento.",
+            "Compara el carácter leído con las dos fronteras que utiliza la condición de reconocimiento de dígitos."
+          ]
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor__secuencia_fronteras_errores",
+          "question": "¿Qué relación distingue ?; 2**3; y 4/0; en un intérprete que ya admita esos operadores?",
+          "options": [
+            "Los tres fallan al reconocer el primer carácter.",
+            "? falla al reconocer; 2**3, al combinar tokens; 4/0 exige rechazar cero antes del cálculo.",
+            "El inspector de tokens calcula los tres resultados y los convierte en cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Reconocer unidades, verificar su estructura y validar el dominio del cálculo son responsabilidades diferentes. Este inspector todavía no ejecuta división ni resto.",
+          "reviewFeedback": [
+            "Analiza el primer carácter de cada texto con las condiciones del lector. No atribuyas un fallo de reconocimiento a una comprobación que se realiza en otra etapa.",
+            "Distingue reconocer una unidad, comprobar su combinación y aceptar los valores con los que se calcula.",
+            "El cero que acompaña a ciertos tokens es un miembro inicializado, no un resultado calculado. Localiza si este inspector ejecuta alguna operación aritmética de esas expresiones."
+          ]
+        }
+      }
+    ],
+    "compilerRevisions": [
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\n"
+                ]
+              }
+            ]
+          }
+        },
+        "references": [
+          {
+            "id": "block_0007_0001",
+            "block": {
+              "type": "code",
+              "language": "cpp",
+              "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    return 0;\n}\n"
+            }
+          }
+        ]
       }
     ]
   },

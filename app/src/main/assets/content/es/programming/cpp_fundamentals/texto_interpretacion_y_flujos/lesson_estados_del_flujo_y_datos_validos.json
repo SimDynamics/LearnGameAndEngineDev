@@ -346,14 +346,14 @@
           "options": [
             "La decisión de procesar el último dato exige good() en vez del éxito de la extracción.",
             "El diagnóstico final debería escribirse antes del primer dato.",
-            "Los enteros 4 y 10 no caben en el tipo int de una implementación conforme."
+            "La entrada necesita siempre un espacio después de 10 para que la última extracción sea válida."
           ],
           "correctIndex": 0,
           "explanation": "El éxito de la extracción permite procesar el último entero aunque eof() ya esté activo. good() es más estricto y puede omitirlo.",
           "reviewFeedback": [
             "Compara qué exige la condición que deja usar el dato con lo que consulta good().",
             "Cambiar el orden de los mensajes no explica por qué falta un dato reconocido. Revisa la condición que permite procesarlo.",
-            "Los dos valores del ejemplo son pequeños y representables como int. Revisa qué consulta podría impedir procesar el último aunque se haya leído."
+            "Revisa qué garantiza el éxito de la extracción y si detectar el final durante esa misma operación invalida necesariamente el dato obtenido."
           ]
         }
       ]
@@ -1400,6 +1400,32 @@
         "id": "block_0007_0002",
         "beforeSha256": "86bd922a647799a6a2b18ee7614dd65b0d19b8e2529a2ac94165a32a1e642ca2",
         "afterSha256": "3ea39cb025d610b3c3f275fd357b937cb52c5694a9fef3b364120bc07fc82d45"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "ccba0a5461601602d2c74520a20b3b800156e23c4156c6f9edb613908d4c3a5f",
+        "afterSha256": "0853764d61cd61df3f1ab10f310ff237a8ee4b057151d5c37e99490963589d3d"
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Una prueba con \"4 10\" imprime sólo Dato: 4 y después Fin. ¿Qué decisión del diseño podría explicar ese resultado?",
+          "options": [
+            "La decisión de procesar el último dato exige good() en vez del éxito de la extracción.",
+            "El diagnóstico final debería escribirse antes del primer dato.",
+            "Los enteros 4 y 10 no caben en el tipo int de una implementación conforme."
+          ],
+          "correctIndex": 0,
+          "explanation": "El éxito de la extracción permite procesar el último entero aunque eof() ya esté activo. good() es más estricto y puede omitirlo.",
+          "reviewFeedback": [
+            "Compara qué exige la condición que deja usar el dato con lo que consulta good().",
+            "Cambiar el orden de los mensajes no explica por qué falta un dato reconocido. Revisa la condición que permite procesarlo.",
+            "Los dos valores del ejemplo son pequeños y representables como int. Revisa qué consulta podría impedir procesar el último aunque se haya leído."
+          ]
+        }
       }
     ]
   },

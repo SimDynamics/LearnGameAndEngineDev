@@ -43,7 +43,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e01",
           "question": "Quieres comprobar dos secuencias de movimientos con la misma implementación. ¿Qué debes cambiar entre ejecuciones?",
           "options": [
-            "El campo Entrada preparada, manteniendo el código del lector.",
+            "El campo Entrada, manteniendo el código del lector.",
             "Sólo una etiqueta de cout: eso sustituye los datos que lee cin.",
             "Una cadena dentro del código; cin obtiene automáticamente esa cadena."
           ],
@@ -222,10 +222,10 @@
         },
         {
           "type": "paragraph",
-          "text": "El campo Entrada contiene inicialmente siete líneas. La segunda tiene un espacio seguido de un tabulador y la última no lleva salto final. Ese caso inicial debe producir lo siguiente, con un salto también después de la última línea:\n\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nEl objetivo es un único lector comprobado con diecinueve entradas. Entre ejecuciones cambia únicamente Entrada y conserva el mismo código; cada ejecución empieza otra vez con ocupación 3. Además del caso inicial, comprueba estos grupos:\n\n• Entrada completamente vacía; un único LF; 0:0 sin LF final, con un LF final y con dos LF finales.\n• Los textos de una línea 2:, q:1, 2;1, 2:1x, 2:1 0, -1:0, 0:4 y +2 : 01, cada uno en su propia ejecución.\n• Las parejas 3:0 y 1:0; 0:3 y 0:1; q:2 y 1:0. Cada pareja ocupa dos líneas de una ejecución, sin salto al final de la segunda.\n• La secuencia 1:0, 1:0 resto y 0:1, en tres líneas y sin salto al final de la tercera.\n• La pareja 0:0 y 0:4, en dos líneas y sin salto al final de la segunda.\n\nSalvo las variantes que piden expresamente uno o dos LF finales, no añadas un salto después del último dato. Los saltos entre líneas son caracteres reales en Entrada; escribir los dos caracteres barra invertida y n no los sustituye. En esta lista LF representa ese salto de línea. Pulsa Compilar, ejecutar y comprobar con cada entrada; no cambies la implementación para resolver casos individuales.",
+          "text": "El campo Entrada contiene inicialmente siete líneas. La segunda tiene un espacio seguido de un tabulador y la última no lleva salto final. Ese caso inicial debe producir lo siguiente, con un salto también después de la última línea:\n\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nEl objetivo es un único lector comprobado con veintiuna entradas. Entre ejecuciones cambia únicamente Entrada y conserva el mismo código; cada ejecución empieza otra vez con ocupación 3. Además del caso inicial, comprueba estos grupos:\n\n• Entrada completamente vacía; un único LF; 0:0 sin LF final, con un LF final y con dos LF finales.\n• Los textos de una línea 2:, q:1, 2;1, 2:1x, 2:1 0, -1:0, 0:4 y +2 : 01, cada uno en su propia ejecución.\n• Las parejas 3:0 y 1:0; 0:3 y 0:1; q:2 y 1:0. Cada pareja ocupa dos líneas de una ejecución, sin salto al final de la segunda.\n• La secuencia 1:0, 1:0 resto y 0:1, en tres líneas y sin salto al final de la tercera.\n• La pareja 0:0 y 0:4, en dos líneas y sin salto al final de la segunda.\n• Los textos 4:0 aviso y 4;0 aviso, cada uno en su propia ejecución. Combinan defectos: aplica el orden de diagnósticos del contrato y conserva el estado ante el rechazo.\n\nSalvo las variantes que piden expresamente uno o dos LF finales, no añadas un salto después del último dato. Los saltos entre líneas son caracteres reales en Entrada; escribir los dos caracteres barra invertida y n no los sustituye. En esta lista LF representa ese salto de línea. Pulsa Compilar, ejecutar y comprobar con cada entrada; no cambies la implementación para resolver casos individuales.",
           "emphasis": [
             {
-              "text": "un único lector comprobado con diecinueve entradas",
+              "text": "un único lector comprobado con veintiuna entradas",
               "style": "bold"
             },
             {
@@ -357,6 +357,18 @@
                 "outputs": [
                   "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
                 ]
+              },
+              {
+                "standardInput": "4:0 aviso",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4;0 aviso",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
               }
             ]
           }
@@ -391,7 +403,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las líneas 2:, q:1 y 2;1 incumplen la obtención de los campos y el separador: reciben Formato invalido. Los textos 2:1x y 2:1 0 sí permiten obtener los campos, pero dejan residuo y reciben Datos adicionales.\n\nLos casos -1:0 y 0:4 exceden el dominio de alguna cantidad y reciben Fuera de dominio. Si cualquiera de esos rechazos es la primera operación, conserva la ocupación inicial 3. La representación +2 : 01 está permitida y deja la ocupación en 4.",
+          "text": "Las líneas 2:, q:1 y 2;1 incumplen la obtención de los campos y el separador: reciben Formato invalido. Los textos 2:1x y 2:1 0 sí permiten obtener los campos, pero dejan residuo y reciben Datos adicionales.\n\nLos casos -1:0 y 0:4 exceden el dominio de alguna cantidad y reciben Fuera de dominio. Si cualquiera de esos rechazos es la primera operación, conserva la ocupación inicial 3. La representación +2 : 01 está permitida y deja la ocupación en 4.\n\nLos dos contrastes con aviso comprueban qué diagnóstico tiene prioridad cuando coinciden defectos. En 4:0 aviso, el residuo se detecta antes de comprobar el dominio y corresponde Datos adicionales. En 4;0 aviso, el separador incorrecto impide aceptar el formato y corresponde Formato invalido antes de examinar el residuo. Ambas ejecuciones conservan la ocupación inicial y no cuentan aceptaciones.",
           "emphasis": [
             {
               "text": "conserva la ocupación inicial 3",
@@ -1687,6 +1699,176 @@
         "id": "block_0000_0004",
         "beforeSha256": "3f5841521d2b3e114778df00579725701e35b2a1bb44eb829a7986a88d366da4",
         "afterSha256": "1588a86d210ef1c95b08fee6120684afc51caa303e932519d401b13981eb65dc"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "1588a86d210ef1c95b08fee6120684afc51caa303e932519d401b13981eb65dc",
+        "afterSha256": "35964088aa38c6231c8febb7b1a00da3a8389e4f1605112af426d03cde09d360"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "0ff28cd1a7cb92334d0a2486d5fcd773c7727813c84a082f8908950a6a3399c6",
+        "afterSha256": "e3d81fc9c5d397dfdd1be6df7271b34cba21d56a696cce43ca5ad1c8e5ae088a"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "da1c9a30d92f0d1d79ef7cfd6e5797b065264f8b581e75d8261f7059ef41c34b",
+        "afterSha256": "c15cb93b91db978aba17bfc2fea64500a9451123494ec24c6a2f8970a436d2ed"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "949bebdf91616b97755b3aff90566e82d2a02d15475d61fe8669957563304271",
+        "afterSha256": "b67bb5120c55df235abce548fa728642374ba06aa321d1b66136e8a189475adc"
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e01",
+          "question": "Quieres comprobar dos secuencias de movimientos con la misma implementación. ¿Qué debes cambiar entre ejecuciones?",
+          "options": [
+            "El campo Entrada preparada, manteniendo el código del lector.",
+            "Sólo una etiqueta de cout: eso sustituye los datos que lee cin.",
+            "Una cadena dentro del código; cin obtiene automáticamente esa cadena."
+          ],
+          "correctIndex": 0,
+          "explanation": "El texto del campo Entrada se entrega a cin. Cambiar la presentación no cambia esos datos, y una string local no alimenta cin por sí sola. Cada ejecución vuelve a comenzar con su estado inicial.",
+          "reviewFeedback": [
+            "Distingue los datos que recibe el lector del código que procesa esos datos.",
+            "Cambiar lo que escribe cout modifica la presentación, no los caracteres que recibe cin. Revisa dónde se prepara la entrada de la ejecución.",
+            "Un flujo local de cadena y cin son objetos lectores distintos. Revisa si crear una string en el programa cambia por sí solo la entrada que recibe cin."
+          ]
+        }
+      }
+    ],
+    "compilerRevisions": [
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Sin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "q:1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2;1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1x",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1 0",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "-1:0",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:4",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "+2 : 01",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6\n"
+                ]
+              },
+              {
+                "standardInput": "0:3\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "q:2\n1:0",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "1:0\n1:0 resto\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n0:4",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              }
+            ]
+          }
+        }
       }
     ]
   },

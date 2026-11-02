@@ -260,7 +260,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor contiene const Dimension fija{2,5}. Dentro de main, después de crear fija, añade la llamada fija.cambiar_a(4,2); y pulsa Compilar y ejecutar. Conserva const en el objeto y conserva la interfaz de Dimension.\n\nLa compilación debe rechazarse porque cambiar_a no puede llamarse sobre ese objeto constante. Observa el diagnóstico: su redacción puede variar entre compiladores. El objetivo es reconocer un error de compilación; no se espera que el programa llegue a ejecutarse ni que produzca salida.",
+          "text": "Este editor contiene const Dimension fija{2,5}. Dentro de main, después de crear fija, añade la llamada fija.cambiar_a(4,2); y pulsa Compilar y comprobar diagnóstico. Conserva const en el objeto y conserva la interfaz de Dimension.\n\nLa compilación debe rechazarse porque cambiar_a no puede llamarse sobre ese objeto constante. Observa el diagnóstico: su redacción puede variar entre compiladores. El objetivo es reconocer un error de compilación; no se espera que el programa llegue a ejecutarse ni que produzca salida.",
           "emphasis": [
             {
               "text": "fija.cambiar_a(4,2);"
@@ -272,7 +272,11 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas() const { return filas_; }\n    int columnas() const { return columnas_; }\n    void cambiar_a(int filas, int columnas) { filas_ = filas; columnas_ = columnas; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas() const { return filas_; }\n    int columnas() const { return columnas_; }\n    void cambiar_a(int filas, int columnas) { filas_ = filas; columnas_ = columnas; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "const-member-call",
+            "explanation": "La llamada fija.cambiar_a(4,2); intenta usar una función miembro no const mediante el objeto const fija. Esa llamada se rechaza durante la compilación; el programa no llegó a ejecutarse."
+          }
         }
       ]
     },
@@ -1108,6 +1112,16 @@
         "id": "block_0006_0001",
         "beforeSha256": "19d9e83b1e2a474dff0c6e221c6b5f31d7f7fa3f56786918a04071a2c47038b0",
         "afterSha256": "ad5cb84460ceb778dbc8ce01cdfe022be87936c3b0590962fc94e9f50972dc1a"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27",
+        "afterSha256": "8b50b6badf4244e5e4d98b8c7a2b89c0d137addb83b29ed0550d1b26141da9a4"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "5ee9e4550469ca26d9e23612fc417f24762466634fc2b7b1aa3422956903d172",
+        "afterSha256": "c71e5d50433c4066156bf53ea4ca62807ed7ee28ec7131d3807e813566cd71e0"
       }
     ]
   },

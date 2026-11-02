@@ -325,7 +325,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente contiene el modelo conocido. Dentro de main añade únicamente const Caja mal{Alto{4}, Ancho{3}}; y pulsa Compilar y ejecutar. Conserva los tipos de los parámetros y el orden de los argumentos de esa llamada.\n\nEl primer argumento tiene tipo Alto donde el constructor solicita Ancho. El objetivo es reconocer ese diagnóstico de compilación; no se exige una frase concreta, porque puede variar entre compiladores. El programa no debe llegar a ejecutarse ni producir un veredicto de salida. Las pruebas de valores válidos e inválidos permanecen en la actividad anterior.",
+          "text": "Este editor independiente contiene el modelo conocido. Dentro de main añade únicamente const Caja mal{Alto{4}, Ancho{3}}; y pulsa Compilar y comprobar diagnóstico. Conserva los tipos de los parámetros y el orden de los argumentos de esa llamada.\n\nEl primer argumento tiene tipo Alto donde el constructor solicita Ancho. El objetivo es reconocer ese diagnóstico de compilación; no se exige una frase concreta, porque puede variar entre compiladores. El programa no debe llegar a ejecutarse ni producir un veredicto de salida. Las pruebas de valores válidos e inválidos permanecen en la actividad anterior.",
           "emphasis": [
             {
               "text": "const Caja mal{Alto{4}, Ancho{3}};"
@@ -337,7 +337,11 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n",
+          "compileCheck": {
+            "diagnostic": "swapped-named-arguments",
+            "explanation": "El constructor de Caja recibe primero un Ancho y después un Alto. En Caja mal{Alto{4}, Ancho{3}}, esos tipos están intercambiados: los valores numéricos no sustituyen el tipo requerido en cada posición. El rechazo ocurre durante la compilación; el programa no llegó a ejecutarse."
+          }
         }
       ]
     },
@@ -1306,6 +1310,16 @@
         "id": "block_0007_0003",
         "beforeSha256": "6823d802ec0658f9db8be2ada705420bc102654f943c9f1c8f0e5fee90852adb",
         "afterSha256": "8675c8d2a577d1b1a7cf0a9be06189ac5776c366063e4d230bc2c4e2101e2cec"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed",
+        "afterSha256": "c9d09bede8fbaa241170b18a732a5a80efff5c788d03a38394ab5807071ca281"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "65cdb6871d2462bb17a615c7b849bb9abbdc3e8fc075eca8ed41a31bde111544",
+        "afterSha256": "36631d752173ba485b295d4f26bbe44464ed6b77e9798b0fcf600f62f5b2a21a"
       }
     ]
   },
