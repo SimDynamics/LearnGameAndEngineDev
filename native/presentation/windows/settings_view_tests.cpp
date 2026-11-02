@@ -578,11 +578,29 @@ void settings_thumb_drag_tests(){
     using namespace lgaed;using namespace presentation;
     state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["learning_progress"]["answer"]=std::string("unchanged");
     ScopedFixture fixture(SettingsScope::global,seed);ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
+    RECT host_client{},initial_view{};GetClientRect(fixture.host,&host_client);GetWindowRect(fixture.view,&initial_view);
+    // Production sizes its child page to the root client, not to a fixed
+    // fraction of an outer window whose frame grows with monitor DPI.
+    MoveWindow(fixture.view,host_client.left,host_client.top,host_client.right-host_client.left,host_client.bottom-host_client.top,TRUE);pump();
     SendMessageW(fixture.view,WM_VSCROLL,SB_TOP,0);pump();SCROLLBARINFO bar{sizeof(bar)};
     check(GetScrollBarInfo(fixture.view,OBJID_VSCROLL,&bar)&&!(bar.rgstate[3]&STATE_SYSTEM_UNAVAILABLE),"Settings native scrollbar thumb is unavailable");
     const POINT first{(bar.rcScrollBar.left+bar.rcScrollBar.right)/2,bar.rcScrollBar.top+(bar.xyThumbTop+bar.xyThumbBottom)/2};
     const POINT last{first.x,bar.rcScrollBar.bottom-bar.dxyLineButton-30};
-    check(WindowFromPoint(first)==fixture.view&&SendMessageW(fixture.view,WM_NCHITTEST,0,MAKELPARAM(first.x,first.y))==HTVSCROLL,"The Settings fixture does not own its native scrollbar input");
+    const auto hit=WindowFromPoint(first),foreground=GetForegroundWindow();
+    const auto hit_test=SendMessageW(fixture.view,WM_NCHITTEST,0,MAKELPARAM(first.x,first.y));
+    RECT view_bounds{},host_bounds{};GetWindowRect(fixture.view,&view_bounds);GetWindowRect(fixture.host,&host_bounds);
+    wchar_t hit_class[128]{},foreground_class[128]{};GetClassNameW(hit,hit_class,128);GetClassNameW(foreground,foreground_class,128);
+    DWORD hit_pid=0,foreground_pid=0;GetWindowThreadProcessId(hit,&hit_pid);GetWindowThreadProcessId(foreground,&foreground_pid);
+    std::cout<<"METRIC Settings thumb input: dpi="<<GetDpiForWindow(fixture.host)<<" host="<<static_cast<void*>(fixture.host)
+        <<" host_bounds="<<host_bounds.left<<','<<host_bounds.top<<','<<host_bounds.right<<','<<host_bounds.bottom
+        <<" host_client="<<host_client.left<<','<<host_client.top<<','<<host_client.right<<','<<host_client.bottom
+        <<" initial_view_size="<<initial_view.right-initial_view.left<<'x'<<initial_view.bottom-initial_view.top
+        <<" view="<<static_cast<void*>(fixture.view)<<" view_bounds="<<view_bounds.left<<','<<view_bounds.top<<','<<view_bounds.right<<','<<view_bounds.bottom
+        <<" scrollbar="<<bar.rcScrollBar.left<<','<<bar.rcScrollBar.top<<','<<bar.rcScrollBar.right<<','<<bar.rcScrollBar.bottom
+        <<" thumb="<<bar.xyThumbTop<<','<<bar.xyThumbBottom<<" first="<<first.x<<','<<first.y
+        <<" hit="<<static_cast<void*>(hit)<<" hit_class="<<utf8(hit_class)<<" hit_pid="<<hit_pid<<" hit_test="<<hit_test
+        <<" foreground="<<static_cast<void*>(foreground)<<" foreground_class="<<utf8(foreground_class)<<" foreground_pid="<<foreground_pid<<'\n';
+    check(hit==fixture.view&&hit_test==HTVSCROLL,"The Settings fixture does not own its native scrollbar input");
     SCROLLINFO initial{sizeof(initial),SIF_ALL};GetScrollInfo(fixture.view,SB_VERT,&initial);const auto child=fixture.control(5101);const auto before=relative_rect(child,fixture.view);
     SettingsThumbProbe probe;check(SetWindowSubclass(fixture.view,SettingsThumbProbe::proc,0x51415354,reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,"Observe real Settings scrollbar notifications");
     POINT original{};GetCursorPos(&original);std::atomic<bool> finished=false,input_ok=true;const auto dpi=GetThreadDpiAwarenessContext();
@@ -1038,6 +1056,72 @@ void scoped_options_parity_tests(){
     check(lesson.data==expected,"Lesson selectors changed UI/content language, rate, drafts or unrelated preferences");
     std::cout<<"PASS scoped Android Options parity: complete ES/EN/FR explanations, single size card, real modal speech selectors, scrolling keyboard focus, cancellation and retained voice/dialect/state\n";
 }
+void profile_location_tests(){
+    using namespace lgaed;using namespace presentation;
+    const std::filesystem::path roaming=L"Q:\\QA sin datos\\Usuaria Ángela con nombre largo\\AppData\\Roaming\\LearnGameAndEngineDev";
+    const std::filesystem::path local=L"Q:\\QA sin datos\\Usuaria Ángela con nombre largo\\AppData\\Local\\LearnGameAndEngineDev\\Codex\\qa\\respaldo-aislado";
+    for(const auto* locale:{"es","en","fr"})for(const bool qa:{false,true}){
+        const auto root=qa?local:roaming/(std::string_view(locale)=="en"?L"Work":L"Codex");
+        state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string(locale);
+        data.preferences["learning_progress"]["respuesta_conservada"]=std::string("{\"correct\":true,\"opaque\":7}");
+        data.preferences["cpp_lesson_drafts"]["borrador_conservado"]=std::string("int main(){return 7;}\n");
+        const auto original=data;int updates=0,changes=0;std::vector<std::wstring> copied;
+        const auto host=CreateWindowExW(0,L"STATIC",L"Isolated profile-location QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+        check(host!=nullptr,"Cannot create the profile-location QA host");
+        struct DestroyHost{HWND value;~DestroyHost(){if(IsWindow(value))DestroyWindow(value);}} destroy{host};
+        SettingsAccess access;access.profile_root=root;access.qa_profile=qa;
+        access.read=[&]{return data;};access.update=[&](const auto& update){++updates;update(data);};access.changed=[&]{++changes;};
+        access.copy_text=[&](std::wstring_view text){copied.emplace_back(text);};
+        const auto view=create_settings_view(host,access);MoveWindow(view,0,0,960,700,TRUE);pump();
+        const auto location=GetDlgItem(view,5165),copy=GetDlgItem(view,5166),instructions=GetDlgItem(view,5168);
+        check(location&&copy&&instructions&&native_text(location)==root.native(),"Global options did not display the exact environment profile path");
+        check((GetWindowLongPtrW(location,GWL_STYLE)&ES_READONLY)&&(GetWindowLongPtrW(location,GWL_STYLE)&ES_MULTILINE),"The profile location must be selectable, read-only and wrapped");
+        const auto guidance=native_text(instructions),kind=native_text(GetDlgItem(view,5169));
+        if(qa)check(!GetDlgItem(view,5167)&&kind.find(L"QA")!=std::wstring::npos&&guidance.find(L"Roaming")==std::wstring::npos,
+            "An isolated Local QA profile was presented as normal Roaming progress or a product-wide backup");
+        else check(native_text(GetDlgItem(view,5167))==root.parent_path().native()&&kind.find(L"QA")==std::wstring::npos
+            &&guidance.find(L"Work")!=std::wstring::npos&&guidance.find(L"Codex")!=std::wstring::npos
+            &&guidance.find(L"AppData\\Roaming")!=std::wstring::npos,
+            "Normal-profile backup guidance lost the complete product folder, both instances or the original Roaming restoration location");
+        check(data==original&&updates==0&&changes==0&&copied.empty(),"Opening the progress-location section changed saved state or copied text without a click");
+        SendMessageW(copy,BM_CLICK,0,0);pump();
+        check(copied==std::vector<std::wstring>{root.native()}&&data==original&&updates==0&&changes==0,
+            "Copy path did not copy the exact Unicode environment path once or changed progress/drafts/settings");
+        MoveWindow(view,0,0,360,620,TRUE);pump();
+        RECT bounds{},client{};GetWindowRect(location,&bounds);MapWindowPoints(nullptr,view,reinterpret_cast<POINT*>(&bounds),2);GetClientRect(view,&client);
+        check(bounds.left>=0&&bounds.right<=client.right&&bounds.bottom>bounds.top&&SendMessageW(location,EM_GETLINECOUNT,0,0)>1,
+            "A long Unicode profile path escaped or failed to wrap in a narrow settings page");
+        RECT formatting{};SendMessageW(location,EM_GETRECT,0,reinterpret_cast<LPARAM>(&formatting));
+        const auto last=SendMessageW(location,EM_POSFROMCHAR,GetWindowTextLengthW(location)-1,0);
+        const auto path_dc=GetDC(location);const auto previous_font=SelectObject(path_dc,reinterpret_cast<HFONT>(SendMessageW(location,WM_GETFONT,0,0)));TEXTMETRICW path_metrics{};
+        check(GetTextMetricsW(path_dc,&path_metrics)!=FALSE,"Cannot inspect the wrapped profile path's actual font");SelectObject(path_dc,previous_font);ReleaseDC(location,path_dc);
+        const auto last_top=static_cast<short>(HIWORD(last));
+        const bool last_visible=last!=-1&&last_top>=formatting.top&&last_top+path_metrics.tmHeight<=formatting.bottom;
+        if(!last_visible)std::cerr<<"PROFILE PATH layout: locale="<<locale<<" qa="<<qa<<" lines="<<SendMessageW(location,EM_GETLINECOUNT,0,0)
+            <<" first_visible="<<SendMessageW(location,EM_GETFIRSTVISIBLELINE,0,0)<<" width="<<bounds.right-bounds.left<<" height="<<bounds.bottom-bounds.top
+            <<" format="<<formatting.top<<','<<formatting.bottom<<" last_y="<<last_top<<" glyph_height="<<path_metrics.tmHeight<<'\n';
+        check(last_visible,
+            "The profile path's final wrapped line is clipped in a narrow settings page");
+        DestroyWindow(view);
+        const auto reopened=create_settings_view(host,access);MoveWindow(reopened,0,0,960,700,TRUE);
+        check(native_text(GetDlgItem(reopened,5165))==root.native()&&data==original&&updates==0&&changes==0,
+            "Reopening profile-location options changed the environment path or saved data");
+    }
+    for(const auto scope:{SettingsScope::course,SettingsScope::unit,SettingsScope::lesson,SettingsScope::audio,SettingsScope::global}){
+        state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");int copied=0,updates=0;
+        const auto host=CreateWindowExW(0,L"STATIC",L"Scoped profile-location QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+        check(host!=nullptr,"Cannot create the scoped profile-location QA host");
+        struct DestroyHost{HWND value;~DestroyHost(){if(IsWindow(value))DestroyWindow(value);}} destroy{host};
+        SettingsAccess access;access.scope=scope;access.course_id="qa_course";access.route_id="programming";
+        access.profile_root=scope==SettingsScope::global?std::filesystem::path(L"relative-profile"):roaming/L"Work";
+        access.read=[&]{return data;};access.update=[&](const auto& update){++updates;update(data);};access.copy_text=[&](auto){++copied;};
+        const auto view=create_settings_view(host,access);MoveWindow(view,0,0,960,700,TRUE);
+        check(!GetDlgItem(view,5165)&&!GetDlgItem(view,5166)&&!GetDlgItem(view,5167),"Scoped options or an invalid relative path invented a global backup location");
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(5166,BN_CLICKED),0);
+        check(copied==0&&updates==0,"A stale copy-path action bypassed its global/absolute-path gate or changed preferences");
+    }
+    std::cout<<"PASS exact Unicode profile path/copy, manual whole-product Roaming guidance, explicitly isolated Local QA, narrow wrapping, reopen and global-only gates; no real profile, backup files or desktop clipboard touched\n";
+}
 void global_migration_contract_tests(){
     using namespace lgaed;using namespace presentation;
     state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["learning_progress"]["answer"]=std::string("unchanged");
@@ -1125,7 +1209,7 @@ int main(int argc,char** argv){
     try{
         std::cout<<std::unitbuf;
         std::string_view selected="all";
-        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure|interactions|engine-storage]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure"||selected=="interactions"||selected=="engine-storage","Unknown Settings test case; expected licenses, controls, save-failure, interactions or engine-storage");}
+        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure|interactions|engine-storage|profile-location]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure"||selected=="interactions"||selected=="engine-storage"||selected=="profile-location","Unknown Settings test case; expected licenses, controls, save-failure, interactions, engine-storage or profile-location");}
         const auto dpi_set=SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         check(dpi_set||GetAwarenessFromDpiAwarenessContext(GetThreadDpiAwarenessContext())==DPI_AWARENESS_PER_MONITOR_AWARE,
             "Settings visual QA must use the application's actual per-monitor DPI context");
@@ -1139,6 +1223,7 @@ int main(int argc,char** argv){
         check(InitCommonControlsEx(&common)!=FALSE,"The declared settings controls could not be registered");
         if(selected=="save-failure"){run_case("save_failure",save_failure_tests);return 0;}
         if(selected=="engine-storage"){run_case("engine_storage",engine_storage_tests);return 0;}
+        if(selected=="profile-location"){run_case("profile_location",profile_location_tests);return 0;}
         if(selected=="interactions"){
             run_case("thumb_drag",settings_thumb_drag_tests);run_case("slider_wheel",slider_wheel_tests);run_case("native_colour",native_color_picker_tests);
             run_case("live_storage",live_storage_tests);run_case("lesson_actions",lesson_settings_actions_tests);run_case("unavailable_system_voice",unavailable_system_voice_tests);run_case("engine_storage",engine_storage_tests);return 0;
@@ -1204,6 +1289,7 @@ int main(int argc,char** argv){
         run_case("scoped_parity",scoped_options_parity_tests);
         run_case("immediate_language",immediate_settings_language_tests);
         run_case("global_contract",global_migration_contract_tests);
+        run_case("profile_location",profile_location_tests);
         std::cout<<"PASS native options: complete shared voices, real SAPI inventory, independent languages and preserved progress\n";return 0;
     }catch(const std::exception& e){if(view)DestroyWindow(view);if(host)DestroyWindow(host);std::cerr<<"FAIL native settings: "<<e.what()<<'\n';return 1;}
 }

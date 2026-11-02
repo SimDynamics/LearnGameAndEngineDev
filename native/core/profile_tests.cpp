@@ -163,6 +163,25 @@ int main() {
         require(paths.root.is_absolute(), "Never resolve personal data relative to the executable");
     });
 
+    test("Personal state roams while generated resources retain their local paths", [] {
+        const std::filesystem::path local{LR"(C:\Users\Prueba\AppData\Local)"};
+        const std::filesystem::path roaming{LR"(C:\Users\Prueba\AppData\Roaming)"};
+        for (const auto profile : {ProfileId::Work, ProfileId::Codex}) {
+            const auto legacy = lgaed::make_profile_paths(local, profile);
+            const auto paths = lgaed::make_profile_paths(local, roaming, profile);
+            require(paths.root == roaming / L"LearnGameAndEngineDev" / lgaed::profile_name(profile), "Visible roaming profile");
+            require(paths.progress == paths.root / L"progress" && paths.drafts == paths.root / L"drafts" &&
+                    paths.preferences == paths.root / L"preferences", "Durable categories roam");
+            require(paths.cache == legacy.cache && paths.logs == legacy.logs && paths.projects == legacy.projects,
+                    "Existing audio, models and generated workspaces are reused");
+            const auto qa = lgaed::make_profile_paths(local, roaming, profile, L"isolated");
+            const auto old_qa = lgaed::make_profile_paths(local, profile, L"isolated");
+            require(qa.root == old_qa.root && qa.cache == old_qa.cache, "QA stays local and never migrates");
+        }
+        rejects([&] { (void)lgaed::make_profile_paths(local, L"relative", ProfileId::Work); });
+        rejects([&] { (void)lgaed::make_profile_paths(local, {}, ProfileId::Work); });
+    });
+
     std::cout << "Profile tests: " << passed << " passed, " << failed << " failed.\n";
     return failed == 0 ? 0 : 1;
 }

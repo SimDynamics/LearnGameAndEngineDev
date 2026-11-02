@@ -45,10 +45,11 @@ std::int64_t json_integer(double value) {
         throw std::runtime_error("Indice JSON no valido.");
     return static_cast<std::int64_t>(value);
 }
-void write_file(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) {
+void write_file(const std::filesystem::path& path, std::span<const std::uint8_t> bytes, bool physical_io) {
     Handle file{CreateFileW(native_io_path(path).c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW,
                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH, nullptr)};
     if (file.value == INVALID_HANDLE_VALUE) throw std::runtime_error("No se pudo crear el estado pendiente.");
+    if (physical_io) require_unredirected_handle(file.value, path);
     std::size_t cursor = 0;
     while (cursor < bytes.size()) {
         DWORD written = 0;
@@ -71,6 +72,17 @@ std::filesystem::path native_io_path(const std::filesystem::path& path) {
     const auto absolute = std::filesystem::absolute(path).lexically_normal().native();
     if (absolute.starts_with(L"\\\\")) return std::filesystem::path(L"\\\\?\\UNC\\" + absolute.substr(2));
     return std::filesystem::path(L"\\\\?\\" + absolute);
+}
+void require_unredirected_handle(void* handle, const std::filesystem::path& requested) {
+    const auto size = GetFinalPathNameByHandleW(handle, nullptr, 0, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+    if (!size) throw std::runtime_error("No se pudo comprobar la ruta real del progreso.");
+    std::wstring actual(size, L'\0');
+    const auto copied = GetFinalPathNameByHandleW(handle, actual.data(), size, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+    if (!copied || copied >= size) throw std::runtime_error("La ruta real del progreso no es valida.");
+    actual.resize(copied);
+    const auto expected = native_io_path(std::filesystem::absolute(requested).lexically_normal()).native();
+    if (CompareStringOrdinal(actual.c_str(), -1, expected.c_str(), -1, TRUE) != CSTR_EQUAL)
+        throw std::runtime_error("Windows ha redirigido la carpeta de progreso a los datos privados de otra aplicacion. Cierra esta copia y abre LearnGameAndEngineDev desde su acceso instalado. No se ha trasladado el progreso.");
 }
 void require_safe_path(const std::filesystem::path& path) {
     auto cursor = std::filesystem::absolute(path).lexically_normal();
@@ -115,6 +127,9 @@ StateStore::StateStore(std::filesystem::path profile_root) : root_(std::move(pro
     if (!root_.is_absolute()) throw std::runtime_error("El perfil debe tener una ruta absoluta independiente del directorio actual.");
     root_ = root_.lexically_normal();
     require_safe_path(root_);
+    const auto profile = root_.parent_path();
+    physical_io_ = profile.parent_path().filename() == L"LearnGameAndEngineDev" &&
+        (profile.filename() == L"Work" || profile.filename() == L"Codex");
 }
 bool StateStore::empty() const { return !std::filesystem::exists(native_io_path(root_ / "active")); }
 StateData StateStore::load() {
@@ -125,6 +140,13 @@ StateData StateStore::load() {
         if (std::filesystem::exists(native_io_path(root_ / "active"))) throw std::runtime_error("El estado activo esta incompleto; no se ha reemplazado.");
         expected_hash_ = hash; loaded_ = true;
         return {};
+    }
+    if (physical_io_) {
+        Handle input{CreateFileW(native_io_path(file).c_str(), GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL, nullptr)};
+        if (input.value == INVALID_HANDLE_VALUE) throw std::runtime_error("No se pudo abrir el progreso guardado.");
+        require_unredirected_handle(input.value, file);
     }
     auto bytes = read_bytes(file);
     if (bytes.size() < 64) throw std::runtime_error("Estado Windows incompleto.");
@@ -139,6 +161,7 @@ void StateStore::save(const StateData& state) {
     Handle lock{CreateFileW(native_io_path(root_ / "writer.lock").c_str(), GENERIC_READ | GENERIC_WRITE, 0,
                             nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr)};
     if (lock.value == INVALID_HANDLE_VALUE) throw std::runtime_error("Otra instancia esta guardando este perfil.");
+    if (physical_io_) require_unredirected_handle(lock.value, root_ / "writer.lock");
     const auto active = root_ / "active";
     const auto final_file = active / "state.bin";
     if (file_hash(final_file) != expected_hash_) throw std::runtime_error("El perfil cambio en otra instancia; vuelve a abrirlo antes de guardar.");
@@ -150,7 +173,7 @@ void StateStore::save(const StateData& state) {
     const auto pending_file = initial ? pending_directory / "state.bin" : active / (token + L".pending");
     try {
         if (initial) std::filesystem::create_directory(native_io_path(pending_directory));
-        write_file(pending_file, bytes);
+        write_file(pending_file, bytes, physical_io_);
         if (initial) {
             if (!MoveFileExW(native_io_path(pending_directory).c_str(), native_io_path(active).c_str(), MOVEFILE_WRITE_THROUGH))
                 throw std::runtime_error("No se pudo publicar el estado inicial.");

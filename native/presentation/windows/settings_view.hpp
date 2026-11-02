@@ -3,6 +3,7 @@
 #include "platform/windows/narration_storage.hpp"
 #include <windows.h>
 #include <functional>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -37,6 +38,11 @@ struct SettingsAccess {
     std::function<void()> page_top, page_bottom, import_state, finish;
     bool finish_enabled=false;
     std::function<std::string()> generation_status;
+    // The environment supplies the actual profile location; QA may use Local.
+    std::filesystem::path profile_root;
+    bool qa_profile=false;
+    // Optional desktop boundary for isolated UI tests. Empty uses Win32 clipboard.
+    std::function<void(std::wstring_view)> copy_text;
 };
 // Normal application page, not a second copy of the lesson or its data.
 [[nodiscard]] HWND create_settings_view(HWND parent,SettingsAccess);

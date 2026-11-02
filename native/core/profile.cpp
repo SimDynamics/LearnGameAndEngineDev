@@ -118,4 +118,18 @@ ProfilePaths make_profile_paths(const std::filesystem::path& local_app_data,
         root / L"logs", root / L"projects", root / L"cache"};
 }
 
+ProfilePaths make_profile_paths(const std::filesystem::path& local_app_data,
+    const std::filesystem::path& roaming_app_data, ProfileId profile,
+    std::wstring_view qa_instance) {
+    auto paths = make_profile_paths(local_app_data, profile, qa_instance);
+    if (roaming_app_data.empty() || !roaming_app_data.is_absolute())
+        throw std::invalid_argument("RoamingAppData must be an absolute path");
+    if (!qa_instance.empty()) return paths;
+    paths.root = roaming_app_data / L"LearnGameAndEngineDev" / profile_name(profile);
+    paths.progress = paths.root / L"progress";
+    paths.drafts = paths.root / L"drafts";
+    paths.preferences = paths.root / L"preferences";
+    return paths;
+}
+
 } // namespace lgaed

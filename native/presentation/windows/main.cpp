@@ -245,6 +245,7 @@ void open_settings(HWND window,WindowState& state){
     if(state.reader)state.reader->pause();
     state.settings_lesson=state.lesson;state.settings_focus=GetFocus();state.pending_option_page.reset();state.pending_option_action.reset();
     SettingsAccess access;access.read=[&state]{return preferences(state);};access.update=[&state](const PreferencesMutation& change){update_preferences(state,change);};
+    access.profile_root=state.environment.paths.root;access.qa_profile=state.environment.options.qa_instance.has_value();
     const auto initial_preferences=preferences(state);
     access.changed=[window,&state,previous_ui=interface_language(initial_preferences),previous_content=lgaed::state::string_value(initial_preferences,"native_windows","content_language","es")]()mutable{
         update_audio_context(state,true);if(state.reader)state.reader->settings_changed();
@@ -620,6 +621,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         }
         auto environment = lgaed::resolve_windows_environment(
             lgaed::parse_launch_options(options, *default_profile));
+        const auto profile_session = lgaed::prepare_windows_profile(environment);
         lgaed::initialize_profile_directories(environment.paths);
         WindowState state{std::move(environment)};
 

@@ -20,6 +20,7 @@ private:
     std::filesystem::path root_;
     std::optional<std::string> expected_hash_;
     bool loaded_ = false;
+    bool physical_io_ = false;
 };
 
 [[nodiscard]] std::optional<Response> get_response(const StateData&, std::string_view exercise_key);
@@ -58,5 +59,8 @@ void save_current_page(StateData&, const curriculum::Lesson&, std::size_t displa
 void require_safe_path(const std::filesystem::path&);
 // Extended Win32 spelling is I/O only; stored IDs and relative paths are unchanged.
 [[nodiscard]] std::filesystem::path native_io_path(const std::filesystem::path&);
+// Call immediately after opening/creating a durable file, before its payload
+// is written. A known-folder name alone does not rule out MSIX redirection.
+void require_unredirected_handle(void* handle, const std::filesystem::path& requested);
 
 } // namespace lgaed::state

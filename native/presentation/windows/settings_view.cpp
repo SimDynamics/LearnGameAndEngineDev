@@ -25,6 +25,7 @@
 #include <optional>
 #include <cstdio>
 #include <cstddef>
+#include <cstring>
 #include <exception>
 #include <limits>
 #include <stdexcept>
@@ -53,6 +54,7 @@ constexpr int size_range=5152;
 constexpr int kokoro_separator=5153,kokoro_heading=5154,storage_explanation=5155;
 constexpr int generation_detail=5156;
 constexpr int lesson_import=5160,lesson_page=5161,lesson_top=5162,lesson_bottom=5163,lesson_finish=5164;
+constexpr int profile_location=5165,copy_profile_location=5166,backup_folder=5167,backup_instructions=5168,profile_kind=5169;
 constexpr UINT_PTR storage_timer=0x4C475354;
 bool separator_id(int id){return id==size_separator||id==kokoro_separator||(id>=flow_separator_first&&id<flow_separator_first+2);}
 constexpr std::uint64_t storage_step=1024ull*1024;
@@ -109,6 +111,22 @@ int measured_text_height(HWND control,int width){
     std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(control))+1,L'\0');text.resize(static_cast<std::size_t>(GetWindowTextW(control,text.data(),static_cast<int>(text.size()))));
     RECT bounds{0,0,std::max(1,width),0};DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&bounds,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
     if(previous)SelectObject(dc,previous);ReleaseDC(control,dc);return bounds.bottom-bounds.top;
+}
+int wrapped_edit_height(HWND control,int width){
+    // EDIT's wrapping differs from DrawText, notably for an unbroken path.
+    // Let that same native control reflow at its final width before measuring.
+    RECT bounds{};GetWindowRect(control,&bounds);
+    SetWindowPos(control,nullptr,0,0,std::max(1,width),std::max(1L,bounds.bottom-bounds.top),
+        SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOREDRAW);
+    const auto lines=std::max<LRESULT>(1,SendMessageW(control,EM_GETLINECOUNT,0,0));
+    const auto dc=GetDC(control);TEXTMETRICW metrics{};
+    if(dc){const auto font=reinterpret_cast<HFONT>(SendMessageW(control,WM_GETFONT,0,0));const auto previous=font?SelectObject(dc,font):nullptr;
+        GetTextMetricsW(dc,&metrics);if(previous)SelectObject(dc,previous);ReleaseDC(control,dc);}
+    const auto dpi=GetDpiForWindow(control);
+    const int line_height=std::max(MulDiv(16,dpi,96),static_cast<int>(metrics.tmHeight+metrics.tmExternalLeading));
+    RECT client{},formatting{};GetClientRect(control,&client);SendMessageW(control,EM_GETRECT,0,reinterpret_cast<LPARAM>(&formatting));
+    const int frame=std::max(0L,bounds.bottom-bounds.top-client.bottom);
+    return static_cast<int>(lines)*line_height+frame+std::max(0L,formatting.top)*2+MulDiv(8,dpi,96);
 }
 int combo_selection_height(HWND control,int width){const auto dpi=static_cast<int>(GetDpiForWindow(control));
     return std::max(MulDiv(56,dpi,96),measured_text_height(control,width-MulDiv(72,dpi,96))+MulDiv(12,dpi,96));}
@@ -561,6 +579,48 @@ struct Settings {
             else{settings[std::string(system?"windows_voice:":"kokoro_voice:")+tag]=candidate_voices[*chosen];if(!system)settings["kokoro_voice"]=candidate_voices[*chosen];}});
         fill_voices(access.read());if(id==engine)refresh_engine_storage();refresh_narration_visibility();layout();if(access.changed)access.changed();
     }
+    void copy_profile_location_text(){
+        if(access.scope!=SettingsScope::global||!access.profile_root.is_absolute())return;
+        const auto text=access.profile_root.native();
+        if(access.copy_text)access.copy_text(text);
+        else{
+            const auto memory=GlobalAlloc(GMEM_MOVEABLE,(text.size()+1)*sizeof(wchar_t));
+            if(!memory)throw std::runtime_error(tr("No se pudo copiar la ruta.","Could not copy the path.","Impossible de copier le chemin."));
+            const auto destination=GlobalLock(memory);
+            if(!destination){GlobalFree(memory);throw std::runtime_error(tr("No se pudo copiar la ruta.","Could not copy the path.","Impossible de copier le chemin."));}
+            std::memcpy(destination,text.c_str(),(text.size()+1)*sizeof(wchar_t));GlobalUnlock(memory);
+            if(!OpenClipboard(window)){GlobalFree(memory);throw std::runtime_error(tr("El portapapeles está ocupado.","The clipboard is busy.","Le presse-papiers est occupé."));}
+            const bool copied=EmptyClipboard()&&SetClipboardData(CF_UNICODETEXT,memory)!=nullptr;
+            CloseClipboard();
+            if(!copied){GlobalFree(memory);throw std::runtime_error(tr("No se pudo copiar la ruta.","Could not copy the path.","Impossible de copier le chemin."));}
+        }
+        show_settings_notice(window,tr("Ruta copiada.","Path copied.","Chemin copié."));
+    }
+    void backup_controls(int& y){
+        if(!access.profile_root.is_absolute())return;
+        section(y,tr("Progreso y copia de seguridad","Progress and backup","Progression et sauvegarde"),
+            tr("Consulta dónde se guardan el progreso, los borradores y los ajustes de este perfil.","See where this profile’s progress, drafts, and settings are stored.","Consultez l’emplacement de la progression, des brouillons et des paramètres de ce profil."));
+        begin_card(y);
+        item(L"STATIC",access.qa_profile?tr("Perfil de prueba (QA)","Test profile (QA)","Profil de test (QA)"):
+            tr("Carpeta del perfil actual","Current profile folder","Dossier du profil actuel"),profile_kind,y,34,SS_LEFT,18,true);y+=44;
+        const auto path=[&](const std::filesystem::path& value,int id){
+            item(L"EDIT",utf8(value.native()),id,y,70,WS_TABSTOP|ES_MULTILINE|ES_READONLY|ES_AUTOVSCROLL);y+=84;
+        };
+        path(access.profile_root,profile_location);
+        reader_theme::primary_button(item(L"BUTTON",tr("Copiar ruta","Copy path","Copier le chemin"),copy_profile_location,y,56,WS_TABSTOP|BS_PUSHBUTTON));y+=72;
+        if(access.qa_profile){
+            item(L"STATIC",tr("Esta instancia usa una carpeta aislada de prueba. Cierra la prueba antes de copiar su carpeta completa. Para restaurarla, vuelve a colocarla en esta misma ruta antes de abrir la prueba.",
+                "This instance uses an isolated test folder. Close the test before copying its whole folder. To restore it, put it back at this same path before opening the test.",
+                "Cette instance utilise un dossier de test isolé. Fermez le test avant de copier son dossier complet. Pour le restaurer, replacez-le au même emplacement avant d’ouvrir le test."),backup_instructions,y,120,SS_LEFT,16);y+=132;
+        }else{
+            label(tr("Carpeta completa para la copia","Whole folder to back up","Dossier complet à sauvegarder"),y,18,true);y+=44;
+            path(access.profile_root.parent_path(),backup_folder);
+            item(L"STATIC",tr("Para hacer una copia de seguridad manual, cierra todas las instancias de la aplicación (Work y Codex). Copia la carpeta LearnGameAndEngineDev completa, indicada arriba, a la ubicación que elijas.\n\nPara restaurar, con la aplicación cerrada, coloca esa carpeta completa en AppData\\Roaming de tu usuario de Windows, en su ubicación original, antes de volver a abrir la aplicación.",
+                "To make a manual backup, close every instance of the app (Work and Codex). Copy the whole LearnGameAndEngineDev folder shown above to a location you choose.\n\nTo restore it, with the app closed, put that whole folder back in your Windows user’s AppData\\Roaming, at its original location, before opening the app again.",
+                "Pour faire une sauvegarde manuelle, fermez toutes les instances de l’application (Work et Codex). Copiez le dossier LearnGameAndEngineDev complet indiqué ci-dessus à l’emplacement de votre choix.\n\nPour le restaurer, l’application étant fermée, replacez ce dossier complet dans AppData\\Roaming de votre compte Windows, à son emplacement d’origine, avant de rouvrir l’application."),backup_instructions,y,170,SS_LEFT,16);y+=182;
+        }
+        end_card(y);y+=24;
+    }
     void global_controls(int& y,const state::StateData& data){
         section(y,tr("Idioma de la aplicación","App Language","Langue de l’application"),tr("Selecciona el idioma de la aplicación, el contenido y la narración.","Choose the language of the application, content and narration.","Choisissez la langue de l’application, du contenu et de la narration."));
         const auto selected=state::string_value(data,"native_windows","ui_language","auto");
@@ -599,6 +659,7 @@ struct Settings {
                 tr("Esta ruta aún no tiene cursos ni excepciones de ajuste de línea. El botón solo muestra un aviso; no restablece ninguna configuración.","This learning path has no courses or line wrapping exceptions yet. The button only shows a notice; it does not reset any settings.","Ce parcours n’a pas encore de cours ni d’exceptions de retour à la ligne. Le bouton affiche seulement un message ; aucun réglage n’est réinitialisé."));
             const auto button=item(L"BUTTON",index==0?tr("Restablecer excepciones de Programación","Reset Programming Exceptions","Réinitialiser les exceptions de programmation"):tr("Consultar disponibilidad de excepciones","Check exception availability","Vérifier la disponibilité des exceptions"),index==0?reset_wrap_exceptions:reset_math_wrap_exceptions,y,58,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);y+=72;end_card(y);y+=20;
         }
+        backup_controls(y);
         if(access.reset_route){section(y,tr("Datos y progreso","Data and Progress","Données et progression"),tr("Reinicia el progreso guardado de cada ruta sin cambiar sus ajustes.","Reset each learning path’s saved progress without changing its settings.","Réinitialisez la progression enregistrée de chaque parcours sans modifier ses réglages."));
             for(int index=0;index<2;++index){begin_card(y);label(index==0?tr("Ruta de Programación","Programming Learning Path","Parcours de programmation"):tr("Ruta de Matemáticas y Física","Mathematics and Physics path","Parcours Mathématiques et Physique"),y,19,true);y+=34;
                 description(y,tr("Elimina el progreso, las respuestas y las páginas guardadas de todos los cursos de esta ruta.","Remove progress, answers and saved pages for all courses in this learning path.","Supprimez la progression, les réponses et les pages enregistrées de tous les cours de ce parcours."));
@@ -832,7 +893,8 @@ struct Settings {
                     const bool check=type==BS_AUTOCHECKBOX||type==BS_CHECKBOX;
                     const auto text_inset=check?px(40):(id>=global_color&&id<=math_color?px(76):px(28));
                     row.actual_height=std::max(px(check?58:62),measured_text_height(row.window,std::max(1,row.actual_width-text_inset))+px(check?12:16));
-                }else if(_wcsicmp(name,L"STATIC")==0)row.actual_height=std::max(px(24),measured_text_height(row.window,row.actual_width)+px(4));
+                }else if(id==profile_location||id==backup_folder)row.actual_height=std::max(px(54),wrapped_edit_height(row.window,row.actual_width));
+                else if(_wcsicmp(name,L"STATIC")==0)row.actual_height=std::max(px(24),measured_text_height(row.window,row.actual_width)+px(4));
                 else row.actual_height=px(row.height);
             }
             cursor=std::max(cursor,row.actual_top+row.actual_height);authored_end=row.y+row.height;
@@ -872,6 +934,7 @@ struct Settings {
         if(id==engine||id==language||id==voice){if(notification==BN_CLICKED)choose_narration(id);return;}
         if((id==reset_programming||id==reset_math)&&access.reset_route){access.reset_route(id==reset_programming?"programming":"math_physics");return;}
         if(notification!=CBN_SELCHANGE&&notification!=BN_CLICKED)return;
+        if(id==copy_profile_location){if(notification==BN_CLICKED)copy_profile_location_text();return;}
         if(id==lesson_page){
             const auto selected=static_cast<int>(SendDlgItemMessageW(window,id,CB_GETCURSEL,0,0));
             if(notification==CBN_SELCHANGE&&selected>=0&&static_cast<std::size_t>(selected)<access.lesson_pages.size()&&access.navigate_page){

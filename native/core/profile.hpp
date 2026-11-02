@@ -40,4 +40,12 @@ struct ProfilePaths {
     ProfileId profile,
     std::wstring_view qa_instance = {});
 
+// Durable personal state roams; regenerable resources stay local. QA keeps
+// its original fully isolated LocalAppData layout and never migrates a user.
+[[nodiscard]] ProfilePaths make_profile_paths(
+    const std::filesystem::path& local_app_data,
+    const std::filesystem::path& roaming_app_data,
+    ProfileId profile,
+    std::wstring_view qa_instance = {});
+
 } // namespace lgaed

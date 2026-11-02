@@ -139,14 +139,45 @@ por el sufijo exacto de la raíz `LearnGameAndEngineDev-Work` o
 En otras ubicaciones se debe indicar `-Profile Work` o `-Profile Codex` al script.
 También existe la selección explícita de lanzamiento `--profile Work|Codex`.
 
-Los datos mutables se resuelven con la API de carpetas de Windows bajo
-`%LOCALAPPDATA%\LearnGameAndEngineDev\<perfil>`, separados en `progress`, `drafts`,
-`preferences`, `logs`, `projects` y `cache`. Las pruebas añaden
-`--qa-instance <identificador>` para utilizar un subperfil `qa/<identificador>`.
-`--smoke-test` exige ese aislamiento, abre y pinta una ventana real y la cierra.
+El progreso personal se guarda en **`%APPDATA%\LearnGameAndEngineDev\<perfil>`**
+(AppData\Roaming), con los perfiles `Work` y `Codex` separados. El archivo
+autoritativo es `state\active\state.bin`: incluye respuestas, progreso, borradores,
+ajustes y posición de lectura. La carpeta `state\active` conserva también archivos
+importados e historial de proyectos C++. No basta con copiar la subcarpeta vacía
+`progress`. Los audios, modelos y recursos regenerables continúan bajo
+`%LOCALAPPDATA%\LearnGameAndEngineDev\<perfil>` (`cache`, `projects` y `logs`).
+
+**Copia manual:** cerrar las aplicaciones de ambos perfiles y copiar la carpeta
+`%APPDATA%\LearnGameAndEngineDev` completa a la ubicación externa elegida por el
+usuario. Después de reinstalar Windows, restaurarla en AppData\Roaming del usuario
+actual **antes de abrir la aplicación**. Las opciones globales muestran la ruta
+exacta y permiten copiarla. No se programa ninguna copia externa automática;
+Roaming por sí solo no sobrevive a un formateo.
+
+Al abrir por primera vez esta versión, con las copias anteriores cerradas, se
+valida y copia el estado de LocalAppData a Roaming sin borrar ni recodificar el
+original. Se comprueba cada archivo y se publica el directorio completo de forma
+atómica. Un estado corrupto o dos estados incompatibles se conservan y causan un
+error; no se reemplazan por progreso vacío. Un marcador detecta modificaciones
+posteriores en el origen antiguo. La sesión bloquea las escrituras de binarios
+antiguos y otra apertura personal del mismo perfil mientras está en uso.
+
+Se solicita Roaming con `KF_FLAG_NO_PACKAGE_REDIRECTION` y se comprueba además la
+ruta física del directorio abierto: una ejecución normal redirigida al espacio
+privado de un paquete se rechaza antes de trasladar o guardar progreso. Los
+[flags de carpetas conocidas](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/ne-shlobj_core-known_folder_flag)
+controlan la ruta devuelta; la
+[virtualización MSIX de archivos](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes)
+también puede afectar a las escrituras posteriores.
+
+Las pruebas añaden `--qa-instance <identificador>` y conservan su subperfil
+aislado `%LOCALAPPDATA%\LearnGameAndEngineDev\<perfil>\qa\<identificador>`; nunca
+leen ni migran progreso personal. `--smoke-test` exige ese aislamiento, abre y pinta
+una ventana real y la cierra.
 
 No se enlazan fuentes, binarios ni cachés del checkout vecino. No hay un mutex,
-puerto o servicio global que impida las ejecuciones simultáneas. El manifiesto
+puerto o servicio global que impida ejecutar perfiles distintos o instancias QA
+simultáneamente. El bloqueo de sesión se limita al perfil personal concreto. El manifiesto
 solicita `asInvoker`; los resultados QA registran además la elevación real del
 proceso, pues el manifiesto no reduce los permisos de un lanzador elevado.
 

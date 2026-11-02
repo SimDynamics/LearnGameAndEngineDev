@@ -91,6 +91,7 @@ target_link_libraries(lgaed_smo_arithmetic PUBLIC lgaed_core lgaed_host_options)
 
 add_library(lgaed_platform_windows STATIC
     native/platform/windows/environment.cpp
+    native/platform/windows/profile_migration.cpp
     native/platform/windows/content_loader.cpp
     native/platform/windows/narration_preferences.cpp
     native/platform/windows/catalog_loader.cpp
@@ -378,6 +379,8 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_settings_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_settings_view_tests lgaed_narration_runtime)
     add_test(NAME native.settings_view COMMAND lgaed_settings_view_tests --case controls)
+    add_test(NAME native.settings_profile_location COMMAND lgaed_settings_view_tests --case profile-location)
+    set_tests_properties(native.settings_profile_location PROPERTIES TIMEOUT 45)
     add_test(NAME native.settings_save_failure COMMAND lgaed_settings_view_tests --case save-failure)
     set_tests_properties(native.settings_save_failure PROPERTIES TIMEOUT 30)
     add_test(NAME native.narration_licenses COMMAND lgaed_settings_view_tests --case licenses)
@@ -670,6 +673,14 @@ if(BUILD_TESTING)
     add_executable(lgaed_profile_tests native/core/profile_tests.cpp)
     target_link_libraries(lgaed_profile_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.profile COMMAND lgaed_profile_tests)
+    add_executable(lgaed_profile_migration_tests native/platform/windows/profile_migration_tests.cpp)
+    target_link_libraries(lgaed_profile_migration_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.profile_migration COMMAND lgaed_profile_migration_tests "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(native.profile_migration PROPERTIES TIMEOUT 45)
+    add_executable(lgaed_profile_session_tests native/platform/windows/profile_session_tests.cpp)
+    target_link_libraries(lgaed_profile_session_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.profile_session COMMAND lgaed_profile_session_tests "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(native.profile_session PROPERTIES TIMEOUT 30)
     add_test(NAME native.window_smoke
         COMMAND LearnGameAndEngineDev --profile "${LGAED_DEFAULT_PROFILE}"
         --qa-instance "ctest-${CMAKE_BUILD_TYPE}" --smoke-test)
@@ -791,7 +802,7 @@ if(BUILD_TESTING)
         lgaed_audio_schedule_tests lgaed_audio_generation_tests lgaed_audio_generation_real_tests
         lgaed_system_speech_tests lgaed_system_speech_background_tests
         lgaed_narration_cpu_policy_tests lgaed_narration_shutdown_tests
-        lgaed_narration_preferences_tests lgaed_profile_tests)
+        lgaed_narration_preferences_tests lgaed_profile_tests lgaed_profile_migration_tests lgaed_profile_session_tests)
 endif()
 
 install(TARGETS LearnGameAndEngineDev lgaed_cpp_tool_host lgaed_system_speech_host RUNTIME DESTINATION bin)
