@@ -10,7 +10,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Para conservar la prioridad, una expresión ya no reúne números directamente: reúne términos. Un término es un número seguido de cero o más pares de * o / y número. Una expresión es un término seguido de cero o más pares de + o - y término. Cada término termina su multiplicación o división antes de entregar el valor al nivel de suma y resta."
+          "text": "Para conservar la prioridad, una expresión ya no reúne números directamente: reúne términos. Un término es un número seguido de cero o más pares de * o / y número. Una expresión es un término seguido de cero o más pares de + o - y término. Cada término termina su multiplicación o división antes de entregar el valor al nivel de suma y resta (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Un término es un número",
+              "style": "bold"
+            },
+            {
+              "text": "Una expresión es un término",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -25,37 +35,12 @@
             "El carácter *, porque el nivel de suma debe calcular todos los signos."
           ],
           "correctIndex": 1,
-          "explanation": "El nivel de expresión combina términos completos. La multiplicación se resuelve dentro del término antes de regresar al nivel exterior."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Un término conserva lo que pertenece a la expresión"
-        },
-        {
-          "type": "paragraph",
-          "text": "Este fragmento añade leer_termino después de leer_numero y resultado_en_dominio del archivo anterior. Reutiliza Lector_tokens ya construido. La referencia posterior al laboratorio lo integra en un programa completo; el fragmento aislado no sustituye ese contexto."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "int leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "Después de una multiplicación o división, el término vuelve a preguntar por otro signo de su propio nivel. Si encuentra +, -, ; o final, lo devuelve y retorna. La función que lo llamó recibirá ese mismo token y decidirá su papel. Leer una reserva la vacía antes de que otra regla pueda volver a reservarla: no se ocupan dos posiciones."
-        },
-        {
-          "type": "paragraph",
-          "text": "El fragmento de expresión siguiente sustituye sus llamadas numéricas por llamadas a términos. Se coloca después de leer_termino, de modo que la declaración sea visible. El bucle exterior sigue admitiendo únicamente + y -."
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "int leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n"
+          "explanation": "El nivel de expresión combina términos completos. La multiplicación se resuelve dentro del término antes de regresar al nivel exterior.",
+          "reviewFeedback": [
+            "Distingue el primer número del término completo que debe devolver la llamada antes de continuar la suma.",
+            "Comprueba qué operaciones pertenecen al término y en qué momento entrega su valor al nivel exterior.",
+            "Revisa qué función reconoce y calcula los signos de cada nivel. El nivel exterior combina los valores que recibe de los términos."
+          ]
         }
       ]
     },
@@ -64,16 +49,6 @@
         {
           "type": "heading",
           "text": "La asociación sigue siendo de izquierda a derecha en cada nivel"
-        },
-        {
-          "type": "output_prediction",
-          "question": "Predice la salida de la etapa con términos.",
-          "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"6+2*5-3;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texto extra tras la operacion\");\n        }\n        std::cout << \"Resultado: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
-          "answers": [
-            "Resultado: 13"
-          ],
-          "explanation": "El término 2*5 entrega 10. La expresión calcula 6+10 y después resta 3, sin mezclar la suma con el bucle de multiplicación."
         },
         {
           "type": "paragraph",
@@ -88,7 +63,12 @@
             "Obtener 6 de 36/6 y después dividir ese acumulado entre 3."
           ],
           "correctIndex": 2,
-          "explanation": "El término actualiza su acumulado después de cada par, por lo que produce 2. No agrupa hacia la derecha."
+          "explanation": "El término actualiza su acumulado después de cada par, por lo que produce 2. No agrupa hacia la derecha.",
+          "reviewFeedback": [
+            "Sigue la primera división y conserva su cociente como acumulado antes de leer el siguiente par.",
+            "Cada vuelta actualiza el acumulado antes de comenzar la siguiente. Sigue las dos divisiones en el orden de entrada.",
+            "Comprueba qué valor izquierdo recibe la segunda división después de terminar la primera."
+          ]
         }
       ]
     },
@@ -100,21 +80,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La división sólo se ejecuta después de obtener un operando derecho distinto de cero. Un divisor cero provoca un diagnóstico; no se calcula primero para comprobar luego una salida. Los operandos de cada cálculo están dentro de -100..100; el producto candidato tiene magnitud máxima 10000 y sigue siendo representable en cualquier int conforme. Después se rechaza si sale del dominio -100..100 del lenguaje."
+          "text": "La división sólo se ejecuta después de obtener un operando derecho distinto de cero. Un divisor cero provoca un diagnóstico; no se calcula primero para comprobar luego una salida (Stroustrup, 2024). Los operandos de cada cálculo están dentro de -100..100; el producto candidato tiene magnitud máxima 10000 y sigue siendo representable en cualquier int conforme. Después se rechaza si sale del dominio -100..100 del lenguaje.",
+          "emphasis": [
+            {
+              "text": "operando derecho distinto de cero",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Estos cálculos son enteros: 9/2 produce 4, como en la unidad de división y resto. El lenguaje no convierte el resultado en double por encontrar /. También conserva el dominio de cada resultado parcial: una operación que llega temporalmente a 110 y después vuelve a 10 debe rechazarse en el paso que salió de la banda."
-        },
-        {
-          "type": "output_prediction",
-          "question": "Predice el diagnóstico de la implementación antes de ejecutar una división.",
-          "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"8/0+1;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texto extra tras la operacion\");\n        }\n        std::cout << \"Resultado: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
-          "answers": [
-            "Error: Divisor cero"
-          ],
-          "explanation": "El término obtiene el divisor 0 y lanza el diagnóstico antes de evaluar izquierda / derecha. La expresión no llega a sumar 1."
+          "text": "Estos cálculos son enteros: 9/2 produce 4, como en la unidad de división y resto. El lenguaje no convierte el resultado en double por encontrar /. Cada multiplicación, división, suma o resta conserva el dominio de cada resultado parcial: una operación que llega temporalmente a 110 y después vuelve a 10 debe rechazarse en el paso que salió de la banda.",
+          "emphasis": [
+            {
+              "text": "cada resultado parcial",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -125,7 +107,12 @@
             "8/2;: comprueba una división exacta válida."
           ],
           "correctIndex": 0,
-          "explanation": "El resultado final matemático sería 20, pero el contrato exige que cada resultado parcial esté dentro de -100..100. La primera suma viola esa regla."
+          "explanation": "El resultado final matemático sería 20, pero el contrato exige que cada resultado parcial esté dentro de -100..100. La primera suma viola esa regla.",
+          "reviewFeedback": [
+            "Localiza el primer resultado parcial y comprueba su pertenencia a la banda antes de continuar con el siguiente par.",
+            "Un único número no pone a prueba la diferencia entre comprobar cada operación y comprobar sólo al final. Busca un caso que salga de la banda y después vuelva a ella.",
+            "Una división válida por sí sola no distingue las dos políticas. Busca un resultado intermedio fuera de la banda que una operación posterior reduciría."
+          ]
         }
       ]
     },
@@ -137,8 +124,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor parte del intérprete de sumas y restas.\n\nAmplíalo con un nivel de términos para * y / y conecta el nivel exterior mediante llamadas.\n\nPara \"2+3*4;\" debe producir Resultado: 14.\n\nConserva los casos anteriores de suma/resta y la comprobación de una única operación terminada en ;.\n\nNo añadas * al mismo acumulado exterior para simular prioridad.\n\nAgrupa las pruebas en una sola batería: define probar(const std::string& texto), crea un lector nuevo por llamada y no cambies la implementación entre casos. main llama, en este orden, con \"2+3*4;\", \"24/4/2;\", \"9/2;\", \"5*0;\", \"8/0;\", \"9*12;\", \"2*;\", \"2 3;\", \"4+2*7-3;\", \"20-6-3;\", \"11/2*2;\".\n\nCada llamada presenta su resultado o diagnóstico en una línea terminada con salto, sin títulos ni líneas vacías.\n\nPara comparar stdout, conserva los mensajes exactos Resultado: N o Error: seguido de la causa: Divisor cero, Resultado fuera de dominio, Se esperaba ;, Se esperaba un numero.\n\nDistintos nombres de funciones y organizaciones siguen siendo válidos si conservan reglas, seguridad y estos mensajes observables.\n\nUsa Compilar, ejecutar y comprobar con toda la batería; un fallo de compilación o ejecución conserva su diagnóstico técnico sin veredicto de stdout.",
+          "text": "El editor parte del intérprete de sumas y restas. Construye la ampliación antes de consultar los fragmentos y programas completos de las páginas siguientes.\n\nAmplíalo con un nivel de términos para * y / y conecta el nivel exterior mediante llamadas.\n\nPara \"2+3*4;\" debe producir Resultado: 14.\n\nConserva los casos anteriores de suma/resta y la comprobación de una única operación terminada en ;.\n\nNo añadas * al mismo acumulado exterior para simular prioridad.\n\nAgrupa las pruebas en una sola batería: define probar(const std::string& texto), crea un lector nuevo por llamada y no cambies la implementación entre casos. main llama, en este orden, con \"2+3*4;\", \"24/4/2;\", \"9/2;\", \"5*0;\", \"8/0;\", \"9*12;\", \"2*;\", \"2 3;\", \"4+2*7-3;\", \"20-6-3;\", \"11/2*2;\".\n\nCada llamada presenta su resultado o diagnóstico en una línea terminada con salto, sin títulos ni líneas vacías.\n\nPara comparar stdout, conserva los mensajes exactos Resultado: N o Error: seguido de la causa: Divisor cero, Resultado fuera de dominio, Se esperaba ;, Se esperaba un numero.\n\nDistintos nombres de funciones y organizaciones siguen siendo válidos si conservan reglas, seguridad y estos mensajes observables.\n\nLa función `leer_token` transforma caracteres en tokens: es el analizador léxico o lexer del intérprete. `Lector_tokens` añade a ese lector la reserva de un token.\n\nUsa Compilar, ejecutar y comprobar con toda la batería; un fallo de compilación o ejecución conserva su diagnóstico técnico sin veredicto de stdout.",
           "emphasis": [
+            {
+              "text": "Construye la ampliación",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -155,7 +146,12 @@
             "Un rechazo: el lexer no reconoce *."
           ],
           "correctIndex": 1,
-          "explanation": "El término entrega el producto 12 al nivel de suma; la expresión exterior lo combina con 2. Reconocimiento y prioridad son contratos diferentes."
+          "explanation": "El término entrega el producto 12 al nivel de suma; la expresión exterior lo combina con 2. Reconocimiento y prioridad son contratos diferentes.",
+          "reviewFeedback": [
+            "Separa los niveles de suma y multiplicación. Sigue el valor que debe devolver el término derecho antes de continuar el nivel exterior.",
+            "Comprueba qué parte se resuelve dentro del término y qué valores combina después la expresión.",
+            "Distingue reconocer un signo de darle una función en la gramática. El analizador léxico y la evaluación de los términos realizan tareas diferentes."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -181,11 +177,41 @@
       "blocks": [
         {
           "type": "heading",
+          "text": "Un término conserva lo que pertenece a la expresión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento añade leer_termino después de leer_numero y resultado_en_dominio del programa inicial del editor. Reutiliza Lector_tokens ya construido. La referencia posterior al laboratorio lo integra en un programa completo; el fragmento aislado no sustituye ese contexto. La organización por funciones sigue los niveles de la gramática (Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de una multiplicación o división, el término vuelve a preguntar por otro signo de su propio nivel. Si encuentra +, -, ; o final, lo devuelve y retorna. La función que lo llamó recibirá ese mismo token y decidirá su papel. Leer una reserva la vacía antes de que otra regla pueda volver a reservarla: no se ocupan dos posiciones (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El fragmento de expresión siguiente sustituye sus llamadas numéricas por llamadas a términos. Se coloca después de leer_termino, de modo que la declaración sea visible. El bucle exterior sigue admitiendo únicamente + y -."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
           "text": "Comparar la integración después del intento"
         },
         {
           "type": "paragraph",
-          "text": "La referencia usa \"4+2*7-3;\". El término multiplicativo entrega 14 antes de combinarse con 4 y -3. La expresión exterior conserva su bucle de + y -, mientras el nuevo nivel conserva su bucle de * y /. Compara interfaces y consumo antes de comparar cada línea del código."
+          "text": "La referencia usa \"4+2*7-3;\". El término multiplicativo entrega 14; la expresión exterior suma ese valor a 4 y después resta 3. La expresión exterior conserva su bucle de + y -, mientras el nuevo nivel conserva su bucle de * y /. Compara interfaces y consumo antes de comparar cada línea del código."
         },
         {
           "type": "code",
@@ -195,6 +221,17 @@
         {
           "type": "paragraph",
           "text": "El resultado de esta referencia es 15. Para el caso inicial del intento debe obtenerse 14. La división repetida 24/4/2 debe dar 3 y el divisor cero debe producir un rechazo, nunca un resultado numérico supuesto. Una solución que organiza sus funciones de otra manera puede cumplir las mismas reglas si conserva estas decisiones observables."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida de la etapa con términos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"6+2*5-3;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texto extra tras la operacion\");\n        }\n        std::cout << \"Resultado: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Resultado: 13"
+          ],
+          "explanation": "El término 2*5 entrega 10. La expresión calcula 6+10 y después resta 3, sin mezclar la suma con el bucle de multiplicación.",
+          "reviewFeedback": "Separa el término multiplicativo del nivel exterior y sigue qué valor devuelve antes de aplicar la resta. La expresión combina términos completos."
         }
       ]
     },
@@ -212,7 +249,8 @@
           "answers": [
             "Resultado: 13"
           ],
-          "explanation": "El término obtiene 11/2 como 5 y después 5*2 como 10. La suma exterior añade 3. El descarte entero ocurre antes de la multiplicación siguiente."
+          "explanation": "El término obtiene 11/2 como 5 y después 5*2 como 10. La suma exterior añade 3. El descarte entero ocurre antes de la multiplicación siguiente.",
+          "reviewFeedback": "Sigue / y * en el orden en que aparecen y conserva el cociente entero antes de la multiplicación. Después vuelve al nivel de suma."
         },
         {
           "type": "multiple_choice",
@@ -224,7 +262,23 @@
             "Porque el intérprete convierte 11 en 10 antes de leer operadores."
           ],
           "correctIndex": 0,
-          "explanation": "La división entera ya descarta la fracción; multiplicar el cociente no recupera el dato descartado. / y * comparten nivel y se asocian a la izquierda."
+          "explanation": "La división entera ya descarta la fracción; multiplicar el cociente no recupera el dato descartado. / y * comparten nivel y se asocian a la izquierda.",
+          "reviewFeedback": [
+            "Sigue la actualización del acumulado después de cada par y conserva el cociente entero antes de continuar.",
+            "/ y * comparten nivel. Revisa la asociación de izquierda a derecha antes de decidir qué par se calcula primero.",
+            "Localiza la operación que descarta la parte fraccionaria. La lectura del número conserva su valor; el cambio ocurre durante el cálculo."
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice el diagnóstico de la implementación antes de ejecutar una división.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"8/0+1;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texto extra tras la operacion\");\n        }\n        std::cout << \"Resultado: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Error: Divisor cero"
+          ],
+          "explanation": "El término obtiene el divisor 0 y lanza el diagnóstico antes de evaluar izquierda / derecha. La expresión no llega a sumar 1.",
+          "reviewFeedback": "Localiza la lectura del divisor y la comprobación que aparece antes de /. Distingue producir un resultado de abandonar la operación mediante una excepción."
         }
       ]
     },
@@ -236,7 +290,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La siguiente ampliación sustituirá el número de cada término por una unidad más general: podrá ser un número, un signo unario seguido de esa unidad o una expresión entre paréntesis. Devolver un signo al nivel correcto ya está construido. Para permitir agrupación habrá que consumir el paréntesis de apertura antes de llamar otra vez a la regla de expresión y comprobar después el cierre. La separación de expresión y término adapta la organización de la lectura de apoyo (Stroustrup, 2024, secciones 5.5.1–5.5.3). La banda de resultados enteros, las condiciones de aceptación y las actividades son propias de esta ruta."
+          "text": "La siguiente ampliación sustituirá el número de cada término por una unidad más general: podrá ser un número, un signo unario seguido de esa unidad o una expresión entre paréntesis. Devolver un signo al nivel correcto ya está construido. Para permitir agrupación habrá que consumir el paréntesis de apertura antes de llamar otra vez a la regla de expresión y comprobar después el cierre."
         }
       ]
     },
@@ -251,6 +305,960 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_termino(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_numero(lector);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_termino(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texto extra tras la operacion\");\n        }\n        std::cout << \"Resultado: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"2+3*4;\");\n    probar(\"24/4/2;\");\n    probar(\"9/2;\");\n    probar(\"5*0;\");\n    probar(\"8/0;\");\n    probar(\"9*12;\");\n    probar(\"2*;\");\n    probar(\"2 3;\");\n    probar(\"4+2*7-3;\");\n    probar(\"20-6-3;\");\n    probar(\"11/2*2;\");\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "30404f9b7c98afc7e9ba6cfba1d594bc30dccbabc04d489448bf3e52eb8bd8cd"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "6584fcabf8bd164827adb4d50a56a95fe42e0e83318fc199185fd03c00f297a0"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "19036cf96eb1f1a544b91a0fae777d6ca45163043d86b1522b415eb007f91e29"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "0ff4819467856591b608116bf508b6b53fa969b998db0e1ff18451de104c79e4"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "27891f9dcb2f7fd2cb65c602fb290176c2d11bea0c42b6e5cd694da2de40795a"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "f1363b7359dabda37c68d97c6faf2ca8f41a78726c511cbf4d175778aa24afc0"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "613ce69f44c47badc8a2ff8068dc89c5e406e245edd4fb7314e4e71823b7a004"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "6b100b4ec36bc29c326ddb547c6ed8e0ddd3bb5c850119c778c2807c8774e29d"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "9bddda66a2a7024ef1280fc82a82e7ad59cd189a2b3089138b5f06c06de78f1d"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "4884b3336316b0c805568f4dd9956f017658858ca5547e5a839652cfa6807d37"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "77b10975633f6507f09bfec6422143d48b027bd803dac9eae931289f863913c2"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "008ef66072a2de7acfd1c6a046dde125ca93826f9d8bc4bdbd75a85b775f4568"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "44f26849307e799bc3263578b3353b4979218eae494c39a906c2fe09bafb2cb5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0002_0001"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "e77db00ca45a1be5cb4faf6f88499c5329386cdcff332c9cb0398cd3c016cabb",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "29ff9c3d7f3859a8b18002c8076e5c06474ccc5af7a74b5dbb2c5ef5a063c232"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "5071719f2f73025ca99e798140593839e1318ef9e15384f50d5e90f023ef676f"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "19036cf96eb1f1a544b91a0fae777d6ca45163043d86b1522b415eb007f91e29"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "65e96c65a13deff6b7b9660a98a215e5003b8d2d12fdd055b2327f19a3132c35"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "8975cfed48ab9d028ab51e0a90208e204d4bf08cd25177623cee61783c952569"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f7a9a2d24d321a4ee733f6d8369dc8313550f7d138d8a8f4ae031ca77a5f901c"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "76783b97573c1e2c9db4d23ec8423ed749af6fee1e53f5c1a2150fa1281ec305"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "a5d27275a88e7b343e4c9a8bc3d1b794cfd21c0f83fd86e7f5da3c90643fa536"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "01e87e6fd368e6a9c9ccae8e51460d10be23fcdd71a14c01f13b42c1112bfa00"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "027c7f8b492531e427b0bc0f066b6da9686008b7dd0dd11e65a1f76162d79609"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "92a6459a88ec6d5f81ec4488414f3f35faaab718909add2bf3671bf2488a95c8",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "30404f9b7c98afc7e9ba6cfba1d594bc30dccbabc04d489448bf3e52eb8bd8cd"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "6584fcabf8bd164827adb4d50a56a95fe42e0e83318fc199185fd03c00f297a0"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "19036cf96eb1f1a544b91a0fae777d6ca45163043d86b1522b415eb007f91e29"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0ff4819467856591b608116bf508b6b53fa969b998db0e1ff18451de104c79e4"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "27891f9dcb2f7fd2cb65c602fb290176c2d11bea0c42b6e5cd694da2de40795a"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f1363b7359dabda37c68d97c6faf2ca8f41a78726c511cbf4d175778aa24afc0"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "613ce69f44c47badc8a2ff8068dc89c5e406e245edd4fb7314e4e71823b7a004"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "6b100b4ec36bc29c326ddb547c6ed8e0ddd3bb5c850119c778c2807c8774e29d"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "9bddda66a2a7024ef1280fc82a82e7ad59cd189a2b3089138b5f06c06de78f1d"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "4884b3336316b0c805568f4dd9956f017658858ca5547e5a839652cfa6807d37"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "77b10975633f6507f09bfec6422143d48b027bd803dac9eae931289f863913c2"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "008ef66072a2de7acfd1c6a046dde125ca93826f9d8bc4bdbd75a85b775f4568"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "44f26849307e799bc3263578b3353b4979218eae494c39a906c2fe09bafb2cb5"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "a3c81dfc31489cd27dcf5c0d66a0f96a20e2c9a836d3d539b159e19894b5f8a8",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "0179dbb7875928193f0e0d67a0a9faca7502768064586478691d27bb9d43b975"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "2645c5168f8ec8f719edcddb3f4d039baa4eb49c59ee71d864566a7e7b9184c0"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "19036cf96eb1f1a544b91a0fae777d6ca45163043d86b1522b415eb007f91e29"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "240ed214aa3a3f63e72abd3438287c21aa04ee384a79ddcc80ea5af7051dd923"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "9cf12358d5dbdf0c69ee53b372ceb8c4dc1e688a03e520323a29b9bd834861b9"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "3ed2dad72da30ee86d089384744212dbe8cc7c4665a2515c51f3b3f1689eb6c7"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "0b9dd88e57ad02dbe58a4d64cccc187e134c209cfef1757d8ec72ee2964fa4dc"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "9dbaae49947c44603e7280bca08f7043da1d7b8f362d7e24fecd919da983c158"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "2f23bd37c06c14cae75582958747722ed2c37bfc6fcc3dfc9dfabe96bbf003b0"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "db982f2f66d31e5cf3bcda43132201ef9a02e4a2930ef2cb8e0bcb9d138baf3f"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "42e01b65d204056384e546a4f4236a1c2fcc04401bec84927d773205681363b2",
+        "afterSha256": "3e9ea2734400c3cf7961bf87dd1b016aa3a2f877daf07885e5a7c654c1dd1e60"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8e638769706f43b894eedf6a3ab57948d830fe1586ba8fc7c49e2d34e94b805d",
+        "afterSha256": "ebaf4e90bfbf90f760a347ba8cfa654b340841d4a14aac8e38218ada00c22a7d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "feb1ee1e6a722664ad092aba1f8c6f0ee2e4f68064babd0a1e6314340febeeb4",
+        "afterSha256": "54bfe7d8d2bccfc381e7bdcb61d0ebb7795fa66da10db5129d7164f44bec72fe"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "c421a93d0f3e8920f7500150200bf49fc60cae8799ef31cfb2a1519c206dad97",
+        "afterSha256": "fead2baec4f4273c732bfe689fb5dc2a4c50e9aeb35b7514950eef356df4db36"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "077fc0ef5cb02c4234cd5ba9e6dc19f246559d3d811214247d63cb67e5031aba",
+        "afterSha256": "106ed09eb3aa2f26000882ddd580c20b94b3fc0f95a1a4664e00dece3e2a9e60"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "b39ad1a8142beffe8ec7a35ece4766c4ba37d5c180756c72974f88e67d9fb22e",
+        "afterSha256": "837ddcc1f1d826b139ee05d9a004c4458b5bb58b5e10874486dca971fc1a8412"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "4a6403d0d601cf163bdbe4fb89f68b2196712c27f1e4504b78a59e97fbe1f41e",
+        "afterSha256": "5aeb6104df52fe7da3c1a3c6c7e4bd73f8f6d4944ba06a1e807c14de9988dcf4"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "a412693c5ebdf2694c1968d53ef823bb55b3fe787944b312c4a33dbd70f88e6a",
+        "afterSha256": "9713e97aa6e867ee22a2c7f502a1d1f6e24703e427dde61ad7ffac07a4e08c1f"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "32892c85a396a5de41c90a216b1b559109512d2b15abb8047176bd560a1add49",
+        "afterSha256": "89ae3f9d49576031acc6d9943b1826fa46b992a5d7e656e9cd10d3b191fc363e"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "86340210f3e386eda915dc02f84280bd646b7162a96f8dc551e53a7bda3c7cb3",
+        "afterSha256": "149f979d35cdd764c45e815d2e9dc6a0fba27beea33b5bee9889a66572a8d253"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "2d70404d66778fab30ce794d3e72805bf4b3d83c3901ff51dfd6faf00615ec7b",
+        "afterSha256": "16ea4ce3a7a0fb0d20d82c9323d4bae8a20648475f5c18ee659db26db59f6722"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "0ed89c7683517750235c930519ea6daea9c1910ba63e96cd0acfb4925513e0c8",
+        "afterSha256": "009bc922caf6d0bcf75eb741e5c0219e85e9765622d5ef5188a475bc68480ecf"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "f39a51dff8eba736328713890541674492d97d9d995b149c63cbe811296af10d",
+        "afterSha256": "955968622d22215f1ce04211447ed61edb5063fd8aaff7c0ecff28ff5bfd151d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "0edca511ee2f1be478303cd6cfd6cb8c49abc648658a042152120b098ce98d2d",
+        "afterSha256": "0c5a040fb9b65e70cb3326908abc790face309290bb431ce32a16edd14f770f4"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "54bfe7d8d2bccfc381e7bdcb61d0ebb7795fa66da10db5129d7164f44bec72fe",
+        "afterSha256": "f57b52497c70a0b769aa759dc242266197c51d24b4602c1c88639b48a694b34d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "a537652a598e904e7b9d97cd585f9831365507da4d604540226038df5e17c9d3",
+        "afterSha256": "8c49053f10a22a368b228b9f8dceb19569b868b19724ec82a0c9e13bb0ddfafb"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "53819fdcf087c07e2a7fc2211d428db1ca51b0d29373cd7e694088714a9243b7",
+        "afterSha256": "dcc07357a76db387efe388b00a7ea3f90d9876b627aa4ec2cf80d117cca8993c"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0001_0000",
+        "block_0001_0001",
+        "block_0001_0002",
+        "block_0001_0003",
+        "block_0001_0004",
+        "block_0001_0005",
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0002_0001",
+      "requires": [
+        "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "block_0003_0003",
+      "requires": [
+        "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "block_0006_0001",
+      "requires": [
+        "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "requires": [
+        "block_0004_0003"
       ]
     }
   ]

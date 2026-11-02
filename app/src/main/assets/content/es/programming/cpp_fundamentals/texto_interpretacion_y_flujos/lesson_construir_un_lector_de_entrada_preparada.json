@@ -555,7 +555,7 @@
             "getline ya consumió esa línea y el fallo pertenece al analizador local que se abandona."
           ],
           "correctIndex": 2,
-          "explanation": "El lector exterior ya avanzó hasta la frontera. El siguiente análisis crea un flujo local nuevo; borrar cin no es necesario para reparar un fallo de otro objeto y no descartaría caracteres por sí mismo.",
+          "explanation": "El lector exterior ya consumió esa línea y la siguiente vuelta crea un flujo local nuevo. El fallo de `campos` no modifica los indicadores de `std::cin`. Llamar a `clear()` sólo modifica los indicadores del flujo sobre el que se aplica; no descarta caracteres por sí mismo.",
           "reviewFeedback": [
             "clear modifica indicadores, pero no selecciona ni descarta por sí solo líneas del texto. Revisa qué lectura ya consumió la operación.",
             "La ocupación y la entrada son objetos distintos. Cambiar el estado del almacén no cambia la posición desde la que lee cin.",
@@ -1719,6 +1719,11 @@
         "id": "block_0004_0002",
         "beforeSha256": "949bebdf91616b97755b3aff90566e82d2a02d15475d61fe8669957563304271",
         "afterSha256": "b67bb5120c55df235abce548fa728642374ba06aa321d1b66136e8a189475adc"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "65319e272405c1544fd8abb47b57537aa1827f30dcd0bcc4e53f7b8d887fa1d9",
+        "afterSha256": "3c24c5d55bf01230d382fa32ce986b7e5e58419a5ec77e5fa9fd028836454709"
       }
     ],
     "choiceRevisions": [
