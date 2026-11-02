@@ -1073,7 +1073,8 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 
 
 # Pedidos de Work: la explicación de U1L2, la pregunta de U11L2 y las dos
-# explicaciones de U11L11. Cada par fija texto, coordenada histórica y la
+# explicaciones de U11L11, la excepción/diagnóstico de U11L12 y la pregunta
+# sobre profundidad de U11L13. Cada par fija texto, coordenada histórica y la
 # identidad explícita original (None exige que el campo id no exista).
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
@@ -1094,6 +1095,14 @@ WORK_EXACT_EDITORIAL_REVISIONS = {
      7, 3, 'output_prediction', 'explanation', None): (
         '5fcc83da4e6f4dcd16510343f01d4633b95ad901841af88f68b12a9c91554043',
         'eb3bd0aea79408b2146891b3116c41678e8cf098bbd56d3328dba1ba936ebadd'),
+    ('texto_interpretacion_y_flujos/lesson_terminos_prioridad_y_division_segura.json',
+     4, 4, 'output_prediction', 'explanation', None): (
+        '5e4956eac79a3c4c02bf33e877a0e643c502c6b3e7f90327142938ceaedfc247',
+        '5d3f39719517e667b19f82ae8f4ed1565e78336ab7a321051f4486f0f11dc141'),
+    ('texto_interpretacion_y_flujos/lesson_signos_unarios_parentesis_y_progreso_recursivo.json',
+     8, 2, 'multiple_choice', 'question', None): (
+        '7f18d783ddecec3d24ee6484f02e59633c749e0a62423a19d3a78833ed090064',
+        '77027e5a050155971e7d4df8a9c71e48bf6d6c8203d35d48a95cf7ecedd7126b'),
 }
 
 

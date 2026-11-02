@@ -21,7 +21,10 @@ std::string proof_pin(const curriculum::Lesson& lesson){
         values.Append(JsonValue::CreateStringValue(winrt::to_hstring(test::compile_check_test_fingerprint(proof))));
     return winrt::to_string(values.Stringify());
 }
-void source_intact(const test::EditorialReturnFixture& fixture){check(state::read_bytes(fixture.source)==fixture.source_bytes,"Editorial QA changed its actual curricular asset");}
+void source_intact(const test::EditorialReturnFixture& fixture){check(state::read_bytes(fixture.source)==fixture.source_bytes,"Editorial QA changed its actual curricular asset");
+    check(state::sha256(state::read_bytes(fixture.original_archive))==test::editorial_return_original_sha
+        &&state::sha256(state::read_bytes(fixture.intermediate_archive))==test::editorial_return_intermediate_sha,
+        "Editorial QA changed an authenticated A/B historical document");}
 void write_new(const std::filesystem::path& path,std::string_view text){
     state::require_safe_path(path);check(!std::filesystem::exists(path),"Refusing to overwrite an existing QA file");
     std::filesystem::create_directories(state::native_io_path(path.parent_path()));std::ofstream output(state::native_io_path(path),std::ios::binary);
@@ -91,6 +94,9 @@ void adopt_exact(state::StateData& data,const curriculum::Lesson& returned){
     check(state::current_page(data,returned)==6&&narration::read_history(data)==narration::read_history(before),"Editorial return lost page or exact bounded narration markers");
 }
 void guards(const test::EditorialReturnFixture& fixture){
+    rejects([&]{(void)test::editorial_return_historical_lesson(fixture.original_archive,true);},"A was accepted as the independently pinned intermediate B");
+    rejects([&]{(void)test::editorial_return_historical_lesson(fixture.intermediate_archive,false);},"B was accepted as the independently pinned original A");
+    rejects([&]{(void)test::editorial_return_historical_lesson(fixture.source,true);},"The integrated live C was accepted as historical B");
     using Mutate=std::function<void(JsonObject&)>;
     const auto fail=[&](const Mutate& mutate){auto root=JsonObject::Parse(winrt::to_hstring(fixture.returned.raw_json));mutate(root);const auto raw=winrt::to_string(root.Stringify());
         rejects([&]{(void)windows::parse_lesson_json(raw,"es");},"Full loader accepted a forged editorial return");
@@ -173,6 +179,11 @@ int main(){try{
     const auto full=windows::parse_lesson_progress_metadata(fixture.returned.raw_json,"es");
     check(full.id==fixture.returned.id&&fixture.original.state_layout.signatures==fixture.returned.state_layout.signatures
         &&fixture.intermediate.state_layout.signatures==fixture.returned.state_layout.signatures,"The return changed immutable state ownership");
+    const auto historical=JsonObject::Parse(winrt::to_hstring(fixture.intermediate.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    const auto integrated=JsonObject::Parse(winrt::to_hstring(fixture.returned.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    check(integrated.Size()==historical.Size()+2,"The live final publication lost the two real return transitions");
+    for(unsigned at=0;at<historical.Size();++at)check(test::compile_check_test_fingerprint(historical.GetAt(at))==test::compile_check_test_fingerprint(integrated.GetAt(at)),
+        "The integrated return changed its exact independently published B prefix");
     check(fixture.returned.state_layout.editorial_returns.size()==test::editorial_return_cases.size(),"The validated return archive lost an edge");
     for(std::size_t at=0;at<test::editorial_return_cases.size();++at){const auto& archived=fixture.returned.state_layout.editorial_returns[at];
         check(archived.id==test::editorial_return_cases[at].identity&&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(archived.previous_raw_json)))==test::editorial_return_cases[at].before,

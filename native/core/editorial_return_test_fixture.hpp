@@ -1,6 +1,6 @@
 #pragma once
-// QA only. The old publication is an authenticated local Git export; the
-// proposed return changes two paragraph spellings in memory, never assets.
+// QA only. A and intermediate B are authenticated local Git exports. Final C
+// is the integrated live asset, independently checked against the B->C return.
 #include "core/compile_check_test_fixture.hpp"
 #include "core/lesson.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -13,6 +13,15 @@
 #include <winrt/Windows.Foundation.Collections.h>
 
 namespace lgaed::test {
+inline constexpr auto editorial_return_intermediate_name="lesson_estado_asignacion_y_copia-df2f9fa.json";
+inline constexpr auto editorial_return_original_sha="1f88d26abb2b93108257f62a6e7914744bae8fe874f6664aac2fb7ad31ba8dcb";
+inline constexpr auto editorial_return_intermediate_sha="7c3e963deba83299f771924ec2c0d1d06ef1eae3db4763bdffe2457aa47f2c81";
+inline curriculum::Lesson editorial_return_historical_lesson(const std::filesystem::path& path,bool intermediate){
+    const auto bytes=state::read_bytes(path);
+    if(state::sha256(bytes)!=(intermediate?editorial_return_intermediate_sha:editorial_return_original_sha))
+        throw std::runtime_error("Editorial return history differs from its independent A/B Git byte pin");
+    auto result=windows::parse_lesson_json(std::string(bytes.begin(),bytes.end()),"es");result.source_path=path;return result;
+}
 struct EditorialReturnCase {const char* identity;const char* before;const char* after;const char* marked;const char* plain;};
 inline constexpr std::array<EditorialReturnCase,2> editorial_return_cases{{
     {"block_0006_0001","56aa7fbc312649200f5c8e4f09b9ee892be872d19cb8d378a5e4048b608386b6",
@@ -67,29 +76,38 @@ inline std::string editorial_return_json(const curriculum::Lesson& intermediate)
 }
 struct EditorialReturnFixture {
     curriculum::Lesson original,intermediate,returned;
-    std::filesystem::path source;
+    std::filesystem::path source,original_archive,intermediate_archive;
     std::vector<std::uint8_t> source_bytes;
 };
 inline EditorialReturnFixture editorial_return_fixture(){
     EditorialReturnFixture result;result.source=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json";
-    result.source_bytes=state::read_bytes(result.source);result.intermediate=windows::load_lesson(result.source);
+    result.source_bytes=state::read_bytes(result.source);result.returned=windows::load_lesson(result.source);
     std::array<wchar_t,32768> executable{};const auto count=GetModuleFileNameW(nullptr,executable.data(),static_cast<DWORD>(executable.size()));
     if(!count||count>=executable.size())throw std::runtime_error("Cannot locate the authenticated editorial return QA export");
-    const auto old=std::filesystem::path(std::wstring_view(executable.data(),count)).parent_path()/
-        "test-fixtures/editorial-return-1fe0975/lesson_estado_asignacion_y_copia.json";
+    const auto archive=std::filesystem::path(std::wstring_view(executable.data(),count)).parent_path()/"test-fixtures/editorial-return-1fe0975";
+    result.original_archive=archive/"lesson_estado_asignacion_y_copia.json";
+    result.intermediate_archive=archive/editorial_return_intermediate_name;
     // Exact Git object 1fe097550c458d9267113d2b2409863d21c75d99, including
     // its unrelated contemporary prose and its complete historical metadata.
-    if(state::sha256(state::read_bytes(old))!="1f88d26abb2b93108257f62a6e7914744bae8fe874f6664aac2fb7ad31ba8dcb")
-        throw std::runtime_error("Editorial return A differs from its pinned historical Git bytes");
-    result.original=windows::load_lesson(old);result.original.source_path=result.source;
-    if(result.original.id!=result.intermediate.id||result.original.state_layout.lineage!=result.intermediate.state_layout.lineage)
-        throw std::runtime_error("Editorial return A/B no longer share their immutable state family");
+    result.original=editorial_return_historical_lesson(result.original_archive,false);result.original.source_path=result.source;
+    // B is the last complete publication before these returns, including the
+    // preceding turnos editorial correction. Older 22443d8 lacks that edge.
+    // Exact Git object df2f9fa44737f857ffbe06fadb4843110b06d579.
+    result.intermediate=editorial_return_historical_lesson(result.intermediate_archive,true);result.intermediate.source_path=result.source;
+    if(result.original.id!=result.intermediate.id||result.original.state_layout.lineage!=result.intermediate.state_layout.lineage
+        ||result.returned.id!=result.intermediate.id||result.returned.state_layout.lineage!=result.intermediate.state_layout.lineage)
+        throw std::runtime_error("Editorial return A/B/live C no longer share their immutable state family");
     for(const auto& plan:editorial_return_cases){const auto at=curriculum::stable_block_position(result.original,plan.identity);
         if(!at||compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(
             winrt::to_hstring(result.original.pages[at->page].blocks[at->block].raw_json)))!=plan.after)
             throw std::runtime_error("The genuine historical A does not contain the independently pinned return presentation");}
-    result.returned=windows::parse_lesson_json(editorial_return_json(result.intermediate),"es");result.returned.source_path=result.source;
+    const auto expected=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(editorial_return_json(result.intermediate)));
+    const auto integrated=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(result.returned.raw_json));
+    if(compile_check_test_fingerprint(expected)!=compile_check_test_fingerprint(integrated))
+        throw std::runtime_error("The integrated live C differs from the independently reviewed B-to-C return");
+    if(result.original.raw_json==result.intermediate.raw_json||result.intermediate.raw_json==result.returned.raw_json)
+        throw std::runtime_error("Editorial return QA must exercise three distinct publications, not a no-op");
     return result;
 }
 } // namespace lgaed::test

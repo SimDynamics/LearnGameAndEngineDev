@@ -188,6 +188,18 @@ en ambos después de integrar las mismas fuentes.
 
 ## Primer recorrido curricular
 
+La preparación española de Windows limita las referencias C++ implícitas a sus
+operandos y operadores. La prosa posterior a una asignación o declaración,
+como «es una definición, no una actualización», conserva sus palabras y tildes.
+Los fragmentos explícitos mantienen la lectura técnica habitual de sus
+identificadores. El mismo ajuste se utiliza en lectura inmediata y anticipada,
+con posiciones UTF-16 sobre la fuente original. Las claves de grabaciones siguen
+dependiendo de su texto preparado: una lectura corregida obtiene su propia
+clave, y las grabaciones compatibles se conservan y reutilizan. Las pruebas
+`native.windows_symbol_speech` y `native.spanish_prose_boundaries` comprueban
+la preparación, la correspondencia de palabras y audio Kokoro real; no sustituyen
+la escucha humana de la pronunciación.
+
 El inicio normal abre las seis páginas existentes de «Construir y leer un primer
 programa», desde el JSON original bajo `app/src/main/assets/content/es/`.
 No se genera una segunda copia del contenido. El adaptador comprueba el contrato

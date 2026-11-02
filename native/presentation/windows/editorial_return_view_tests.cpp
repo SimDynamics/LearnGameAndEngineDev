@@ -121,6 +121,9 @@ struct View {
 };
 void run(std::shared_ptr<windows::NarrationWorker> worker){
     const auto fixture=test::editorial_return_fixture();
+    const auto original_bytes=state::read_bytes(fixture.original_archive),intermediate_bytes=state::read_bytes(fixture.intermediate_archive);
+    check(fixture.returned.source_path==fixture.source&&fixture.returned.raw_json!=fixture.intermediate.raw_json,
+        "Reader return QA must adopt the actual integrated live C from a distinct authenticated B");
     for(const bool historical:{true,false})for(std::size_t test_index=0;test_index<test::editorial_return_cases.size();++test_index){
         const auto& baseline=historical?fixture.original:fixture.intermediate;
         View qa(worker,test_index+(historical?0:2));std::vector<narration::Bookmark> other_slots;
@@ -181,6 +184,8 @@ void run(std::shared_ptr<windows::NarrationWorker> worker){
             &&state::get_draft(qa.saved(),curriculum::draft_key("programming",fixture.returned,fixture.returned.pages[6].blocks[2]),"").source==View::copy_source(),
             "Return/reopen lost the actual prerequisite compilation or exact program draft");
         qa.preserved_recordings();check(state::read_bytes(fixture.source)==fixture.source_bytes,"Return QA wrote the live curriculum");
+        check(state::read_bytes(fixture.original_archive)==original_bytes&&state::read_bytes(fixture.intermediate_archive)==intermediate_bytes,
+            "Return playback/compilation modified an authenticated A/B historical document");
         std::cout<<"PASS actual returned numeral "<<test_index<<" from "<<(historical?"genuine A":"intermediate B")<<": real paused PCM, source position, three slots and preserved WAVs\n";
     }
     std::cout<<"PASS both actual U2L3 returns from genuine A and intermediate B: real Kokoro PCM, exact passage pause/return/resume/reopen, valid UTF-16 word shading, three bounded slots, immutable old WAVs and compatible reuse; two real MSVC prerequisite runs retain their proofs and drafts. Changed source/audio never inherits unverified listening credit. Neutral color/underline and human listening acceptance remain outside this test.\n";

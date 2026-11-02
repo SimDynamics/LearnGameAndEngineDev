@@ -632,6 +632,37 @@ def windows_reading_source(name: str, code: str) -> str:
     implementation moves, rather than silently leaving one preparation path stale.
     """
     if name == "SpanishTechnicalSpeech":
+        # Bound only implicit source detection. Explicit code, identifier speech
+        # and onPiece source ownership continue through the canonical reader.
+        declaration = '    private val declaration = Regex("(?:(?:const|unsigned|signed|long|short)\\\\s+)*(?:int|double|float|bool|char|auto|void|long|short)(?:\\\\s*[*&]+(?:\\\\s*[A-Za-z_][A-Za-z_0-9]*)?|\\\\s+[A-Za-z_][A-Za-z_0-9]*(?=\\\\s*[({=;]))")'
+        code = exact(code, declaration, declaration.replace('[A-Za-z_]', '[\\\\p{L}_]').replace('[A-Za-z_0-9]', '[\\\\p{L}\\\\p{M}\\\\p{N}_]'))
+        code = exact(code,
+                     '    private val statementAssignment = Regex("[A-Za-z_][A-Za-z_0-9]*',
+                     '    private val statementAssignment = Regex("[\\\\p{L}_][\\\\p{L}\\\\p{M}\\\\p{N}_]*')
+        code = exact(code,
+                     "        statementAssignment.matchAt(text, index)?.let { return it.range.last + 1 }",
+                     "        statementAssignment.matchAt(text, index)?.let {\n"
+                     "            WindowsNarrationSpeechRules.implicitStatementAssignmentEnd(text, index)?.let { end -> return end }\n"
+                     "        }")
+        code = exact(code, '''    private fun expressionEnd(text: String, index: Int): Int {
+        var end = index
+        while (end < text.length) {
+            val char = text[end]
+            if (char == ';') return end + 1
+            if (char in "\\n:!?" || char == '.' && text.getOrNull(end + 1)?.isDigit() != true) break
+            if (char == '\\'' || char == '"') {
+                val quoteEnd = quotedEnd(text, end) ?: break
+                end = quoteEnd
+                continue
+            }
+            // Stop at a prose conjunction after the operands instead of reading
+            // the remainder of the explanatory sentence as source code.
+            if (end > index && proseJoiner.matchAt(text, end) != null) break
+            end++
+        }
+        return end
+    }''', '''    private fun expressionEnd(text: String, index: Int): Int =
+        WindowsNarrationSpeechRules.implicitExpressionEnd(text, index)''')
         # Display styling does not make an expected output label source code.
         code = exact(code, '                    val code = text.substring(index + delimiter.length, end)', '                    val code = text.substring(index + delimiter.length, end)\n                    if (delimiter.length == 1 && WindowsNarrationSpeechRules.isDisplayedOutputValue(text, index, code)) {\n                        // Visible output is prose/data. Keep each original UTF-16\n                        // owner; only replace colon punctuation for a short pause.\n                        output.append(\' \')\n                        onPiece?.invoke(index, index + delimiter.length, " ")\n                        code.forEachIndexed { offset, character ->\n                            val spoken = if (character == \':\') ", " else character.toString()\n                            output.append(spoken)\n                            onPiece?.invoke(index + delimiter.length + offset, index + delimiter.length + offset + 1, spoken)\n                        }\n                        output.append(\' \')\n                        onPiece?.invoke(end, end + delimiter.length, " ")\n                        observedChildren = onPiece != null\n                        index = end + delimiter.length\n                        changed = true\n                        continue\n                    }')
         # Recognize author/year citations before local technical detection.

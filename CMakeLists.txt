@@ -292,16 +292,23 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_diagnostic_fixtures DEPENDS ${LGAED_DIAGNOSTIC_FIXTURES})
     set(LGAED_EDITORIAL_RETURN_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/editorial-return-1fe0975")
     set(LGAED_EDITORIAL_RETURN_FIXTURE "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}/lesson_estado_asignacion_y_copia.json")
-    add_custom_command(OUTPUT "${LGAED_EDITORIAL_RETURN_FIXTURE}"
+    set(LGAED_EDITORIAL_RETURN_INTERMEDIATE_FIXTURE "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}/lesson_estado_asignacion_y_copia-df2f9fa.json")
+    add_custom_command(OUTPUT "${LGAED_EDITORIAL_RETURN_FIXTURE}" "${LGAED_EDITORIAL_RETURN_INTERMEDIATE_FIXTURE}"
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_return_fixture_source.py"
             --output-dir "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}"
         DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_return_fixture_source.py"
-        COMMENT "Verifying immutable pre-markup U2L3 editorial return fixture from local 1fe0975"
+        COMMENT "Verifying immutable U2L3 editorial return fixtures from local 1fe0975 and df2f9fa"
         VERBATIM)
-    add_custom_target(lgaed_editorial_return_fixture DEPENDS "${LGAED_EDITORIAL_RETURN_FIXTURE}")
+    add_custom_target(lgaed_editorial_return_fixture DEPENDS "${LGAED_EDITORIAL_RETURN_FIXTURE}" "${LGAED_EDITORIAL_RETURN_INTERMEDIATE_FIXTURE}")
     add_test(NAME native.editorial_return_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_editorial_return.py)
     set_tests_properties(native.editorial_return_authoring PROPERTIES TIMEOUT 120)
+    add_test(NAME native.editorial_return_fixture_source COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_editorial_return_fixture_source.py)
+    set_tests_properties(native.editorial_return_fixture_source PROPERTIES TIMEOUT 60)
+    add_test(NAME native.work_exact_editorials COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_work_exact_editorials.py)
+    set_tests_properties(native.work_exact_editorials PROPERTIES TIMEOUT 120)
     add_executable(lgaed_editorial_return_tests native/core/editorial_return_tests.cpp)
     target_link_libraries(lgaed_editorial_return_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_editorial_return_tests lgaed_editorial_return_fixture)
@@ -564,6 +571,12 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_narration_worker_tests PRIVATE lgaed_platform_windows)
     add_dependencies(lgaed_narration_worker_tests lgaed_narration_runtime)
     add_test(NAME native.narration_worker COMMAND lgaed_narration_worker_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    add_test(NAME native.windows_symbol_speech COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_windows_symbol_speech.py")
+    set_tests_properties(native.windows_symbol_speech PROPERTIES TIMEOUT 180)
+    add_test(NAME native.spanish_prose_boundaries COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_spanish_prose_boundaries.py")
+    set_tests_properties(native.spanish_prose_boundaries PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.math_editor_worker COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_math_editor.py")
     add_test(NAME native.math_calculator_task COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_calculator_task.py")
     add_test(NAME native.worker_dependencies COMMAND "${Python3_EXECUTABLE}" -m unittest discover
@@ -881,7 +894,7 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
         LearnGameAndEngineDev lgaed_editorial_return_tests lgaed_editorial_return_view_tests
         lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
-        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests)
+        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_narration_worker_tests)
     add_custom_target(lgaed_windows_settings_checks DEPENDS
         lgaed_current_reference_reader_tests
         lgaed_math_narration_plan_tests lgaed_cmake_curricular_targets_tests

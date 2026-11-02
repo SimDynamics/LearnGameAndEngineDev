@@ -148,6 +148,47 @@ fun main() {
     verify("operador de resolución de ámbito" in namespaced,
         "Output context wrongly turned a real C++ expression into prose: $namespaced")
 
+    // The user's original U2L3 feedback lacks delimiters/terminators at two
+    // code/prose boundaries. The Windows parser must stop before Spanish words;
+    // replacing accents or altering readCode would conceal the actual defect.
+    val oldTurnos = "++turnos aumenta en una unidad el valor existente. turnos = 1 lo reemplaza por uno; int turnos = 1 es una definición, no una actualización del objeto existente."
+    val currentTurnos = "`++turnos;` aumenta en una unidad el valor existente. `turnos = 1;` lo reemplaza por uno. `int turnos = 1;` es una definición, no una actualización del objeto existente."
+    val spanishProse = listOf(oldTurnos, currentTurnos,
+        "definición", "actualización", "Es una definición, no una actualización del objeto existente.",
+        "turnos = 1 lo reemplaza por uno; int turnos = 1 es una definición, no una actualización.",
+        "int turnos = cantidad + 1 es una definición, no una actualización.",
+        "turnos += cantidad * 2 permite una actualización, no una definición.",
+        "int turnos = f(1, 2) es una definición, no una actualización.",
+        "𐐀 int turnos = 1 es una definición, no una actualización.")
+    for (source in spanishProse) {
+        val output = SpanishTechnicalSpeech.prepare(source).text
+        for (word in listOf("definición", "actualización", "lo reemplaza por uno")) if (word in source)
+            verify(word in output, "Spanish prose entered identifier spelling: $source => $output")
+        val pieces = mutableListOf<Triple<Int,Int,String>>()
+        val observed = SpanishTechnicalSpeech.prepareObserved(source) { a,b,s -> pieces += Triple(a,b,s) }
+        verify(outputCanonical(observed.text) == outputCanonical(output) &&
+            outputCanonical(pieces.joinToString("") { it.third }) == outputCanonical(output),
+            "Code/prose boundaries changed source ownership: $source; $pieces")
+        verify(pieces.all { it.first in 0..source.length && it.second in it.first..source.length },
+            "An accented or supplementary character moved original UTF-16 owners: $source")
+        val live = SpanishTechnicalSpeech.prepareForReading(source) { _,_,_ -> }.text
+        val queued = SpanishTechnicalSpeech.prepareForKokoro(source).text
+        verify(live == queued, "Code/prose boundaries differ between live and anticipated narration: $source")
+        for (word in listOf("definición", "actualización")) if (word in source)
+            verify(word in live, "Kokoro preparation split a Spanish word: $source => $live")
+    }
+    val technicalOriginal = SpanishTechnicalSpeech.prepare(oldTurnos).text
+    verify("incremento" in technicalOriginal && Regex("\\basigna\\b").findAll(technicalOriginal).count() == 2,
+        "Bounding prose erased genuine C++ operations: $technicalOriginal")
+    // Unicode identifiers are genuine code here, not Spanish prose to exempt.
+    // Keep their historical explicit-code pronunciation and exact source owner.
+    for (code in listOf("definición = actualización;", "int definición = 1;", "turnos = f(1, 2);", "turnos = \"es una definición\";")) {
+        val implicit = SpanishTechnicalSpeech.prepare(code).text
+        val explicit = SpanishTechnicalSpeech.prepare("`$code`").text
+        verify(normalized(implicit) == normalized(explicit),
+            "A real identifier, grouped operand or string lost its code reading: $code => $implicit / $explicit")
+    }
+
     check(failures.isEmpty()) { failures.joinToString("\n") }
     println("PASS $assertions Windows technical-speech assertions: delimiters, empty literals, double diagonal in prose/code/strings, single quotes/slashes, URLs, math, named letters, provenance and Kokoro preparation")
 }
