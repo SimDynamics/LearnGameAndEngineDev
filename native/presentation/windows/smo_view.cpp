@@ -1,4 +1,5 @@
 #include "presentation/windows/smo_view.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/smo_benchmark.hpp"
 #include "presentation/windows/smo_scene.hpp"
 #include "presentation/windows/smo_rule_gpu.hpp"
@@ -69,12 +70,19 @@ std::string rules_text(){return
     "Frontera gráfica del ensayo: los vértices, caras, colores y ángulos proceden del programa SMO. Rotación, seno/coseno aproximados, perspectiva, intersecciones y profundidad se calculan en la GPU con el formato base 12. Son extensiones geométricas explícitas, no una demostración de derivar la geometría de las reglas experimentales. Los ángulos son radianes y el envolvente gráfico permanece acotado; excederlo produce un diagnóstico. La ventana sólo presenta los píxeles ya calculados.\n\n"
     "El programa completo de este editor aislado se valida y traduce a instrucciones sin evaluar sus expresiones en FP64. La GPU ejecuta inicialización, estados, actualización, dibujo, signos, operaciones y alternativas mediante enteros en el formato duodecimal adaptable de doce cifras significativas. El reloj entrega nanosegundos y su conversión a dt también se hace en la GPU. Pausar conserva los estados y omite la actualización. Hay redondeo declarado y diagnósticos de rango; no se afirma exactitud real ilimitada ni mayor velocidad por usar base 12. El intérprete CPU anterior se conserva sólo como referencia para pruebas. Esta integración no cambia el compilador C++, la calculadora ni otras partes de la aplicación. Ejecutar aplica el código actual; editar cancela el programa anterior y evita mostrar resultados obsoletos.\n";
 }
+struct DetailsContent{const std::string* body;std::string back;};
 LRESULT CALLBACK rules_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     if(message==WM_CREATE){const auto text=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|ES_MULTILINE|ES_READONLY|WS_VSCROLL,
         0,0,1,1,window,reinterpret_cast<HMENU>(1),GetModuleHandleW(nullptr),nullptr);
         if(!text)return -1;reader_theme::apply(text,reader_theme::Surface::canvas);
-        const auto* body=static_cast<const std::string*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);set_rich_text(text,body?*body:rules_text());SetWindowSubclass(text,rules_text_proc,1,0);return 0;}
-    if(message==WM_SIZE){MoveWindow(GetDlgItem(window,1),12,12,std::max(1,LOWORD(lp)-24),std::max(1,HIWORD(lp)-24),TRUE);return 0;}
+        const auto* content=static_cast<const DetailsContent*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);set_rich_text(text,content&&content->body?*content->body:rules_text());SetWindowSubclass(text,rules_text_proc,1,0);
+        const auto back=CreateWindowExW(0,L"BUTTON",wide(content?content->back:"Volver").c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,
+            0,0,1,1,window,reinterpret_cast<HMENU>(IDCANCEL),GetModuleHandleW(nullptr),nullptr);
+        if(!back)return -1;reader_theme::apply(back,reader_theme::Surface::canvas);SendMessageW(back,WM_SETFONT,reinterpret_cast<WPARAM>(GetStockObject(DEFAULT_GUI_FONT)),TRUE);return 0;}
+    if(message==WM_SIZE||message==WM_DPICHANGED_AFTERPARENT){RECT area{};GetClientRect(window,&area);const auto px=[&](int value){return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96);};
+        MoveWindow(GetDlgItem(window,IDCANCEL),px(12),px(8),std::max(1L,std::min<LONG>(px(112),area.right-px(24))),px(40),TRUE);
+        MoveWindow(GetDlgItem(window,1),px(12),px(56),std::max(1L,area.right-px(24)),std::max(1L,area.bottom-px(68)),TRUE);return 0;}
+    if(message==WM_COMMAND&&LOWORD(wp)==IDCANCEL){DestroyWindow(window);return 0;}
     if(message==WM_KEYDOWN&&wp==VK_ESCAPE){DestroyWindow(window);return 0;}
     LRESULT result{};if(reader_theme::control_color(message,wp,lp,result))return result;
     return DefWindowProcW(window,message,wp,lp);
@@ -281,10 +289,9 @@ struct Lab {
     HWND details(std::string_view heading,const std::string& body){
         WNDCLASSW cls{};cls.lpfnWndProc=rules_proc;cls.hInstance=GetModuleHandleW(nullptr);cls.lpszClassName=L"LearnGameAndEngineDev.SmoRules";cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);
         WNDCLASSW existing{};if(!GetClassInfoW(cls.hInstance,cls.lpszClassName,&existing))RegisterClassW(&cls);
-        MONITORINFO monitor{};monitor.cbSize=sizeof(monitor);if(!GetMonitorInfoW(MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST),&monitor))throw std::runtime_error("Cannot size SMO result window");
-        const auto width=std::min(px(900),static_cast<int>(monitor.rcWork.right-monitor.rcWork.left)-px(32));const auto height=std::min(px(720),static_cast<int>(monitor.rcWork.bottom-monitor.rcWork.top)-px(32));
-        const auto x=monitor.rcWork.left+(monitor.rcWork.right-monitor.rcWork.left-width)/2,y=monitor.rcWork.top+(monitor.rcWork.bottom-monitor.rcWork.top-height)/2;
-        return CreateWindowExW(WS_EX_TOOLWINDOW,cls.lpszClassName,wide(heading).c_str(),WS_OVERLAPPEDWINDOW|WS_VISIBLE,x,y,width,height,GetAncestor(window,GA_ROOT),nullptr,cls.hInstance,const_cast<std::string*>(&body));
+        const DetailsContent content{&body,tr("Volver","Back","Retour")};
+        const auto child=create_internal_window(window,cls.lpszClassName,wide(heading).c_str(),const_cast<DetailsContent*>(&content));
+        ShowWindow(child,SW_SHOW);SetFocus(GetDlgItem(child,1));return child;
     }
     std::string benchmark_text(const SmoBenchmarkReport& report)const{
         std::ostringstream out;out<<tr("Prueba de estrés GPU · resultados experimentales\n\n","GPU stress test · experimental results\n\n","Test de charge GPU · résultats expérimentaux\n\n")
@@ -458,7 +465,7 @@ struct Lab {
         if(id==pause_id&&program){running=!running;if(program_session)program_session->running(running);update_program(true);
             SetWindowTextW(buttons[2],wide(running?tr("Pausar","Pause","Pause"):tr("Reanudar","Resume","Reprendre")).c_str());
             if(running)update_status();else label(tr("SMO pausado; no se ejecuta la actualización.","SMO paused; the update block is not executed.","SMO en pause ; le bloc de mise à jour n’est pas exécuté."));return;}
-        if(id==rules_id){if(rules&&IsWindow(rules)){SetForegroundWindow(rules);return;}rules=details(tr("Reglas SMO · provisionales","SMO rules · provisional","Règles SMO · provisoires"),rules_text());}}
+        if(id==rules_id){if(rules&&IsWindow(rules)){ShowWindow(rules,SW_SHOW);SetWindowPos(rules,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);SetFocus(GetDlgItem(rules,1));return;}rules=details(tr("Reglas SMO · provisionales","SMO rules · provisional","Règles SMO · provisoires"),rules_text());}}
 };
 LRESULT CALLBACK procedure(HWND window,UINT message,WPARAM wp,LPARAM lp){auto* self=reinterpret_cast<Lab*>(GetWindowLongPtrW(window,GWLP_USERDATA));
     if(message==WM_NCCREATE){self=static_cast<Lab*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}

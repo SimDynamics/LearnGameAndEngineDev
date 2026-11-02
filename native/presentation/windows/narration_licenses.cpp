@@ -1,4 +1,5 @@
 #include "presentation/windows/narration_licenses.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/card_list.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
@@ -102,9 +103,8 @@ HWND open_narration_licenses(HWND owner,std::string_view locale){
     const auto module=GetModuleHandleW(nullptr);WNDCLASSEXW existing{};existing.cbSize=sizeof(existing);
     if(!GetClassInfoExW(module,class_name,&existing)){WNDCLASSEXW cls{sizeof(cls)};cls.hInstance=module;cls.lpfnWndProc=procedure;cls.lpszClassName=class_name;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);cls.hbrBackground=reader_theme::brush(reader_theme::Surface::screen);
         if(!RegisterClassExW(&cls))throw std::runtime_error("Cannot register narration license window");}
-    auto* self=new View;self->locale=locale;const auto dpi=GetDpiForWindow(owner);
-    const auto window=CreateWindowExW(WS_EX_CONTROLPARENT,class_name,self->title().c_str(),WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,MulDiv(840,dpi,96),MulDiv(680,dpi,96),owner,nullptr,module,self);
-    if(!window)throw std::runtime_error("Cannot open narration license window");
+    auto* self=new View;self->locale=locale;
+    const auto window=create_internal_window(owner,class_name,self->title().c_str(),self);
     try{
         reader_theme::apply(window,reader_theme::Surface::screen);
         self->heading=CreateWindowExW(0,L"STATIC",self->title().c_str(),WS_CHILD|WS_VISIBLE,0,0,1,1,window,reinterpret_cast<HMENU>(3),module,nullptr);

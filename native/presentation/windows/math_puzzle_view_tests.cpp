@@ -1,4 +1,5 @@
 #include "presentation/windows/math_puzzle_view.hpp"
+#include "presentation/windows/internal_surface_test_support.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/reading_shade.hpp"
@@ -588,6 +589,7 @@ void slider_and_coordinate_draft_tests(HWND host){
     std::cout<<"PASS authored slider preview order, fixed scale/base dimensions, fractional proportions, live graph parameters and exact graph drafts with real bridge rejection/recovery\n";
 }
 void canvas_viewport_tests(HWND host){
+    const bool host_visible=IsWindowVisible(host)!=FALSE;if(!host_visible)ShowWindow(host,SW_SHOWNOACTIVATE);
     auto raw=simple_block(R"json({"id":"plot","type":"math_coordinate_graph_builder","bounds":{"xMin":-5,"xMax":5,"yMin":-5,"yMax":5},"snap":1,"points":[{"x":0,"y":0,"draggable":true}]})json");
     MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","");view.layout(0,0,700);
     HWND canvas=nullptr,expand=nullptr;for(const auto item:descendants(view.window())){wchar_t name[90]{};GetClassNameW(item,name,90);if(std::wstring_view(name)==L"LearnGameAndEngineDev.MathCanvas")canvas=item;
@@ -598,6 +600,8 @@ void canvas_viewport_tests(HWND host){
     require(inline_bounds.right-inline_bounds.left==inline_bounds.bottom-inline_bounds.top&&control_bounds.bottom-control_bounds.top==MulDiv(48,static_cast<int>(GetDpiForWindow(canvas)),96)&&control_bounds.bottom==inline_bounds.top,"Inline graph did not retain Android's square aspect ratio and separate contiguous 48dp expand row");
     SendMessageW(expand,BM_CLICK,0,0);const auto frame=GetParent(canvas);wchar_t class_name[90]{};GetClassNameW(frame,class_name,90);
     require(frame!=original_parent&&std::wstring_view(class_name)==L"LearnGameAndEngineDev.MathCanvasFullscreen"&&GetDlgItem(frame,6401),"Expand did not move the same mathematical canvas into its real fullscreen viewport with an X exit");
+    internal_surface_test::require_internal_surface(host,frame);
+    require(!IsWindowVisible(original_parent),"Expanding mathematics did not retain/hide its original page");
     require(view.answers_json()==before,"Opening a mathematical viewport changed a response");
     RECT bounds{};GetClientRect(canvas,&bounds);const auto center=MAKELPARAM(bounds.right/2,bounds.bottom/2);const auto normal=canvas_pixels(canvas);
     const auto nearby=MAKELPARAM(bounds.right/2+MulDiv(24,static_cast<int>(GetDpiForWindow(canvas)),96),bounds.bottom/2);
@@ -614,6 +618,7 @@ void canvas_viewport_tests(HWND host){
     const auto moved=view.answers_json();SendMessageW(GetDlgItem(frame,6401),BM_CLICK,0,0);
     RECT restored{};GetWindowRect(canvas,&restored);MapWindowPoints(nullptr,original_parent,reinterpret_cast<POINT*>(&restored),2);
     require(!IsWindow(frame)&&GetParent(canvas)==original_parent&&EqualRect(&inline_bounds,&restored)&&view.answers_json()==moved,"Closing fullscreen lost the original canvas, layout or edited mathematical state");
+    require(IsWindowVisible(original_parent)&&IsWindowEnabled(host),"Closing the internal mathematical page did not restore its original page and enabled main root");
     view.set_enabled(false);require(IsWindowEnabled(expand),"A checked response disabled visual inspection of its representation");SendMessageW(expand,BM_CLICK,0,0);const auto review=GetParent(canvas);
     require(review!=original_parent&&GetDlgItem(review,6401),"A checked mathematical response cannot be inspected in fullscreen");SendMessageW(GetDlgItem(review,6401),WM_KEYDOWN,VK_ESCAPE,0);
     require(GetParent(canvas)==original_parent&&!IsWindow(review)&&view.answers_json()==moved,"Escape did not close the reviewed mathematical viewport without changing its answer");
@@ -632,7 +637,8 @@ void canvas_viewport_tests(HWND host){
     SendMessageW(GetDlgItem(line_frame,6401),BM_CLICK,0,0);
     SendMessageW(line,WM_LBUTTONDOWN,MK_LBUTTON,inline_at);SendMessageW(line,WM_LBUTTONUP,0,inline_at);
     require(number_line.answers_json()!=line_before,"Input-neutral zoom disabled ordinary immediate number-line selection");
-    std::cout<<"PASS same-canvas mathematical fullscreen, source expand/X icons, pixel-verified double-click zoom/reset, inverse drag projection, Escape and retained responses\n";
+    if(!host_visible)ShowWindow(host,SW_HIDE);
+    std::cout<<"PASS same-canvas internal mathematical page, one visible root/client bounds, expand/X icons, pixel-verified double-click zoom/reset, inverse drag projection, Escape and retained responses\n";
 }
 void structured_input_tests(HWND host){
     const auto raw=simple_block(R"json({"id":"formula","type":"math_expression_input","inputMode":"structured","keyboard":"ALGEBRA","validator":{"expected":"\\frac{1}{2}"}})json");
@@ -814,6 +820,7 @@ int main(int argc,char** argv) {
         require(host.window != nullptr,"Cannot create isolated QA host"); tom_probe(host.window);
         if(argc>1&&std::string_view(argv[1])=="--locale-technical"){mathematical_labels_keep_their_content_locale(host.window);return 0;}
         canvas_viewport_tests(host.window);
+        if(argc>1&&std::string_view(argv[1])=="--internal-viewport")return 0;
         structured_input_tests(host.window);
         android_control_parity_tests(host.window);
         mathematical_input_hint_tests(host.window);

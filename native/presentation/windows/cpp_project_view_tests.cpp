@@ -1,4 +1,5 @@
 #include "presentation/windows/cpp_project_view.hpp"
+#include "presentation/windows/internal_surface_test_support.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/lesson_view.hpp"
@@ -30,9 +31,9 @@ struct ModalScenario {
     static inline ModalScenario* active=nullptr;
     ModalScenario(HWND owner,Kind operation):kind(operation),host(owner),deadline(GetTickCount64()+15000){require(!active,"Nested QA scenarios");active=this;timer=SetTimer(host,991,15,tick);require(timer!=0,"Cannot schedule app-owned modal QA");}
     ~ModalScenario(){KillTimer(host,timer);active=nullptr;}
-    static HWND dialog(int control){HWND result=nullptr;std::pair<int,HWND*> search{control,&result};EnumThreadWindows(GetCurrentThreadId(),[](HWND item,LPARAM lp)->BOOL{auto* found=reinterpret_cast<std::pair<int,HWND*>*>(lp);wchar_t name[128]{};GetClassNameW(item,name,128);if(std::wstring_view(name)==L"LearnGameAndEngineDev.CppProjectDialog"&&IsWindowVisible(item)&&GetDlgItem(item,found->first)&&IsWindowEnabled(item)){*found->second=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));return result;}
+    static HWND dialog(int control){if(!active)return nullptr;HWND result=nullptr;std::pair<int,HWND*> search{control,&result};EnumChildWindows(active->host,[](HWND item,LPARAM lp)->BOOL{auto* found=reinterpret_cast<std::pair<int,HWND*>*>(lp);wchar_t name[128]{};GetClassNameW(item,name,128);if(std::wstring_view(name)==L"LearnGameAndEngineDev.CppProjectDialog"&&IsWindowVisible(item)&&GetDlgItem(item,found->first)&&IsWindowEnabled(item)){*found->second=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));if(result)internal_surface_test::require_internal_surface(active->host,result);return result;}
     static void CALLBACK tick(HWND,UINT,UINT_PTR,DWORD){if(!active)return;auto& self=*active;try{self.step();}catch(const std::exception& failure){self.error=failure.what();self.close_all();}}
-    void close_all(){EnumThreadWindows(GetCurrentThreadId(),[](HWND item,LPARAM)->BOOL{wchar_t name[128]{};GetClassNameW(item,name,128);if(std::wstring_view(name)==L"LearnGameAndEngineDev.CppProjectDialog")PostMessageW(item,WM_CLOSE,0,0);return TRUE;},0);}
+    void close_all(){EnumChildWindows(host,[](HWND item,LPARAM)->BOOL{wchar_t name[128]{};GetClassNameW(item,name,128);if(std::wstring_view(name)==L"LearnGameAndEngineDev.CppProjectDialog")PostMessageW(item,WM_CLOSE,0,0);return TRUE;},0);if(const auto current=active_internal_window(host))PostMessageW(current,WM_CLOSE,0,0);}
     static void rendered_row(HWND window){const auto list=GetDlgItem(window,505);RECT bounds{};GetClientRect(list,&bounds);const auto height=static_cast<int>(SendMessageW(list,LB_GETITEMHEIGHT,0,0));
         const auto dpi=static_cast<int>(GetDpiForWindow(window));const auto measure_dc=GetDC(list);const auto original_font=SelectObject(measure_dc,reinterpret_cast<HFONT>(SendMessageW(list,WM_GETFONT,0,0)));wchar_t label[512]{};SendMessageW(list,LB_GETTEXT,0,reinterpret_cast<LPARAM>(label));RECT text{0,0,std::max(1L,bounds.right-MulDiv(32,dpi,96)),0};DrawTextW(measure_dc,label,-1,&text,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);SelectObject(measure_dc,original_font);ReleaseDC(list,measure_dc);
         require(height>=text.bottom+MulDiv(24,dpi,96),"A two-line revision row clips its actual text or inner padding");
@@ -113,8 +114,9 @@ void integrated_lesson(HWND host){
 }
 int main(int argc,char** argv){
     using namespace lgaed;using namespace presentation;
+    const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2,"Provide the existing isolated QA output directory");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
+    try{require(argc==2||internal_only,"Provide the existing isolated QA output directory, optionally --internal-dialogs");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
         const auto editor_window=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_MULTILINE|ES_AUTOHSCROLL|ES_AUTOVSCROLL,0,250,800,240,host,nullptr,GetModuleHandleW(nullptr),nullptr);require(editor_window!=nullptr,"Cannot create the existing source editor");
@@ -169,12 +171,17 @@ int main(int argc,char** argv){
         {auto one=block;one.project_files.resize(1);CppProjectView project(host,one,editor_window,editor,"","",history_root,"qa/single-file","es",events);
             MoveWindow(project.window(),0,0,800,project.height_for_width(800),TRUE);
             // A real pointer click first focuses its enabled toolbar button.
-            // The following informational popup must retain that focus.
+            // The following child notice must retain that focus.
             SetFocus(child(project.window(),301));const auto focused=GetFocus();windows::CppRunRequest before;project.snapshot(before);
             click(project.window(),301);HWND notice=nullptr;
-            EnumThreadWindows(GetCurrentThreadId(),[](HWND item,LPARAM raw)->BOOL{if(caption(item)=="Conserva al menos un archivo en el proyecto."){*reinterpret_cast<HWND*>(raw)=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&notice));
+            EnumChildWindows(project.window(),[](HWND item,LPARAM raw)->BOOL{if(IsWindowVisible(item)&&caption(item)=="Conserva al menos un archivo en el proyecto."){*reinterpret_cast<HWND*>(raw)=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&notice));
             windows::CppRunRequest after;project.snapshot(after);
-            const bool notice_valid=notice&&(GetWindowLongPtrW(notice,GWL_EXSTYLE)&WS_EX_NOACTIVATE)&&GetFocus()==focused&&after.project_files==before.project_files;
+            RECT main_bounds{},notice_bounds{};GetClientRect(host,&main_bounds);GetWindowRect(notice,&notice_bounds);MapWindowPoints(nullptr,host,reinterpret_cast<POINT*>(&notice_bounds),2);
+            const auto notice_style=GetWindowLongPtrW(notice,GWL_STYLE);
+            const bool notice_valid=notice&&GetParent(notice)==project.window()&&GetAncestor(notice,GA_ROOT)==host
+                &&(notice_style&WS_CHILD)&&!(notice_style&WS_POPUP)&&(GetWindowLongPtrW(notice,GWL_EXSTYLE)&WS_EX_NOACTIVATE)
+                &&notice_bounds.left>=0&&notice_bounds.top>=0&&notice_bounds.right<=main_bounds.right&&notice_bounds.bottom<=main_bounds.bottom
+                &&IsWindowEnabled(host)&&GetFocus()==focused&&after.project_files==before.project_files&&after.source_files==before.source_files;
             if(!notice_valid){wchar_t focused_class[80]{};GetClassNameW(GetFocus(),focused_class,80);
                 std::cerr<<"DELETE LAST actual: notice="<<static_cast<void*>(notice)<<" style="<<(notice?GetWindowLongPtrW(notice,GWL_EXSTYLE):0)<<" focus="<<static_cast<void*>(focused)<<" -> "<<static_cast<void*>(GetFocus())
                     <<" focus_id="<<GetDlgCtrlID(GetFocus())<<" focus_class="<<utf8(focused_class)<<" delete_button="<<static_cast<void*>(child(project.window(),301))<<" files_equal="<<(after.project_files==before.project_files)<<" file_count="<<after.project_files.size()<<'\n';}
@@ -194,8 +201,10 @@ int main(int argc,char** argv){
             const auto changed_before=source_changes;set_edit_text(child(project.configuration_window(),400),"revised");set_edit_text(child(project.configuration_window(),402),"WITH_TRACE=OFF\nMODE=two words");project.snapshot(snapshot);require(snapshot.cmake->target=="revised"&&snapshot.cmake->options.at("MODE")=="two words"&&source_changes>changed_before&&cmake_json.find("revised")!=std::string::npos,"Configuration edits did not immediately persist and invalidate the exact request");
             project.reset();project.snapshot(snapshot);require(snapshot.cmake==block.cmake&&snapshot.project_files==block.project_files,"Reset did not restore the authored project and CMake settings only");
         }
-        integrated_lesson(host);
+        if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
-        DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
+        DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
+        if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
+        else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
     }catch(const std::exception& error){if(host)DestroyWindow(host);if(rich)FreeLibrary(rich);std::cerr<<"Project controls failure: "<<error.what()<<'\n';return 1;}
 }

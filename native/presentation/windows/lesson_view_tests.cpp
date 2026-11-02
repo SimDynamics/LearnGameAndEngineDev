@@ -490,47 +490,90 @@ void lesson_menu_retains_import_pages_and_settings_with_hooks() {
         Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {
             data.preferences["native_windows"]["ui_language"] = std::string(locale);
         },[](const curriculum::Lesson&) {
-            return windows::parse_lesson_json(R"({"id":"qa_lesson_menu","title":"Contenido para el menú","pages":[
+            auto lesson=windows::parse_lesson_json(R"({"id":"qa_lesson_menu","title":"Contenido para el menú","pages":[
                 {"blocks":[{"type":"paragraph","text":"Página sin respuestas para comprobar el menú."}]},
                 {"blocks":[{"type":"paragraph","text":"Segunda página conservada."}]}]})");
+            for(int line=0;line<80;++line)lesson.pages[0].blocks[0].text+="\nContenido de prueba para desplazar la página.";
+            return lesson;
         },true);
         const auto before = fixture.saved();
-        const auto pick = [locale](const char* es,const char* en,const char* fr) {
-            return std::string(std::string_view(locale)=="fr"?fr:std::string_view(locale)=="en"?en:es);
-        };
-        int settings_requests = 0;
+        int settings_requests = 0,finished = 0;
         HWND settings_owner = nullptr;
         LessonViewHooks hooks;
         hooks.settings_requested = [&](HWND owner) { ++settings_requests; settings_owner = owner; };
+        hooks.lesson_completed = [&](HWND owner) { require(owner==fixture.view,"Lesson completion lost its owning view");++finished; };
         set_lesson_view_hooks(fixture.view,hooks);
         ShowWindow(fixture.host,SW_SHOWNOACTIVATE); pump(fixture.host);
-        const auto verify_menu = [&](bool settings_available) {
+        const auto verify_options = [&](bool settings_available) {
+            const auto requests=settings_requests;
             PopupCapture capture(fixture.view);
-            fixture.click(107); capture.verified();
-            require(capture.captions.front() == pick("Importar estado Android…","Import Android state…","Importer l'état Android…")
-                && std::ranges::find(capture.commands,104u) != capture.commands.end()
-                && std::ranges::find(capture.captions,pick("Páginas","Pages","Pages")) != capture.captions.end(),
-                "The lesson gear lost its localized import command or Pages submenu");
-            const auto settings = std::ranges::find(capture.commands,114u);
-            require((settings != capture.commands.end()) == settings_available,
-                "The lesson menu lost its settings command or invented one without a callback");
-            if (settings_available) require(capture.captions[static_cast<std::size_t>(settings-capture.commands.begin())]
-                == pick("Ajustes de lectura y apariencia…","Reading and appearance settings…","Réglages de lecture et d'apparence…"),
-                "The real lesson menu settings command ignored the interface language");
-            require(settings_requests == 0 && fixture.saved() == before && fixture.page() == 0,
-                "Opening/canceling the lesson menu invoked Settings or changed lesson data");
+            fixture.click(107);
+            require(capture.captions.empty(),"The lesson gear still opened a native dropdown instead of integrated settings");
+            require(settings_requests==requests+(settings_available?1:0)&&fixture.saved()==before&&fixture.page()==0,
+                "The lesson gear failed to request settings once or changed lesson state");
+            const auto options=lesson_options_snapshot(fixture.view);
+            require(options.current_page==0&&options.page_count==2&&options.available_pages==std::vector<std::size_t>{0,1}
+                &&!options.finish_visible&&!options.finish_enabled,
+                "Integrated lesson options lost their current page, available pages or completion gate");
         };
-        verify_menu(true);
+        verify_options(true);
         set_lesson_view_hooks(fixture.view,{});
-        verify_menu(false);
+        verify_options(false);
         set_lesson_view_hooks(fixture.view,hooks);
         SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(114,BN_CLICKED),0); pump(fixture.host);
-        require(settings_requests == 1 && settings_owner == fixture.view && IsWindow(fixture.view)
+        require(settings_requests == 2 && settings_owner == fixture.view && IsWindow(fixture.view)
             && fixture.saved() == before && fixture.page() == 0,
             "The retained Settings command did not dispatch once through its hook with lesson state intact");
+        require(!invoke_lesson_option(fixture.view,LessonOptionAction::finish)
+            &&!invoke_lesson_option(fixture.view,static_cast<LessonOptionAction>(9999))&&finished==0,
+            "An unavailable or invalid lesson option bypassed its original gate");
+        // Import is deliberately tested before scrolling: recording a lesson
+        // viewport is personal state and correctly makes import unavailable.
+        require(state::can_import_android_profile(fixture.saved()),"Lesson import options require an untouched QA profile");
+        require(invoke_lesson_option(fixture.view,LessonOptionAction::import_android_state),
+            "The integrated lesson options lost the guarded Android import surface");
+        pump(fixture.host);require(IsWindowVisible(fixture.control(201)),"The original Android import path control did not open");
+        require(lesson_options_snapshot(fixture.view).available_pages.empty()&&!navigate_lesson_view(fixture.view,1),
+            "The integrated page selector bypassed the active import surface");
+        fixture.click(206);
+        RECT original_text{},bottom_text{},top_text{};GetWindowRect(fixture.control(0,0),&original_text);
+        require(invoke_lesson_option(fixture.view,LessonOptionAction::page_bottom),"The integrated lesson options lost page bottom");
+        pump(fixture.host);GetWindowRect(fixture.control(0,0),&bottom_text);
+        require(invoke_lesson_option(fixture.view,LessonOptionAction::page_top),"The integrated lesson options lost page top");
+        pump(fixture.host);GetWindowRect(fixture.control(0,0),&top_text);
+        require(bottom_text.top<original_text.top&&top_text.top==original_text.top,
+            "The integrated top/bottom actions did not scroll the original lesson viewport");
+        require(navigate_lesson_view(fixture.view,1),"The integrated page selector lost an allowed page");pump(fixture.host);
+        const auto last=lesson_options_snapshot(fixture.view);
+        require(last.current_page==1&&last.page_count==2&&last.available_pages==std::vector<std::size_t>{0,1}
+            &&last.finish_visible&&last.finish_enabled,"Final lesson options lost the original completion action");
+        require(invoke_lesson_option(fixture.view,LessonOptionAction::finish),"The integrated Finish action did not complete an eligible lesson");
+        pump(fixture.host);require(finished==1,"The integrated Finish action lost or duplicated its completion callback");
         ShowWindow(fixture.host,SW_HIDE); pump(fixture.host);
     }
-    std::cout << "PASS real lesson gear in es/en/fr with and without settings hook: localized Import/Pages/Settings, cancel without navigation or callback, explicit Settings dispatch once and lesson state intact\n";
+    {
+        Fixture blocked({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"({"id":"qa_options_gate","title":"Opciones con requisito","pages":[
+            {"blocks":[{"type":"fill_code","id":"required","question":"Completa el tipo.","code":"[]","answers":["int"]}]},
+            {"blocks":[{"type":"paragraph","text":"Página posterior bloqueada."}]}]})");},true);
+        int finished=0;LessonViewHooks hooks;hooks.lesson_completed=[&](HWND){++finished;};set_lesson_view_hooks(blocked.view,hooks);
+        const auto before=blocked.saved();const auto options=lesson_options_snapshot(blocked.view);
+        require(options.available_pages==std::vector<std::size_t>{0}&&!navigate_lesson_view(blocked.view,1)
+            &&!invoke_lesson_option(blocked.view,LessonOptionAction::finish)&&finished==0&&blocked.saved()==before,
+            "Integrated lesson options bypassed an unanswered prerequisite or changed protected state");
+    }
+    {
+        Fixture last({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"({"id":"qa_options_finish_gate","title":"Finalizar sin saltar respuestas","pages":[
+            {"blocks":[{"type":"fill_code","id":"required","question":"Completa el tipo.","code":"[]","answers":["int"]}]}]})");},true);
+        int finished=0;LessonViewHooks hooks;hooks.lesson_completed=[&](HWND){++finished;};set_lesson_view_hooks(last.view,hooks);
+        auto options=lesson_options_snapshot(last.view);
+        require(options.finish_visible&&!options.finish_enabled&&!invoke_lesson_option(last.view,LessonOptionAction::finish)&&finished==0,
+            "The integrated Finish action ignored an unanswered final-page exercise");
+        last.replace(0,2,"int");last.click(0,3);options=lesson_options_snapshot(last.view);
+        require(options.finish_visible&&options.finish_enabled&&invoke_lesson_option(last.view,LessonOptionAction::finish),
+            "The integrated Finish action did not enable after the real answer was checked");
+        pump(last.host);require(finished==1,"Checking the final exercise did not preserve the real completion callback");
+    }
+    std::cout << "PASS real lesson gear requests integrated settings without a dropdown in es/en/fr; import, allowed pages, top/bottom and gated completion remain available without fabricated progress\n";
 }
 
 void lesson_interface_languages() {
@@ -569,9 +612,10 @@ void lesson_interface_languages() {
         require(std::ranges::any_of(regions,[&](const auto& region) { return region.source_text == pick("Nota","Note","Note"); }),
                 "The localized note heading and narration source disagree");
         {
-            PopupCapture capture(fixture.view); fixture.click(107); capture.verified();
-            require(capture.captions.front() == pick("Importar estado Android…","Import Android state…","Importer l'état Android…") &&
-                    capture.captions[1] == pick("Páginas","Pages","Pages"), "The real lesson popup remained in another language");
+            int requests=0;LessonViewHooks hooks;hooks.settings_requested=[&](HWND owner){require(owner==fixture.view,"Localized lesson settings lost their owner");++requests;};
+            set_lesson_view_hooks(fixture.view,hooks);PopupCapture capture(fixture.view);fixture.click(107);
+            require(requests==1&&capture.captions.empty(),"The localized lesson gear did not open integrated settings directly");
+            set_lesson_view_hooks(fixture.view,{});
         }
         {
             PopupCapture capture(fixture.view); SendMessageW(fixture.control(2,10),WM_CONTEXTMENU,0,MAKELPARAM(-1,-1));capture.verified();

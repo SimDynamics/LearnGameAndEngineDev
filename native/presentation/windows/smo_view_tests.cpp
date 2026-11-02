@@ -1,4 +1,5 @@
 #include "presentation/windows/smo_view.hpp"
+#include "presentation/windows/internal_surface_test_support.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "platform/windows/state_store.hpp"
@@ -54,8 +55,8 @@ void edit(HWND view,std::string_view source){const auto item=GetDlgItem(view,sou
     check(edit_text(item)==source,"The actual editor did not retain the requested source");
 }
 HWND owned_rules(HWND host){struct Search{HWND owner,result=nullptr;} search{host};
-    EnumThreadWindows(GetCurrentThreadId(),[](HWND item,LPARAM data)->BOOL{auto& current=*reinterpret_cast<Search*>(data);wchar_t name[100]{};
-        GetClassNameW(item,name,100);if(GetWindow(item,GW_OWNER)==current.owner&&std::wstring_view(name)==L"LearnGameAndEngineDev.SmoRules"){
+    EnumChildWindows(host,[](HWND item,LPARAM data)->BOOL{auto& current=*reinterpret_cast<Search*>(data);wchar_t name[100]{};
+        GetClassNameW(item,name,100);if(GetParent(item)==current.owner&&IsWindowVisible(item)&&std::wstring_view(name)==L"LearnGameAndEngineDev.SmoRules"){
             current.result=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));return search.result;
 }
 struct ApiMenuProbe{bool initialized=false,valid=false;int first=api_first_id;};
@@ -99,6 +100,27 @@ void assert_blank(const SmoLabSnapshot& value,std::uint64_t blank_hash){
         " vertices="+std::to_string(value.vertices)+" faces="+std::to_string(value.faces)+
         " colored_pixels="+std::to_string(value.surface.colored_pixels)+" actual_hash="+std::to_string(value.surface.pixel_hash)+
         " expected_blank_hash="+std::to_string(blank_hash));
+}
+void internal_info_only(){
+    const auto environment=resolve_windows_environment({ProfileId::Codex,L"native-smo-info-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    check(!std::filesystem::exists(environment.paths.root),"Internal SMO info QA requires a new private profile");initialize_profile_directories(environment.paths);
+    Window host;host.value=CreateWindowExW(0,L"STATIC",L"Internal SMO information QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,30,30,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(host.value!=nullptr,"Cannot create internal SMO info QA root");Window view;
+    view.value=create_smo_view(host.value,environment,[]{},GraphicsBackend::warp);RECT area{};GetClientRect(host.value,&area);MoveWindow(view.value,0,0,area.right,area.bottom,TRUE);pump();
+    const auto before=inspect_smo_lab(view.value,false);
+    click(view.value,rules_id);const auto rules=owned_rules(host.value);internal_surface_test::require_internal_surface(host.value,rules);
+    check(!IsWindowVisible(view.value)&&GetDlgItem(rules,IDCANCEL)&&edit_text(GetDlgItem(rules,1)).find("alternativa(")!=std::string::npos,
+        "Internal SMO information lost its original content, Back action or retained source page");
+    RECT root_bounds{};GetWindowRect(host.value,&root_bounds);MoveWindow(host.value,root_bounds.left,root_bounds.top,560,380,TRUE);layout_internal_windows(host.value);pump();
+    internal_surface_test::require_internal_surface(host.value,rules);
+    MoveWindow(host.value,root_bounds.left,root_bounds.top,root_bounds.right-root_bounds.left,root_bounds.bottom-root_bounds.top,TRUE);layout_internal_windows(host.value);
+    SendMessageW(GetDlgItem(rules,IDCANCEL),BM_CLICK,0,0);pump();
+    const auto after=inspect_smo_lab(view.value,false);
+    check(!IsWindow(rules)&&IsWindowVisible(view.value)&&IsWindowEnabled(host.value)&&after.source==before.source&&!after.running&&!after.benchmarking,
+        "Returning from internal SMO info changed the draft, executed source or failed to restore the page");
+    click(view.value,rules_id);const auto repeated=owned_rules(host.value);internal_surface_test::require_internal_surface(host.value,repeated);
+    SendMessageW(repeated,WM_CLOSE,0,0);pump();check(!IsWindow(repeated)&&IsWindowVisible(view.value),"Repeated internal SMO info did not close cleanly");
+    std::cout<<"PASS internal SMO information: one visible root/client bounds/resize, original text, Back/reopen and retained source; no SMO execution or benchmark\n";
 }
 void exercise(std::string_view sample,SmoProgramBackend program_backend){
     const auto environment=resolve_windows_environment({ProfileId::Codex,L"native-smo-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
@@ -242,8 +264,10 @@ void exercise(std::string_view sample,SmoProgramBackend program_backend){
 }
 
 int main(int argc,char** argv){try{
-    check((argc==2||argc==3)&&(std::string_view(argv[1])=="triangle"||std::string_view(argv[1])=="cube")&&(argc==2||std::string_view(argv[2])=="f12"),"Expected triangle or cube, optionally followed by f12");
+    const bool info_only=argc==2&&std::string_view(argv[1])=="--internal-info";
+    check(info_only||((argc==2||argc==3)&&(std::string_view(argv[1])=="triangle"||std::string_view(argv[1])=="cube")&&(argc==2||std::string_view(argv[2])=="f12")),"Expected triangle/cube with optional f12, or --internal-info");
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);reader_theme::prepare_fonts();
     INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};check(InitCommonControlsEx(&controls)!=FALSE,"Could not initialize native controls");
+    if(info_only){internal_info_only();return 0;}
     exercise(argv[1],argc==3?SmoProgramBackend::experimental_f12:SmoProgramBackend::compiled_binary32);return 0;
 }catch(const std::exception& error){std::cerr<<"SMO laboratory integration failure: "<<error.what()<<'\n';return 1;}}

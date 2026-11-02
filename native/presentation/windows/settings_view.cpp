@@ -1,4 +1,5 @@
 #include "presentation/windows/settings_view.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "core/narration_speed.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/icons.hpp"
@@ -16,6 +17,7 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <commctrl.h>
+#include <commdlg.h>
 #include <windowsx.h>
 #include <algorithm>
 #include <array>
@@ -49,6 +51,9 @@ constexpr int storage_maximum=5148;
 constexpr int flow_separator_first=5150;
 constexpr int size_range=5152;
 constexpr int kokoro_separator=5153,kokoro_heading=5154,storage_explanation=5155;
+constexpr int generation_detail=5156;
+constexpr int lesson_import=5160,lesson_page=5161,lesson_top=5162,lesson_bottom=5163,lesson_finish=5164;
+constexpr UINT_PTR storage_timer=0x4C475354;
 bool separator_id(int id){return id==size_separator||id==kokoro_separator||(id>=flow_separator_first&&id<flow_separator_first+2);}
 constexpr std::uint64_t storage_step=1024ull*1024;
 constexpr int rgb_slider_first=5700,rgb_input_first=5720,rgb_label_first=5740,rgb_default_first=5760,rgb_default_heading_first=5780;
@@ -57,6 +62,12 @@ std::optional<std::size_t> choose_settings_option(HWND,std::string_view,std::str
 constexpr UINT_PTR combo_size_subclass_id=0x4C475348;
 constexpr UINT_PTR slider_pointer_subclass_id=0x4C475350;
 constexpr UINT_PTR rgb_input_subclass_id=0x4C475352;
+struct RedrawPause{
+    HWND window;bool restore;
+    explicit RedrawPause(HWND target,bool pause=true):window(target),restore(pause&&(GetWindowLongPtrW(target,GWL_STYLE)&WS_VISIBLE)!=0){if(restore)SendMessageW(window,WM_SETREDRAW,FALSE,0);}
+    void resume(){if(std::exchange(restore,false)&&IsWindow(window))SendMessageW(window,WM_SETREDRAW,TRUE,0);}
+    ~RedrawPause(){resume();}
+};
 LRESULT CALLBACK rgb_input_subclass(HWND control,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
     if(message==WM_NCDESTROY){RemoveWindowSubclass(control,rgb_input_subclass,rgb_input_subclass_id);return DefSubclassProc(control,message,wp,lp);}
     const bool first_click=message==WM_LBUTTONDOWN&&GetFocus()!=control;
@@ -69,6 +80,9 @@ LRESULT CALLBACK rgb_input_subclass(HWND control,UINT message,WPARAM wp,LPARAM l
 }
 LRESULT CALLBACK slider_pointer_subclass(HWND control,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
     if(message==WM_NCDESTROY){RemoveWindowSubclass(control,slider_pointer_subclass,slider_pointer_subclass_id);return DefSubclassProc(control,message,wp,lp);}
+    // Wheel navigation belongs to the page, even when a slider has focus.
+    // Native click, drag and keyboard adjustment continue through TRACKBAR.
+    if(message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL)return SendMessageW(GetParent(control),message,wp,lp);
     if(message==WM_LBUTTONDOWN){
         if(!IsWindowEnabled(control))return 0;
         RECT channel{};SendMessageW(control,TBM_GETCHANNELRECT,0,reinterpret_cast<LPARAM>(&channel));
@@ -134,7 +148,7 @@ COLORREF default_accent(const state::StateData& data,std::string_view route){
 // This is an ordinary Windows dialog with ordinary single-line EDIT controls.
 // Shortcut configuration must not run the code editor's automatic pairing.
 struct ShortcutDialog {
-    static constexpr int viewport_id=5350,defaults_id=5351,help_id=5352,first_input_id=5400;
+    static constexpr int viewport_id=5350,defaults_id=5351,help_id=5352,title_id=5353,first_input_id=5400;
     HWND window=nullptr,viewport=nullptr;HFONT font=nullptr;int scroll=0;std::string locale;
     std::array<HWND,20> inputs{},labels{};std::vector<std::string> initial;
     std::optional<std::string> result;
@@ -160,9 +174,10 @@ struct ShortcutDialog {
     void layout(){
         if(!viewport)return;RECT bounds{};GetClientRect(window,&bounds);const int margin=px(18),gap=px(12);
         const int width=std::max(px(100),static_cast<int>(bounds.right)-margin*2);
-        MoveWindow(GetDlgItem(window,help_id),margin,margin,width,px(78),TRUE);
-        MoveWindow(GetDlgItem(window,defaults_id),margin,px(106),width,px(44),TRUE);
-        MoveWindow(viewport,margin,px(164),width,std::max(px(60),static_cast<int>(bounds.bottom)-px(250)),TRUE);
+        MoveWindow(GetDlgItem(window,title_id),margin,margin,width,px(34),TRUE);
+        MoveWindow(GetDlgItem(window,help_id),margin,px(64),width,px(78),TRUE);
+        MoveWindow(GetDlgItem(window,defaults_id),margin,px(152),width,px(44),TRUE);
+        MoveWindow(viewport,margin,px(210),width,std::max(px(60),static_cast<int>(bounds.bottom)-px(296)),TRUE);
         const int button_width=(width-gap)/2;
         MoveWindow(GetDlgItem(window,IDCANCEL),margin,std::max(px(224),static_cast<int>(bounds.bottom)-px(62)),button_width,px(44),TRUE);
         MoveWindow(GetDlgItem(window,IDOK),margin+button_width+gap,std::max(px(224),static_cast<int>(bounds.bottom)-px(62)),button_width,px(44),TRUE);
@@ -180,13 +195,14 @@ struct ShortcutDialog {
         for(const auto input:inputs){std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(input))+1,L'\0');
             text.resize(static_cast<std::size_t>(GetWindowTextW(input,text.data(),static_cast<int>(text.size()))));
             if(!text.empty())shortcuts.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(text));}
-        result=winrt::to_string(shortcuts.Stringify());EndDialog(window,IDOK);
+        result=winrt::to_string(shortcuts.Stringify());end_internal_dialog(window,IDOK);
     }
     void initialize(HWND target){
         window=target;SetWindowTextW(window,wide(tr("Atajos de programación","Programming Shortcuts","Raccourcis de programmation")).c_str());
         font=CreateFontW(-MulDiv(16,static_cast<int>(GetDpiForWindow(window)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(!font)throw std::runtime_error("Cannot create the shortcut dialog font");
         const auto help=tr("TAB permanece fijo. Puedes configurar 20 teclas, compartidas por todos los ejercicios de Programación. Deja una posición vacía para ocultarla.","TAB remains fixed. Configure 20 keys shared by all Programming exercises. Leave a slot empty to hide it.","TAB reste fixe. Configurez 20 touches communes à tous les exercices de Programmation. Laissez une position vide pour la masquer.");
+        control(window,L"STATIC",tr("Atajos de programación","Programming Shortcuts","Raccourcis de programmation"),title_id,SS_LEFT);
         control(window,L"STATIC",help,help_id,SS_LEFT);
         control(window,L"BUTTON",tr("Restaurar valores predeterminados","Restore defaults","Rétablir les valeurs par défaut"),defaults_id,WS_TABSTOP|BS_PUSHBUTTON|BS_MULTILINE);
         viewport=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"",WS_CHILD|WS_VISIBLE|WS_VSCROLL|WS_CLIPCHILDREN,0,0,0,0,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(viewport_id)),GetModuleHandleW(nullptr),nullptr);
@@ -197,10 +213,6 @@ struct ShortcutDialog {
         control(window,L"BUTTON",tr("Cancelar","Cancel","Annuler"),IDCANCEL,WS_TABSTOP|BS_PUSHBUTTON);
         const auto save=control(window,L"BUTTON",tr("Guardar atajos","Save shortcuts","Enregistrer les raccourcis"),IDOK,WS_TABSTOP|BS_DEFPUSHBUTTON);reader_theme::primary_button(save);
         SendMessageW(window,DM_SETDEFID,IDOK,0);
-        MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(GetWindow(window,GW_OWNER),MONITOR_DEFAULTTONEAREST),&monitor);
-        const int width=std::max(px(260),std::min(px(680),static_cast<int>(monitor.rcWork.right-monitor.rcWork.left)-px(32)));
-        const int height=std::max(px(320),std::min(px(740),static_cast<int>(monitor.rcWork.bottom-monitor.rcWork.top)-px(32)));
-        SetWindowPos(window,nullptr,monitor.rcWork.left+(monitor.rcWork.right-monitor.rcWork.left-width)/2,monitor.rcWork.top+(monitor.rcWork.bottom-monitor.rcWork.top-height)/2,width,height,SWP_NOZORDER|SWP_NOACTIVATE);
         layout();SetFocus(inputs.front());
     }
     static LRESULT CALLBACK viewport_proc(HWND target,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR data){
@@ -223,21 +235,21 @@ struct ShortcutDialog {
         try{switch(message){
         case WM_INITDIALOG:self->initialize(target);return FALSE;
         case WM_SIZE:self->layout();return TRUE;
-        case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){EndDialog(target,IDCANCEL);return TRUE;}
+        case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){end_internal_dialog(target,IDCANCEL);return TRUE;}
             if(LOWORD(wp)==IDOK){self->save();return TRUE;}if(LOWORD(wp)==defaults_id){self->restore_defaults();return TRUE;}break;
-        case WM_CLOSE:EndDialog(target,IDCANCEL);return TRUE;
+        case WM_CLOSE:end_internal_dialog(target,IDCANCEL);return TRUE;
         case WM_DRAWITEM:return reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lp));
         case WM_ERASEBKGND:{RECT bounds{};GetClientRect(target,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::brush(reader_theme::Surface::screen));return TRUE;}
         default:break;}}
-        catch(const std::exception& error){MessageBoxW(target,wide(error.what()).c_str(),L"Programming shortcuts",MB_OK|MB_ICONERROR);EndDialog(target,IDCANCEL);return TRUE;}
+        catch(const std::exception& error){internal_message_box(target,wide(error.what()).c_str(),L"Programming shortcuts",MB_OK|MB_ICONERROR);end_internal_dialog(target,IDCANCEL);return TRUE;}
         return FALSE;
     }
     std::optional<std::string> show(HWND owner){
         struct alignas(DWORD) Template{DLGTEMPLATE dialog{};WORD menu=0,window_class=0,title=0;} layout;
         static_assert(offsetof(Template,menu)==sizeof(DLGTEMPLATE));
-        layout.dialog.style=WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_CLIPCHILDREN|DS_MODALFRAME|DS_CENTER;
+        layout.dialog.style=WS_CHILD|WS_CLIPCHILDREN|DS_CONTROL;
         layout.dialog.dwExtendedStyle=WS_EX_CONTROLPARENT;layout.dialog.cx=340;layout.dialog.cy=370;
-        const auto code=DialogBoxIndirectParamW(GetModuleHandleW(nullptr),&layout.dialog,GetAncestor(owner,GA_ROOT),proc,reinterpret_cast<LPARAM>(this));
+        const auto code=show_internal_dialog(owner,&layout.dialog,proc,reinterpret_cast<LPARAM>(this));
         if(code==-1)throw std::runtime_error("Cannot open the programming shortcut dialog");return result;
     }
 };
@@ -253,6 +265,7 @@ struct Settings {
     int scale_draft=100,original_scale=100;bool inherits_scale=true,original_inherits_scale=true;
     bool wrap_draft=false,original_wrap=false,wrap_allowed=true,original_wrap_allowed=true;
     std::array<COLORREF,3> colors{},original_colors{},default_colors{},original_default_colors{};
+    std::array<COLORREF,16> custom_colors{};
     std::array<std::array<std::string,3>,3> color_inputs{},default_inputs{};
     std::array<bool,2> color_overwrite{true,true},original_color_overwrite{true,true};
     HFONT preview_font=nullptr;
@@ -416,7 +429,7 @@ struct Settings {
             const auto slider=item(TRACKBAR_CLASSW,"",rgb_slider_first+static_cast<int>(index)*3+channel,y,42,WS_TABSTOP|TBS_HORZ|TBS_NOTICKS);y+=52;
             SendMessageW(slider,TBM_SETRANGE,TRUE,MAKELPARAM(0,255));SendMessageW(slider,TBM_SETLINESIZE,0,1);SendMessageW(slider,TBM_SETPAGESIZE,0,8);}
         label(tr("Entrada manual","Manual Input","Saisie manuelle"),y,16,true);y+=34;rgb_fields(index,y,false);
-        item(L"STATIC","",global_color+static_cast<int>(index),y,76,SS_OWNERDRAW,18,true);y+=92;
+        item(L"BUTTON","",global_color+static_cast<int>(index),y,76,WS_TABSTOP|BS_OWNERDRAW,18,true);y+=92;
         const auto load=item(L"BUTTON",tr("Cargar color predeterminado","Load Default Color","Charger la couleur par défaut"),global_color_reset+static_cast<int>(index),y,54,WS_TABSTOP|BS_PUSHBUTTON,16);reader_theme::primary_button(load);y+=78;
         const auto start=rows.size();item(L"STATIC",tr("Valores predeterminados","Default Values","Valeurs par défaut"),rgb_default_heading_first+static_cast<int>(index),y,28,SS_LEFT,16,true);y+=34;
         description(y,tr("El botón «Cargar color predeterminado» copia estos valores al selector. Pulsa «Guardar cambios» para aplicar el color.","The «Load Default Color» button copies these values into the color picker. Select «Save Changes» to apply the color.","Le bouton « Charger la couleur par défaut » copie ces valeurs dans le sélecteur. Appuyez sur « Enregistrer les modifications » pour appliquer la couleur."));
@@ -469,6 +482,19 @@ struct Settings {
             if(access.changed)access.changed();
         }
     }
+    void choose_color(std::size_t index){
+        const auto attached=window;auto custom=custom_colors;
+        CHOOSECOLORW selection{sizeof(selection)};selection.hwndOwner=GetAncestor(window,GA_ROOT);
+        selection.rgbResult=colors[index];selection.lpCustColors=custom.data();selection.Flags=CC_FULLOPEN|CC_RGBINIT;
+        const auto accepted=ChooseColorW(&selection);
+        // The native dialog owns its local buffers. Closing the main window
+        // during its modal loop must not leave a pointer into Settings behind.
+        if(!IsWindow(attached)||reinterpret_cast<Settings*>(GetWindowLongPtrW(attached,GWLP_USERDATA))!=this)return;
+        if(!accepted){if(CommDlgExtendedError())throw std::runtime_error(tr("No se pudo abrir el selector de color de Windows.","The Windows colour picker could not be opened.","Impossible d’ouvrir le sélecteur de couleur Windows."));return;}
+        custom_colors=custom;colors[index]=selection.rgbResult;
+        for(int channel=0;channel<3;++channel)color_inputs[index][channel]=std::to_string(rgb_channel(colors[index],channel));
+        refresh_appearance();
+    }
     void fill_voices(const state::StateData& data){
         std::string voice_error;
         const auto tag=windows::selected_narration_language(data,interface_language(data));
@@ -494,7 +520,11 @@ struct Settings {
             try{selected=windows::selected_kokoro_voice(data,tags[std::clamp(index,0,3)],std::filesystem::path(build::source_root)/"out/narration/runtime.json");}
             catch(...){voices.clear();voice_names.clear();voice_error=tr("No se pudo cargar el catálogo de voces de Kokoro.","The Kokoro voice catalogue could not be loaded.","Impossible de charger le catalogue de voix Kokoro.");}
         }
-        const auto found=std::ranges::find(voices,selected);selected_voice_index=found==voices.end()?0:static_cast<std::size_t>(found-voices.begin());
+        const auto found=std::ranges::find(voices,selected);
+        // An explicit Windows token can disappear after reinstalling the OS.
+        // Keep it saved and expose the unavailable choice rather than falsely
+        // presenting the first installed voice as the selected one.
+        selected_voice_index=found==voices.end()?(selected.empty()?0:voices.size()):static_cast<std::size_t>(found-voices.begin());
         refresh_narration_buttons(voice_error);
     }
     std::vector<std::string> narration_language_labels()const{return {tr("Español","Spanish","Espagnol"),tr("Inglés estadounidense","American English","Anglais américain"),tr("Inglés británico","British English","Anglais britannique"),tr("Francés","French","Français")};}
@@ -505,9 +535,10 @@ struct Settings {
         SetWindowTextW(GetDlgItem(window,engine),wide(system?tr("Motor: Windows TTS","Engine: Windows TTS","Moteur : Windows TTS"):
             selected_engine=="AUTO"?tr("Motor: automático","Engine: automatic","Moteur : automatique"):tr("Motor: Kokoro","Engine: Kokoro","Moteur : Kokoro")).c_str());
         const auto current=voices.empty()?(voice_error.empty()?tr("No hay voces disponibles para este idioma","No available voices for this language","Aucune voix disponible pour cette langue"):voice_error):
+            selected_voice_index>=voices.size()?tr("Voz seleccionada no disponible. Elige una voz instalada.","Selected voice unavailable. Choose an installed voice.","Voix sélectionnée indisponible. Choisissez une voix installée."):
             system?voice_names[selected_voice_index]:voices[selected_voice_index];
         SetWindowTextW(GetDlgItem(window,voice),wide((system?tr("Voz Windows: ","Windows voice: ","Voix Windows : "):tr("Voz Kokoro: ","Kokoro voice: ","Voix Kokoro : "))+current).c_str());
-        SetWindowTextW(GetDlgItem(window,narration_hint),wide(tr("Configura el motor de lectura y sus voces en las opciones globales.","Configure the speech engine and its voices in Global Settings.","Configurez le moteur de lecture et ses voix dans les paramètres généraux.")).c_str());
+        SetWindowTextW(GetDlgItem(window,narration_hint),wide(tr("El idioma y la voz se comparten con las opciones globales.","Language and voice are shared with Global Settings.","La langue et la voix sont partagées avec les paramètres généraux.")).c_str());
         const bool active=boolean(data,"lesson_narration_settings","enabled",true);EnableWindow(GetDlgItem(window,engine),active);EnableWindow(GetDlgItem(window,language),active);EnableWindow(GetDlgItem(window,voice),active&&!voices.empty());
     }
     void choose_narration(int id){
@@ -528,7 +559,7 @@ struct Settings {
             if(id==engine)settings["engine"]=std::string(*chosen==1?"WINDOWS":"KOKORO");
             else if(id==language)settings["language"]=std::string(tags[*chosen]);
             else{settings[std::string(system?"windows_voice:":"kokoro_voice:")+tag]=candidate_voices[*chosen];if(!system)settings["kokoro_voice"]=candidate_voices[*chosen];}});
-        fill_voices(access.read());refresh_narration_visibility();layout();if(access.changed)access.changed();
+        fill_voices(access.read());if(id==engine)refresh_engine_storage();refresh_narration_visibility();layout();if(access.changed)access.changed();
     }
     void global_controls(int& y,const state::StateData& data){
         section(y,tr("Idioma de la aplicación","App Language","Langue de l’application"),tr("Selecciona el idioma de la aplicación, el contenido y la narración.","Choose the language of the application, content and narration.","Choisissez la langue de l’application, du contenu et de la narration."));
@@ -543,8 +574,9 @@ struct Settings {
         if(active){reader_theme::premium_button(premium,true);EnableWindow(premium,FALSE);}else reader_theme::primary_button(premium);y+=72;
         end_card(y);y+=32;
         section(y,tr("Apariencia general","General Appearance","Apparence générale"),tr("Configura el tamaño global del contenido y el color de acento de la aplicación.","Set the global content size and the app’s accent color.","Réglez la taille globale du contenu et la couleur d’accent de l’application."));
-        begin_card(y);text_controls(y);end_card(y);y+=24;color_controls(y);appearance_save_button(y);y+=20;
+        begin_card(y);text_controls(y);end_card(y);y+=24;
         narration_controls(y,data);
+        color_controls(y);appearance_save_button(y);y+=20;
         section(y,tr("Flujo de aprendizaje","Learning Flow","Progression de l’apprentissage"),tr("Controla cómo continúa la aplicación cuando terminas contenido.","Control how the app continues when you complete learning content.","Contrôlez la manière dont l’application poursuit le parcours après avoir terminé du contenu."));
         begin_card(y);label(tr("Continuidad automática","Automatic Progression","Progression automatique"),y,19,true);y+=34;
         description(y,tr("Decide hasta dónde puede continuar automáticamente el estudio.","Choose how far your learning can progress automatically.","Choisissez jusqu’où l’apprentissage peut progresser automatiquement."));
@@ -583,15 +615,70 @@ struct Settings {
         // available when the playback engine changes. Only the master switch
         // disables this section; selecting system speech does not remove it.
         for(std::size_t index=kokoro_rows_begin;index<kokoro_rows_end&&index<rows.size();++index){rows[index].suppressed=false;ShowWindow(rows[index].window,SW_SHOW);EnableWindow(rows[index].window,active);}
+        EnableWindow(GetDlgItem(window,storage_limit),active);EnableWindow(GetDlgItem(window,advance),active);
         EnableWindow(GetDlgItem(window,licenses_action),active);
     }
-    std::string storage_size(std::uint64_t bytes)const{char value[40]{};std::snprintf(value,sizeof(value),"%.2f",static_cast<double>(bytes)/(1024.*1024.*1024.));std::string number(value);if(locale!="en")std::replace(number.begin(),number.end(),'.',',');return number+tr(" GB"," GB"," Go");}
+    std::string storage_size(std::uint64_t bytes)const{
+        if(bytes<1024)return std::to_string(bytes)+tr(" B"," B"," o");
+        const auto divisor=bytes<1024ull*1024?1024.:bytes<1024ull*1024*1024?1024.*1024.:1024.*1024.*1024.;
+        const auto unit=bytes<1024ull*1024?tr(" KB"," KB"," Ko"):bytes<1024ull*1024*1024?tr(" MB"," MB"," Mo"):tr(" GB"," GB"," Go");
+        char value[40]{};std::snprintf(value,sizeof(value),"%.2f",static_cast<double>(bytes)/divisor);std::string number(value);if(locale!="en")std::replace(number.begin(),number.end(),'.',',');return number+unit;
+    }
     void refresh_storage_detail(std::uint64_t selected){
         const auto limit=selected?storage_size(selected):tr("0 GB (pregeneración pausada)","0 GB (pre-rendering paused)","0 Go (prégénération en pause)");
-        auto detail=tr("Límite: ","Limit: ","Limite : ")+limit+tr(" · Ya guardado: "," · Already saved: "," · Déjà enregistré : ")+storage_size(storage.stored_bytes);
+        auto detail=tr("Límite por motor: ","Limit per engine: ","Limite par moteur : ")+limit+tr(" · Ya guardado: "," · Already saved: "," · Déjà enregistré : ")+storage_size(storage.stored_bytes);
         if(storage.stored_bytes>=selected)detail+=" "+tr("No se generarán nuevos audios automáticos hasta tener espacio disponible.","No new background audio will be generated until there is room.","Aucun nouvel audio automatique tant que l’espace reste insuffisant.");
-        SetWindowTextW(GetDlgItem(window,storage_detail),wide(detail).c_str());
-        SetWindowTextW(GetDlgItem(window,storage_maximum),wide(tr("Máximo disponible: ","Available maximum: ","Maximum disponible : ")+storage_size(storage.maximum_bytes)+tr(" (con 1 GB de reserva)"," (with 1 GB reserved)"," (1 Go réservé)")).c_str());
+        set_caption(storage_detail,detail);
+        set_caption(storage_maximum,tr("Máximo disponible: ","Available maximum: ","Maximum disponible : ")+storage_size(storage.maximum_bytes)+tr(" (con 1 GB de reserva)"," (with 1 GB reserved)"," (1 Go réservé)"));
+    }
+    void refresh_engine_storage(){
+        const auto slider=GetDlgItem(window,storage_limit);if(!slider||!access.storage_snapshot)return;
+        const auto next=access.storage_snapshot();
+        const auto steps=static_cast<int>(std::min<std::uint64_t>(std::numeric_limits<int>::max(),next.maximum_bytes/storage_step));
+        const auto previous_binding=binding;binding=true;
+        // The user explicitly selected another engine. Bind its effective
+        // capacity once; periodic disk observation still leaves the thumb alone.
+        SendMessageW(slider,TBM_SETRANGEMIN,FALSE,0);SendMessageW(slider,TBM_SETRANGEMAX,TRUE,steps);
+        SendMessageW(slider,TBM_SETPOS,TRUE,static_cast<int>(std::min<std::uint64_t>(steps,next.effective_bytes/storage_step)));
+        binding=previous_binding;storage=next;refresh_storage_detail(storage.effective_bytes);
+    }
+    void poll_storage(){
+        // An internal child screen can temporarily cover Settings. Do not
+        // resurface its hidden owner or interrupt any active pointer gesture.
+        if(!IsWindowVisible(window)||GetCapture())return;
+        const auto slider=GetDlgItem(window,storage_limit);
+        bool relayout=false;
+        if(slider&&access.storage_snapshot){const auto next=access.storage_snapshot();
+            if(next.stored_bytes!=storage.stored_bytes||next.maximum_bytes!=storage.maximum_bytes||next.effective_bytes!=storage.effective_bytes){
+                storage=next;
+                // Observed usage never changes TRACKBAR range/position or the
+                // selected budget, even as files finish in the background.
+                refresh_storage_detail(static_cast<std::uint64_t>(SendMessageW(slider,TBM_GETPOS,0,0))*storage_step);relayout=true;
+            }
+        }
+        if(access.generation_status&&GetDlgItem(window,generation_detail)){
+            const auto text=access.generation_status();if(text!=control_text(GetDlgItem(window,generation_detail))){set_caption(generation_detail,text);relayout=true;}
+        }
+        if(relayout)layout();
+    }
+    void lesson_controls(int& y){
+        if(!access.import_state&&!access.navigate_page&&!access.page_top&&!access.page_bottom&&!access.finish)return;
+        label(tr("Acciones de la lección","Lesson actions","Actions de la leçon"),y,21,true);y+=40;begin_card(y);
+        const auto action=[&](int id,std::string caption,bool enabled=true){const auto button=item(L"BUTTON",std::move(caption),id,y,56,WS_TABSTOP|BS_PUSHBUTTON,17);reader_theme::primary_button(button);EnableWindow(button,enabled);y+=72;};
+        if(access.import_state)action(lesson_import,tr("Importar estado Android…","Import Android state…","Importer l'état Android…"));
+        if(access.navigate_page&&!access.lesson_pages.empty()){
+            label(tr("Páginas","Pages","Pages"),y,17,true);y+=36;
+            const auto found=std::ranges::find_if(access.lesson_pages,[&](const auto& page){return page.first==access.current_page;});
+            const auto pages=item(L"COMBOBOX","",lesson_page,y,64,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL,18);
+            for(const auto& page:access.lesson_pages)SendMessageW(pages,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(wide(page.second).c_str()));
+            SendMessageW(pages,CB_SETCURSEL,found==access.lesson_pages.end()?static_cast<WPARAM>(-1):static_cast<WPARAM>(found-access.lesson_pages.begin()),0);
+            if(!SetWindowSubclass(pages,combo_size_subclass,combo_size_subclass_id,0))throw std::runtime_error("Cannot preserve lesson page selector dimensions");
+            size_combo(pages);y+=84;
+        }
+        if(access.page_top)action(lesson_top,tr("Ir al principio de la página","Go to the top of the page","Aller au début de la page"));
+        if(access.page_bottom)action(lesson_bottom,tr("Ir al final de la página","Go to the bottom of the page","Aller à la fin de la page"));
+        if(access.finish)action(lesson_finish,tr("Finalizar lección","Finish lesson","Terminer la leçon"),access.finish_enabled);
+        end_card(y);y+=32;
     }
     void narration_controls(int& y,const state::StateData& data){
         section(y,tr("Lectura en voz alta","Read aloud","Lecture à voix haute"),tr("Configura la lectura de las lecciones, el motor, las voces y sus recursos.","Configure lesson narration, the speech engine, voices, and their resources.","Configurez la lecture des leçons, le moteur vocal, les voix et leurs ressources."));
@@ -599,30 +686,31 @@ struct Settings {
         checkbox(enabled,tr("Activar narración de las lecciones","Enable lesson narration","Activer la narration des leçons"),y,boolean(data,"lesson_narration_settings","enabled",true));y+=52;
         for(const auto id:{engine,language,voice}){reader_theme::primary_button(item(L"BUTTON","",id,y,56,WS_TABSTOP|BS_PUSHBUTTON,17));y+=72;}
         fill_voices(data);
-        kokoro_rows_begin=rows.size();
-        y+=14;item(L"STATIC","",kokoro_separator,y,1,SS_OWNERDRAW);y+=13;
-        item(L"STATIC",tr("Voces y recursos Kokoro","Kokoro voices and resources","Voix et ressources Kokoro"),kokoro_heading,y,34,SS_LEFT,18,true);y+=46;
         if(access.storage_snapshot){storage=access.storage_snapshot();
-            label(tr("Almacenamiento para audios Kokoro","Kokoro audio storage","Stockage audio Kokoro"),y,17,true);y+=38;
+            label(tr("Almacenamiento para audios","Audio storage","Stockage audio"),y,17,true);y+=38;
             item(L"STATIC","",storage_detail,y,46,SS_LEFT,15);y+=54;
             const auto slider=item(TRACKBAR_CLASSW,"",storage_limit,y,48,WS_TABSTOP|TBS_HORZ|TBS_NOTICKS);y+=56;
             const auto steps=static_cast<int>(std::min<std::uint64_t>(std::numeric_limits<int>::max(),storage.maximum_bytes/storage_step));
             SendMessageW(slider,TBM_SETRANGEMIN,FALSE,0);SendMessageW(slider,TBM_SETRANGEMAX,TRUE,steps);
             SendMessageW(slider,TBM_SETPOS,TRUE,static_cast<int>(std::min<std::uint64_t>(steps,storage.effective_bytes/storage_step)));
             item(L"STATIC","",storage_maximum,y,30,SS_LEFT,14);y+=40;refresh_storage_detail(storage.effective_bytes);
-            item(L"STATIC",tr("Límite para la pregeneración automática. Se reserva al menos 1 GB libre; los audios terminados nunca se borran automáticamente.","Limit for automatic pre-rendering. At least 1 GB stays free; finished audio is never deleted automatically.","Limite de prégénération automatique. Au moins 1 Go reste libre ; les audios terminés ne sont jamais supprimés automatiquement."),storage_explanation,y,60,SS_LEFT,14);y+=70;
+            item(L"STATIC",tr("El total incluye todas las voces del motor seleccionado. Se reserva al menos 1 GB libre; los audios terminados nunca se borran automáticamente. El progreso corresponde a la voz, el motor y el idioma seleccionados.","The total includes all voices of the selected engine. At least 1 GB stays free; finished audio is never deleted automatically. Progress applies to the selected voice, engine and language.","Le total comprend toutes les voix du moteur sélectionné. Au moins 1 Go reste libre ; les audios terminés ne sont jamais supprimés automatiquement. La progression correspond à la voix, au moteur et à la langue sélectionnés."),storage_explanation,y,80,SS_LEFT,14);y+=90;
         }
+        if(access.generation_status){item(L"STATIC",access.generation_status(),generation_detail,y,60,SS_LEFT,15);y+=72;}
         checkbox(advance,tr("Generar anticipadamente los audios de las siguientes lecciones y cursos","Generate audio for upcoming lessons and courses in advance","Générer à l’avance l’audio des prochaines leçons et cours"),y,boolean(data,"lesson_narration_settings","kokoro_advance_generation",true));y+=72;
+        kokoro_rows_begin=rows.size();
+        y+=14;item(L"STATIC","",kokoro_separator,y,1,SS_OWNERDRAW);y+=13;
+        item(L"STATIC",tr("Voces y recursos Kokoro","Kokoro voices and resources","Voix et ressources Kokoro"),kokoro_heading,y,34,SS_LEFT,18,true);y+=46;
         if(access.open_audio){label(tr("Audios Kokoro por curso","Kokoro audio by course","Audios Kokoro par cours"),y,17,true);y+=38;
             for(int index=0;index<2;++index){const auto button=item(L"BUTTON",index==0?tr("Audios de Programación","Programming audio","Audios de programmation"):tr("Audios de Matemáticas y Física","Mathematics and Physics audio","Audios de mathématiques et physique"),index==0?audio_programming:audio_mathematics,y,54,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);y+=66;}}
         kokoro_rows_end=rows.size();
+        if(access.open_licenses){y+=14;label(tr("Licencias","Licenses","Licences"),y,19,true);y+=38;const auto button=item(L"BUTTON",tr("Licencias y atribuciones de lectura","Read aloud licenses and credits","Licences et crédits de lecture"),licenses_action,y,54,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);EnableWindow(button,boolean(data,"lesson_narration_settings","enabled",true));y+=66;}
         for(std::size_t index=card_begin;index<rows.size();++index){wchar_t kind[16]{};GetClassNameW(rows[index].window,kind,16);
             const auto font=reinterpret_cast<HFONT>(SendMessageW(rows[index].window,WM_GETFONT,0,0));LOGFONTW details{};
             if(_wcsicmp(kind,L"STATIC")==0&&GetObjectW(font,sizeof(details),&details)&&details.lfWeight<FW_BOLD)
                 reader_theme::set_text_color(rows[index].window,RGB(210,214,220));}
         end_card(y);y+=24;
         refresh_narration_visibility();
-        if(access.open_licenses){label(tr("Licencias","Licenses","Licences"),y,19,true);y+=38;begin_card(y);const auto button=item(L"BUTTON",tr("Licencias y atribuciones de lectura","Read aloud licenses and credits","Licences et crédits de lecture"),licenses_action,y,54,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);EnableWindow(button,boolean(data,"lesson_narration_settings","enabled",true));y+=66;end_card(y);y+=24;}
     }
     void build(){
         binding=true;struct BindingGuard{bool& value;~BindingGuard(){value=false;}} binding_guard{binding};
@@ -648,6 +736,7 @@ struct Settings {
             extent=y+20;binding=false;layout();return;
         }
         if(lesson_scope){
+            lesson_controls(y);
             label(tr("Narración","Narration","Narration"),y,21,true);y+=40;begin_card(y);
             reader_theme::primary_button(item(L"BUTTON","",language,y,56,WS_TABSTOP|BS_PUSHBUTTON,17));y+=72;
             reader_theme::primary_button(item(L"BUTTON","",voice,y,56,WS_TABSTOP|BS_PUSHBUTTON,17));y+=72;
@@ -688,7 +777,7 @@ struct Settings {
         const auto pending=std::tuple{flow_draft,original_flow,flow_uses_global,scale_draft,original_scale,inherits_scale,original_inherits_scale,
             wrap_draft,original_wrap,wrap_allowed,original_wrap_allowed,colors,original_colors,default_colors,original_default_colors,color_inputs,default_inputs,color_overwrite,original_color_overwrite};
         const auto previous_scroll=scroll;const auto focus=GetFocus();const auto focused_id=focus&&IsChild(window,focus)?GetDlgCtrlID(focus):0;
-        SendMessageW(window,WM_SETREDRAW,FALSE,0);binding=true;
+        RedrawPause redraw(window);binding=true;
         for(const auto& row:rows)DestroyWindow(row.window);rows.clear();card_ranges.clear();selector_cards.clear();default_ranges.clear();default_cards.clear();eyebrow_label=nullptr;
         if(preview_font){DeleteObject(preview_font);preview_font=nullptr;}for(const auto font:fonts)DeleteObject(font);fonts.clear();
         build();binding=true;
@@ -702,19 +791,18 @@ struct Settings {
         if(access.scope==SettingsScope::course)for(const auto id:{auto_lesson,auto_unit,auto_course,swipe_finish})EnableWindow(GetDlgItem(window,id),!flow_uses_global);
         scroll=previous_scroll;binding=false;refresh_appearance();
         if(focused_id)if(const auto control=GetDlgItem(window,focused_id))SetFocus(control);
-        const auto parent=GetParent(window);wchar_t name[80]{};GetClassNameW(parent,name,80);
-        if(std::wstring_view(name)==L"LearnGameAndEngineDev.SettingsWindow"&&access.title.empty())SetWindowTextW(parent,wide(tr("Opciones","Settings","Paramètres")).c_str());
-        SendMessageW(window,WM_SETREDRAW,TRUE,0);RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
+        SetWindowTextW(window,wide(access.title.empty()?tr("Opciones","Settings","Paramètres"):access.title).c_str());
+        redraw.resume();RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
     }
     void refresh_fonts(){
         std::vector<HFONT> replacements;replacements.reserve(rows.size());
         for(const auto& row:rows){const auto font=CreateFontW(-px(row.font_size),0,0,0,row.font_bold?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,
             DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
             if(!font){for(const auto value:replacements)DeleteObject(value);throw std::runtime_error("Cannot resize the settings fonts for this display");}replacements.push_back(font);}
-        SendMessageW(window,WM_SETREDRAW,FALSE,0);const auto previous_binding=binding;binding=true;
+        RedrawPause redraw(window);const auto previous_binding=binding;binding=true;
         for(std::size_t index=0;index<rows.size();++index)SendMessageW(rows[index].window,WM_SETFONT,reinterpret_cast<WPARAM>(replacements[index]),FALSE);
         for(const auto font:fonts)DeleteObject(font);fonts=std::move(replacements);
-        refresh_appearance();binding=previous_binding;SendMessageW(window,WM_SETREDRAW,TRUE,0);layout();
+        refresh_appearance();binding=previous_binding;redraw.resume();layout();
     }
     void layout(bool measure=true){
         if(laying_out||!window)return;laying_out=true;struct LayoutGuard{bool& value;~LayoutGuard(){value=false;}} guard{laying_out};
@@ -752,7 +840,10 @@ struct Settings {
         if(measure){content_height=cursor+px(24);measured_width=area.right;measured_dpi=static_cast<int>(GetDpiForWindow(window));}
         scroll=std::clamp(scroll,0,std::max(0,content_height-static_cast<int>(area.bottom)));
         struct Placement{HWND control;int left,top,width,height;};std::vector<Placement> placements;placements.reserve(rows.size());
-        SendMessageW(window,WM_SETREDRAW,FALSE,0);selector_cards.clear();default_cards.clear();
+        // WM_SETREDRAW temporarily removes WS_VISIBLE. Doing that to the
+        // scrolling HWND inside USER's scrollbar tracking loop cancels the
+        // native drag. Pure scrolling only batches child positions.
+        RedrawPause redraw(window,measure);selector_cards.clear();default_cards.clear();
         for(const auto& range:card_ranges)selector_cards.push_back({margin,rows[range.first].actual_top-scroll-padding,margin+width,rows[range.second-1].actual_top+rows[range.second-1].actual_height-scroll+padding});
         for(const auto& range:default_ranges)default_cards.push_back({margin+padding,rows[range.first].actual_top-scroll-px(14),margin+width-padding,rows[range.second-1].actual_top+rows[range.second-1].actual_height-scroll+px(14)});
         for(const auto& row:rows){if(row.actual_height==0)continue;const auto top=row.actual_top-scroll;const auto inner=in_card(static_cast<std::size_t>(&row-rows.data()));
@@ -772,7 +863,7 @@ struct Settings {
         // including any earlier entries, rather than leaving a partial layout.
         if(!positioned)for(const auto& placement:placements)MoveWindow(placement.control,placement.left,placement.top,placement.width,placement.height,FALSE);
         if(measure)for(const auto& row:rows)if(row.dropdown&&row.actual_height>0)size_combo(row.window);
-        SendMessageW(window,WM_SETREDRAW,TRUE,0);SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,content_height-1),static_cast<UINT>(area.bottom),scroll,0};SetScrollInfo(window,SB_VERT,&info,TRUE);reader_theme::refresh_scrollbars(window);
+        redraw.resume();SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,content_height-1),static_cast<UINT>(area.bottom),scroll,0};SetScrollInfo(window,SB_VERT,&info,TRUE);reader_theme::refresh_scrollbars(window);
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
         RECT adjusted{};GetClientRect(window,&adjusted);if(adjusted.right!=area.right)PostMessageW(window,WM_SIZE,0,MAKELPARAM(adjusted.right,adjusted.bottom));
     }
@@ -781,14 +872,25 @@ struct Settings {
         if(id==engine||id==language||id==voice){if(notification==BN_CLICKED)choose_narration(id);return;}
         if((id==reset_programming||id==reset_math)&&access.reset_route){access.reset_route(id==reset_programming?"programming":"math_physics");return;}
         if(notification!=CBN_SELCHANGE&&notification!=BN_CLICKED)return;
-        if(id==premium_action){MessageBoxW(window,wide(tr("Esta versión es para uso personal. Premium solo se activa desde el código.","This version is for personal use. Premium is enabled only in code.","Cette version est réservée à un usage personnel. Premium s’active uniquement dans le code.")).c_str(),L"Premium",MB_OK|MB_ICONINFORMATION);return;}
+        if(id==lesson_page){
+            const auto selected=static_cast<int>(SendDlgItemMessageW(window,id,CB_GETCURSEL,0,0));
+            if(notification==CBN_SELCHANGE&&selected>=0&&static_cast<std::size_t>(selected)<access.lesson_pages.size()&&access.navigate_page){
+                const auto page=access.lesson_pages[static_cast<std::size_t>(selected)].first;const auto callback=access.navigate_page;callback(page);
+            }return;
+        }
+        if(id==lesson_import||id==lesson_top||id==lesson_bottom||id==lesson_finish){
+            if(id==lesson_finish&&!access.finish_enabled)return;
+            const auto callback=id==lesson_import?access.import_state:id==lesson_top?access.page_top:id==lesson_bottom?access.page_bottom:access.finish;
+            if(callback)callback();return;
+        }
+        if(id==premium_action){internal_message_box(window,wide(tr("Esta versión es para uso personal. Premium solo se activa desde el código.","This version is for personal use. Premium is enabled only in code.","Cette version est réservée à un usage personnel. Premium s’active uniquement dans le code.")).c_str(),L"Premium",MB_OK|MB_ICONINFORMATION);return;}
         if(id==audio_programming||id==audio_mathematics){if(boolean(access.read(),"lesson_narration_settings","enabled",true)&&access.open_audio)access.open_audio(id==audio_programming?"programming":"math_physics");return;}
         if(id==licenses_action){if(boolean(access.read(),"lesson_narration_settings","enabled",true)&&access.open_licenses)access.open_licenses();return;}
         const auto selection=static_cast<int>(SendDlgItemMessageW(window,id,CB_GETCURSEL,0,0));
         const bool checked=SendDlgItemMessageW(window,id,BM_GETCHECK,0,0)==BST_CHECKED;
         if(id==save_appearance){save_appearance_settings();return;}
         if(id==edit_shortcuts){show_shortcuts();return;}
-        if(id>=global_color&&id<=math_color)return;
+        if(id>=global_color&&id<=math_color){choose_color(static_cast<std::size_t>(id-global_color));return;}
         if(id>=global_color_reset&&id<=math_color_reset){const auto index=static_cast<std::size_t>(id-global_color_reset);
             if(std::ranges::any_of(default_inputs[index],[](const auto& text){const auto value=rgb_number(text);return !value||*value>255;})){show_settings_notice(window,tr("Escribe tres valores RGB de 0 a 255.","Enter three RGB values from 0 to 255.","Saisissez trois valeurs RVB de 0 à 255."));return;}
             colors[index]=default_colors[index];for(int channel=0;channel<3;++channel)color_inputs[index][channel]=std::to_string(rgb_channel(colors[index],channel));refresh_appearance();return;}
@@ -797,13 +899,13 @@ struct Settings {
         if(id==programming_color_overwrite||id==math_color_overwrite){color_overwrite[id-programming_color_overwrite]=checked;refresh_appearance();return;}
         if(id==reset_math_wrap_exceptions){
             const auto message=tr("Todavía no hay cursos disponibles en esta ruta.\n\nCuando se agreguen cursos, este botón permitirá restablecer sus excepciones de ajuste de línea.","There are no courses available in this learning path yet.\n\nWhen courses are added, this button will allow you to reset their line wrapping exceptions.","Aucun cours n’est encore disponible dans ce parcours.\n\nLorsque des cours seront ajoutés, ce bouton permettra de réinitialiser leurs exceptions de retour à la ligne.");
-            MessageBoxW(window,wide(message).c_str(),wide(tr("Matemáticas y Física","Mathematics and Physics","Mathématiques et physique")).c_str(),MB_OK|MB_ICONINFORMATION);return;
+            internal_message_box(window,wide(message).c_str(),wide(tr("Matemáticas y Física","Mathematics and Physics","Mathématiques et physique")).c_str(),MB_OK|MB_ICONINFORMATION);return;
         }
         if(id==reset_wrap_exceptions){
             const auto& courses=access.programming_course_ids;
             const auto title=tr("Restablecer excepciones de Programación","Reset Programming Exceptions","Réinitialiser les exceptions de programmation");
             const auto description=tr("Todos los cursos de Programación volverán a permitir que las Opciones globales sobrescriban su ajuste de línea.\n\nAdemás, todos recibirán inmediatamente el ajuste de línea predeterminado actualmente guardado.","All Programming courses will once again allow global settings to override their line wrapping preferences.\n\nThey will also immediately receive the currently saved default line wrapping setting.","Tous les cours de Programmation autoriseront à nouveau les paramètres généraux à remplacer leur réglage de retour à la ligne.\n\nIls recevront également immédiatement le réglage de retour à la ligne par défaut actuellement enregistré.");
-            if(MessageBoxW(window,wide(description).c_str(),wide(title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONQUESTION)!=IDYES)return;
+            if(internal_message_box(window,wide(description).c_str(),wide(title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONQUESTION)!=IDYES)return;
             access.update([&](state::StateData& data){appearance::reset_wrap_exceptions(data,courses);});
             show_settings_notice(window,tr("Excepciones de Programación restablecidas","Programming Exceptions Reset","Exceptions de programmation réinitialisées"));
             if(access.changed)access.changed();return;
@@ -855,12 +957,16 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     if(message==WM_CTLCOLORSTATIC&&reinterpret_cast<HWND>(lp)==self->eyebrow_label&&self->eyebrow_label){SetBkMode(reinterpret_cast<HDC>(wp),TRANSPARENT);SetTextColor(reinterpret_cast<HDC>(wp),reader_theme::accent_ink(window,reader_theme::background(window)));return reinterpret_cast<LRESULT>(reader_theme::brush(reader_theme::Surface::screen));}
     LRESULT themed{};if(reader_theme::control_color(message,wp,lp,themed))return themed;
     try{switch(message){
-    case WM_CREATE:reader_theme::apply(window,reader_theme::Surface::screen);self->build();return 0;
+    case WM_CREATE:reader_theme::apply(window,reader_theme::Surface::screen);self->build();if(self->access.storage_snapshot||self->access.generation_status)SetTimer(window,storage_timer,1000,nullptr);return 0;
     case WM_SIZE:self->layout();return 0;
     case WM_DPICHANGED_AFTERPARENT:self->refresh_fonts();return 0;
     case WM_ERASEBKGND:self->paint_background(reinterpret_cast<HDC>(wp));return 1;
     case WM_PRINTCLIENT:self->paint_background(reinterpret_cast<HDC>(wp));return 0;
-    case WM_COMMAND:if(!self->showing_error&&self->pending_error.empty())self->change(LOWORD(wp),HIWORD(wp));return 0;
+    case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){PostMessageW(window,close_message,0,0);return 0;}if(!self->showing_error&&self->pending_error.empty())self->change(LOWORD(wp),HIWORD(wp));return 0;
+    case WM_CLOSE:PostMessageW(window,close_message,0,0);return 0;
+    case WM_KEYDOWN:if(wp==VK_ESCAPE){PostMessageW(window,close_message,0,0);return 0;}break;
+    case WM_SETFOCUS:if(const auto back=GetDlgItem(window,5100))SetFocus(back);return 0;
+    case WM_TIMER:if(wp==storage_timer){try{self->poll_storage();}catch(...){/* Retain the last observed snapshot on a transient read failure. */}return 0;}break;
     case save_error_message:{
         if(self->showing_error||self->pending_error.empty())return 0;
         const auto text=wide(std::exchange(self->pending_error,{}));self->showing_error=true;
@@ -869,7 +975,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         // tracking before entering the modal dialog's nested message loop.
         const auto captured=GetCapture();
         if(captured&&(captured==window||IsChild(window,captured))){SendMessageW(captured,WM_CANCELMODE,0,0);if(GetCapture()==captured)ReleaseCapture();}
-        MessageBoxW(GetAncestor(window,GA_ROOT),text.c_str(),L"Opciones",MB_OK|MB_ICONERROR);
+        internal_message_box(window,text.c_str(),L"Opciones",MB_OK|MB_ICONERROR);
         // Closing an owner during a nested loop also destroys its child view.
         // Resolve the attachment again before touching any Settings members.
         if(IsWindow(window)&&reinterpret_cast<Settings*>(GetWindowLongPtrW(window,GWLP_USERDATA))==self){
@@ -879,7 +985,9 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         }
         return 0;
     }
-    case close_message:if(self->appearance_dirty()&&self->access.unsaved_discarded)self->access.unsaved_discarded(self->tr("Saliste sin guardar los cambios de color.","You left without saving the colour changes.","Vous avez quitté sans enregistrer les modifications de couleur."));if(self->access.close)self->access.close();return 0;
+    case close_message:{const auto close=self->access.close;const auto discarded=self->access.unsaved_discarded;
+        const auto notice=self->appearance_dirty()?self->tr("Saliste sin guardar los cambios de color.","You left without saving the colour changes.","Vous avez quitté sans enregistrer les modifications de couleur."):std::string{};
+        if(!notice.empty()&&discarded)discarded(notice);if(IsWindow(window)&&close)close();return 0;}
     case refresh_language_message:self->refresh_language();return 0;
     case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);
         if(separator_id(static_cast<int>(item.CtlID))){const auto color=reader_theme::palette(window);const auto fill=CreateSolidBrush(color.high_contrast?color.outline:item.CtlID==kokoro_separator?RGB(76,79,87):RGB(48,50,58));FillRect(item.hDC,&item.rcItem,fill);DeleteObject(fill);return TRUE;}
@@ -895,6 +1003,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
             const auto secondary_font=reinterpret_cast<HFONT>(SendDlgItemMessageW(window,rgb_default_heading_first+index,WM_GETFONT,0,0));if(secondary_font)SelectObject(item.hDC,secondary_font);
             SetTextColor(item.hDC,palette.high_contrast?palette.text:RGB(MulDiv(GetRValue(color),96,100),MulDiv(GetGValue(color),96,100),MulDiv(GetBValue(color),96,100)));
             DrawTextW(item.hDC,wide(self->tr("Color secundario","Secondary Color","Couleur secondaire")).c_str(),-1,&text,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX);SelectObject(item.hDC,previous);
+            if(item.itemState&ODS_FOCUS){auto focus=item.rcItem;InflateRect(&focus,-self->px(5),-self->px(5));DrawFocusRect(item.hDC,&focus);}
             return TRUE;
         }
         if((item.CtlID==back||item.CtlID==reset)&&!reader_theme::palette(window).high_contrast){
@@ -910,6 +1019,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         }
         if(item.CtlID==back){FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::catalog_card));auto bounds=item.rcItem;InflateRect(&bounds,-self->px(18),-self->px(8));draw_icon(item.hDC,bounds,Icon::back,reader_theme::accent_ink(window,reader_theme::palette(window).card));return TRUE;}return reader_theme::draw_button(item);}
     case WM_MOUSEWHEEL:self->scroll-=GET_WHEEL_DELTA_WPARAM(wp)*self->px(48)/WHEEL_DELTA;self->layout(false);return 0;
+    case WM_MOUSEHWHEEL:return 0;
     case WM_HSCROLL:if(self->showing_error||!self->pending_error.empty()||(lp&&!IsWindowEnabled(reinterpret_cast<HWND>(lp))))return 0;
     if(lp&&!self->binding){const auto slider=reinterpret_cast<HWND>(lp);const int id=GetDlgCtrlID(slider);
         if(id>=rgb_slider_first&&id<rgb_slider_first+9){const int offset=id-rgb_slider_first,index=offset/3,channel=offset%3,value=static_cast<int>(SendMessageW(slider,TBM_GETPOS,0,0));
@@ -922,11 +1032,11 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         if(self->access.changed)self->access.changed();return 0;}
     if(lp&&!self->binding&&reinterpret_cast<HWND>(lp)==GetDlgItem(window,text_scale)){
         const auto scale=std::clamp(static_cast<int>(SendMessageW(reinterpret_cast<HWND>(lp),TBM_GETPOS,0,0)),75,150);self->access.update([&](auto& data){if(self->access.scope==SettingsScope::lesson)appearance::save_course_text_scale(data,self->access.course_id,self->inherits_scale,scale);else appearance::save_global_text_scale(data,scale);});self->scale_draft=self->original_scale=scale;self->refresh_appearance();if(self->access.changed)self->access.changed();return 0;}break;
-    case WM_VSCROLL:{SCROLLINFO info{sizeof(info),SIF_TRACKPOS};GetScrollInfo(window,SB_VERT,&info);switch(LOWORD(wp)){case SB_LINEUP:self->scroll-=self->px(32);break;case SB_LINEDOWN:self->scroll+=self->px(32);break;case SB_PAGEUP:self->scroll-=self->px(240);break;case SB_PAGEDOWN:self->scroll+=self->px(240);break;case SB_THUMBTRACK:self->scroll=info.nTrackPos;break;default:break;}self->layout(false);return 0;}
+    case WM_VSCROLL:{if(lp)break;SCROLLINFO info{sizeof(info),SIF_TRACKPOS};GetScrollInfo(window,SB_VERT,&info);switch(LOWORD(wp)){case SB_LINEUP:self->scroll-=self->px(32);break;case SB_LINEDOWN:self->scroll+=self->px(32);break;case SB_PAGEUP:self->scroll-=self->px(240);break;case SB_PAGEDOWN:self->scroll+=self->px(240);break;case SB_THUMBTRACK:case SB_THUMBPOSITION:self->scroll=info.nTrackPos;break;case SB_TOP:self->scroll=0;break;case SB_BOTTOM:self->scroll=self->content_height;break;default:break;}self->layout(false);return 0;}
     case WM_LBUTTONDOWN:self->drag={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};self->dragging=true;SetCapture(window);return 0;
-    case WM_MOUSEMOVE:if(self->dragging&&(wp&MK_LBUTTON)){self->scroll+=self->drag.y-GET_Y_LPARAM(lp);self->drag.y=GET_Y_LPARAM(lp);self->layout(false);}return 0;
-    case WM_LBUTTONUP:case WM_CAPTURECHANGED:self->dragging=false;if(GetCapture()==window)ReleaseCapture();return 0;
-    case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);delete self;break;
+    case WM_MOUSEMOVE:if(self->dragging&&(wp&MK_LBUTTON)){self->scroll+=self->drag.y-GET_Y_LPARAM(lp);self->drag.y=GET_Y_LPARAM(lp);self->layout(false);return 0;}break;
+    case WM_LBUTTONUP:case WM_CAPTURECHANGED:case WM_CANCELMODE:if(self->dragging){self->dragging=false;if(GetCapture()==window)ReleaseCapture();return 0;}break;
+    case WM_NCDESTROY:KillTimer(window,storage_timer);SetWindowLongPtrW(window,GWLP_USERDATA,0);delete self;break;
     default:break;}}catch(const std::exception& error){
         if(IsWindow(window)&&reinterpret_cast<Settings*>(GetWindowLongPtrW(window,GWLP_USERDATA))==self)self->queue_error(error.what());
         return 0;
@@ -939,12 +1049,13 @@ HWND create_settings_view(HWND parent,SettingsAccess access){
     if(!InitCommonControlsEx(&common))throw std::runtime_error("Cannot initialize native settings controls");
     const auto instance=reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(parent,GWLP_HINSTANCE));
     WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=proc;cls.hInstance=instance;cls.lpszClassName=class_name;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
-    auto settings=std::make_unique<Settings>(std::move(access));const auto window=CreateWindowExW(WS_EX_CONTROLPARENT,class_name,L"Opciones",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_VSCROLL,0,0,0,0,parent,nullptr,instance,settings.get());
+    auto settings=std::make_unique<Settings>(std::move(access));const auto locale=interface_language(settings->access.read());
+    const auto caption=settings->access.title.empty()?wide(locale=="fr"?"Paramètres":locale=="en"?"Settings":"Opciones"):wide(settings->access.title);
+    const auto window=CreateWindowExW(WS_EX_CONTROLPARENT,class_name,caption.c_str(),WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_VSCROLL,0,0,0,0,parent,nullptr,instance,settings.get());
     if(!window)throw std::runtime_error("No se pudo abrir las opciones.");settings.release();return window;
 }
 
 namespace {
-constexpr wchar_t frame_class[]=L"LearnGameAndEngineDev.SettingsWindow";
 constexpr wchar_t attempts_class[]=L"LearnGameAndEngineDev.AttemptDetails";
 constexpr wchar_t attempts_property[]=L"LGAED.AttemptDetails";
 struct LanguageDialog {
@@ -953,6 +1064,13 @@ struct LanguageDialog {
     ~LanguageDialog(){if(font)DeleteObject(font);}
     std::string tr(const char* es,const char* en,const char* fr)const{return locale=="fr"?fr:locale=="en"?en:es;}
     int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96);}
+    void layout(){
+        if(!viewport)return;RECT area{};GetClientRect(window,&area);const int margin=px(24),width=std::max(1L,area.right-2*margin);
+        MoveWindow(GetDlgItem(window,8348),margin,px(20),width,px(40),TRUE);
+        MoveWindow(viewport,margin,px(76),width,std::max(px(56),static_cast<int>(area.bottom)-px(166)),TRUE);
+        MoveWindow(GetDlgItem(window,IDCANCEL),std::max(margin,static_cast<int>(area.right)-margin-px(180)),std::max(px(142),static_cast<int>(area.bottom)-px(70)),std::min(width,px(180)),px(48),TRUE);
+        layout_choices();
+    }
     void layout_choices(){RECT area{};GetClientRect(viewport,&area);const int extent=px(56)*static_cast<int>(choices.size());scroll=std::clamp(scroll,0,std::max(0,extent-static_cast<int>(area.bottom)));
         SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,extent-1),static_cast<UINT>(area.bottom),scroll};SetScrollInfo(viewport,SB_VERT,&info,TRUE);
         GetClientRect(viewport,&area);for(std::size_t index=0;index<choices.size();++index)MoveWindow(choices[index],0,px(56)*static_cast<int>(index)-scroll,area.right,px(56),TRUE);
@@ -977,15 +1095,12 @@ struct LanguageDialog {
         if(labels.empty()){labels={tr("Automático (idioma del dispositivo)","Automatic (device language)","Automatique (langue de l’appareil)"),"Español","English","Français"};tags={"auto","es","en","fr"};}
         if(labels.size()!=tags.size()||labels.empty())throw std::invalid_argument("Invalid settings choices");
         SetWindowTextW(window,wide(title.empty()?tr("Idioma de la aplicación","App Language","Langue de l’application"):title).c_str());
-        MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(GetWindow(window,GW_OWNER),MONITOR_DEFAULTTONEAREST),&monitor);
-        const int visible_height=std::min(px(56)*static_cast<int>(labels.size()),std::max(px(56),std::min(px(420),static_cast<int>(monitor.rcWork.bottom-monitor.rcWork.top)-px(160))));
-        RECT bounds{0,0,std::min(px(440),std::max(px(200),static_cast<int>(monitor.rcWork.right-monitor.rcWork.left)-px(32))),visible_height+px(90)};const auto style=static_cast<DWORD>(GetWindowLongPtrW(window,GWL_STYLE)),ex=static_cast<DWORD>(GetWindowLongPtrW(window,GWL_EXSTYLE));
-        AdjustWindowRectExForDpi(&bounds,style,FALSE,ex,GetDpiForWindow(window));RECT parent{};GetWindowRect(GetWindow(window,GW_OWNER),&parent);
-        SetWindowPos(window,nullptr,(parent.left+parent.right-(bounds.right-bounds.left))/2,(parent.top+parent.bottom-(bounds.bottom-bounds.top))/2,bounds.right-bounds.left,bounds.bottom-bounds.top,SWP_NOZORDER|SWP_NOACTIVATE);
         font=CreateFontW(-px(18),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(!font)throw std::runtime_error("Cannot create the application language chooser font");
+        const auto heading=CreateWindowExW(0,L"STATIC",wide(title.empty()?tr("Idioma de la aplicación","App Language","Langue de l’application"):title).c_str(),WS_CHILD|WS_VISIBLE|SS_LEFT,0,0,0,0,window,reinterpret_cast<HMENU>(8348),GetModuleHandleW(nullptr),nullptr);
+        if(!heading)throw std::runtime_error("Cannot create the settings choice heading");reader_theme::apply(heading,reader_theme::Surface::catalog_card);SendMessageW(heading,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         RECT area{};GetClientRect(window,&area);
-        viewport=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_VSCROLL,px(24),px(16),area.right-px(48),visible_height,window,reinterpret_cast<HMENU>(8349),GetModuleHandleW(nullptr),nullptr);
+        viewport=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_VSCROLL,0,0,0,0,window,reinterpret_cast<HMENU>(8349),GetModuleHandleW(nullptr),nullptr);
         if(!viewport||!SetWindowSubclass(viewport,viewport_proc,0x4C474F50,reinterpret_cast<DWORD_PTR>(this)))throw std::runtime_error("Cannot create scrollable settings choices");reader_theme::apply(viewport,reader_theme::Surface::catalog_card);
         for(std::size_t index=0;index<labels.size();++index){
             const auto radio=CreateWindowExW(0,L"BUTTON",wide(labels[index]).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTORADIOBUTTON|BS_MULTILINE|BS_NOTIFY|(index==0?WS_GROUP:0),0,px(static_cast<int>(index)*56),area.right-px(48),px(56),viewport,reinterpret_cast<HMENU>(8350+index),GetModuleHandleW(nullptr),nullptr);
@@ -996,10 +1111,10 @@ struct LanguageDialog {
             reader_theme::apply(radio,reader_theme::Surface::catalog_card);SendMessageW(radio,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);SendMessageW(radio,BM_SETCHECK,selected==tags[index]?BST_CHECKED:BST_UNCHECKED,0);
             choices.push_back(radio);
         }
-        layout_choices();
-        const auto cancel=CreateWindowExW(0,L"BUTTON",wide(tr("Cancelar","Cancel","Annuler")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_GROUP|BS_PUSHBUTTON,area.right-px(160),visible_height+px(32),px(136),px(48),window,reinterpret_cast<HMENU>(IDCANCEL),GetModuleHandleW(nullptr),nullptr);
+        const auto cancel=CreateWindowExW(0,L"BUTTON",wide(tr("Cancelar","Cancel","Annuler")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_GROUP|BS_PUSHBUTTON,0,0,0,0,window,reinterpret_cast<HMENU>(IDCANCEL),GetModuleHandleW(nullptr),nullptr);
         if(!cancel)throw std::runtime_error("Cannot create the language chooser Cancel action");
         reader_theme::apply(cancel,reader_theme::Surface::catalog_card);SendMessageW(cancel,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+        layout();
     }
     static INT_PTR CALLBACK proc(HWND target,UINT message,WPARAM wp,LPARAM lp){
         auto* self=reinterpret_cast<LanguageDialog*>(GetWindowLongPtrW(target,DWLP_USER));
@@ -1007,19 +1122,20 @@ struct LanguageDialog {
         if(!self)return FALSE;LRESULT themed{};if(reader_theme::control_color(message,wp,lp,themed))return themed;
         try{switch(message){
         case WM_INITDIALOG:self->initialize(target);return TRUE;
-        case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){EndDialog(target,IDCANCEL);return TRUE;}
-            if(LOWORD(wp)>=8350&&static_cast<std::size_t>(LOWORD(wp)-8350)<self->tags.size()&&HIWORD(wp)==BN_CLICKED){self->result=self->tags[LOWORD(wp)-8350];EndDialog(target,IDOK);return TRUE;}break;
-        case WM_CLOSE:EndDialog(target,IDCANCEL);return TRUE;
+        case WM_SIZE:self->layout();return TRUE;
+        case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){end_internal_dialog(target,IDCANCEL);return TRUE;}
+            if(LOWORD(wp)>=8350&&static_cast<std::size_t>(LOWORD(wp)-8350)<self->tags.size()&&HIWORD(wp)==BN_CLICKED){self->result=self->tags[LOWORD(wp)-8350];end_internal_dialog(target,IDOK);return TRUE;}break;
+        case WM_CLOSE:end_internal_dialog(target,IDCANCEL);return TRUE;
         case WM_DRAWITEM:return reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lp));
         case WM_ERASEBKGND:{RECT bounds{};GetClientRect(target,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::brush(reader_theme::Surface::catalog_card));return TRUE;}
-        default:break;}}catch(...){self->error=std::current_exception();EndDialog(target,IDCANCEL);}return FALSE;
+        default:break;}}catch(...){self->error=std::current_exception();end_internal_dialog(target,IDCANCEL);}return FALSE;
     }
     std::optional<std::string> show(HWND owner){
         struct alignas(DWORD) Template{DLGTEMPLATE dialog{};WORD menu=0,window_class=0,title=0;} layout;
         static_assert(offsetof(Template,menu)==sizeof(DLGTEMPLATE));
-        layout.dialog.style=WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_CLIPCHILDREN|DS_MODALFRAME|DS_CENTER;
+        layout.dialog.style=WS_CHILD|WS_CLIPCHILDREN|DS_CONTROL;
         layout.dialog.dwExtendedStyle=WS_EX_CONTROLPARENT;layout.dialog.cx=310;layout.dialog.cy=220;
-        const auto code=DialogBoxIndirectParamW(GetModuleHandleW(nullptr),&layout.dialog,GetAncestor(owner,GA_ROOT),proc,reinterpret_cast<LPARAM>(this));
+        const auto code=show_internal_dialog(owner,&layout.dialog,proc,reinterpret_cast<LPARAM>(this));
         if(error)std::rethrow_exception(error);if(code==-1)throw std::runtime_error("Cannot open the application language chooser");return result;
     }
 };
@@ -1027,25 +1143,6 @@ std::optional<std::size_t> choose_settings_option(HWND owner,std::string_view lo
     LanguageDialog dialog;dialog.locale=locale;dialog.title=title;dialog.labels=labels;dialog.selected=std::to_string(selected);
     for(std::size_t index=0;index<labels.size();++index)dialog.tags.push_back(std::to_string(index));
     if(const auto choice=dialog.show(owner))return static_cast<std::size_t>(std::stoul(*choice));return {};
-}
-struct SettingsFrame {HWND child=nullptr;SettingsAccess access;bool owns=false;};
-LRESULT CALLBACK frame_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
-    auto* frame=reinterpret_cast<SettingsFrame*>(GetWindowLongPtrW(window,GWLP_USERDATA));
-    if(message==WM_NCCREATE){frame=static_cast<SettingsFrame*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(frame));}
-    if(!frame)return DefWindowProcW(window,message,wp,lp);
-    switch(message){
-    case WM_CREATE:try{frame->child=create_settings_view(window,std::move(frame->access));return 0;}catch(...){return -1;}
-    case WM_SIZE:{RECT bounds{};GetClientRect(window,&bounds);if(frame->child)MoveWindow(frame->child,0,0,bounds.right,bounds.bottom,TRUE);return 0;}
-    case WM_SETFOCUS:if(frame->child)SetFocus(frame->child);return 0;
-    case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){SendMessageW(window,WM_CLOSE,0,0);return 0;}break;
-    case WM_KEYDOWN:if(wp==VK_ESCAPE){SendMessageW(window,WM_CLOSE,0,0);return 0;}break;
-    case WM_CLOSE:if(frame->child)SendMessageW(frame->child,close_message,0,0);return 0;
-    case WM_DPICHANGED:{const auto bounds=reinterpret_cast<RECT*>(lp);SetWindowPos(window,nullptr,bounds->left,bounds->top,bounds->right-bounds->left,bounds->bottom-bounds->top,SWP_NOZORDER|SWP_NOACTIVATE);return 0;}
-    case WM_GETMINMAXINFO:{const auto dpi=GetDpiForWindow(window);reinterpret_cast<MINMAXINFO*>(lp)->ptMinTrackSize={MulDiv(360,dpi,96),MulDiv(320,dpi,96)};return 0;}
-    case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);if(frame->owns)delete frame;break;
-    default:break;
-    }
-    return DefWindowProcW(window,message,wp,lp);
 }
 std::int64_t now_millis(){FILETIME time{};GetSystemTimeAsFileTime(&time);ULARGE_INTEGER ticks{};ticks.LowPart=time.dwLowDateTime;ticks.HighPart=time.dwHighDateTime;return static_cast<std::int64_t>(ticks.QuadPart/10000-11644473600000ULL);}
 struct AttemptDetails {HWND lesson=nullptr;std::function<state::StateData()> read;std::string route;int offset=0;POINT drag{};bool dragging=false;};
@@ -1110,14 +1207,8 @@ SettingsResetText settings_reset_text(SettingsScope scope,std::string_view local
     throw std::invalid_argument("Unknown progress reset scope");
 }
 HWND create_settings_window(HWND owner,SettingsAccess access){
-    const auto instance=GetModuleHandleW(nullptr);WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=frame_proc;cls.hInstance=instance;cls.lpszClassName=frame_class;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
-    auto frame=std::make_unique<SettingsFrame>();const auto locale=interface_language(access.read());
-    const auto caption=access.title.empty()?(locale=="es"?L"Opciones":locale=="fr"?L"Paramètres":L"Settings"):wide(access.title);
-    frame->access=std::move(access);RECT owner_bounds{},work{};GetWindowRect(owner,&owner_bounds);MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(owner,MONITOR_DEFAULTTONEAREST),&monitor);work=monitor.rcWork;
-    const auto dpi=GetDpiForWindow(owner);const auto width=std::min<LONG>(MulDiv(920,dpi,96),work.right-work.left),height=std::min<LONG>(MulDiv(900,dpi,96),work.bottom-work.top);
-    const auto left=std::clamp<LONG>((owner_bounds.left+owner_bounds.right-width)/2,work.left,work.right-width),top=std::clamp<LONG>((owner_bounds.top+owner_bounds.bottom-height)/2,work.top,work.bottom-height);
-    const auto result=CreateWindowExW(WS_EX_CONTROLPARENT,frame_class,caption.c_str(),WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,left,top,width,height,owner,nullptr,instance,frame.get());
-    if(!result)throw std::runtime_error("No se pudo abrir la ventana de opciones.");frame->owns=true;frame.release();ShowWindow(result,SW_SHOW);SetForegroundWindow(result);return result;
+    const auto view=create_settings_view(owner,std::move(access));RECT bounds{};GetClientRect(owner,&bounds);
+    MoveWindow(view,0,0,bounds.right,bounds.bottom,TRUE);return view;
 }
 void refresh_settings_language(HWND settings_window){
     const auto view=FindWindowExW(settings_window,nullptr,class_name,nullptr);
@@ -1138,11 +1229,11 @@ std::optional<std::string> choose_interface_language(HWND owner,const state::Sta
 }
 void show_settings_notice(HWND owner,std::string_view text){
     if(!IsWindow(owner)||text.empty())return;
-    const auto dpi=GetDpiForWindow(owner);RECT parent{};GetWindowRect(owner,&parent);
+    const auto dpi=GetDpiForWindow(owner);RECT parent{};GetClientRect(owner,&parent);
     const int width=std::min<int>(MulDiv(600,dpi,96),std::max(160L,parent.right-parent.left-MulDiv(32,dpi,96)));
     const int height=MulDiv(78,dpi,96);
-    const auto popup=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,L"STATIC",wide(text).c_str(),WS_POPUP|SS_CENTER|SS_CENTERIMAGE,
-        parent.left+(parent.right-parent.left-width)/2,parent.bottom-height-MulDiv(32,dpi,96),width,height,owner,nullptr,GetModuleHandleW(nullptr),nullptr);
+    const auto popup=CreateWindowExW(WS_EX_NOACTIVATE,L"STATIC",wide(text).c_str(),WS_CHILD|SS_CENTER|SS_CENTERIMAGE,
+        (parent.right-width)/2,std::max(0L,parent.bottom-height-MulDiv(32,dpi,96)),width,height,owner,nullptr,GetModuleHandleW(nullptr),nullptr);
     if(!popup)return;reader_theme::apply(popup,reader_theme::Surface::catalog_card);
     const auto font=CreateFontW(-MulDiv(16,dpi,96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
     if(!font){DestroyWindow(popup);return;}

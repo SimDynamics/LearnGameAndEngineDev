@@ -10,6 +10,7 @@
 #include "presentation/windows/audio_course_view.hpp"
 #include "presentation/windows/narration_licenses.hpp"
 #include "platform/windows/narration_storage.hpp"
+#include "platform/windows/system_speech.hpp"
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/tools_view.hpp"
 #include "presentation/windows/smo_view.hpp"
@@ -17,6 +18,8 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/native_menu.hpp"
+#include "presentation/windows/internal_window.hpp"
+#include "presentation/windows/math_expression_editor.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/state_store.hpp"
@@ -47,6 +50,7 @@ constexpr DWORD window_style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
 constexpr UINT open_lesson_message=WM_APP+230,return_message=WM_APP+231,settings_message=WM_APP+232,close_settings_message=WM_APP+233,tool_message=WM_APP+234;
 constexpr UINT lesson_finished_message=WM_APP+235;
 constexpr UINT application_language_message=WM_APP+237;
+constexpr UINT lesson_option_message=WM_APP+238;
 
 struct WindowState {
     lgaed::WindowsEnvironment environment;
@@ -65,6 +69,9 @@ struct WindowState {
     lgaed::curriculum::CatalogLocation context;
     lgaed::presentation::CatalogAction pending_action=lgaed::presentation::CatalogAction::settings;
     std::string startup_error;
+    HWND settings_lesson=nullptr,settings_focus=nullptr;
+    std::optional<std::size_t> pending_option_page;
+    std::optional<lgaed::presentation::LessonOptionAction> pending_option_action;
     ~WindowState(){
         // Also covers a failed startup or an external DestroyWindow path. The
         // service must unblock users before member destruction joins them.
@@ -116,7 +123,8 @@ std::wstring widen_error(const std::exception& error) {
 
 void layout_controls(HWND window, WindowState& state) {
     RECT area{};GetClientRect(window,&area);
-    for(const auto view:{state.catalog,state.lesson,state.tool})if(view)MoveWindow(view,0,0,area.right,area.bottom,TRUE);
+    for(const auto view:{state.catalog,state.lesson,state.tool,state.settings})if(view)MoveWindow(view,0,0,area.right,area.bottom,TRUE);
+    lgaed::presentation::layout_internal_windows(window);
 }
 
 // Navigation has one current destination. The lesson's existing store owns its
@@ -142,6 +150,12 @@ void navigate_back(HWND window,WindowState& state){
     // IsDialogMessage turns Escape over ordinary buttons into IDCANCEL;
     // editors that request the key use their existing local escape route.
     // Both paths retain the current view's normal save/close policy.
+    if(const auto keyboard=lgaed::presentation::math_keyboard_window(window);keyboard&&IsWindowVisible(keyboard)){
+        lgaed::presentation::hide_math_keyboard();return;
+    }
+    if(const auto internal=lgaed::presentation::active_internal_window(window)){
+        PostMessageW(internal,WM_CLOSE,0,0);return;
+    }
     if(state.settings&&IsWindow(state.settings)){
         PostMessageW(state.settings,WM_CLOSE,0,0);return;
     }
@@ -218,11 +232,18 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     state.lesson=create_lesson_view(window,state.environment,std::move(lesson),std::move(hooks));ShowWindow(state.catalog,SW_HIDE);
     if(!laboratory)state.reader=std::make_unique<LessonReader>(state.lesson,state.environment,state.narrator,[window,&state]{
         state.pending_action=CatalogAction::audio;state.context=catalog_location(state.catalog);PostMessageW(window,settings_message,0,0);});
-    layout_controls(window,state);SetFocus(state.lesson);
+    if(state.settings&&IsWindow(state.settings)){
+        state.settings_lesson=state.lesson;ShowWindow(state.lesson,SW_HIDE);
+        if(state.reader)state.reader->suspend_preparation(true);
+    }
+    layout_controls(window,state);SetFocus(state.settings?state.settings:state.lesson);
 }
 void open_settings(HWND window,WindowState& state){
-    using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_RESTORE);SetForegroundWindow(state.settings);return;}
+    using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_SHOW);SetFocus(state.settings);return;}
     if(state.lesson&&!flush_lesson_view(state.lesson))return;
+    hide_math_keyboard();
+    if(state.reader)state.reader->pause();
+    state.settings_lesson=state.lesson;state.settings_focus=GetFocus();state.pending_option_page.reset();state.pending_option_action.reset();
     SettingsAccess access;access.read=[&state]{return preferences(state);};access.update=[&state](const PreferencesMutation& change){update_preferences(state,change);};
     const auto initial_preferences=preferences(state);
     access.changed=[window,&state,previous_ui=interface_language(initial_preferences),previous_content=lgaed::state::string_value(initial_preferences,"native_windows","content_language","es")]()mutable{
@@ -231,12 +252,34 @@ void open_settings(HWND window,WindowState& state){
         if(ui!=previous_ui||content!=previous_content){previous_ui=ui;previous_content=content;PostMessageW(window,application_language_message,0,0);}
     };access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
     access.unsaved_discarded=[window](std::string_view message){show_settings_notice(window,message);};
-    access.storage_snapshot=[&state]{const auto data=preferences(state);const auto raw=lgaed::state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",-1);return lgaed::windows::narration_storage_snapshot(state.environment.paths.cache/L"kokoro",raw<0?std::numeric_limits<std::uint64_t>::max():static_cast<std::uint64_t>(raw));};
+    access.storage_snapshot=[&state]{
+        const auto data=preferences(state);const auto raw=lgaed::state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",-1);
+        const auto budget=raw<0?std::numeric_limits<std::uint64_t>::max():static_cast<std::uint64_t>(raw);
+        const auto engine=lgaed::state::string_value(data,"lesson_narration_settings","engine","KOKORO");
+        return engine=="WINDOWS"||engine=="ANDROID"?lgaed::windows::system_speech_storage_snapshot(state.environment.paths.cache,budget):
+            lgaed::windows::narration_storage_snapshot(state.environment.paths.cache/L"kokoro",budget);
+    };
+    access.generation_status=[&state]{
+        const auto data=preferences(state);const auto locale=interface_language(data);
+        const auto tr=[&](const char* es,const char* en,const char* fr){return std::string(locale=="fr"?fr:locale=="en"?en:es);};
+        if(!state.generation||!lgaed::windows::audio_generation_selection(data,{locale}).enabled)
+            return tr("Generación anticipada desactivada.","Advance audio generation is disabled.","La génération anticipée des audios est désactivée.");
+        const auto progress=state.generation->status();
+        if(!progress.error.empty())return tr("No se ha podido continuar la generación de audios: ","Audio generation could not continue: ","La génération des audios ne peut pas continuer : ")+progress.error;
+        if(progress.finished)return tr("Audios preparados para la voz, el motor y el idioma seleccionados.","Audio is ready for the selected voice, engine and language.","Les audios sont prêts pour la voix, le moteur et la langue sélectionnés.");
+        if(!progress.total)return tr("Preparando el catálogo de audios…","Preparing the audio catalog…","Préparation du catalogue audio…");
+        return tr("Páginas de audio preparadas: ","Audio pages ready: ","Pages audio prêtes : ")+std::to_string(progress.completed)+" / "+std::to_string(progress.total)+
+            (progress.running?tr(" · Generando en segundo plano."," · Generating in the background."," · Génération en arrière-plan."):tr(" · Esperando para continuar."," · Waiting to continue."," · En attente de reprise."));
+    };
     access.open_licenses=[window,&state]{(void)open_narration_licenses(state.settings?state.settings:window,interface_language(preferences(state)));};
     access.open_audio=[window,&state](std::string_view route){
         CourseAudioAccess audio;audio.worker=state.narrator;audio.content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";audio.cache=state.environment.paths.cache/L"kokoro";
-        audio.profile=[&state]{const auto data=preferences(state);CourseAudioProfile profile;profile.locale=lgaed::state::string_value(data,"native_windows","content_language",interface_language(data));
-            const auto selection=lgaed::windows::audio_generation_selection(data,{profile.locale});profile.language=selection.language;profile.ui_language=interface_language(data);profile.voices=selection.voices;profile.engine=lgaed::state::string_value(data,"lesson_narration_settings","engine","KOKORO");
+        audio.profile=[&state]{auto data=preferences(state);CourseAudioProfile profile;profile.locale=lgaed::state::string_value(data,"native_windows","content_language",interface_language(data));
+            // This resource manager belongs to the explicitly labelled Kokoro
+            // block. Selecting Windows playback must not reinterpret its files
+            // or feed Windows token IDs into the neural coverage planner.
+            data.preferences["lesson_narration_settings"]["engine"]=std::string("KOKORO");
+            const auto selection=lgaed::windows::audio_generation_selection(data,{profile.locale});profile.language=selection.language;profile.ui_language=interface_language(data);profile.voices=selection.voices;profile.engine="KOKORO";
             const auto enabled=lgaed::state::find(data,"lesson_narration_settings","enabled");profile.enabled=!enabled||!std::holds_alternative<bool>(*enabled)||std::get<bool>(*enabled);return profile;};
         audio.paused=[&state](const CourseAudioRef& course){const auto data=preferences(state);const auto value=lgaed::state::find(data,"lesson_narration_settings","kokoro_paused_course:"+course.route+":"+course.course);return value&&std::holds_alternative<bool>(*value)&&std::get<bool>(*value);};
         audio.pause=[&state](const CourseAudioRef& course,bool pause){update_preferences(state,[&](auto& data){data.preferences["lesson_narration_settings"]["kokoro_paused_course:"+course.route+":"+course.course]=pause;});};
@@ -244,11 +287,11 @@ void open_settings(HWND window,WindowState& state){
             if(state.reader){const auto reading=state.reader->snapshot();if(reading.playing||reading.preparing||reading.allocated)return {};}
             auto lease=state.narrator->try_idle_maintenance_lease();if(!lease)return {};
             auto token=std::make_shared<lgaed::windows::NarrationPriorityLease>(std::move(*lease));
-            const auto lesson=state.lesson,settings=state.settings;const bool root_enabled=IsWindowEnabled(window)!=FALSE,lesson_enabled=lesson&&IsWindowEnabled(lesson),settings_enabled=settings&&IsWindowEnabled(settings);
-            EnableWindow(window,FALSE);if(lesson)EnableWindow(lesson,FALSE);if(settings)EnableWindow(settings,FALSE);
+            const auto lesson=state.lesson,settings=state.settings;const bool lesson_enabled=lesson&&IsWindowEnabled(lesson),settings_enabled=settings&&IsWindowEnabled(settings);
+            if(lesson)EnableWindow(lesson,FALSE);if(settings)EnableWindow(settings,FALSE);
             const auto identity=token.get();
-            return std::shared_ptr<void>(identity,[token=std::move(token),window,lesson,settings,root_enabled,lesson_enabled,settings_enabled](void*)mutable{
-                token.reset();if(IsWindow(window))EnableWindow(window,root_enabled);if(IsWindow(lesson))EnableWindow(lesson,lesson_enabled);if(IsWindow(settings))EnableWindow(settings,settings_enabled);});
+            return std::shared_ptr<void>(identity,[token=std::move(token),lesson,settings,lesson_enabled,settings_enabled](void*)mutable{
+                token.reset();if(IsWindow(lesson))EnableWindow(lesson,lesson_enabled);if(IsWindow(settings))EnableWindow(settings,settings_enabled);});
         };
         (void)open_course_audio_window(state.settings?state.settings:window,std::string(route),std::move(audio));
     };
@@ -266,7 +309,7 @@ void open_settings(HWND window,WindowState& state){
         if(route!="programming"&&route!="math_physics")throw std::invalid_argument("Unknown reset route");
         const auto scope=lgaed::windows::catalog_scope(content,{catalogue_locale,std::string(route)});
         const auto text=settings_reset_text(SettingsScope::global,locale,route);
-        if(MessageBoxW(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
+        if(lgaed::presentation::internal_message_box(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
         if(state.reader)state.reader->pause();
         if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
         lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();
@@ -291,11 +334,25 @@ void open_settings(HWND window,WindowState& state){
         const auto scope=lgaed::windows::catalog_scope(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",context);
         access.reset_scope=[window,&state,scope,locale,kind=access.scope]{
             const auto text=settings_reset_text(kind,locale);
-            if(MessageBoxW(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
+            if(lgaed::presentation::internal_message_box(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
             if(state.reader)state.reader->pause();if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
             lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();lgaed::curriculum::reset_catalog_progress(data,scope);store.save(data);show_settings_notice(window,text.success);PostMessageW(window,close_settings_message,0,0);};
     }
-    state.settings=create_settings_window(window,std::move(access));
+    if(state.lesson){
+        const auto options=lesson_options_snapshot(state.lesson);
+        access.current_page=options.current_page;
+        for(const auto index:options.available_pages)access.lesson_pages.emplace_back(index,tr("Página ","Page ","Page ")+std::to_string(index+1));
+        access.navigate_page=[window](std::size_t page){PostMessageW(window,lesson_option_message,0,static_cast<LPARAM>(page));};
+        access.import_state=[window]{PostMessageW(window,lesson_option_message,1,0);};
+        access.page_top=[window]{PostMessageW(window,lesson_option_message,2,0);};
+        access.page_bottom=[window]{PostMessageW(window,lesson_option_message,3,0);};
+        if(options.finish_visible)access.finish=[window]{PostMessageW(window,lesson_option_message,4,0);};
+        access.finish_enabled=options.finish_enabled;
+    }
+    state.settings=create_settings_view(window,std::move(access));
+    if(state.reader)state.reader->suspend_preparation(true);
+    for(const auto view:{state.catalog,state.lesson,state.tool})if(view)ShowWindow(view,SW_HIDE);
+    layout_controls(window,state);ShowWindow(state.settings,SW_SHOW);SetFocus(state.settings);
 }
 
 LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -395,7 +452,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
             auto path=state->pending_lesson;const auto content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
             const auto relative=path.lexically_relative(content);const auto actual=relative.empty()?locale:relative.begin()->string();
             open_lesson(window,*state,lgaed::windows::load_lesson(path,actual));}
-        catch(const std::exception& error){show_catalog(window,*state);MessageBoxW(window,widen_error(error).c_str(),L"Abrir lección",MB_OK|MB_ICONERROR);}
+        catch(const std::exception& error){show_catalog(window,*state);lgaed::presentation::internal_message_box(window,widen_error(error).c_str(),L"Abrir lección",MB_OK|MB_ICONERROR);}
         return 0;
     case return_message:show_catalog(window,*state);return 0;
     case lesson_finished_message:{
@@ -436,12 +493,27 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         }catch(const std::exception& error){lgaed::presentation::show_settings_notice(window,error.what());}return 0;
     }
     case settings_message:
-        try{open_settings(window,*state);}catch(const std::exception& error){MessageBoxW(window,widen_error(error).c_str(),L"Opciones",MB_OK|MB_ICONERROR);}return 0;
+        try{open_settings(window,*state);}catch(const std::exception& error){lgaed::presentation::internal_message_box(window,widen_error(error).c_str(),L"Opciones",MB_OK|MB_ICONERROR);}return 0;
+    case lesson_option_message:{
+        if(!state->settings||!state->lesson||state->settings_lesson!=state->lesson)return 0;
+        if(wparam==0)state->pending_option_page=static_cast<std::size_t>(lparam);
+        else if(wparam<=4){const std::array actions{lgaed::presentation::LessonOptionAction::import_android_state,lgaed::presentation::LessonOptionAction::page_top,lgaed::presentation::LessonOptionAction::page_bottom,lgaed::presentation::LessonOptionAction::finish};state->pending_option_action=actions[wparam-1];}
+        // Let Settings run its normal draft/discard policy, then execute only
+        // after its posted close has returned from the originating callback.
+        PostMessageW(state->settings,WM_CLOSE,0,0);return 0;
+    }
     case close_settings_message:{if(state->settings){DestroyWindow(state->settings);state->settings=nullptr;}
-        if(state->lesson){ShowWindow(state->lesson,SW_SHOW);if(state->reader)state->reader->settings_changed();}
+        if(state->lesson){ShowWindow(state->lesson,SW_SHOW);if(state->reader){state->reader->settings_changed();state->reader->suspend_preparation(false);}}
         else if(state->tool)ShowWindow(state->tool,SW_SHOW);
         else{auto where=lgaed::presentation::catalog_location(state->catalog);const auto data=preferences(*state);where.locale=lgaed::state::string_value(data,"native_windows","content_language",where.locale);lgaed::presentation::navigate_catalog(state->catalog,where);ShowWindow(state->catalog,SW_SHOW);}
-        layout_controls(window,*state);return 0;}
+        layout_controls(window,*state);
+        const auto page=std::exchange(state->pending_option_page,{});const auto action=std::exchange(state->pending_option_action,{});
+        const auto lesson=std::exchange(state->settings_lesson,nullptr);
+        const auto focus=std::exchange(state->settings_focus,nullptr);
+        if(lesson&&lesson==state->lesson){SetFocus(lesson);if(page)(void)lgaed::presentation::navigate_lesson_view(lesson,*page);if(action)(void)lgaed::presentation::invoke_lesson_option(lesson,*action);}
+        else SetFocus(state->tool?state->tool:state->catalog);
+        if(!page&&!action&&IsWindow(focus)&&IsWindowVisible(focus)&&IsWindowEnabled(focus))SetFocus(focus);
+        update_audio_context(*state,true);return 0;}
     case tool_message:
         try{using lgaed::presentation::CatalogAction;
             state->graphics_active=state->pending_action==CatalogAction::graphics||state->pending_action==CatalogAction::smo;
@@ -460,7 +532,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                     lgaed::presentation::create_calculator_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);},state->narrator):
                     lgaed::presentation::create_graphics_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}}
         catch(const std::exception& error){if(state->pending_action==lgaed::presentation::CatalogAction::smo){show_catalog(window,*state);update_audio_context(*state);}
-            MessageBoxW(window,widen_error(error).c_str(),L"Herramientas",MB_OK|MB_ICONERROR);}return 0;
+            lgaed::presentation::internal_message_box(window,widen_error(error).c_str(),L"Herramientas",MB_OK|MB_ICONERROR);}return 0;
     case WM_SIZE:
         layout_controls(window, *state);
         return 0;
@@ -592,10 +664,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
                 if(!(message.lParam&(1LL<<30)))navigate_back(window,state);
                 continue;
             }
-            wchar_t target_class[128]{};if(target)GetClassNameW(target,target_class,128);
-            const bool auxiliary=target&&(target==state.settings||std::wstring_view(target_class)==L"LearnGameAndEngineDev.SettingsWindow"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CourseAudio"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.NarrationLicenses"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CalculatorWindow"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.MathCanvasFullscreen");
-            const auto dialog=auxiliary?target:target==window?window:nullptr;
-            if(target==window&&!auxiliary&&state.reader&&state.reader->dispatch_shortcut(message))continue;
+            const auto internal=lgaed::presentation::active_internal_window(window);
+            const bool settings=state.settings&&IsWindowVisible(state.settings);
+            const auto dialog=target==window?(internal?internal:settings?state.settings:window):nullptr;
+            if(target==window&&!internal&&!settings&&state.reader&&state.reader->dispatch_shortcut(message))continue;
             if(lgaed::presentation::dispatch_lesson_enter(message))continue;
             if(lgaed::windows::CodeEditor::handle_key_message(message))continue;
             if (!dialog||!IsDialogMessageW(dialog,&message)) {

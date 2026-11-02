@@ -22,6 +22,7 @@ struct LessonReaderSegmentSnapshot {
 };
 struct LessonReaderSnapshot {
     bool playing = false,allocated = false,planned = false,preparing = false,finished = false,waiting_gate = false;
+    bool preparation_suspended = false;
     std::size_t index = 0;
     std::int64_t offset = 0,heard_through = 0;
     double rate = 1,playback_rate = 0;
@@ -43,10 +44,15 @@ public:
     void toggle_controls();
     [[nodiscard]] bool controls_visible() const;
     void settings_changed();
+    // Temporary options navigation only: stop/cancellation callbacks and joins
+    // run off the UI thread. Keeps the plan/bookmark/cache and never autoplays;
+    // an in-flight host operation still acknowledges cancellation normally.
+    void suspend_preparation(bool suspended);
     void seek_seconds(int);
     void restart();
     // Called before dialog dispatch so focused RichEdit controls cannot swallow
-    // reader keys. F9/F10 step speed with clamped repeats; other actions fire once.
+    // reader keys. F9/F10 cycle speed in reverse/forward order, including repeats;
+    // the speed button uses that same forward cycle. Other actions fire once.
     // Left/Up/Down/Right alias F5/F6/F7/F8 only outside text/interactive controls.
     [[nodiscard]] bool dispatch_shortcut(const MSG&);
     [[nodiscard]] HWND bar()const;

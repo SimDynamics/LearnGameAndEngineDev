@@ -23,7 +23,7 @@ options = parser.parse_args()
 sys.stdin.reconfigure(encoding="utf-8")
 sys.stdout.reconfigure(encoding="utf-8")
 log = open(options.log, "w", encoding="utf-8", buffering=1)
-log.write(json.dumps({"command": "started", "pid": os.getpid()}) + "\n")
+log.write(json.dumps({"command": "started", "pid": os.getpid(), "parentPid": os.getppid(), "executable": sys.executable}) + "\n")
 pending = None
 cached_wave = options.cached_wave
 cached_source = None

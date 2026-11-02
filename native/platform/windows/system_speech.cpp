@@ -17,6 +17,7 @@
 #include <cstring>
 #include <fstream>
 #include <optional>
+#include <limits>
 #include <set>
 #include <stdexcept>
 
@@ -56,7 +57,7 @@ std::vector<SystemVoice> voices() {
     return result;
 }
 std::size_t utf16_size(std::string_view value) { return winrt::to_hstring(value).size(); }
-std::string framing(const NarrationSegment& segment,std::string_view language,const SystemVoice& voice,std::string_view spoken) {
+std::string legacy_framing(const NarrationSegment& segment,std::string_view language,const SystemVoice& voice,std::string_view spoken) {
     std::string result = "windows-sapi5-pcm24k-v1/";
     const auto token = [&](std::string_view text) { result += std::to_string(text.size()) + ':'; result += text; };
     token(language); token(voice.id); token(voice.language); token(segment.text); token(spoken);
@@ -65,6 +66,11 @@ std::string framing(const NarrationSegment& segment,std::string_view language,co
         token(std::to_string(spoken_range.start)); token(std::to_string(spoken_range.end)); token(std::to_string(displayed.start)); token(std::to_string(displayed.end));
     }
     return result;
+}
+std::string pcm_framing(std::string_view language,const SystemVoice& voice,std::string_view spoken) {
+    std::string result="windows-sapi5-pcm24k-v2/";
+    const auto token=[&](std::string_view text){result+=std::to_string(text.size())+':';result+=text;};
+    token(language);token(voice.id);token(normalized(voice.language));token(spoken);return result;
 }
 struct Boundary { std::size_t start = 0,end = 0; double time = 0; };
 std::vector<NarrationTiming> project(const NarrationSegment&,std::string_view,const std::vector<Boundary>&,double);
@@ -110,7 +116,7 @@ void write_metadata(const std::filesystem::path& path,const std::string& text) {
     DWORD written = 0; const bool ok = WriteFile(handle,text.data(),static_cast<DWORD>(text.size()),&written,nullptr) && written == text.size() && FlushFileBuffers(handle);
     CloseHandle(handle); require(ok,"No se pudo confirmar la caché de voz del sistema.");
 }
-NarrationAudio reuse(const std::filesystem::path& directory,std::string_view key,const NarrationSegment& segment,std::string_view spoken) {
+NarrationAudio reuse_legacy(const std::filesystem::path& directory,std::string_view key,const NarrationSegment& segment,std::string_view spoken) {
     const auto bytes = state::read_bytes(directory / "timings.json",4 * 1024 * 1024);
     const auto metadata = JsonObject::Parse(winrt::to_hstring(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
     require(winrt::to_string(metadata.GetNamedString(L"key")) == key && winrt::to_string(metadata.GetNamedString(L"source")) == segment.text &&
@@ -132,6 +138,36 @@ NarrationAudio reuse(const std::filesystem::path& directory,std::string_view key
     // have an empty sidecar. Recover its alignment without touching the audio.
     if (result.timings.empty() && !actual.words.empty()) result.timings = project(segment,spoken,actual.words,actual.duration);
     return result;
+}
+std::vector<Boundary> read_boundaries(const JsonArray& rows,std::size_t spoken_length,double duration) {
+    require(rows.Size()<=32768,"La alineación SAPI guardada excede el texto hablado; se conserva sin reemplazar.");
+    std::vector<Boundary> result;double previous_time=-1;std::size_t previous_start=0;
+    for(const auto& item:rows){const auto value=item.GetObject();const auto from=value.GetNamedNumber(L"start"),to=value.GetNamedNumber(L"end"),time=value.GetNamedNumber(L"startMs");
+        require(std::isfinite(from)&&std::isfinite(to)&&from>=0&&to>from&&to<=static_cast<double>(spoken_length)&&std::trunc(from)==from&&std::trunc(to)==to&&from>=static_cast<double>(previous_start)&&
+            std::isfinite(time)&&time>=0&&time>=previous_time&&time<=duration+.1,"Los límites de palabra SAPI guardados no son válidos; se conserva sin reemplazar.");
+        result.push_back({static_cast<std::size_t>(from),static_cast<std::size_t>(to),time});previous_start=static_cast<std::size_t>(from);previous_time=time;
+    }return result;
+}
+JsonArray boundary_rows(const std::vector<Boundary>& words) {
+    JsonArray rows;for(const auto& word:words){JsonObject row;row.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(word.start)));
+        row.Insert(L"end",JsonValue::CreateNumberValue(static_cast<double>(word.end)));row.Insert(L"startMs",JsonValue::CreateNumberValue(word.time));rows.Append(row);}return rows;
+}
+NarrationAudio reuse_pcm(const std::filesystem::path& directory,std::string_view key,const NarrationSegment& segment,std::string_view spoken,std::string_view language,const SystemVoice& voice) {
+    const auto bytes=state::read_bytes(directory/"timings.json",4*1024*1024);
+    const auto metadata=JsonObject::Parse(winrt::to_hstring(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
+    require(metadata.GetNamedNumber(L"version")==2&&winrt::to_string(metadata.GetNamedString(L"key"))==key&&metadata.GetNamedString(L"provider")==L"windows-sapi5"&&
+        metadata.GetNamedString(L"audioFormat")==L"pcm_s16le/24000/mono"&&winrt::to_string(metadata.GetNamedString(L"spoken"))==spoken&&
+        winrt::to_string(metadata.GetNamedString(L"language"))==language&&winrt::to_string(metadata.GetNamedString(L"voiceId"))==voice.id&&
+        winrt::to_string(metadata.GetNamedString(L"voiceLanguage"))==normalized(voice.language),"La caché PCM del sistema no coincide; se conserva sin regenerar.");
+    const auto actual=wave(directory/"audio.wav");
+    require(actual.hash==winrt::to_string(metadata.GetNamedString(L"sha256")),"La integridad de la voz del sistema no coincide; se conserva el archivo.");
+    const auto words=read_boundaries(metadata.GetNamedArray(L"words"),utf16_size(spoken),actual.duration);
+    if(!actual.words.empty()){
+        require(words.size()==actual.words.size(),"Los eventos SAPI no coinciden con el WAV; se conserva sin reemplazar.");
+        for(std::size_t index=0;index<words.size();++index)require(words[index].start==actual.words[index].start&&words[index].end==actual.words[index].end&&std::abs(words[index].time-actual.words[index].time)<.001,
+            "Los eventos SAPI no coinciden con el WAV; se conserva sin reemplazar.");
+    }
+    return {std::string(key),segment.text,std::string(spoken),"windows-sapi5",directory/"audio.wav",project(segment,spoken,words,actual.duration),actual.duration,true};
 }
 std::vector<NarrationTiming> project(const NarrationSegment& segment,std::string_view spoken,const std::vector<Boundary>& boundaries,double duration) {
     std::vector<NarrationTiming> result; const bool identity = spoken == segment.text && segment.spoken_ranges.empty();
@@ -158,8 +194,44 @@ bool system_voice_matches(std::string_view voice,std::string_view request) {
 }
 std::vector<SystemVoice> system_voices() try { ensure_winrt_apartment(); return voices(); }
 catch (const winrt::hresult_error& error) { throw std::runtime_error("Voces del sistema: " + winrt::to_string(error.message())); }
-NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
-    const std::filesystem::path& output_directory,std::stop_token stop) try {
+NarrationStorageSnapshot system_speech_storage_snapshot(const std::filesystem::path& output_directory,std::uint64_t budget) {
+    require(output_directory.is_absolute(),"La caché de voz debe pertenecer a una ruta privada absoluta.");
+    const auto root=output_directory/L"windows_tts";state::require_safe_path(root);NarrationStorageSnapshot result;std::error_code error;
+    const auto cache_exists=std::filesystem::exists(state::native_io_path(root),error);require(!error,"No se pudo consultar el almacenamiento de voces de Windows.");
+    if(cache_exists){
+        std::filesystem::directory_iterator entry(state::native_io_path(root),error),end;require(!error,"No se pudieron consultar las grabaciones de Windows.");
+        for(;entry!=end;entry.increment(error)){
+            require(!error,"No se pudieron consultar las grabaciones de Windows.");const auto name=entry->path().filename().wstring();
+            // Both v1 and v2 final keys are SHA-256 directory names. In-flight
+            // .pending folders and unrelated files are not finished recordings.
+            if(name.size()!=64||!std::ranges::all_of(name,[](wchar_t c){return(c>=L'0'&&c<=L'9')||(c>=L'a'&&c<=L'f')||(c>=L'A'&&c<=L'F');}))continue;
+            const auto wav=entry->path()/L"audio.wav";state::require_safe_path(wav);
+            const auto exists=std::filesystem::exists(state::native_io_path(wav),error);require(!error,"No se pudo consultar una grabación de Windows.");if(!exists)continue;
+            if(!std::filesystem::is_regular_file(state::native_io_path(wav),error)){require(!error,"No se pudo consultar una grabación de Windows.");continue;}
+            const auto size=std::filesystem::file_size(state::native_io_path(wav),error);require(!error,"No se pudo medir una grabación de Windows.");
+            result.stored_bytes+=std::min<std::uint64_t>(size,std::numeric_limits<std::uint64_t>::max()-result.stored_bytes);
+        }
+        require(!error,"No se pudieron consultar las grabaciones de Windows.");
+    }
+    auto volume=output_directory;
+    while(!volume.empty()){const auto exists=std::filesystem::exists(state::native_io_path(volume),error);require(!error,"No se pudo consultar el espacio de audio disponible.");if(exists)break;const auto parent=volume.parent_path();require(parent!=volume,"No se pudo localizar el volumen de las voces de Windows.");volume=parent;}
+    require(!volume.empty(),"No se pudo localizar el volumen de las voces de Windows.");const auto space=std::filesystem::space(state::native_io_path(volume),error);require(!error,"No se pudo consultar el espacio de audio disponible.");
+    result.available_bytes=space.available;const auto sum=result.stored_bytes+std::min(result.available_bytes,std::numeric_limits<std::uint64_t>::max()-result.stored_bytes);
+    result.maximum_bytes=sum>narration_storage_reserve?sum-narration_storage_reserve:0;
+    result.configured_bytes=budget==std::numeric_limits<std::uint64_t>::max()?result.maximum_bytes:budget;result.effective_bytes=std::min(result.configured_bytes,result.maximum_bytes);return result;
+}
+namespace {
+void require_system_budget(const std::filesystem::path& cache,std::uint64_t budget,std::optional<std::uint64_t> pending_size={}) {
+    const auto storage=system_speech_storage_snapshot(cache,budget);
+    require(storage.stored_bytes<=budget&&(!pending_size?storage.stored_bytes<budget:*pending_size<=budget-storage.stored_bytes),
+        "El límite de audio del motor Windows no permite nuevas grabaciones. Los audios guardados se conservan.");
+    // A pending WAV already occupies disk space. Do not subtract its bytes a
+    // second time from free space; require the reserve after all pending writes.
+    require(pending_size?storage.available_bytes>=narration_storage_reserve:storage.available_bytes>narration_storage_reserve,
+        "No hay espacio disponible para generar audio de Windows conservando 1 GB libre. Los audios guardados se conservan.");
+}
+NarrationAudio synthesize_system_speech_impl(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
+    const std::filesystem::path& output_directory,std::stop_token stop,std::optional<std::uint64_t> budget) try {
     ensure_winrt_apartment(); cancelled(stop);
     const auto spoken = segment.spoken.empty() ? segment.text : segment.spoken;
     const auto speech = winrt::to_hstring(spoken); const auto source_length = utf16_size(segment.text);
@@ -172,10 +244,17 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
         return (voice_id.empty() || voice.id == voice_id) && system_voice_matches(voice.language,language);
     });
     require(found != installed.end(),"No hay una voz SAPI instalada para el idioma y la voz seleccionados. No se sustituye por otro idioma.");
-    cancelled(stop); const auto key = state::sha256(framing(segment,normalized(language),*found,spoken));
+    cancelled(stop);const auto requested_language=normalized(language);
+    const auto old_key=state::sha256(legacy_framing(segment,requested_language,*found,spoken));
+    const auto key=state::sha256(pcm_framing(requested_language,*found,spoken));
     require(output_directory.is_absolute(),"La caché de voz debe pertenecer a una ruta privada absoluta.");
     const auto root = output_directory / "windows_tts"; const auto final = root / key; state::require_safe_path(final);
-    if (std::filesystem::exists(state::native_io_path(final))) return reuse(final,key,segment,spoken);
+    // Never migrate, rewrite or discard an existing v1 recording. Its exact
+    // source/mapping identity is still authoritative for that old entry.
+    const auto legacy=root/old_key;state::require_safe_path(legacy);
+    if(std::filesystem::exists(state::native_io_path(legacy)))return reuse_legacy(legacy,old_key,segment,spoken);
+    if(std::filesystem::exists(state::native_io_path(final)))return reuse_pcm(final,key,segment,spoken,requested_language,*found);
+    if(budget)require_system_budget(output_directory,*budget);
     std::filesystem::create_directories(state::native_io_path(root));
     static std::atomic<std::uint64_t> serial = 0;
     const auto pending = root / (L"." + std::wstring(winrt::to_hstring(key).c_str()) + L"-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(++serial) + L".pending");
@@ -227,25 +306,35 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
         voice.Reset(); checked(stream->Close(),"No se pudo cerrar la grabación del sistema.");
         stream.Reset(); token.Reset(); cancelled(stop);
         const auto actual = wave(pending / "audio.wav");
-        const auto timings = project(segment,spoken,actual.words.empty() ? boundaries : actual.words,actual.duration);
+        // Persist the actual spoken-coordinate events once. Display text and
+        // source spans belong to each caller, not to the shared PCM artifact.
+        const auto words=actual.words.empty()?boundaries:actual.words;
+        const auto rows=boundary_rows(words);(void)read_boundaries(rows,speech.size(),actual.duration);
         JsonObject metadata; metadata.Insert(L"key",JsonValue::CreateStringValue(winrt::to_hstring(key)));
-        metadata.Insert(L"source",JsonValue::CreateStringValue(winrt::to_hstring(segment.text))); metadata.Insert(L"spoken",JsonValue::CreateStringValue(speech));
+        metadata.Insert(L"version",JsonValue::CreateNumberValue(2));metadata.Insert(L"audioFormat",JsonValue::CreateStringValue(L"pcm_s16le/24000/mono"));
+        metadata.Insert(L"language",JsonValue::CreateStringValue(winrt::to_hstring(requested_language)));metadata.Insert(L"voiceId",JsonValue::CreateStringValue(winrt::to_hstring(found->id)));
+        metadata.Insert(L"voiceLanguage",JsonValue::CreateStringValue(winrt::to_hstring(normalized(found->language))));metadata.Insert(L"spoken",JsonValue::CreateStringValue(speech));
         metadata.Insert(L"provider",JsonValue::CreateStringValue(L"windows-sapi5")); metadata.Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(actual.hash)));
-        JsonArray rows;
-        for (const auto& timing : timings) {
-            JsonObject row; row.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(timing.start))); row.Insert(L"end",JsonValue::CreateNumberValue(static_cast<double>(timing.end)));
-            row.Insert(L"startMs",JsonValue::CreateNumberValue(timing.start_ms)); row.Insert(L"endMs",JsonValue::CreateNumberValue(timing.end_ms)); rows.Append(row);
-        }
-        metadata.Insert(L"timings",rows); write_metadata(pending / "timings.json",winrt::to_string(metadata.Stringify())); cancelled(stop);
+        metadata.Insert(L"words",rows);write_metadata(pending/"timings.json",winrt::to_string(metadata.Stringify()));cancelled(stop);
+        if(budget)require_system_budget(output_directory,*budget,std::filesystem::file_size(state::native_io_path(pending/L"audio.wav")));
         if (!MoveFileExW(state::native_io_path(pending).c_str(),state::native_io_path(final).c_str(),MOVEFILE_WRITE_THROUGH)) {
             require(std::filesystem::exists(state::native_io_path(final)),"No se pudo publicar la caché del sistema.");
-            auto result = reuse(final,key,segment,spoken); std::filesystem::remove_all(state::native_io_path(pending)); return result;
+            auto result=reuse_pcm(final,key,segment,spoken,requested_language,*found);std::filesystem::remove_all(state::native_io_path(pending));return result;
         }
-        auto result = reuse(final,key,segment,spoken); result.cache_hit = false; return result;
+        auto result=reuse_pcm(final,key,segment,spoken,requested_language,*found);result.cache_hit=false;return result;
     } catch (...) { std::error_code error; std::filesystem::remove_all(state::native_io_path(pending),error); throw; }
 } catch (const winrt::hresult_error& error) {
     // C++/WinRT errors do not derive from std::exception. Keep the native
     // provider's error contract so a corrupt sidecar cannot terminate the host.
     throw std::runtime_error("Voz del sistema: " + winrt::to_string(error.message()));
+}
+}
+NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
+    const std::filesystem::path& output_directory,std::stop_token stop){
+    return synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,{});
+}
+NarrationAudio synthesize_system_speech_with_budget(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
+    const std::filesystem::path& output_directory,std::stop_token stop,std::uint64_t budget){
+    return synthesize_system_speech_impl(segment,language,voice_id,output_directory,stop,budget);
 }
 } // namespace lgaed::windows

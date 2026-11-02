@@ -1,4 +1,5 @@
 #include "presentation/windows/settings_view.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/editing_bar.hpp"
 #include "platform/windows/system_speech.hpp"
@@ -11,6 +12,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "native_build_config.hpp"
 #include <commctrl.h>
+#include <commdlg.h>
 #include <shlwapi.h>
 #include <oleacc.h>
 #include <winrt/Windows.Data.Json.h>
@@ -23,6 +25,8 @@
 #include <bit>
 #include <chrono>
 #include <tuple>
+#include <atomic>
+#include <thread>
 
 namespace {
 void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
@@ -30,7 +34,18 @@ void run_case(const char* name,void(*run)()){const auto start=std::chrono::stead
 std::wstring native_text(HWND window);
 void select(HWND view,int id,int value){SendDlgItemMessageW(view,id,CB_SETCURSEL,value,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(GetDlgItem(view,id)));}
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}}}
+HWND internal_dialog_with_control(int id){
+    struct Search{int id;HWND found=nullptr;} search{id};
+    EnumThreadWindows(GetCurrentThreadId(),[](HWND root,LPARAM raw)->BOOL{
+        auto& query=*reinterpret_cast<Search*>(raw);
+        EnumChildWindows(root,[](HWND child,LPARAM data)->BOOL{auto& query=*reinterpret_cast<Search*>(data);wchar_t name[32]{};GetClassNameW(child,name,32);
+            if(std::wstring_view(name)==L"#32770"&&GetDlgItem(child,query.id)){query.found=child;return FALSE;}return TRUE;},raw);
+        return !query.found;
+    },reinterpret_cast<LPARAM>(&search));return search.found;
+}
+void license_settings_navigation_tests(HWND owner);
 void license_window_tests(HWND owner){
+    ShowWindow(GetAncestor(owner,GA_ROOT),SW_SHOW);SetForegroundWindow(GetAncestor(owner,GA_ROOT));pump();
     const std::array<const char*,3> locales{"es","en","fr"};
     const std::array<const wchar_t*,3> first{L"Kokoro y voces",L"Kokoro and voices",L"Kokoro et voix"};
     const std::array<const wchar_t*,3> last{L"Misaki · Apache 2.0",L"Misaki · Apache 2.0",L"Misaki · Apache 2.0"};
@@ -59,6 +74,7 @@ void license_window_tests(HWND owner){
         if(!IsDialogMessageW(window,&escape)){TranslateMessage(&escape);DispatchMessageW(&escape);}pump();
         check(!IsWindow(window),"Escape from a notice failed to return to settings as in Android");
     }
+    license_settings_navigation_tests(owner);
 }
 void reset_text_tests(){
     using namespace lgaed;using namespace presentation;
@@ -99,23 +115,23 @@ struct ScopedFixture{
 struct WrapResetAction{std::wstring title;bool accept=true,found=false;std::exception_ptr error;};
 WrapResetAction* wrap_reset_action=nullptr;
 void CALLBACK wrap_reset_timer(HWND,UINT,UINT_PTR timer,DWORD){
-    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{auto& result=*reinterpret_cast<HWND*>(raw);
-        if(GetDlgItem(candidate,IDYES)&&GetDlgItem(candidate,IDNO)&&wrap_reset_action&&native_text(candidate)==wrap_reset_action->title){result=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    const auto dialog=internal_dialog_with_control(IDYES);
     if(!dialog||!wrap_reset_action)return;KillTimer(nullptr,timer);wrap_reset_action->found=true;
+    if(native_text(dialog)!=wrap_reset_action->title||!GetDlgItem(dialog,IDNO)){wrap_reset_action->error=std::make_exception_ptr(std::runtime_error("The internal wrap-reset confirmation lost its title or conservative No action"));SendMessageW(dialog,WM_COMMAND,IDNO,0);return;}
     SendMessageW(dialog,WM_COMMAND,wrap_reset_action->accept?IDYES:IDNO,0);
 }
 void click_wrap_reset(ScopedFixture& fixture,int id,bool accept=true){
+    ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
     WrapResetAction action;action.title=native_text(fixture.control(id));action.accept=accept;wrap_reset_action=&action;
     const auto timer=SetTimer(nullptr,0,20,wrap_reset_timer);check(timer!=0,"Cannot schedule the real wrap-reset confirmation");
     fixture.click(id);KillTimer(nullptr,timer);wrap_reset_action=nullptr;
-    check(action.found,"Resetting all course wrap exceptions omitted the confirmation dialog");
+    if(action.error)std::rethrow_exception(action.error);check(action.found,"Resetting all course wrap exceptions omitted the confirmation dialog");
 }
 struct WrapAvailabilityAction{std::wstring title,body;bool found=false;std::exception_ptr error;};
 WrapAvailabilityAction* wrap_availability_action=nullptr;
 void CALLBACK wrap_availability_timer(HWND,UINT,UINT_PTR timer,DWORD){
     if(!wrap_availability_action)return;
-    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{
-        wchar_t name[32]{};GetClassNameW(candidate,name,32);if(std::wstring_view(name)==L"#32770"&&wrap_availability_action&&native_text(candidate)==wrap_availability_action->title){*reinterpret_cast<HWND*>(raw)=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    const auto dialog=internal_dialog_with_control(IDOK);
     if(!dialog)return;
     KillTimer(nullptr,timer);auto& action=*wrap_availability_action;action.found=true;
     struct Contents{const WrapAvailabilityAction* action;std::vector<HWND> buttons;bool body_found=false;} contents{&action};
@@ -204,6 +220,7 @@ void math_wrap_reset_tests(){
         auto localized=seed;localized.preferences["native_windows"]["ui_language"]=std::string(locales[index]);ScopedFixture fixture(SettingsScope::global,localized);fixture.has(5133,true);fixture.has(5137,true);
         check(native_text(fixture.control(5137))==labels[index]&&fixture.data==localized&&fixture.updates==0,"Opening Mathematics availability altered data or lost the original action caption");
         WrapAvailabilityAction action{titles[index],bodies[index]};wrap_availability_action=&action;
+        ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
         const auto timer=SetTimer(nullptr,0,20,wrap_availability_timer);check(timer!=0,"Cannot inspect the original Mathematics availability notice");
         fixture.click(5137);KillTimer(nullptr,timer);wrap_availability_action=nullptr;if(action.error)std::rethrow_exception(action.error);
         check(action.found&&fixture.updates==0&&fixture.changes==0&&fixture.data==localized,"Consulting Mathematics availability changed exceptions, another course, answers or intentional stdin whitespace");
@@ -214,11 +231,10 @@ struct ShortcutAction{bool restore=false,save=false,edit=false,found=false,revea
 ShortcutAction* shortcut_action=nullptr;
 std::wstring native_text(HWND window){std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');text.resize(static_cast<std::size_t>(GetWindowTextW(window,text.data(),static_cast<int>(text.size()))));return text;}
 void CALLBACK shortcut_timer(HWND,UINT,UINT_PTR timer,DWORD){
-    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND target,LPARAM context)->BOOL{
-        wchar_t name[40]{};GetClassNameW(target,name,40);if(std::wstring_view(name)==L"#32770"&&GetDlgItem(target,5350)){
-            *reinterpret_cast<HWND*>(context)=target;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    const auto dialog=internal_dialog_with_control(5350);
     if(!dialog||!shortcut_action)return;KillTimer(nullptr,timer);auto& action=*shortcut_action;action.found=true;
     try{
+        check((GetWindowLongPtrW(dialog,GWL_STYLE)&WS_CHILD)&&!(GetWindowLongPtrW(dialog,GWL_STYLE)&WS_POPUP),"Shortcut settings opened a separate application window");
         const auto viewport=GetDlgItem(dialog,5350);check(viewport!=nullptr,"Shortcut dialog omitted its scrolling viewport");
         for(int index=0;index<20;++index){const auto input=GetDlgItem(viewport,5400+index);check(input!=nullptr,"Shortcut dialog did not create all 20 configured slots");action.opened[static_cast<std::size_t>(index)]=native_text(input);}
         check(GetDlgItem(viewport,5420)==nullptr,"Shortcut configuration exposed TAB as an additional editable slot");
@@ -230,6 +246,7 @@ void CALLBACK shortcut_timer(HWND,UINT,UINT_PTR timer,DWORD){
     }catch(...){action.error=std::current_exception();SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);}
 }
 void open_shortcuts(ScopedFixture& fixture,ShortcutAction& action){
+    ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
     shortcut_action=&action;const auto timer=SetTimer(nullptr,0,20,shortcut_timer);check(timer!=0,"Cannot schedule real shortcut dialog QA");
     fixture.has(5136,false); // Windows no longer presents the Programming floating keyboard.
     SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(5136,BN_CLICKED),0);pump();KillTimer(nullptr,timer);shortcut_action=nullptr;if(action.error)std::rethrow_exception(action.error);
@@ -273,6 +290,34 @@ int reveal_control(HWND view,HWND target){
         if(wheel_delta==0)wheel_delta=control.top>target_top?-1:1;
         SendMessageW(view,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(static_cast<SHORT>(wheel_delta))),0);}
     check(false,"The native wheel setup did not reveal the entire real Settings control");return 0;
+}
+void license_settings_navigation_tests(HWND owner){
+    using namespace lgaed;using namespace presentation;
+    state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["learning_progress"]["answer"]=std::string("unchanged");data.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");const auto saved=data;
+    HWND settings=nullptr,license=nullptr;int writes=0,closed=0;
+    SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& change){++writes;change(data);};access.close=[&]{++closed;};
+    access.open_licenses=[&]{license=open_narration_licenses(settings,"es");};
+    settings=create_settings_view(owner,std::move(access));RECT root{};GetClientRect(owner,&root);MoveWindow(settings,0,0,root.right,root.bottom,TRUE);
+    const auto rgb=GetDlgItem(settings,5720),button=GetDlgItem(settings,5141);check(rgb&&button,"Create real deferred-colour and license controls for navigation QA");
+    SetWindowTextW(rgb,L"123");check(IsWindowEnabled(GetDlgItem(settings,5123))&&data==saved&&writes==0,"Create an unsaved colour draft before opening licenses");
+    reveal_control(settings,button);SetFocus(button);SCROLLINFO before{sizeof(before),SIF_POS};GetScrollInfo(settings,SB_VERT,&before);const auto button_rect=relative_rect(button,settings);
+    check(GetFocus()==button&&before.nPos>0,"License navigation fixture must begin on the focused, scrolled Settings action");
+    for(const bool escape:{false,true}){
+        SendMessageW(button,BM_CLICK,0,0);pump();
+        check(license&&IsWindow(license)&&GetParent(license)==owner&&GetAncestor(license,GA_ROOT)==owner&&(GetWindowLongPtrW(license,GWL_STYLE)&WS_CHILD)&&!(GetWindowLongPtrW(license,GWL_STYLE)&WS_POPUP),"Production Settings license action opened outside the same main window");
+        check(IsWindowEnabled(owner)&&!IsWindowVisible(settings)&&active_internal_window(owner)==license&&GetDlgItem(settings,5720)==rgb,
+            "Opening licenses disabled the root, exposed Settings or recreated its draft controls");
+        const auto list=GetDlgItem(license,2);SendMessageW(list,LB_SETCURSEL,0,0);SendMessageW(license,WM_APP+1,0,0);pump();
+        const auto body=GetDlgItem(license,1);check(IsWindowVisible(body)&&GetWindowTextLengthW(body)>0,"Open an actual original notice inside the internal license screen");
+        if(escape){MSG key{};key.hwnd=body;key.message=WM_KEYDOWN;key.wParam=VK_ESCAPE;key.lParam=1;if(!IsDialogMessageW(license,&key)){TranslateMessage(&key);DispatchMessageW(&key);}pump();}
+        else{SendMessageW(GetDlgItem(license,4),BM_CLICK,0,0);pump();}
+        SCROLLINFO after{sizeof(after),SIF_POS};GetScrollInfo(settings,SB_VERT,&after);const auto restored=relative_rect(button,settings);
+        check(!IsWindow(license)&&IsWindow(settings)&&IsWindowVisible(settings)&&IsWindowEnabled(owner)&&GetDlgItem(settings,5720)==rgb&&GetDlgItem(settings,5141)==button&&GetFocus()==button,
+            "Closing an internal license failed to restore the same live Settings controls/focus");
+        check(after.nPos==before.nPos&&EqualRect(&button_rect,&restored)&&native_text(rgb)==L"123"&&IsWindowEnabled(GetDlgItem(settings,5123))&&data==saved&&writes==0&&closed==0,
+            "License navigation altered the Settings scroll, unsaved colour draft, saved preferences or student data");
+    }
+    DestroyWindow(settings);std::cout<<"PASS production Settings -> license list -> original notice -> Close/Escape: same root enabled, hidden owner, exact live controls/focus/scroll/draft restored\n";
 }
 LRESULT CALLBACK measurement_probe(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
     if(message==WM_GETTEXT||message==WM_GETTEXTLENGTH)++*reinterpret_cast<int*>(raw);return DefSubclassProc(window,message,wp,lp);
@@ -390,8 +435,8 @@ void settings_dpi_notice_tests(){
     check(fixture.control(5101)==language&&fixture.data==before&&prior_scroll.nPos==after_scroll.nPos&&!fixture.checked(5128)&&IsWindowEnabled(fixture.control(5123)),"DPI refresh replaced controls, lost buffered colours/scroll or modified preferences");
     ShowWindow(fixture.host,SW_SHOWNOACTIVATE);SetActiveWindow(fixture.host);SetFocus(language);check(GetFocus()==language,"The notice fixture could not focus its original native input");const auto active=GetActiveWindow();
     const auto popup_text=L"Aviso breve de prueba con tipografía escalada";show_settings_notice(fixture.host,"Aviso breve de prueba con tipografía escalada");HWND popup=nullptr;
-    EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{if(native_text(candidate)==L"Aviso breve de prueba con tipografía escalada"){*reinterpret_cast<HWND*>(raw)=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&popup));
-    check(popup&&native_text(popup)==popup_text&&IsWindowVisible(popup),"The informational notice did not open its real transient window");const auto notice=control_font(popup);
+    popup=FindWindowExW(fixture.host,nullptr,L"STATIC",popup_text);
+    check(popup&&native_text(popup)==popup_text&&IsWindowVisible(popup)&&(GetWindowLongPtrW(popup,GWL_STYLE)&WS_CHILD)&&GetParent(popup)==fixture.host,"The informational notice did not stay inside its application page");const auto notice=control_font(popup);
     check(GetFocus()==language&&GetActiveWindow()==active,"Creating the nonblocking notice stole focus or activated a different window");pump();
     check(GetFocus()==language&&GetActiveWindow()==active,"Painting the nonblocking notice stole focus from the original input");
     check(_wcsicmp(notice.lfFaceName,L"Roboto")==0&&-notice.lfHeight==MulDiv(16,GetDpiForWindow(popup),96),"The brief notice still uses an unscaled Windows stock font");
@@ -399,7 +444,7 @@ void settings_dpi_notice_tests(){
     const std::array<const char*,3> locales{"es","en","fr"};const std::array<const wchar_t*,3> messages{L"Excepciones de Programación restablecidas",L"Programming Exceptions Reset",L"Exceptions de programmation réinitialisées"};
     for(std::size_t index=0;index<locales.size();++index){auto localized=seed;localized.preferences["native_windows"]["ui_language"]=std::string(locales[index]);ScopedFixture options(SettingsScope::global,localized);
         click_wrap_reset(options,5133,false);check(options.data==localized,"Cancelling localized reset changed settings");click_wrap_reset(options,5133);HWND success=nullptr;
-        struct Search{std::wstring_view text;HWND* output;} search{messages[index],&success};EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{auto& query=*reinterpret_cast<Search*>(raw);if(native_text(candidate)==query.text){*query.output=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));
+        success=FindWindowExW(options.view,nullptr,L"STATIC",messages[index]);
         check(success!=nullptr,"Confirmed reset omitted its translated nonblocking success notice");DestroyWindow(success);}
     std::cout<<"PASS Settings DPI notification/font recreation with retained handles/state/drafts/scroll and real scaled nonactivating notices; ES/EN/FR reset Cancel/confirm/success\n";
 }
@@ -429,7 +474,7 @@ void rgb_options_tests(){
         if(index%3){const auto previous=relative_rect(fixture.control(5720+index-1),fixture.view),previous_default=relative_rect(fixture.control(5760+index-1),fixture.view);
             check(bounds.top==previous.top&&bounds.left>=previous.right+px(8)&&default_bounds.top==previous_default.top&&default_bounds.left>=previous_default.right+px(8),"RGB fields are not three aligned nonoverlapping columns");}}
     for(int index=0;index<3;++index){const auto preview=fixture.control(5125+index);wchar_t name[32]{};GetClassNameW(preview,name,32);
-        check(_wcsicmp(name,L"STATIC")==0&&(GetWindowLongPtrW(preview,GWL_STYLE)&SS_TYPEMASK)==SS_OWNERDRAW,"The inline RGB preview became an extra colour-picker button");
+        check(_wcsicmp(name,L"BUTTON")==0&&(GetWindowLongPtrW(preview,GWL_STYLE)&BS_TYPEMASK)==BS_OWNERDRAW&&(GetWindowLongPtrW(preview,GWL_STYLE)&WS_TABSTOP),"The RGB preview is not an accessible native colour-picker button");
         check(native_text(fixture.control(5130+index))==L"Cargar color predeterminado","The original Load Default Color action is missing");
         if(!reader_theme::palette(fixture.view).high_contrast)check(reader_theme::background(fixture.control(5780+index))==RGB(24,25,29)&&reader_theme::background(fixture.control(5760+index*3))==RGB(24,25,29),"Default RGB values lost their nested Android card surface");}
     check(fixture.data==seed&&fixture.updates==0,"Opening RGB controls applied colour drafts");
@@ -503,14 +548,135 @@ void slider_pointer_tests(){
     check(SendMessageW(disabled,TBM_GETPOS,0,0)==disabled_value&&inherited.data==seed&&GetCapture()!=disabled,"A raw pointer press bypassed a disabled inherited Settings control");
     std::cout<<"PASS Settings real pointer endpoints/midpoint/native drag and keyboard; live scale callbacks, deferred RGB Save, disabled inheritance and protected data\n";
 }
+void slider_wheel_tests(){
+    using namespace lgaed;using namespace presentation;
+    state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+    ScopedFixture fixture(SettingsScope::global,data);ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
+    for(const auto id:{5120,5700,5701,5702,5703,5704,5705,5706,5707,5708}){
+        const auto slider=fixture.control(id);reveal_control(fixture.view,slider);SetFocus(slider);
+        const auto value=SendMessageW(slider,TBM_GETPOS,0,0);const auto before=fixture.data;const int updates=fixture.updates,changes=fixture.changes;
+        const auto rgb_text=native_text(fixture.control(5720+(id>=5700?id-5700:0)));
+        SCROLLINFO initial{sizeof(initial),SIF_POS};check(GetScrollInfo(fixture.view,SB_VERT,&initial)!=FALSE,"Read Settings scroll before wheel on slider");
+        SendMessageW(slider,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(-WHEEL_DELTA)),0);
+        SCROLLINFO moved{sizeof(moved),SIF_POS};GetScrollInfo(fixture.view,SB_VERT,&moved);
+        check(moved.nPos>initial.nPos,"Wheel over a focused Settings slider did not scroll its page");
+        SendMessageW(slider,WM_MOUSEHWHEEL,MAKEWPARAM(0,WHEEL_DELTA),0);
+        check(SendMessageW(slider,TBM_GETPOS,0,0)==value&&fixture.data==before&&fixture.updates==updates&&fixture.changes==changes&&native_text(fixture.control(5720+(id>=5700?id-5700:0)))==rgb_text,
+            "Wheel changed a Settings slider, colour draft or saved preference");
+    }
+    std::cout<<"PASS focused text-size and all nine RGB sliders: wheel scrolls page, horizontal wheel leaves values/data/drafts unchanged\n";
+}
+struct SettingsThumbProbe{
+    int notifications=0;std::vector<int> positions;
+    static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR raw){
+        auto& self=*reinterpret_cast<SettingsThumbProbe*>(raw);const auto result=DefSubclassProc(window,message,wp,lp);
+        if(message==WM_VSCROLL&&LOWORD(wp)==SB_THUMBTRACK&&!lp){SCROLLINFO info{sizeof(info),SIF_POS};GetScrollInfo(window,SB_VERT,&info);++self.notifications;self.positions.push_back(info.nPos);}
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(window,proc,id);return result;
+    }
+};
+void settings_thumb_drag_tests(){
+    using namespace lgaed;using namespace presentation;
+    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["learning_progress"]["answer"]=std::string("unchanged");
+    ScopedFixture fixture(SettingsScope::global,seed);ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
+    SendMessageW(fixture.view,WM_VSCROLL,SB_TOP,0);pump();SCROLLBARINFO bar{sizeof(bar)};
+    check(GetScrollBarInfo(fixture.view,OBJID_VSCROLL,&bar)&&!(bar.rgstate[3]&STATE_SYSTEM_UNAVAILABLE),"Settings native scrollbar thumb is unavailable");
+    const POINT first{(bar.rcScrollBar.left+bar.rcScrollBar.right)/2,bar.rcScrollBar.top+(bar.xyThumbTop+bar.xyThumbBottom)/2};
+    const POINT last{first.x,bar.rcScrollBar.bottom-bar.dxyLineButton-30};
+    check(WindowFromPoint(first)==fixture.view&&SendMessageW(fixture.view,WM_NCHITTEST,0,MAKELPARAM(first.x,first.y))==HTVSCROLL,"The Settings fixture does not own its native scrollbar input");
+    SCROLLINFO initial{sizeof(initial),SIF_ALL};GetScrollInfo(fixture.view,SB_VERT,&initial);const auto child=fixture.control(5101);const auto before=relative_rect(child,fixture.view);
+    SettingsThumbProbe probe;check(SetWindowSubclass(fixture.view,SettingsThumbProbe::proc,0x51415354,reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,"Observe real Settings scrollbar notifications");
+    POINT original{};GetCursorPos(&original);std::atomic<bool> finished=false,input_ok=true;const auto dpi=GetThreadDpiAwarenessContext();
+    std::thread input([&,dpi]{const auto previous=SetThreadDpiAwarenessContext(dpi);if(!previous){input_ok=false;finished=true;return;}
+        Sleep(25);
+        if(WindowFromPoint(first)!=fixture.view||GetForegroundWindow()!=fixture.host||(GetAsyncKeyState(VK_LBUTTON)&0x8000)){input_ok=false;SetThreadDpiAwarenessContext(previous);finished=true;return;}
+        SetCursorPos(first.x,first.y);INPUT down{};down.type=INPUT_MOUSE;down.mi.dwFlags=MOUSEEVENTF_LEFTDOWN;
+        if(SendInput(1,&down,sizeof(down))!=1){input_ok=false;SetThreadDpiAwarenessContext(previous);finished=true;return;}
+        Sleep(60);SetCursorPos(first.x,first.y+(last.y-first.y)/2);Sleep(60);SetCursorPos(last.x,last.y);Sleep(80);
+        INPUT up{};up.type=INPUT_MOUSE;up.mi.dwFlags=MOUSEEVENTF_LEFTUP;if(SendInput(1,&up,sizeof(up))!=1){input_ok=false;PostMessageW(fixture.view,WM_LBUTTONUP,0,0);}
+        SetThreadDpiAwarenessContext(previous);finished=true;
+    });
+    while(!finished){MsgWaitForMultipleObjectsEx(0,nullptr,50,QS_ALLINPUT,MWMO_INPUTAVAILABLE);pump();}
+    input.join();pump();SetCursorPos(original.x,original.y);RemoveWindowSubclass(fixture.view,SettingsThumbProbe::proc,0x51415354);
+    SCROLLINFO after{sizeof(after),SIF_ALL};GetScrollInfo(fixture.view,SB_VERT,&after);const auto moved=relative_rect(child,fixture.view);
+    check(input_ok&&probe.notifications>=2&&std::ranges::any_of(probe.positions,[&](int value){return value>initial.nPos;}),"Dragging the real Settings scrollbar did not deliver continuing native thumb movement");
+    check(after.nPos>initial.nPos&&before.top-moved.top==after.nPos-initial.nPos&&GetCapture()!=fixture.view,"The Settings thumb moved without its actual content or retained mouse capture");
+    check(fixture.data==seed&&fixture.updates==0&&fixture.changes==0,"Scrolling Settings changed protected student data or preferences");
+    std::cout<<"PASS Settings real native thumb drag: notifications="<<probe.notifications<<" scroll="<<initial.nPos<<"->"<<after.nPos<<", exact content movement, released capture and unchanged data\n";
+}
+struct NativeColorAction{HWND owner=nullptr;bool accept=false,found=false;std::exception_ptr error;};
+NativeColorAction* native_color_action=nullptr;
+void CALLBACK native_color_timer(HWND,UINT,UINT_PTR timer,DWORD){
+    if(!native_color_action)return;HWND dialog=nullptr;
+    EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{wchar_t name[32]{};GetClassNameW(candidate,name,32);
+        if(std::wstring_view(name)==L"#32770"&&native_color_action&&GetWindow(candidate,GW_OWNER)==native_color_action->owner&&!(GetWindowLongPtrW(candidate,GWL_STYLE)&WS_CHILD)){*reinterpret_cast<HWND*>(raw)=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    if(!dialog)return;KillTimer(nullptr,timer);auto& action=*native_color_action;action.found=true;
+    try{check(GetWindow(dialog,GW_OWNER)==action.owner&&!(GetWindowLongPtrW(dialog,GWL_STYLE)&WS_CHILD),"The requested Windows colour picker lost its main-window owner or was reparented");
+        // The documented common-dialog protocol avoids depending on private
+        // control IDs in a particular Windows colour-dialog resource.
+        // https://learn.microsoft.com/windows/win32/dlgbox/setrgbstring
+        const auto set_rgb=RegisterWindowMessageW(SETRGBSTRINGW);check(set_rgb!=0,"Register the documented Windows colour-picker message");
+        SendMessageW(dialog,set_rgb,0,static_cast<LPARAM>(RGB(37,83,129)));
+        SendMessageW(dialog,WM_COMMAND,action.accept?IDOK:IDCANCEL,0);
+    }catch(...){action.error=std::current_exception();SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);}
+}
+void native_color_picker_tests(){
+    using namespace lgaed;using namespace presentation;state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+    for(const bool accept:{false,true}){ScopedFixture fixture(SettingsScope::global,seed);ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
+        const auto before=native_text(fixture.control(5720));NativeColorAction action{fixture.host,accept};native_color_action=&action;const auto timer=SetTimer(nullptr,0,20,native_color_timer);check(timer!=0,"Schedule the native Windows colour picker acceptance");
+        SendMessageW(fixture.control(5125),BM_CLICK,0,0);KillTimer(nullptr,timer);native_color_action=nullptr;if(action.error)std::rethrow_exception(action.error);
+        check(action.found&&fixture.data==seed&&fixture.updates==0,"Opening/accepting the native colour picker persisted colours before Save");
+        if(accept){check(native_text(fixture.control(5720))==L"37"&&native_text(fixture.control(5721))==L"83"&&native_text(fixture.control(5722))==L"129"&&IsWindowEnabled(fixture.control(5123)),"The Windows colour selection did not update the RGB draft");
+            fixture.click(5123);check(reader_theme::appearance_accent(fixture.data)==RGB(37,83,129)&&fixture.updates==1&&fixture.data.preferences["cpp_lesson_drafts"]==seed.preferences["cpp_lesson_drafts"],"Save did not commit exactly the selected Windows colour while preserving student drafts");
+        }else check(native_text(fixture.control(5720))==before&&!IsWindowEnabled(fixture.control(5123)),"Cancelling the native colour picker modified a draft");
+    }
+    std::cout<<"PASS native Windows colour preview button: main owner, real RGB selection, Cancel, deferred Save and preserved drafts\n";
+}
+void live_storage_tests(){
+    using namespace lgaed;using namespace presentation;state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["learning_progress"]["answer"]=std::string("unchanged");const auto before=data;
+    const auto host=CreateWindowExW(0,L"STATIC",L"Live storage QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Create isolated storage observation host");
+    int reads=0,writes=0;std::uint64_t stored=513;std::string generation="Preparando la lectura.";
+    SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& change){++writes;change(data);};
+    access.generation_status=[&]{return generation;};
+    access.storage_snapshot=[&]{++reads;windows::NarrationStorageSnapshot snapshot;snapshot.stored_bytes=stored;snapshot.maximum_bytes=8ull*1024*1024*1024;snapshot.configured_bytes=snapshot.effective_bytes=4ull*1024*1024*1024;return snapshot;};
+    const auto view=create_settings_view(host,std::move(access));MoveWindow(view,0,0,960,700,TRUE);ShowWindow(host,SW_SHOW);SetForegroundWindow(host);pump();
+    const auto slider=GetDlgItem(view,5144),detail=GetDlgItem(view,5145);const auto position=SendMessageW(slider,TBM_GETPOS,0,0),range=SendMessageW(slider,TBM_GETRANGEMAX,0,0);
+    check(native_text(detail).find(L"513 B")!=std::wstring::npos,"A small saved audio was misleadingly displayed as0.00 GB");
+    const auto wait_for=[&](std::wstring_view expected){const auto deadline=GetTickCount64()+2500;do{pump();if(native_text(detail).find(expected)!=std::wstring::npos)return true;MsgWaitForMultipleObjectsEx(0,nullptr,20,QS_ALLINPUT,MWMO_INPUTAVAILABLE);}while(GetTickCount64()<deadline);return false;};
+    stored=7ull*1024*1024;generation="Audio listo.";check(wait_for(L"7,00 MB")&&reads>=2&&native_text(GetDlgItem(view,5156))==L"Audio listo.","New background usage/progress did not refresh while Settings remained open");
+    reveal_control(view,slider);SetFocus(slider);SendMessageW(slider,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(-WHEEL_DELTA)),0);SendMessageW(slider,WM_MOUSEHWHEEL,MAKEWPARAM(0,WHEEL_DELTA),0);
+    check(SendMessageW(slider,TBM_GETPOS,0,0)==position&&SendMessageW(slider,TBM_GETRANGEMAX,0,0)==range&&data==before&&writes==0,"Usage refresh/wheel changed the audio budget, slider range or student data");
+    RECT thumb{};SendMessageW(slider,TBM_GETTHUMBRECT,0,reinterpret_cast<LPARAM>(&thumb));SendMessageW(slider,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM((thumb.left+thumb.right)/2,(thumb.top+thumb.bottom)/2));
+    const auto captured=GetCapture();check(captured==slider,"Start a genuine native storage slider drag");const auto drag_position=SendMessageW(slider,TBM_GETPOS,0,0);const auto drag_data=data;const auto during=native_text(detail);
+    stored=15ull*1024*1024;const auto deadline=GetTickCount64()+1150;while(GetTickCount64()<deadline){pump();MsgWaitForMultipleObjectsEx(0,nullptr,20,QS_ALLINPUT,MWMO_INPUTAVAILABLE);}
+    check(GetCapture()==slider&&SendMessageW(slider,TBM_GETPOS,0,0)==drag_position&&native_text(detail)==during&&data==drag_data,"Periodic storage observation disturbed an active native slider drag");
+    SendMessageW(slider,WM_LBUTTONUP,0,MAKELPARAM((thumb.left+thumb.right)/2,(thumb.top+thumb.bottom)/2));check(wait_for(L"15,00 MB"),"Usage observation did not resume after releasing the slider");
+    const auto screen=create_internal_window(view,L"STATIC",L"Internal storage cover QA",nullptr);ShowWindow(screen,SW_SHOW);stored=21ull*1024*1024;generation="Esperando espacio disponible.";
+    SendMessageW(view,WM_DPICHANGED_AFTERPARENT,0,0);const auto hidden_until=GetTickCount64()+1150;while(GetTickCount64()<hidden_until){pump();MsgWaitForMultipleObjectsEx(0,nullptr,20,QS_ALLINPUT,MWMO_INPUTAVAILABLE);}
+    check(!IsWindowVisible(view)&&active_internal_window(host)==screen,"A periodic refresh/DPI update resurfaced Settings under its active child screen");
+    DestroyWindow(screen);check(IsWindowVisible(view)&&wait_for(L"21,00 MB")&&native_text(GetDlgItem(view,5156))==L"Esperando espacio disponible.","Storage/progress did not resume on the same Settings page after returning from an internal screen");
+    DestroyWindow(view);DestroyWindow(host);std::cout<<"PASS live storage/progress: B/MB, real periodic refresh, read-only usage, wheel-safe budget, uninterrupted drag and hidden-owner preservation\n";
+}
+void lesson_settings_actions_tests(){
+    using namespace lgaed;using namespace presentation;state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");const auto before=data;
+    const auto host=CreateWindowExW(0,L"STATIC",L"Lesson settings actions QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Create isolated lesson actions host");
+    std::vector<std::size_t> pages;int top=0,bottom=0,imports=0,finish=0,writes=0;
+    SettingsAccess access;access.scope=SettingsScope::lesson;access.read=[&]{return data;};access.update=[&](const auto& change){++writes;change(data);};
+    access.lesson_pages={{0,"Página 1"},{1,"Página 2"},{3,"Página 4"}};access.current_page=1;access.navigate_page=[&](std::size_t page){pages.push_back(page);};access.page_top=[&]{++top;};access.page_bottom=[&]{++bottom;};access.import_state=[&]{++imports;};access.finish=[&]{++finish;};
+    auto view=create_settings_view(host,access);MoveWindow(view,0,0,960,700,TRUE);const auto selector=GetDlgItem(view,5161);
+    check(selector&&SendMessageW(selector,CB_GETCOUNT,0,0)==3&&SendMessageW(selector,CB_GETCURSEL,0,0)==1,"Lesson Settings did not preserve the host's authorized pages/current selection");
+    wchar_t label[80]{};SendMessageW(selector,CB_GETLBTEXT,2,reinterpret_cast<LPARAM>(label));check(std::wstring_view(label)==L"Página 4","Lesson Settings invented an unavailable page or changed its identity");
+    select(view,5161,2);for(const auto id:{5160,5162,5163,5164})SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(view,id)));
+    check(pages==std::vector<std::size_t>{3}&&imports==1&&top==1&&bottom==1&&finish==0&&!IsWindowEnabled(GetDlgItem(view,5164))&&data==before&&writes==0,"Lesson action routing bypassed the finish gate or changed answers/preferences");
+    const auto actions=child_with_caption(view,L"Acciones de la lección"),narration=child_with_caption(view,L"Narración");check(actions&&narration&&relative_rect(actions,view).top<relative_rect(narration,view).top,"Lesson navigation actions are not visible before narration preferences");
+    DestroyWindow(view);access.finish_enabled=true;view=create_settings_view(host,access);SendMessageW(GetDlgItem(view,5164),BM_CLICK,0,0);check(finish==1&&writes==0&&data==before,"Enabled finish did not delegate exactly once to the real lesson owner");DestroyWindow(view);
+    access.finish={};access.navigate_page={};access.lesson_pages.clear();view=create_settings_view(host,access);check(!GetDlgItem(view,5161)&&!GetDlgItem(view,5164),"Settings exposed actions the lesson owner did not provide");DestroyWindow(view);DestroyWindow(host);
+    std::cout<<"PASS internal lesson actions: authorized page IDs, selected page, import/top/bottom delegation, finish gate/absence and unchanged drafts/preferences\n";
+}
 struct SaveFailureAction {HWND slider=nullptr,owner=nullptr;bool pointer_active=false,synchronous=false,captured=false,found=false;int dialogs=0;};
 SaveFailureAction* save_failure_action=nullptr;
 void CALLBACK save_failure_timer(HWND,UINT,UINT_PTR,DWORD){
     if(!save_failure_action)return;
-    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{
-        wchar_t name[32]{};GetClassNameW(candidate,name,32);
-        if(std::wstring_view(name)==L"#32770"&&native_text(candidate)==L"Opciones"){*reinterpret_cast<HWND*>(raw)=candidate;return FALSE;}return TRUE;
-    },reinterpret_cast<LPARAM>(&dialog));
+    const auto dialog=internal_dialog_with_control(IDOK);
     if(!dialog)return;
     auto& action=*save_failure_action;action.found=true;++action.dialogs;
     action.synchronous=action.synchronous||action.pointer_active;action.captured=action.captured||GetCapture()==action.slider;
@@ -673,13 +839,14 @@ void attempts_and_owned_settings_tests(){
     const auto host=CreateWindowExW(0,L"STATIC",L"Owned settings QA",WS_OVERLAPPEDWINDOW,0,0,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create owned-settings test host");
     int closed=0;SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& mutation){mutation(data);};access.close=[&]{++closed;};
     const auto before=data;const auto frame=create_settings_window(host,std::move(access));
-    check(GetWindow(frame,GW_OWNER)==host&&!(GetWindowLongPtrW(frame,GWL_STYLE)&WS_CHILD),"Settings did not open in its own owned top-level window");
-    const auto view=FindWindowExW(frame,nullptr,L"LearnGameAndEngineDev.SettingsView",nullptr);check(view&&GetParent(view)==frame,"The owned settings frame does not host the shared settings view");
-    MoveWindow(frame,0,0,720,580,TRUE);pump();RECT outer{};GetClientRect(frame,&outer);const auto inner=relative_rect(view,frame);
-    check(outer.left==inner.left&&outer.top==inner.top&&outer.right==inner.right&&outer.bottom==inner.bottom,"The independent settings window did not resize its complete content bounds");
-    SendMessageW(frame,WM_CLOSE,0,0);check(closed==1&&IsWindow(host)&&data==before,"Closing settings destroyed its lesson owner or changed stored data");
+    check(GetParent(frame)==host&&(GetWindowLongPtrW(frame,GWL_STYLE)&WS_CHILD)&&!(GetWindowLongPtrW(frame,GWL_STYLE)&WS_POPUP),"Settings created a separate top-level application window");
+    RECT outer{};GetClientRect(host,&outer);auto inner=relative_rect(frame,host);
+    check(EqualRect(&outer,&inner),"The compatibility factory did not fill the main client area");
+    MoveWindow(host,0,0,720,580,TRUE);GetClientRect(host,&outer);MoveWindow(frame,0,0,outer.right,outer.bottom,TRUE);pump();inner=relative_rect(frame,host);
+    check(EqualRect(&outer,&inner),"The internal settings page cannot fit the resized main client area");
+    SendMessageW(frame,WM_CLOSE,0,0);pump();check(closed==1&&IsWindow(host)&&data==before,"Closing settings destroyed its lesson owner or changed stored data");
     DestroyWindow(frame);DestroyWindow(host);
-    std::cout<<"PASS Windows owned settings: independent resize/close, shared hourly reserves, legacy migration, route separation and Premium gold without purchases\n";
+    std::cout<<"PASS Windows internal settings: main-window parent, exact client bounds/close, shared hourly reserves, legacy migration, route separation and Premium gold without purchases\n";
 }
 void owned_settings_escape_tests(){
     using namespace lgaed;using namespace presentation;
@@ -688,13 +855,14 @@ void owned_settings_escape_tests(){
     seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
     const auto host=CreateWindowExW(0,L"STATIC",L"Settings Escape QA",WS_OVERLAPPEDWINDOW,0,0,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
     check(host!=nullptr,"Cannot create the Settings Escape owner");
+    ShowWindow(host,SW_SHOW);SetForegroundWindow(host);pump();
     const std::array<const char*,3> locales{"es","en","fr"};const std::array<const wchar_t*,3> titles{L"Opciones",L"Settings",L"Paramètres"};
     const std::array<int,3> focus_ids{5100,5101,0};
     for(std::size_t index=0;index<locales.size();++index){const auto focus_id=focus_ids[index];
         auto data=seed;data.preferences["native_windows"]["ui_language"]=std::string(locales[index]);int closed=0,updates=0;
         SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& mutation){++updates;mutation(data);};access.close=[&]{++closed;};
         const auto frame=create_settings_window(host,std::move(access));
-        const auto view=FindWindowExW(frame,nullptr,L"LearnGameAndEngineDev.SettingsView",nullptr);
+        const auto view=frame;
         check(view!=nullptr,"The Settings Escape window omitted its shared content");
         check(native_text(frame)==titles[index],"Opening owned Settings used a different EN/FR title until the language was changed");
         // Persisted choices remain saved; buffered appearance edits retain the same close policy as Back.
@@ -703,10 +871,11 @@ void owned_settings_escape_tests(){
         check(IsWindowEnabled(GetDlgItem(view,5123))&&data==before_close,"Settings Escape setup did not keep its appearance edit buffered");
         if(focus_id){
             const auto control=GetDlgItem(view,focus_id);check(control!=nullptr,"Settings Escape omitted its real focus target");
-            SetActiveWindow(frame);SetFocus(control);check(GetFocus()==control,"Settings Escape could not focus the real button or combo");
+            SetActiveWindow(host);SetFocus(control);check(GetFocus()==control,"Settings Escape could not focus the real button or combo");
             MSG key{};key.hwnd=control;key.message=WM_KEYDOWN;key.wParam=VK_ESCAPE;key.lParam=1;
             check(IsDialogMessageW(frame,&key)!=FALSE,"The owned Settings frame did not process Escape through native dialog navigation");
         }else SendMessageW(frame,WM_KEYDOWN,VK_ESCAPE,1);
+        pump();
         check(closed==1&&IsWindow(host)&&data==before_close&&updates==saved_updates,
             "Escape did not reuse Settings close exactly once or altered saved choices, buffered appearance, answers or whitespace");
         DestroyWindow(frame);
@@ -717,10 +886,10 @@ void owned_settings_escape_tests(){
 struct LanguageAction {int selected=0,choose=-1;bool found=false;std::wstring title,automatic;std::exception_ptr error;};
 LanguageAction* language_action=nullptr;
 void CALLBACK language_timer(HWND,UINT,UINT_PTR timer,DWORD){
-    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND target,LPARAM context)->BOOL{
-        wchar_t name[40]{};GetClassNameW(target,name,40);if(std::wstring_view(name)==L"#32770"&&GetDlgItem(target,8349)){*reinterpret_cast<HWND*>(context)=target;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    const auto dialog=internal_dialog_with_control(8349);
     if(!dialog||!language_action)return;KillTimer(nullptr,timer);auto& action=*language_action;action.found=true;
     try{
+        check((GetWindowLongPtrW(dialog,GWL_STYLE)&WS_CHILD)&&!(GetWindowLongPtrW(dialog,GWL_STYLE)&WS_POPUP),"The interface language chooser opened a separate application window");
         check(native_text(dialog)==action.title,"The header language chooser title does not match the selected UI language");
         const auto viewport=GetDlgItem(dialog,8349);check(viewport!=nullptr,"The reusable language chooser omitted its viewport");
         check(native_text(GetDlgItem(viewport,8350))==action.automatic,"The header omitted Android's automatic device-language choice");
@@ -735,6 +904,7 @@ void header_language_tests(){
     state::StateData data;data.preferences["native_windows"]["content_language"]=std::string("fr");data.preferences["lesson_narration_settings"]["language"]=std::string("en-GB");
     data.preferences["lesson_narration_settings"]["kokoro_voice:en-GB"]=std::string("bm_george");data.preferences["learning_progress"]["answer"]=std::string("unchanged");
     const auto host=CreateWindowExW(0,L"STATIC",L"Header language QA",WS_OVERLAPPEDWINDOW,0,0,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create header language QA host");
+    ShowWindow(host,SW_SHOW);SetForegroundWindow(host);pump();
     const std::array<std::string,4> tags{"auto","es","en","fr"};
     for(int selection=1;selection<4;++selection){
         data.preferences["native_windows"]["ui_language"]=tags[selection];const auto before=data;
@@ -753,10 +923,10 @@ void header_language_tests(){
 struct NarrationChoiceAction{int selected=0,choose=-1,count=4;bool found=false,revealed=false;std::wstring title;std::vector<std::wstring> labels;std::exception_ptr error;};
 NarrationChoiceAction* narration_choice_action=nullptr;
 void CALLBACK narration_choice_timer(HWND,UINT,UINT_PTR timer,DWORD){
-    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND target,LPARAM context)->BOOL{wchar_t name[40]{};GetClassNameW(target,name,40);
-        if(std::wstring_view(name)==L"#32770"&&GetDlgItem(target,8349)){*reinterpret_cast<HWND*>(context)=target;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    const auto dialog=internal_dialog_with_control(8349);
     if(!dialog||!narration_choice_action)return;KillTimer(nullptr,timer);auto& action=*narration_choice_action;action.found=true;
-    try{check(native_text(dialog)==action.title,"Narration selector dialog omitted its Android title");const auto viewport=GetDlgItem(dialog,8349);
+    try{check((GetWindowLongPtrW(dialog,GWL_STYLE)&WS_CHILD)&&!(GetWindowLongPtrW(dialog,GWL_STYLE)&WS_POPUP),"The narration chooser opened a separate application window");
+        check(native_text(dialog)==action.title,"Narration selector dialog omitted its Android title");const auto viewport=GetDlgItem(dialog,8349);
         for(int index=0;index<action.count;++index){const auto choice=GetDlgItem(viewport,8350+index);check(choice!=nullptr,"Narration chooser omitted a valid original voice or language");
             if(!action.labels.empty())check(static_cast<std::size_t>(index)<action.labels.size()&&native_text(choice)==action.labels[index],"The narration chooser changed an original voice name or stable identifier");
             check((SendMessageW(choice,BM_GETCHECK,0,0)==BST_CHECKED)==(index==action.selected),"Narration chooser lost the effective saved choice");}
@@ -765,7 +935,7 @@ void CALLBACK narration_choice_timer(HWND,UINT,UINT_PTR timer,DWORD){
         std::cout<<"METRIC narration chooser count="<<action.count<<" selected="<<action.selected<<" choose="<<action.choose
             <<" alive="<<IsWindow(dialog)<<" focus="<<GetDlgCtrlID(GetFocus())<<" last="<<GetDlgCtrlID(last)
             <<" row="<<bounds.top<<','<<bounds.bottom<<" viewport="<<area.bottom<<" dpi="<<GetDpiForWindow(viewport)<<'\n';
-        check(IsWindow(dialog)&&SendMessageW(GetDlgItem(viewport,8350+action.selected),BM_GETCHECK,0,0)==BST_CHECKED,
+        check(IsWindow(dialog)&&(action.selected<0||SendMessageW(GetDlgItem(viewport,8350+action.selected),BM_GETCHECK,0,0)==BST_CHECKED),
             "Giving a narration choice keyboard focus committed a false selection or closed the dialog");
         action.revealed=GetFocus()==last&&bounds.top>=0&&bounds.bottom<=area.bottom;
         if(action.count>8){SCROLLINFO scroll{sizeof(scroll),SIF_ALL};check(GetScrollInfo(viewport,SB_VERT,&scroll)&&scroll.nMax>=static_cast<int>(scroll.nPage),"Long voice list has no real scrolling range");}
@@ -773,12 +943,62 @@ void CALLBACK narration_choice_timer(HWND,UINT,UINT_PTR timer,DWORD){
     }catch(...){action.error=std::current_exception();SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);}
 }
 void open_narration_choice(HWND view,int id,NarrationChoiceAction& action){
+    const auto root=GetAncestor(view,GA_ROOT);ShowWindow(root,SW_SHOW);SetForegroundWindow(root);pump();
     narration_choice_action=&action;const auto timer=SetTimer(nullptr,0,20,narration_choice_timer);check(timer!=0,"Cannot schedule actual narration selector QA");
     const auto button=GetDlgItem(view,id);wchar_t kind[32]{};GetClassNameW(button,kind,32);check(button&&IsWindowEnabled(button)&&_wcsicmp(kind,L"BUTTON")==0,"Narration selector is not an enabled real action button");
     SendMessageW(button,BM_CLICK,0,0);pump();KillTimer(nullptr,timer);narration_choice_action=nullptr;if(action.error)std::rethrow_exception(action.error);
     check(action.found&&action.revealed,"Narration selection failed to open or reveal its last keyboard-focused option");
 }
 void open_narration_choice(ScopedFixture& fixture,int id,NarrationChoiceAction& action){open_narration_choice(fixture.view,id,action);}
+void unavailable_system_voice_tests(){
+    using namespace lgaed;using namespace presentation;
+    const auto installed=windows::system_voices();std::string language;std::vector<windows::SystemVoice> matching;
+    for(const auto* tag:{"es","en-US","en-GB","fr"}){for(const auto& voice:installed)if(windows::system_voice_matches(voice.language,tag))matching.push_back(voice);if(!matching.empty()){language=tag;break;}}
+    if(matching.empty()){std::cout<<"SKIP unavailable-system-voice repair: no installed SAPI token for a supported speech language; no voice installed by test.\n";return;}
+    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["lesson_narration_settings"]["engine"]=std::string("WINDOWS");
+    seed.preferences["lesson_narration_settings"]["language"]=language;seed.preferences["lesson_narration_settings"]["windows_voice:"+language]=std::string("Missing Windows token from isolated QA");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+    ScopedFixture fixture(SettingsScope::global,seed);
+    check(native_text(fixture.control(5106)).find(L"Voz seleccionada no disponible")!=std::wstring::npos&&IsWindowEnabled(fixture.control(5106))&&fixture.data==seed&&fixture.updates==0,
+        "An unavailable stored Windows voice was silently changed or falsely displayed as an installed selected voice");
+    NarrationChoiceAction select;select.title=L"Voces de Windows";select.count=static_cast<int>(matching.size());select.selected=-1;for(const auto& voice:matching)select.labels.push_back(winrt::to_hstring(voice.name).c_str());
+    open_narration_choice(fixture,5106,select);check(fixture.data==seed&&fixture.updates==0&&native_text(fixture.control(5106)).find(L"Voz seleccionada no disponible")!=std::wstring::npos,"Cancelling voice repair changed the unavailable saved Windows token");
+    select.choose=0;select.found=false;select.revealed=false;
+    open_narration_choice(fixture,5106,select);auto expected=seed;expected.preferences["lesson_narration_settings"]["windows_voice:"+language]=matching.front().id;
+    check(fixture.data==expected&&fixture.updates==1&&native_text(fixture.control(5106)).find(winrt::to_hstring(matching.front().name).c_str())!=std::wstring::npos,
+        "Choosing the first real Windows voice failed to repair the unavailable selection explicitly or altered unrelated preferences/drafts");
+    ScopedFixture reopened(SettingsScope::global,fixture.data);check(reopened.data==expected&&reopened.updates==0&&native_text(reopened.control(5106))==native_text(fixture.control(5106)),"Reopening Settings lost the explicitly repaired Windows voice");
+    std::cout<<"PASS unavailable stored Windows voice: honest status, no automatic mutation, no false radio selection, explicit first-token repair and preserved reopen/drafts\n";
+}
+void engine_storage_tests(){
+    using namespace lgaed;using namespace presentation;
+    constexpr auto gib=1024ull*1024*1024,mib=1024ull*1024;
+    state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["lesson_narration_settings"]["engine"]=std::string("KOKORO");
+    data.preferences["lesson_narration_settings"]["offline_audio_budget_bytes"]=static_cast<std::int64_t>(6*gib);data.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");const auto saved=data;
+    const auto host=CreateWindowExW(0,L"STATIC",L"Engine storage QA",WS_OVERLAPPEDWINDOW,0,0,1000,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Create isolated engine/storage fixture");
+    int writes=0,changes=0;std::uint64_t kokoro_max=8*gib,kokoro_stored=128*mib;
+    SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& change){++writes;change(data);};access.changed=[&]{++changes;};
+    access.storage_snapshot=[&]{const bool system=state::string_value(data,"lesson_narration_settings","engine")=="WINDOWS";
+        windows::NarrationStorageSnapshot snapshot;snapshot.stored_bytes=system?512*mib:kokoro_stored;snapshot.maximum_bytes=system?2*gib:kokoro_max;
+        snapshot.configured_bytes=static_cast<std::uint64_t>(state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes"));snapshot.effective_bytes=std::min(snapshot.configured_bytes,snapshot.maximum_bytes);return snapshot;};
+    const auto view=create_settings_view(host,std::move(access));MoveWindow(view,0,0,960,800,TRUE);ShowWindow(host,SW_SHOW);SetForegroundWindow(host);pump();
+    const auto slider=GetDlgItem(view,5144),rgb=GetDlgItem(view,5720);SetWindowTextW(rgb,L"123");
+    check(SendMessageW(slider,TBM_GETRANGEMAX,0,0)==8192&&SendMessageW(slider,TBM_GETPOS,0,0)==6144,"Kokoro snapshot did not establish its own initial slider range/effective limit");
+    reveal_control(view,GetDlgItem(view,5104));SCROLLINFO scroll{sizeof(scroll),SIF_POS};GetScrollInfo(view,SB_VERT,&scroll);
+    NarrationChoiceAction system;system.title=L"Motor de voz";system.count=2;system.choose=1;open_narration_choice(view,5104,system);
+    auto expected=saved;expected.preferences["lesson_narration_settings"]["engine"]=std::string("WINDOWS");SCROLLINFO after{sizeof(after),SIF_POS};GetScrollInfo(view,SB_VERT,&after);
+    check(SendMessageW(slider,TBM_GETRANGEMAX,0,0)==2048&&SendMessageW(slider,TBM_GETPOS,0,0)==2048&&native_text(GetDlgItem(view,5145)).find(L"Límite por motor: 2,00 GB")!=std::wstring::npos&&native_text(GetDlgItem(view,5145)).find(L"512,00 MB")!=std::wstring::npos,
+        "An explicit switch to Windows inherited Kokoro's slider capacity/effective limit or saved-byte count");
+    check(data==expected&&writes==1&&changes==1&&GetDlgItem(view,5144)==slider&&GetDlgItem(view,5720)==rgb&&native_text(rgb)==L"123"&&IsWindowEnabled(GetDlgItem(view,5123))&&after.nPos==scroll.nPos,
+        "Engine snapshot binding rewrote the shared quota, RGB draft, scroll, controls or student data");
+    NarrationChoiceAction neural;neural.title=L"Motor de voz";neural.count=2;neural.selected=1;neural.choose=0;open_narration_choice(view,5104,neural);GetScrollInfo(view,SB_VERT,&after);
+    check(SendMessageW(slider,TBM_GETRANGEMAX,0,0)==8192&&SendMessageW(slider,TBM_GETPOS,0,0)==6144&&native_text(GetDlgItem(view,5145)).find(L"Límite por motor: 6,00 GB")!=std::wstring::npos&&data==saved&&writes==2&&changes==2&&after.nPos==scroll.nPos&&native_text(rgb)==L"123",
+        "Returning to Kokoro failed to restore its capacity while preserving the configured quota/draft/scroll");
+    kokoro_max=10*gib;kokoro_stored=256*mib;const auto deadline=GetTickCount64()+2500;
+    do{pump();if(native_text(GetDlgItem(view,5145)).find(L"256,00 MB")!=std::wstring::npos)break;MsgWaitForMultipleObjectsEx(0,nullptr,20,QS_ALLINPUT,MWMO_INPUTAVAILABLE);}while(GetTickCount64()<deadline);
+    check(native_text(GetDlgItem(view,5145)).find(L"256,00 MB")!=std::wstring::npos&&SendMessageW(slider,TBM_GETRANGEMAX,0,0)==8192&&SendMessageW(slider,TBM_GETPOS,0,0)==6144&&data==saved&&writes==2&&changes==2,
+        "Periodic usage refresh rebound the slider or persisted a quota after the explicit engine selection ended");
+    DestroyWindow(view);DestroyWindow(host);std::cout<<"PASS explicit engine storage binding: distinct Windows/Kokoro capacities, effective limits, shared saved quota, unchanged RGB draft/scroll/HWNDs and stationary periodic thumb\n";
+}
 void scoped_options_parity_tests(){
     using namespace lgaed;using namespace presentation;
     const std::array<const char*,3> locales{"es","en","fr"};
@@ -828,6 +1048,9 @@ void global_migration_contract_tests(){
     access.storage_snapshot=[&]{windows::NarrationStorageSnapshot snapshot;snapshot.stored_bytes=1024ull*1024*1024;snapshot.maximum_bytes=8ull*1024*1024*1024;snapshot.configured_bytes=snapshot.effective_bytes=static_cast<std::uint64_t>(state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",4ll*1024*1024*1024));return snapshot;};
     const auto view=create_settings_view(host,access);MoveWindow(view,0,0,1000,750,TRUE);
     LONG previous=-1;for(const auto* title:{L"Idioma de la aplicación",L"Premium",L"Apariencia general",L"Lectura en voz alta",L"Flujo de aprendizaje",L"Gestos de navegación",L"Código"}){const auto control=child_with_caption(view,title);check(control!=nullptr,"A requested Android section is absent");const auto bounds=relative_rect(control,view);check(bounds.top>previous,"Global sections do not follow the requested order");previous=bounds.top;}
+    check(relative_rect(GetDlgItem(view,5152),view).bottom<relative_rect(child_with_caption(view,L"Lectura en voz alta"),view).top&&
+        relative_rect(GetDlgItem(view,5141),view).bottom<relative_rect(GetDlgItem(view,5142),view).top,
+        "Read aloud and licenses did not stay together after General Appearance and before the deferred-colour Save notice");
     check(!GetDlgItem(view,5102)&&!GetDlgItem(view,5107)&&!GetDlgItem(view,5109)&&!GetDlgItem(view,5118),"Global options invented an unrelated content, speed, reader-visibility or gesture switch");
     for(const int id:{5150,5151}){const auto line=GetDlgItem(view,id);const auto bounds=relative_rect(line,view);check(line&&bounds.bottom-bounds.top==MulDiv(1,GetDpiForWindow(view),96),"Global continuation switches lost Android's one-DIP separators");}
     check((GetWindowLongPtrW(GetDlgItem(view,5152),GWL_STYLE)&SS_TYPEMASK)==SS_CENTER&&native_text(GetDlgItem(view,5152))==L"75 % · 150 %","Global text-size range does not match the original centered Android range");
@@ -835,9 +1058,12 @@ void global_migration_contract_tests(){
     check(kokoro_line&&kokoro_title&&storage_note&&native_text(kokoro_title)==L"Voces y recursos Kokoro","The original Kokoro subsection heading/divider is absent");
     const int dpi=static_cast<int>(GetDpiForWindow(view));const auto title_font=control_font(kokoro_title),note_font=control_font(storage_note);
     const auto voice_bounds=relative_rect(GetDlgItem(view,5106),view),line_bounds=relative_rect(kokoro_line,view),heading_bounds=relative_rect(kokoro_title,view),storage_bounds=relative_rect(GetDlgItem(view,5145),view);
-    check(line_bounds.bottom-line_bounds.top==MulDiv(1,dpi,96)&&voice_bounds.bottom<line_bounds.top&&line_bounds.bottom<heading_bounds.top&&heading_bounds.bottom<storage_bounds.top,"The Kokoro subsection lost its original one-DIP divider or visual order");
+    check(line_bounds.bottom-line_bounds.top==MulDiv(1,dpi,96)&&voice_bounds.bottom<storage_bounds.top&&storage_bounds.bottom<line_bounds.top&&line_bounds.bottom<heading_bounds.top&&relative_rect(GetDlgItem(view,5108),view).bottom<line_bounds.top,
+        "Shared storage/advance controls did not precede the dedicated Kokoro resources subsection");
     check(title_font.lfHeight==-MulDiv(18,dpi,96)&&title_font.lfWeight>=FW_BOLD&&note_font.lfHeight==-MulDiv(14,dpi,96),"Kokoro headings or the storage explanation lost their original font roles");
-    check(native_text(storage_note)==L"Límite para la pregeneración automática. Se reserva al menos 1 GB libre; los audios terminados nunca se borran automáticamente.","The storage explanation omitted or rewrote the original Android information");
+    check(native_text(storage_note)==L"El total incluye todas las voces del motor seleccionado. Se reserva al menos 1 GB libre; los audios terminados nunca se borran automáticamente. El progreso corresponde a la voz, el motor y el idioma seleccionados.","The storage explanation omitted its engine-wide voice total, selected generation profile, free-space reserve or preservation policy");
+    const auto license_heading=child_with_caption(view,L"Licencias");check(license_heading&&relative_rect(license_heading,view).left==voice_bounds.left&&relative_rect(GetDlgItem(view,5141),view).left==voice_bounds.left,
+        "Licenses were separated from the narration card instead of sharing its content alignment");
     if(!reader_theme::palette(view).high_contrast)check(reader_theme::foreground(storage_note)==RGB(210,214,220),"The storage explanation lost the original narration text ink");
     for(const auto id:{5139,5140,5141})SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(view,id)));
     check(audio==std::vector<std::string>{"programming","math_physics"}&&licenses==1,"Audio/licence buttons are inert or use the wrong route");
@@ -899,7 +1125,7 @@ int main(int argc,char** argv){
     try{
         std::cout<<std::unitbuf;
         std::string_view selected="all";
-        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure","Unknown Settings test case; expected licenses, controls or save-failure");}
+        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure|interactions|engine-storage]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure"||selected=="interactions"||selected=="engine-storage","Unknown Settings test case; expected licenses, controls, save-failure, interactions or engine-storage");}
         const auto dpi_set=SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         check(dpi_set||GetAwarenessFromDpiAwarenessContext(GetThreadDpiAwarenessContext())==DPI_AWARENESS_PER_MONITOR_AWARE,
             "Settings visual QA must use the application's actual per-monitor DPI context");
@@ -912,6 +1138,11 @@ int main(int argc,char** argv){
         INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES|ICC_BAR_CLASSES};
         check(InitCommonControlsEx(&common)!=FALSE,"The declared settings controls could not be registered");
         if(selected=="save-failure"){run_case("save_failure",save_failure_tests);return 0;}
+        if(selected=="engine-storage"){run_case("engine_storage",engine_storage_tests);return 0;}
+        if(selected=="interactions"){
+            run_case("thumb_drag",settings_thumb_drag_tests);run_case("slider_wheel",slider_wheel_tests);run_case("native_colour",native_color_picker_tests);
+            run_case("live_storage",live_storage_tests);run_case("lesson_actions",lesson_settings_actions_tests);run_case("unavailable_system_voice",unavailable_system_voice_tests);run_case("engine_storage",engine_storage_tests);return 0;
+        }
         state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["native_windows"]["content_language"]=std::string("fr");
         data.preferences["lesson_narration_settings"]["language"]=std::string("en-US");
@@ -958,11 +1189,18 @@ int main(int argc,char** argv){
         run_case("DPI_notice",settings_dpi_notice_tests);
         run_case("RGB",rgb_options_tests);
         run_case("slider_pointer",slider_pointer_tests);
+        run_case("thumb_drag",settings_thumb_drag_tests);
+        run_case("slider_wheel",slider_wheel_tests);
+        run_case("native_colour",native_color_picker_tests);
+        run_case("live_storage",live_storage_tests);
+        run_case("lesson_actions",lesson_settings_actions_tests);
         run_case("save_failure",save_failure_tests);
         run_case("visual_metrics",visual_metrics_tests);
         run_case("attempts_owned",attempts_and_owned_settings_tests);
         run_case("owned_Escape",owned_settings_escape_tests);
         run_case("header_language",header_language_tests);
+        run_case("unavailable_system_voice",unavailable_system_voice_tests);
+        run_case("engine_storage",engine_storage_tests);
         run_case("scoped_parity",scoped_options_parity_tests);
         run_case("immediate_language",immediate_settings_language_tests);
         run_case("global_contract",global_migration_contract_tests);

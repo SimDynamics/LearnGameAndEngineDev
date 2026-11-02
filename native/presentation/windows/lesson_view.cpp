@@ -1,4 +1,5 @@
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/code_gutter.hpp"
@@ -1052,7 +1053,7 @@ struct LessonView {
     }
 
     void show_error(std::string_view message) {
-        MessageBoxW(window, wide(message).c_str(), L"LearnGameAndEngineDev", MB_OK | MB_ICONERROR);
+        internal_message_box(window, wide(message).c_str(), L"LearnGameAndEngineDev", MB_OK | MB_ICONERROR);
     }
     void show_incomplete(std::size_t index) {
         show_settings_notice(window,block(index).type==BlockType::drag_fill_code
@@ -2194,6 +2195,26 @@ struct LessonView {
         }
         return result;
     }
+    LessonOptionsSnapshot options_snapshot() const {
+        LessonOptionsSnapshot result;result.current_page=page;result.page_count=lesson.pages.size();
+        if(!import_open)for(std::size_t index=0;index<lesson.pages.size();++index)
+            if(can_visit(index))result.available_pages.push_back(index);
+        result.finish_visible=page+1==lesson.pages.size()&&static_cast<bool>(hooks.lesson_completed);
+        result.finish_enabled=result.finish_visible&&!import_open;
+        if(result.finish_enabled)for(std::size_t required=0;required<lesson.pages.size();++required)
+            if(!can_advance(required)){result.finish_enabled=false;break;}
+        return result;
+    }
+    bool invoke_option(LessonOptionAction action){
+        if(import_open)return false;
+        switch(action){
+        case LessonOptionAction::import_android_state:import_state();return import_open;
+        case LessonOptionAction::page_top:scroll_to(0);return true;
+        case LessonOptionAction::page_bottom:scroll_to(extent);return true;
+        case LessonOptionAction::finish:return options_snapshot().finish_enabled&&finish_lesson();
+        }
+        return false;
+    }
     void sync_quiz_controls(std::size_t index) {
         auto& vm = controls.at(index);
         if (!exercise(block(index).type)) return;
@@ -2658,31 +2679,10 @@ struct LessonView {
         reflow();
         if(palette_reparented&&focused&&IsWindow(focused)&&IsWindowEnabled(focused)&&IsWindowVisible(focused)&&GetFocus()!=focused)SetFocus(focused);
     }
-    void open_menu() {
-        const auto popup = CreatePopupMenu();
-        if (!popup) throw std::runtime_error("Cannot open the lesson menu");
-        AppendMenuW(popup,MF_STRING,import_id,wide(ui("Importar estado Android…","Import Android state…","Importer l'état Android…")).c_str());
-        if (hooks.settings_requested) AppendMenuW(popup,MF_STRING,settings_id,wide(ui("Ajustes de lectura y apariencia…",
-            "Reading and appearance settings…","Réglages de lecture et d'apparence…")).c_str());
-        const auto pages = CreatePopupMenu();
-        if (!pages) { DestroyMenu(popup); throw std::runtime_error("Cannot open the page menu"); }
-        for (std::size_t index = 0; index < lesson.pages.size(); ++index) {
-            const auto caption = wide(ui("Página ","Page ","Page ")) + std::to_wstring(index + 1);
-            AppendMenuW(pages,MF_STRING | (index == page ? MF_CHECKED : 0) | (can_visit(index) ? MF_ENABLED : MF_GRAYED),
-                pages_menu_base + index,caption.c_str());
-        }
-        AppendMenuW(popup,MF_POPUP,reinterpret_cast<UINT_PTR>(pages),wide(ui("Páginas","Pages","Pages")).c_str());
-        AppendMenuW(popup,MF_SEPARATOR,0,nullptr);
-        AppendMenuW(popup,MF_STRING,page_top_id,wide(ui("Ir al principio de la página","Go to the top of the page","Aller au début de la page")).c_str());
-        AppendMenuW(popup,MF_STRING,page_bottom_id,wide(ui("Ir al final de la página","Go to the bottom of the page","Aller à la fin de la page")).c_str());
-        if(page+1==lesson.pages.size()&&hooks.lesson_completed)AppendMenuW(popup,MF_STRING|(can_advance(page)?MF_ENABLED:MF_GRAYED),finish_id,
-            wide(ui("Finalizar lección","Finish lesson","Terminer la leçon")).c_str());
-        RECT bounds{}; GetWindowRect(menu,&bounds);
-        const auto style = prepare_native_menu(popup,window);
-        const auto selected = TrackPopupMenuEx(popup,TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_TOPALIGN,
-            bounds.right,bounds.bottom,window,nullptr);
-        DestroyMenu(popup);
-        if (selected) command(static_cast<int>(selected),BN_CLICKED,menu);
+    void open_lesson_options() {
+        // The application hosts the complete settings page. Its lesson actions
+        // use options_snapshot/invoke_option and the original navigation gates.
+        if(hooks.settings_requested)PostMessageW(window,header_action_message,settings_id,0);
     }
     void reflow() {
         if (!pane) return;
@@ -3552,7 +3552,7 @@ struct LessonView {
         if (id == import_id) { import_state(); return; }
         if(id==finish_id){(void)finish_lesson();return;}
         if(id==continue_id){if(page+1<lesson.pages.size())change_page(page+1);else (void)finish_lesson();return;}
-        if (id == menu_id) { open_menu(); return; }
+        if (id == menu_id) { open_lesson_options(); return; }
         if(id==back_id){(void)navigate_back();return;}
         if (id == reader_id || id == language_id || id == attempts_id || id == settings_id) {
             if(id==attempts_id&&attempt_state.premium)return;
@@ -3791,6 +3791,9 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         }
         case lesson_page_query_message:
             if (lparam) *reinterpret_cast<LessonPageState*>(lparam) = view->page_state(); return 1;
+        case lesson_options_query_message:
+            if(lparam)*reinterpret_cast<LessonOptionsSnapshot*>(lparam)=view->options_snapshot();return 1;
+        case lesson_options_action_message:return view->invoke_option(static_cast<LessonOptionAction>(wparam));
         case lesson_page_navigate_message: return !view->import_open && view->change_page(static_cast<std::size_t>(wparam));
         case lesson_reading_regions_message:
             if(lparam){
@@ -3908,6 +3911,14 @@ LessonPageState lesson_page_state(HWND window) {
 }
 bool navigate_lesson_view(HWND window,std::size_t page) {
     return window && SendMessageW(window,lesson_page_navigate_message,page,0) != 0;
+}
+LessonOptionsSnapshot lesson_options_snapshot(HWND window){
+    LessonOptionsSnapshot result;
+    if(IsWindow(window))SendMessageW(window,lesson_options_query_message,0,reinterpret_cast<LPARAM>(&result));
+    return result;
+}
+bool invoke_lesson_option(HWND window,LessonOptionAction action){
+    return IsWindow(window)&&SendMessageW(window,lesson_options_action_message,static_cast<WPARAM>(action),0)!=0;
 }
 bool navigate_lesson_back(HWND window){
     if(!IsWindow(window))return false;wchar_t name[96]{};GetClassNameW(window,name,96);if(std::wstring_view(name)!=view_class)return false;

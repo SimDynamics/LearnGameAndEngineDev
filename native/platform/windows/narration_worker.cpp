@@ -1,6 +1,7 @@
 #include "platform/windows/narration_worker.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
+#include "platform/windows/system_speech_process.hpp"
 #include <windows.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -87,6 +88,7 @@ NarrationPriorityLease& NarrationPriorityLease::operator=(NarrationPriorityLease
 struct NarrationWorker::Impl {
     std::filesystem::path runtime;Handle process,job,input,output,error;
     std::unique_ptr<NarrationCpuPolicy> cpu;
+    SystemSpeechProcess system_speech;
     std::shared_ptr<PriorityState> priority=std::make_shared<PriorityState>();
     // Inference still has its original serialized lane. The single process's
     // lightweight editor lane can exchange replies without waiting for ONNX.
@@ -103,6 +105,7 @@ struct NarrationWorker::Impl {
     void shutdown() noexcept {
         const std::lock_guard closing(shutdown_mutex);
         if(closed.exchange(true))return;
+        system_speech.shutdown();
         // Do not request operation stop here: its synchronous callbacks may be
         // writing to a child that has stopped reading. Close the owned process
         // first, without taking the writer/request locks or sending another RPC.
@@ -270,6 +273,14 @@ NarrationAudio NarrationWorker::prepare(const NarrationSegment& segment,std::str
     NarrationAudio audio;audio.key=string(reply,L"key");audio.source=string(reply,L"sourceText");audio.spoken=string(reply,L"spokenText");audio.provider=string(reply,L"provider");audio.wav=std::filesystem::path(reply.GetNamedString(L"wav").c_str());audio.duration_ms=reply.GetNamedNumber(L"durationMs");audio.cache_hit=reply.GetNamedBoolean(L"cacheHit",false);
     for(const auto& item:reply.GetNamedArray(L"timings")){const auto timing=item.GetObject();audio.timings.push_back({index(timing,L"start"),index(timing,L"end"),timing.GetNamedNumber(L"startMs"),timing.GetNamedNumber(L"endMs")});}
     if(!std::filesystem::is_regular_file(audio.wav)||audio.duration_ms<=0)throw std::runtime_error("Kokoro no produjo una grabación válida.");return audio;
+}
+NarrationAudio NarrationWorker::prepare_system(const NarrationSegment& segment,std::string_view language,std::string_view voice,
+    const std::filesystem::path& output,std::stop_token stop){
+    ensure_winrt_apartment();BackgroundReservation background(impl_->priority,stop);std::stop_source operation;
+    std::stop_callback cancelled(stop,[&]{operation.request_stop();});
+    std::stop_callback preempted(background.stop,[&]{operation.request_stop();});
+    try{return impl_->system_speech.prepare(segment,language,voice,output,operation.get_token(),impl_->storage_budget.load()).audio;}
+    catch(...){if(background.stop.stop_requested()&&!stop.stop_requested())throw NarrationPreempted{};throw;}
 }
 std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop){
     ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);

@@ -173,32 +173,33 @@ int wmain(int argc,wchar_t** argv) {
             selection=audio_generation_selection(data,{"es"});coordinator.update(selection);
             eventually([&]{const auto values=preparations(log);return values.size()>before_voice&&values.back().GetNamedString(L"voice")==L"em_santa";},"Changing voice did not cancel the old request and resume with Santa");
 
-            data.preferences["lesson_narration_settings"]["engine"]=std::string("WINDOWS");
+            data.preferences["lesson_narration_settings"]["enabled"]=false;
             selection=audio_generation_selection(data,{"es"});
-            check(!selection.enabled,"Selecting native speech did not disable Kokoro advance generation");
+            check(!selection.enabled,"Disabling narration did not disable advance generation");
             const auto before_off=cancellations(log);coordinator.update(selection);
-            eventually([&]{return cancellations(log)>before_off&&!coordinator.status().running;},"Selecting native speech did not acknowledge and stop in-flight Kokoro generation");
+            eventually([&]{return cancellations(log)>before_off&&!coordinator.status().running;},"Disabling narration did not acknowledge and stop in-flight generation");
             const auto paused=preparations(log).size();
-            data.preferences["lesson_narration_settings"]["engine"]=std::string("KOKORO");
+            data.preferences["lesson_narration_settings"]["enabled"]=true;
             data.preferences["lesson_narration_settings"]["language"]=std::string("fr");
             selection=audio_generation_selection(data,{"es"});coordinator.update(selection);
             eventually([&]{const auto values=preparations(log);return values.size()>paused&&values.back().GetNamedString(L"language")==L"fr"&&values.back().GetNamedString(L"voice")==L"ff_siwis";},"Returning to Kokoro did not resume the newly selected French profile");
 
-            // Select an existing course/unit from the actual read-only manifest.
+            // Navigation no longer jumps the global background queue ahead.
             auto where=curriculum::catalog_child({"es"},"programming");
             const auto course=load_catalog(content,where).entries.front();where=curriculum::catalog_child(where,course.id);
             const auto unit=load_catalog(content,where).entries.at(1);where=curriculum::catalog_child(where,unit.id);
-            const auto lesson=load_catalog(content,where).entries.front();
             const auto before_unit=preparations(log).size();
+            const auto before_navigation_cancel=cancellations(log);
             selection=audio_generation_selection(data,where);coordinator.update(selection);
-            eventually([&]{const auto values=preparations(log);return values.size()>before_unit&&winrt::to_string(values.back().GetNamedString(L"text")).starts_with("generation:"+lesson.id+":0");},"Navigation did not prioritize the selected unit's manifest order");
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            check(preparations(log).size()==before_unit&&cancellations(log)==before_navigation_cancel,"Opening another unit cancelled or reordered the current background page");
             check(coordinator.status().error.empty(),"Navigation or profile cancellation produced a coordinator error");
             check(coordinator.status().completed==0,"Cancelled preparations manufactured completed page audio");
         }
         worker.reset();
         snapshot_recovery(root,argv[1],build);
         completed_artifact_invalidation(root,argv[1],build);
-        std::cout<<"PASS native coordinator over real catalog: bounded background request, foreground preemption/resume without backoff, Santa voice switch, native speech cancellation, French resumption, selected-unit priority and shutdown acknowledgement (controlled transport, not synthesis/performance evidence)\n";
+        std::cout<<"PASS native coordinator over real catalog: bounded background request, foreground preemption/resume without backoff, Santa voice switch, narration cancellation, French resumption, navigation-independent order and shutdown acknowledgement (controlled transport, not synthesis/performance evidence)\n";
         return 0;
     }catch(const std::exception& error){std::cerr<<"FAIL "<<error.what()<<'\n';return 1;}
 }

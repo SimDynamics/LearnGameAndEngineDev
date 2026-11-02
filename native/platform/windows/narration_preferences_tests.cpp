@@ -1,6 +1,7 @@
 #include "platform/windows/narration_preferences.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/system_speech.hpp"
 #include "native_build_config.hpp"
 #include <algorithm>
 #include <iostream>
@@ -50,6 +51,15 @@ int main() {
         catch(const std::exception& error){rejected=std::string(error.what()).find("Kokoro voice catalogue")!=std::string::npos;}
         check(rejected,"A missing runtime catalogue silently invented supported voice identities");
         check(data==original,"An unavailable catalogue reset saved preferences");
+        const std::vector<windows::SystemVoice> installed{{"spanish-token","Spanish","es-MX"},
+            {"us-token","American","en-US"},{"gb-token","British","en-GB"}};
+        state::StateData system;
+        check(windows::selected_system_voice(system,"es",installed)=="spanish-token","System voice did not follow the foreground default policy");
+        check(windows::selected_system_voice(system,"en-GB",installed)=="gb-token","A British request selected an American token");
+        check(windows::selected_system_voice(system,"fr",installed).empty(),"A missing French system voice fell back to another language");
+        system.preferences["lesson_narration_settings"]["windows_voice:es"]=std::string("temporarily-unavailable-token");
+        const auto saved_system=system;
+        check(windows::selected_system_voice(system,"es",installed)=="temporarily-unavailable-token"&&system==saved_system,"An explicit system voice was silently replaced or persisted");
         std::cout<<"PASS shared language aliases, original voice catalogue, compatible legacy selection, invalid voice isolation and read-only failure\n";
         return 0;
     } catch (const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}

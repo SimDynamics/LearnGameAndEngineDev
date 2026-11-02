@@ -1,6 +1,7 @@
 #include "platform/windows/narration_preferences.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/system_speech.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -90,5 +91,14 @@ std::string selected_kokoro_voice(const state::StateData& data,std::string_view 
         *requested == "en-GB" ? "bf_emma" : "af_heart";
     if (!supports(preferred)) throw std::runtime_error("The original default voice is missing from the Kokoro catalogue");
     return preferred;
+}
+std::string selected_system_voice(const state::StateData& data,std::string_view language,
+                                 std::span<const SystemVoice> installed) {
+    const auto requested=narration_language_tag(language);
+    if(!requested)throw std::invalid_argument("Unsupported system narration language");
+    const auto saved=state::string_value(data,"lesson_narration_settings","windows_voice:"+*requested);
+    if(!saved.empty())return saved;
+    const auto found=std::ranges::find_if(installed,[&](const auto& voice){return system_voice_matches(voice.language,*requested);});
+    return found==installed.end()?std::string{}:found->id;
 }
 }

@@ -1,4 +1,5 @@
 #include "presentation/windows/tools_view.hpp"
+#include "presentation/windows/internal_surface_test_support.hpp"
 #include "presentation/windows/graphics_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "platform/windows/state_store.hpp"
@@ -27,7 +28,7 @@ void pump() { MSG message{}; while (PeekMessageW(&message,nullptr,0,0,PM_REMOVE)
 void dialog_escape(HWND frame,int focused_id) {
     const auto button=control(frame,focused_id);
     check(button&&IsChild(frame,button),"Calculator Escape fixture has no target button");
-    SetActiveWindow(frame);SetFocus(button);
+    SetActiveWindow(GetAncestor(frame,GA_ROOT));SetFocus(button);
     check(GetFocus()==button,"Calculator Escape fixture did not focus the actual button");
     MSG message{};message.hwnd=button;message.message=WM_KEYDOWN;message.wParam=VK_ESCAPE;message.lParam=1;
     check(IsDialogMessageW(frame,&message)!=FALSE,"The Windows dialog manager did not process Escape");
@@ -36,7 +37,9 @@ void dialog_escape(HWND frame,int focused_id) {
 void calculated(HWND view){const auto start=GetTickCount64();while(inspect_calculator(view).evaluating&&GetTickCount64()-start<20000){pump();Sleep(5);}pump();check(!inspect_calculator(view).evaluating,"Actual canonical calculator did not return");}
 LRESULT CALLBACK host_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) { return DefWindowProcW(window,message,wparam,lparam); }
 }
-int main() {
+int main(int argc,char** argv) {
+    const bool calculator_only=argc==2&&std::string_view(argv[1])=="--calculator-window";
+    if(argc>1&&!calculator_only)return 2;
     try {
         WNDCLASSW type{}; type.lpfnWndProc = host_proc; type.hInstance = GetModuleHandleW(nullptr); type.lpszClassName = L"LgaedToolsTests";
         check(RegisterClassW(&type) != 0,"Register tools QA");
@@ -82,17 +85,23 @@ int main() {
         const auto retained_preferences=state::StateStore(environment.paths.root).load();check(retained_preferences.preferences.at("native_windows").at("calculator/history/v1")==original_preferences.preferences.at("native_windows").at("calculator/history/v1"),"Calculator migration erased a pre-existing Windows tool history");
         auto shared_preferences=retained_preferences;unsigned shared_writes=0;std::string pasted;
         CalculatorPreferences access;access.read=[&]{return shared_preferences;};access.update=[&](const auto& mutation){mutation(shared_preferences);++shared_writes;};
-        const auto frame=open_calculator_window(host,environment,worker,[&](std::string_view value){pasted=value;},access);pump();check(frame&&IsWindow(frame)&&!IsWindowEnabled(host),"Field calculator is not an independently owned modal interaction");const auto frame_expression=control(frame,5202);const auto frame_view=GetParent(GetParent(frame_expression));check(frame_expression&&IsWindowVisible(control(frame,5248)),"Permitted calculator result return is missing");
+        const auto frame=open_calculator_window(host,environment,worker,[&](std::string_view value){pasted=value;},access);pump();internal_surface_test::require_internal_surface(host,frame);const auto frame_expression=control(frame,5202);const auto frame_view=GetParent(GetParent(frame_expression));check(frame_expression&&IsWindowVisible(control(frame,5248)),"Permitted calculator result return is missing");
         shared_preferences.preferences["learning_progress"]["concurrent_reader_coverage"]=std::string("intact");SetWindowTextW(frame_expression,L"5nCr2");SendMessageW(control(frame,5206),BM_CLICK,0,0);calculated(frame_view);check(inspect_calculator(frame_view).result=="10"&&shared_writes>0&&state::string_value(shared_preferences,"learning_progress","concurrent_reader_coverage")=="intact","Calculator overwrote its owning lesson's latest reader/progress state");SendMessageW(control(frame,5248),BM_CLICK,0,0);pump();check(pasted=="10"&&!IsWindow(frame)&&IsWindowEnabled(host),"Paste did not return the exact value and close/re-enable its original owner");
         const auto cancelled_frame=open_calculator_window(host,environment,worker,[&](std::string_view){throw std::runtime_error("Closing calculator returned an unintended value");},access);
         const auto nested_frame=open_calculator_window(cancelled_frame,environment,worker,[&](std::string_view){throw std::runtime_error("Escape returned an unintended calculator value");},access);
         const auto display_draft=inspect_calculator(GetParent(GetParent(control(nested_frame,5202)))).draft;RECT suggested{};GetWindowRect(nested_frame,&suggested);suggested.right=suggested.left+820;suggested.bottom=suggested.top+540;const auto native_dpi=GetDpiForWindow(nested_frame);SendMessageW(nested_frame,WM_DPICHANGED,MAKEWPARAM(native_dpi,native_dpi),reinterpret_cast<LPARAM>(&suggested));RECT actual{};GetWindowRect(nested_frame,&actual);
-        check(EqualRect(&actual,&suggested)&&inspect_calculator(GetParent(GetParent(control(nested_frame,5202)))).draft==display_draft,"The calculator frame ignored the official suggested display rectangle or replaced its expression");
+        internal_surface_test::require_internal_surface(host,nested_frame);
+        check(inspect_calculator(GetParent(GetParent(control(nested_frame,5202)))).draft==display_draft&&!IsWindowVisible(cancelled_frame),"Internal calculator DPI layout lost its draft or exposed the preceding page");
+        RECT root_bounds{};GetWindowRect(host,&root_bounds);MoveWindow(host,root_bounds.left,root_bounds.top,760,520,TRUE);layout_internal_windows(host);pump();
+        internal_surface_test::require_internal_surface(host,nested_frame);
+        MoveWindow(host,root_bounds.left,root_bounds.top,root_bounds.right-root_bounds.left,root_bounds.bottom-root_bounds.top,TRUE);layout_internal_windows(host);pump();
         SendMessageW(nested_frame,WM_COMMAND,MAKEWPARAM(IDOK,0),0);pump();check(IsWindow(nested_frame),"An unrelated dialog command closed the calculator");
         dialog_escape(nested_frame,5204);
-        check(!IsWindow(nested_frame)&&IsWindow(cancelled_frame)&&IsWindowEnabled(cancelled_frame)&&IsWindow(host)&&!IsWindowEnabled(host),"Escape from RAD closed the preceding calculator or its host");
+        check(!IsWindow(nested_frame)&&IsWindow(cancelled_frame)&&IsWindowVisible(cancelled_frame)&&IsWindowEnabled(host),"Escape from RAD closed the preceding calculator or disabled its main root");
+        internal_surface_test::require_internal_surface(host,cancelled_frame);
         dialog_escape(cancelled_frame,5241);
         check(!IsWindow(cancelled_frame)&&IsWindow(host)&&IsWindowEnabled(host),"Escape from Edit did not close only the focused calculator and restore its owner");
+        if(calculator_only){DestroyWindow(host);UnregisterClassW(type.lpszClassName,type.hInstance);std::cout<<"PASS internal calculator pages: one visible app root, client bounds/resize/DPI, nested Back/Escape, unchanged drafts and exact result return\n";return 0;}
         auto graphics=create_graphics_view(host,environment,[&]{++returned;});MoveWindow(graphics,0,0,980,800,TRUE);pump();
         const auto scene=inspect_graphics_lab(graphics);const auto frame_compatibility=inspect_graphics_frame(graphics);
         check(scene.objects==14&&!scene.benchmark&&scene.presented_frames>0&&scene.colored_pixels>100&&scene.error.empty(),"The public graphics wrapper did not open the original fourteen-body physics laboratory");

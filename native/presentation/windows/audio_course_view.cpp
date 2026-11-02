@@ -1,4 +1,5 @@
 #include "presentation/windows/audio_course_view.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/card_list.hpp"
 #include "presentation/windows/icons.hpp"
 #include "presentation/windows/reader_theme.hpp"
@@ -269,7 +270,7 @@ struct CourseAudioWindow {
         if(result.status==CourseAudioRemovalStatus::changed)status(tr("Cambió el contenido, el idioma, la voz o un archivo. Actualiza la lista antes de reintentar.","The content, language, voice or a file changed. Refresh before retrying.","Le contenu, la langue, la voix ou un fichier a changé. Actualisez avant de réessayer."));
         else if(result.status==CourseAudioRemovalStatus::busy)status(tr("La lectura o la generación están ocupadas. Pausa y vuelve a intentarlo.","Reading or generation is busy. Pause it and retry.","La lecture ou la génération est occupée. Suspendez-la et réessayez."));
         else status(tr("Eliminados ","Deleted ","Supprimés : ")+std::to_string(result.deleted)+tr(" archivos · "," files · "," fichiers · ")+audio_size(result.bytes)+(result.failed?" · "+std::to_string(result.failed)+tr(" fallos"," failures"," échecs"):std::string{})+"\n"+tr("La generación anticipada del curso quedó pausada. Actualiza la lista.","Advance generation for the course remains paused. Refresh the list.","La génération anticipée du cours reste suspendue. Actualisez la liste."));
-        layout();if(closing){show_settings_notice(GetWindow(window,GW_OWNER),wide_text(GetDlgItem(window,status_id)));DestroyWindow(window);}
+        layout();if(closing){show_settings_notice(GetAncestor(window,GA_ROOT),wide_text(GetDlgItem(window,status_id)));DestroyWindow(window);}
     }
     static std::string wide_text(HWND control){std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(control))+1,L'\0');text.resize(GetWindowTextW(control,text.data(),static_cast<int>(text.size())));return winrt::to_string(text);}
     void confirm(std::shared_ptr<CourseAudioRemovalPreview> preview){
@@ -278,7 +279,7 @@ struct CourseAudioWindow {
         const auto question=tr("Se eliminarán ","Delete ","Supprimer ")+std::to_string(preview->exclusive.size())+tr(" archivos exclusivos ("," exclusive files ("," fichiers exclusifs (")+audio_size(preview->removable_bytes)+").\n"+
             tr("Archivos compartidos conservados: ","Shared files preserved: ","Fichiers partagés conservés : ")+std::to_string(preview->shared_files)+".\n\n"+
             tr("La generación anticipada del curso quedará pausada. Los audios de otros idiomas o voces, los modelos y el progreso se conservarán. Esta acción no se puede deshacer.","Advance generation for this course will be paused. Audio from other languages or voices, models and learning progress are preserved. This action cannot be undone.","La génération anticipée du cours sera suspendue. Les audios d’autres langues ou voix, les modèles et la progression seront conservés. Cette action est irréversible.");
-        if(MessageBoxW(window,wide(question).c_str(),wide(tr("Eliminar audios","Delete audio","Supprimer les audios")).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES){status(tr("No se ha eliminado nada.","Nothing was deleted.","Aucun fichier n’a été supprimé."));layout();return;}
+        if(internal_message_box(window,wide(question).c_str(),wide(tr("Eliminar audios","Delete audio","Supprimer les audios")).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES){status(tr("No se ha eliminado nada.","Nothing was deleted.","Aucun fichier n’a été supprimé."));layout();return;}
         const auto current=access.profile();if(current!=preview->report.profile){status(tr("Cambió el idioma o la voz. Actualiza la lista.","The language or voice changed. Refresh the list.","La langue ou la voix a changé. Actualisez la liste."));layout();return;}
         maintenance=access.idle_maintenance?access.idle_maintenance():nullptr;
         if(!maintenance){status(tr("No se puede eliminar durante la lectura, generación u otra operación. Pausa y vuelve a intentarlo.","Audio cannot be deleted while reading, generation or another operation is active. Pause it and retry.","Impossible de supprimer pendant une lecture, une génération ou une autre opération. Suspendez-la et réessayez."));layout();return;}
@@ -297,7 +298,7 @@ struct CourseAudioWindow {
         if(id==refresh_id&&operation!=Operation::none){job.request_stop();return;}
         if(operation!=Operation::none)return;
         if(id==refresh_id){scan(false);return;}
-        if(id==info_id){MessageBoxW(window,wide(tr("En cada lista solo aparecen los cursos de su ruta. Un audio puede utilizarse en varios cursos y se cuenta dentro de cada uno, pero sigue siendo un único archivo físico. Los porcentajes consideran las voces e idiomas actualmente seleccionados. La eliminación solo ocurre tras la confirmación del usuario y nunca afecta archivos compartidos.","Each list shows only courses from its learning path. One recording can be used by several courses and counted in each, while remaining one physical file. Percentages use the current voices and languages. Deletion requires explicit confirmation and never affects shared files.","Chaque liste ne contient que les cours de son parcours. Un audio partagé est compté dans chaque cours, tout en restant un seul fichier physique. Les pourcentages reflètent les voix et langues sélectionnées. La suppression nécessite une confirmation et n’affecte jamais les fichiers partagés.")).c_str(),wide(route_title()).c_str(),MB_OK|MB_ICONINFORMATION);return;}
+        if(id==info_id){internal_message_box(window,wide(tr("En cada lista solo aparecen los cursos de su ruta. Un audio puede utilizarse en varios cursos y se cuenta dentro de cada uno, pero sigue siendo un único archivo físico. Los porcentajes consideran las voces e idiomas actualmente seleccionados. La eliminación solo ocurre tras la confirmación del usuario y nunca afecta archivos compartidos.","Each list shows only courses from its learning path. One recording can be used by several courses and counted in each, while remaining one physical file. Percentages use the current voices and languages. Deletion requires explicit confirmation and never affects shared files.","Chaque liste ne contient que les cours de son parcours. Un audio partagé est compté dans chaque cours, tout en restant un seul fichier physique. Les pourcentages reflètent les voix et langues sélectionnées. La suppression nécessite une confirmation et n’affecte jamais les fichiers partagés.")).c_str(),wide(route_title()).c_str(),MB_OK|MB_ICONINFORMATION);return;}
         if(id==pause_id&&course()){const auto item=course()->owner;access.pause(item,!access.paused(item));show_detail();return;}
         if(id==delete_id&&course()){scan(true);return;}
     }
@@ -333,8 +334,8 @@ HWND open_course_audio_window(HWND owner,std::string route,CourseAudioAccess acc
     if((route!="programming"&&route!="math_physics")||!access.worker||!access.profile||!access.pause||!access.paused)throw std::invalid_argument("Incomplete course-audio access");
     static const auto rich_edit=LoadLibraryW(L"Msftedit.dll");if(!rich_edit)throw std::runtime_error("Cannot load the native information view");
     const auto instance=GetModuleHandleW(nullptr);WNDCLASSEXW cls{sizeof(cls)};cls.hInstance=instance;cls.lpszClassName=course_window_class;cls.lpfnWndProc=course_audio_proc;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
-    auto model=std::make_unique<CourseAudioWindow>(std::move(route),std::move(access));const auto dpi=GetDpiForWindow(owner);
-    const auto result=CreateWindowExW(WS_EX_CONTROLPARENT,course_window_class,wide(model->route_title()).c_str(),WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,MulDiv(900,dpi,96),MulDiv(800,dpi,96),owner,nullptr,instance,model.get());
-    if(!result)throw std::runtime_error("Cannot open course audio management");model->owns=true;model.release();ShowWindow(result,SW_SHOW);return result;
+    auto model=std::make_unique<CourseAudioWindow>(std::move(route),std::move(access));
+    const auto result=create_internal_window(owner,course_window_class,wide(model->route_title()).c_str(),model.get());
+    model->owns=true;model.release();ShowWindow(result,SW_SHOW);SetFocus(result);return result;
 }
 }

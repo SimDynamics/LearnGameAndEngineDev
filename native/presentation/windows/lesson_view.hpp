@@ -22,6 +22,13 @@ struct LessonPageState {
     std::string narration_scope,narration_page_identity,narration_language;
     std::string lesson_title;
 };
+struct LessonOptionsSnapshot {
+    std::size_t current_page = 0,page_count = 0;
+    // Ordered zero-based indices admitted by the existing navigation gates.
+    std::vector<std::size_t> available_pages;
+    bool finish_visible = false,finish_enabled = false;
+};
+enum class LessonOptionAction { import_android_state,page_top,page_bottom,finish };
 struct LessonReadingRegion {
     std::string key, source_text;
     HWND target = nullptr;
@@ -58,8 +65,15 @@ inline constexpr UINT lesson_view_hooks_message = WM_APP + 183;
 inline constexpr UINT lesson_reader_bar_message = WM_APP + 184;
 inline constexpr UINT lesson_state_read_message = WM_APP + 185;
 inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
+inline constexpr UINT lesson_options_query_message = WM_APP + 189;
+inline constexpr UINT lesson_options_action_message = WM_APP + 190;
 [[nodiscard]] LessonPageState lesson_page_state(HWND window);
 [[nodiscard]] bool navigate_lesson_view(HWND window,std::size_t page);
+// The integrated lesson settings page observes these actions without changing
+// progress. Navigate with navigate_lesson_view; return to the lesson before
+// invoking import/scroll/finish so their existing surfaces and guards remain.
+[[nodiscard]] LessonOptionsSnapshot lesson_options_snapshot(HWND window);
+[[nodiscard]] bool invoke_lesson_option(HWND window,LessonOptionAction action);
 // Back first dismisses the current transient surface, then uses the existing
 // catalog callback. It never changes page/reading history on its own.
 [[nodiscard]] bool navigate_lesson_back(HWND window);

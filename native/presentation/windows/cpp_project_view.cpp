@@ -1,5 +1,6 @@
 #include "presentation/windows/cpp_project_view.hpp"
 #include "presentation/windows/card_list.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/settings_view.hpp"
@@ -79,8 +80,7 @@ struct Dialog {
                 if(reader_theme::draw_button(item))return TRUE;}
             if(message==WM_ERASEBKGND){RECT rect{};GetClientRect(window,&rect);FillRect(reinterpret_cast<HDC>(wp),&rect,reader_theme::brush(reader_theme::Surface::popup));return TRUE;}
             if(message==WM_SIZE){self->layout();return 0;}
-            if(message==WM_DPICHANGED){const auto* bounds=reinterpret_cast<const RECT*>(lp);if(bounds)SetWindowPos(window,nullptr,bounds->left,bounds->top,bounds->right-bounds->left,bounds->bottom-bounds->top,SWP_NOZORDER|SWP_NOACTIVATE);self->refresh_font();self->layout();return 0;}
-            if(message==WM_DPICHANGED_AFTERPARENT){self->refresh_font();self->layout();return 0;}
+            if(message==WM_DPICHANGED||message==WM_DPICHANGED_AFTERPARENT){self->refresh_font();self->layout();return 0;}
             if(message==WM_NOTIFY&&reinterpret_cast<NMHDR*>(lp)->hwndFrom==self->heading&&reinterpret_cast<NMHDR*>(lp)->code==EN_REQUESTRESIZE){const auto size=reinterpret_cast<REQRESIZE*>(lp);self->heading_height=size->rc.bottom-size->rc.top+self->px(4);return 0;}
             if(message==WM_CLOSE||(message==WM_COMMAND&&LOWORD(wp)==IDCANCEL)){DestroyWindow(window);return 0;}
             if(message==WM_COMMAND&&LOWORD(wp)==IDOK){if(!self->busy&&self->accept&&self->accept()&&IsWindow(window))DestroyWindow(window);return 0;}
@@ -88,23 +88,17 @@ struct Dialog {
             if(message==dialog_completed){if(self->worker.joinable())self->worker.join();std::function<void()> done;{std::lock_guard guard(self->completion_mutex);done=std::move(self->completion);}self->busy=false;
                 if(self->primary)EnableWindow(self->primary,self->primary_enabled);if(self->body)EnableWindow(self->body,self->body_enabled);if(done)done();return 0;}
             if(message==WM_NCDESTROY){if(self->tracked)std::erase(*self->tracked,window);self->window=nullptr;SetWindowLongPtrW(window,GWLP_USERDATA,0);return DefWindowProcW(window,message,wp,lp);}
-        }catch(const std::exception& failure){MessageBoxW(window,wide(failure.what()).c_str(),wide(self->title).c_str(),MB_OK|MB_ICONERROR);}
-        catch(const winrt::hresult_error& failure){MessageBoxW(window,failure.message().c_str(),wide(self->title).c_str(),MB_OK|MB_ICONERROR);}return DefWindowProcW(window,message,wp,lp);
+        }catch(const std::exception& failure){internal_message_box(window,wide(failure.what()).c_str(),wide(self->title).c_str(),MB_OK|MB_ICONERROR);}
+        catch(const winrt::hresult_error& failure){internal_message_box(window,failure.message().c_str(),wide(self->title).c_str(),MB_OK|MB_ICONERROR);}return DefWindowProcW(window,message,wp,lp);
     }
-    void create(HWND parent,std::vector<HWND>& windows){owner=GetAncestor(parent,GA_ROOT);tracked=&windows;WNDCLASSEXW type{sizeof(type)};type.lpfnWndProc=proc;type.hInstance=GetModuleHandleW(nullptr);type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.lpszClassName=dialog_class;
+    void create(HWND parent,std::vector<HWND>& windows){owner=parent;tracked=&windows;WNDCLASSEXW type{sizeof(type)};type.lpfnWndProc=proc;type.hInstance=GetModuleHandleW(nullptr);type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.lpszClassName=dialog_class;
         if(!RegisterClassExW(&type)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register project dialog");const auto caption=wide(title);
-        window=CreateWindowExW(WS_EX_CONTROLPARENT|WS_EX_DLGMODALFRAME,dialog_class,caption.c_str(),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME, CW_USEDEFAULT,CW_USEDEFAULT,1,1,owner,nullptr,GetModuleHandleW(nullptr),this);
-        if(!window)throw std::runtime_error("Cannot create project dialog");windows.push_back(window);reader_theme::apply(window,reader_theme::Surface::popup);
+        window=create_internal_window(owner,dialog_class,caption.c_str(),this);
+        windows.push_back(window);reader_theme::apply(window,reader_theme::Surface::popup);
         refresh_font();
         close=control(L"BUTTON",close_text,WS_TABSTOP|BS_PUSHBUTTON,IDCANCEL);if(!primary_text.empty())primary=control(L"BUTTON",primary_text,WS_TABSTOP|BS_PUSHBUTTON,IDOK);
     }
-    void run(){RECT owner_rect{};GetWindowRect(owner,&owner_rect);MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(owner,MONITOR_DEFAULTTONEAREST),&monitor);
-        const auto width=std::min(px(700),static_cast<int>(monitor.rcWork.right-monitor.rcWork.left)),height=std::min(px(body?540:260),static_cast<int>(monitor.rcWork.bottom-monitor.rcWork.top));
-        const auto left=std::clamp(static_cast<int>(owner_rect.left+(owner_rect.right-owner_rect.left-width)/2),static_cast<int>(monitor.rcWork.left),static_cast<int>(monitor.rcWork.right)-width);
-        const auto top=std::clamp(static_cast<int>(owner_rect.top+(owner_rect.bottom-owner_rect.top-height)/2),static_cast<int>(monitor.rcWork.top),static_cast<int>(monitor.rcWork.bottom)-height);
-        SetWindowPos(window,nullptr,left,top,width,height,SWP_NOZORDER);
-        layout();const bool enabled=IsWindowEnabled(owner);if(enabled)EnableWindow(owner,FALSE);
-        struct RestoreOwner{HWND owner;bool enabled;~RestoreOwner(){if(enabled&&IsWindow(owner)){EnableWindow(owner,TRUE);SetActiveWindow(owner);}}} restore{owner,enabled};
+    void run(){layout_internal_windows(GetAncestor(owner,GA_ROOT));layout();
         ShowWindow(window,SW_SHOW);SetFocus(input?input:body?body:close);if(initialize)initialize();MSG message{};
         while(window&&IsWindow(window)){const auto result=GetMessageW(&message,nullptr,0,0);if(result<=0){if(result==0)PostQuitMessage(static_cast<int>(message.wParam));if(window)DestroyWindow(window);break;}
             if(input&&message.message==WM_KEYDOWN&&message.wParam==VK_RETURN){SendMessageW(window,WM_COMMAND,IDOK,0);continue;}
@@ -226,8 +220,8 @@ struct CppProjectView::Impl {
                 else if(event==BN_CLICKED){if(id>=1000&&static_cast<std::size_t>(id-1000)<self.files.size()){self.capture();self.selected=self.files[id-1000].first;self.show_selected();self.notify(false);SetFocus(self.source);return 0;}
                     if(id==303){self.capture();const bool included=SendMessageW(self.include_source,BM_GETCHECK,0,0)==BST_CHECKED;std::erase(self.sources,self.selected);if(included)self.sources.push_back(self.selected);self.notify(true);return 0;}
                     if(id==300){self.add_file();return 0;}if(id==301){if(self.files.size()==1)show_settings_notice(self.host,self.ui("Conserva al menos un archivo en el proyecto.","Keep at least one file in the project.","Conservez au moins un fichier dans le projet."));else{self.capture();const auto removed=self.selected;std::erase_if(self.files,[&](const auto& entry){return entry.first==removed;});std::erase(self.sources,removed);self.indentation.erase(removed);self.cursors.erase(removed);self.selected=self.files.front().first;self.show_selected();self.notify(true);}return 0;}if(id==302){self.open_history();return 0;}}}
-        }catch(const std::exception& failure){MessageBoxW(window,wide(failure.what()).c_str(),L"C++",MB_OK|MB_ICONERROR);}
-        catch(const winrt::hresult_error& failure){MessageBoxW(window,failure.message().c_str(),L"C++",MB_OK|MB_ICONERROR);}return DefWindowProcW(window,message,wp,lp);
+        }catch(const std::exception& failure){internal_message_box(window,wide(failure.what()).c_str(),L"C++",MB_OK|MB_ICONERROR);}
+        catch(const winrt::hresult_error& failure){internal_message_box(window,failure.message().c_str(),L"C++",MB_OK|MB_ICONERROR);}return DefWindowProcW(window,message,wp,lp);
     }
 };
 void CppProjectView::Impl::add_file(){const auto life=alive;Dialog dialog;dialog.title=ui("Crear archivo","Create file","Créer un fichier");dialog.close_text=ui("Cancelar","Cancel","Annuler");dialog.primary_text=ui("Aceptar","OK","OK");dialog.create(host,dialogs);

@@ -37,15 +37,32 @@ bool observed(const std::filesystem::path& log,const wchar_t* command){
 }
 struct Process {
     HANDLE handle=nullptr;
+    DWORD pid=0;
     ~Process(){if(handle)CloseHandle(handle);}
     void capture(const std::filesystem::path& log){
         for(const auto& row:records(log))if(row.GetNamedString(L"command")==L"started"){
-            handle=OpenProcess(SYNCHRONIZE,FALSE,static_cast<DWORD>(row.GetNamedNumber(L"pid")));
+            pid=static_cast<DWORD>(row.GetNamedNumber(L"pid"));
+            check(static_cast<DWORD>(row.GetNamedNumber(L"parentPid"))==GetCurrentProcessId(),
+                "The controlled worker was not the directly launched child");
+            handle=OpenProcess(SYNCHRONIZE|PROCESS_QUERY_LIMITED_INFORMATION,FALSE,pid);
             check(handle!=nullptr,"Cannot observe the test-owned worker process");return;
         }
         throw std::runtime_error("Fixture omitted its process identity");
     }
     bool exited()const{return handle&&WaitForSingleObject(handle,0)==WAIT_OBJECT_0;}
+    bool exited_by(std::chrono::steady_clock::time_point deadline)const{
+        if(exited())return true;
+        // TerminateJobObject initiates termination asynchronously. Account for
+        // completion within the SAME global shutdown/join deadline, never a
+        // fresh timeout after shutdown returns or an exit-code-only shortcut.
+        const auto now=std::chrono::steady_clock::now();
+        const auto remaining=now<deadline?std::chrono::ceil<std::chrono::milliseconds>(deadline-now).count():0;
+        DWORD code=STILL_ACTIVE;GetExitCodeProcess(handle,&code);
+        const auto wait=WaitForSingleObject(handle,static_cast<DWORD>(remaining));
+        std::cerr<<"Worker completion pid="<<pid<<" initialExitCode="<<code<<" wait="<<wait
+            <<" waitedMs="<<std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-now).count()<<'\n';
+        return wait==WAIT_OBJECT_0;
+    }
 };
 struct Fixture {
     std::filesystem::path directory,log,runtime;
@@ -105,8 +122,8 @@ void coordinator_shutdown(const std::filesystem::path& root,const std::filesyste
     const auto started=std::chrono::steady_clock::now();
     target.worker->shutdown();coordinator.reset();
     check(waiter.wait_for(1s)==std::future_status::ready&&waiter.get(),"Shutdown did not release the queued arbitration caller");
+    check(process.exited_by(started+2s),"The closed worker child survived its owned job shutdown");
     check(std::chrono::steady_clock::now()-started<2s,"Shutdown/coordinator join waited for unacknowledged inference");
-    check(process.exited(),"The closed worker child survived its owned job shutdown");
     verify_terminal(*target.worker);
     (void)independent.worker->curriculum_plan(R"({"id":"independent-after"})",0,"es","ef_dora","es");
     check(!other.exited(),"Shutting down one worker terminated an independent worker");
@@ -136,7 +153,7 @@ void blocked_transport_shutdown(const std::filesystem::path& root,const std::fil
     check(writer.wait_for(1s)==std::future_status::ready&&writer.get(),"Shutdown waited behind a blocked transport writer");
     check(cancellation.wait_for(1s)==std::future_status::ready,"Shutdown left a synchronous cancellation callback blocked");
     (void)cancellation.get();
-    check(std::chrono::steady_clock::now()-started<2s&&process.exited(),"Blocked-transport shutdown exceeded its bound or left a child alive");
+    check(process.exited_by(started+2s)&&std::chrono::steady_clock::now()-started<2s,"Blocked-transport shutdown exceeded its bound or left a child alive");
     verify_terminal(*target.worker);
     std::cout<<"PASS real non-reading child and large blocked pipe writer are interrupted without a shutdown RPC or stuck stop callback\n";
 }

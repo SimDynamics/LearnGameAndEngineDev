@@ -9,6 +9,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include "core/lesson.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/narration_state.hpp"
@@ -20,13 +21,16 @@
 #include <winrt/Windows.Data.Json.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <thread>
 
 namespace {
 using namespace lgaed;
@@ -129,7 +133,7 @@ curriculum::Lesson compiler_model(bool required=false){
 }
 struct Fixture{
     WindowsEnvironment environment;HWND host=nullptr,view=nullptr;std::unique_ptr<LessonReader> reader;
-    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false):
+    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={}):
         environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})){
         check(!std::filesystem::exists(environment.paths.root),"QA profile already exists");
         if(!private_audio)environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";initialize_profile_directories(environment.paths);
@@ -144,8 +148,9 @@ struct Fixture{
         LessonViewHooks hooks;hooks.before_page_change=[this](HWND){if(reader)reader->pause();};
         hooks.content_changed=[this](HWND){if(reader)reader->content_changed();};
         hooks.feedback_changed=[this](HWND,std::size_t block,bool correct){if(reader)reader->feedback(block,correct);};set_lesson_view_hooks(view,std::move(hooks));
+        if(before_reader)before_reader(view);
         reader=std::make_unique<LessonReader>(view,environment,std::move(backend),[]{});
-        if(advance)ready();else wait([&]{const auto s=snapshot();return s.planned&&!s.segments.empty()&&s.segments.front().available;},"current segment without advance preparation");
+        if(wait_initial){if(advance)ready();else wait([&]{const auto s=snapshot();return s.planned&&!s.segments.empty()&&s.segments.front().available;},"current segment without advance preparation");}
     }
     ~Fixture(){reader.reset();if(view){(void)flush_lesson_view(view);DestroyWindow(view);}if(host)DestroyWindow(host);}
     LessonReaderSnapshot snapshot(){auto result=reader->snapshot();check(result.error.empty(),"Real reader error: "+result.error);return result;}
@@ -807,11 +812,65 @@ void integrated_order_reader_flow(const std::shared_ptr<windows::NarrationWorker
     std::cout << "PASS current U1L2 p4 order reader: complete authored wrong guide and success explanation, real PCM/timings, retry stop, full-view exact silent restoration and three real page positions\n";
 }
 
+void reader_preparation_suspension(const std::filesystem::path& python,const std::filesystem::path& build_directory){
+    windows::ensure_winrt_apartment();using namespace winrt::Windows::Data::Json;
+    check(std::filesystem::is_regular_file(python)&&std::filesystem::is_directory(build_directory),"Controlled suspension inputs are missing");
+    const auto base=build_directory/(L"reader-suspend-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    check(std::filesystem::create_directory(base),"Controlled reader suspension requires a new QA directory");
+    const auto log=base/L"transport.jsonl",cache=base/L"audio",ack=base/L"allow-cancel-ack",runtime=base/L"runtime.json";
+    JsonObject config;config.Insert(L"java",JsonValue::CreateStringValue(python.native()));JsonArray arguments;
+    for(const auto& value:{std::wstring(L"-u"),(std::filesystem::path(build::source_root)/L"native/presentation/windows/lesson_reader_suspend_fixture.py").native(),log.native(),cache.native(),ack.native()})
+        arguments.Append(JsonValue::CreateStringValue(value));
+    config.Insert(L"arguments",arguments);{std::ofstream output(runtime);output<<winrt::to_string(config.Stringify());check(static_cast<bool>(output),"Cannot save controlled reader transport");}
+    auto backend=std::make_shared<windows::NarrationWorker>(runtime);
+    std::unique_ptr<Fixture> fixture;std::future<std::string> background;
+    struct ShutdownBeforeJoins{std::shared_ptr<windows::NarrationWorker> worker;~ShutdownBeforeJoins(){worker->shutdown();}} cleanup{backend};
+    const std::wstring draft=L"Borrador parcial conservado";
+    fixture=std::make_unique<Fixture>(backend,true,false,true,"es",std::nullopt,true,0,true,false,[&](HWND view){
+        const auto answer=child(view,1102);CHARRANGE all{0,-1};SendMessageW(answer,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
+        SendMessageW(answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(draft.c_str()));
+    });auto& f=*fixture;
+    const auto records=[&]{std::vector<JsonObject> result;std::ifstream input(log);std::string line;
+        while(std::getline(input,line))try{result.push_back(JsonObject::Parse(wide(line)));}catch(const winrt::hresult_error&){break;}
+        return result;};
+    const auto count=[&](const wchar_t* command){std::size_t result=0;for(const auto& row:records())if(row.GetNamedString(L"command")==command)++result;return result;};
+    wait([&]{const auto value=f.snapshot();return value.planned&&value.segments.size()>1&&value.segments.front().available&&count(L"prepare_blocked")==1;},
+        "controlled preparation blocked after one existing WAV");
+    f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.offset>=100;},"controlled PCM playback before an exact paused bookmark");
+    f.reader->pause();const auto before=f.snapshot();const auto protected_state=read_lesson_state(f.view);
+    const auto recording=before.segments.front().recording;const auto recording_hash=state::sha256(state::read_bytes(recording));const auto modified=std::filesystem::last_write_time(recording);
+    const auto started=std::chrono::steady_clock::now();f.reader->suspend_preparation(true);
+    check(std::chrono::steady_clock::now()-started<std::chrono::milliseconds(250),"Suspending preparation waited for the blocked host or ran its stop/join on the UI thread");
+    f.reader->suspend_preparation(true);const auto paused=f.snapshot();
+    check(paused.preparation_suspended&&paused.key==before.key&&paused.index==before.index&&paused.offset==before.offset
+        &&paused.heard_through==before.heard_through&&paused.segments.size()==before.segments.size()&&!paused.playing&&!paused.allocated
+        &&paused.segments.front().recording==recording&&read_lesson_state(f.view)==protected_state,
+        "Suspending preparation changed the plan, exact bookmark, draft, history or existing cached part");
+    wait([&]{return count(L"cancel")!=0;},"asynchronous cancellation reaches the controlled host");
+    background=std::async(std::launch::async,[&]{return backend->curriculum_plan(R"({"id":"controlled-background"})",0,"es","ef_dora","es");});
+    check(background.wait_for(std::chrono::milliseconds(50))!=std::future_status::ready,
+        "Background preparation bypassed an unacknowledged foreground operation");
+    {std::ofstream output(ack);output<<"acknowledge this test-owned cancellation";check(static_cast<bool>(output),"Cannot release controlled cancellation acknowledgement");}
+    wait([&]{return background.wait_for(std::chrono::seconds(0))==std::future_status::ready;},"background preparation continues after the original cancellation acknowledgement");
+    check(background.get().find("background-after-ack")!=std::string::npos,"The admitted background request lost its independent reply");
+    check(count(L"prepare")==2&&read_lesson_state(f.view)==protected_state,"A suspended reader continued foreground preparation or changed protected state");
+    f.reader->settings_changed();f.reader->suspend_preparation(false);f.ready();const auto resumed=f.snapshot();
+    check(!resumed.preparation_suspended&&!resumed.playing&&!resumed.allocated&&resumed.key==before.key&&resumed.index==before.index
+        &&resumed.offset==before.offset&&resumed.heard_through==before.heard_through&&read_lesson_state(f.view)==protected_state
+        &&edit_text(child(f.view,1102))==utf8(draft),"Resuming unchanged settings replanned/autoplayed or lost the exact bookmark, history or real draft");
+    std::size_t existing_preparations=0;for(const auto& row:records())if(row.GetNamedString(L"command")==L"prepare"&&row.GetNamedString(L"text")==wide(before.segments.front().source))++existing_preparations;
+    check(existing_preparations==1&&state::sha256(state::read_bytes(recording))==recording_hash&&std::filesystem::last_write_time(recording)==modified,
+        "Resuming preparation regenerated, rewrote or replaced the already cached WAV");
+    const auto prepared=count(L"prepare");f.reader->suspend_preparation(true);f.reader->suspend_preparation(false);pump();
+    check(count(L"prepare")==prepared&&read_lesson_state(f.view)==protected_state,"Suspending an already cached page restarted synthesis or changed protected state");
+    std::cout<<"PASS controlled reader suspension: UI returns before cancellation ACK, background proceeds after ACK, plan/bookmark/draft/history survive, and resume does not autoplay or regenerate existing PCM; no neural-audio claim\n";
+}
 void extended_reader_playback_rates(const std::shared_ptr<windows::NarrationWorker>& backend){
     Fixture f(backend,false,true,true,"es",compiler_model());const auto initial=f.snapshot();
     std::vector<std::pair<std::filesystem::path,std::filesystem::file_time_type>> recordings;
     for(const auto& part:initial.segments)recordings.emplace_back(part.recording,std::filesystem::last_write_time(part.recording));
-    const auto preserved=read_lesson_state(f.view);
+    check(flush_lesson_view(f.view),"Cannot persist the initial paused speed-selector state");
+    auto preserved=read_lesson_state(f.view);
     const auto unchanged=[&]{auto current=read_lesson_state(f.view),before=preserved;
         current.preferences["lesson_narration_settings"].erase("rate");before.preferences["lesson_narration_settings"].erase("rate");
         check(current==before,"The paused speed selector changed narration history, progress, drafts or generation settings");};
@@ -824,19 +883,26 @@ void extended_reader_playback_rates(const std::shared_ptr<windows::NarrationWork
     }
     const auto source=child(f.view,1110);const auto original_source=edit_text(source);CHARRANGE selection{4,9};
     SetFocus(source);SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));pump();
+    // Establish the deliberately changed cursor before testing shortcuts: a
+    // preference update also persists the editor's current selection.
+    check(flush_lesson_view(f.view),"Cannot persist the deliberate editor selection before speed shortcuts");
+    preserved=read_lesson_state(f.view);
     KeyboardStateScope keyboard;
     const auto press=[&](UINT key,UINT kind=WM_KEYDOWN,LPARAM flags=1,HWND target=nullptr){MSG message{};message.hwnd=target?target:source;
         message.message=kind;message.wParam=key;message.lParam=flags;return f.reader->dispatch_shortcut(message);};
     check(press(VK_F10,WM_SYSKEYDOWN)&&f.snapshot().rate==2.5&&press(VK_F10,WM_SYSKEYUP)&&f.snapshot().rate==2.5,
         "F10 from the actual code editor failed to increase playback speed or leaked its menu-key release");
     check(press(VK_F10)&&f.snapshot().rate==3.,"F10 did not expose the new3X endpoint");
-    for(int repeat=0;repeat<5;++repeat)check(press(VK_F10,WM_KEYDOWN,1LL|(1LL<<30))&&f.snapshot().rate==3.,
-        "Holding F10 wrapped playback speed past its3X endpoint");
-    bool first=true;for(const auto expected:{2.5,2.,1.5,1.,.5}){
-        check(press(VK_F9,WM_KEYDOWN,first?1:1LL|(1LL<<30))&&f.snapshot().rate==expected,
-            "F9 or its autorepeat skipped an existing playback speed");first=false;
+    for(const auto expected:{.5,1.,1.5,2.,2.5,3.,.5}){
+        check(press(VK_F10,WM_KEYDOWN,1LL|(1LL<<30))&&f.snapshot().rate==expected,
+            "F10 autorepeat did not follow the speed button's forward cycle through3X to0.5X");unchanged();
     }
-    check(press(VK_F9)&&f.snapshot().rate==.5&&press(VK_F9,WM_KEYUP),"F9 wrapped below0.5X or leaked its release");
+    bool first=true;for(const auto expected:{3.,2.5,2.,1.5,1.,.5,3.}){
+        check(press(VK_F9,WM_KEYDOWN,first?1:1LL|(1LL<<30))&&f.snapshot().rate==expected,
+            "F9 or its autorepeat did not reverse the same speed cycle through0.5X to3X");first=false;unchanged();
+    }
+    check(press(VK_F10)&&f.snapshot().rate==.5&&press(VK_F9,WM_KEYUP)&&f.snapshot().rate==.5,
+        "F10 did not wrap like the speed button or F9 release changed speed");
     for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN}){
         auto modified=keyboard.clear;modified[modifier]=0x80;check(SetKeyboardState(modified.data())!=FALSE,"Cannot set the isolated speed-shortcut modifier");
         check(!press(VK_F10)&&f.snapshot().rate==.5,"A modified F10 shortcut bypassed its original system/editor action");
@@ -848,24 +914,25 @@ void extended_reader_playback_rates(const std::shared_ptr<windows::NarrationWork
     check(GetFocus()==source&&edit_text(source)==original_source&&after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&GetCapture()==nullptr,
         "Changing playback speed from the code editor changed focus, source, selection or capture");
     f.reader->set_controls_visible(false);check(!press(VK_F10)&&f.snapshot().rate==.5,"A hidden reader consumed F10");f.reader->set_controls_visible(true);
-    for(const auto expected:{2.5,3.}){
+    for(const auto expected:{2.5,3.,.5}){
         update_lesson_preferences(f.view,[expected](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=expected;});f.reader->settings_changed();
         const auto history=narration::read_history(read_lesson_state(f.view));
         f.reader.reset();f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
         check(f.snapshot().rate==expected&&!f.snapshot().playing&&!f.snapshot().allocated&&
-            narration::read_history(read_lesson_state(f.view))==history,"Recreating the reader clamped2.5X/3X or changed its paused bookmark");
+            narration::read_history(read_lesson_state(f.view))==history,"Recreating the reader changed its selected cyclic speed or paused bookmark");
         f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.playback_rate==expected;},"the selected fast rate reaches the actual media session");
-        const auto before=f.snapshot();check(press(expected==2.5?VK_F10:VK_F9)&&
-            f.snapshot().playback_rate==(expected==2.5?3.:2.5),"The focused-editor speed shortcut did not update live MediaPlaybackSession");
-        check(press(expected==2.5?VK_F9:VK_F10)&&f.snapshot().playback_rate==expected&&f.snapshot().index==before.index&&f.snapshot().offset>=before.offset,
-            "Changing a live speed through F9/F10 sought or restarted the current recording");
+        const auto before=f.snapshot();const bool faster=expected!=.5;const auto next=expected==3.?.5:3.;
+        check(press(faster?VK_F10:VK_F9)&&f.snapshot().playback_rate==next,
+            "The focused-editor cyclic speed shortcut did not update live MediaPlaybackSession");
+        check(press(faster?VK_F9:VK_F10)&&f.snapshot().playback_rate==expected&&f.snapshot().index==before.index&&f.snapshot().offset>=before.offset,
+            "Cycling a live speed through F9/F10 sought or restarted the current recording");
         f.reader->pause();check(!f.snapshot().allocated,"Pausing a fast rate retained the media player");
         state::StateStore saved(f.environment.paths.root);
         check(std::get<double>(*state::find(saved.load(),"lesson_narration_settings","rate"))==expected,"The selected fast playback rate was not persisted in its isolated profile");
     }
     for(const auto& [path,modified]:recordings)check(std::filesystem::is_regular_file(path)&&std::filesystem::last_write_time(path)==modified,
         "Changing only playback speed regenerated or replaced an existing QA recording");
-    std::cout<<"PASS real reader playback rates: six existing/new choices,2.5X/3X persistence/restoration, focused-editor F9/F10 and held endpoints without menu/capture/seek, live media rates and unchanged recordings/protected state\n";
+    std::cout<<"PASS real reader playback rates: the speed button and focused-editor F9/F10 share forward/reverse cyclic choices including held keys,3X/0.5X live wrap without menu/capture/seek, persisted/restored rates and unchanged recordings/protected state\n";
 }
 void checked_compilation_keeps_keyboard_reader_control(const std::shared_ptr<windows::NarrationWorker>& backend){
     auto lesson=compiler_model(true);lesson.id="qa_reader_compile_focus";
@@ -1136,6 +1203,7 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
 }
 
 int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(argv[1])=="--stderr-objective";
+    const bool suspend_only=argc==4&&std::string_view(argv[1])=="--suspend";
     const bool dependencies_only=argc==2&&std::string_view(argv[1])=="--dependent-puzzles";
     const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
     const bool integrated_order_only=argc==2&&std::string_view(argv[1])=="--integrated-order";
@@ -1144,10 +1212,11 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
-    if(argc>1&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
+        if(suspend_only){reader_preparation_suspension(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         if(missing_recording_only){missing_recording_recovery(backend);return 0;}
         if(seek_keys_only){reader_arrow_aliases_preserve_control_keys(backend);return 0;}

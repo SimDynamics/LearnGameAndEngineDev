@@ -73,6 +73,10 @@ public:
     [[nodiscard]] NarrationAudio prepare(const NarrationSegment&,std::string_view language,std::string_view voice,
         const std::filesystem::path& output,unsigned threads,std::stop_token={},
         NarrationCpuClass work=NarrationCpuClass::current_page);
+    // System speech advance generation shares the same cancellable background
+    // reservation as Kokoro, and runs in its own hard-affinity native child.
+    [[nodiscard]] NarrationAudio prepare_system(const NarrationSegment&,std::string_view language,std::string_view voice,
+        const std::filesystem::path& output,std::stop_token={});
     [[nodiscard]] std::string identity(std::string_view page,std::string_view language,std::string_view voice,
         const std::vector<NarrationSegment>&,std::stop_token={},std::string_view engine="KOKORO");
     // Raw curricular JSON travels as a string: WinRT's floating-point JSON

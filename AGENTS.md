@@ -1,6 +1,6 @@
 # LearnGameAndEngineDev: acuerdo de trabajo
 
-Lee íntegramente `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al empezar, al reanudar y después de una compactación. La copia conserva el documento proporcionado por el usuario. Las instrucciones posteriores del usuario sobre Windows, directorios y registros prevalecen sobre las ubicaciones Android y el registro único mencionados en ese documento.
+El documento maestro vigente para Windows, indicado expresamente por el usuario, es `E:\PersonalFiles\Projects\LearnGameAndEngineDev-Playground\Instrucciones_maestras_cursosWindows.txt`. Léelo íntegramente al empezar, al reanudar y después de una compactación. La copia local `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` conserva el mismo texto, contrastado con ese documento; su nombre histórico no cambia la plataforma del encargo. Las instrucciones posteriores del usuario sobre Windows, directorios y registros prevalecen sobre las ubicaciones Android y el registro único mencionados en el documento.
 
 ## Directorios y responsabilidades vigentes
 

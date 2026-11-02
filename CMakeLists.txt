@@ -99,6 +99,7 @@ add_library(lgaed_platform_windows STATIC
     native/platform/windows/narration_cpu_policy.cpp
     native/platform/windows/narration_player.cpp
     native/platform/windows/system_speech.cpp
+    native/platform/windows/system_speech_process.cpp
     native/platform/windows/state_store.cpp
     native/platform/windows/android_import.cpp
     native/platform/windows/cpp_project_history.cpp
@@ -107,8 +108,12 @@ add_library(lgaed_platform_windows STATIC
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
+add_executable(lgaed_system_speech_host native/platform/windows/system_speech_host_main.cpp)
+target_link_libraries(lgaed_system_speech_host PRIVATE lgaed_platform_windows)
+set_target_properties(lgaed_system_speech_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 add_library(lgaed_presentation_windows STATIC
+    native/presentation/windows/internal_window.cpp
     native/presentation/windows/lesson_view.cpp
     native/presentation/windows/cpp_project_view.cpp
     native/presentation/windows/cpp_fill_view.cpp
@@ -191,6 +196,7 @@ add_custom_target(lgaed_narration_runtime
     COMMENT "Preparing the shared Kokoro and mathematical runtime"
     VERBATIM)
 add_dependencies(LearnGameAndEngineDev lgaed_narration_runtime)
+add_dependencies(LearnGameAndEngineDev lgaed_system_speech_host)
 set_target_properties(LearnGameAndEngineDev PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
@@ -300,8 +306,18 @@ if(BUILD_TESTING)
     set_tests_properties(native.narration_cpu_policy PROPERTIES TIMEOUT 30)
     add_executable(lgaed_audio_generation_tests native/platform/windows/audio_generation_tests.cpp)
     target_link_libraries(lgaed_audio_generation_tests PRIVATE lgaed_platform_windows)
-    add_dependencies(lgaed_audio_generation_tests lgaed_narration_runtime)
+    add_dependencies(lgaed_audio_generation_tests lgaed_narration_runtime lgaed_system_speech_host)
     add_test(NAME native.audio_generation COMMAND lgaed_audio_generation_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    add_executable(lgaed_system_speech_background_tests native/platform/windows/system_speech_background_tests.cpp)
+    target_link_libraries(lgaed_system_speech_background_tests PRIVATE lgaed_platform_windows)
+    add_dependencies(lgaed_system_speech_background_tests lgaed_system_speech_host)
+    add_test(NAME native.system_speech_background COMMAND lgaed_system_speech_background_tests)
+    set_tests_properties(native.system_speech_background PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_audio_generation_real_tests native/platform/windows/audio_generation_real_tests.cpp)
+    target_link_libraries(lgaed_audio_generation_real_tests PRIVATE lgaed_platform_windows)
+    add_dependencies(lgaed_audio_generation_real_tests lgaed_system_speech_host lgaed_narration_runtime)
+    add_test(NAME native.audio_generation_real COMMAND lgaed_audio_generation_real_tests)
+    set_tests_properties(native.audio_generation_real PROPERTIES TIMEOUT 240)
     set_tests_properties(native.audio_generation PROPERTIES TIMEOUT 90)
     add_executable(lgaed_narration_shutdown_tests native/platform/windows/narration_shutdown_tests.cpp)
     target_link_libraries(lgaed_narration_shutdown_tests PRIVATE lgaed_platform_windows)
@@ -366,6 +382,10 @@ if(BUILD_TESTING)
     set_tests_properties(native.settings_save_failure PROPERTIES TIMEOUT 30)
     add_test(NAME native.narration_licenses COMMAND lgaed_settings_view_tests --case licenses)
     set_tests_properties(native.settings_view native.narration_licenses PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_internal_window_tests native/presentation/windows/internal_window_tests.cpp)
+    target_link_libraries(lgaed_internal_window_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.internal_navigation COMMAND lgaed_internal_window_tests)
+    set_tests_properties(native.internal_navigation PROPERTIES TIMEOUT 40)
     add_executable(lgaed_lesson_composition_tests native/presentation/windows/lesson_composition_tests.cpp)
     target_link_libraries(lgaed_lesson_composition_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_composition_tests lgaed_narration_runtime)
@@ -420,6 +440,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.reader_missing_recording PROPERTIES TIMEOUT 90)
     add_test(NAME native.narration_speed_shortcuts COMMAND lgaed_lesson_reader_tests --rates)
     set_tests_properties(native.narration_speed_shortcuts PROPERTIES TIMEOUT 90)
+    add_test(NAME native.narration_reader_suspend COMMAND lgaed_lesson_reader_tests --suspend "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(native.narration_reader_suspend PROPERTIES TIMEOUT 90)
     add_test(NAME native.narration_seek_shortcuts COMMAND lgaed_lesson_reader_tests --seek-keys)
     set_tests_properties(native.narration_seek_shortcuts PROPERTIES TIMEOUT 90)
     add_test(NAME native.compiler_reader_focus COMMAND lgaed_lesson_reader_tests --compiler-focus)
@@ -452,6 +474,8 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_math_puzzle_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_math_puzzle_view_tests lgaed_narration_runtime)
     add_test(NAME native.math_puzzle_view COMMAND lgaed_math_puzzle_view_tests)
+    add_test(NAME native.math_internal_viewport COMMAND lgaed_math_puzzle_view_tests --internal-viewport)
+    set_tests_properties(native.math_internal_viewport PROPERTIES TIMEOUT 120)
     set_tests_properties(native.math_puzzle_view PROPERTIES TIMEOUT 180)
     add_test(NAME native.math_technical_locale COMMAND lgaed_math_puzzle_view_tests --locale-technical)
     set_tests_properties(native.math_technical_locale PROPERTIES TIMEOUT 45)
@@ -548,6 +572,8 @@ if(BUILD_TESTING)
         lgaed_smo_native_performance_tests lgaed_smo_native_render_performance_tests lgaed_smo_f12_render_performance_tests lgaed_smo_native_radix_tests)
     add_executable(lgaed_smo_view_tests native/presentation/windows/smo_view_tests.cpp)
     target_link_libraries(lgaed_smo_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_internal_info COMMAND lgaed_smo_view_tests --internal-info)
+    set_tests_properties(native.smo_internal_info PROPERTIES TIMEOUT 60)
     add_test(NAME native.smo_triangle COMMAND lgaed_smo_view_tests triangle)
     add_test(NAME native.smo_cube COMMAND lgaed_smo_view_tests cube)
     add_test(NAME native.smo_triangle_f12 COMMAND lgaed_smo_view_tests triangle f12)
@@ -625,6 +651,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.smo_float12_gpu PROPERTIES TIMEOUT 60)
     add_dependencies(lgaed_tools_view_tests lgaed_narration_runtime)
     add_test(NAME native.tools_view COMMAND lgaed_tools_view_tests)
+    add_test(NAME native.calculator_internal_window COMMAND lgaed_tools_view_tests --calculator-window)
+    set_tests_properties(native.calculator_internal_window PROPERTIES TIMEOUT 120)
     set_tests_properties(native.tools_view PROPERTIES TIMEOUT 90)
     add_executable(lgaed_catalog_tests native/core/catalog_tests.cpp)
     target_link_libraries(lgaed_catalog_tests PRIVATE lgaed_platform_windows)
@@ -668,6 +696,8 @@ if(BUILD_TESTING)
     add_executable(lgaed_cpp_project_view_tests native/presentation/windows/cpp_project_view_tests.cpp)
     target_link_libraries(lgaed_cpp_project_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.cpp_project_view COMMAND lgaed_cpp_project_view_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history")
+    add_test(NAME native.cpp_project_internal_dialogs COMMAND lgaed_cpp_project_view_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history" --internal-dialogs)
+    set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
     set_tests_properties(native.cpp_project_view PROPERTIES TIMEOUT 120)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
@@ -753,9 +783,18 @@ if(BUILD_TESTING)
             add_dependencies(${fixture_consumer} lgaed_order_line_fixtures)
         endif()
     endforeach()
+    add_custom_target(lgaed_windows_settings_checks DEPENDS
+        LearnGameAndEngineDev lgaed_internal_window_tests lgaed_settings_view_tests
+        lgaed_lesson_reader_tests lgaed_lesson_view_tests lgaed_reader_shortcut_focus_tests
+        lgaed_audio_course_view_tests lgaed_tools_view_tests lgaed_cpp_project_view_tests
+        lgaed_math_puzzle_view_tests lgaed_math_expression_editor_tests lgaed_smo_view_tests
+        lgaed_audio_schedule_tests lgaed_audio_generation_tests lgaed_audio_generation_real_tests
+        lgaed_system_speech_tests lgaed_system_speech_background_tests
+        lgaed_narration_cpu_policy_tests lgaed_narration_shutdown_tests
+        lgaed_narration_preferences_tests lgaed_profile_tests)
 endif()
 
-install(TARGETS LearnGameAndEngineDev lgaed_cpp_tool_host RUNTIME DESTINATION bin)
+install(TARGETS LearnGameAndEngineDev lgaed_cpp_tool_host lgaed_system_speech_host RUNTIME DESTINATION bin)
 install(FILES native/assets/fonts/NotoSerif-Regular.ttf native/assets/fonts/NotoSerif-Italic.ttf
     native/assets/fonts/NOTICE.txt native/assets/fonts/DroidSansMono.ttf
     native/assets/fonts/DroidSansMono-NOTICE.txt DESTINATION bin/fonts)

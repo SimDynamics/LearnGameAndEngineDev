@@ -1,4 +1,5 @@
 #include "presentation/windows/math_puzzle_view.hpp"
+#include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/native_math_text.hpp"
@@ -240,7 +241,7 @@ struct Canvas {
         auto* self=reinterpret_cast<Canvas*>(GetWindowLongPtrW(target,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Canvas*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(target,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(target,message,wp,lp);
-        if(message==WM_SIZE){self->expanded_layout();return 0;}
+        if(message==WM_SIZE||message==WM_DPICHANGED_AFTERPARENT){self->expanded_layout();return 0;}
         // IsDialogMessage routes Escape over ordinary controls as IDCANCEL;
         // canvas-local Escape still arrives directly when requested by a view.
         if(message==WM_CLOSE||(message==WM_COMMAND&&(LOWORD(wp)==canvas_close_id||LOWORD(wp)==IDCANCEL))||(message==WM_KEYDOWN&&wp==VK_ESCAPE)){self->close_expanded();return 0;}
@@ -254,9 +255,7 @@ struct Canvas {
         if(fullscreen||!IsWindow(window))return;previous_focus=GetFocus();inline_parent=GetParent(window);GetWindowRect(window,&inline_rectangle);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&inline_rectangle),2);inline_drawing=drawing;inline_drawing_width=drawing_width;inline_drawing_height=drawing_height;
         WNDCLASSEXW definition{sizeof(definition)};definition.lpfnWndProc=fullscreen_proc;definition.hInstance=GetModuleHandleW(nullptr);definition.lpszClassName=canvas_fullscreen_class;definition.hCursor=LoadCursorW(nullptr,IDC_ARROW);
         if(!RegisterClassExW(&definition)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register the expanded mathematics viewport");
-        MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST),&monitor);const auto area=monitor.rcMonitor;
-        fullscreen=CreateWindowExW(WS_EX_CONTROLPARENT,canvas_fullscreen_class,wide(tr("Representación ampliada","Expanded representation","Représentation agrandie")).c_str(),WS_POPUP|WS_CLIPCHILDREN,area.left,area.top,area.right-area.left,area.bottom-area.top,GetAncestor(window,GA_ROOT),nullptr,GetModuleHandleW(nullptr),this);
-        if(!fullscreen)throw std::runtime_error("Cannot expand the mathematics representation");
+        fullscreen=create_internal_window(inline_parent,canvas_fullscreen_class,wide(tr("Representación ampliada","Expanded representation","Représentation agrandie")).c_str(),this);
         reader_theme::apply(fullscreen,reader_theme::Surface::card);reader_theme::set_accent(fullscreen,reader_theme::palette(inline_parent).accent);
         const auto close=CreateWindowExW(0,L"BUTTON",wide(tr("Cerrar representación ampliada","Close expanded representation","Fermer la représentation agrandie")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,0,0,1,1,fullscreen,reinterpret_cast<HMENU>(static_cast<INT_PTR>(canvas_close_id)),GetModuleHandleW(nullptr),nullptr);
         if(!close){DestroyWindow(fullscreen);fullscreen=nullptr;throw std::runtime_error("Cannot create the expanded mathematics exit control");}
@@ -269,7 +268,7 @@ struct Canvas {
             if(!auxiliary_host)throw std::runtime_error("Cannot create the mathematics controls viewport");reader_theme::apply(auxiliary_host,reader_theme::Surface::card);
         }
         auxiliary_rectangles.clear();for(const auto item:auxiliary_controls){RECT rect{};GetWindowRect(item,&rect);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&rect),2);auxiliary_rectangles.push_back(rect);SetParent(item,auxiliary_host?auxiliary_host:fullscreen);SetWindowSubclass(item,exit_key_proc,19,type=="segment_transport"?reinterpret_cast<DWORD_PTR>(this):0);}
-        SetParent(window,fullscreen);expanded_layout();ShowWindow(fullscreen,SW_SHOW);SetForegroundWindow(fullscreen);SetFocus(window);
+        SetParent(window,fullscreen);expanded_layout();ShowWindow(fullscreen,SW_SHOW);SetFocus(window);
     }
     void scale_text(int percentage) {
         text_scale=percentage;drawing_width=drawing_height=0;

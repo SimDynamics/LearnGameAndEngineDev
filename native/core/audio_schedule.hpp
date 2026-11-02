@@ -10,8 +10,11 @@ struct CurriculumAudioPage {
     std::string language;
     bool operator==(const CurriculumAudioPage&) const = default;
 };
-// Manifest order is retained within every priority. The turn advances only
-// after a page actually generated audio; cache hits never starve the other route.
+// Background work always starts at the beginning of each route's manifest,
+// independent of the open page, course or Options screen. The producer advances
+// the turn only after actual generation; cached pages do not consume that turn.
+// The location/page arguments remain source compatible. Interactive preparation
+// has its own worker reservation and never reorders this background inventory.
 [[nodiscard]] std::vector<std::size_t> audio_schedule(std::span<const CurriculumAudioPage>,
     const curriculum::CatalogLocation&,std::optional<std::size_t> current_page,
     std::string_view next_route="programming");

@@ -24,6 +24,7 @@
 #include <cwchar>
 #include <iterator>
 #include <condition_variable>
+#include <deque>
 #include <limits>
 #include <map>
 #include <mutex>
@@ -46,7 +47,23 @@ bool promoted_pointer_mouse(){
 }
 std::string guid(){GUID id{};CoCreateGuid(&id);wchar_t value[40]{};StringFromGUID2(id,value,40);return utf8(value);}
 bool setting_bool(const state::StateData& data,const char* key,bool fallback){const auto value=state::find(data,"lesson_narration_settings",key);return value&&std::holds_alternative<bool>(*value)?std::get<bool>(*value):fallback;}
-
+// Stop callbacks can write to the host's pipe. Temporary navigation must not
+// run those callbacks or join an in-flight preparation on the UI thread.
+class PreparationRetirement {
+    std::mutex mutex;std::condition_variable changed;
+    std::deque<std::jthread> pending;bool closing=false;
+    std::condition_variable& generation_changed;
+    std::jthread worker;
+    void run(){for(;;){std::jthread task;
+        {std::unique_lock lock(mutex);changed.wait(lock,[&]{return closing||!pending.empty();});
+            if(pending.empty())return;task=std::move(pending.front());pending.pop_front();}
+        task.request_stop();generation_changed.notify_all();task.join();
+    }}
+public:
+    explicit PreparationRetirement(std::condition_variable& wake):generation_changed(wake),worker([this]{run();}){}
+    ~PreparationRetirement(){{const std::lock_guard lock(mutex);closing=true;}changed.notify_all();if(worker.joinable())worker.join();}
+    void retire(std::jthread& task){{const std::lock_guard lock(mutex);pending.emplace_back(std::move(task));}changed.notify_all();}
+};
 }
 struct LessonReader::Impl {
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
@@ -70,6 +87,8 @@ struct LessonReader::Impl {
     bool manually_paused=true;
     double rate=1;std::uint64_t epoch=0;std::atomic<std::size_t> priority{0};std::jthread generation;
     std::atomic<bool> advance_generation{true};std::condition_variable generation_changed;std::mutex generation_mutex;
+    bool preparation_suspended=false;
+    std::unique_ptr<PreparationRetirement> retiring_preparation;
     std::mutex result_mutex;std::vector<Result> results;ULONGLONG checkpoint_at=0;
     std::map<std::string,std::vector<std::pair<double,double>>> listened;
     double last_played_offset=0;
@@ -118,7 +137,7 @@ struct LessonReader::Impl {
     void cancel_generation(){if(generation.joinable()){generation.request_stop();generation_changed.notify_all();generation.join();}}
     void release_player(){if(player.allocated()){const auto offset=player.position();if(player.ready())heard_until(offset);
         position.milliseconds=static_cast<std::int64_t>(std::llround(player.release()));}}
-    void stop(){if(IsWindow(view)&&has_plan){try{release_player();save(finished);}catch(...) {}}(void)player.release();wanted=false;cancel_generation();}
+    void stop(){if(IsWindow(view)&&has_plan){try{release_player();save(finished);}catch(...) {}}(void)player.release();wanted=false;cancel_generation();retiring_preparation.reset();}
     void pause(){release_player();wanted=false;manually_paused=true;save(finished);paint_progress();update_buttons();}
     void set_controls_visible(bool show){
         if(!enabled||visible==show)return;
@@ -191,16 +210,34 @@ struct LessonReader::Impl {
                 backend->prepare(planned[index].sentence,lang,selected_voice,environment.paths.cache/L"kokoro",0,stop);ready[index]=true;
             Result result;result.epoch=current_epoch;result.index=index;result.audio=std::move(audio);push(std::move(result));}
     }
+    void start_audio_preparation(){
+        if(preparation_suspended||parts.empty())return;
+        const auto current_epoch=epoch;const auto snapshot=parts;const auto lang=language,selected_voice=voice,selected_engine=engine;
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine](std::stop_token stop){
+            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,stop,backend->current_page_lease(stop));}
+            catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
+        });
+    }
+    void suspend_preparation(bool suspended){
+        if(preparation_suspended==suspended)return;
+        preparation_suspended=suspended;
+        if(suspended){
+            ++epoch;planning=false;
+            if(generation.joinable()){
+                if(!retiring_preparation)retiring_preparation=std::make_unique<PreparationRetirement>(generation_changed);
+                retiring_preparation->retire(generation);
+            }
+        }else if(enabled){
+            if(!has_plan){signature.clear();changed();}
+            else if(std::ranges::any_of(parts,[](const auto& part){return !part.audio||!audio_file(*part.audio);}))start_audio_preparation();
+        }
+        update_buttons();
+    }
     void recover_audio(std::size_t at){
         // Settings can delete a course's recordings while the released reader
         // still has their metadata. Reuse its one preparation worker without
         // rebuilding the script, changing its key or moving its bookmark.
-        parts[at].audio.reset();cancel_generation();const auto current_epoch=++epoch;prioritize(at);
-        const auto snapshot=parts;const auto lang=language,selected_voice=voice,selected_engine=engine;
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine](std::stop_token stop){
-            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,stop,backend->current_page_lease(stop));}
-            catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
-        });update_buttons();
+        parts[at].audio.reset();cancel_generation();++epoch;prioritize(at);start_audio_preparation();update_buttons();
     }
     static std::string part_id(const Part& part){return (part.region.anchor.empty()?part.region.key:part.region.anchor)+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
     void changed(){if(!IsWindow(view))return;const auto page=lesson_page_state(view);const auto next_page=page.lesson_id+'/'+page.locale+'/'+page.page_id;
@@ -227,7 +264,7 @@ struct LessonReader::Impl {
         configure();if(!enabled){for(auto& [id,shade]:shades)shade->restore();return;}
         if(!configuration_error.empty()){error=configuration_error;update_buttons();return;}
         if(engine!="KOKORO"&&engine!="AUTO"&&engine!="WINDOWS"&&engine!="ANDROID"){error="Motor de narración no reconocido.";update_buttons();return;}
-        if(regions.empty())return;planning=true;prioritize(0);const auto current_epoch=epoch;const auto snapshot=regions;const auto lang=language,selected_voice=voice;const auto current_page=resume_page_id;
+        if(regions.empty()||preparation_suspended)return;planning=true;prioritize(0);const auto current_epoch=epoch;const auto snapshot=regions;const auto lang=language,selected_voice=voice;const auto current_page=resume_page_id;
         const auto selected_engine=engine;
         const auto history=narration::read_history(data());
         auto retired_archives=retired_lesson_reading_archives(view);
@@ -495,8 +532,8 @@ struct LessonReader::Impl {
     }
     void step_playback_rate(bool faster){
         const auto& values=narration::playback_rates;
-        if(faster){const auto next=std::upper_bound(values.begin(),values.end(),rate);change_playback_rate(next==values.end()?values.back():*next);}
-        else{const auto next=std::lower_bound(values.begin(),values.end(),rate);change_playback_rate(next==values.begin()?values.front():*std::prev(next));}
+        if(faster){const auto next=std::upper_bound(values.begin(),values.end(),rate);change_playback_rate(next==values.end()?values.front():*next);}
+        else{const auto next=std::lower_bound(values.begin(),values.end(),rate);change_playback_rate(next==values.begin()?values.back():*std::prev(next));}
     }
     bool dispatch_shortcut(const MSG& message){
         const bool speed_key=message.wParam==VK_F9||message.wParam==VK_F10;
@@ -533,7 +570,7 @@ struct LessonReader::Impl {
         }
         if(speed_key){
             // F10's unmodified system-key release must not reach USER's menu
-            // activation. Repeats adjust speed until its endpoint, never wrap.
+            // activation. Clicks and repeated keys share the same speed cycle.
             if(down&&IsWindowEnabled(buttons[5]))step_playback_rate(message.wParam==VK_F10);
             return true;
         }
@@ -568,7 +605,7 @@ struct LessonReader::Impl {
         case WM_ERASEBKGND:return 1;
         case WM_PAINT:self->paint();return 0;
         case WM_COMMAND:if(HIWORD(wp)==BN_CLICKED){const auto id=LOWORD(wp)-button_base;switch(id){case 0:self->seek(-3);break;case 1:self->seek(-5);break;case 2:self->seek(5);break;case 3:self->seek(3);break;case 4:self->toggle();break;
-            case 5:{const auto& values=narration::playback_rates;const auto it=std::ranges::find(values,self->rate);const auto index=it==values.end()?1:static_cast<std::size_t>(it-values.begin());self->change_playback_rate(values[(index+1)%values.size()]);break;}
+            case 5:self->step_playback_rate(true);break;
             case 6:self->restart();break;default:break;}return 0;}break;
         case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);const auto index=static_cast<std::size_t>(item.CtlID-button_base);if(index>=self->buttons.size())return FALSE;
             auto bounds=item.rcItem;const auto palette=reader_theme::palette(window);FillRect(item.hDC,&bounds,reader_theme::brush(reader_theme::Surface::card));InflateRect(&bounds,-self->px(11),-self->px(11));
@@ -607,6 +644,7 @@ void LessonReader::set_controls_visible(bool show){impl_->set_controls_visible(s
 void LessonReader::toggle_controls(){impl_->set_controls_visible(!impl_->visible);}
 bool LessonReader::controls_visible()const{return impl_->enabled&&impl_->visible;}
 void LessonReader::settings_changed(){impl_->settings_changed();}
+void LessonReader::suspend_preparation(bool suspended){impl_->suspend_preparation(suspended);}
 void LessonReader::seek_seconds(int seconds){impl_->seek(seconds);}
 void LessonReader::restart(){impl_->restart();}
 bool LessonReader::dispatch_shortcut(const MSG& message){return impl_->dispatch_shortcut(message);}
@@ -615,6 +653,7 @@ LessonReaderSnapshot LessonReader::snapshot()const{
     const auto& self=*impl_;LessonReaderSnapshot value;
     value.playing=self.wanted&&self.player.ready();value.allocated=self.player.allocated();value.planned=self.has_plan;
     value.preparing=self.planning;value.finished=self.finished;value.waiting_gate=self.waiting_gate;value.index=self.current();
+    value.preparation_suspended=self.preparation_suspended;
     value.offset=self.player.allocated()?static_cast<std::int64_t>(std::llround(self.player.position())):self.position.milliseconds;
     value.rate=self.rate;value.playback_rate=self.player.ready()?self.player.playback_rate():0;
     value.heard_through=self.position.heard_through;value.error=self.error;value.key=self.key;
