@@ -1599,6 +1599,122 @@ void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::N
     DestroyWindow(list);DestroyWindow(math);
     std::cout<<"PASS F5/Left -3, F6/Up -5, F7/Down +5, F8/Right +3: root/bar normal/SYS once, editor/readonly/math/card-list arrows preserve documents/cursors/selection and paused playback\n";
 }
+void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    const auto asset=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json";
+    const auto original=state::read_bytes(asset);const auto authored=windows::load_lesson(asset);
+    struct Case{std::size_t page,block;bool explanation;const char* anchor;std::size_t letter;const char* ordinary;};
+    const std::array<Case,3> cases{{{3,1,false,"int a = 2;",4,"las etapas son"},
+        {5,1,false,"produce 15",8,"Una asignación como"},{5,3,true,"++turnos;",2,"aumenta"}}};
+    const auto style=[](HWND target,LONG at){
+        CHARRANGE selection{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        CHARRANGE one{at,at+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&one));
+        CHARFORMAT2W value{};value.cbSize=sizeof(value);SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&value));
+        SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));return value;
+    };
+    const auto background=[](HWND target,const CHARFORMAT2W& value){return (value.dwEffects&CFE_AUTOBACKCOLOR)
+        ?reader_theme::background(target):value.crBackColor;};
+    const auto same_shape=[](const CHARFORMAT2W& one,const CHARFORMAT2W& two){
+        constexpr DWORD effects=CFE_BOLD|CFE_ITALIC|CFE_UNDERLINE;
+        return (one.dwEffects&effects)==(two.dwEffects&effects)&&one.bUnderlineType==two.bUnderlineType
+            &&one.yHeight==two.yHeight&&std::wstring_view(one.szFaceName)==std::wstring_view(two.szFaceName);
+    };
+    for(std::size_t number=0;number<cases.size();++number){const auto& item=cases[number];const auto& source=authored.pages.at(item.page).blocks.at(item.block);
+        curriculum::Lesson lesson;lesson.id="qa_current_curricular_colors_"+std::to_string(number);lesson.title="Prueba de referencias curriculares.";lesson.locale="es";
+        curriculum::Page page;page.stable_id="qa_colors_page";curriculum::Block body;body.type=curriculum::BlockType::paragraph;
+        body.stable_id="qa_colors_body";body.text=item.explanation?source.explanation:source.text;
+        if(!item.explanation)body.emphasis=source.emphasis;
+        check(!body.text.empty(),"The exact current curricular color source is missing");page.blocks.push_back(body);lesson.pages.push_back(page);
+        // Exact current text/emphasis in a plain QA page isolates reader ink.
+        // This does not claim to activate the original choice's feedback.
+        const auto raw=wide(body.text);const auto anchor=raw.find(wide(item.anchor));
+        check(anchor!=raw.npos,"The current selected technical/numeric reference changed");const auto raw_glyph=anchor+item.letter;
+        struct Frame{HWND target=nullptr;LONG glyph=0,ordinary=0;CHARFORMAT2W ink{},plain{};std::string text;int zoom_n=0,zoom_d=0;LRESULT undo=0,modified=0;} frame;
+        std::optional<Frame> first_frame;
+        const auto before_reader=[&](HWND view){
+            frame.target=child(view,1000);frame.text=edit_text(frame.target);const auto displayed=wide(frame.text);
+            const auto at=displayed.find(wide(item.anchor)),plain=displayed.find(wide(item.ordinary));
+            check(at!=displayed.npos&&plain!=displayed.npos,"The displayed reference/prose mapping is absent");
+            frame.glyph=static_cast<LONG>(at+item.letter);frame.ordinary=static_cast<LONG>(plain);
+            frame.ink=style(frame.target,frame.glyph);frame.plain=style(frame.target,frame.ordinary);
+            check((frame.ink.dwEffects&CFE_UNDERLINE)&&frame.ink.bUnderlineType==CFU_UNDERLINE
+                &&!(frame.plain.dwEffects&CFE_UNDERLINE),"The actual base reference lacks single underline or underlines ordinary prose");
+            SendMessageW(frame.target,EM_GETZOOM,reinterpret_cast<WPARAM>(&frame.zoom_n),reinterpret_cast<LPARAM>(&frame.zoom_d));
+            check(frame.zoom_d>0&&frame.zoom_n*100==frame.zoom_d*125,"The persisted QA text scale was not applied");
+            frame.undo=SendMessageW(frame.target,EM_CANUNDO,0,0);frame.modified=SendMessageW(frame.target,EM_GETMODIFY,0,0);
+            if(first_frame)check(frame.text==first_frame->text&&frame.ink.crTextColor==first_frame->ink.crTextColor
+                &&background(frame.target,frame.ink)==background(frame.target,first_frame->ink)
+                &&same_shape(frame.ink,first_frame->ink)&&same_shape(frame.plain,first_frame->plain)
+                &&frame.zoom_n==first_frame->zoom_n&&frame.zoom_d==first_frame->zoom_d,
+                "Reopening changed the original source's semantic ink, emphasis, font or scale before Reader attachment");
+            else first_frame=frame;
+            CHARRANGE selected{0,1};SendMessageW(frame.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=.5;});
+        };
+        const auto initialize=[](state::StateData& data){data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{125};
+            data.preferences["curricular_colors_opaque"]["text"]=std::string(" \t unchanged\r\n");
+            data.preferences["curricular_colors_opaque"]["flag"]=true;
+            data.preferences["curricular_colors_opaque"]["items"]=std::vector<std::string>{"one","two"};};
+        Fixture f(backend,false,true,false,"es",lesson,false,0,true,true,before_reader,initialize);
+        const auto opaque=read_lesson_state(f.view).preferences.at("curricular_colors_opaque");
+        const auto invariant=[&]{
+            const auto current=style(frame.target,frame.glyph),plain=style(frame.target,frame.ordinary);
+            int numerator=0,denominator=0;SendMessageW(frame.target,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            CHARRANGE selected{};SendMessageW(frame.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            check(current.crTextColor==frame.ink.crTextColor&&same_shape(current,frame.ink)&&same_shape(plain,frame.plain)
+                &&frame.text==edit_text(frame.target)&&numerator==frame.zoom_n&&denominator==frame.zoom_d&&selected.cpMin==0&&selected.cpMax==1,
+                "Real reader shading changed semantic ink, underline, emphasis, face, zoom, text or selection");
+            check(SendMessageW(frame.target,EM_CANUNDO,0,0)==frame.undo&&SendMessageW(frame.target,EM_GETMODIFY,0,0)==frame.modified,
+                "Reader formatting changed the original document's Undo availability or modified flag");
+            check(read_lesson_state(f.view).preferences.at("curricular_colors_opaque")==opaque,"The actual reader changed unrelated typed QA state");
+        };
+        const auto reopen=[&](std::optional<std::size_t> preview={}){
+            const auto current_key=f.snapshot().key;
+            f.reader.reset();check(flush_lesson_view(f.view),"Cannot preserve the actual color-reader bookmark");DestroyWindow(f.view);f.view=nullptr;
+            if(preview){state::StateStore store(f.environment.paths.root);auto data=store.load();auto history=narration::read_history(data);
+                const auto entry=std::ranges::find_if(history.entries,[&](const auto& value){return value.key==current_key;});
+                check(entry!=history.entries.end(),"A preview needs this actual planned page's bounded slot");
+                entry->position=narration::seek(entry->position,static_cast<std::int64_t>(*preview),0);
+                narration::write_history(data,history);store.save(data);}
+            f.view=create_lesson_view(f.host,f.environment,lesson);check(f.view!=nullptr,"Cannot reopen the exact QA curricular source");MoveWindow(f.view,0,0,980,720,TRUE);
+            LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+            set_lesson_view_hooks(f.view,std::move(hooks));before_reader(f.view);
+            f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});
+            wait([&]{const auto value=f.snapshot();return value.planned&&!value.segments.empty()&&value.segments[value.index].available;},"real selected curricular fragment preparation");
+        };
+        const auto plan=f.snapshot();const auto part=std::ranges::find_if(plan.segments,[&](const auto& value){return value.target==frame.target&&value.start<=raw_glyph&&raw_glyph<value.end;});
+        check(part!=plan.segments.end(),"The selected raw UTF-16 glyph is not owned by an actual narrated part");
+        const auto index=static_cast<std::size_t>(part-plan.segments.begin());f.reader->seek_seconds(0);reopen(index);
+        const auto preview=f.snapshot();check(preview.index==index&&preview.offset==0&&!preview.playing&&!preview.allocated,"A positional-only preview autoplayed or moved");
+        const auto& selected=preview.segments[index];const auto word=std::ranges::find_if(selected.timings,[&](const auto& value){return selected.start+value.start<=raw_glyph&&raw_glyph<selected.start+value.end;});
+        check(word!=selected.timings.end()&&word->start_ms>=0&&word->end_ms>word->start_ms,"The actual selected word lacks a positive-duration real timing");
+        const auto wave_hash=verify_feedback_recording(selected);const auto wave_stamp=std::filesystem::last_write_time(selected.recording);
+        // At 0 ms a word whose real timing starts at zero is already visually
+        // read. Preview the preceding part in that case; no heard evidence is
+        // inferred, and real playback must enter the selected word's WAV.
+        if(word->start_ms==0){check(index>0,"A zero-timed reference needs an earlier real part for a pending preview");reopen(index-1);}
+        const auto base_background=background(frame.target,frame.ink);
+        const auto pending=reader_theme::unread_reference_background(frame.target,base_background,frame.ink.crTextColor);
+        check(background(frame.target,style(frame.target,frame.glyph))==pending
+            &&style(frame.target,frame.ordinary).crTextColor==reader_theme::unread_color(background(frame.target,frame.plain)),
+            "Pending underlined ink/prose does not use the exact theme background/gray policy");invariant();
+        f.reader->toggle();wait([&]{const auto value=f.snapshot();check(value.index<=index,"Actual color-reader playback passed the selected part");
+            return value.playing&&value.index==index&&value.playback_rate==.5&&value.offset>=word->start_ms+std::min(40.,(word->end_ms-word->start_ms)/3.)
+                &&background(frame.target,style(frame.target,frame.glyph))==base_background;},"actual ef_dora word playback restores the reference background");
+        f.reader->pause();const auto paused=f.snapshot();invariant();
+        check(paused.index==index&&!paused.playing&&!paused.allocated&&paused.offset>0,"The actual colored word was not paused in its own recording");
+        reopen();const auto restored=f.snapshot();invariant();
+        check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset&&restored.heard_through==paused.heard_through
+            &&!restored.playing&&!restored.allocated&&restored.segments[index].recording==selected.recording,"Reopening changed the exact real colored-word pause or recording");
+        f.reader->toggle();await_resumed_player([&]{return f.snapshot();},restored,"Actual curricular color resume");
+        wait([&]{const auto value=f.snapshot();return value.playing&&value.index==index&&value.offset>restored.offset+30;},"actual same-WAV colored-word continuation");
+        f.reader->pause();invariant();f.reader->seek_seconds(-60);invariant();
+        check(background(frame.target,style(frame.target,frame.glyph))==pending,"Rewinding did not restore the pending reference background with unchanged ink");
+        check(state::sha256(state::read_bytes(selected.recording))==wave_hash&&std::filesystem::last_write_time(selected.recording)==wave_stamp
+            &&state::read_bytes(asset)==original,"Color-reader playback/reopen rewrote actual audio or the curricular asset");
+        std::cout<<"PASS current curricular source "<<number+1<<": actual ef_dora/.5 PCM and word timing, ink/single underline/background, pause/reopen/resume/rewind, exact QA text/emphasis/zoom/selection; explanation is a plain QA copy, not activated original feedback\n";
+    }
+}
 void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>& backend) {
     const auto owned_cache=std::filesystem::path(build::source_root)/"out/qa"/
         (L"reader-missing-wave-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
@@ -1648,21 +1764,34 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
     CHARFORMAT2W word_style{};word_style.cbSize=sizeof(word_style);
     SendMessageW(old_part.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&word_style));
     SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&old_selection));
-    const auto pending_ink=reader_theme::unread_color((word_style.dwEffects&CFE_AUTOBACKCOLOR)
-        ?reader_theme::background(old_part.target):word_style.crBackColor);
-    check(color(old_part.target,character)!=pending_ink,"The real word was not read before deleting its private recording");
+    const auto original_background=(word_style.dwEffects&CFE_AUTOBACKCOLOR)
+        ?reader_theme::background(old_part.target):word_style.crBackColor;
+    const auto pending_ink=reader_theme::unread_color(original_background);
+    const bool reference=(word_style.dwEffects&CFE_UNDERLINE)!=0;
+    const auto pending_background=reader_theme::unread_reference_background(old_part.target,original_background,word_style.crTextColor);
+    const auto word_is_pending=[&]{
+        CHARRANGE selection{};SendMessageW(old_part.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&timed_word));CHARFORMAT2W current{};current.cbSize=sizeof(current);
+        SendMessageW(old_part.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&current));
+        SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        if(reference){check(current.crTextColor==word_style.crTextColor&&(current.dwEffects&CFE_UNDERLINE),
+            "Missing-audio recovery changed an underlined reference's semantic ink or underline");
+            return !(current.dwEffects&CFE_AUTOBACKCOLOR)&&current.crBackColor==pending_background;}
+        return current.crTextColor==pending_ink;
+    };
+    check(!word_is_pending(),"The real word was not read before deleting its private recording");
     check(old_part.recording==missing&&std::filesystem::remove(missing),"The controlled seek regression did not remove only the same private WAV");
     f.reader->toggle();wait([&]{const auto value=f.snapshot();return !value.segments[value.index].available;},
         "background byte validation observes the deleted recording before new timing delivery");
     f.reader->pause();const auto recovering=f.snapshot();
     check(!recovering.segments[recovering.index].available&&!recovering.allocated&&recovering.offset==before_seek.offset,
         "The recovery-seek fixture already delivered replacement timings or changed the paused offset");
-    check(color(old_part.target,character)!=pending_ink,"Preparing an unchanged missing recording lost the existing word shading");
+    check(!word_is_pending(),"Preparing an unchanged missing recording lost the existing word shading");
     f.reader->seek_seconds(-1);const auto rewound=f.snapshot();
     check(rewound.index==before_seek.index&&rewound.offset==before_seek.offset-1000&&rewound.offset>0
             &&!rewound.allocated&&!rewound.playing&&rewound.heard_through==before_seek.heard_through,
         "Rewinding without an audio file changed segment identity, listening credit or the exact requested offset");
-    check(color(old_part.target,character)==pending_ink,
+    check(word_is_pending(),
         "A seek reused an older visible word boundary while the current recording had no timing metadata");
     f.ready();check(f.snapshot().offset==rewound.offset&&!f.snapshot().playing,
         "Replacement timing delivery moved the new rewind position or overrode its pause");
@@ -1689,12 +1818,14 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
     const bool changed_recording_only=argc==2&&std::string_view(argv[1])=="--changed-recording";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only)return 2;
+    const bool curricular_colors_only=argc==2&&std::string_view(argv[1])=="--curricular-colors";
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         if(suspend_only){reader_preparation_suspension(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        if(curricular_colors_only){current_curricular_colors_reader(backend);return 0;}
         if(missing_recording_only){missing_recording_recovery(backend);return 0;}
         if(changed_recording_only){replaced_recording_is_verified_before_released_resume(backend);return 0;}
         if(seek_keys_only){reader_arrow_aliases_preserve_control_keys(backend);return 0;}

@@ -607,6 +607,23 @@ COLORREF unread_color(COLORREF background){
     for(int channel=0;channel<=255;++channel)if(contrast_ratio(gray(channel),background)>=4.5&&std::abs(channel-preferred)<distance){selected=channel;distance=std::abs(channel-preferred);}
     return gray(selected);
 }
+COLORREF unread_reference_background(HWND context,COLORREF surface,COLORREF ink){
+    const auto colors=palette(context);
+    const auto minimum=std::min(4.5,contrast_ratio(ink,surface));
+    const auto suitable=[&](COLORREF fill){return fill!=surface&&contrast_ratio(ink,fill)+1e-9>=minimum;};
+    if(colors.high_contrast){
+        for(const auto candidate:{COLOR_HIGHLIGHT,COLOR_BTNFACE,COLOR_INFOBK,COLOR_WINDOWFRAME}){
+            const auto fill=GetSysColor(candidate);if(suitable(fill))return fill;
+        }
+        return surface;
+    }
+    for(const auto tint:{colors.accent,colors.muted,colors.text})for(unsigned alpha=48;alpha>0;--alpha){
+        const auto blend=[&](unsigned foreground,unsigned background){return (foreground*alpha+background*(255-alpha)+127)/255;};
+        const auto fill=RGB(blend(GetRValue(tint),GetRValue(surface)),blend(GetGValue(tint),GetGValue(surface)),blend(GetBValue(tint),GetBValue(surface)));
+        if(suitable(fill))return fill;
+    }
+    return surface;
+}
 HBRUSH brush(Surface surface) { static Brushes brushes; return brushes.get(surface); }
 bool applied(HWND window) { return window && GetPropW(window, surface_property) != nullptr; }
 COLORREF completion_background(COLORREF surface) {

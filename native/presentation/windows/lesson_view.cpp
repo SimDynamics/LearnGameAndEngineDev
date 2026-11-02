@@ -408,15 +408,22 @@ struct LessonView {
         std::span<const std::pair<std::size_t,std::size_t>> mathematics={}) const {
         const auto selected=locale.empty()?std::string(interface_language(data)):std::string(locale);
         RichTextContext context;
-        std::string visible_code;
+        std::string visible_code,visible_prose;
         const auto id=GetDlgCtrlID(target);
         if(!code&&route=="programming"&&id>=1000){
             const auto index=static_cast<std::size_t>((id-1000)/100);
             if(index<controls.size()&&controls[index].rendered&&!controls[index].locked){
                 const auto& current=block(index);
-                // Only the visible question/current source can disambiguate a
-                // mention. Never use answers or unrevealed feedback as context.
-                context.prose=current.question;
+                // Only the visible question/options/fragments and current source can
+                // disambiguate a mention. Never use answer keys or feedback.
+                visible_prose=current.question;
+                if(current.type==BlockType::multiple_choice)for(const auto& option:current.options){
+                    visible_prose+='\n';visible_prose+=option;
+                }
+                if(current.type==BlockType::order_code)for(const auto& fragment:current.fragments){
+                    visible_prose+='\n';visible_prose+=fragment;
+                }
+                context.prose=visible_prose;
                 if(controls[index].source){visible_code=edit_text(controls[index].source);context.code=visible_code;}
                 else context.code=current.code;
             }

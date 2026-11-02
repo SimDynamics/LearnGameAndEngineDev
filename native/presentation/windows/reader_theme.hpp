@@ -38,6 +38,9 @@ void set_accent(HWND,std::optional<COLORREF> accent);
 [[nodiscard]] COLORREF accent_ink(HWND context,COLORREF surface);
 // Exact Android LessonReadingColor policy: opaque neutral gray, >=4.5:1.
 [[nodiscard]] COLORREF unread_color(COLORREF background);
+// Pending underlined curriculum references retain their semantic ink. Use a
+// local-theme surface cue instead, without reducing its original contrast.
+[[nodiscard]] COLORREF unread_reference_background(HWND context,COLORREF background,COLORREF ink);
 [[nodiscard]] HBRUSH brush(Surface surface);
 // Only the supplied HWND is themed. Existing characters, spans and editing
 // state are untouched; apply before formatting rich text or code.

@@ -1,0 +1,188 @@
+#pragma once
+
+#include "presentation/windows/programming_technical_ranges.hpp"
+
+namespace lgaed::presentation::technical_prose {
+// Displayed UTF-16 offsets only. Source strings, narration and authored state
+// remain unchanged; visible context must never contain unrevealed solutions.
+struct CurricularRoles { std::vector<Range> code,numbers,neutral_numbers,citations; };
+
+namespace curricular_role_detail {
+inline void merge(std::vector<Range>& ranges) {
+    std::ranges::sort(ranges); std::vector<Range> result;
+    for(const auto item:ranges)if(item.first<item.second){
+        if(!result.empty()&&item.first<=result.back().second)result.back().second=std::max(result.back().second,item.second);
+        else result.push_back(item);
+    }
+    ranges=std::move(result);
+}
+inline bool contained(Range item,std::span<const Range> ranges) {
+    return std::ranges::any_of(ranges,[&](Range value){return value.first<=item.first&&value.second>=item.second;});
+}
+inline std::set<std::wstring> names(std::wstring_view source) {
+    std::set<std::wstring> result;
+    for(std::size_t at=0;at<source.size();){
+        if(source.substr(at).starts_with(L"//")){auto end=source.find_first_of(L"\r\n",at+2);at=end==source.npos?source.size():end;continue;}
+        if(source.substr(at).starts_with(L"/*")){auto end=source.find(L"*/",at+2);at=end==source.npos?source.size():end+2;continue;}
+        if(source[at]==L'\''||source[at]==L'"'){at=quoted_end(source,at,source.size());continue;}
+        if(!letter(source[at])&&source[at]!=L'_'){++at;continue;}
+        const auto first=at++;while(at<source.size()&&identifier(source[at]))++at;
+        result.emplace(source.substr(first,at-first));
+    }
+    return result;
+}
+inline bool capital(wchar_t value) {
+    WORD kind=0;return GetStringTypeW(CT_CTYPE1,&value,1,&kind)&&(kind&C1_UPPER);
+}
+inline std::vector<Range> bibliographic(std::wstring_view text,std::span<const Range> code) {
+    std::vector<Range> result;
+    // A year is not sufficient: require author-year citation grammar. Localizers
+    // belong to that same citation, never every page/section number in a lesson.
+    for(std::size_t at=0;at<text.size();++at){
+        if(text[at]!=L'(')continue;
+        const auto close=text.find(L')',at+1);if(close==text.npos||close-at>512)continue;
+        const auto inside=text.substr(at+1,close-at-1);
+        const bool author_year=has(inside,LR"(^[^0-9()]+,\s*(?:[0-9]{4}[a-z]?|s\.[ \t]*f\.|n\.[ \t]*d\.)(?:[ ,;].*)?$)",true)&&
+            std::ranges::any_of(inside,letter);
+        const bool year_only=has(inside,LR"(^\s*(?:[0-9]{4}[a-z]?|s\.[ \t]*f\.|n\.[ \t]*d\.)(?:\s*[,;].*)?\s*$)",true);
+        bool narrative=false;auto first=at;
+        if(year_only&&at&&space(text[at-1])){
+            auto last=at;while(last&&space(text[last-1]))--last;first=last;
+            if(text.substr(0,last).ends_with(L"et al.")){
+                last-=6;while(last&&space(text[last-1]))--last;first=last;
+            }
+            while(first&&(letter(text[first-1])||text[first-1]==L'-'||text[first-1]==L'’'||text[first-1]==L'\''))--first;
+            narrative=first<last&&capital(text[first]);
+        }
+        if(!author_year&&!narrative)continue;
+        if(!narrative)first=at;
+        auto end=close+1;
+        const auto suffix=text.substr(end);
+        const auto& localizer=expression(LR"(^\s*,?\s*(?:pp?\.|pág(?:ina)?s?\.?|pages?|sec(?:ción|ciones|tions?)?\.?|sections?|§{1,2})\s*[0-9]+(?:[.][0-9]+)*(?:\s*[–—-]\s*[0-9]+(?:[.][0-9]+)*)?)",true);
+        std::match_results<std::wstring_view::const_iterator> match;
+        if(std::regex_search(suffix.begin(),suffix.end(),match,localizer))end+=match.length();
+        if(!overlaps({first,end},code)){result.emplace_back(first,end);at=end-1;}
+    }
+    return result;
+}
+inline void subtract(std::vector<Range>& ranges,std::span<const Range> removed) {
+    std::vector<Range> result;
+    for(auto item:ranges){std::vector<Range> pieces{item};
+        for(const auto cut:removed){std::vector<Range> next;
+            for(const auto piece:pieces)if(!overlaps(piece,std::span<const Range>(&cut,1)))next.push_back(piece);
+                else {if(piece.first<cut.first)next.emplace_back(piece.first,cut.first);if(cut.second<piece.second)next.emplace_back(cut.second,piece.second);}
+            pieces=std::move(next);
+        }
+        result.insert(result.end(),pieces.begin(),pieces.end());
+    }
+    ranges=std::move(result);
+}
+inline bool output_number(std::wstring_view text,Range number,std::span<const Range> strings) {
+    if(contained(number,strings))return false;
+    // Local output grammar wins over legacy numeric backticks. Do not inherit
+    // a role from a matching value elsewhere in a program or its answers.
+    auto prefix=tail(text,number.first,192);
+    for(auto end=prefix.size();end;--end){
+        const auto position=end-1;const auto value=prefix[position];
+        const bool decimal=value==L'.'&&position&&position+1<prefix.size()&&digit(prefix[position-1])&&digit(prefix[position+1]);
+        if(std::wstring_view(L"\n!?;").find(value)!=std::wstring_view::npos||(value==L'.'&&!decimal)){
+            prefix.remove_prefix(end);break;
+        }
+    }
+    return has(prefix,LR"((?:\b(?:antes|ahora|before|after|avant|après|resultado|result|résultat|salida|output|sortie)\s*:\s*|\b(?:la\s+)?(?:consola|console|salida|output|sortie|mensaje|message|resultado|result|résultat)\s+(?:muestra|imprime|es|son|contiene|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|produce|produces|produit)\s*)(?:[+−-]?[0-9]+(?:[.,][0-9]+)?[ \t,;]*(?:(?:y|and|et)[ \t]+)?)*$)",true);
+}
+}
+
+inline CurricularRoles curricular_roles(std::wstring_view text,std::string_view locale,const Analysis& semantic,
+    std::wstring_view visible_prose={},std::wstring_view visible_code={},std::span<const Range> explicit_code={}) {
+    using namespace curricular_role_detail;
+    CurricularRoles result;
+    const auto authored=inline_code_spans(text);
+    std::vector<Range> trusted(explicit_code.begin(),explicit_code.end());
+    trusted.insert(trusted.end(),authored.fragments.begin(),authored.fragments.end());
+    const auto isolated_operator=[&](Range range){
+        if(range.first>=range.second||range.second>text.size())return false;
+        return word_in(text.substr(range.first,range.second-range.first),
+            L"+ - * / % = += -= *= /= %= ++ -- == != < > <= >= && || ! & | ^ ~ << >> <<= >>= &= |= ^= :: -> ;");
+    };
+    for(const auto range:semantic.fragments)if(range.first<range.second&&range.second<=text.size()){
+        const bool crosses=std::ranges::any_of(trusted,[&](Range marked){
+            return isolated_operator(marked)&&overlaps(range,std::span<const Range>(&marked,1))&&
+                (range.first<marked.first||range.second>marked.second);
+        });
+        if(!crosses)result.code.push_back(range);
+        else for(const auto marked:trusted)if(marked.first<marked.second&&marked.second<=text.size()&&
+            overlaps(range,std::span<const Range>(&marked,1)))
+                result.code.emplace_back(std::max(range.first,marked.first),std::min(range.second,marked.second));
+    }
+    const auto add_code=[&](std::size_t first,std::size_t last){
+        if(first<last&&last<=text.size()&&!overlaps({first,last},semantic.protected_ranges))result.code.emplace_back(first,last);
+    };
+    std::set<std::wstring> local_names;
+    for(const auto range:result.code){const auto found=names(text.substr(range.first,range.second-range.first));local_names.insert(found.begin(),found.end());}
+    auto known=names(visible_code);known.insert(local_names.begin(),local_names.end());
+    if(!visible_prose.empty()){
+        const auto context=analyze(visible_prose,locale);
+        for(const auto range:context.fragments){const auto found=names(visible_prose.substr(range.first,range.second-range.first));known.insert(found.begin(),found.end());}
+    }
+    for(std::size_t at=0;at<text.size();){
+        if(!letter(text[at])&&text[at]!=L'_'){++at;continue;}
+        const auto first=at++;while(at<text.size()&&identifier(text[at]))++at;
+        if(first&&identifier(text[first-1]))continue;
+        const auto word=text.substr(first,at-first),prefix=tail(text,first,96),suffix=text.substr(at,std::min<std::size_t>(80,text.size()-at));
+        const bool role=has(prefix,LR"(\b(?:variable|objeto|entero|identificador|miembro|función|método|tipo|variable|object|integer|identifier|member|function|method|type|entier|identificateur|membre|fonction|méthode)\s+(?:(?:llamad[oa]|denominad[oa]|named|called|nommée?|appelée?)\s+)?$)",true);
+        const bool stored_value=has(prefix,
+            LR"(\bvalor\s+[+−-]?(?:[0-9]+(?:[.,][0-9]+)?|\.[0-9]+)\s+en\s+$)",true);
+        // A type/name merely present in another visible source is not evidence
+        // that ordinary prose is tracing a variable. This relation needs its
+        // own local technical occurrence; explicit noun cues use known below.
+        const bool value=local_names.contains(std::wstring(word))&&begins(suffix,
+            LR"(\s+(?:vale|valen|conserva|recibe|pasa|contiene|guarda|counts?|holds?|contains?|vaut|contient)\b)",true);
+        if(((role||stored_value)&&known.contains(std::wstring(word)))||value)add_code(first,at);
+        // Complete prefix/postfix updates include their operand, not just ++.
+        if(first>=2&&(text.substr(first-2,2)==L"++"||text.substr(first-2,2)==L"--")&&
+            (first==2||!identifier(text[first-3]))){auto end=skip_spaces(text,at);if(technical_prose::at(text,end,L';'))++end;else end=at;add_code(first-2,end);}
+        if(text.substr(at).starts_with(L"++")||text.substr(at).starts_with(L"--")){
+            auto end=skip_spaces(text,at+2);if(technical_prose::at(text,end,L';'))++end;else end=at+2;add_code(first,end);
+        }
+    }
+    merge(result.code);
+    result.citations=bibliographic(text,result.code);
+    subtract(result.code,result.citations);
+    std::vector<Range> strings;
+    for(std::size_t cursor=0;cursor<text.size();++cursor)if((text[cursor]==L'"'||text[cursor]==L'\'')&&contained({cursor,cursor+1},result.code)){
+        const auto end=closed_quote_end(text,cursor,text.size());
+        if(end!=text.npos&&contained({cursor,end},result.code)){strings.emplace_back(cursor,end);cursor=end-1;}
+    }
+    for(std::size_t cursor=0;cursor<text.size();){
+        if(!digit(text[cursor])||(cursor&&identifier(text[cursor-1]))){++cursor;continue;}
+        const auto first=cursor++;
+        // Numeric tokens keep their real source spelling, including C++ bases,
+        // exponent/suffixes and digit separators. No floating-point conversion.
+        const bool hexadecimal=text[first]==L'0'&&cursor<text.size()&&(text[cursor]==L'x'||text[cursor]==L'X');
+        const bool binary=text[first]==L'0'&&cursor<text.size()&&(text[cursor]==L'b'||text[cursor]==L'B');
+        if(hexadecimal||binary)++cursor;
+        while(cursor<text.size()){
+            const auto current=text[cursor];
+            if(digit(current)||(hexadecimal&&((current>=L'a'&&current<=L'f')||(current>=L'A'&&current<=L'F')))){++cursor;continue;}
+            if((current==L'.'||current==L'\'')&&cursor+1<text.size()&&digit(text[cursor+1])){++cursor;continue;}
+            if(std::wstring_view(L"eEpP").find(current)!=std::wstring_view::npos&&cursor+1<text.size()){
+                auto next=cursor+1;if(text[next]==L'+'||text[next]==L'-')++next;
+                if(next<text.size()&&digit(text[next])){cursor=next;continue;}
+            }
+            break;
+        }
+        while(cursor<text.size()&&std::wstring_view(L"uUlLfFzZ").find(text[cursor])!=std::wstring_view::npos)++cursor;
+        if(cursor<text.size()&&identifier(text[cursor])){while(cursor<text.size()&&identifier(text[cursor]))++cursor;continue;}
+        auto begin=first;
+        if(begin&&text[begin-1]==L'.'&&(begin==1||!identifier(text[begin-2])))--begin;
+        if(begin&&std::wstring_view(L"+−-").find(text[begin-1])!=std::wstring_view::npos&&
+            (begin==1||space(text[begin-2])||std::wstring_view(L"(:,;=[{").find(text[begin-2])!=std::wstring_view::npos))--begin;
+        const Range number{begin,cursor};
+        if(overlaps(number,semantic.protected_ranges)||overlaps(number,result.citations))continue;
+        result.numbers.push_back(number);
+        if(!contained(number,result.code)||output_number(text,number,strings))result.neutral_numbers.push_back(number);
+    }
+    return result;
+}
+}

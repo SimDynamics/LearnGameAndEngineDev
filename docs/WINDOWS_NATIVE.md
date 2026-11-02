@@ -196,6 +196,24 @@ respuestas o borradores. Las traducciones importadas se conservan sin cambios;
 esta primera interfaz utiliza español.
 
 Los controles Win32 conservan párrafos separados, énfasis y coloreado C++.
+Las referencias técnicas dentro de prosa, preguntas, opciones y explicaciones
+visibles usan la misma paleta y el mismo lexer que el editor, con subrayado
+tipográfico real. Los números de salida, resultados y cantidades en prosa usan
+el neutro activo de Matemáticas y subrayado; los literales que pertenecen al
+código conservan su categoría C++. Los años y localizadores de citas
+parentéticas o narrativas mantienen su tratamiento bibliográfico ordinario.
+La clasificación sólo utiliza el contexto visible, sin consultar respuestas
+ocultas ni añadir propiedades al JSON. Conserva negritas, cursivas, texto,
+offsets de narración y contratos de estado.
+
+Durante la lectura, las referencias subrayadas conservan su tinta. El tramo
+pendiente se distingue mediante un fondo derivado del tema que respeta el
+contraste de la tinta; al leerlo recupera su fondo original. La prosa ordinaria
+mantiene el gris de pendiente. Retroceder vuelve a aplicar el indicador, y al
+cerrar el lector se restauran los fondos originales. El alto contraste utiliza
+los colores del sistema. `lgaed_curricular_color_checks` compila la aplicación
+y las pruebas de formato, montaje curricular y reproducción real afectadas.
+
 La predicción, la selección, el relleno y el ordenamiento usan los contratos del
 contenido. Enter comprueba una respuesta de una línea sin avanzar de página.
 Una respuesta correcta conserva el mecanismo explícito «Reiniciar respuesta».

@@ -331,6 +331,105 @@ int technical_range_parity(const char* path,const char* diagnostics){
     }
     std::cout<<"Canonical Android range parity: "<<checked<<" cases, "<<failed<<" mismatches\n";return failed?1:0;
 }
+void curricular_role_formatting(){
+    using namespace lgaed::presentation;
+    Window parent{CreateWindowExW(0,L"STATIC",L"Hidden curricular role QA",WS_OVERLAPPEDWINDOW,
+        0,0,900,600,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    check(parent.value!=nullptr,"Cannot create the curricular role QA host");
+    const std::string source="𐐀 La variable `a` vale `2` y vuelve a la sala. `int turnos = 1;` continúa. "
+        "`++turnos;` aumenta el valor existente. Es una definición, no una actualización del objeto existente. "
+        "El identificador `texto` guarda la cadena `\"Hola\"`. "
+        "En C++, `3 * 5` produce 15. El relleno de la página anterior utiliza `10` como inicializador y `-=` para restar. "
+        "El código `int y = 2;` y `int para = 3;` usa `y -= para;`.\r\nAntes: `5`\r\nAhora: `8`\r\nLa consola muestra `6`. "
+        "Hay 7 y 8 elementos. La consola muestra `1.5 2.5`. `2024` es un literal real. "
+        "Según Stroustrup (2024, pp. 139–140), seguimos. El literal `2024` pertenece a `int anno = 2024;`. "
+        "(Stroustrup, 2024), Stroustrup (2024), (Köppe et al., 2023, pp. 865–866) "
+        "y Stroustrup (2024, sección 4.2.3) conservan sus citas. El resultado es 2024.";
+    auto displayed=source;std::erase(displayed,'`');std::erase(displayed,'\r');
+    const std::array<lgaed::curriculum::Emphasis,2> emphasis{{{"variable",0,"bold_italic"},{"produce",0,"italic"}}};
+    // Role expectations are authored here, independently of the production
+    // detector. The code editor supplies the current palette, not a copied RGB.
+    const std::string program="int a = 2; int turnos = 1; ++turnos; const char* texto = \"Hola\"; return 2024; 3 * 5; int y = 2; int para = 3; y -= para; int anterior = 3;";
+    for(const int surface:{-1,0,1,2}){
+        const auto create=[&]{return CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE,
+            0,0,700,400,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr);};
+        Window target{create()},reference{create()},mathematics{create()};
+        check(target.value&&reference.value&&mathematics.value,"Cannot create independent curricular color references");
+        if(surface>=0)for(const auto window:{target.value,reference.value,mathematics.value})
+            reader_theme::apply(window,surface==0?reader_theme::Surface::canvas:surface==1?reader_theme::Surface::card:reader_theme::Surface::field);
+        set_rich_text(reference.value,program,{},true);set_rich_text(mathematics.value,"15");
+        const auto neutral=reader_theme::foreground(mathematics.value);
+        check(character(mathematics.value,0).crTextColor==neutral,"Mathematics no longer uses its active neutral foreground");
+        const auto code_ink=[&](std::wstring_view token){const auto visible=wide(program);const auto at=visible.find(token);
+            check(at!=visible.npos,"The independent C++ color reference lost a token");return character(reference.value,static_cast<LONG>(at)).crTextColor;};
+        for(const int zoom:{75,100,150,200}){
+            set_rich_text(target.value,source,emphasis);SendMessageW(target.value,EM_SETZOOM,zoom,100);
+            check(edit_text(target.value)==displayed,"Curricular roles rewrote text, Unicode, CRLF projection or visible delimiters");
+            const auto text=wide(displayed);const auto prose=character(target.value,0).crTextColor;
+            const auto expect=[&](std::wstring_view context,std::wstring_view token,COLORREF expected,bool underlined){
+                const auto start=text.find(context),local=context.find(token);
+                check(start!=text.npos&&local!=context.npos,"The independently authored role fixture lost a passage");
+                for(std::size_t at=start+local;at<start+local+token.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
+                    if(style.crTextColor!=expected||((style.dwEffects&CFE_UNDERLINE)!=0)!=underlined)
+                        std::cerr<<"Curricular role mismatch: surface="<<surface<<" zoom="<<zoom<<" context="<<utf8(context)<<" token="<<utf8(token)<<" offset="<<at-start<<'\n';
+                    check(style.crTextColor==expected&&((style.dwEffects&CFE_UNDERLINE)!=0)==underlined,
+                        "A curricular reference lost its role ink/real underline or decorated adjacent prose/citation");
+                }
+            };
+            expect(L"a vale 2",L"a",code_ink(L"a"),true);
+            expect(L"vale 2 y",L"2",code_ink(L"2"),true);
+            expect(L"vuelve a la sala",L"a",prose,false);
+            for(const auto token:{L"int",L"turnos",L"=",L"1"})expect(L"int turnos = 1;",token,code_ink(token),true);
+            // The lexer leaves ';' uncategorized. Preserve the historical
+            // technical neutral; only categorized glyphs take editor ink.
+            expect(L"int turnos = 1;",L";",reader_theme::palette(target.value).high_contrast?reader_theme::foreground(target.value):RGB(216,216,216),true);
+            expect(L"++turnos;",L"++",code_ink(L"++"),true);expect(L"++turnos;",L"turnos",code_ink(L"turnos"),true);
+            expect(L"aumenta el valor existente",L"aumenta el valor existente",prose,false);
+            expect(L"objeto existente",L"objeto existente",prose,false);
+            expect(L"identificador texto guarda",L"texto",code_ink(L"texto"),true);
+            expect(L"cadena \"Hola\"",L"\"Hola\"",code_ink(L"\"Hola\""),true);
+            expect(L"3 * 5 produce 15",L"3",code_ink(L"3"),true);expect(L"3 * 5 produce 15",L"*",code_ink(L"*"),true);
+            expect(L"3 * 5 produce 15",L"5",code_ink(L"5"),true);expect(L"produce 15",L"15",neutral,true);
+            expect(L"inicializador y -= para restar",L"y",prose,false);
+            expect(L"-= para restar",L"para restar",prose,false);expect(L"-= para restar",L"-=",code_ink(L"-="),true);
+            expect(L"int y = 2;",L"y",code_ink(L"y"),true);expect(L"int para = 3;",L"para",code_ink(L"para"),true);
+            expect(L"y -= para;",L"y",code_ink(L"y"),true);expect(L"y -= para;",L"para",code_ink(L"para"),true);
+            for(const auto context:{L"Antes: 5",L"Ahora: 8",L"consola muestra 6",L"Hay 7",L"y 8 elementos",L"resultado es 2024"}){
+                const std::wstring_view passage=context;const auto at=passage.find_first_of(L"0123456789");
+                expect(passage,passage.substr(at,passage.find_first_not_of(L"0123456789",at)-at),neutral,true);
+            }
+            expect(L"literal 2024 pertenece",L"2024",code_ink(L"2024"),true);
+            expect(L"int anno = 2024;",L"2024",code_ink(L"2024"),true);
+            expect(L"consola muestra 1.5 2.5",L"1.5",neutral,true);expect(L"consola muestra 1.5 2.5",L"2.5",neutral,true);
+            expect(L"2024 es un literal real",L"2024",code_ink(L"2024"),true);
+            for(const auto citation:{L"(Stroustrup, 2024)",L"Stroustrup (2024)",L"(Köppe et al., 2023, pp. 865–866)",L"Stroustrup (2024, sección 4.2.3)",L"Stroustrup (2024, pp. 139–140)"})
+                expect(citation,citation,prose,false);
+            const auto bold=character(target.value,static_cast<LONG>(text.find(L"variable")));
+            check((bold.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)
+                &&(character(target.value,static_cast<LONG>(text.find(L"produce"))).dwEffects&CFE_ITALIC),
+                "Automatic curricular underlining replaced authored bold/italic");
+            const std::string question="Ordena las acciones para conservar primero el valor 3 en anterior y luego imprimir 8 3.";
+            // This is an actual visible fragment of the current ordering
+            // exercise, not its hidden correctOrder or success explanation.
+            const std::string visible_fragment="    int anterior = actual;";
+            for(const bool supplied:{false,true}){
+                set_rich_text(target.value,question,{},false,RichTextRole::body,"es",{},RichTextContext{supplied?std::string_view(visible_fragment):std::string_view{}, {}});
+                const auto first=wide(question).find(L"anterior");check(first!=std::wstring::npos&&edit_text(target.value)==question,"Visible context changed the actual ordering question");
+                for(std::size_t offset=0;offset<std::wstring_view(L"anterior").size();++offset){const auto style=character(target.value,static_cast<LONG>(first+offset));
+                    check(style.crTextColor==(supplied?code_ink(L"anterior"):reader_theme::foreground(target.value))&&((style.dwEffects&CFE_UNDERLINE)!=0)==supplied,
+                        "The ordering identifier ignored visible fragment context or invented a code role without that reference");}
+            }
+            // set_rich_text loads a whole document via EM_STREAMIN; it is not
+            // an in-place edit transaction. The editor's syntax-only refresh
+            // owns the existing selection-preservation contract.
+            CHARRANGE selected{3,9};SendMessageW(reference.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+            style_cpp(reference.value);CHARRANGE after{};SendMessageW(reference.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+            check(after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&edit_text(reference.value)==program,
+                "Refreshing the independent native code palette moved selection or changed source");
+        }
+    }
+    std::cout<<"PASS curricular roles: native C++ palette, active mathematics neutral, actual underline, citations/homonyms, Unicode/CRLF, emphasis and four zooms; actual contrast mode only\n";
+}
 }
 int main(int argc,char** argv) {
     if(argc>1){try{
@@ -338,12 +437,16 @@ int main(int argc,char** argv) {
             const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load the native synthetic background fixture");
             technical_background_geometry(argc==3?argv[2]:nullptr);FreeLibrary(module);return 0;}
         if(argc==2&&std::string_view(argv[1])=="--technical-stress"){technical_range_stress();return 0;}
+        if(argc==2&&std::string_view(argv[1])=="--curricular-roles"){
+            const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load native curricular role QA");
+            curricular_role_formatting();FreeLibrary(module);return 0;}
         if((argc==3||argc==4)&&std::string_view(argv[1])=="--android-parity")return technical_range_parity(argv[2],argc==4?argv[3]:nullptr);
         return 2;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
     const auto module = LoadLibraryW(L"Msftedit.dll");
     if (!module) return 2;
     try {
         using namespace lgaed::presentation;
+        curricular_role_formatting();
         technical_range_contract();
         std::cout<<"Android technical ranges: contextual names, syntax, symbols, protected math/URLs and prose neighbors: PASS\n";
         Window parent{CreateWindowExW(0, L"STATIC", L"RichEdit QA", WS_OVERLAPPEDWINDOW,
@@ -622,7 +725,8 @@ int main(int argc,char** argv) {
                 const bool decorated=technical_prose::overlaps({at,at+1},expected)&&!reader_theme::palette().high_contrast;
                 const auto style=character(editor.value,static_cast<LONG>(at));
                 check(((style.dwEffects&CFE_AUTOBACKCOLOR)==0)==decorated,"The Android backdrop missed a technical glyph or spilled into adjacent prose/C++");
-                check(!(style.dwEffects&CFE_UNDERLINE),"The Android background was replaced with a typographic underline");
+                check(((style.dwEffects&CFE_UNDERLINE)!=0)==technical_prose::overlaps({at,at+1},expected),
+                    "Technical prose lacks its real underline or underlines an ordinary prose/C++ neighbor");
             }
             const auto technical=character(editor.value,static_cast<LONG>(visible.find(L"std::cout"))),language=character(editor.value,static_cast<LONG>(visible.find(L"C++")));
             check((technical.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&technical.yHeight==270&&std::wstring_view(technical.szFaceName)==reader_theme::code_font_face(),

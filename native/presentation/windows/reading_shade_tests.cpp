@@ -62,13 +62,22 @@ void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t bounda
         // and operator, including both UTF16 units of mathematical letters.
         if (native_math && native[index] >= 0xFDD0 && native[index] <= 0xFDEF) continue;
         styles_equal(before[index],after[index]);
-        if (index < boundary) {
+        const auto original_background=(before[index].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(edit):before[index].crBackColor;
+        const auto actual_background=(after[index].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(edit):after[index].crBackColor;
+        const bool reference=(before[index].dwEffects&CFE_UNDERLINE)!=0;
+        if (index < boundary || reference) {
             require(after[index].crTextColor == before[index].crTextColor,"A read token did not recover its original syntax color");
             require((after[index].dwEffects & CFE_AUTOCOLOR) == (before[index].dwEffects & CFE_AUTOCOLOR),
                     "A read token lost its automatic color identity");
         } else require(after[index].crTextColor == reader_theme::unread_color((before[index].dwEffects&CFE_AUTOBACKCOLOR)
                            ?reader_theme::background(edit):before[index].crBackColor) && !(after[index].dwEffects & CFE_AUTOCOLOR),
                        "An unread word, operator or punctuation mark escaped the pending gray");
+        if(reference&&index>=boundary){const auto original_ink=(before[index].dwEffects&CFE_AUTOCOLOR)?reader_theme::foreground(edit):before[index].crTextColor;
+            require(actual_background==reader_theme::unread_reference_background(edit,original_background,original_ink),
+                "An unread underlined reference lost its theme-derived pending background");
+        }else require(actual_background==original_background&&
+            (before[index].dwEffects&CFE_AUTOBACKCOLOR)==(after[index].dwEffects&CFE_AUTOBACKCOLOR),
+            "A read/restored reference or ordinary prose lost its exact original background");
     }
 }
 std::size_t source_units(std::string_view source,std::size_t bytes) { return wide(source.substr(0,bytes)).size(); }
@@ -235,20 +244,15 @@ int main(int argc,char* argv[]) {
             require(selection.cpMin==selected.cpMin&&selection.cpMax==selected.cpMax&&scroll.x==position.x&&scroll.y==position.y&&
                 (GetWindowLongPtrW(field.edit,GWL_STYLE)&ES_READONLY)&&events==SendMessageW(field.edit,EM_GETEVENTMASK,0,0)&&modified==SendMessageW(field.edit,EM_GETMODIFY,0,0),
                 "Technical-background narration moved the readonly selection or changed its viewport/events");
-            for(std::size_t at=0;at<before.size();++at){
-                require((before[at].dwEffects&CFE_AUTOBACKCOLOR)==(after[at].dwEffects&CFE_AUTOBACKCOLOR)&&
-                    ((before[at].dwEffects&CFE_AUTOBACKCOLOR)||before[at].crBackColor==after[at].crBackColor),
-                    "Word shading removed or spread a technical background");
-                styles_equal(before[at],after[at]);
-            }
+            for(std::size_t at=0;at<before.size();++at)styles_equal(before[at],after[at]);
             require(edit_text(field.edit)==source,"Technical-background narration changed original prose or C++");
         };
         ReadingShade shade(field.edit,source);
         for(const auto boundary:{std::size_t{0},technical,technical+4,technical+9,language,std::size_t{0},displayed.size()}){
             shade.read_through(boundary);stable();prefix(field.edit,before,boundary);
             const auto after=ink(field.edit);
-            for(std::size_t at=boundary;at<after.size();++at){const auto background=(before[at].dwEffects&CFE_AUTOBACKCOLOR)
-                    ?reader_theme::background(field.edit):before[at].crBackColor;
+            for(std::size_t at=boundary;at<after.size();++at){const auto background=(after[at].dwEffects&CFE_AUTOBACKCOLOR)
+                    ?reader_theme::background(field.edit):after[at].crBackColor;
                 require(contrast(after[at].crTextColor,background)>=4.5,"Pending technical text lost readable contrast against its own background");}
         }
         shade.read_through(technical);shade.restore();stable();prefix(field.edit,before,before.size());
@@ -328,20 +332,41 @@ int main(int argc,char* argv[]) {
         shade.read_through(source.size()); prefix(field.edit,before,before.size(),true);
         require(native_math_text_mapping(field.edit,source)->native_text == mapping->native_text,"Shading changed a mathematical glyph or operator");
     });
-    test("Original bold italic underline fonts and syntax colors survive pending and read ranges",[] {
-        const std::string source = "Negrita cursiva y `std::cout << \"área\";` final.";
+    test("Automatically underlined code and neutral numbers retain their exact ink during pending read and restore",[] {
+        const std::string source = "𐐀 Negrita cursiva y `std::cout << \"área\";` final.\r\nEn C++, `3 * 5` produce 15.\r\nAntes: `5`\r\nAhora: `8` (Stroustrup, 2024).";
         const std::vector<lgaed::curriculum::Emphasis> emphasis{{"Negrita",0,"bold"},{"cursiva",0,"italic"}};
-        Field field(source,false,emphasis); const auto displayed = edit_text(field.edit);
+        Field field(source,false,emphasis,true); const auto displayed = edit_text(field.edit);
         const auto at = static_cast<LONG>(wide(displayed).find(L"std::cout"));
-        CHARRANGE range{at,at + 9}; SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
-        CHARFORMAT2W underline{}; underline.cbSize = sizeof(underline); underline.dwMask = CFM_UNDERLINE; underline.dwEffects = CFE_UNDERLINE;
-        SendMessageW(field.edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&underline));
         const auto before = ink(field.edit);
-        require(before[0].dwEffects & CFE_BOLD,"The real renderer did not apply bold to the fixture");
+        require(before[static_cast<std::size_t>(at)].dwEffects&CFE_UNDERLINE,"The real renderer did not automatically underline its code reference");
+        require(before[wide(displayed).find(L"Negrita")].dwEffects & CFE_BOLD,"The real renderer did not apply bold to the fixture");
         require(before[wide(displayed).find(L"cursiva")].dwEffects & CFE_ITALIC,"The real renderer did not apply italic to the fixture");
-        { ReadingShade shade(field.edit,source); shade.read_through(0); prefix(field.edit,before,0);
-          shade.read_through(source_units(source,source.find(" final"))); prefix(field.edit,before,wide(displayed).find(L" final")); }
+        for(const auto token:{L"15",L"Antes: 5",L"Ahora: 8"}){const std::wstring_view text=token;
+            const auto number=text.find_first_of(L"0123456789");const auto start=wide(displayed).find(text)+number;
+            require(start<before.size()&&(before[start].dwEffects&CFE_UNDERLINE)&&before[start].crTextColor==reader_theme::foreground(field.edit),
+                "The actual renderer did not produce a neutral underlined output/result numeral");}
+        const auto year=wide(displayed).find(L"2024");require(year<before.size()&&!(before[year].dwEffects&CFE_UNDERLINE),"A citation year acquired a technical underline");
+        CHARRANGE selected{3,9};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        POINT scroll{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        { ReadingShade shade(field.edit,source);
+          for(const auto bytes:{std::size_t{0},source.find("std::cout"),source.find(" final"),source.find("15."),source.find("Ahora:"),std::size_t{0},source.size()}){
+              auto visible_prefix=source.substr(0,bytes);std::erase(visible_prefix,'`');std::erase(visible_prefix,'\r');
+              shade.read_through(source_units(source,bytes));prefix(field.edit,before,wide(visible_prefix).size());
+              CHARRANGE after{};POINT current{};SendMessageW(field.edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&current));
+              require(after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&current.x==scroll.x&&current.y==scroll.y&&edit_text(field.edit)==displayed,
+                  "Pending reference backgrounds moved the original selection/viewport or changed Unicode text");
+          }
+        }
         prefix(field.edit,before,before.size());
+    });
+    test("Reference pending backgrounds keep readable dark light and actual high-contrast palettes without changing Windows",[]{
+        Field field("La referencia `valor` y el resultado 15.");
+        const std::pair<COLORREF,COLORREF> samples[]={{RGB(16,16,16),RGB(218,221,228)},{RGB(28,28,28),RGB(224,151,109)},
+            {RGB(255,255,255),RGB(32,32,32)},{RGB(238,238,238),RGB(74,45,116)}};
+        for(const auto& [background,foreground]:samples){const auto marked=reader_theme::unread_reference_background(field.edit,background,foreground);
+            require(contrast(foreground,marked)>=4.5,"A reference pending background lost the original readable contrast");
+            if(!reader_theme::palette(field.edit).high_contrast)require(marked!=background,"A typical dark/light reference has no distinct pending background");
+        }
     });
     test("Selection scroll geometry event mask modified flag and native Undo Redo are unchanged",[] {
         std::string source; for (int line = 0; line < 60; ++line) source += "línea de lectura con acento\n";

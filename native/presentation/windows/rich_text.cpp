@@ -1,6 +1,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/editor_render_transaction.hpp"
 #include "presentation/windows/programming_technical_ranges.hpp"
+#include "presentation/windows/curricular_text_roles.hpp"
 #include "presentation/windows/reader_theme.hpp"
 
 #include <richedit.h>
@@ -417,6 +418,12 @@ void format(HWND edit, std::size_t start, std::size_t end, COLORREF color, const
     if (font) { style.dwMask |= CFM_FACE; wcscpy_s(style.szFaceName, font); }
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&style));
 }
+void underline(HWND edit,std::size_t start,std::size_t end,bool enabled=true) {
+    if(start>=end)return;select(edit,start,end);
+    CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_UNDERLINE|CFM_UNDERLINETYPE;
+    style.dwEffects=enabled?CFE_UNDERLINE:0;style.bUnderlineType=enabled?CFU_UNDERLINE:CFU_UNDERLINENONE;
+    SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
+}
 bool identifier_start(wchar_t c) { return (c >= L'A' && c <= L'Z') || (c >= L'a' && c <= L'z') || c == L'_'; }
 bool identifier_part(wchar_t c) { return identifier_start(c) || (c >= L'0' && c <= L'9'); }
 struct Ink { std::size_t start, end; COLORREF color; };
@@ -481,7 +488,7 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_backgro
             result.push_back({start,index,literal_color}); include_header = false;
         } else {
             ++index;
-            if (std::wstring_view(L"+-*/%<>!&|^~:").find(text[start]) != text.npos) result.push_back({start,index,keyword_color});
+            if (std::wstring_view(L"+-*/%<>!&|^~:=").find(text[start]) != text.npos) result.push_back({start,index,keyword_color});
             if (text[start] == L'\n' || text[start] == L'\r') include_header = false;
         }
     }
@@ -979,6 +986,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     std::vector<std::pair<std::size_t,std::size_t>> language_names;
     std::vector<std::pair<std::size_t,std::size_t>> cpp_statements;
     std::vector<std::pair<std::size_t,std::size_t>> quoted_literals;
+    std::vector<std::pair<std::size_t,std::size_t>> explicit_strings;
     std::vector<std::pair<std::size_t,std::size_t>> inline_fragments;
     for(const auto& [start,end]:fragments){const auto begin=wide(std::string_view(displayed).substr(0,start)).size();
         inline_fragments.emplace_back(begin,begin+wide(std::string_view(displayed).substr(start,end-start)).size());}
@@ -998,6 +1006,12 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
         std::ranges::sort(semantic.fragments);
     }
+    // Resolve prose/code boundaries before any lexical color pass. A classic
+    // analyzer can otherwise expand an explicitly isolated operator into the
+    // surrounding natural-language words once its backticks are hidden.
+    const auto roles=code?technical_prose::CurricularRoles{}:technical_prose::curricular_roles(
+        source,locale,semantic,wide(context.prose),wide(context.code),inline_fragments);
+    if(!code)semantic.fragments=roles.code;
     const bool has_background=!reader_theme::palette().high_contrast;
     const auto backed=[&](std::size_t start,std::size_t end){return has_background&&std::ranges::any_of(semantic.fragments,[&](const auto& part){return part.first<=start&&part.second>=end;});};
     const auto protected_text=[&](std::size_t start,std::size_t end){return technical_prose::overlaps({start,end},semantic.protected_ranges);};
@@ -1026,8 +1040,10 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         const auto character_mentions=inline_character_mentions(source);
         for(const auto& [start,end]:character_mentions) {
             if(protected_text(start,end))continue;
-            if(source[start]==L'\\'||named_string_character(source,start,end))
+            if(source[start]==L'\\'||named_string_character(source,start,end)){
                 format(edit,start,end,cpp_color(edit,CppInk::string,backed(start,end)));
+                explicit_strings.emplace_back(start,end);
+            }
             else apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start,false,backed(start,end));
         }
         // Apply complete fragments after individual technical mentions so a
@@ -1052,8 +1068,10 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 std::ranges::find(character_mentions,std::pair{begin_wide,begin_wide+fragment.size()})!=character_mentions.end()&&
                 named_string_character(source,begin_wide,begin_wide+fragment.size());
             if(std::regex_search(tail.begin(),tail.end(),output_cue)||
-                    (fragment.starts_with(L"\\")&&escape_mention_end(fragment,0)==fragment.size())||named_string)
+                    (fragment.starts_with(L"\\")&&escape_mention_end(fragment,0)==fragment.size())||named_string){
                 format(edit,begin_wide,begin_wide+fragment.size(),cpp_color(edit,CppInk::string,backed(begin_wide,begin_wide+fragment.size())));
+                explicit_strings.emplace_back(begin_wide,begin_wide+fragment.size());
+            }
             else apply_cpp(edit, fragment, begin_wide, true,backed(begin_wide,begin_wide+fragment.size()));
         }
         // Last lexical layer: operator-looking characters inside an explicit
@@ -1119,6 +1137,55 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             for(const auto& [name_first,name_last]:prose_language_names){if(name_last<=begin||name_first>=last)continue;
                 paint_background(begin,std::min(name_first,last));begin=std::min(last,name_last);}
             paint_background(begin,last);
+        }
+    }
+    if(!code){
+        const auto underline_tokens=[&](technical_prose::Range range){
+            if(range.first>=range.second||range.second>source.size())return;
+            auto at=range.first;
+            while(at<range.second){
+                while(at<range.second&&technical_prose::space(source[at]))++at;
+                const auto first=at;
+                while(at<range.second&&!technical_prose::space(source[at]))++at;
+                underline(edit,first,at);
+            }
+        };
+        // The editor and prose references use the same lexer and exact ink
+        // categories. No face/size/emphasis or adjacent prose is reformatted.
+        for(const auto& [first,last]:roles.code){
+            if(first>=last||last>source.size())continue;
+            for(const auto& ink:cpp_ink(edit,std::wstring_view(source).substr(first,last-first)))
+                format(edit,first+ink.start,first+ink.end,ink.color);
+            underline_tokens({first,last});
+        }
+        for(const auto& range:roles.numbers)underline_tokens(range);
+        // Context can identify string contents without their C++ quote marks
+        // (an escape's named character, or a displayed output such as Carga
+        // lista). Relexing those contents as identifiers must not erase the
+        // already established string role. Numeric outputs still win below.
+        const auto string_roles=[&](const auto& ranges){for(const auto& [first,last]:ranges){
+            if(first>=last||last>source.size()||protected_text(first,last))continue;
+            format(edit,first,last,cpp_color(edit,CppInk::string));underline_tokens({first,last});
+        }};
+        string_roles(explicit_strings);string_roles(quoted_literals);string_roles(contextual_strings);
+        for(const auto& [first,last]:prose_language_names){
+            format(edit,first,last,role==RichTextRole::body||reader_theme::palette().high_contrast
+                ?reader_theme::foreground(edit):RGB(255,255,255));
+            underline(edit,first,last,false);
+        }
+        // Bibliographic numbers stay ordinary text. Actual source literals
+        // are excluded by the role classifier, even when their value is a year.
+        for(const auto& [first,last]:roles.citations){
+            if(first>=last||last>source.size())continue;
+            format(edit,first,last,role==RichTextRole::body||reader_theme::palette().high_contrast
+                ?reader_theme::foreground(edit):RGB(255,255,255));
+            underline(edit,first,last,false);
+        }
+        // Last ink wins over legacy code/output heuristics, including explicit
+        // numeric spans. Use the existing mathematical foreground policy.
+        for(const auto& [first,last]:roles.neutral_numbers){
+            if(first>=last||last>source.size()||technical_prose::overlaps({first,last},roles.citations))continue;
+            format(edit,first,last,reader_theme::foreground(edit));
         }
     }
     semantic_background(edit,semantic_color,!code&&has_background&&!semantic.fragments.empty());

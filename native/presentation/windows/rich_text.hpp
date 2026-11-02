@@ -41,6 +41,9 @@ void compact_code_spaces(HWND edit);
 // system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);
 // Display-only inline delimiters are hidden; original lesson strings remain untouched.
+// Curricular references share the editor's syntax ink and use native single
+// underlining. Prose/output numbers use the mathematical foreground; citations
+// retain ordinary styling. These layers preserve emphasis and source offsets.
 void set_rich_text(HWND edit, std::string_view text,
     std::span<const curriculum::Emphasis> emphasis = {}, bool code = false,
     RichTextRole role = RichTextRole::body, std::string_view locale = "es",
