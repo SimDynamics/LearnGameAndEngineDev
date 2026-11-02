@@ -3690,6 +3690,191 @@ void compiler_puzzle_completion_and_navigation() {
 }
 
 namespace {
+struct ScrollMotionTrace {
+    HWND view;
+    std::map<HWND,bool> targets;
+    unsigned requests=0,rectangles=0,bars=0,sizes=0,notifications=0;
+    static LRESULT CALLBACK proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
+        auto& self=*reinterpret_cast<ScrollMotionTrace*>(raw);
+        if(self.targets.at(item)){
+            if(message==EM_REQUESTRESIZE)++self.requests;
+            if(message==EM_SETRECT||message==EM_SETRECTNP)++self.rectangles;
+            if(message==EM_SHOWSCROLLBAR)++self.bars;
+            if(message==WM_SIZE)++self.sizes;
+        }
+        if(message==WM_NOTIFY&&lp&&reinterpret_cast<NMHDR*>(lp)->code==EN_REQUESTRESIZE)++self.notifications;
+        return DefSubclassProc(item,message,wp,lp);
+    }
+    explicit ScrollMotionTrace(HWND owner):view(owner){
+        targets.emplace(view,false);
+        EnumChildWindows(view,[](HWND item,LPARAM raw)->BOOL{
+            auto& self=*reinterpret_cast<ScrollMotionTrace*>(raw);wchar_t name[128]{};GetClassNameW(item,name,128);
+            // Overflow bands intentionally clip their own host rectangle.
+            // They may resize; measured content controls must only translate.
+            self.targets.emplace(item,std::wstring_view(name)!=L"LearnGameAndEngineDev.LessonPane");return TRUE;
+        },reinterpret_cast<LPARAM>(this));
+        for(const auto& [item,content]:targets){(void)content;
+            require(SetWindowSubclass(item,proc,0x53434d4f,reinterpret_cast<DWORD_PTR>(this)),"Cannot observe actual scroll-motion messages");}
+    }
+    ~ScrollMotionTrace(){for(const auto& [item,content]:targets){(void)content;
+        if(IsWindow(item))RemoveWindowSubclass(item,proc,0x53434d4f);}}
+    void quiet()const{
+        require(requests==0&&rectangles==0&&bars==0&&sizes==0&&notifications==0,
+            "Pure scrolling remeasured native controls: EM_REQUESTRESIZE="+std::to_string(requests)
+            +" EM_SETRECT/NP="+std::to_string(rectangles)+" EM_SHOWSCROLLBAR="+std::to_string(bars)
+            +" WM_SIZE="+std::to_string(sizes)+" EN_REQUESTRESIZE="+std::to_string(notifications));
+    }
+};
+
+std::vector<HWND> scroll_descendants(HWND owner){
+    std::vector<HWND> result;EnumChildWindows(owner,[](HWND item,LPARAM raw)->BOOL{
+        reinterpret_cast<std::vector<HWND>*>(raw)->push_back(item);return TRUE;
+    },reinterpret_cast<LPARAM>(&result));std::ranges::sort(result);return result;
+}
+RECT screen_client(HWND item){RECT result{};GetClientRect(item,&result);MapWindowPoints(item,nullptr,reinterpret_cast<POINT*>(&result),2);return result;}
+bool scroll_visible_clip(HWND item,HWND pane,RECT& clipped){
+    if(!IsWindowVisible(item))return false;
+    GetWindowRect(item,&clipped);const auto viewport=screen_client(pane);
+    if(!IntersectRect(&clipped,&clipped,&viewport))return false;
+    for(auto parent=GetParent(item);parent&&parent!=pane;parent=GetParent(parent)){
+        const auto bounds=screen_client(parent);if(!IntersectRect(&clipped,&clipped,&bounds))return false;
+    }
+    return clipped.bottom>clipped.top&&clipped.right>clipped.left;
+}
+void require_clean_visible_scroll_frame(HWND pane){
+    auto windows=scroll_descendants(pane);windows.push_back(pane);
+    for(const auto item:windows){RECT clipped{};if(!scroll_visible_clip(item,pane,clipped))continue;
+        MapWindowPoints(nullptr,item,reinterpret_cast<POINT*>(&clipped),2);
+        const auto update=CreateRectRgn(0,0,0,0),visible=CreateRectRgnIndirect(&clipped);
+        require(update&&visible,"Cannot observe the actual viewport update region");
+        const auto kind=GetUpdateRgn(item,update,FALSE);
+        CombineRgn(update,update,visible,RGN_AND);RECT remaining{};const auto pending=GetRgnBox(update,&remaining);
+        DeleteObject(visible);DeleteObject(update);
+        require(kind!=ERROR&&pending==NULLREGION,
+            "A returned drag frame still has dirty visible client pixels: control="+std::to_string(GetDlgCtrlID(item)));
+    }
+}
+void pure_scroll_motion_keeps_native_document(bool tall){
+    Fixture f([](state::StateData& data,const curriculum::Lesson&){
+        data.preferences["scroll_motion_qa"]["unrelated"]=std::string(" \t conservar\r\n");
+    },[&](const curriculum::Lesson&){
+        curriculum::Lesson lesson;lesson.id=tall?"qa_scroll_motion_overflow_bands":"qa_scroll_motion";
+        lesson.locale="es";lesson.title="Movimiento de la página";curriculum::Page page;page.stable_id="page_motion";
+        curriculum::Block editor;editor.type=BlockType::cpp_compiler;editor.stable_id="editor";
+        editor.initial_code="int main() {\n";
+        for(int line=0;line<70;++line)editor.initial_code+="    // línea "+std::to_string(line)+" "+std::string(260,'x')+'\n';
+        editor.initial_code+="    return 0;\n}\n";editor.address={0,0,{},{}};page.blocks.push_back(std::move(editor));
+        curriculum::Block answer;answer.type=BlockType::fill_code;answer.stable_id="checked_answer";
+        answer.question="Completa el operador.";answer.answers={"<<"};answer.explanation="El operador conserva la salida.";
+        answer.address={0,1,{},{}};page.blocks.push_back(std::move(answer));
+        for(int block=0;block<(tall?24:5);++block){curriculum::Block paragraph;paragraph.type=BlockType::paragraph;
+            paragraph.stable_id="paragraph_"+std::to_string(block);paragraph.address={0,page.blocks.size(),{},{}};
+            for(int line=0;line<(tall?100:20);++line)paragraph.text+="Contenido conservado durante el movimiento de la página.\n";
+            page.blocks.push_back(std::move(paragraph));}
+        lesson.pages.push_back(std::move(page));return lesson;
+    },true);
+    // Enter deliberately ignores controls under a hidden host. Establish a
+    // visible QA surface before accepting the prerequisite through its actual
+    // Check button; this regression concerns movement, not keyboard dispatch.
+    ShowWindow(f.host,SW_SHOWNOACTIVATE);pump(f.host);
+    f.replace(0,10,f.text(0,10)+"// borrador QA sin compilación\n");
+    f.replace(1,2,"<<");f.click(1,3);
+    const auto accepted=state::get_response(f.saved(),f.lesson,f.lesson.pages[0].blocks[1]);
+    require(f.text(1,4).starts_with("✓ Correcto")&&accepted&&accepted->correct,
+        "The visible scroll QA did not accept its answer through the actual Check button");
+    const auto pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane"),editor=f.control(0,10);
+    require(pane&&editor,"Scroll-motion fixture has no real pane/editor");
+    SetFocus(editor);CHARRANGE selection{300,315};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    POINT desired{80,40};SendMessageW(editor,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&desired));pump(f.host);
+    POINT inner{};SendMessageW(editor,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&inner));
+    require(inner.x>0&&inner.y>0,"The scroll-motion fixture did not establish actual two-axis editor scrolling");
+    SendMessageW(f.view,WM_VSCROLL,tall?SB_BOTTOM:SB_TOP,0);pump(f.host);
+    if(tall){SendMessageW(pane,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(8*WHEEL_DELTA)),0);pump(f.host);}
+    SCROLLINFO initial{sizeof(initial),SIF_ALL};GetScrollInfo(pane,SB_VERT,&initial);
+    require(initial.nMax-static_cast<int>(initial.nPage)>500,"The scroll-motion fixture has no movable document");
+    if(tall){
+        require(initial.nMax>32767&&initial.nPos>32767,"The tall scroll fixture did not reach a genuine late overflow band");
+        require(GetParent(f.control(f.lesson.pages[0].blocks.size()-1,0))!=pane,
+            "The late tall-page paragraph did not use a rebased overflow host");
+    }
+    const auto state_before=f.saved();
+    const auto script=reading_script(f.view);
+    const auto handles=scroll_descendants(f.view);
+    struct Content{HWND item;std::string text;SIZE dimensions;bool row;};std::vector<Content> content;
+    for(const auto item:handles){wchar_t type[128]{};GetClassNameW(item,type,128);
+        if(std::wstring_view(type)==L"LearnGameAndEngineDev.LessonPane")continue;
+        RECT bounds{};GetClientRect(item,&bounds);wchar_t parent_type[128]{};GetClassNameW(GetParent(item),parent_type,128);
+        content.push_back({item,window_text(item),{bounds.right,bounds.bottom},
+            std::wstring_view(parent_type)==L"LearnGameAndEngineDev.LessonPane"});
+    }
+    std::map<HWND,RECT> document_positions;
+    const auto unchanged=[&](int position){
+        require(scroll_descendants(f.view)==handles,"Pure scrolling recreated or removed a lesson control");
+        const auto viewport=screen_client(pane);
+        for(const auto& item:content){RECT bounds{};GetClientRect(item.item,&bounds);
+            require(bounds.right==item.dimensions.cx&&bounds.bottom==item.dimensions.cy&&window_text(item.item)==item.text,
+                "Pure scrolling changed a control's dimensions or exact text");
+            RECT clipped{};
+            if(item.row&&scroll_visible_clip(item.item,pane,clipped)){
+                RECT logical{};GetWindowRect(item.item,&logical);OffsetRect(&logical,-viewport.left,position-viewport.top);
+                const auto [found,inserted]=document_positions.emplace(item.item,logical);
+                require(inserted||EqualRect(&found->second,&logical),"Translating the viewport changed a row's logical document geometry");
+            }
+        }
+        CHARRANGE current{};POINT offset{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
+        SendMessageW(editor,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+        require(current.cpMin==selection.cpMin&&current.cpMax==selection.cpMax&&offset.x==inner.x&&offset.y==inner.y,
+            "Page scrolling changed the editor's selection or internal scroll position");
+        require(f.page()==0&&reading_script(f.view)==script,"Pure vertical movement changed the page or its narration sources");
+    };
+    unchanged(initial.nPos);RedrawWindow(pane,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN|RDW_UPDATENOW);
+    {
+        ScrollMotionTrace trace(f.view);
+        const auto position=[&]{SCROLLINFO value{sizeof(value),SIF_ALL};GetScrollInfo(pane,SB_VERT,&value);return value;};
+        const auto drag=[&](int direction){
+            const auto start_position=position();RECT area{};GetClientRect(pane,&area);
+            const int scale=static_cast<int>(GetDpiForWindow(pane));
+            const POINT start{MulDiv(8,scale,96),area.bottom/2};
+            SendMessageW(pane,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(start.x,start.y));
+            int previous=start_position.nPos;
+            for(int step=1;step<=24;++step){
+                const auto distance=MulDiv(18+step*6,scale,96)*direction;
+                SendMessageW(pane,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(start.x,start.y-distance));
+                const auto current=position();const auto maximum=std::max(0,current.nMax-static_cast<int>(current.nPage)+1);
+                const auto expected=std::clamp(start_position.nPos+distance,0,maximum);
+                require(current.nPos==expected&&current.nPos!=previous,
+                    "A real vertical drag did not expose every continuous requested scroll position");
+                trace.quiet();unchanged(current.nPos);require_clean_visible_scroll_frame(pane);previous=current.nPos;
+            }
+            const auto end_distance=MulDiv(18+24*6,scale,96)*direction;
+            SendMessageW(pane,WM_LBUTTONUP,0,MAKELPARAM(start.x,start.y-end_distance));
+            require(position().nPos==previous,"Releasing a vertical drag changed its final position");trace.quiet();
+        };
+        drag(1);drag(-1);
+        for(const auto delta:{-WHEEL_DELTA,-WHEEL_DELTA,WHEEL_DELTA,-WHEEL_DELTA}){
+            const auto before=position();SendMessageW(pane,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(delta)),0);
+            const auto after=position();require((delta<0&&after.nPos>before.nPos)||(delta>0&&after.nPos<before.nPos),
+                "The actual mouse wheel did not move only the current viewport");
+            trace.quiet();unchanged(after.nPos);pump(f.host);trace.quiet();
+        }
+    }
+    SCROLLINFO final_position{sizeof(final_position),SIF_ALL};GetScrollInfo(pane,SB_VERT,&final_position);
+    const auto final_state=f.saved();
+    const auto without_scroll=[&](state::StateData value){value.preferences["native_windows"].erase(
+        "scroll/"+f.lesson.id+'/'+f.lesson.pages[0].stable_id);return value;};
+    require(without_scroll(final_state)==without_scroll(state_before),
+        "Pure movement changed preferences, drafts, answers, attempts or achievements beyond the page offset");
+    const auto original_source=f.text(0,10),original_feedback=f.text(1,4);f.reopen();
+    const auto restored_pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");SCROLLINFO restored{sizeof(restored),SIF_POS};
+    GetScrollInfo(restored_pane,SB_VERT,&restored);const auto dpi=static_cast<int>(GetDpiForWindow(restored_pane));
+    const auto saved_dp=MulDiv(final_position.nPos,96,dpi),expected_pixels=MulDiv(saved_dp,dpi,96);
+    require(restored.nPos==expected_pixels&&f.text(0,10)==original_source&&f.text(1,4)==original_feedback
+        &&without_scroll(f.saved())==without_scroll(final_state),
+        "Reopening lost the real final page offset, code draft, accepted response or unrelated preferences");
+    std::cout<<"PASS pure scroll motion "<<(tall?"over32767 rebased bands":"ordinary page")
+        <<": 48 actual drag moves plus wheel, no native content measurement/resize, exact positions and geometry, synchronous clean drag frames, same HWNDs/text/selection/internal scroll, preserved state and reopen; no timing threshold\n";
+}
+
 struct NarrationLayoutTrace {
     unsigned geometry=0,formatting=0,erases=0;
     std::vector<HWND> targets;
@@ -3879,6 +4064,7 @@ int main(int argc,char* argv[]) {
         catch (const std::exception& error) { std::cerr << "Stderr visual QA preparation failed: " << error.what() << '\n'; return 1; }
     }
     const bool scroll_repaint_only=argc==2&&std::string_view(argv[1])=="--scroll-repaint";
+    const bool scroll_motion_only=argc==2&&std::string_view(argv[1])=="--scroll-motion";
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
@@ -3894,7 +4080,7 @@ int main(int argc,char* argv[]) {
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
-    if(argc>1&&!scroll_repaint_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -3906,6 +4092,7 @@ int main(int argc,char* argv[]) {
         if(inline_feedback_only){current_inline_feedback_uses_authored_controls_and_restores_each_attempt();return 0;}
         if(navigation_geometry_only){completed_compilers_keep_navigation_after_active_content();return 0;}
         if(scroll_repaint_only){simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
+        if(scroll_motion_only){pure_scroll_motion_keeps_native_document(false);pure_scroll_motion_keeps_native_document(true);return 0;}
         if(compiler_height_only){native_compiler_short_sources_keep_a_usable_height();return 0;}
         if(narration_repaint_only){narration_checkpoints_do_not_reformat_or_reflow_the_page();return 0;}
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}

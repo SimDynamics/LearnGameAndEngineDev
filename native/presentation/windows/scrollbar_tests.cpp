@@ -70,7 +70,7 @@ const wchar_t* compiler_host_class(){
 struct Field {
     HWND host=nullptr,field=nullptr;HFONT font=nullptr;
     explicit Field(bool themed=true,bool compiler=false){host=CreateWindowExW(compiler?WS_EX_CONTROLPARENT:0,
-        compiler?compiler_host_class():L"STATIC",L"Isolated native scrollbar QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE|
+        compiler_host_class(),L"Isolated native scrollbar QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE|
         (compiler?WS_CLIPCHILDREN|WS_CLIPSIBLINGS:0),
         30,30,700,500,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host!=nullptr,"Cannot create the scrollbar QA host");
@@ -209,6 +209,42 @@ void native_theme_owner_contract(){
     }
     check(!reader_theme::native_scrollbar_theme(single),"The single-line answer failed to restore its prior policy");DestroyWindow(single);
     std::cout<<"PASS native scrollbar owner: gutter opt-in, no custom overlay, "<<(has_theme?"Windows theme":"Windows system fallback")<<" and prior policy restored\n";
+}
+void custom_viewport_theme_contract(){
+    const auto host=CreateWindowExW(0,compiler_host_class(),L"Custom viewport policy QA",WS_OVERLAPPEDWINDOW,
+        0,0,700,500,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(host!=nullptr,"Create a normal custom-viewport policy host");
+    struct DestroyHost{HWND value;~DestroyHost(){if(IsWindow(value))DestroyWindow(value);}} destroy{host};
+    const auto viewport=CreateWindowExW(0,compiler_host_class(),L"Viewport content",WS_CHILD|WS_VISIBLE|WS_VSCROLL|WS_HSCROLL,
+        10,10,440,260,host,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(viewport!=nullptr,"Create the non-RichEdit viewport with native scrollbars");
+    SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE|SIF_POS,0,1200,100,20};
+    SetScrollInfo(viewport,SB_VERT,&range,FALSE);SetScrollInfo(viewport,SB_HORZ,&range,FALSE);
+    const auto before_vertical=scroll(viewport,SB_VERT),before_horizontal=scroll(viewport,SB_HORZ);
+    const auto style=GetWindowLongPtrW(viewport,GWL_STYLE),extended_style=GetWindowLongPtrW(viewport,GWL_EXSTYLE);
+    const auto offered=OpenThemeData(viewport,L"SCROLLBAR");const bool theme_available=offered!=nullptr;if(offered)CloseThemeData(offered);
+    reader_theme::apply(viewport,reader_theme::Surface::screen);
+    const auto themed=OpenThemeData(viewport,L"SCROLLBAR");const bool second_skin=themed!=nullptr;if(themed)CloseThemeData(themed);
+    check(reader_theme::palette(viewport).high_contrast||!theme_available||!second_skin,
+        "A custom scrolling viewport kept a visual-style scrollbar over its custom renderer");
+    check(GetWindowLongPtrW(viewport,GWL_STYLE)==style&&GetWindowLongPtrW(viewport,GWL_EXSTYLE)==extended_style
+        &&equal(before_vertical,scroll(viewport,SB_VERT))&&equal(before_horizontal,scroll(viewport,SB_HORZ))&&text(viewport)==L"Viewport content",
+        "Adopting one custom scrollbar renderer changed native styles, range, position or content");
+    reader_theme::use_native_scrollbar_theme(viewport);
+    check(!reader_theme::native_scrollbar_theme(viewport),"A custom viewport acquired the RichEdit-only native-theme opt-in");
+    ShowScrollBar(viewport,SB_BOTH,FALSE);const auto hidden_style=GetWindowLongPtrW(viewport,GWL_STYLE);
+    reader_theme::refresh_scrollbars(viewport);
+    check(!(hidden_style&(WS_VSCROLL|WS_HSCROLL))&&GetWindowLongPtrW(viewport,GWL_STYLE)==hidden_style,
+        "Refreshing an adopted viewport recreated hidden scrollbar frames");
+    // The retained adoption is needed even without WS_*SCROLL: a subsequent
+    // system high-contrast change must still restore the window's theme.
+    check(GetPropW(viewport,L"LGAED.ReaderScrollbarThemePolicy")!=nullptr,
+        "Removing custom viewport bars lost the policy needed for high-contrast restoration");
+    ShowScrollBar(viewport,SB_BOTH,TRUE);reader_theme::refresh_scrollbars(viewport);
+    check(GetWindowLongPtrW(viewport,GWL_STYLE)==style&&equal(before_vertical,scroll(viewport,SB_VERT))&&equal(before_horizontal,scroll(viewport,SB_HORZ)),
+        "Restoring custom viewport bars changed their native state or styles");
+    std::cout<<"PASS custom viewport single-renderer policy: "<<(theme_available?"visual-style conflict removed":"system theme unavailable")
+        <<", native ranges/styles/content preserved, hidden-bar lifecycle retained and RichEdit-only opt-in unchanged; no global high-contrast setting changed\n";
 }
 struct EditorFormatHost {
     HWND field=nullptr;
@@ -512,9 +548,10 @@ struct PresentedBar {
     std::vector<DWORD> gutter_pixels;
     LONG thumb_top=0,thumb_bottom=0,native_top=0,native_bottom=0;
     int position=0,tracking_position=0;
+    POINT track_point{},thumb_point{},pointer_point{};
     bool valid=false,stable_thumb=false,stable_arrow=false,arrow_visible=false,thumb_visible=false,controlled=false;
 };
-PresentedBar presented_bar(HWND field,int axis,bool tracking,const RECT* gutter=nullptr){
+PresentedBar presented_bar(HWND field,int axis,bool tracking,const RECT* gutter=nullptr,const POINT* press_anchor=nullptr){
     PresentedBar result;const bool sideways=axis==SB_HORZ;SCROLLBARINFO before{sizeof(before)},after{sizeof(after)};
     const auto host=GetAncestor(field,GA_ROOT),foreground=GetForegroundWindow();
     SCROLLINFO range{sizeof(range),SIF_ALL},range_after{sizeof(range_after),SIF_ALL};
@@ -538,6 +575,27 @@ PresentedBar presented_bar(HWND field,int axis,bool tracking,const RECT* gutter=
         const auto span=maximum-limits.nMin;
         return static_cast<LONG>(button+(span?(delta*travel+span/2)/span:0));
     };
+    // Sample an actual free part of the track, physically separated from the
+    // live pointer/thumb and the original button press. A desktop cursor
+    // highlighter can remain around the press after the pointer moves; no
+    // pixel of the independently observed gutter is excluded.
+    const auto extent=sideways?width:height;
+    const auto arrow_extent=std::min<LONG>(before.dxyLineButton,extent/2);
+    const auto live_top=thumb_start(before,range),live_bottom=live_top+before.xyThumbBottom-before.xyThumbTop;
+    const std::array<std::pair<LONG,LONG>,2> free_track{{{arrow_extent+2,live_top-2},{live_bottom+2,extent-arrow_extent-2}}};
+    POINT pointer{};GetCursorPos(&pointer);result.pointer_point=pointer;LONG sample_along=-1;long long best_distance=-1;
+    const auto pointer_distance=[&](POINT candidate){
+        const auto squared=[&](POINT center){const auto dx=static_cast<long long>(candidate.x)-center.x,dy=static_cast<long long>(candidate.y)-center.y;return dx*dx+dy*dy;};
+        return press_anchor?std::min(squared(pointer),squared(*press_anchor)):squared(pointer);
+    };
+    // Search only native free-track geometry, before reading any screen RGB.
+    // The longest free region's center may coincide with the press halo;
+    // maximize clearance from both anchors within the same track bounds.
+    for(const auto& [begin,end]:free_track)for(auto along=begin;along<end;++along){
+        const POINT candidate{before.rcScrollBar.left+(sideways?along:1),before.rcScrollBar.top+(sideways?1:along)};
+        const auto distance=pointer_distance(candidate);
+        if(distance>best_distance){sample_along=along;best_distance=distance;result.track_point=candidate;}}
+    if(sample_along<0)return result;
     const auto screen=GetDC(nullptr),memory=CreateCompatibleDC(screen);
     const auto bitmap=memory?CreateCompatibleBitmap(screen,capture_width,capture_height):nullptr;
     if(!screen||!memory||!bitmap){if(bitmap)DeleteObject(bitmap);if(memory)DeleteDC(memory);if(screen)ReleaseDC(nullptr,screen);return result;}
@@ -546,14 +604,19 @@ PresentedBar presented_bar(HWND field,int axis,bool tracking,const RECT* gutter=
     // from this same desktop frame, before any observer obtains a WindowDC.
     const bool copied=BitBlt(memory,0,0,capture_width,capture_height,screen,observed.left,observed.top,SRCCOPY)!=FALSE;
     const auto pixel=[&](int x,int y){return GetPixel(memory,bar_x+x,bar_y+y);};
-    result.track=pixel(sideways?width/2:1,sideways?1:height/2);
+    result.track=pixel(sideways?sample_along:1,sideways?1:sample_along);
     // USER reports the committed xyThumb* geometry while drawing its live drag
     // at SIF_TRACKPOS. Observe that live position instead of the vacated thumb.
     result.native_top=before.xyThumbTop;result.native_bottom=before.xyThumbBottom;
     result.position=range.nPos;result.tracking_position=range.nTrackPos;
     result.thumb_top=thumb_start(before,range);result.thumb_bottom=result.thumb_top+before.xyThumbBottom-before.xyThumbTop;
-    result.thumb=pixel(sideways?(result.thumb_top+result.thumb_bottom)/2:width/2,
-        sideways?height/2:(result.thumb_top+result.thumb_bottom)/2);
+    const auto thumb_length=result.thumb_bottom-result.thumb_top;
+    const auto cap_margin=std::max<LONG>(1,std::min<LONG>((thumb_length-1)/4,(sideways?height:width)/2+2));
+    const auto near_start=result.thumb_top+cap_margin,near_end=result.thumb_bottom-cap_margin-1;
+    const auto thumb_distance=[&](LONG along){return pointer_distance({before.rcScrollBar.left+(sideways?along:width/2),before.rcScrollBar.top+(sideways?height/2:along)});};
+    const auto thumb_sample=thumb_distance(near_start)>=thumb_distance(near_end)?near_start:near_end;
+    result.thumb_point={before.rcScrollBar.left+(sideways?thumb_sample:width/2),before.rcScrollBar.top+(sideways?height/2:thumb_sample)};
+    result.thumb=pixel(sideways?thumb_sample:width/2,sideways?height/2:thumb_sample);
     const auto arrow=std::min<LONG>(before.dxyLineButton,(sideways?width:height)/2);
     unsigned thumb_ink=0;
     for(LONG along=arrow+2;along<(sideways?width:height)-arrow-2;++along){
@@ -594,11 +657,31 @@ void native_thumb_tracking(Field& value,int axis,bool visible_screen=false){
     // IMR_QUERYCHARPOSITION can reveal an offscreen insertion point after a
     // synthetic focus change. It is unrelated to this scrollbar gesture; keep
     // this fixture's IME isolated and restore its original context afterwards.
+    const bool sideways=axis==SB_HORZ;
+    if(visible_screen){
+        // Keep the complete number margin and the free-track sample well away
+        // from the native pointer, without masking or tolerating changed pixels.
+        MONITORINFO monitor{sizeof(monitor)};check(GetMonitorInfoW(MonitorFromWindow(value.host,MONITOR_DEFAULTTONEAREST),&monitor)!=FALSE,"Read the physical tracking fixture's monitor work area");
+        RECT original{};GetWindowRect(value.host,&original);
+        const int outer_width=std::min(1200L,monitor.rcWork.right-monitor.rcWork.left),outer_height=std::min(sideways?600L:1000L,monitor.rcWork.bottom-monitor.rcWork.top);
+        const int left=std::clamp(original.left,monitor.rcWork.left,monitor.rcWork.right-outer_width),top=std::clamp(original.top,monitor.rcWork.top,monitor.rcWork.bottom-outer_height);
+        SetWindowPos(value.host,nullptr,left,top,outer_width,outer_height,SWP_NOZORDER|SWP_NOACTIVATE);
+        RECT client{};GetClientRect(value.host,&client);
+        MoveWindow(value.field,20,20,std::max(1L,client.right-40),std::max(1L,std::min(sideways?300L:800L,client.bottom-40)),TRUE);pump();
+    }
     SetForegroundWindow(value.host);SetFocus(value.field);pump();
     const auto original_text=text(value.field);const auto style=GetWindowLongPtrW(value.field,GWL_STYLE);
     CHARRANGE original_selection{};SendMessageW(value.field,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&original_selection));
-    const bool sideways=axis==SB_HORZ;const UINT scroll_message=sideways?WM_HSCROLL:WM_VSCROLL;
+    const UINT scroll_message=sideways?WM_HSCROLL:WM_VSCROLL;
     SendMessageW(value.field,scroll_message,sideways?SB_LEFT:SB_TOP,0);pump();
+    if(visible_screen&&sideways){
+        const auto range=scroll(value.field,axis);POINT point{};SendMessageW(value.field,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&point));
+        point.x=range.nMin+std::max(0,range.nMax-std::max(0,static_cast<int>(range.nPage)-1)-range.nMin)/2;
+        SendMessageW(value.field,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&point));pump();
+        const auto positioned=scroll(value.field,axis);
+        check(positioned.nPos>positioned.nMin&&positioned.nPos<positioned.nMax-static_cast<int>(positioned.nPage)+1,
+            "The physical horizontal tracking fixture did not begin at a real intermediate scroll position");
+    }
     SCROLLBARINFO info{sizeof(info)};check(GetScrollBarInfo(value.field,sideways?OBJID_HSCROLL:OBJID_VSCROLL,&info)!=FALSE,"Read native thumb before tracking");
     const auto initial=scroll(value.field,axis);
     RECT client_bounds{};GetClientRect(value.field,&client_bounds);
@@ -630,6 +713,10 @@ void native_thumb_tracking(Field& value,int axis,bool visible_screen=false){
     }
     check(WindowFromPoint(first)==value.field,"The isolated scrollbar fixture must own the mouse target");
     check(SendMessageW(value.field,WM_NCHITTEST,0,MAKELPARAM(first.x,first.y))==(sideways?HTHSCROLL:HTVSCROLL),"The visible scrollbar must retain native hit testing");
+    if(visible_screen)std::cout<<"METRIC tracking geometry: axis="<<axis<<" initial_position="<<initial.nPos<<" range="<<initial.nMin<<','<<initial.nMax
+        <<" native_theme="<<reader_theme::native_scrollbar_theme(value.field)
+        <<" page="<<initial.nPage<<" first="<<first.x<<','<<first.y<<" last="<<last.x<<','<<last.y
+        <<" gutter="<<gutter_region.left<<','<<gutter_region.top<<','<<gutter_region.right<<','<<gutter_region.bottom<<'\n';
     TrackingPaintProbe probe;probe.axis=axis;probe.raster=!visible_screen;
     check(SetWindowSubclass(value.field,TrackingPaintProbe::proc,9920,reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,"Observe actual native thumb tracking");
     SetCursorPos(first.x,first.y);
@@ -639,7 +726,7 @@ void native_thumb_tracking(Field& value,int axis,bool visible_screen=false){
     std::atomic<bool> finished=false,input_ok=true;
     TrackingPaintProbe::Sample during{};bool button_down=false;
     struct VisibleFrame{bool released;double milliseconds;PresentedBar bar;};std::vector<VisibleFrame> frames;frames.reserve(observe_gutter?21:14);
-    const auto read_screen=[field=value.field,axis,observe_gutter,gutter_region](bool tracking){return presented_bar(field,axis,tracking,observe_gutter?&gutter_region:nullptr);};
+    const auto read_screen=[field=value.field,axis,observe_gutter,gutter_region,first](bool tracking){return presented_bar(field,axis,tracking,observe_gutter?&gutter_region:nullptr,&first);};
     std::vector<DWORD> gutter_reference;
     auto expected=reader_theme::background(value.field);
     if(visible_screen){
@@ -746,6 +833,10 @@ void native_thumb_tracking(Field& value,int axis,bool visible_screen=false){
             <<", pressed="<<button_down<<", during track="<<during.ink<<", during position="<<during.position.nPos<<", during tracking="<<during.position.nTrackPos<<'\n';
         for(const auto& sample:probe.samples)std::cerr<<"  message="<<sample.message<<", request="<<sample.request<<", position="<<sample.position.nPos<<", tracking="<<sample.position.nTrackPos<<", track color="<<sample.ink<<'\n';
         for(const auto& frame:frames)std::cerr<<"  visible screen "<<(frame.released?"after release":"during hold")<<" at "<<frame.milliseconds<<" ms: track="<<frame.bar.track
+            <<" track_point="<<frame.bar.track_point.x<<','<<frame.bar.track_point.y
+            <<" pointer="<<frame.bar.pointer_point.x<<','<<frame.bar.pointer_point.y
+            <<" thumb_point="<<frame.bar.thumb_point.x<<','<<frame.bar.thumb_point.y
+            <<" track_RGB="<<static_cast<int>(GetRValue(frame.bar.track))<<','<<static_cast<int>(GetGValue(frame.bar.track))<<','<<static_cast<int>(GetBValue(frame.bar.track))
             <<" thumb="<<frame.bar.thumb<<" geometry="<<frame.bar.thumb_top<<".."<<frame.bar.thumb_bottom<<" stable="<<frame.bar.stable_thumb
             <<" committed geometry="<<frame.bar.native_top<<".."<<frame.bar.native_bottom<<" position="<<frame.bar.position<<" tracking="<<frame.bar.tracking_position
             <<" arrow="<<frame.bar.arrow_visible<<" arrow stable="<<frame.bar.stable_arrow<<" thumb present="<<frame.bar.thumb_visible
@@ -794,6 +885,7 @@ void editor_native_tracking(){
     const auto line_end=SendMessageW(value.field,EM_LINELENGTH,0,0);SendMessageW(value.field,EM_SETSEL,static_cast<WPARAM>(line_end),line_end);pump();
     check(lgaed::windows::code_gutter_snapshot(value.field).active,
         "Native scrollbar tracking must include the compiler's actual fixed number margin");
+    check(reader_theme::native_scrollbar_theme(value.field),"The physical CodeEditor tracking fixture lost its single native scrollbar owner");
     native_thumb_tracking(value,SB_HORZ,true);native_thumb_tracking(value,SB_VERT,true);
     std::cout<<"PASS actual CodeEditor horizontal/vertical native tracking with its live fixed gutter\n";
 }
@@ -859,17 +951,18 @@ int main(int argc,char* argv[]){const auto module=LoadLibraryW(L"Msftedit.dll");
         SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         lgaed::windows::ensure_winrt_apartment();
         if(argc==2&&std::string_view(argv[1])=="--editor-cycles"){editor_format_cycles();return 0;}
-        if(argc==2&&std::string_view(argv[1])=="--editor-tracking"){editor_native_tracking();return 0;}
+        if(argc==2&&(std::string_view(argv[1])=="--editor-tracking"||std::string_view(argv[1])=="--tracking")){editor_native_tracking();return 0;}
         if(argc==2&&std::string_view(argv[1])=="--stock-tracking"){
             Field value(false,true);reader_theme::use_native_scrollbar_theme(value.field);
             check(SUCCEEDED(SetWindowTheme(value.field,L"DarkMode_Explorer",nullptr)),"Cannot enable the stock Windows dark scrollbar");
             native_thumb_tracking(value,SB_HORZ,true);native_thumb_tracking(value,SB_VERT,true);return 0;}
         if(argc==2&&std::string_view(argv[1])=="--native-theme-contract"){native_theme_owner_contract();return 0;}
+        if(argc==2&&std::string_view(argv[1])=="--custom-viewport-policy"){custom_viewport_theme_contract();return 0;}
         if(argc==2&&std::string_view(argv[1])=="--custom-tracking"){custom_native_tracking();return 0;}
         check(argc==1,"Unknown scrollbar QA mode");
         int baseline_wheel=0;
         {Field baseline(false);baseline_wheel=native_wheel_delta(baseline.field);}
-        native_theme_owner_contract();editor_format_cycles();editor_native_tracking();
+        native_theme_owner_contract();custom_viewport_theme_contract();editor_format_cycles();editor_native_tracking();
         Field value;hidden_viewport_frame(value.host);slider_colors_and_native_state(value.host);switch_colors_and_native_state(value.host);std::cout<<"Actual scrollbar DPI="<<GetDpiForWindow(value.field)<<'\n';paint_without_mutating_native_state(value);
         native_thumb_tracking(value,SB_HORZ,true);native_thumb_tracking(value,SB_VERT,true);
         native_thumb_tracking(value,SB_HORZ);native_thumb_tracking(value,SB_VERT);

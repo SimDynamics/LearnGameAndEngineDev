@@ -96,9 +96,15 @@ void reset_text_tests(){
 bool boolean(const lgaed::state::StateData& data,const char* domain,const char* key){const auto value=lgaed::state::find(data,domain,key);check(value&&std::holds_alternative<bool>(*value),"Expected a persisted boolean preference");return std::get<bool>(*value);}
 struct ScopedFixture{
     lgaed::state::StateData data;HWND host=nullptr,view=nullptr;int updates=0,changes=0,closed=0,resets=0,scope_id=0;std::vector<std::string> reset_routes;
-    ScopedFixture(lgaed::presentation::SettingsScope scope,lgaed::state::StateData initial={},std::string course="course_a",bool programming=true):data(std::move(initial)){
+    ScopedFixture(lgaed::presentation::SettingsScope scope,lgaed::state::StateData initial={},std::string course="course_a",bool programming=true,bool native_mouse_host=false):data(std::move(initial)){
         scope_id=static_cast<int>(scope);
-        host=CreateWindowExW(0,L"STATIC",L"Scoped settings QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create scoped settings QA host");
+        constexpr wchar_t mouse_host_class[]=L"LearnGameAndEngineDev.SettingsMouseTests";
+        if(native_mouse_host){WNDCLASSEXW type{sizeof(type)};type.lpfnWndProc=DefWindowProcW;type.hInstance=GetModuleHandleW(nullptr);
+            type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.hbrBackground=lgaed::presentation::reader_theme::brush(lgaed::presentation::reader_theme::Surface::screen);type.lpszClassName=mouse_host_class;
+            check(RegisterClassExW(&type)!=0||GetLastError()==ERROR_CLASS_ALREADY_EXISTS,"Cannot register a genuine native mouse-test host");}
+        // WindowFromPoint deliberately skips static text controls. Real input
+        // fixtures need an ordinary root window, as the application uses.
+        host=CreateWindowExW(0,native_mouse_host?mouse_host_class:L"STATIC",L"Scoped settings QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create scoped settings QA host");
         lgaed::presentation::SettingsAccess access;access.scope=scope;access.course_id=std::move(course);access.title="Título del contenido";access.eyebrow="Contexto";access.programming=programming;
         access.programming_course_ids={"course_a","course_b","course_c"};access.math_course_ids={"math_a","math_b"};access.reset_route=[this](std::string_view route){reset_routes.emplace_back(route);};
         access.read=[this]{return data;};access.update=[this](const auto& update){++updates;update(data);};access.changed=[this]{++changes;};access.close=[this]{++closed;};access.reset_scope=[this]{++resets;};
@@ -567,21 +573,35 @@ void slider_wheel_tests(){
     std::cout<<"PASS focused text-size and all nine RGB sliders: wheel scrolls page, horizontal wheel leaves values/data/drafts unchanged\n";
 }
 struct SettingsThumbProbe{
-    int notifications=0;std::vector<int> positions;
+    int notifications=0,scroll_depth=0,nested_nc_calc=0,nested_nc_paint=0;std::vector<int> positions;
     static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR raw){
-        auto& self=*reinterpret_cast<SettingsThumbProbe*>(raw);const auto result=DefSubclassProc(window,message,wp,lp);
+        auto& self=*reinterpret_cast<SettingsThumbProbe*>(raw);
+        if(self.scroll_depth&&message==WM_NCCALCSIZE)++self.nested_nc_calc;
+        if(self.scroll_depth&&message==WM_NCPAINT)++self.nested_nc_paint;
+        const bool scroll=message==WM_VSCROLL&&!lp&&(LOWORD(wp)==SB_THUMBTRACK||LOWORD(wp)==SB_THUMBPOSITION);
+        if(scroll)++self.scroll_depth;
+        const auto result=DefSubclassProc(window,message,wp,lp);
+        if(scroll)--self.scroll_depth;
         if(message==WM_VSCROLL&&LOWORD(wp)==SB_THUMBTRACK&&!lp){SCROLLINFO info{sizeof(info),SIF_POS};GetScrollInfo(window,SB_VERT,&info);++self.notifications;self.positions.push_back(info.nPos);}
         if(message==WM_NCDESTROY)RemoveWindowSubclass(window,proc,id);return result;
     }
 };
-void settings_thumb_drag_tests(){
+void settings_thumb_drag_test(bool focus_handshake){
     using namespace lgaed;using namespace presentation;
     state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["learning_progress"]["answer"]=std::string("unchanged");
-    ScopedFixture fixture(SettingsScope::global,seed);ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
+    ScopedFixture fixture(SettingsScope::global,seed,"course_a",true,true);ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();
     RECT host_client{},initial_view{};GetClientRect(fixture.host,&host_client);GetWindowRect(fixture.view,&initial_view);
     // Production sizes its child page to the root client, not to a fixed
     // fraction of an outer window whose frame grows with monitor DPI.
     MoveWindow(fixture.view,host_client.left,host_client.top,host_client.right-host_client.left,host_client.bottom-host_client.top,TRUE);pump();
+    if(focus_handshake&&GetForegroundWindow()!=fixture.host){
+        std::cout<<"NEED_FOCUS settings_scrollbar_paint host="<<static_cast<void*>(fixture.host)<<" pid="<<GetCurrentProcessId()<<std::endl;
+        const auto deadline=GetTickCount64()+10000;
+        while(GetForegroundWindow()!=fixture.host&&GetTickCount64()<deadline){
+            MsgWaitForMultipleObjects(0,nullptr,FALSE,20,QS_ALLINPUT);pump();
+        }
+        check(GetForegroundWindow()==fixture.host,"The isolated Settings QA did not receive foreground within its focus handshake");
+    }
     SendMessageW(fixture.view,WM_VSCROLL,SB_TOP,0);pump();SCROLLBARINFO bar{sizeof(bar)};
     check(GetScrollBarInfo(fixture.view,OBJID_VSCROLL,&bar)&&!(bar.rgstate[3]&STATE_SYSTEM_UNAVAILABLE),"Settings native scrollbar thumb is unavailable");
     const POINT first{(bar.rcScrollBar.left+bar.rcScrollBar.right)/2,bar.rcScrollBar.top+(bar.xyThumbTop+bar.xyThumbBottom)/2};
@@ -603,24 +623,56 @@ void settings_thumb_drag_tests(){
     check(hit==fixture.view&&hit_test==HTVSCROLL,"The Settings fixture does not own its native scrollbar input");
     SCROLLINFO initial{sizeof(initial),SIF_ALL};GetScrollInfo(fixture.view,SB_VERT,&initial);const auto child=fixture.control(5101);const auto before=relative_rect(child,fixture.view);
     SettingsThumbProbe probe;check(SetWindowSubclass(fixture.view,SettingsThumbProbe::proc,0x51415354,reinterpret_cast<DWORD_PTR>(&probe))!=FALSE,"Observe real Settings scrollbar notifications");
+    const auto expected_track=reader_theme::background(fixture.view);const bool observe_ink=!reader_theme::palette(fixture.view).high_contrast;
+    struct TrackSample{COLORREF upper,lower;bool held,controlled;std::size_t phase;};std::vector<TrackSample> samples;
+    const int sample_x=bar.rcScrollBar.left+std::max(1L,(bar.rcScrollBar.right-bar.rcScrollBar.left)/8);
+    const int track_top=bar.rcScrollBar.top+bar.dxyLineButton,track_bottom=bar.rcScrollBar.bottom-bar.dxyLineButton;
     POINT original{};GetCursorPos(&original);std::atomic<bool> finished=false,input_ok=true;const auto dpi=GetThreadDpiAwarenessContext();
     std::thread input([&,dpi]{const auto previous=SetThreadDpiAwarenessContext(dpi);if(!previous){input_ok=false;finished=true;return;}
         Sleep(25);
         if(WindowFromPoint(first)!=fixture.view||GetForegroundWindow()!=fixture.host||(GetAsyncKeyState(VK_LBUTTON)&0x8000)){input_ok=false;SetThreadDpiAwarenessContext(previous);finished=true;return;}
         SetCursorPos(first.x,first.y);INPUT down{};down.type=INPUT_MOUSE;down.mi.dwFlags=MOUSEEVENTF_LEFTDOWN;
         if(SendInput(1,&down,sizeof(down))!=1){input_ok=false;SetThreadDpiAwarenessContext(previous);finished=true;return;}
-        Sleep(60);SetCursorPos(first.x,first.y+(last.y-first.y)/2);Sleep(60);SetCursorPos(last.x,last.y);Sleep(80);
+        const auto observe=[&](std::size_t phase){const auto deadline=GetTickCount64()+350;const auto before=samples.size();
+            do{const auto screen=GetDC(nullptr);if(!screen){input_ok=false;return;}
+                const POINT upper{sample_x,track_top+(track_bottom-track_top)/4},lower{sample_x,track_top+(track_bottom-track_top)*3/4};
+                const bool controlled=GetForegroundWindow()==fixture.host&&WindowFromPoint(upper)==fixture.view&&WindowFromPoint(lower)==fixture.view;
+                samples.push_back({GetPixel(screen,upper.x,upper.y),GetPixel(screen,lower.x,lower.y),(GetAsyncKeyState(VK_LBUTTON)&0x8000)!=0,controlled,phase});
+                ReleaseDC(nullptr,screen);Sleep(2);
+            }while(samples.size()-before<4&&GetTickCount64()<deadline);};
+        observe(0);SetCursorPos(first.x,first.y+(last.y-first.y)/2);observe(1);SetCursorPos(last.x,last.y);observe(2);
         INPUT up{};up.type=INPUT_MOUSE;up.mi.dwFlags=MOUSEEVENTF_LEFTUP;if(SendInput(1,&up,sizeof(up))!=1){input_ok=false;PostMessageW(fixture.view,WM_LBUTTONUP,0,0);}
         SetThreadDpiAwarenessContext(previous);finished=true;
     });
     while(!finished){MsgWaitForMultipleObjectsEx(0,nullptr,50,QS_ALLINPUT,MWMO_INPUTAVAILABLE);pump();}
     input.join();pump();SetCursorPos(original.x,original.y);RemoveWindowSubclass(fixture.view,SettingsThumbProbe::proc,0x51415354);
     SCROLLINFO after{sizeof(after),SIF_ALL};GetScrollInfo(fixture.view,SB_VERT,&after);const auto moved=relative_rect(child,fixture.view);
+    SCROLLBARINFO final_bar{sizeof(final_bar)};check(GetScrollBarInfo(fixture.view,OBJID_VSCROLL,&final_bar)!=FALSE,"Read Settings scrollbar after actual tracking");
+    const auto held=std::count_if(samples.begin(),samples.end(),[](const auto& sample){return sample.held&&sample.controlled;});
+    std::array<std::size_t,3> phase_held{};for(const auto& sample:samples)if(sample.held&&sample.controlled)++phase_held[sample.phase];
+    const auto light=std::count_if(samples.begin(),samples.end(),[&](const auto& sample){return sample.held&&sample.controlled&&(sample.upper!=expected_track||sample.lower!=expected_track);});
+    std::cout<<"METRIC Settings tracking paint: nested_nccalc="<<probe.nested_nc_calc<<" nested_ncpaint="<<probe.nested_nc_paint
+        <<" held_samples="<<held<<" phase_samples="<<phase_held[0]<<','<<phase_held[1]<<','<<phase_held[2]
+        <<" wrong_track_samples="<<light<<" expected_track="<<expected_track<<'\n';
+    for(std::size_t index=0;index<samples.size();++index){const auto& sample=samples[index];
+        if(!sample.held||!sample.controlled||(sample.upper==expected_track&&sample.lower==expected_track))continue;
+        const auto report=[&](const char* point,COLORREF ink,int y){std::cerr<<"Settings track mismatch: sample="<<index<<" phase="<<sample.phase
+            <<" point="<<point<<" screen="<<sample_x<<','<<y<<" RGB="<<static_cast<int>(GetRValue(ink))<<','<<static_cast<int>(GetGValue(ink))<<','<<static_cast<int>(GetBValue(ink))
+            <<" expected_RGB="<<static_cast<int>(GetRValue(expected_track))<<','<<static_cast<int>(GetGValue(expected_track))<<','<<static_cast<int>(GetBValue(expected_track))<<'\n';};
+        if(sample.upper!=expected_track)report("upper",sample.upper,track_top+(track_bottom-track_top)/4);
+        if(sample.lower!=expected_track)report("lower",sample.lower,track_top+(track_bottom-track_top)*3/4);
+    }
     check(input_ok&&probe.notifications>=2&&std::ranges::any_of(probe.positions,[&](int value){return value>initial.nPos;}),"Dragging the real Settings scrollbar did not deliver continuing native thumb movement");
     check(after.nPos>initial.nPos&&before.top-moved.top==after.nPos-initial.nPos&&GetCapture()!=fixture.view,"The Settings thumb moved without its actual content or retained mouse capture");
+    check(initial.nMin==after.nMin&&initial.nMax==after.nMax&&initial.nPage==after.nPage&&EqualRect(&bar.rcScrollBar,&final_bar.rcScrollBar),
+        "A pure Settings thumb drag changed its range, page or native scrollbar frame");
+    check(probe.nested_nc_calc==0&&(!observe_ink||probe.nested_nc_paint==0),"Settings needlessly recalculated or repainted its native frame inside a pure thumb-scroll callback");
+    check(!observe_ink||(std::ranges::all_of(phase_held,[](auto count){return count>=2;})&&light==0),"The actual Settings scrollbar flashed a different track colour while its native thumb was held");
     check(fixture.data==seed&&fixture.updates==0&&fixture.changes==0,"Scrolling Settings changed protected student data or preferences");
     std::cout<<"PASS Settings real native thumb drag: notifications="<<probe.notifications<<" scroll="<<initial.nPos<<"->"<<after.nPos<<", exact content movement, released capture and unchanged data\n";
 }
+void settings_thumb_drag_tests(){settings_thumb_drag_test(false);}
+void settings_scrollbar_paint_tests(){settings_thumb_drag_test(true);}
 struct NativeColorAction{HWND owner=nullptr;bool accept=false,found=false;std::exception_ptr error;};
 NativeColorAction* native_color_action=nullptr;
 void CALLBACK native_color_timer(HWND,UINT,UINT_PTR timer,DWORD){
@@ -1209,7 +1261,7 @@ int main(int argc,char** argv){
     try{
         std::cout<<std::unitbuf;
         std::string_view selected="all";
-        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure|interactions|engine-storage|profile-location]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure"||selected=="interactions"||selected=="engine-storage"||selected=="profile-location","Unknown Settings test case; expected licenses, controls, save-failure, interactions, engine-storage or profile-location");}
+        if(argc!=1){check(argc==3&&std::string_view(argv[1])=="--case","Usage: settings_view_tests [--case licenses|controls|save-failure|interactions|engine-storage|profile-location|scrollbar-paint]");selected=argv[2];check(selected=="licenses"||selected=="controls"||selected=="save-failure"||selected=="interactions"||selected=="engine-storage"||selected=="profile-location"||selected=="scrollbar-paint","Unknown Settings test case; expected licenses, controls, save-failure, interactions, engine-storage, profile-location or scrollbar-paint");}
         const auto dpi_set=SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         check(dpi_set||GetAwarenessFromDpiAwarenessContext(GetThreadDpiAwarenessContext())==DPI_AWARENESS_PER_MONITOR_AWARE,
             "Settings visual QA must use the application's actual per-monitor DPI context");
@@ -1224,6 +1276,7 @@ int main(int argc,char** argv){
         if(selected=="save-failure"){run_case("save_failure",save_failure_tests);return 0;}
         if(selected=="engine-storage"){run_case("engine_storage",engine_storage_tests);return 0;}
         if(selected=="profile-location"){run_case("profile_location",profile_location_tests);return 0;}
+        if(selected=="scrollbar-paint"){run_case("scrollbar_paint",settings_scrollbar_paint_tests);return 0;}
         if(selected=="interactions"){
             run_case("thumb_drag",settings_thumb_drag_tests);run_case("slider_wheel",slider_wheel_tests);run_case("native_colour",native_color_picker_tests);
             run_case("live_storage",live_storage_tests);run_case("lesson_actions",lesson_settings_actions_tests);run_case("unavailable_system_voice",unavailable_system_voice_tests);run_case("engine_storage",engine_storage_tests);return 0;

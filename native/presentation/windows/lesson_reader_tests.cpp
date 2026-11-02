@@ -42,6 +42,17 @@ void wait(const std::function<bool()>& done,const std::string& description,ULONG
     do{pump();if(done())return;MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);}while(GetTickCount64()<deadline);
     throw std::runtime_error("Timeout: "+description);
 }
+void await_resumed_player(const std::function<LessonReaderSnapshot()>& snapshot,
+        const LessonReaderSnapshot& paused,const std::string& description){
+    const auto requested=snapshot();
+    check(requested.key==paused.key&&requested.index==paused.index&&requested.offset==paused.offset,
+        description+": the explicit request changed its exact saved position");
+    wait([&]{const auto value=snapshot();
+        check(value.key==paused.key&&value.index==paused.index,description+": verification selected a different recording");
+        if(!value.allocated)return false;
+        check(value.offset>=paused.offset,description+": the allocated player moved behind its saved position");return true;
+    },description);
+}
 HWND child(HWND parent,int id){struct Search{int id;HWND result=nullptr;} value{id};EnumChildWindows(parent,[](HWND item,LPARAM arg)->BOOL{
     auto& search=*reinterpret_cast<Search*>(arg);if(GetDlgCtrlID(item)==search.id){search.result=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&value));
     check(value.result!=nullptr,"Missing actual lesson control "+std::to_string(id));return value.result;
@@ -133,15 +144,22 @@ curriculum::Lesson compiler_model(bool required=false){
 }
 struct Fixture{
     WindowsEnvironment environment;HWND host=nullptr,view=nullptr;std::unique_ptr<LessonReader> reader;
-    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={}):
+    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={},std::function<void(state::StateData&)> initialize_state={},std::filesystem::path private_cache={}):
         environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})){
         check(!std::filesystem::exists(environment.paths.root),"QA profile already exists");
-        if(!private_audio)environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";initialize_profile_directories(environment.paths);
+        if(!private_cache.empty()){
+            check(private_audio&&private_cache.is_absolute()&&!std::filesystem::exists(private_cache),"An owned narration cache must be a new absolute path");
+            environment.paths.cache=std::move(private_cache);
+        }else if(!private_audio)environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";
+        initialize_profile_directories(environment.paths);
         host=CreateWindowExW(WS_EX_CONTROLPARENT|(hidden_host?WS_EX_NOACTIVATE:0),L"STATIC",L"Native real Kokoro reader QA",WS_OVERLAPPEDWINDOW|(hidden_host?0:WS_VISIBLE),
             40,40,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create reader QA window");
         auto lesson=supplied?std::move(*supplied):model(exercise,after,language);
-        if(initial_page){state::StateStore store(environment.paths.root);auto data=store.load();state::prepare_lesson_state(data,lesson);
-            state::save_current_page(data,lesson,initial_page);store.save(data);}
+        if(initial_page||initialize_state){state::StateStore store(environment.paths.root);auto data=store.load();state::prepare_lesson_state(data,lesson);
+            if(initial_page)state::save_current_page(data,lesson,initial_page);
+            // Test-owned initial data belongs in the new QA store before the
+            // view exists, never in its protected reader-preferences callback.
+            if(initialize_state)initialize_state(data);store.save(data);}
         view=create_lesson_view(host,environment,std::move(lesson));check(view!=nullptr,"Cannot create actual lesson view");MoveWindow(view,0,0,980,720,TRUE);
         update_lesson_preferences(view,[advance](state::StateData& data){auto& prefs=data.preferences["lesson_narration_settings"];
             prefs["engine"]=std::string("KOKORO");prefs["language"]=std::string("es");prefs["kokoro_voice:es"]=std::string("ef_dora");prefs["rate"]=2.;prefs["kokoro_advance_generation"]=advance;});
@@ -397,7 +415,7 @@ void integrated_u1_reader_flow(const std::shared_ptr<windows::NarrationWorker>& 
     check(wrong.segments[wrong.index].feedback&&!wrong.segments[wrong.index].correct&&wrong.segments[wrong.index].block==compiler.block
         &&std::ranges::none_of(wrong.segments,[&](const auto& part){return part.block==following.block;}),
         "The integrated wrong goal failed to select its own guide or exposed the following puzzle");
-    f.reader->toggle();wait([&]{const auto current=f.snapshot();return !current.playing&&!current.allocated
+    f.reader->toggle();wait([&]{const auto current=f.snapshot();return !current.playing&&!current.allocated&&!current.preparing
         &&current.segments[current.index].feedback&&current.segments[current.index].block==compiler.block;},
         "current compiler guide is heard and stops for a retry");
     check(!f.snapshot().finished,"The current compiler's wrong guide completed its page");
@@ -445,9 +463,13 @@ void integrated_matching_reader_bookmarks(const std::shared_ptr<windows::Narrati
     const auto correct_body=utf8(authored.GetNamedObject(L"feedback").GetNamedString(L"correct"));
     const std::string revised="Construcción desde código y unidades que termina normalmente";
     const std::string source_suffix="contratos/source/construccion";
-    const auto environment=resolve_windows_environment({ProfileId::Codex,
+    auto environment=resolve_windows_environment({ProfileId::Codex,
         L"integrated-matching-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
     check(!std::filesystem::exists(environment.paths.root),"Matching reader QA requires a new private profile");
+    // Keep the explicitly isolated QA state while using the same physical
+    // technical audio cache as Fixture. A logical MSIX AppData alias is not a
+    // valid path for the handle-bound playback verification.
+    environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";
     initialize_profile_directories(environment.paths);
     state::StateData initial;state::prepare_lesson_state(initial,lesson);
     // Explicit compiler receipts isolate this later page only. No execution or
@@ -527,8 +549,7 @@ void integrated_matching_reader_bookmarks(const std::shared_ptr<windows::Narrati
         const auto until=GetTickCount64()+150;
         wait([&]{const auto value=snapshot();check(!value.playing&&!value.allocated&&value.offset==paused.offset,
                 "The restored matching bookmark started itself");return GetTickCount64()>=until;},"matching restoration stays paused",2000);
-        reader->toggle();check(snapshot().allocated&&std::abs(snapshot().offset-paused.offset)<=1,
-            "Actual matching bookmark resume restarted its recording");
+        reader->toggle();await_resumed_player(snapshot,paused,"Actual matching bookmark resume");
     };
     open();current_label();
     check(narration::read_history(read_lesson_state(view)).entries.empty(),"Matching narration began with fabricated listening history");
@@ -762,8 +783,7 @@ void integrated_order_reader_flow(const std::shared_ptr<windows::NarrationWorker
         check(state::sha256(state::read_bytes(recording.path)) == recording.hash,
             "Reopening the current order guide changed an existing valid recording");
     f.reader->toggle();
-    check(f.snapshot().allocated && std::abs(f.snapshot().offset - paused.offset) <= 1,
-        "Resuming the reopened actual guide restarted its recording");
+    await_resumed_player([&]{return f.snapshot();},paused,"Resuming the reopened actual guide");
     wait([&] { const auto value = f.snapshot(); observe_wrong(value);
         return !value.playing && !value.allocated && !value.preparing
             && value.index == wrong_indices.back();
@@ -810,6 +830,455 @@ void integrated_order_reader_flow(const std::shared_ptr<windows::NarrationWorker
     check(state::sha256(state::read_bytes(path)) == asset_hash && !IsWindowVisible(f.host),
         "The focal order reader QA modified its authored asset or exposed a desktop window");
     std::cout << "PASS current U1L2 p4 order reader: complete authored wrong guide and success explanation, real PCM/timings, retry stop, full-view exact silent restoration and three real page positions\n";
+}
+
+void current_inline_feedback_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
+        std::optional<std::size_t> selected) {
+    struct Case { const char* file; std::size_t page,block; std::vector<std::string> incorrect; };
+    const std::array<Case,9> cases{{
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"}},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"}},
+        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"}},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"}},
+        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4,{"recibidos","sobres_recibidos"}},
+        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"}},
+        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""}},
+        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"}},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1,{"<<","\"Carga\""}},
+    }};
+    const auto visible=[](std::string text){std::erase(text,'`');return text;};
+    for(std::size_t number=0;number<cases.size();++number){
+        if(selected&&*selected!=number)continue;
+        const auto& test=cases[number];
+        const auto asset=std::filesystem::path(build::source_root)/
+            "app/src/main/assets/content/es/programming/cpp_fundamentals"/test.file;
+        const auto asset_hash=state::sha256(state::read_bytes(asset));
+        const auto original=windows::load_lesson(asset);
+        const auto goal=original.pages.at(test.page).blocks.at(test.block);
+        const auto asset_bytes=state::read_bytes(asset);
+        const auto authored=winrt::Windows::Data::Json::JsonObject::Parse(wide(std::string(
+            reinterpret_cast<const char*>(asset_bytes.data()),asset_bytes.size())))
+            .GetNamedArray(L"pages").GetObjectAt(static_cast<std::uint32_t>(test.page))
+            .GetNamedArray(L"blocks").GetObjectAt(static_cast<std::uint32_t>(test.block));
+        check(goal.type==curriculum::BlockType::inline_fill_code&&!goal.review_feedback.empty()
+            &&!goal.explanation.empty()&&goal.answers.size()==test.incorrect.size()
+            &&!curriculum::evaluate_hole_answers(goal,test.incorrect).correct
+            &&goal.review_feedback==utf8(authored.GetNamedString(L"reviewFeedback"))
+            &&goal.explanation==utf8(authored.GetNamedString(L"explanation"))
+            &&goal.question==utf8(authored.GetNamedString(L"question"))
+            &&goal.code_template==utf8(authored.GetNamedString(L"template")),
+            "The registered current inline narration case no longer has its authored feedback/evaluator");
+
+        // The complete original block is copied into a new QA lesson, without
+        // changing any authored prompt/template/answer/alternative/feedback.
+        // Only the QA address changes. This isolates the reader contract from
+        // unrelated curricular gates without seeding compiler receipts or wins.
+        auto lesson=model();lesson.id="qa_current_inline_reader_"+std::to_string(number+1);
+        lesson.title="Retroalimentación.";lesson.pages.resize(1);
+        auto& page=lesson.pages.front();page.blocks.front().text="Lectura previa de control.";
+        auto target=goal;target.address={0,1,{},{}};page.blocks.push_back(std::move(target));
+        auto tail=page.blocks.front();tail.stable_id="after_inline_feedback";tail.address={0,2,{},{}};
+        tail.text="La lectura posterior continúa después de toda la explicación.";page.blocks.push_back(std::move(tail));
+        Fixture f(backend,false,true,true,"es",lesson,false,0,true,true,[](HWND view){
+            // Exercise the supported rate through the allowed preference API;
+            // recordings/timings and complete listening still remain real.
+            update_lesson_preferences(view,[](state::StateData& data){
+                data.preferences["lesson_narration_settings"]["rate"]=3.;
+            });
+        },[](state::StateData& data){
+            data.preferences["inline_audio_qa"]["unrelated"]=std::string(" \t preservar\r\n");
+        });
+        f.reader->pause();
+        const auto unrelated=read_lesson_state(f.view).preferences.at("inline_audio_qa");
+        const auto control=[&](int part){return child(f.view,1100+part);};
+        const auto field=[&](std::size_t index){const auto result=GetDlgItem(control(5),100+static_cast<int>(index));
+            check(result!=nullptr,"A current inline narration fixture lost its actual editable hole");return result;};
+        const auto fields=[&](const std::vector<std::string>& values,bool enabled){
+            for(std::size_t index=0;index<values.size();++index)
+                check(edit_text(field(index))==values[index]&&(IsWindowEnabled(field(index))!=FALSE)==enabled,
+                    "Actual inline narration lost its exact answers or completion lock");
+        };
+        const auto replace=[&](const std::vector<std::string>& values){
+            for(std::size_t index=0;index<values.size();++index){
+                check(IsWindowEnabled(field(index)),"The current inline retry field is locked");
+                const auto text=wide(values[index]);SendMessageW(field(index),EM_SETSEL,0,-1);
+                SendMessageW(field(index),EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(text.c_str()));
+            }
+            f.reader->pause();f.ready();fields(values,true);
+        };
+        const auto privacy=[&]{
+            check(edit_text(control(4)).empty(),"An unreviewed inline answer exposed feedback visually");
+            std::string script;
+            for(const auto& region:lesson_reading_regions(f.view)){
+                check(!region.feedback&&region.target!=control(4),"An unreviewed inline answer exposed feedback to narration");
+                script+=region.source_text+'\n';
+            }
+            check(script.find(goal.review_feedback)==std::string::npos&&script.find(goal.explanation)==std::string::npos,
+                "The current inline reader exposed an unpublished guide or solution before Check");
+            for(const auto& part:f.snapshot().segments)check(!part.feedback,
+                "The prepared narration plan retained feedback for an unreviewed inline draft");
+        };
+        const auto reopen=[&](const std::function<void(state::StateData&)>& change_closed_qa={}){
+            f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the isolated current inline lesson");
+            DestroyWindow(f.view);f.view=nullptr;
+            if(change_closed_qa){
+                // Metadata compatibility fixtures edit only this new QA store
+                // while no view owns it. Answers/hearing are never fabricated.
+                state::StateStore store(f.environment.paths.root);auto data=store.load();change_closed_qa(data);store.save(data);
+            }
+            f.view=create_lesson_view(f.host,f.environment,lesson);
+            check(f.view!=nullptr,"Cannot reopen the actual inline lesson and saved reader history");
+            MoveWindow(f.view,0,0,980,720,TRUE);
+            LessonViewHooks hooks;
+            hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
+            hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+            hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
+            set_lesson_view_hooks(f.view,std::move(hooks));
+            f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+        };
+        const auto submit=[&]{check(IsWindowEnabled(control(3)),"A completed inline draft cannot be checked");
+            SendMessageW(control(3),BM_CLICK,0,0);f.reader->pause();f.ready();
+            check(!f.snapshot().playing&&!f.snapshot().allocated,"Preparing inline feedback overrode an explicit pause");
+        };
+        struct Recording{std::filesystem::path path;std::string hash;std::filesystem::file_time_type modified;};
+        std::vector<Recording> recordings;
+        const auto verify_feedback=[&](bool correct,const std::string& body){
+            const auto source=std::string(correct?"✓ Correcto\n\n":"✗ Incorrecto\n\n")+body;
+            check(edit_text(control(4))==visible(source),"An inline reader fixture omitted or mixed its current full visible feedback");
+            const auto regions=lesson_reading_regions(f.view);
+            const auto region=std::ranges::find_if(regions,[](const auto& value){return value.block_index==1&&value.feedback;});
+            check(region!=regions.end()&&region->source_text==source&&region->target==control(4)
+                &&region->correct==correct&&region->solved==correct,
+                "The actual inline feedback region lost its complete source, verdict or target");
+            const auto plan=backend->plan(source,"es");const auto value=f.snapshot();std::vector<std::size_t> indices;
+            double nominal_ms=0;
+            for(std::size_t index=0;index<value.segments.size();++index){const auto& part=value.segments[index];
+                if(part.block!=1||!part.feedback)continue;
+                const auto at=indices.size();
+                check(at<plan.size()&&part.region==region->key&&part.correct==correct&&part.target==region->target
+                    &&part.source==plan[at].text&&part.start==plan[at].start&&part.end==plan[at].end
+                    &&wide(source).substr(part.start,part.end-part.start)==wide(part.source),
+                    "Actual inline narration truncated, replaced or reordered an authored feedback sentence");
+                recordings.push_back({part.recording,verify_feedback_recording(part),std::filesystem::last_write_time(part.recording)});
+                nominal_ms+=part.duration_ms;
+                if(part.source.find("9 / 2")!=std::string::npos){
+                    const auto slash=wide(part.source).find(L'/');
+                    check(std::ranges::any_of(part.timings,[&](const auto& timing){return timing.start<=slash&&timing.end>slash;}),
+                        "The current 9 / 2 explanation lost real word-timing ownership of its contextual slash");
+                }
+                std::cout<<"AUDIO inline="<<number+1<<" verdict="<<(correct?"correct":"retry")<<" part="<<at+1
+                    <<" sha256="<<recordings.back().hash<<" path="<<part.recording.generic_string()<<'\n';
+                indices.push_back(index);
+            }
+            check(!indices.empty()&&indices.size()==plan.size()&&value.index==indices.front()&&value.offset==0,
+                "Fresh inline feedback failed to select its complete current script from zero");
+            std::cout<<"DURATION inline="<<number+1<<" verdict="<<(correct?"correct":"retry")
+                <<" parts="<<indices.size()<<" pcmMs="<<nominal_ms<<" rate="<<value.rate
+                <<" nominalPlaybackMs="<<nominal_ms/value.rate<<'\n';
+            return indices;
+        };
+        const auto preserve_recordings=[&]{for(const auto& recording:recordings)
+            check(state::sha256(state::read_bytes(recording.path))==recording.hash
+                &&std::filesystem::last_write_time(recording.path)==recording.modified,
+                "Reopening or replaying current inline feedback rewrote an existing recording");};
+        const auto response=[&]{return state::get_response(read_lesson_state(f.view),lesson,lesson.pages[0].blocks[1]);};
+        const auto restore_pause=[&](const LessonReaderSnapshot& paused,const state::Response& answer){
+            const auto history=narration::read_history(read_lesson_state(f.view));reopen();const auto restored=f.snapshot();
+            const auto saved=response();
+            check(saved&&saved->raw_json==answer.raw_json&&saved->correct==answer.correct
+                &&saved->reviewed_answer_identity==answer.reviewed_answer_identity
+                &&restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset
+                &&restored.heard_through==paused.heard_through&&restored.finished==paused.finished
+                &&!restored.playing&&!restored.allocated&&narration::read_history(read_lesson_state(f.view))==history,
+                "Whole-view inline restoration changed the reviewed answer, exact real pause or listening history");
+            const auto until=GetTickCount64()+200;
+            wait([&]{const auto current=f.snapshot();check(!current.playing&&!current.allocated&&current.offset==paused.offset,
+                "Restored inline feedback started without an explicit play action");return GetTickCount64()>=until;},
+                "restored current inline feedback stays silent",2000);
+            fields(answer.correct?goal.answers:test.incorrect,!answer.correct);preserve_recordings();
+        };
+        struct Observation{
+            std::vector<bool> heard;
+            std::vector<std::set<std::int64_t>> offsets;
+            std::vector<std::set<std::vector<COLORREF>>> masks;
+        };
+        const auto observe=[&](Observation& evidence,const std::vector<std::size_t>& indices,const LessonReaderSnapshot& value){
+            if(!value.playing)return;
+            const auto found=std::ranges::find(indices,value.index);if(found==indices.end())return;
+            const auto at=static_cast<std::size_t>(found-indices.begin());evidence.heard[at]=true;
+            if(!evidence.offsets[at].insert(value.offset).second)return;
+            const auto& part=value.segments[value.index];const auto displayed=wide(edit_text(part.target));
+            const auto source=wide(std::string(part.correct?"✓ Correcto\n\n":"✗ Incorrecto\n\n")
+                +(part.correct?goal.explanation:goal.review_feedback));
+            std::vector<COLORREF> ink;
+            for(const auto word:{std::size_t{0},part.timings.size()/2,part.timings.size()-1}){
+                auto prefix=source.substr(0,part.start+part.timings[word].start);std::erase(prefix,L'`');
+                check(prefix.size()<displayed.size(),"An inline real word timing maps outside its visible original feedback");
+                ink.push_back(color(part.target,static_cast<LONG>(prefix.size())));
+            }
+            evidence.masks[at].insert(std::move(ink));
+        };
+        const auto make_observation=[](std::size_t count){return Observation{std::vector<bool>(count),
+            std::vector<std::set<std::int64_t>>(count),std::vector<std::set<std::vector<COLORREF>>>(count)};};
+        const auto diagnostic=[&](std::string_view stage,const Observation& evidence,const std::vector<std::size_t>& indices){
+            const auto value=f.reader->snapshot();
+            std::cerr<<"INLINE DIAGNOSTIC case="<<number+1<<" stage="<<stage<<" key="<<value.key
+                <<" index="<<value.index<<" offsetMs="<<value.offset<<" heardThrough="<<value.heard_through
+                <<" playing="<<value.playing<<" allocated="<<value.allocated<<" preparing="<<value.preparing
+                <<" finished="<<value.finished<<" waitingGate="<<value.waiting_gate
+                <<" rate="<<value.rate<<" playbackRate="<<value.playback_rate<<" parts="<<value.segments.size()
+                <<" error="<<value.error<<'\n';
+            if(value.index<value.segments.size()){const auto& part=value.segments[value.index];
+                std::cerr<<"  current block="<<part.block<<" feedback="<<part.feedback<<" correct="<<part.correct
+                    <<" available="<<part.available<<" durationMs="<<part.duration_ms<<" timings="<<part.timings.size()<<'\n';}
+            for(std::size_t at=0;at<indices.size();++at){const auto index=indices[at];
+                std::cerr<<"  feedbackPart="<<at+1<<" index="<<index<<" observedPlaying="<<evidence.heard[at]
+                    <<" distinctOffsets="<<evidence.offsets[at].size()<<" distinctMasks="<<evidence.masks[at].size();
+                if(!evidence.offsets[at].empty())std::cerr<<" firstObservedMs="<<*evidence.offsets[at].begin()
+                    <<" lastObservedMs="<<*evidence.offsets[at].rbegin();
+                if(index<value.segments.size())std::cerr<<" durationMs="<<value.segments[index].duration_ms;
+                std::cerr<<'\n';
+            }
+        };
+        const auto evidence_complete=[&](const Observation& evidence){
+            check(std::ranges::all_of(evidence.heard,[](bool heard){return heard;})
+                &&std::ranges::any_of(evidence.offsets,[](const auto& values){return values.size()>=3;}),
+                "Current inline feedback skipped a real recording or lacked growing playback positions");
+            if(!reader_theme::palette().high_contrast)
+                check(std::ranges::any_of(evidence.masks,[](const auto& masks){return masks.size()>=2;}),
+                    "Actual inline word timing did not produce different native masks within one recording");
+        };
+        const auto play_pause_restore=[&](const std::vector<std::size_t>& indices,Observation& evidence,const state::Response& answer){
+            f.reader->toggle();
+            wait([&]{const auto value=f.snapshot();observe(evidence,indices,value);
+                if(!value.playing||!value.segments[value.index].feedback)return false;
+                const auto& part=value.segments[value.index];return part.timings.size()>=3
+                    &&value.offset>150&&value.offset<part.timings.back().start_ms;
+            },"real current inline feedback reaches an internal word-aligned pause");
+            f.reader->pause();const auto paused=f.snapshot();check(!paused.allocated,"Pausing inline feedback retained its player");
+            std::cout<<"PAUSE inline="<<number+1<<" verdict="<<(answer.correct?"correct":"retry")
+                <<" index="<<paused.index<<" offsetMs="<<paused.offset<<" heardThrough="<<paused.heard_through<<'\n';
+            restore_pause(paused,answer);f.reader->toggle();const auto resumed=f.snapshot();
+            std::cout<<"RESUME inline="<<number+1<<" key="<<resumed.key<<" index="<<resumed.index
+                <<" offsetMs="<<resumed.offset<<" allocated="<<resumed.allocated<<" playing="<<resumed.playing
+                <<" rate="<<resumed.rate<<" playbackRate="<<resumed.playback_rate<<'\n';
+            try{
+                check(resumed.key==paused.key&&resumed.index==paused.index&&resumed.offset==paused.offset&&resumed.rate==3.,
+                    "Resuming restored inline feedback lost its selected recording, player or requested rate");
+                // PlaybackRate is observable only after MediaOpened/seek have
+                // completed. The exact paused bookmark was checked above;
+                // now require real playback from that same point and part.
+                auto previous=paused.offset;
+                wait([&]{const auto current=f.snapshot();
+                    check(current.key==paused.key&&current.index==paused.index,
+                        "The restored inline recording advanced before its real resumed playback was observed");
+                    if(!current.playing)return false;
+                    check(current.playback_rate==3.&&current.offset>=paused.offset&&current.offset>=previous,
+                        "Ready inline playback has the wrong rate or moved behind its real restored position");
+                    observe(evidence,indices,current);previous=current.offset;
+                    return current.offset>paused.offset;
+                },"restored inline recording becomes ready at its exact position and real selected rate");
+            }catch(...){diagnostic("resuming real playback after exact paused restoration",evidence,indices);throw;}
+        };
+
+        fields(std::vector<std::string>(goal.answers.size()),true);privacy();
+        replace(test.incorrect);privacy();reopen();fields(test.incorrect,true);privacy();
+        check(response()&&!response()->correct&&!state::response_reviewed(*response(),lesson.pages[0].blocks[1]),
+            "Reopening an inline draft invented a submitted attempt");
+        submit();const auto wrong_indices=verify_feedback(false,goal.review_feedback);const auto wrong=response();
+        check(wrong&&!wrong->correct&&state::response_reviewed(*wrong,lesson.pages[0].blocks[1])
+            &&edit_text(control(4)).find(visible(goal.explanation))==std::string::npos,
+            "Current rejected inline feedback exposed success or lost its reviewed identity");
+        auto wrong_evidence=make_observation(wrong_indices.size());play_pause_restore(wrong_indices,wrong_evidence,*wrong);
+        try{wait([&]{const auto value=f.snapshot();observe(wrong_evidence,wrong_indices,value);
+                return !value.playing&&!value.allocated&&!value.preparing&&value.index==wrong_indices.back();
+            },"every actual inline guide part plays before stopping for a retry");
+        }catch(...){diagnostic("complete retry guide",wrong_evidence,wrong_indices);throw;}
+        const auto stopped=f.snapshot();evidence_complete(wrong_evidence);
+        check(!stopped.finished&&stopped.offset+1>=stopped.segments[stopped.index].duration_ms&&response()&&!response()->correct,
+            "The actual wrong inline guide skipped its end or granted completion");
+        f.reader->seek_seconds(60);check(f.snapshot().segments[f.snapshot().index].feedback&&!f.snapshot().finished,
+            "Forward seeking escaped an unresolved inline guide");
+        replace(goal.answers);privacy();
+        check(response()&&!response()->correct&&!state::response_reviewed(*response(),lesson.pages[0].blocks[1]),
+            "Typing the correct inline draft credited an unchecked answer");
+        submit();const auto correct_indices=verify_feedback(true,goal.explanation);const auto correct=response();
+        check(correct&&correct->correct,"The actual corrected inline fields did not earn completion");fields(goal.answers,false);
+        auto correct_evidence=make_observation(correct_indices.size());play_pause_restore(correct_indices,correct_evidence,*correct);
+        if(number==0){
+            // Start from a genuinely heard partial explanation. A manual
+            // preview must not become proof or trigger legacy recovery when
+            // its valid zero-prefix certificate is restored.
+            f.reader->pause();const auto partial=f.snapshot();
+            auto history=narration::read_history(read_lesson_state(f.view));
+            const auto partial_entry=std::ranges::find(history.entries,partial.key,&narration::Bookmark::key);
+            check(partial_entry!=history.entries.end()&&partial_entry->position.heard_prefix
+                &&partial_entry->position.heard_prefix->microseconds>0,
+                "The real partial inline recording has no persisted contiguous-prefix certificate");
+            double explanation_ms=0;for(const auto index:correct_indices)explanation_ms+=partial.segments[index].duration_ms;
+            const int preview_seconds=static_cast<int>(std::ceil(explanation_ms/1000.))+1;
+            const auto preview_end=[&]{
+                f.reader->seek_seconds(preview_seconds);const auto preview=f.snapshot();
+                check(!preview.playing&&preview.index==correct_indices.back()
+                    &&preview.offset+1>=preview.segments[preview.index].duration_ms
+                    &&preview.heard_through==partial.heard_through,"Manual preview credited or escaped unheard inline feedback");
+                return preview;
+            };
+            const auto preview=preview_end();reopen();const auto restored_preview=f.snapshot();
+            check(restored_preview.index==preview.index&&restored_preview.offset==preview.offset
+                &&restored_preview.heard_through==preview.heard_through&&!restored_preview.playing,
+                "A zero-prefix preview failed exact silent restoration");
+            f.reader->toggle();const auto preview_pending=f.snapshot();
+            check(preview_pending.index==preview.index&&preview_pending.offset==preview.offset,
+                "A pending zero-prefix preview changed its exact requested bookmark");
+            wait([&]{const auto value=f.snapshot();return value.allocated||value.waiting_gate;},
+                "the zero-credit preview finishes verification without legacy recovery");const auto preview_request=f.snapshot();
+            // Native playback can finish the sub-millisecond tail between a
+            // truncated seek offset and the rounded terminal checkpoint.
+            check(preview_request.index==preview.index&&std::abs(preview_request.offset-preview.offset)<=1,
+                "A valid zero-prefix manual preview unexpectedly restarted an explanation");
+            f.reader->pause();check(f.snapshot().heard_through==partial.heard_through,
+                "An unplayed preview request manufactured complete listening credit");
+
+            for(const bool mismatch:{false,true}){
+                if(mismatch)(void)preview_end();
+                const auto before=f.snapshot();
+                reopen([&](state::StateData& data){
+                    auto old=narration::read_history(data);auto entry=std::ranges::find(old.entries,before.key,&narration::Bookmark::key);
+                    check(entry!=old.entries.end(),"The closed QA compatibility fixture lost its real bookmark");
+                    if(mismatch){check(entry->position.heard_prefix.has_value(),"The changed-recording fixture needs its existing zero certificate");
+                        entry->position.heard_prefix->fingerprint=std::string(64,'0');}
+                    else entry->position.heard_prefix.reset();
+                    narration::write_history(data,old);
+                });
+                const auto compatible=f.snapshot();
+                check(!compatible.playing&&!compatible.allocated&&compatible.index==before.index
+                    &&compatible.offset==before.offset&&compatible.heard_through==before.heard_through,
+                    "Legacy or mismatched evidence changed a paused bookmark or invented listening");
+                f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.allocated&&value.index==correct_indices.front();},
+                    "explicit compatibility recovery verifies its first uncredited recording");const auto recovered=f.snapshot();
+                check(recovered.index==correct_indices.front()&&recovered.offset>=0
+                    &&recovered.offset<recovered.segments[recovered.index].duration_ms
+                    &&recovered.heard_through==partial.heard_through,
+                    "Explicit legacy recovery failed to select only the first uncredited explanation sentence");
+                if(!mismatch){f.reader->pause();check(f.snapshot().heard_through==partial.heard_through,
+                    "Requesting legacy recovery granted unheard explanation credit");}
+            }
+            std::cout<<"PASS inline compatibility: genuine partial proof, restored zero-credit manual preview without recovery, old/mismatched trapped bookmarks remain exact while paused and explicit Play replays only the first uncredited explanation sentence\n";
+        }
+        try{wait([&]{const auto value=f.snapshot();observe(correct_evidence,correct_indices,value);
+                if(!value.playing&&!value.preparing&&value.waiting_gate&&value.index==correct_indices.back()
+                    &&value.offset+1>=value.segments[value.index].duration_ms)
+                    throw std::runtime_error("Complete inline success playback stopped at the final listening gate instead of reaching following prose");
+                return value.playing&&value.segments[value.index].block==2&&value.offset>150;
+            },"all actual inline success sentences play before following prose");
+        }catch(...){diagnostic("complete success before following prose",correct_evidence,correct_indices);throw;}
+        f.reader->pause();evidence_complete(correct_evidence);
+        check(f.snapshot().heard_through>static_cast<std::int64_t>(correct_indices.back()),
+            "Inline success continued without real listening credit for every feedback part");
+        f.reader->toggle();wait([&]{return f.snapshot().finished;},"the inline QA page reaches its real end");
+        const auto finished=f.snapshot();restore_pause(finished,*correct);preserve_recordings();
+        if(number==0){
+            SendMessageW(control(12),BM_CLICK,0,0);f.reader->pause();f.ready();
+            fields(std::vector<std::string>(goal.answers.size()),true);privacy();
+            replace(goal.answers);submit();const auto fresh=f.snapshot();
+            const auto history=narration::read_history(read_lesson_state(f.view));
+            const auto entry=std::ranges::find(history.entries,fresh.key,&narration::Bookmark::key);
+            check(entry!=history.entries.end()&&!entry->position.finished&&entry->position.milliseconds==0
+                &&entry->position.heard_through<=static_cast<std::int64_t>(correct_indices.front())
+                &&(!entry->position.heard_prefix||entry->position.heard_prefix->microseconds==0),
+                "A fresh checked answer retained an older listening certificate while paused");
+            reopen();const auto fresh_restored=f.snapshot();
+            check(!fresh_restored.playing&&!fresh_restored.finished&&fresh_restored.offset==0
+                &&fresh_restored.heard_through<=static_cast<std::int64_t>(correct_indices.front()),
+                "Closing a paused fresh answer resurrected its previous completed reading");
+            f.reader->restart();f.reader->pause();reopen();const auto restarted=f.snapshot();
+            check(!restarted.playing&&!restarted.finished&&restarted.index==0&&restarted.offset==0&&restarted.heard_through==0,
+                "Explicit Restart failed to persist cleared hearing evidence before closing");
+            std::cout<<"PASS inline fresh answer and Restart persist cleared listening evidence while paused without rewriting recordings\n";
+        }
+        check(!IsWindowVisible(f.host)&&read_lesson_state(f.view).preferences.at("inline_audio_qa")==unrelated
+            &&state::sha256(state::read_bytes(asset))==asset_hash,
+            "Current inline narration changed its source asset, unrelated preferences or the desktop");
+        std::cout<<"PASS current inline reader "<<number+1<<" "<<test.file<<" p"<<test.page+1<<" b"<<test.block+1
+            <<": current complete retry/success, real Kokoro PCM/timings/playback/masks, unreviewed privacy, released exact silent reopen, retry stop/full-success continuation and unchanged recordings/assets; isolated copied block, no full curricular navigation or human listening claimed\n";
+    }
+}
+
+void replaced_recording_is_verified_before_released_resume(const std::shared_ptr<windows::NarrationWorker>& backend){
+    const auto cache=std::filesystem::path(build::source_root)/"out/qa"/
+        (L"reader-replaced-wave-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    auto lesson=model(true);lesson.id="qa_replaced_recording";lesson.pages.resize(1);
+    Fixture f(backend,true,true,true,"es",lesson,true,0,true,true,[](HWND view){
+        update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
+    },{},cache);
+    f.answer("<<");f.reader->toggle();
+    wait([&]{const auto value=f.snapshot();if(!value.playing||!value.segments[value.index].feedback)return false;
+        const auto& part=value.segments[value.index];return part.timings.size()>3
+            &&value.offset>=part.timings[part.timings.size()/2].start_ms&&value.offset<part.timings.back().start_ms;
+    },"owned recording has a genuinely heard partial feedback prefix");
+    f.reader->pause();const auto paused=f.snapshot();const auto old_part=paused.segments[paused.index];
+    check(std::filesystem::equivalent(old_part.recording.parent_path(),cache/"kokoro"),
+        "Replacement fixture attempted to modify a recording outside its new owned cache");
+    const auto history=narration::read_history(read_lesson_state(f.view));
+    const auto old_entry=std::ranges::find(history.entries,paused.key,&narration::Bookmark::key);
+    check(old_entry!=history.entries.end()&&old_entry->position.heard_prefix
+        &&old_entry->position.heard_prefix->microseconds>0,"Owned PCM did not earn a real partial certificate");
+    const auto old_certificate=*old_entry->position.heard_prefix;
+    const auto response_before=state::get_response(read_lesson_state(f.view),lesson,lesson.pages[0].blocks[1]);
+    check(response_before&&response_before->correct,"Replacement QA did not use an actually accepted answer");
+    f.reader->suspend_preparation(true);
+    struct File{HANDLE value=INVALID_HANDLE_VALUE;~File(){if(value!=INVALID_HANDLE_VALUE)CloseHandle(value);}} writer;
+    wait([&]{writer.value=CreateFileW(state::native_io_path(old_part.recording).c_str(),GENERIC_READ|GENERIC_WRITE,
+        0,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);return writer.value!=INVALID_HANDLE_VALUE;},
+        "Pause/suspension releases all reader-owned file leases before cache maintenance");
+    CloseHandle(writer.value);writer.value=INVALID_HANDLE_VALUE;
+    const auto original=state::read_bytes(old_part.recording);const auto original_hash=state::sha256(original);
+    const auto sidecar=old_part.recording.parent_path()/(old_part.recording.stem().wstring()+L"-"
+        +wide(state::sha256(old_part.source))+L".timings.json");
+    const auto original_sidecar=state::read_bytes(sidecar);
+    const auto backup=cache/"before-replacement";check(std::filesystem::create_directory(backup),"Owned recording backup already exists");
+    check(std::filesystem::copy_file(old_part.recording,backup/"original.wav")
+        &&std::filesystem::copy_file(sidecar,backup/"original.timings.json"),"Cannot preserve the original owned recording and alignment");
+    auto replacement=original;check(replacement.size()>46,"The owned PCM fixture is too short");
+    // Change one PCM bit, retaining the real format, duration, sample count,
+    // non-silence and original word alignment. This is a valid new recording.
+    const auto sample=44+2*((replacement.size()-44)/4);replacement[sample]^=1;
+    const auto replacement_hash=state::sha256(replacement);check(replacement_hash!=original_hash,"The owned PCM replacement did not change bytes");
+    writer.value=CreateFileW(state::native_io_path(old_part.recording).c_str(),GENERIC_WRITE,0,nullptr,OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_WRITE_THROUGH,nullptr);check(writer.value!=INVALID_HANDLE_VALUE,"A released reader still pins its owned recording");
+    DWORD written=0;check(WriteFile(writer.value,replacement.data(),static_cast<DWORD>(replacement.size()),&written,nullptr)
+        &&written==replacement.size()&&FlushFileBuffers(writer.value),"Cannot replace only the test-owned PCM bytes");
+    CloseHandle(writer.value);writer.value=INVALID_HANDLE_VALUE;
+    auto metadata=winrt::Windows::Data::Json::JsonObject::Parse(wide(std::string(
+        reinterpret_cast<const char*>(original_sidecar.data()),original_sidecar.size())));
+    check(utf8(metadata.GetNamedString(L"audioSha256"))==original_hash,"Owned alignment did not describe its original real PCM");
+    metadata.Insert(L"audioSha256",winrt::Windows::Data::Json::JsonValue::CreateStringValue(wide(replacement_hash)));
+    {std::ofstream output(sidecar,std::ios::binary|std::ios::trunc);output<<winrt::to_string(metadata.Stringify());
+        check(static_cast<bool>(output),"Cannot update the owned replacement's matching alignment SHA");}
+    check(verify_feedback_recording(old_part)==replacement_hash,"The replacement lost valid real PCM/timings");
+    f.reader->suspend_preparation(false);const auto still_paused=f.snapshot();
+    check(still_paused.key==paused.key&&still_paused.index==paused.index&&still_paused.offset==paused.offset
+        &&!still_paused.allocated&&!still_paused.playing&&still_paused.heard_through==paused.heard_through,
+        "Returning from Options changed the released bookmark before explicit Play");
+    f.reader->toggle();
+    wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].feedback
+        &&value.segments[value.index].correct&&value.offset>0;},"same-path replacement is revalidated and really replayed");
+    f.reader->pause();const auto replayed=f.snapshot();
+    const auto after=narration::read_history(read_lesson_state(f.view));
+    const auto new_entry=std::ranges::find(after.entries,replayed.key,&narration::Bookmark::key);
+    check(new_entry!=after.entries.end()&&new_entry->position.heard_prefix
+        &&new_entry->position.heard_prefix->fingerprint!=old_certificate.fingerprint
+        &&new_entry->position.heard_prefix->microseconds>0,
+        "The replaced recording inherited old PCM credit instead of earning a new prefix from zero");
+    const auto response_after=state::get_response(read_lesson_state(f.view),lesson,lesson.pages[0].blocks[1]);
+    check(response_after&&response_after->raw_json==response_before->raw_json&&response_after->correct
+        &&state::sha256(state::read_bytes(backup/"original.wav"))==original_hash
+        &&state::read_bytes(backup/"original.timings.json")==original_sidecar
+        &&state::sha256(state::read_bytes(old_part.recording))==replacement_hash,
+        "Same-path recovery changed the accepted response, preserved original or valid replacement");
+    f.reader->toggle();wait([&]{return f.snapshot().finished;},"actual replacement feedback completes without fabricated hearing");
+    std::cout<<"PASS owned same-path PCM replacement after released Options: original WAV/alignment preserved, valid matching replacement, background byte verification and read-lease handoff, old certificate rejected, real replay from zero completes and accepted response unchanged\n";
 }
 
 void reader_preparation_suspension(const std::filesystem::path& python,const std::filesystem::path& build_directory){
@@ -1131,7 +1600,9 @@ void reader_arrow_aliases_preserve_control_keys(const std::shared_ptr<windows::N
     std::cout<<"PASS F5/Left -3, F6/Up -5, F7/Down +5, F8/Right +3: root/bar normal/SYS once, editor/readonly/math/card-list arrows preserve documents/cursors/selection and paused playback\n";
 }
 void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>& backend) {
-    auto lesson=model();lesson.pages.resize(1);Fixture f(backend,false,true,true,"es",std::move(lesson),true);
+    const auto owned_cache=std::filesystem::path(build::source_root)/"out/qa"/
+        (L"reader-missing-wave-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
+    auto lesson=model();lesson.pages.resize(1);Fixture f(backend,false,true,true,"es",std::move(lesson),true,0,false,true,{}, {},owned_cache);
     update_lesson_preferences(f.view,[](state::StateData& data){
         auto history=narration::begin({},"retained-paused","owner-a",{0,120,0,false},{},"retained-page-a");
         history=narration::begin(std::move(history),"retained-finished","owner-b",{0,240,1,false},{},"retained-page-b");
@@ -1181,7 +1652,9 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
         ?reader_theme::background(old_part.target):word_style.crBackColor);
     check(color(old_part.target,character)!=pending_ink,"The real word was not read before deleting its private recording");
     check(old_part.recording==missing&&std::filesystem::remove(missing),"The controlled seek regression did not remove only the same private WAV");
-    f.reader->toggle();f.reader->pause();const auto recovering=f.snapshot();
+    f.reader->toggle();wait([&]{const auto value=f.snapshot();return !value.segments[value.index].available;},
+        "background byte validation observes the deleted recording before new timing delivery");
+    f.reader->pause();const auto recovering=f.snapshot();
     check(!recovering.segments[recovering.index].available&&!recovering.allocated&&recovering.offset==before_seek.offset,
         "The recovery-seek fixture already delivered replacement timings or changed the paused offset");
     check(color(old_part.target,character)!=pending_ink,"Preparing an unchanged missing recording lost the existing word shading");
@@ -1193,9 +1666,7 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
         "A seek reused an older visible word boundary while the current recording had no timing metadata");
     f.ready();check(f.snapshot().offset==rewound.offset&&!f.snapshot().playing,
         "Replacement timing delivery moved the new rewind position or overrode its pause");
-    f.reader->toggle();const auto final_resume=f.snapshot();
-    check(final_resume.allocated&&std::abs(final_resume.offset-rewound.offset)<=1,
-        "Playback after an unavailable-audio seek did not request the same exact recording offset");
+    f.reader->toggle();await_resumed_player([&]{return f.snapshot();},rewound,"Playback after an unavailable-audio seek");
     f.reader->pause();check(digest(valid)==valid_digest&&std::filesystem::file_size(valid)==valid_size,
         "The controlled unavailable-audio seek changed a different valid recording");
     std::cout<<"PASS unavailable recording seek: unchanged offset preserves shading, real rewind restores pending words without invented timing or listening credit, and exact paused resume\n";
@@ -1208,23 +1679,31 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
     const bool integrated_order_only=argc==2&&std::string_view(argv[1])=="--integrated-order";
     const bool integrated_matching_only=argc==2&&std::string_view(argv[1])=="--integrated-matching";
+    const bool current_inline_only=(argc==2||argc==3)&&std::string_view(argv[1])=="--current-inline-feedback";
+    std::optional<std::size_t> current_inline_case;
+    if(current_inline_only&&argc==3){const std::string_view value=argv[2];
+        if(value.size()!=1||value.front()<'1'||value.front()>'9')return 2;
+        current_inline_case=static_cast<std::size_t>(value.front()-'1');}
     const bool rates_only=argc==2&&std::string_view(argv[1])=="--rates";
     const bool compiler_focus_only=argc==2&&std::string_view(argv[1])=="--compiler-focus";
     const bool seek_keys_only=argc==2&&std::string_view(argv[1])=="--seek-keys";
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only)return 2;
+    const bool changed_recording_only=argc==2&&std::string_view(argv[1])=="--changed-recording";
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         if(suspend_only){reader_preparation_suspension(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         if(missing_recording_only){missing_recording_recovery(backend);return 0;}
+        if(changed_recording_only){replaced_recording_is_verified_before_released_resume(backend);return 0;}
         if(seek_keys_only){reader_arrow_aliases_preserve_control_keys(backend);return 0;}
         if(compiler_focus_only){checked_compilation_keeps_keyboard_reader_control(backend);return 0;}
         if(rates_only){extended_reader_playback_rates(backend);return 0;}
         if(integrated_only){integrated_u1_reader_flow(backend);return 0;}
         if(integrated_order_only){integrated_order_reader_flow(backend);return 0;}
         if(integrated_matching_only){integrated_matching_reader_bookmarks(backend);return 0;}
+        if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
         extended_reader_playback_rates(backend);
@@ -1241,8 +1720,9 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 MSG message{};message.hwnd=target;message.message=kind;message.wParam=key;message.lParam=flags;
                 return f.reader->dispatch_shortcut(message);
             };
-            check(press(VK_F1,edit)&&probe.commands==std::vector<int>{6504}&&f.snapshot().allocated&&GetFocus()==edit,
+            check(press(VK_F1,edit)&&probe.commands==std::vector<int>{6504}&&GetFocus()==edit,
                 "F1 from the real answer editor did not activate the existing play button without stealing focus");
+            wait([&]{return f.snapshot().allocated;},"F1 allocates a real player after background file verification");
             check(press(VK_F1,edit,1LL|(1LL<<30))&&probe.commands.size()==1&&f.snapshot().allocated,
                 "Holding F1 toggled playback more than once");
             check(press(VK_F1,edit)&&probe.commands.size()==2&&!f.snapshot().allocated,
@@ -1340,9 +1820,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 "Leaving readonly fullscreen reset playback, listening evidence or the bounded position history");
             for(std::size_t i=0;i<paused.segments.size();++i)check(restored.segments[i].recording==paused.segments[i].recording,
                 "A presentation-only fullscreen transition replaced a valid Kokoro recording");
-            f.reader->toggle();const auto resuming=f.snapshot();
-            check(resuming.allocated&&resuming.index==paused.index&&std::abs(resuming.offset-paused.offset)<=1,
-                "Playback after fullscreen failed to resume the exact existing recording offset");f.reader->pause();
+            f.reader->toggle();await_resumed_player([&]{return f.snapshot();},paused,"Playback after fullscreen");f.reader->pause();
             std::cout<<"PASS readonly fullscreen and later notifications preserve the real Kokoro script/key/recordings, exact released pause and resume\n";
             const auto page=lesson_page_state(f.view);std::vector<windows::NarrationSegment> old_script;
             for(const auto& region:pre_caption_lesson_reading_regions(f.view)){const auto sentences=backend->plan(region.source_text,"es");old_script.insert(old_script.end(),sentences.begin(),sentences.end());}
@@ -1430,13 +1908,14 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 check(std::get<double>(read_lesson_state(f.view).preferences.at("lesson_narration_settings").at("rate"))==2.&&GetCapture()==nullptr,
                     "Accessible BM_CLICK failed to activate the speed icon once without creating mouse capture");
                 click_icon(play_button);
-                check(f.snapshot().allocated,"A captured mouse click on Play failed to allocate the actual media player");
+                wait([&]{return f.snapshot().allocated;},"captured Play allocates after verifying the actual recording");
                 wait([&]{return f.snapshot().playing;},"actual floating-icon playback");
                 const auto icon_playing=f.snapshot();click_icon(play_button);const auto icon_paused=f.snapshot();
                 check(!icon_paused.playing&&!icon_paused.allocated&&icon_paused.key==icon_playing.key&&icon_paused.index==icon_playing.index&&icon_paused.offset>=icon_playing.offset,
                     "A captured mouse click on Pause failed to release the real player at its current position");
                 SendMessageW(play_button,BM_CLICK,0,0);
-                check(f.snapshot().allocated&&GetCapture()==nullptr,"Accessible Play failed to resume the actual player without capture");
+                wait([&]{return f.snapshot().allocated;},"accessible Play verifies and opens the actual recording");
+                check(GetCapture()==nullptr,"Accessible Play retained mouse capture");
                 SendMessageW(play_button,BM_CLICK,0,0);
                 check(!f.snapshot().playing&&!f.snapshot().allocated&&GetCapture()==nullptr,
                     "Accessible Pause failed to release the actual player and capture");
@@ -1473,13 +1952,11 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             expected_visibility_settings["controls_visible"]=true;
             check(read_lesson_state(f.view).preferences.at("lesson_narration_settings")==expected_visibility_settings,
                 "Showing the controls failed to persist visibility or changed another narration setting");
-            f.reader->toggle();const auto visibility_resume=f.snapshot();
-            check(visibility_resume.allocated&&visibility_resume.index==hidden.index&&std::abs(visibility_resume.offset-hidden.offset)<=1,
-                "Explicit playback after showing the controls failed to resume the existing exact offset");
+            f.reader->toggle();await_resumed_player([&]{return f.snapshot();},hidden,"Explicit playback after showing the controls");
             std::cout<<"PASS header-only visibility, released exact pause, persisted hidden controls and explicit real-audio resume\n";
             f.reader->pause();const auto paused=f.snapshot();check(!paused.allocated&&!paused.playing&&paused.offset>=moving.offset,"Pause did not preserve position and release MediaPlayer");
             pump();check(f.snapshot().offset==paused.offset,"A released paused position kept advancing");
-            f.reader->toggle();const auto opening=f.snapshot();check(opening.allocated&&std::abs(opening.offset-paused.offset)<=1,"Resume restarted instead of requesting the exact saved offset");
+            f.reader->toggle();await_resumed_player([&]{return f.snapshot();},paused,"Explicit resume requests the exact saved offset");
             wait([&]{const auto s=f.snapshot();return s.playing&&s.offset>=paused.offset;},"real resumed media position");
             f.reader->pause();const auto before=f.snapshot();f.reader->seek_seconds(-3);const auto back=f.snapshot();
             check(back.index<before.index||(back.index==before.index&&back.offset<before.offset),"Rewind did not move actual reading position");
@@ -1662,7 +2139,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             check(f.snapshot().segments[f.snapshot().index].block==1&&!f.snapshot().finished,"Required compiler narration skipped its own pending boundary");
             f.reader->seek_seconds(60);check(f.snapshot().segments[f.snapshot().index].block==1,"Seeking bypassed an unanswered compiler puzzle");
             f.run_program(1,false);
-            wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&value.segments[value.index].feedback;},
+            wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&!value.preparing&&value.segments[value.index].feedback;},
                 "wrong required compiler feedback reads its guide and stops");
             check(!f.snapshot().finished&&!f.snapshot().segments[f.snapshot().index].correct,"Wrong compiler feedback completed the page");
             f.reader->pause();f.edit_program(compiler_source("Bien"));f.ready();f.run_program(1,false);
@@ -1695,8 +2172,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             check(technical_word!=std::wstring::npos&&later_word!=std::wstring::npos
                     &&color(current.target,static_cast<LONG>(technical_word))!=pending&&color(current.target,static_cast<LONG>(later_word))==pending,
                 "Compiler feedback did not keep read and pending technical words inside the same narration segment");
-            f.reader->toggle();const auto resumed=f.snapshot();
-            check(resumed.allocated&&std::abs(resumed.offset-paused.offset)<=1,"Resuming compiler feedback restarted its recording");
+            f.reader->toggle();await_resumed_player([&]{return f.snapshot();},paused,"Resuming compiler feedback");
             wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==2;},
                 "fully heard correct compiler feedback continues into the following paragraph");
             wait([&]{return f.snapshot().finished;},"checked compiler narration reaches the real page end");
@@ -1782,7 +2258,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             f.edit_program(reviewed_wrong_source,modification.block);f.ready();f.run_program(modification.block);const auto wrong=f.snapshot();
             check(wrong.segments[wrong.index].block==modification.block&&wrong.segments[wrong.index].feedback&&!wrong.segments[wrong.index].correct,
                 "The authored second editor reused the original editor's correct verdict");
-            f.reader->toggle();wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&value.segments[value.index].block==modification.block&&value.segments[value.index].feedback;},
+            f.reader->toggle();wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&!value.preparing&&value.segments[value.index].block==modification.block&&value.segments[value.index].feedback;},
                 "authored incorrect compiler feedback stops before the following unsolved multiple choice");
             const auto guide_end=f.snapshot();double guide_duration=0;auto guide_start=guide_end.index;
             for(std::size_t i=0;i<guide_end.segments.size();++i)if(guide_end.segments[i].block==modification.block&&guide_end.segments[i].feedback){
@@ -1829,7 +2305,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             wait([&]{const auto s=f.snapshot();if(!s.playing||!s.segments[s.index].feedback||s.offset<120)return false;
                 const auto& current=s.segments[s.index];const bool repeated=s.index>0&&s.segments[s.index-1].feedback&&s.segments[s.index-1].source==current.source;
                 if(repeated)repeated_index=s.index;return repeated;},"later repeated correct-feedback sentence actual playback");
-            f.reader->seek_seconds(60);wait([&]{return !f.snapshot().playing&&!f.snapshot().allocated;},"skipped feedback gate");const auto skipped=f.snapshot();
+            f.reader->seek_seconds(60);wait([&]{const auto value=f.snapshot();return !value.playing&&!value.allocated&&!value.preparing;},"skipped feedback gate");const auto skipped=f.snapshot();
             check(!skipped.finished&&skipped.waiting_gate&&skipped.heard_through<=static_cast<std::int64_t>(skipped.index),"Manual forward credited unheard correct feedback");
             check(skipped.heard_through<=static_cast<std::int64_t>(repeated_index),"An earlier identical sentence credited an unheard occurrence");
             check(skipped.segments[skipped.index].feedback,"A skip crossed feedback into restricted later text");
@@ -1891,9 +2367,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             check(color(part.target,read)!=pending&&color(part.target,unread)==pending,
                 "Real "+language+" playback did not show read and pending words inside one technical paragraph");
             check(!paused.allocated&&!paused.playing,"A language-specific pause kept MediaPlayer alive");
-            f.reader->toggle();const auto resumed=f.snapshot();
-            check(resumed.allocated&&std::abs(resumed.offset-paused.offset)<=1,
-                "A language-specific resume lost the exact saved offset");
+            f.reader->toggle();await_resumed_player([&]{return f.snapshot();},paused,"Language-specific exact resume");
             f.reader->pause();f.reader->seek_seconds(-60);
             check(color(part.target,read)==pending,"Rewinding did not restore pending technical words in "+language);
             std::cout<<"PASS real "<<language<<" Kokoro metadata, technical word shading, released pause, exact resume and rewind\n";

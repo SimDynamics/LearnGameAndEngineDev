@@ -4,9 +4,17 @@
 
 namespace lgaed::narration {
 inline constexpr const char* resume_domain="lesson_narration_resume_bounded_v1";
+// Optional Windows evidence for the current segment in the same bounded slot.
+// A zero prefix identifies an explicit preview without crediting any audio.
+struct HeardPrefix {
+    std::string fingerprint;
+    std::int64_t microseconds=0,duration_microseconds=0;
+    bool operator==(const HeardPrefix&)const=default;
+};
 struct Position {
     std::int64_t segment=0, milliseconds=0, heard_through=0;
     bool finished=false;
+    std::optional<HeardPrefix> heard_prefix;
     bool operator==(const Position&)const=default;
 };
 struct Bookmark { std::string key,stable;Position position;std::string page;bool operator==(const Bookmark&)const=default; };
@@ -24,4 +32,6 @@ void write_history(state::StateData&,const History&);
 [[nodiscard]] History checkpoint(History,std::string_view key,std::string_view owner,Position);
 // A seek changes visual position, never evidence that feedback was listened to.
 [[nodiscard]] Position seek(Position,std::int64_t segment,std::int64_t milliseconds);
+[[nodiscard]] bool heard_prefix_matches(const Position&,std::string_view fingerprint,
+                                      std::int64_t duration_microseconds) noexcept;
 }

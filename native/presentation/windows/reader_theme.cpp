@@ -415,11 +415,16 @@ UINT scroll_paint_message(){
     return message;
 }
 void sync_scrollbar_theme(HWND window){
-    if(!applied(window)||!rich_edit(window))return;
+    if(!applied(window))return;
+    const auto previous=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_theme_policy_property));
+    // Custom scrolling pages use this same nonclient renderer. Leaving their
+    // visual-style animation enabled lets USER repaint a second skin after a
+    // thumb callback. Retain an adopted policy when bars disappear so a later
+    // high-contrast transition can still restore Windows styling.
+    if(!rich_edit(window)&&!(GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))&&!previous)return;
     const bool native=palette(window).high_contrast;
     const bool native_skin=GetPropW(window,native_scroll_theme_property)!=nullptr;
     const ULONG_PTR wanted=native?2:native_skin?3:1;
-    const auto previous=reinterpret_cast<ULONG_PTR>(GetPropW(window,scroll_theme_policy_property));
     if(previous==wanted)return;
     // SetWindowTheme sends WM_THEMECHANGED synchronously. Publish the policy
     // first so its nested nonclient paint cannot enter this transition again.
@@ -733,10 +738,11 @@ void apply(HWND window, Surface surface) {
     SetWindowSubclass(window,focus_subclass,focus_subclass_id,0);
     if(progress_bar(window))SetWindowSubclass(window,progress_subclass,progress_subclass_id,0);
     if(trackbar(window))SetWindowSubclass(window,slider_subclass,slider_subclass_id,0);
-    if((GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))||rich_edit(window))
+    if((GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))||rich_edit(window)){
         SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
-    if (rich_edit(window)) {
         sync_scrollbar_theme(window);
+    }
+    if (rich_edit(window)) {
         SendMessageW(window, EM_SETBKGNDCOLOR, 0, background(window));
         if(!(GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY))use_plain_text_input(window);
     }

@@ -16,6 +16,7 @@
 #include "core/narration_state.hpp"
 #include <commctrl.h>
 #include <objbase.h>
+#include <bcrypt.h>
 #include <windowsx.h>
 #include <algorithm>
 #include <array>
@@ -66,9 +67,11 @@ public:
 };
 }
 struct LessonReader::Impl {
-    struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
+    struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
+    struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;};
     struct LegacyPlan{std::string key;std::vector<Part> parts;};
-    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;};
+    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
+        bool playback_validation=false,recording_changed=false;std::uint64_t validation_serial=0;std::shared_ptr<AudioReadLease> playback_lease;};
     // Android's answered-block priority is playback permission, not listening
     // evidence. It is reconstructed from the same bounded page bookmark.
     struct AnswerPriority{std::size_t block=0,allowed_through=0;};
@@ -85,13 +88,16 @@ struct LessonReader::Impl {
     std::optional<PriorityBoundary> previous_priority;
     narration::Position position;windows::NarrationPlayer player;bool enabled=true,wanted=false,planning=false,has_plan=false,finished=false,waiting_gate=false,visible=true;
     bool manually_paused=true;
+    bool restored_bookmark=false,resume_needs_replay=false,explicit_resume_requested=false;
     double rate=1;std::uint64_t epoch=0;std::atomic<std::size_t> priority{0};std::jthread generation;
     std::atomic<bool> advance_generation{true};std::condition_variable generation_changed;std::mutex generation_mutex;
     bool preparation_suspended=false;
     std::unique_ptr<PreparationRetirement> retiring_preparation;
     std::mutex result_mutex;std::vector<Result> results;ULONGLONG checkpoint_at=0;
     std::map<std::string,std::vector<std::pair<double,double>>> listened;
+    std::map<std::string,std::string> listened_recordings;
     double last_played_offset=0;
+    std::jthread playback_verification;std::atomic<std::uint64_t> playback_validation_serial{0};bool validating_playback=false;
     POINT drag_start{},bar_start{},floating_position{};RECT floating_bounds{};
     std::optional<bool> painted_playing;
     double painted_rate=-1;
@@ -135,9 +141,22 @@ struct LessonReader::Impl {
     void acquire(){if(key.empty()||parts.empty())return;owner=guid();mutate([&](state::StateData& preferences){auto history=narration::begin(narration::read_history(preferences),key,owner,position,{},resume_page_id);narration::write_history(preferences,history);});}
     void prioritize(std::size_t index){if(priority.exchange(index)!=index)generation_changed.notify_all();}
     void cancel_generation(){if(generation.joinable()){generation.request_stop();generation_changed.notify_all();generation.join();}}
+    void cancel_playback_verification(){
+        ++playback_validation_serial;validating_playback=false;
+        if(playback_verification.joinable()){
+            // This file-only task installs no IPC cancellation callbacks.
+            playback_verification.request_stop();
+            if(!retiring_preparation)retiring_preparation=std::make_unique<PreparationRetirement>(generation_changed);
+            retiring_preparation->retire(playback_verification);
+        }
+        {const std::lock_guard lock(result_mutex);std::erase_if(results,[](const auto& result){return result.playback_validation;});}
+        if(!player.allocated())for(auto& part:parts)part.playback_lease.reset();
+    }
     void release_player(){if(player.allocated()){const auto offset=player.position();if(player.ready())heard_until(offset);
-        position.milliseconds=static_cast<std::int64_t>(std::llround(player.release()));}}
-    void stop(){if(IsWindow(view)&&has_plan){try{release_player();save(finished);}catch(...) {}}(void)player.release();wanted=false;cancel_generation();retiring_preparation.reset();}
+        position.milliseconds=static_cast<std::int64_t>(std::llround(player.release()));}cancel_playback_verification();}
+    void stop(){if(IsWindow(view)&&has_plan){try{release_player();save(finished);}catch(...) {}}
+        try{(void)player.release();}catch(...){}cancel_playback_verification();
+        wanted=false;cancel_generation();retiring_preparation.reset();}
     void pause(){release_player();wanted=false;manually_paused=true;save(finished);paint_progress();update_buttons();}
     void set_controls_visible(bool show){
         if(!enabled||visible==show)return;
@@ -192,13 +211,68 @@ struct LessonReader::Impl {
     void update_buttons(){if(!window)return;
         if(!painted_playing||*painted_playing!=wanted){InvalidateRect(buttons[4],nullptr,FALSE);painted_playing=wanted;}
         if(painted_rate!=rate){InvalidateRect(buttons[5],nullptr,FALSE);painted_rate=rate;}
-        const auto label=!error.empty()?error:planning?tr("Preparando lectura…","Preparing narration…","Préparation de la lecture…"):finished?tr("Lectura finalizada","Reading complete","Lecture terminée"):waiting_gate?tr("Responde el ejercicio para continuar","Answer the exercise to continue","Répondez à l’exercice pour continuer"):wanted&&!player.ready()?tr("Preparando audio…","Preparing audio…","Préparation de l’audio…"):std::string{};
+        const auto label=!error.empty()?error:planning?tr("Preparando lectura…","Preparing narration…","Préparation de la lecture…"):finished?tr("Lectura finalizada","Reading complete","Lecture terminée"):resume_needs_replay&&!wanted?tr("Reproduce la explicación pendiente.","Play the remaining explanation.","Écoutez l’explication en attente."):waiting_gate?tr("Responde el ejercicio para continuar","Answer the exercise to continue","Répondez à l’exercice pour continuer"):wanted&&!player.ready()?tr("Preparando audio…","Preparing audio…","Préparation de l’audio…"):std::string{};
         if(label!=status_text){status_text=label;SetWindowTextW(status,wide(label).c_str());
             ShowWindow(status,enabled&&visible&&!label.empty()?SW_SHOWNOACTIVATE:SW_HIDE);}}
     void push(Result result){const std::lock_guard lock(result_mutex);results.push_back(std::move(result));}
     static bool audio_file(const windows::NarrationAudio& audio){std::error_code file_status_error;return std::filesystem::is_regular_file(audio.wav,file_status_error);}
+    static std::string recording_fingerprint(std::string_view page,const Part& part,const windows::NarrationAudio& audio,std::string_view wav_hash){
+        std::string material="lgaed-heard-prefix-v1";
+        const auto append=[&](std::string_view value){material+=std::to_string(value.size())+':';material.append(value);};
+        append(page);append(part_id(part));append(part.sentence.text);append(audio.key);
+        // This runs once in the preparation thread, never in a UI checkpoint.
+        // Neither a cache filename nor a bookmark offset proves which PCM ran.
+        append(wav_hash);return state::sha256(material);
+    }
+    static std::string locked_recording_hash(HANDLE file,std::stop_token stop){
+        struct Hash{BCRYPT_ALG_HANDLE algorithm=nullptr;BCRYPT_HASH_HANDLE value=nullptr;
+            ~Hash(){if(value)BCryptDestroyHash(value);if(algorithm)BCryptCloseAlgorithmProvider(algorithm,0);}} hash;
+        if(BCryptOpenAlgorithmProvider(&hash.algorithm,BCRYPT_SHA256_ALGORITHM,nullptr,0)<0
+            ||BCryptCreateHash(hash.algorithm,&hash.value,nullptr,0,nullptr,0,0)<0)
+            throw std::runtime_error("No se pudo comprobar la grabación de voz.");
+        std::array<std::uint8_t,64*1024> buffer{};
+        while(!stop.stop_requested()){
+            DWORD count=0;if(!ReadFile(file,buffer.data(),static_cast<DWORD>(buffer.size()),&count,nullptr))
+                throw std::runtime_error("No se pudo leer la grabación de voz.");
+            if(!count)break;
+            if(BCryptHashData(hash.value,buffer.data(),count,0)<0)throw std::runtime_error("No se pudo verificar la grabación de voz.");
+        }
+        if(stop.stop_requested())return {};
+        std::array<std::uint8_t,32> bytes{};
+        if(BCryptFinishHash(hash.value,bytes.data(),static_cast<ULONG>(bytes.size()),0)<0)
+            throw std::runtime_error("No se pudo completar la comprobación de voz.");
+        constexpr char digits[]="0123456789abcdef";std::string result;
+        for(const auto byte:bytes){result+=digits[byte>>4];result+=digits[byte&15];}return result;
+    }
+    void validate_for_playback(std::size_t at){
+        if(validating_playback||preparation_suspended||at>=parts.size()||!parts[at].audio)return;
+        cancel_playback_verification();validating_playback=true;
+        const auto serial=playback_validation_serial.load(),current_epoch=epoch;const auto page_key=key;
+        auto candidate=parts[at];candidate.playback_lease.reset();
+        playback_verification=std::jthread([this,at,serial,current_epoch,page_key,candidate=std::move(candidate)](std::stop_token stop){
+            Result result;result.epoch=current_epoch;result.index=at;result.playback_validation=true;result.validation_serial=serial;
+            result.audio_fingerprint=candidate.audio_fingerprint;
+            try{
+                state::require_safe_path(candidate.audio->wav);
+                auto lease=std::make_shared<AudioReadLease>();
+                lease->file=CreateFileW(state::native_io_path(candidate.audio->wav).c_str(),GENERIC_READ,FILE_SHARE_READ,
+                    nullptr,OPEN_EXISTING,FILE_FLAG_SEQUENTIAL_SCAN,nullptr);
+                if(lease->file==INVALID_HANDLE_VALUE){const auto code=GetLastError();
+                    if(code==ERROR_FILE_NOT_FOUND||code==ERROR_PATH_NOT_FOUND)result.recording_changed=true;
+                    else throw std::runtime_error("No se pudo abrir la grabación para comprobarla.");
+                }else{
+                    state::require_unredirected_handle(lease->file,candidate.audio->wav);
+                    const auto hash=locked_recording_hash(lease->file,stop);if(stop.stop_requested())return;
+                    result.recording_changed=recording_fingerprint(page_key,candidate,*candidate.audio,hash)!=candidate.audio_fingerprint;
+                    if(!result.recording_changed)result.playback_lease=std::move(lease);
+                }
+            }catch(const std::exception& failure){result.error=failure.what();}
+            const std::lock_guard lock(result_mutex);
+            if(!stop.stop_requested()&&playback_validation_serial.load()==serial)results.push_back(std::move(result));
+        });
+    }
     void prepare_audio(std::vector<Part> planned,std::uint64_t current_epoch,const std::string& lang,const std::string& selected_voice,
-            const std::string& selected_engine,std::stop_token stop,windows::NarrationPriorityLease page_priority){
+            const std::string& selected_engine,const std::string& page_key,std::stop_token stop,windows::NarrationPriorityLease page_priority){
         std::vector<bool> ready;ready.reserve(planned.size());for(const auto& part:planned)ready.push_back(part.audio&&audio_file(*part.audio));
         while(!stop.stop_requested()){const auto requested=std::min(priority.load(),planned.size()-1);auto index=requested;
             if(ready[index]){const auto found=std::ranges::find(ready,false);if(found==ready.end())break;
@@ -208,13 +282,17 @@ struct LessonReader::Impl {
             auto audio=selected_engine=="WINDOWS"||selected_engine=="ANDROID"?
                 windows::synthesize_system_speech(planned[index].sentence,lang,selected_voice,environment.paths.cache,stop):
                 backend->prepare(planned[index].sentence,lang,selected_voice,environment.paths.cache/L"kokoro",0,stop);ready[index]=true;
-            Result result;result.epoch=current_epoch;result.index=index;result.audio=std::move(audio);push(std::move(result));}
+            if(stop.stop_requested())return;
+            Result result;result.epoch=current_epoch;result.index=index;
+            result.audio_fingerprint=recording_fingerprint(page_key,planned[index],audio,state::sha256(state::read_bytes(audio.wav)));
+            result.audio=std::move(audio);push(std::move(result));}
     }
     void start_audio_preparation(){
         if(preparation_suspended||parts.empty())return;
-        const auto current_epoch=epoch;const auto snapshot=parts;const auto lang=language,selected_voice=voice,selected_engine=engine;
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine](std::stop_token stop){
-            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,stop,backend->current_page_lease(stop));}
+        const auto current_epoch=epoch;auto snapshot=parts;for(auto& part:snapshot)part.playback_lease.reset();
+        const auto lang=language,selected_voice=voice,selected_engine=engine,page_key=key;
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine,page_key](std::stop_token stop){
+            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,page_key,stop,backend->current_page_lease(stop));}
             catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });
     }
@@ -222,6 +300,7 @@ struct LessonReader::Impl {
         if(preparation_suspended==suspended)return;
         preparation_suspended=suspended;
         if(suspended){
+            cancel_playback_verification();
             ++epoch;planning=false;
             if(generation.joinable()){
                 if(!retiring_preparation)retiring_preparation=std::make_unique<PreparationRetirement>(generation_changed);
@@ -237,7 +316,12 @@ struct LessonReader::Impl {
         // Settings can delete a course's recordings while the released reader
         // still has their metadata. Reuse its one preparation worker without
         // rebuilding the script, changing its key or moving its bookmark.
-        parts[at].audio.reset();cancel_generation();++epoch;prioritize(at);start_audio_preparation();update_buttons();
+        parts[at].audio.reset();
+        if(generation.joinable()){
+            if(!retiring_preparation)retiring_preparation=std::make_unique<PreparationRetirement>(generation_changed);
+            retiring_preparation->retire(generation);
+        }
+        ++epoch;prioritize(at);start_audio_preparation();update_buttons();
     }
     static std::string part_id(const Part& part){return (part.region.anchor.empty()?part.region.key:part.region.anchor)+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
     void changed(){if(!IsWindow(view))return;const auto page=lesson_page_state(view);const auto next_page=page.lesson_id+'/'+page.locale+'/'+page.page_id;
@@ -252,8 +336,9 @@ struct LessonReader::Impl {
             previous_priority=PriorityBoundary{answer_priority->block,part_id(parts[boundary]),answer_priority->allowed_through>=parts.size()};
         }
         answer_priority.reset();const bool same_page=next_page==page_id;
-        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
+        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();listened_recordings.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
         cancel_generation();++epoch;signature=next_signature;page_id=next_page;resume_page_id=page.narration_page_identity.empty()?next_page:page.narration_page_identity;regions=next_regions;parts.clear();key.clear();owner.clear();position={};finished=false;waiting_gate=false;has_plan=false;error.clear();planning=false;
+        restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;
         std::erase_if(shades,[&](const auto& item){return std::ranges::none_of(regions,[&](const auto& region){return item.first==region.key&&item.second->matches(region.target,region.source_text)
                 &&!(feedback_target&&region.feedback&&region.block_index==*feedback_target);});});
         std::erase_if(shaded_ends,[&](const auto& item){return !shades.contains(item.first);});
@@ -312,15 +397,32 @@ struct LessonReader::Impl {
                     }
                 }
                 push(std::move(plan));
-                prepare_audio(std::move(planned),current_epoch,lang,selected_voice,selected_engine,stop,std::move(page_priority));
+                prepare_audio(std::move(planned),current_epoch,lang,selected_voice,selected_engine,resume_key,stop,std::move(page_priority));
             }catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });update_buttons();}
     void receive(){std::vector<Result> pending;{const std::lock_guard lock(result_mutex);pending.swap(results);}if(pending.empty())return;for(auto& result:pending){if(result.epoch!=epoch)continue;
-        if(!result.error.empty()){error=result.error;planning=false;wanted=false;(void)player.release();continue;}
+        if(result.playback_validation){
+            if(result.validation_serial!=playback_validation_serial.load()||result.index!=current())continue;
+            validating_playback=false;
+            if(playback_verification.joinable()){
+                if(!retiring_preparation)retiring_preparation=std::make_unique<PreparationRetirement>(generation_changed);
+                retiring_preparation->retire(playback_verification);
+            }
+            if(result.index>=parts.size()||parts[result.index].audio_fingerprint!=result.audio_fingerprint)continue;
+            if(!result.error.empty()){error=result.error;wanted=false;cancel_playback_verification();update_buttons();continue;}
+            if(result.recording_changed){recover_audio(result.index);continue;}
+            parts[result.index].playback_lease=std::move(result.playback_lease);
+            continue;
+        }
+        if(!result.error.empty()){error=result.error;planning=false;wanted=false;
+            try{(void)player.release();}catch(...){}cancel_playback_verification();continue;}
         if(result.planned){parts=std::move(result.parts);key=result.key;has_plan=true;planning=false;position={};
-            const auto history=narration::read_history(data());if(const auto saved=narration::restore(history,key,parts.size()))position=*saved;
+            restored_bookmark=false;resume_needs_replay=false;
+            const auto history=narration::read_history(data());if(const auto saved=narration::restore(history,key,parts.size())){
+                position=*saved;restored_bookmark=!position.finished;}
             else for(const auto& legacy:result.legacy)if(const auto legacy_saved=narration::restore(history,legacy.key,legacy.parts.size())){
-                position=*legacy_saved;const auto old_at=static_cast<std::size_t>(legacy_saved->segment);bool found_position=false;
+                position=*legacy_saved;restored_bookmark=!position.finished;
+                const auto old_at=static_cast<std::size_t>(legacy_saved->segment);bool found_position=false;
                 if(!legacy.parts[old_at].region.retired_successor.empty()){
                     const auto& successor=legacy.parts[old_at].region.retired_successor;
                     const auto active=std::ranges::find_if(parts,[&](const auto& part){return part.region.anchor.starts_with(successor);});
@@ -385,18 +487,85 @@ struct LessonReader::Impl {
                 if(found!=parts.end()){
                     fresh_feedback_selected=true;
                     position.segment=found-parts.begin();position.milliseconds=0;position.finished=false;
+                    position.heard_prefix.reset();restored_bookmark=false;resume_needs_replay=false;
                     // Reuse the recording, never listening credit from an older
                     // submission that happened to generate the same verdict.
                     position.heard_through=std::min(position.heard_through,position.segment);
-                    for(const auto& part:parts)if(part.region.feedback&&part.region.block_index==*feedback_target)listened.erase(part_id(part));
+                    for(const auto& part:parts)if(part.region.feedback&&part.region.block_index==*feedback_target){
+                        listened.erase(part_id(part));listened_recordings.erase(part_id(part));}
                     if(found->region.correct&&found->region.solved)answer_priority=AnswerPriority{*feedback_target,static_cast<std::size_t>(position.segment)};
                     else if(answer_priority&&answer_priority->block==*feedback_target)answer_priority.reset();
                 }feedback_target.reset();}
             if(!fresh_feedback_selected)constrain_required_compiler_bookmark();
-            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));if(wanted&&!finished)acquire();
-        }else if(result.audio&&result.index<parts.size())parts[result.index].audio=std::move(result.audio);
+            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));
+            // A fresh answer invalidates previous hearing even when the reader
+            // stays paused and the learner closes before pressing Play.
+            if(fresh_feedback_selected){acquire();save(false);}
+            else if(wanted&&!finished)acquire();
+        }else if(result.audio&&result.index<parts.size()){
+            auto& part=parts[result.index];const bool replaced=!part.audio_fingerprint.empty()
+                &&part.audio_fingerprint!=result.audio_fingerprint;
+            if(replaced&&result.index==current()&&player.allocated())release_player();
+            if(replaced){listened.erase(part_id(part));listened_recordings.erase(part_id(part));}
+            part.audio=std::move(result.audio);part.audio_fingerprint=std::move(result.audio_fingerprint);
+            if(result.index==current())restore_current_prefix(replaced);
+        }
         }paint_progress();update_buttons();}
     std::size_t current()const{return parts.empty()?0:std::min(static_cast<std::size_t>(std::max<std::int64_t>(0,position.segment)),parts.size()-1);}
+    static std::int64_t duration_microseconds(const Part& part){
+        if(!part.audio||!std::isfinite(part.audio->duration_ms)||part.audio->duration_ms<=0
+            ||part.audio->duration_ms>=static_cast<double>(std::numeric_limits<std::int64_t>::max())/1000.)return 0;
+        return static_cast<std::int64_t>(std::floor(part.audio->duration_ms*1000.));
+    }
+    std::optional<narration::HeardPrefix> empty_certificate(std::size_t at)const{
+        if(at>=parts.size()||parts[at].audio_fingerprint.empty())return {};
+        const auto duration=duration_microseconds(parts[at]);if(duration<=0)return {};
+        return narration::HeardPrefix{parts[at].audio_fingerprint,0,duration};
+    }
+    void merge_heard(const Part& part,double start,double end){
+        if(!std::isfinite(start)||!std::isfinite(end)||start<0||end<=start)return;
+        if(part.audio_fingerprint.empty())return;const auto id=part_id(part);
+        auto& recording=listened_recordings[id];if(recording!=part.audio_fingerprint){listened.erase(id);recording=part.audio_fingerprint;}
+        auto& ranges=listened[id];ranges.push_back({start,end});std::ranges::sort(ranges);
+        std::vector<std::pair<double,double>> merged;
+        for(const auto& range:ranges){if(!merged.empty()&&range.first<=merged.back().second+1)
+            merged.back().second=std::max(merged.back().second,range.second);else merged.push_back(range);}
+        ranges=std::move(merged);
+    }
+    void restore_current_prefix(bool replaced=false){
+        if(parts.empty())return;const auto& part=parts[current()];const auto certificate=empty_certificate(current());
+        if(!certificate)return;
+        if(narration::heard_prefix_matches(position,certificate->fingerprint,certificate->duration_microseconds)){
+            if(position.heard_prefix->microseconds>0)
+                merge_heard(part,0,position.heard_prefix->microseconds/1000.);
+            resume_needs_replay=false;
+        }else if((restored_bookmark||replaced)&&part.region.feedback&&part.region.correct&&part.region.solved){
+            // Keep the paused offset untouched. Only explicit Play can recover
+            // an old/mismatched certificate by replaying missing explanation.
+            resume_needs_replay=true;
+        }else position.heard_prefix=certificate;
+    }
+    void bind_preview_certificate(){
+        const auto certificate=empty_certificate(current());if(!certificate){position.heard_prefix.reset();return;}
+        if(!narration::heard_prefix_matches(position,certificate->fingerprint,certificate->duration_microseconds))
+            position.heard_prefix=certificate;
+    }
+    void recover_explicit_resume(){
+        if(!explicit_resume_requested||parts.empty())return;
+        if(!parts[current()].audio||!parts[current()].playback_lease)return;
+        explicit_resume_requested=false;
+        if(!resume_needs_replay)return;
+        const auto& part=parts[current()];const auto first=correct_feedback_start(part.region.block_index);
+        if(first){const auto missing=std::max(*first,static_cast<std::size_t>(std::max<std::int64_t>(0,position.heard_through)));
+            if(missing<=current()&&missing<parts.size()&&parts[missing].region.block_index==part.region.block_index
+                &&parts[missing].region.feedback&&parts[missing].region.correct){
+                if(missing!=current())parts[current()].playback_lease.reset();
+                position.segment=static_cast<std::int64_t>(missing);position.milliseconds=0;position.finished=false;
+                position.heard_prefix.reset();bind_preview_certificate();prioritize(missing);save(false);
+            }
+        }
+        restored_bookmark=false;resume_needs_replay=false;
+    }
     void constrain_required_compiler_bookmark(){
         const auto at=current();
         for(std::size_t first=0;first<parts.size();){
@@ -413,6 +582,7 @@ struct LessonReader::Impl {
                 // not rewrite the student's three saved page slots.
                 position.segment=static_cast<std::int64_t>(first);position.milliseconds=0;position.finished=false;
                 position.heard_through=std::min(position.heard_through,position.segment);
+                position.heard_prefix.reset();restored_bookmark=false;resume_needs_replay=false;
                 answer_priority.reset();wanted=false;waiting_gate=false;return;
             }
             first=last+1;
@@ -449,12 +619,29 @@ struct LessonReader::Impl {
         }
         answer_priority=restored;
     }
-    void play_current(){if(!wanted||!has_plan||finished||parts.empty()||player.allocated())return;const auto at=current();prioritize(at);if(!parts[at].audio)return;
-        if(!audio_file(*parts[at].audio)){recover_audio(at);return;}
+    void play_current(){if(!wanted||!has_plan||finished||parts.empty()||player.allocated()||preparation_suspended)return;
+        auto at=current();prioritize(at);if(!parts[at].audio)return;
+        if(!parts[at].playback_lease){validate_for_playback(at);return;}
+        recover_explicit_resume();at=current();prioritize(at);if(!parts[at].audio)return;
+        if(!parts[at].playback_lease){validate_for_playback(at);return;}
         last_played_offset=static_cast<double>(position.milliseconds);player.play(parts[at].audio->wav,last_played_offset,rate);update_buttons();}
-    void heard_until(double end){if(parts.empty()||end<last_played_offset)return;auto& ranges=listened[part_id(parts[current()])];ranges.push_back({last_played_offset,end});std::ranges::sort(ranges);
-        std::vector<std::pair<double,double>> merged;for(const auto& range:ranges){if(!merged.empty()&&range.first<=merged.back().second+1)merged.back().second=std::max(merged.back().second,range.second);else merged.push_back(range);}ranges=std::move(merged);last_played_offset=end;}
-    bool feedback_fully_heard(std::size_t at)const{const auto found=listened.find(part_id(parts[at]));return found!=listened.end()&&!found->second.empty()
+    void heard_until(double end){if(parts.empty()||!std::isfinite(end)||end<last_played_offset)return;
+        const auto& part=parts[current()];if(!part.audio)return;
+        end=std::clamp(end,0.,part.audio->duration_ms);merge_heard(part,last_played_offset,end);last_played_offset=end;
+        if(auto certificate=empty_certificate(current())){
+            const auto known=listened.find(part_id(part));
+            const auto recording=listened_recordings.find(part_id(part));
+            if(known!=listened.end()&&recording!=listened_recordings.end()&&recording->second==part.audio_fingerprint
+                &&!known->second.empty()&&known->second.front().first<=1)
+                certificate->microseconds=std::min(certificate->duration_microseconds,
+                    static_cast<std::int64_t>(std::floor(known->second.front().second*1000.)));
+            position.heard_prefix=std::move(certificate);
+        }
+        restored_bookmark=false;
+    }
+    bool feedback_fully_heard(std::size_t at)const{const auto id=part_id(parts[at]);const auto found=listened.find(id);
+        const auto recording=listened_recordings.find(id);
+        return found!=listened.end()&&!found->second.empty()&&recording!=listened_recordings.end()&&recording->second==parts[at].audio_fingerprint
         &&parts[at].audio&&found->second.front().first<=1&&found->second.front().second+1>=parts[at].audio->duration_ms;}
     void credit_heard_feedback(){
         // This persisted boundary means every preceding correct-feedback part
@@ -470,7 +657,7 @@ struct LessonReader::Impl {
             const auto actual=player.position();heard_until(actual);position.milliseconds=static_cast<std::int64_t>(std::llround(actual));paint_progress();
             if(GetTickCount64()-checkpoint_at>1200){save();checkpoint_at=GetTickCount64();}}
         if(wanted&&player.ended()){
-            const auto at=current();heard_until(parts[at].audio->duration_ms);position.milliseconds=static_cast<std::int64_t>(std::llround(parts[at].audio->duration_ms));(void)player.release();
+            const auto at=current();heard_until(parts[at].audio->duration_ms);position.milliseconds=static_cast<std::int64_t>(std::llround(parts[at].audio->duration_ms));(void)player.release();parts[at].playback_lease.reset();
             credit_heard_feedback();
             if(answer_priority&&parts[at].region.feedback&&parts[at].region.correct)
                 answer_priority->allowed_through=std::max(answer_priority->allowed_through,at+1);
@@ -482,7 +669,8 @@ struct LessonReader::Impl {
             else if(at+1==parts.size()&&(!pending_feedback||(answer_priority&&answer_priority->allowed_through>at))&&!unanswered
                 &&passes_prefix(parts.size())){finished=true;wanted=false;save(true);}
             else if(at+1==parts.size()||(!wrong&&!can_enter(at+1))){wanted=false;waiting_gate=true;save();}
-            else{position.segment=static_cast<std::int64_t>(at+1);position.milliseconds=0;save();play_current();}
+            else{position.segment=static_cast<std::int64_t>(at+1);position.milliseconds=0;position.heard_prefix.reset();
+                bind_preview_certificate();save();play_current();}
             paint_progress();update_buttons();}}
     void paint_progress(){if(!enabled||!has_plan)return;std::map<std::string,std::size_t> ends;for(const auto& region:regions)ends[region.key]=0;
         if(has_plan&&!parts.empty()){const auto at=current();for(std::size_t i=0;i<at;++i)ends[parts[i].region.key]=std::max(ends[parts[i].region.key],parts[i].sentence.end);
@@ -498,7 +686,8 @@ struct LessonReader::Impl {
         }
         for(auto& [id,shade]:shades){shade->read_through(ends[id]);shaded_ends[id]=ends[id];}}
     void toggle(){if(!enabled)return;if(wanted){pause();return;}if(finished){update_buttons();return;}
-        if(!error.empty()){signature.clear();changed();if(!error.empty())return;}wanted=true;manually_paused=false;waiting_gate=false;if(has_plan){acquire();play_current();}update_buttons();}
+        if(!error.empty()){signature.clear();changed();if(!error.empty())return;}wanted=true;manually_paused=false;waiting_gate=false;
+        explicit_resume_requested=true;if(has_plan){acquire();play_current();}update_buttons();}
     void seek(int seconds){if(!has_plan||parts.empty())return;const bool resume=wanted;release_player();
         auto at=current();double offset=static_cast<double>(position.milliseconds)+seconds*1000.;
         auto last=parts.size()-1;
@@ -512,8 +701,13 @@ struct LessonReader::Impl {
             if(!guide&&!can_enter(at+1,true)){offset=std::min(offset,parts[at].audio->duration_ms);break;}offset-=parts[at].audio->duration_ms;++at;}
         if(answer_priority&&seconds>0)answer_priority->allowed_through=std::max(answer_priority->allowed_through,at);
         position=narration::seek(position,static_cast<std::int64_t>(at),static_cast<std::int64_t>(std::max(0.,offset)));finished=false;prioritize(at);wanted=resume;waiting_gate=false;
+        // Explicit preview cancels legacy recovery. A zero certificate records
+        // known identity, never a prefix inferred from the new visual offset.
+        restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
         if(owner.empty())acquire();save();paint_progress();play_current();update_buttons();}
-    void restart(){if(!has_plan)return;(void)player.release();listened.clear();answer_priority.reset();previous_priority.reset();position={};finished=false;wanted=true;manually_paused=false;waiting_gate=false;acquire();save();paint_progress();play_current();update_buttons();}
+    void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();position={};
+        restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
+        finished=false;wanted=true;manually_paused=false;waiting_gate=false;acquire();save();paint_progress();play_current();update_buttons();}
     void feedback(std::size_t block,bool correct){
         const bool resume=!manually_paused&&!finished;
         // An incorrect guide interrupts the original permission; it does not
@@ -523,7 +717,7 @@ struct LessonReader::Impl {
         feedback_target=block;wanted=resume;finished=false;signature.clear();changed();}
     void settings_changed(){const auto old_language=language,old_voice=voice,old_engine=engine;const auto old_enabled=enabled;configure();
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
-        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();answer_priority.reset();previous_priority.reset();listened.clear();signature.clear();changed();}
+        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();answer_priority.reset();previous_priority.reset();listened.clear();listened_recordings.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
     void change_playback_rate(double value){
         value=narration::clamp_playback_rate(value);if(rate==value)return;
@@ -629,7 +823,8 @@ struct LessonReader::Impl {
         case WM_CANCELMODE:case WM_CAPTURECHANGED:self->dragging=false;self->pressed_button=nullptr;if(GetCapture()==window)ReleaseCapture();return 0;
         case WM_NCDESTROY:KillTimer(window,tick_timer);self->window=nullptr;SetWindowLongPtrW(window,GWLP_USERDATA,0);break;
         default:break;}}
-        catch(const std::exception& failure){self->error=failure.what();self->wanted=false;try{(void)self->player.release();}catch(...){}self->update_buttons();}
+        catch(const std::exception& failure){self->error=failure.what();self->wanted=false;try{(void)self->player.release();}catch(...){}
+            self->cancel_playback_verification();self->update_buttons();}
         return DefWindowProcW(window,message,wp,lp);
     }
 };
@@ -652,7 +847,7 @@ HWND LessonReader::bar()const{return impl_->window;}
 LessonReaderSnapshot LessonReader::snapshot()const{
     const auto& self=*impl_;LessonReaderSnapshot value;
     value.playing=self.wanted&&self.player.ready();value.allocated=self.player.allocated();value.planned=self.has_plan;
-    value.preparing=self.planning;value.finished=self.finished;value.waiting_gate=self.waiting_gate;value.index=self.current();
+    value.preparing=self.planning||self.validating_playback;value.finished=self.finished;value.waiting_gate=self.waiting_gate;value.index=self.current();
     value.preparation_suspended=self.preparation_suspended;
     value.offset=self.player.allocated()?static_cast<std::int64_t>(std::llround(self.player.position())):self.position.milliseconds;
     value.rate=self.rate;value.playback_rate=self.player.ready()?self.player.playback_rate():0;

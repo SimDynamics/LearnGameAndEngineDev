@@ -289,6 +289,10 @@ struct LessonView {
     std::optional<state::AndroidImportPreview> import_preview;
     bool import_open = false, import_done = false;
     std::vector<Row> rows;
+    struct Placement { HWND item; int x, y, width, height; bool fixed=false; HWND parent=nullptr;int origin=0; };
+    std::vector<Placement> scroll_placements;
+    SIZE scroll_layout_size{};
+    bool scroll_layout_valid=false;
     std::map<int,HWND> overflow_panes;
     std::map<HWND,int> overflow_view_origins;
     struct SimulatedCardSurface { RECT bounds; int header_bottom; };
@@ -2588,6 +2592,7 @@ struct LessonView {
         reader_theme::primary_button(check);create_feedback(index);
     }
     void render_page() {
+        scroll_layout_valid=false;scroll_placements.clear();
         cancel_math();
         choice_labels.clear();selected_puzzle.reset();
         pending_answer_viewports.clear();
@@ -2684,9 +2689,85 @@ struct LessonView {
         // use options_snapshot/invoke_option and the original navigation gates.
         if(hooks.settings_requested)PostMessageW(window,header_action_message,settings_id,0);
     }
+    // Translation keeps the measured document, native edit viewports and
+    // mathematical layouts intact. Only a content/size change measures again.
+    void position_rows(std::vector<Placement>& placements,const RECT& area,bool resize_rows) {
+        const UINT placement_flags=SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOCOPYBITS|SWP_NOREDRAW
+            |(resize_rows?0:SWP_NOSIZE);
+        // Commit only final, clamped positions. Suppress the default bit-copy:
+        // reused client pixels are stale when several child rows move past
+        // one another. Repaint parent and children once after every move.
+        // USER clamps child-window coordinates at signed 16-bit limits. Keep
+        // very long lesson rows in local bands rather than moving a late
+        // answer to y>32767, which overlaps its still-growing readonly source.
+        constexpr int band_size=30000;
+        std::set<int> active_bands;
+        std::map<int,int> band_tops,band_bottoms;
+        const auto focused=GetFocus();
+        std::map<HWND,std::vector<const Placement*>> groups;
+        for(auto& item:placements){
+            if(item.fixed&&!resize_rows)continue;
+            item.origin=item.fixed||fullscreen_block?0:(item.y/band_size)*band_size;
+            item.parent=item.fixed?fullscreen_header:pane;
+            if(item.origin){
+                auto& host=overflow_panes[item.origin];
+                if(!host){host=CreateWindowExW(WS_EX_CONTROLPARENT,pane_class,L"",WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS,
+                    0,0,0,0,pane,nullptr,GetModuleHandleW(nullptr),this);
+                    if(!host)throw std::runtime_error("Cannot create a long-lesson viewport band");
+                    reader_theme::apply(host,reader_theme::Surface::canvas);attach_gestures(host);}
+                active_bands.insert(item.origin);item.parent=host;
+                const auto [first,inserted]=band_tops.try_emplace(item.origin,item.y);
+                if(!inserted)first->second=std::min(first->second,item.y);
+                band_bottoms[item.origin]=std::max(band_bottoms[item.origin],item.y+item.height);
+            }
+            if(GetParent(item.item)!=item.parent)SetParent(item.item,item.parent);
+            groups[item.parent].push_back(&item);
+        }
+        overflow_view_origins.clear();
+        for(const auto& [origin,host]:overflow_panes){
+            const bool intersects=active_bands.contains(origin)&&band_bottoms.at(origin)>scroll&&band_tops.at(origin)<scroll+area.bottom;
+            if(!intersects){
+                if(active_bands.contains(origin))SetWindowPos(host,HWND_BOTTOM,0,origin-scroll,area.right,
+                    std::max(1,band_bottoms.at(origin)-origin),SWP_NOACTIVATE|SWP_HIDEWINDOW|SWP_NOCOPYBITS|SWP_NOREDRAW);
+                else ShowWindow(host,SW_HIDE);
+            }
+            else overflow_view_origins.emplace(host,std::max(band_tops.at(origin),scroll));
+        }
+        for(const auto& [host,visible_origin]:overflow_view_origins){
+            const auto band=std::ranges::find_if(overflow_panes,[host](const auto& entry){return entry.second==host;});
+            const auto bottom=std::min(band_bottoms.at(band->first),scroll+static_cast<int>(area.bottom));
+            // Clip the host itself to the viewport and move its existing
+            // children relative to that visible document origin. Otherwise
+            // USER clamps a distant negative host Y to -32768 and an old
+            // opaque band can cover the current answer on a very long page.
+            SetWindowPos(host,HWND_BOTTOM,0,visible_origin-scroll,area.right,std::max(1,bottom-visible_origin),SWP_NOACTIVATE|SWP_SHOWWINDOW|SWP_NOCOPYBITS|SWP_NOREDRAW);
+        }
+        // Visible hosts begin at their first actual child, never at an empty
+        // slice containing the preceding band's long row. Hidden hosts keep
+        // their stable local origin to avoid USER's signed16 coordinate clamp.
+        for(auto& item:placements)if(item.origin)if(const auto visible=overflow_view_origins.find(item.parent);visible!=overflow_view_origins.end())item.origin=visible->second;
+        if(focused&&IsWindow(focused)&&GetFocus()!=focused)SetFocus(focused);
+        // DeferWindowPos requires every HWND in a batch to share its parent.
+        for(const auto& [parent,items]:groups){
+            auto deferred=BeginDeferWindowPos(static_cast<int>(items.size()));
+            if(deferred){for(const auto* item:items){
+                const int y=item->y-(item->fixed?0:item->origin?item->origin:scroll);
+                deferred=DeferWindowPos(deferred,item->item,nullptr,item->x,y,item->width,item->height,placement_flags);
+                if(!deferred)break;
+            }
+            if(deferred&&!EndDeferWindowPos(deferred))deferred=nullptr;}
+            if(!deferred)for(const auto* item:items)SetWindowPos(item->item,nullptr,item->x,
+                item->y-(item->fixed?0:item->origin?item->origin:scroll),item->width,item->height,placement_flags);
+        }
+    }
+    void paint_scrolled_viewport(bool synchronous=false) {
+        RedrawWindow(pane,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN
+            |(synchronous?RDW_UPDATENOW:0));
+    }
     void reflow() {
         if (!pane) return;
         if (laying_out) { layout_pending = true; return; }
+        scroll_layout_valid=false;
         if(fullscreen_palette_block&&*fullscreen_palette_block<controls.size()&&controls[*fullscreen_palette_block].fill){
             RECT area{};GetClientRect(window,&area);
             const auto height=std::min(fullscreen_palette_max_height,controls[*fullscreen_palette_block].fill->palette_height_for_width(area.right));
@@ -2698,7 +2779,6 @@ struct LessonView {
         const int margin = 0;
         const int width = std::max(px(100), static_cast<int>(area.right) - margin * 2);
         const int left = std::max(margin, (static_cast<int>(area.right) - width) / 2);
-        struct Placement { HWND item; int x, y, width, height; bool fixed=false; HWND parent=nullptr;int origin=0; };
         std::vector<Placement> placements;
         std::vector<HWND> toolbar_captions;
         std::map<HWND,POINT> editor_positions;
@@ -2894,70 +2974,9 @@ struct LessonView {
         if(math_keyboard&&IsWindowVisible(math_keyboard))GetWindowRect(math_keyboard,&keyboard_area);
         extent = top + px(16)+static_cast<int>(keyboard_area.bottom-keyboard_area.top);
         scroll = std::clamp(scroll, 0, std::max(0, extent - static_cast<int>(area.bottom)));
-        // Commit only final, clamped positions. Suppress the default bit-copy:
-        // reused client pixels are stale when several child rows move past
-        // one another. Repaint parent and children once after every move.
-        // USER clamps child-window coordinates at signed 16-bit limits. Keep
-        // very long lesson rows in local bands rather than moving a late
-        // answer to y>32767, which overlaps its still-growing readonly source.
-        constexpr int band_size=30000;
-        std::set<int> active_bands;
-        std::map<int,int> band_tops,band_bottoms;
-        const auto focused=GetFocus();
-        std::map<HWND,std::vector<const Placement*>> groups;
-        for(auto& item:placements){
-            item.origin=item.fixed||fullscreen_block?0:(item.y/band_size)*band_size;
-            item.parent=item.fixed?fullscreen_header:pane;
-            if(item.origin){
-                auto& host=overflow_panes[item.origin];
-                if(!host){host=CreateWindowExW(WS_EX_CONTROLPARENT,pane_class,L"",WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS,
-                    0,0,0,0,pane,nullptr,GetModuleHandleW(nullptr),this);
-                    if(!host)throw std::runtime_error("Cannot create a long-lesson viewport band");
-                    reader_theme::apply(host,reader_theme::Surface::canvas);attach_gestures(host);}
-                active_bands.insert(item.origin);item.parent=host;
-                const auto [first,inserted]=band_tops.try_emplace(item.origin,item.y);
-                if(!inserted)first->second=std::min(first->second,item.y);
-                band_bottoms[item.origin]=std::max(band_bottoms[item.origin],item.y+item.height);
-            }
-            if(GetParent(item.item)!=item.parent)SetParent(item.item,item.parent);
-            groups[item.parent].push_back(&item);
-        }
-        overflow_view_origins.clear();
-        for(const auto& [origin,host]:overflow_panes){
-            const bool intersects=active_bands.contains(origin)&&band_bottoms.at(origin)>scroll&&band_tops.at(origin)<scroll+area.bottom;
-            if(!intersects){
-                if(active_bands.contains(origin))SetWindowPos(host,HWND_BOTTOM,0,origin-scroll,area.right,
-                    std::max(1,band_bottoms.at(origin)-origin),SWP_NOACTIVATE|SWP_HIDEWINDOW|SWP_NOCOPYBITS);
-                else ShowWindow(host,SW_HIDE);
-            }
-            else overflow_view_origins.emplace(host,std::max(band_tops.at(origin),scroll));
-        }
-        for(const auto& [host,visible_origin]:overflow_view_origins){
-            const auto band=std::ranges::find_if(overflow_panes,[host](const auto& entry){return entry.second==host;});
-            const auto bottom=std::min(band_bottoms.at(band->first),scroll+static_cast<int>(area.bottom));
-            // Clip the host itself to the viewport and move its existing
-            // children relative to that visible document origin. Otherwise
-            // USER clamps a distant negative host Y to -32768 and an old
-            // opaque band can cover the current answer on a very long page.
-            SetWindowPos(host,HWND_BOTTOM,0,visible_origin-scroll,area.right,std::max(1,bottom-visible_origin),SWP_NOACTIVATE|SWP_SHOWWINDOW|SWP_NOCOPYBITS);
-        }
-        // Visible hosts begin at their first actual child, never at an empty
-        // slice containing the preceding band's long row. Hidden hosts keep
-        // their stable local origin to avoid USER's signed16 coordinate clamp.
-        for(auto& item:placements)if(item.origin)if(const auto visible=overflow_view_origins.find(item.parent);visible!=overflow_view_origins.end())item.origin=visible->second;
-        if(focused&&IsWindow(focused)&&GetFocus()!=focused)SetFocus(focused);
-        // DeferWindowPos requires every HWND in a batch to share its parent.
-        for(const auto& [parent,items]:groups){
-            auto deferred=BeginDeferWindowPos(static_cast<int>(items.size()));
-            if(deferred){for(const auto* item:items){
-                const int y=item->y-(item->fixed?0:item->origin?item->origin:scroll);
-                deferred=DeferWindowPos(deferred,item->item,nullptr,item->x,y,item->width,item->height,placement_flags);
-                if(!deferred)break;
-            }
-            if(deferred&&!EndDeferWindowPos(deferred))deferred=nullptr;}
-            if(!deferred)for(const auto* item:items)SetWindowPos(item->item,nullptr,item->x,
-                item->y-(item->fixed?0:item->origin?item->origin:scroll),item->width,item->height,placement_flags);
-        }
+        scroll_placements=placements;
+        scroll_layout_size={area.right,area.bottom};
+        position_rows(placements,area,true);
         // RichEdit preserves formatting insets when its client size changes.
         // Setting this rectangle at the provisional measurement height can
         // therefore clip the first caption after its final, smaller placement.
@@ -3018,6 +3037,7 @@ struct LessonView {
         place_reader_bar();
         RedrawWindow(pane,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
         if(pinned)RedrawWindow(fullscreen_header,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
+        scroll_layout_valid=true;
         laying_out = false;
         if (layout_pending) { layout_pending = false; reflow(); }
     }
@@ -3027,7 +3047,19 @@ struct LessonView {
         if (new_scroll == scroll) return;
         scroll = new_scroll;
         if(!fullscreen_block){remember_scroll();mark_dirty();}
-        reflow();
+        if(!laying_out&&scroll_layout_valid&&area.right==scroll_layout_size.cx&&area.bottom==scroll_layout_size.cy){
+            laying_out=true;
+            struct PositionGuard { bool& active; ~PositionGuard(){active=false;} } guard{laying_out};
+            auto placements=scroll_placements;
+            position_rows(placements,area,false);
+            SCROLLINFO info{sizeof(info),SIF_POS};info.nPos=scroll;
+            SetScrollInfo(pane,SB_VERT,&info,FALSE);
+            // A held mouse supplies more moves before the ordinary paint
+            // queue drains. Present one complete translated frame per move.
+            paint_scrolled_viewport(drag.axis==DragAxis::lesson_vertical);
+            laying_out=false;
+            if(layout_pending){layout_pending=false;reflow();}
+        }else reflow();
     }
     bool enter_key(const MSG& message){
         if(import_open)return false;

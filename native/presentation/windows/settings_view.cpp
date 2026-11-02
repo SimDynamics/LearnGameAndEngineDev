@@ -925,7 +925,14 @@ struct Settings {
         // including any earlier entries, rather than leaving a partial layout.
         if(!positioned)for(const auto& placement:placements)MoveWindow(placement.control,placement.left,placement.top,placement.width,placement.height,FALSE);
         if(measure)for(const auto& row:rows)if(row.dropdown&&row.actual_height>0)size_combo(row.window);
-        redraw.resume();SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,content_height-1),static_cast<UINT>(area.bottom),scroll,0};SetScrollInfo(window,SB_VERT,&info,TRUE);reader_theme::refresh_scrollbars(window);
+        redraw.resume();
+        // Translation changes only the position. Publishing the unchanged
+        // range/page and redrawing USER's frame on every thumb move flashes
+        // that native skin before our existing dark scrollbar is presented.
+        const UINT scroll_fields=measure?SIF_RANGE|SIF_PAGE|SIF_POS:SIF_POS;
+        SCROLLINFO info{sizeof(info),scroll_fields,0,std::max(0,content_height-1),static_cast<UINT>(area.bottom),scroll,0};
+        SetScrollInfo(window,SB_VERT,&info,reader_theme::palette(window).high_contrast);
+        reader_theme::refresh_scrollbars(window);
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
         RECT adjusted{};GetClientRect(window,&adjusted);if(adjusted.right!=area.right)PostMessageW(window,WM_SIZE,0,MAKELPARAM(adjusted.right,adjusted.bottom));
     }
