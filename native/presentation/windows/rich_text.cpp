@@ -963,7 +963,10 @@ void map_rich_text_reference_ranges(HWND edit,
     const auto native=wide(edit_text(edit));
     if(source_to_native.empty()||source_to_native.front()!=0||source_to_native.back()!=native.size()||
             !std::ranges::is_sorted(source_to_native))
-        throw std::invalid_argument("The transformed reference map is not a complete monotone UTF-16 map");
+        throw std::invalid_argument("The transformed reference map is not a complete monotone UTF-16 map: boundaries="+
+            std::to_string(source_to_native.size())+", first="+(source_to_native.empty()?"empty":std::to_string(source_to_native.front()))+
+            ", last="+(source_to_native.empty()?"empty":std::to_string(source_to_native.back()))+", native="+std::to_string(native.size())+
+            ", sorted="+std::to_string(std::ranges::is_sorted(source_to_native)));
     std::vector<std::pair<std::size_t,std::size_t>> mapped;
     std::size_t previous_end=0;
     for(const auto& [first,last]:source_ranges){
@@ -1220,12 +1223,15 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         // Background highlighting and reference ownership are independent of
         // typography. Never introduce underline lines or category-colored fills.
         references=roles.code;
-        references.insert(references.end(),roles.numbers.begin(),roles.numbers.end());
         const auto append_references=[&](const auto& extra){references.insert(references.end(),extra.begin(),extra.end());};
         append_references(explicit_strings);append_references(quoted_literals);append_references(contextual_strings);
         technical_prose::curricular_role_detail::merge(references);
-        technical_prose::curricular_role_detail::subtract(references,roles.citations);
         technical_prose::curricular_role_detail::subtract(references,prose_language_names);
+        // Keep a language name's ordinary ink/bold treatment while allowing
+        // its version digits (C++20) the same neutral numeric background.
+        append_references(roles.numbers);
+        technical_prose::curricular_role_detail::merge(references);
+        technical_prose::curricular_role_detail::subtract(references,roles.citations);
         technical_prose::curricular_role_detail::subtract(references,semantic.protected_ranges);
         std::vector<technical_prose::Range> tokens;
         for(const auto& [first,last]:references){

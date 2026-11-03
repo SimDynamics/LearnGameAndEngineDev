@@ -245,7 +245,16 @@ RECT visible_ink_bounds(HWND item){
     void* pixels=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&pixels,nullptr,0);ReleaseDC(item,dc);require(bitmap&&buffer&&pixels,"Cannot inspect actual mathematical answer ink");const auto previous=SelectObject(buffer,bitmap);
     const auto background=reader_theme::background(item);const auto fill=CreateSolidBrush(background);FillRect(buffer,&area,fill);DeleteObject(fill);SendMessageW(item,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(buffer),PRF_CLIENT);GdiFlush();
     RECT ink{area.right,area.bottom,-1,-1};const auto values=static_cast<const std::uint32_t*>(pixels);
-    for(int y=0;y<area.bottom;++y)for(int x=0;x<area.right;++x){const auto pixel=values[static_cast<std::size_t>(y)*area.right+x];const auto difference=std::abs(static_cast<int>((pixel>>16)&255)-GetRValue(background))+std::abs(static_cast<int>((pixel>>8)&255)-GetGValue(background))+std::abs(static_cast<int>(pixel&255)-GetBValue(background));if(difference>=24){ink.left=std::min<LONG>(ink.left,x);ink.top=std::min<LONG>(ink.top,y);ink.right=std::max<LONG>(ink.right,x+1);ink.bottom=std::max<LONG>(ink.bottom,y+1);}}
+    const auto reference=reader_theme::reference_background(item);
+    const bool reference_surface=!reader_theme::palette(item).high_contrast&&!rich_text_reference_ranges(item).empty();
+    for(int y=0;y<area.bottom;++y)for(int x=0;x<area.right;++x){const auto pixel=values[static_cast<std::size_t>(y)*area.right+x];
+        const auto red=static_cast<BYTE>((pixel>>16)&255),green=static_cast<BYTE>((pixel>>8)&255),blue=static_cast<BYTE>(pixel&255);
+        // A declared neutral reference BackColor is a surface, not glyph ink.
+        // Exclude that exact opaque fill only; actual foreground/antialias
+        // pixels still use the original threshold and native alignment bound.
+        if(reference_surface&&RGB(red,green,blue)==reference)continue;
+        const auto difference=std::abs(int(red)-GetRValue(background))+std::abs(int(green)-GetGValue(background))+std::abs(int(blue)-GetBValue(background));
+        if(difference>=24){ink.left=std::min<LONG>(ink.left,x);ink.top=std::min<LONG>(ink.top,y);ink.right=std::max<LONG>(ink.right,x+1);ink.bottom=std::max<LONG>(ink.bottom,y+1);}}
     SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);require(ink.bottom>ink.top,"The original mathematical answer produced no visible ink");return ink;
 }
 void initial_text_scale_layout_tests(HWND host){
@@ -341,6 +350,28 @@ void rich_content_layout_tests(HWND host){
     std::cout<<"PASS source table column geometry/header styles, real horizontal scroll, block/inline formula layout and movable enriched ordering/matching cards\n";
 }
 void rich_option_content_tests(HWND host){
+    struct RichEditModule{HMODULE module=LoadLibraryW(L"Msftedit.dll");~RichEditModule(){if(module)FreeLibrary(module);}} rich_edit;
+    require(rich_edit.module,"Cannot load the native bare-fraction regression's RichEdit module");
+    // Actual enriched options include bare fractions at story CP0. Their
+    // first native digit follows a structural OfficeMath marker, while the
+    // document/source boundary must remain zero and never decorate the marker.
+    for(const auto source:{"1/2","2/4","2/3"}){
+        struct OwnedField{HWND window;~OwnedField(){if(window)DestroyWindow(window);}} field{
+            CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|ES_READONLY|ES_MULTILINE,0,0,300,100,host,nullptr,GetModuleHandleW(nullptr),nullptr)};
+        if(!field.window)throw std::runtime_error("Cannot create the actual bare-fraction rich-option regression: "+std::to_string(GetLastError()));
+        reader_theme::apply(field.window,reader_theme::Surface::card);
+        require(set_native_math_text(field.window,source),"A bare rich-option fraction did not build real OfficeMath");
+        const auto mapping=native_math_text_mapping(field.window,source);const auto references=rich_text_reference_ranges(field.window);
+        require(mapping&&mapping->built_up&&mapping->source_to_native.front()==0&&mapping->source_to_native.back()==mapping->native_text.size(),
+            "A bare rich-option fraction lost its complete native source boundaries");
+        require(!mapping->native_text.empty()&&mapping->native_text.front()>=0xFDD0&&mapping->native_text.front()<=0xFDEF,
+            "The regression did not exercise an actual OfficeMath marker before its first digit");
+        for(std::size_t at=0;at<mapping->native_text.size();++at){const auto unit=mapping->native_text[at];
+            const bool covered=std::ranges::any_of(references,[&](const auto& range){return range.first<=at&&at<range.second;});
+            if(unit>=L'0'&&unit<=L'9')require(covered,"A bare fraction's digit lost its real number-reference ownership");
+            if(unit>=0xFDD0&&unit<=0xFDEF)require(!covered,"A structural OfficeMath marker was decorated as a number");
+        }
+    }
     const auto verify=[&](const JsonObject& block,std::string_view response_id,unsigned count,unsigned graphs){
         MathPuzzleView view(host,winrt::to_string(block.Stringify()),"es","");view.layout(0,0,850);
         auto toggles=class_targets(view.window(),L"BUTTON");std::erase_if(toggles,[](HWND item){const auto type=GetWindowLongPtrW(item,GWL_STYLE)&BS_TYPEMASK;return type!=BS_RADIOBUTTON&&type!=BS_CHECKBOX;});

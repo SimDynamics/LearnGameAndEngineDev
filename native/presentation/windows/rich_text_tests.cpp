@@ -1,6 +1,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/programming_technical_ranges.hpp"
+#include "presentation/windows/curricular_text_roles.hpp"
 #include "core/lesson_state.hpp"
 #include "platform/windows/state_store.hpp"
 
@@ -498,6 +499,23 @@ void curricular_role_formatting(){
         for(std::size_t at=0;at<heading.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
             check(!(style.dwEffects&CFE_UNDERLINE)&&(style.dwEffects&CFE_AUTOBACKCOLOR)&&style.crTextColor==heading_ink,
                 "A lesson header/counter acquired curricular background, numeric ink or underline");}
+        // Exact curricular prose from fuentes_objetivos_y_fases p4b2. Only
+        // the version digits receive a background; C++ remains a language name.
+        const std::string version="Este curso utiliza un perfil de C++20: la herramienta elegida debe poder proporcionar al menos las características de ese estándar.";
+        const auto version_text=wide(version);const auto name=version_text.find(L"C++20");
+        check(name!=version_text.npos,"The current curricular C++ version fixture lost its language name");
+        const auto analyzed=technical_prose::analyze(version_text,"es");
+        const auto roles=technical_prose::curricular_roles(version_text,"es",analyzed);
+        check(std::ranges::find(roles.numbers,std::pair{name+3,name+5})!=roles.numbers.end(),"The existing numeric classifier omitted the real C++20 version digits");
+        set_rich_text(target.value,version);const auto expected_ink=reader_theme::foreground(target.value);
+        check(edit_text(target.value)==version,"Highlighting a curricular language version rewrote its source");
+        for(std::size_t at=0;at<version_text.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
+            check(!(style.dwEffects&CFE_UNDERLINE),"A curricular language version acquired a typographic underline");
+            if(at>=name&&at<name+5)check(style.crTextColor==expected_ink&&(style.dwEffects&CFE_BOLD),"C++20 lost its complete language-name ink/bold treatment or became an identifier/operator sequence");
+            if(at>=name+3&&at<name+5){neutral_reference_background(target.value,style);
+                if(!reader_theme::palette(target.value).high_contrast)check(reference_at(target.value,at),"A highlighted version digit has no native reference ownership");
+            }else check((style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target.value,at),"Version highlighting escaped the digits into C++ or adjacent curricular prose");
+        }
     }
     reference_ranges_follow_effective_text_changes();
     std::cout<<"PASS curricular roles: native C++ palette, active mathematics neutral, neutral background without underlines/red accents, citations/homonyms, Unicode/CRLF, emphasis, lesson chrome and four zooms; actual contrast mode only\n";

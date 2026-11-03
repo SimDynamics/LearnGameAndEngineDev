@@ -16,6 +16,7 @@
 #include "presentation/windows/smo_view.hpp"
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/window_frame.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/native_menu.hpp"
 #include "presentation/windows/internal_window.hpp"
@@ -250,6 +251,7 @@ void open_settings(HWND window,WindowState& state){
     access.changed=[window,&state,previous_ui=interface_language(initial_preferences),previous_content=lgaed::state::string_value(initial_preferences,"native_windows","content_language","es")]()mutable{
         update_audio_context(state,true);if(state.reader)state.reader->settings_changed();
         const auto data=preferences(state);const auto ui=interface_language(data),content=lgaed::state::string_value(data,"native_windows","content_language","es");
+        update_window_frame(window,reader_theme::appearance_accent(data));
         if(ui!=previous_ui||content!=previous_content){previous_ui=ui;previous_content=content;PostMessageW(window,application_language_message,0,0);}
     };access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
     access.unsaved_discarded=[window](std::string_view message){show_settings_notice(window,message);};
@@ -403,6 +405,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                 for(const auto key:{"ui_language","content_language"})
                     if(!lgaed::state::find(defaults,"native_windows",key))defaults.preferences["native_windows"][key]=fallback;
                 if(defaults!=original)initial.save(defaults);
+                lgaed::presentation::update_window_frame(window,lgaed::presentation::reader_theme::appearance_accent(defaults));
                 state->narrator=std::make_shared<lgaed::windows::NarrationWorker>(std::filesystem::path(lgaed::build::source_root)/L"out/narration/runtime.json");
                 state->generation=std::make_unique<lgaed::windows::AudioGeneration>(state->narrator,
                     std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",state->environment.paths.cache/L"kokoro",state->environment.paths.root);

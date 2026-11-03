@@ -237,10 +237,57 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
     // Reference ownership was published after hiding inline delimiters, before
     // TOM expanded mathematical scalars/objects. Remap those native boundaries,
     // rather than treating them as offsets into the still-delimited linear text.
-    map_rich_text_reference_ranges(window,reference_ranges,align(before_math,mapping.native_text));
+    auto reference_mapping=align(before_math,mapping.native_text);
+    // A fraction at story offset zero inserts an OfficeMath marker before its
+    // first digit. Glyph alignment correctly starts that digit at offset one;
+    // the complete document boundary still starts at zero, as does the public
+    // source map below. Math digits are decorated from their final glyph spans.
+    reference_mapping.front()=0;reference_mapping.back()=mapping.native_text.size();
+    map_rich_text_reference_ranges(window,reference_ranges,reference_mapping);
     const auto linear_mapping = align(projection.linear,mapping.native_text); mapping.source_to_native.reserve(projection.mapping.size());
     for (const auto position : projection.mapping) mapping.source_to_native.push_back(linear_mapping.at(std::min(position,linear_mapping.size() - 1)));
     mapping.source_to_native.front() = 0; mapping.source_to_native.back() = mapping.native_text.size();
+    if(role!=RichTextRole::lesson_title){
+        // Math spans are protected from C++ recoloring. Their displayed digits
+        // still belong to the curriculum's neutral number highlight, including
+        // supplementary mathematical digits produced by TOM/author emphasis.
+        const auto digit_width=[&](std::size_t at,std::size_t end)->std::size_t{
+            if(at>=end)return 0;
+            const auto width=IS_HIGH_SURROGATE(mapping.native_text[at])&&at+1<end&&IS_LOW_SURROGATE(mapping.native_text[at+1])?2:1;
+            WORD kind[2]{};wchar_t folded[4]{};
+            const auto count=NormalizeString(NormalizationKC,mapping.native_text.data()+at,width,folded,4);
+            if((count==1&&folded[0]>=L'0'&&folded[0]<=L'9')||
+                (width==1&&GetStringTypeW(CT_CTYPE1,mapping.native_text.data()+at,1,kind)&&(kind[0]&C1_DIGIT)))return width;
+            return 0;
+        };
+        auto references=rich_text_reference_ranges(window);
+        for(const auto& span:converted.spans){const auto last=linear_mapping.at(span.second);
+            for(auto at=linear_mapping.at(span.first);at<last;){
+                auto width=digit_width(at,last);if(!width){++at;continue;}
+                const auto first=at;at+=width;
+                while(at<last){
+                    if((width=digit_width(at,last))){at+=width;continue;}
+                    if((mapping.native_text[at]==L'.'||mapping.native_text[at]==L',')&&digit_width(at+1,last)){++at;continue;}
+                    break;
+                }
+                references.emplace_back(first,at);
+                if(reader_theme::palette(window).high_contrast)continue;
+                const auto fill=reader_theme::reference_background(window);
+                if(document){Microsoft::WRL::ComPtr<ITextRange2> digits;Microsoft::WRL::ComPtr<ITextFont> font;
+                    if(FAILED(document->Range2(static_cast<LONG>(first),static_cast<LONG>(at),&digits))||!digits||
+                        FAILED(digits->GetFont(&font))||!font||FAILED(font->SetBackColor(static_cast<long>(fill))))
+                        throw std::runtime_error("Cannot highlight native curricular number ranges");
+                }else{CHARRANGE selected{static_cast<LONG>(first),static_cast<LONG>(at)};
+                    SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));CHARFORMAT2W number{};number.cbSize=sizeof(number);
+                    number.dwMask=CFM_BACKCOLOR;number.crBackColor=fill;SendMessageW(window,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&number));}
+            }
+        }
+        std::ranges::sort(references);std::vector<std::pair<std::size_t,std::size_t>> merged;
+        for(const auto& reference:references){if(!merged.empty()&&reference.first<=merged.back().second)merged.back().second=std::max(merged.back().second,reference.second);
+            else merged.push_back(reference);}
+        std::vector<std::size_t> identity(mapping.native_text.size()+1);std::iota(identity.begin(),identity.end(),0);
+        map_rich_text_reference_ranges(window,merged,identity);
+    }
     delete reinterpret_cast<NativeMathTextMapping*>(RemovePropW(window,mapping_property)); SetPropW(window,mapping_property,new NativeMathTextMapping(std::move(mapping)));
     SetWindowSubclass(window,mapping_proc,mapping_subclass,0);
     return built;

@@ -7,6 +7,7 @@
 #include <richedit.h>
 #include <richole.h>
 #include <tom.h>
+#include <wrl/client.h>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -334,6 +335,56 @@ int main(int argc,char* argv[]) {
         shade.read_through(first); prefix(field.edit,before,a,true);
         shade.read_through(source.size()); prefix(field.edit,before,before.size(),true);
         require(native_math_text_mapping(field.edit,source)->native_text == mapping->native_text,"Shading changed a mathematical glyph or operator");
+    });
+    test("Curricular OfficeMath numbers have neutral backgrounds and real reading ownership without recoloring formulas",[]{
+        for(const bool standalone:{false,true}){
+            const std::string formula=R"(\frac{12}{3}+x^{4})";
+            const std::string source=standalone?formula:"𐐀 Prosa 6 y \\("+formula+"\\) con `std::cout` (Stroustrup, 2024).";
+            const std::vector<lgaed::curriculum::Emphasis> emphasis{{"12",0,"bold"}};
+            Field field(source,false,emphasis,true);
+            const std::vector<NativeMathFragment> fragments{{0,wide(source).size(),formula,false}};
+            require(standalone?set_native_math_fragments(field.edit,source,fragments,RichTextRole::body):
+                set_native_math_inline_text(field.edit,source,emphasis),"The curricular-number fixture did not build real OfficeMath");
+            const auto mapping=native_math_text_mapping(field.edit,source);require(mapping&&mapping->built_up,"The real mathematical number fixture lost its source map");
+            const auto displayed=wide(edit_text(field.edit));const auto references=rich_text_reference_ranges(field.edit);const auto before=ink(field.edit);
+            const auto covered=[&](std::size_t first,std::size_t last){return std::ranges::any_of(references,[&](const auto& value){return value.first<=first&&last<=value.second;});};
+            const auto native_font=[&](std::size_t first,std::size_t last){Microsoft::WRL::ComPtr<IRichEditOle> rich;Microsoft::WRL::ComPtr<ITextDocument> document;
+                Microsoft::WRL::ComPtr<ITextRange> range;Microsoft::WRL::ComPtr<ITextFont> font;
+                SendMessageW(field.edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+                require(rich&&SUCCEEDED(rich.As(&document))&&SUCCEEDED(document->Range(static_cast<LONG>(first),static_cast<LONG>(last),&range))&&
+                    range&&SUCCEEDED(range->GetFont(&font))&&font,"Cannot inspect the actual native mathematical glyph formatting");return font;};
+            const auto number=[&](std::string_view token){const auto byte=source.find(token);require(byte!=source.npos,"The source number disappeared");
+                auto at=mapping->source_to_native.at(source_units(source,byte));const auto first=at;
+                for(const auto expected:wide(token)){const auto width=IS_HIGH_SURROGATE(mapping->native_text[at])&&at+1<mapping->native_text.size()&&IS_LOW_SURROGATE(mapping->native_text[at+1])?2:1;
+                    wchar_t folded[4]{};const auto count=NormalizeString(NormalizationKC,mapping->native_text.data()+at,width,folded,4);
+                    require(count==1&&folded[0]==expected,"OfficeMath altered a numeric glyph or its original source ownership");at+=width;}
+                return std::pair{first,at};};
+            for(const auto token:{"12","3","4"}){const auto [first,last]=number(token);require(covered(first,last),"A real formula number lacks native reference ownership");
+                long back=tomUndefined;require(SUCCEEDED(native_font(first,last)->GetBackColor(&back)),"Cannot inspect the exact native number background");
+                if(!reader_theme::palette(field.edit).high_contrast)require(back==static_cast<long>(reader_theme::reference_background(field.edit)),
+                    "A real formula number lacks its neutral background");
+                for(auto at=first;at<last;++at){const auto& format=before.at(at);
+                    require(format.crTextColor==reader_theme::foreground(field.edit)&&!(format.dwEffects&CFE_UNDERLINE),"Highlighting recolored or underlined a formula number");
+                }
+            }
+            const auto x=mapping->source_to_native.at(source_units(source,source.find('x')));
+            const auto x_width=IS_HIGH_SURROGATE(mapping->native_text[x])?2:1;long variable_back=tomUndefined;
+            require(SUCCEEDED(native_font(x,x+x_width)->GetBackColor(&variable_back))&&!covered(x,x+1)&&variable_back==tomAutoColor,
+                "Number highlighting spilled onto a mathematical variable");
+            if(!standalone){const auto prose=displayed.find(L'6'),code=displayed.find(L"std::cout"),year=displayed.find(L"2024");
+                require(covered(prose,prose+1)&&covered(code,code+9)&&!covered(year,year+4),"Adding math numbers lost existing prose/code references or decorated a citation");}
+            {ReadingShade shade(field.edit,source);require(shade.matches(field.edit,source),"Number metadata cannot create the actual formula reader");
+                for(const auto boundary:{std::size_t{0},source_units(source,source.find("12")),source_units(source,source.find('x')),std::size_t{0},wide(source).size()}){
+                    shade.read_through(boundary);prefix(field.edit,before,mapping->source_to_native.at(boundary),true);
+                }
+            }
+            prefix(field.edit,before,before.size(),true);
+            require(native_math_text_mapping(field.edit,source)->source_to_native==mapping->source_to_native&&wide(edit_text(field.edit))==displayed,
+                "Highlighting/reading changed mathematical structure, content or source offsets");
+        }
+        const std::string title="Lección 3 de 8: \\(\\frac{12}{3}\\)";Field field(title);
+        require(set_native_math_inline_text(field.edit,title,{},RichTextRole::lesson_title),"The title exclusion fixture did not build its math");
+        require(rich_text_reference_ranges(field.edit).empty(),"A lesson title/counter acquired curricular number decoration");
     });
     test("OfficeMath keeps positive native reference metadata after supplementary scalars and hidden inline delimiters",[]{
         const std::string source="á 😀 La fracción \\(\\frac{x}{2}\\) conserva su forma.\r\nDespués `std::cout` mantiene su tinta y produce 15.";

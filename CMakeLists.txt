@@ -114,6 +114,7 @@ target_link_libraries(lgaed_system_speech_host PRIVATE lgaed_platform_windows)
 set_target_properties(lgaed_system_speech_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 add_library(lgaed_presentation_windows STATIC
+    native/presentation/windows/window_frame.cpp
     native/presentation/windows/internal_window.cpp
     native/presentation/windows/lesson_view.cpp
     native/presentation/windows/cpp_project_view.cpp
@@ -159,7 +160,7 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/code_gutter.cpp
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme)
+    lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme dwmapi)
 add_executable(lgaed_smo_compile native/tools/smo_compile.cpp)
 target_link_libraries(lgaed_smo_compile PRIVATE lgaed_presentation_windows)
 set_target_properties(lgaed_smo_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -224,6 +225,10 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_technical_context_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.technical_context_view COMMAND lgaed_technical_context_view_tests)
     set_tests_properties(native.technical_context_view PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_window_frame_tests native/presentation/windows/window_frame_tests.cpp)
+    target_link_libraries(lgaed_window_frame_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.window_frame COMMAND lgaed_window_frame_tests)
+    set_tests_properties(native.window_frame PROPERTIES TIMEOUT 20)
     add_executable(lgaed_exact_prediction_view_tests native/presentation/windows/exact_prediction_view_tests.cpp)
     target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.exact_prediction_view COMMAND lgaed_exact_prediction_view_tests)
@@ -890,7 +895,7 @@ if(BUILD_TESTING)
     endforeach()
     add_custom_target(lgaed_curricular_color_checks DEPENDS LearnGameAndEngineDev
         lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_technical_context_view_tests
-        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests)
+        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests lgaed_window_frame_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
         LearnGameAndEngineDev lgaed_editorial_return_tests lgaed_editorial_return_view_tests
         lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests

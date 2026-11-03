@@ -215,6 +215,10 @@ sin añadir líneas de subrayado. Los números de salida, resultados y cantidade
 en prosa usan la tinta neutra activa de Matemáticas y el mismo fondo; los literales que pertenecen al
 código conservan su categoría C++. Los años y localizadores de citas
 parentéticas o narrativas mantienen su tratamiento bibliográfico ordinario.
+El fondo numérico corresponde al texto curricular, incluidas las cifras de
+versiones como C++20 y de las fórmulas integradas en ese texto. No se extiende
+a las consolas, los editores de código, los menús de opciones ni al contador
+de lección y página. El fondo no sustituye la tinta correspondiente a cada cifra.
 La clasificación sólo utiliza el contexto visible, sin consultar respuestas
 ocultas ni añadir propiedades al JSON. Conserva negritas, cursivas, texto,
 offsets de narración y contratos de estado.
@@ -229,6 +233,14 @@ como metadatos del renderizador, sin depender de un estilo tipográfico.
 El alto contraste utiliza
 los colores del sistema. `lgaed_curricular_color_checks` compila la aplicación
 y las pruebas de formato, montaje curricular y reproducción real afectadas.
+
+La barra de título principal mantiene los botones y el comportamiento nativos
+de Windows. Al activarse utiliza el acento general guardado en Apariencia;
+al desactivarse utiliza gris neutro, con texto de contraste en ambos estados.
+Guardar otro acento actualiza también la barra. Los atributos de
+[DWM](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute)
+sólo afectan a esta ventana: el alto contraste conserva los colores del sistema
+y una plataforma que no los admita mantiene su marco predeterminado.
 
 La predicción, la selección, el relleno y el ordenamiento usan los contratos del
 contenido. Enter comprueba una respuesta de una línea sin avanzar de página.
