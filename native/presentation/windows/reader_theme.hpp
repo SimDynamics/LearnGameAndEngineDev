@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <optional>
 #include <string_view>
+#include <utility>
 
 namespace lgaed::state { struct StateData; }
 
@@ -38,14 +39,20 @@ void set_accent(HWND,std::optional<COLORREF> accent);
 [[nodiscard]] COLORREF accent_ink(HWND context,COLORREF surface);
 // Exact Android LessonReadingColor policy: opaque neutral gray, >=4.5:1.
 [[nodiscard]] COLORREF unread_color(COLORREF background);
-// Static curriculum-reference surface: grayscale in the ordinary theme, with
-// contrast against the local foreground. High contrast retains its system
-// surface. Does not use accent, progress or feedback colors.
+// Exact Android setPendingInk policy: prefer one readable semantic gray on both
+// surfaces, then search a common gray before falling back to per-surface ink.
+[[nodiscard]] std::pair<COLORREF,COLORREF> unread_colors(COLORREF surface,COLORREF semantic_surface);
+// Route context inherits through HWND parents; unset standalone text defaults
+// to programming. These are presentation properties, never saved preferences.
+void set_reference_mathematics(HWND,std::optional<bool> mathematics);
+[[nodiscard]] std::optional<bool> reference_mathematics(HWND);
+// The renderer records its original semantic tint before syntax/reading ink.
+void set_reference_tint(HWND,std::optional<COLORREF> tint);
+// Exact opaque result of Android LessonTechnicalText's static underlay:
+// alpha8 programming/alpha16 math, or the original light C++ backing.
+// High contrast retains the actual system surface. No accent/progress colors.
 [[nodiscard]] COLORREF reference_background(HWND context);
-// Pending renderer-identified references retain their semantic ink. Use an
-// opaque neutral background, independent of accent/progress colors, without
-// reducing readable contrast. High contrast retains the supplied system
-// surface. Does not change any appearance preference.
+// Compatibility accessor: narration keeps the original surface unchanged.
 [[nodiscard]] COLORREF unread_reference_background(HWND context,COLORREF background,COLORREF ink);
 [[nodiscard]] HBRUSH brush(Surface surface);
 // Only the supplied HWND is themed. Existing characters, spans and editing

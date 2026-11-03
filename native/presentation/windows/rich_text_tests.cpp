@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -68,8 +69,7 @@ void neutral_reference_background(HWND target,const CHARFORMAT2W& style){
     if(reader_theme::palette(target).high_contrast)return;
     const auto background=style.crBackColor;
     check(!(style.dwEffects&CFE_AUTOBACKCOLOR)&&background==reader_theme::reference_background(target)
-        &&GetRValue(background)==GetGValue(background)&&GetGValue(background)==GetBValue(background)
-        &&background!=reader_theme::background(target),"A curricular reference lacks its real neutral background or inherited a colored accent");
+        &&background!=reader_theme::background(target),"A curricular reference lacks its exact static Android backdrop");
 }
 struct NativeRaster {LONG width=0,height=0;std::vector<DWORD> pixels;};
 void save_native_raster(const NativeRaster& raster,const std::string& path){
@@ -112,10 +112,10 @@ void clone_native_document(HWND source,HWND target){
 void technical_background_geometry(const char* artifact=nullptr){
     using namespace lgaed::presentation;
     if(reader_theme::palette().high_contrast){std::cout<<"Technical background raster: system high contrast retained\n";return;}
-    Window parent{CreateWindowExW(0,L"STATIC",L"Hidden background QA",WS_OVERLAPPEDWINDOW,0,0,800,500,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    Window parent{CreateWindowExW(0,L"STATIC",L"Hidden background QA",WS_OVERLAPPEDWINDOW,0,0,1200,500,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
     const auto create=[&]{return CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE|ES_NOHIDESEL,0,0,520,240,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr);};
     Window decorated{create()},native{create()};check(parent.value&&decorated.value&&native.value,"Create hidden background-only controls");
-    reader_theme::apply(decorated.value,reader_theme::Surface::canvas);reader_theme::apply(native.value,reader_theme::Surface::canvas);
+    for(const auto target:{decorated.value,native.value})reader_theme::apply(target,reader_theme::Surface::canvas);
     const auto pixel=[](COLORREF color){return (static_cast<DWORD>(GetRValue(color))<<16)|(static_cast<DWORD>(GetGValue(color))<<8)|GetBValue(color);};
     const auto surface=pixel(reader_theme::background(decorated.value));
     const std::array<std::string,4> sources{{
@@ -124,9 +124,9 @@ void technical_background_geometry(const char* artifact=nullptr){
         "Antes.\r\n```cpp\r\nstd::cout << \"gyp\\n\";\r\nreturn 0;\r\n``` Después C++ y `std::cerr`.",
         "Mira `std::cout << \"gyp\";\n`Después sigue la prosa sin fondo."}};
     const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"std::cout",0,"bold_italic"}}};
-    std::size_t scenarios=0,removed=0;bool multiline=false,selection_visible=false,line_boundary=false;NativeRaster example;
+    std::size_t scenarios=0,added=0,removed=0;bool selection_visible=false,wrapped=false;NativeRaster example;
     for(const auto& source:sources)for(const LONG width:{280,520})for(const int zoom:{75,100,150,200})for(const bool dim:{false,true}){
-        for(auto edit:{decorated.value,native.value})SetWindowPos(edit,nullptr,0,0,width,240,SWP_NOZORDER|SWP_NOACTIVATE);
+        for(const auto target:{decorated.value,native.value})SetWindowPos(target,nullptr,0,0,width,240,SWP_NOZORDER|SWP_NOACTIVATE);
         set_rich_text(decorated.value,source,emphasis);SendMessageW(decorated.value,EM_SETZOOM,zoom,100);
         const auto text=wide(edit_text(decorated.value));
         if(dim){CHARRANGE rest{static_cast<LONG>(text.find(L"std::cout"))+4,static_cast<LONG>(text.size())};
@@ -135,30 +135,19 @@ void technical_background_geometry(const char* artifact=nullptr){
             SendMessageW(decorated.value,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&shade));}
         Microsoft::WRL::ComPtr<IRichEditOle> rich;SendMessageW(decorated.value,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
         Microsoft::WRL::ComPtr<ITextDocument> document;check(rich&&SUCCEEDED(rich.As(&document)),"Read the independent native backdrop geometry");
-        const auto point=[&](LONG at,LONG align){Microsoft::WRL::ComPtr<ITextRange> range;POINTL result{};
-            check(document->Range(at,at,&range)==S_OK&&range&&range->GetPoint(tomStart|tomClientCoord|tomAllowOffClient|align,&result.x,&result.y)==S_OK,"Measure the native selection cell");return result;};
+        const auto point=[&](LONG at,LONG align){Microsoft::WRL::ComPtr<ITextRange> range;POINTL value{};
+            check(document->Range(at,at,&range)==S_OK&&range&&range->GetPoint(tomStart|tomClientCoord|tomAllowOffClient|align,&value.x,&value.y)==S_OK,"Measure the native selection cell");return value;};
         std::vector<std::pair<LONG,LONG>> groups;LONG begin=-1;COLORREF background=0;
+        std::vector<bool> cells(static_cast<std::size_t>(width)*240,false);
+        const auto allowance=std::max(2,MulDiv(2*static_cast<int>(GetDpiForWindow(decorated.value)),zoom,9600));
         for(LONG at=0;at<static_cast<LONG>(text.size());++at){const auto style=character(decorated.value,at);const bool backed=!(style.dwEffects&CFE_AUTOBACKCOLOR);
-            if(backed){if(begin<0)begin=at;background=style.crBackColor;}
-            else if(begin>=0){groups.emplace_back(begin,at);begin=-1;}}
-        if(begin>=0)groups.emplace_back(begin,static_cast<LONG>(text.size()));check(!groups.empty(),"The real technical fixture has no backdrop");
-        std::vector<LONG> natural_heights;for(const auto& [first,last]:groups){
-            const auto a=point(first,TA_TOP|TA_LEFT),b=point(last-1,TA_BOTTOM|TA_RIGHT);if(b.y-a.y>100)multiline=true;}
-        // The expected bottom comes from a second, genuinely native layout at
-        // spacing1.0, rather than repeating the production inverse formula.
-        CHARRANGE all{0,-1};SendMessageW(decorated.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
-        PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
-        SendMessageW(decorated.value,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
-        for(const auto& [first,last]:groups)natural_heights.push_back(point(last-1,TA_BOTTOM|TA_RIGHT).y-point(last-1,TA_TOP|TA_LEFT).y);
-        paragraph.dyLineSpacing=25;SendMessageW(decorated.value,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
-        // A native twin with only BackColor removed proves the strip contains
-        // interlineado, rather than descenders/italic overhangs to be erased.
-        CHARFORMAT2W plain{};plain.cbSize=sizeof(plain);plain.dwMask=CFM_BACKCOLOR;plain.dwEffects=CFE_AUTOBACKCOLOR;
-        SendMessageW(decorated.value,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&plain));
-        SendMessageW(decorated.value,EM_SETSEL,0,0);const auto bare=native_raster(decorated.value,false,PRF_CLIENT);
-        plain.dwEffects=0;plain.crBackColor=background;
-        for(const auto& [first,last]:groups){CHARRANGE range{first,last};SendMessageW(decorated.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
-            SendMessageW(decorated.value,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&plain));}
+            if(backed){if(begin<0)begin=at;background=style.crBackColor;
+                const auto a=point(at,TA_TOP|TA_LEFT),b=point(at,TA_BOTTOM|TA_RIGHT);
+                if(a.y>80)wrapped=true;
+                for(auto y=std::max<LONG>(0,a.y-allowance);y<std::min<LONG>(240,b.y+allowance);++y)
+                    for(auto x=std::max<LONG>(0,std::min(a.x,b.x));x<std::min<LONG>(width,std::max(a.x,b.x));++x)cells[static_cast<std::size_t>(y)*width+x]=true;
+            }else if(begin>=0){groups.emplace_back(begin,at);begin=-1;}}
+        if(begin>=0)groups.emplace_back(begin,static_cast<LONG>(text.size()));check(!groups.empty(),"The technical fixture has no backdrop");
         std::array<NativeRaster,2> unselected;
         for(const bool selected:{false,true})for(const bool clipped:{false,true}){
             CHARRANGE selection{selected?groups.front().first:0,selected?groups.front().second:0};
@@ -166,84 +155,87 @@ void technical_background_geometry(const char* artifact=nullptr){
             POINT scroll{};SendMessageW(decorated.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
             const auto modified=SendMessageW(decorated.value,EM_GETMODIFY,0,0),events=SendMessageW(decorated.value,EM_GETEVENTMASK,0,0);
             const auto undo=SendMessageW(decorated.value,EM_CANUNDO,0,0),redo=SendMessageW(decorated.value,EM_CANREDO,0,0);
-            const auto native_ink=native_raster(decorated.value,clipped,PRF_CLIENT),actual=native_raster(decorated.value,clipped);auto expected=native_ink;
-            const RECT clip{clipped?9:0,clipped?7:0,width-(clipped?11:0),240-(clipped?13:0)};
-            std::size_t changed=0;
-            for(std::size_t group=0;group<groups.size();++group){const auto [first,last]=groups[group];
-                const auto top=point(last-1,TA_TOP|TA_LEFT),bottom=point(last-1,TA_BOTTOM|TA_RIGHT),end=point(last,TA_TOP|TA_LEFT);
-                if(end.y!=top.y){line_boundary=true;continue;}
-                const auto line=SendMessageW(decorated.value,EM_EXLINEFROMCHAR,0,last-1);
-                const auto line_start=static_cast<LONG>(SendMessageW(decorated.value,EM_LINEINDEX,line,0));
-                for(auto at=std::max(first,line_start);at<last;++at){const auto left=point(at,TA_TOP|TA_LEFT),right=point(at,TA_BOTTOM|TA_RIGHT);
-                    for(auto y=std::max(clip.top,top.y+natural_heights[group]);y<std::min(clip.bottom,bottom.y);++y)
-                        for(auto x=std::max(clip.left,std::min(left.x,right.x));x<std::min(clip.right,std::max(left.x,right.x));++x){
-                            const auto index=static_cast<std::size_t>(y)*width+x;auto& value=expected.pixels[index];if((value&0xffffffu)==pixel(background)){
-                                if(!selected)check((bare.pixels[index]&0xffffffu)==surface,"A proposed interlineado strip contains a native descender or italic glyph");
-                                value=(value&0xff000000u)|surface;++changed;}}}
+            // PRF_CLIENT deliberately bypasses the decorator. This is the
+            // exact native glyph/AA/selection raster, not a copied paint rule.
+            const auto original=native_raster(decorated.value,clipped,PRF_CLIENT),actual=native_raster(decorated.value,clipped);
+            for(std::size_t at=0;at<actual.pixels.size();++at){
+                if(actual.pixels[at]==original.pixels[at])continue;
+                const auto from=original.pixels[at]&0xffffffu,to=actual.pixels[at]&0xffffffu;
+                if(!cells[at]||!((from==surface&&to==pixel(background))||(from==pixel(background)&&to==surface))){
+                    std::cerr<<"Background damaged native raster source="<<(&source-sources.data())<<" zoom="<<zoom<<" width="<<width
+                        <<" dim="<<dim<<" selected="<<selected<<" clipped="<<clipped<<" pixel="<<at%width<<','<<at/width
+                        <<" native="<<original.pixels[at]<<" actual="<<actual.pixels[at]<<'\n';
+                    if(artifact){save_native_raster(actual,std::string(artifact)+".actual.bmp");save_native_raster(original,std::string(artifact)+".native.bmp");}
+                    throw std::runtime_error("A uniform backdrop changed glyphs/antialiasing, selection, adjacent prose or caller clipping");
+                }
+                if(from==surface)++added;else ++removed;
             }
-            if(actual.pixels!=expected.pixels){
-                const auto different=std::mismatch(actual.pixels.begin(),actual.pixels.end(),expected.pixels.begin());
-                const auto index=static_cast<std::size_t>(different.first-actual.pixels.begin());
-                std::cerr<<"Background divergence source="<<(&source-sources.data())<<" width="<<width<<" zoom="<<zoom<<" dim="<<dim<<" selected="<<selected<<" clipped="<<clipped
-                    <<" pixel="<<index%width<<','<<index/width<<" actual="<<std::hex<<*different.first<<" expected="<<*different.second<<" native="<<native_ink.pixels[index]<<" bare="<<bare.pixels[index]<<std::dec<<" changed="<<changed<<'\n';
-                if(artifact){save_native_raster(actual,std::string(artifact)+".actual.bmp");save_native_raster(expected,std::string(artifact)+".expected.bmp");save_native_raster(native_ink,std::string(artifact)+".native.bmp");}
-                throw std::runtime_error("Technical backdrop diverged from Android's final-line geometry or changed native glyphs/selection/clipping");
-            }
-            if(!selected){removed+=changed;unselected[clipped?1:0]=actual;
-                if(&source==sources.data()&&width==520&&zoom==150&&!dim&&!clipped){example=actual;
-                    if(artifact)save_native_raster(native_ink,std::string(artifact)+".native.bmp");}}
+            if(!selected){unselected[clipped?1:0]=actual;if(&source==sources.data()&&width==520&&zoom==150&&!dim&&!clipped)example=actual;}
             else if(actual.pixels!=unselected[clipped?1:0].pixels)selection_visible=true;
             CHARRANGE after{};SendMessageW(decorated.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
-            check(after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&wide(edit_text(decorated.value))==text,
-                "Painting a technical underlay changed native selection or original Unicode/paragraph text");
             POINT after_scroll{};SendMessageW(decorated.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after_scroll));
-            check(scroll.x==after_scroll.x&&scroll.y==after_scroll.y&&modified==SendMessageW(decorated.value,EM_GETMODIFY,0,0)&&
-                events==SendMessageW(decorated.value,EM_GETEVENTMASK,0,0)&&undo==SendMessageW(decorated.value,EM_CANUNDO,0,0)&&redo==SendMessageW(decorated.value,EM_CANREDO,0,0),
-                "A background paint changed scroll, Modify, event mask or native Undo/Redo");
-            check(character(decorated.value,groups.front().first).crBackColor==background,"Painting removed the background metadata needed by narration");
-            ++scenarios;
+            check(after.cpMin==selection.cpMin&&after.cpMax==selection.cpMax&&wide(edit_text(decorated.value))==text&&scroll.x==after_scroll.x&&scroll.y==after_scroll.y
+                &&modified==SendMessageW(decorated.value,EM_GETMODIFY,0,0)&&events==SendMessageW(decorated.value,EM_GETEVENTMASK,0,0)
+                &&undo==SendMessageW(decorated.value,EM_CANUNDO,0,0)&&redo==SendMessageW(decorated.value,EM_CANREDO,0,0),
+                "Backdrop painting changed source, selection, scroll, Modify, events or native Undo/Redo");
+            check(character(decorated.value,groups.front().first).crBackColor==background,"Painting changed static background metadata");++scenarios;
         }
     }
-    check(removed>100&&multiline&&selection_visible&&line_boundary,"The regression did not exercise extra leading, a multi-line fragment, a next-line endpoint and native selection");
+    check(added>100&&removed>100&&wrapped&&selection_visible,"The raster matrix missed extension, leading removal, wrapping or native selection");
+    // This independent raster oracle compares the actual top/bottom envelopes
+    // of different glyphs/fonts on ONE line. It knows no production formula.
+    for(const int zoom:{75,100,150,200}){
+        for(const auto target:{decorated.value,native.value})SetWindowPos(target,nullptr,0,0,1100,240,SWP_NOZORDER|SWP_NOACTIVATE);
+        set_rich_text(decorated.value,"Mira `return` `bool` `std::cout` `gypq` y prosa.",emphasis);SendMessageW(decorated.value,EM_SETZOOM,zoom,100);
+        SendMessageW(decorated.value,EM_SETSEL,0,0);clone_native_document(decorated.value,native.value);
+        CHARFORMAT2W plain{};plain.cbSize=sizeof(plain);plain.dwMask=CFM_BACKCOLOR;plain.dwEffects=CFE_AUTOBACKCOLOR;
+        SendMessageW(native.value,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&plain));
+        const auto bare=native_raster(native.value),actual=native_raster(decorated.value);const auto text=wide(edit_text(decorated.value));
+        const auto background=pixel(reader_theme::reference_background(decorated.value));std::optional<std::pair<LONG,LONG>> envelope;
+        for(const std::wstring_view token:{L"return",L"bool",L"std::cout",L"gypq"}){const auto at=text.find(token);check(at!=text.npos,"The equal-height fixture lost a technical sample");
+            POINTL a{},b{};SendMessageW(decorated.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&a),at);
+            SendMessageW(decorated.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&b),at+token.size());
+            check(a.y==b.y&&b.x>a.x,"The equal-height technical samples must remain on one visual line");
+            LONG top=240,bottom=-1,glyph_top=240,glyph_bottom=-1;
+            for(LONG y=0;y<240;++y)for(auto x=std::max<LONG>(0,a.x);x<std::min<LONG>(1100,b.x);++x){const auto offset=static_cast<std::size_t>(y)*1100+x;
+                if((actual.pixels[offset]&0xffffffu)==background){top=std::min(top,y);bottom=std::max(bottom,y);}
+                if((bare.pixels[offset]&0xffffffu)!=surface){glyph_top=std::min(glyph_top,y);glyph_bottom=std::max(glyph_bottom,y);}
+            }
+            if(!envelope)envelope=std::pair{top,bottom};
+            if(*envelope!=std::pair{top,bottom})std::cerr<<"Unequal backdrop zoom="<<zoom<<" token="<<utf8(token)<<" top/bottom="<<top<<','<<bottom<<" expected="<<envelope->first<<','<<envelope->second<<'\n';
+            check(*envelope==std::pair{top,bottom},"Technical tokens on one line have unequal background heights");
+            check(top<glyph_top&&bottom>glyph_bottom&&bottom-top>0,"The technical backdrop does not surround the whole glyph including descenders with a small margin");
+        }
+    }
     set_rich_text(decorated.value,"Lee `std::cout` y conserva gyp.");clone_native_document(decorated.value,native.value);
     for(const LPARAM flags:{LPARAM{0},LPARAM{PRF_CLIENT},LPARAM{PRF_CLIENT|PRF_ERASEBKGND|PRF_CHECKVISIBLE}})for(const bool clipped:{false,true})
-        check(native_raster(decorated.value,clipped,flags).pixels==native_raster(native.value,clipped,flags).pixels,
-            "An unsupported WM_PRINTCLIENT mode changed native visibility, erase options or caller clipping");
+        check(native_raster(decorated.value,clipped,flags).pixels==native_raster(native.value,clipped,flags).pixels,"An unsupported print mode changed visibility, erase options or clipping");
     {
-        std::string long_text;for(int line=0;line<10;++line)long_text+="Lee `std::cout << \"gyp\";` y sigue.\n";
-        set_rich_text(decorated.value,long_text);SendMessageW(decorated.value,EM_SETZOOM,150,100);SendMessageW(decorated.value,EM_SETSEL,0,0);
+        std::string text;for(int line=0;line<10;++line)text+="Lee `std::cout << \"gyp\";` y sigue.\n";
+        set_rich_text(decorated.value,text);SendMessageW(decorated.value,EM_SETZOOM,150,100);SendMessageW(decorated.value,EM_SETSEL,0,0);
         POINT zero{};SendMessageW(decorated.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&zero));const auto before=native_raster(decorated.value);
         POINT scroll{0,13};SendMessageW(decorated.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));SendMessageW(decorated.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
-        check(scroll.y>0&&scroll.y<before.height,"The hidden fixture did not exercise a partial-row scroll");const auto after=native_raster(decorated.value);
+        check(scroll.y>0&&scroll.y<before.height,"The fixture did not exercise a partial-row scroll");const auto after=native_raster(decorated.value);
         for(LONG y=1;y<before.height-scroll.y-1;++y)for(LONG x=2;x<before.width-2;++x)
-            check((before.pixels[static_cast<std::size_t>(y+scroll.y)*before.width+x]&0xffffffu)==(after.pixels[static_cast<std::size_t>(y)*after.width+x]&0xffffffu),
-                "Partially scrolling a technical line moved glyphs or left a background artifact");
+            check((before.pixels[static_cast<std::size_t>(y+scroll.y)*before.width+x]&0xffffffu)==(after.pixels[static_cast<std::size_t>(y)*after.width+x]&0xffffffu),"Partial-row scrolling moved glyphs or left a backdrop artifact");
     }
     {
         const std::string source="Mira std::cout junto a (1)/(2) en la misma línea.";const auto first=source.find("(1)/(2)");
         const std::array<std::pair<std::size_t,std::size_t>,1> protected_math{{{first,first+7}}};
-        set_rich_text(decorated.value,source,{},false,RichTextRole::body,"es",protected_math);
-        SendMessageW(decorated.value,EM_SETEDITSTYLEEX,0,SES_EX_NOMATH);
+        set_rich_text(decorated.value,source,{},false,RichTextRole::body,"es",protected_math);SendMessageW(decorated.value,EM_SETEDITSTYLEEX,0,SES_EX_NOMATH);
         CHARRANGE selected{static_cast<LONG>(first),static_cast<LONG>(first+7)};SendMessageW(decorated.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
         CHARFORMAT2W math{};math.cbSize=sizeof(math);math.dwMask=CFM_MATH|CFM_FACE;math.dwEffects=CFE_MATH;wcscpy_s(math.szFaceName,L"Cambria Math");
         SendMessageW(decorated.value,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&math));
         Microsoft::WRL::ComPtr<IRichEditOle> rich;SendMessageW(decorated.value,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
         Microsoft::WRL::ComPtr<ITextDocument2> document;Microsoft::WRL::ComPtr<ITextRange2> range;
-        check(rich&&SUCCEEDED(rich.As(&document))&&document->Range2(selected.cpMin,selected.cpMax,&range)==S_OK&&range&&range->BuildUpMath(0)==S_OK,
-            "Build the independent OfficeMath mixed-line fixture");
+        check(rich&&SUCCEEDED(rich.As(&document))&&document->Range2(selected.cpMin,selected.cpMax,&range)==S_OK&&range&&range->BuildUpMath(0)==S_OK,"Build the independent mixed OfficeMath fixture");
         SendMessageW(decorated.value,EM_SETSEL,0,0);
-        check(native_raster(decorated.value).pixels==native_raster(decorated.value,false,PRF_CLIENT).pixels,
-            "The prose underlay changed the native layout/descenders of a mixed OfficeMath row");
+        check(native_raster(decorated.value).pixels==native_raster(decorated.value,false,PRF_CLIENT).pixels,"The prose decorator changed an OfficeMath row");
     }
-    for(const bool code:{false,true}){
-        set_rich_text(decorated.value,code?"std::cout << \"gyp\\n\";":"Prosa corriente, sin tokens técnicos.",{},code);
-        clone_native_document(decorated.value,native.value);
-        check(native_raster(decorated.value).pixels==native_raster(native.value).pixels,"Reusing a prose control retained an obsolete semantic paint correction");
-    }
-    if(artifact&&!example.pixels.empty()){
-        save_native_raster(example,artifact);
-    }
-    std::cout<<"Technical background raster: "<<scenarios<<" hidden native comparisons plus flags, partial scroll, OfficeMath and control reuse; glyphs, selection, syntax/emphasis, Unicode/CRLF, clipping and narration ink: PASS\n";
+    for(const bool code:{false,true}){set_rich_text(decorated.value,code?"std::cout << \"gyp\\n\";":"Prosa corriente, sin tokens técnicos.",{},code);clone_native_document(decorated.value,native.value);
+        check(native_raster(decorated.value).pixels==native_raster(native.value).pixels,"Reusing a control retained an obsolete semantic painter");}
+    if(artifact&&!example.pixels.empty())save_native_raster(example,artifact);
+    std::cout<<"Technical background raster: "<<scenarios<<" hidden comparisons; uniform line heights/full glyph margins, native AA, selection, clipping, scroll, math exclusion and source/state preservation: PASS\n";
 }
 void technical_range_contract(){
     using namespace lgaed::presentation::technical_prose;
@@ -516,6 +508,29 @@ void curricular_role_formatting(){
                 if(!reader_theme::palette(target.value).high_contrast)check(reference_at(target.value,at),"A highlighted version digit has no native reference ownership");
             }else check((style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target.value,at),"Version highlighting escaped the digits into C++ or adjacent curricular prose");
         }
+        const std::array<std::string,3> candidates{{"2cajas","cajas_totales","cajas totales"}};
+        const std::string naming_question="¿Cuál es un nombre válido según la convención del curso?";
+        const std::array<std::string,3> explanation_choices{{"Sólo se permite en nombres de archivos.","Es una palabra reservada del lenguaje.","Es demasiado corto."}};
+        check(rich_text_naming_choice_samples(naming_question,candidates)&&
+            !rich_text_naming_choice_samples("¿Qué impide usar int como nombre de una variable?",explanation_choices)&&
+            !rich_text_naming_choice_samples("¿Cuál de estas frases explica la situación?",candidates),
+            "Technical-sample context must use the public naming exercise, not validity or arbitrary option text");
+        for(const auto& option:candidates){
+            const auto sample=wide(option);
+            set_rich_text(mathematics.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{naming_question,{}});
+            std::vector<CHARFORMAT2W> previous;for(std::size_t at=0;at<sample.size();++at)previous.push_back(character(mathematics.value,static_cast<LONG>(at)));
+            set_rich_text(target.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{naming_question,{},true});
+            check(edit_text(target.value)==option,"Invalid-name highlighting repaired or rewrote the authored option");
+            for(std::size_t at=0;at<sample.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
+                check(style.crTextColor==previous[at].crTextColor&&(style.dwEffects&(CFE_BOLD|CFE_ITALIC))==(previous[at].dwEffects&(CFE_BOLD|CFE_ITALIC)),
+                    "An invalid option acquired identifier ink or lost its existing emphasis merely to add a backdrop");
+                neutral_reference_background(target.value,style);
+                if(sample[at]!=L' '&&!reader_theme::palette(target.value).high_contrast)check(reference_at(target.value,at),"An incorrect technical sample lacks its own native reading range");
+            }
+        }
+        for(const auto& option:explanation_choices){set_rich_text(target.value,option);
+            for(std::size_t at=0;at<wide(option).size();++at){const auto style=character(target.value,static_cast<LONG>(at));
+                check((style.dwEffects&CFE_AUTOBACKCOLOR)&&!(style.dwEffects&CFE_UNDERLINE)&&!reference_at(target.value,at),"An ordinary explanatory option acquired sample-wide background or identifier styling");}}
     }
     reference_ranges_follow_effective_text_changes();
     std::cout<<"PASS curricular roles: native C++ palette, active mathematics neutral, neutral background without underlines/red accents, citations/homonyms, Unicode/CRLF, emphasis, lesson chrome and four zooms; actual contrast mode only\n";

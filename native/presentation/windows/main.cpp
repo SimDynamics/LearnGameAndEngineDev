@@ -17,6 +17,7 @@
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/window_frame.hpp"
+#include "presentation/windows/window_fullscreen.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/native_menu.hpp"
 #include "presentation/windows/internal_window.hpp"
@@ -65,6 +66,7 @@ struct WindowState {
     std::optional<lgaed::curriculum::CatalogLocation> audio_location;
     std::optional<std::size_t> audio_page;
     bool audio_graphics=false;
+    std::optional<std::string> frame_route;
     std::unique_ptr<lgaed::presentation::LessonReader> reader;
     std::filesystem::path pending_lesson;
     lgaed::curriculum::CatalogLocation context;
@@ -92,16 +94,28 @@ void update_preferences(WindowState& state,const lgaed::presentation::Preference
     update_audio_context(state,true);
 }
 void update_audio_context(WindowState& state,bool force){
-    if(!state.generation||!state.catalog)return;
+    if(!state.catalog)return;
     auto where=lgaed::presentation::catalog_location(state.catalog);
+    auto frame_route=where.route;
     std::optional<std::size_t> page;
     if(state.lesson){const auto current=lgaed::presentation::lesson_page_state(state.lesson);
-        if(current.lesson_id!="native_cpp_laboratory"){where.lesson=current.lesson_id;page=current.index;}}
+        if(current.lesson_id!="native_cpp_laboratory"){where.lesson=current.lesson_id;page=current.index;}
+        else frame_route="programming";}
+    // Settings retain the route whose colors they actually display. Standalone
+    // calculator/graphics screens use the global accent, including when opened
+    // from inside a learning route. Neither choice alters the audio context.
+    if(state.settings)frame_route=state.context.route;
+    else if(state.tool)frame_route.clear();
     // Navigation polling is only an inexpensive HWND/context comparison. Do not
     // reread/hash the student's complete store on every UI timer tick.
-    if(!force&&state.audio_location==where&&state.audio_page==page&&state.audio_graphics==state.graphics_active)return;
+    if(!force&&state.audio_location==where&&state.audio_page==page&&state.audio_graphics==state.graphics_active&&
+        state.frame_route==frame_route)return;
     state.audio_location=where;state.audio_page=page;state.audio_graphics=state.graphics_active;
     const auto data=preferences(state);
+    state.frame_route=frame_route;
+    lgaed::presentation::update_window_frame(GetAncestor(state.catalog,GA_ROOT),
+        lgaed::presentation::reader_theme::appearance_accent(data,frame_route));
+    if(!state.generation||!state.narrator)return;
     const auto raw_limit=lgaed::state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",-1);
     state.narrator->set_storage_budget(raw_limit<0?std::numeric_limits<std::uint64_t>::max():static_cast<std::uint64_t>(raw_limit));
     where.locale=lgaed::state::string_value(data,"native_windows","content_language",where.locale);
@@ -146,6 +160,7 @@ void show_catalog(HWND window,WindowState& state){
     if(state.lesson){state.reader.reset();if(!lgaed::presentation::flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
     remember_open_lesson(state,{});
     lgaed::presentation::refresh_catalog_view(state.catalog);ShowWindow(state.catalog,SW_SHOW);layout_controls(window,state);SetFocus(state.catalog);
+    update_audio_context(state);
 }
 void navigate_back(HWND window,WindowState& state){
     // IsDialogMessage turns Escape over ordinary buttons into IDCANCEL;
@@ -162,7 +177,7 @@ void navigate_back(HWND window,WindowState& state){
     }
     if(state.lesson){(void)lgaed::presentation::navigate_lesson_back(state.lesson);return;}
     if(state.tool){PostMessageW(window,return_message,0,0);return;}
-    if(state.catalog)(void)lgaed::presentation::navigate_catalog_back(state.catalog);
+    if(state.catalog&&lgaed::presentation::navigate_catalog_back(state.catalog))update_audio_context(state);
 }
 bool escape_has_local_popup(HWND window){
     GUITHREADINFO info{sizeof(info)};
@@ -238,6 +253,7 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
         if(state.reader)state.reader->suspend_preparation(true);
     }
     layout_controls(window,state);SetFocus(state.settings?state.settings:state.lesson);
+    update_audio_context(state);
 }
 void open_settings(HWND window,WindowState& state){
     using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_SHOW);SetFocus(state.settings);return;}
@@ -251,7 +267,6 @@ void open_settings(HWND window,WindowState& state){
     access.changed=[window,&state,previous_ui=interface_language(initial_preferences),previous_content=lgaed::state::string_value(initial_preferences,"native_windows","content_language","es")]()mutable{
         update_audio_context(state,true);if(state.reader)state.reader->settings_changed();
         const auto data=preferences(state);const auto ui=interface_language(data),content=lgaed::state::string_value(data,"native_windows","content_language","es");
-        update_window_frame(window,reader_theme::appearance_accent(data));
         if(ui!=previous_ui||content!=previous_content){previous_ui=ui;previous_content=content;PostMessageW(window,application_language_message,0,0);}
     };access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
     access.unsaved_discarded=[window](std::string_view message){show_settings_notice(window,message);};
@@ -356,6 +371,7 @@ void open_settings(HWND window,WindowState& state){
     if(state.reader)state.reader->suspend_preparation(true);
     for(const auto view:{state.catalog,state.lesson,state.tool})if(view)ShowWindow(view,SW_HIDE);
     layout_controls(window,state);ShowWindow(state.settings,SW_SHOW);SetFocus(state.settings);
+    update_audio_context(state);
 }
 
 LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -431,8 +447,9 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                                 fingerprint==reply.GetNamedString(L"contentFingerprint",L"missing");
                         }catch(const winrt::hresult_error& error){OutputDebugStringW(error.message().c_str());return std::nullopt;}
                         catch(const std::exception& error){OutputDebugStringW(widen_error(error).c_str());return std::nullopt;}
-                    });
+                    },[state](HWND){update_audio_context(*state);});
                 layout_controls(window, *state);
+                update_audio_context(*state,true);
                 if(!state->environment.options.smoke_test){
                     const auto active=lgaed::state::string_value(defaults,"native_windows","navigation/lesson");
                     if(active=="native_cpp_laboratory"){
@@ -534,7 +551,8 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                 state->tool=lgaed::presentation::create_smo_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}
             else{ShowWindow(state->catalog,SW_HIDE);state->tool=state->pending_action==CatalogAction::calculator?
                     lgaed::presentation::create_calculator_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);},state->narrator):
-                    lgaed::presentation::create_graphics_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}}
+                    lgaed::presentation::create_graphics_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}
+            update_audio_context(*state);}
         catch(const std::exception& error){if(state->pending_action==lgaed::presentation::CatalogAction::smo){show_catalog(window,*state);update_audio_context(*state);}
             lgaed::presentation::internal_message_box(window,widen_error(error).c_str(),L"Herramientas",MB_OK|MB_ICONERROR);}return 0;
     case WM_SIZE:
@@ -662,6 +680,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         BOOL result = 0;
         while ((result = GetMessageW(&message, nullptr, 0, 0)) > 0) {
             const auto target=GetAncestor(message.hwnd,GA_ROOT);
+            if(lgaed::presentation::dispatch_window_fullscreen_key(window,message))continue;
             // Native RichEdit fields can request all keys, including the
             // read-only lesson header. Keep the Android-style Back gesture
             // at the root, after any local popup and before dialog dispatch.

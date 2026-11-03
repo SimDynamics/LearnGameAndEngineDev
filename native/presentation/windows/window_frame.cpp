@@ -56,13 +56,13 @@ WindowFrameColors window_frame_colors(COLORREF accent,bool active,bool contrast)
     const auto black=(light+.05)/.05,white=1.05/(light+.05);
     return {caption,black>=white?RGB(0,0,0):RGB(255,255,255),caption};
 }
-void update_window_frame(HWND window,COLORREF global_accent) noexcept {
+void update_window_frame(HWND window,COLORREF screen_accent) noexcept {
     if(!IsWindow(window)||(GetWindowLongPtrW(window,GWL_STYLE)&WS_CHILD))return;
     DWORD_PTR current=0;
     if(GetWindowSubclass(window,frame_proc,frame_subclass,&current)){
-        auto& state=*reinterpret_cast<Frame*>(current);state.accent=global_accent;apply(window,state);return;
+        auto& state=*reinterpret_cast<Frame*>(current);state.accent=screen_accent;apply(window,state);return;
     }
-    auto* state=new(std::nothrow) Frame{global_accent,GetActiveWindow()==window};
+    auto* state=new(std::nothrow) Frame{screen_accent,GetActiveWindow()==window};
     if(!state)return;
     if(!SetWindowSubclass(window,frame_proc,frame_subclass,reinterpret_cast<DWORD_PTR>(state))){delete state;return;}
     apply(window,*state);

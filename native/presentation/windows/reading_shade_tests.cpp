@@ -44,8 +44,13 @@ std::vector<CHARFORMAT2W> ink(HWND edit) {
     for (std::size_t index = 0; index < length; ++index) result.push_back(character(edit,static_cast<LONG>(index)));
     return result;
 }
+COLORREF semantic_surface(HWND target,std::span<const CHARFORMAT2W> formats){
+    const auto references=rich_text_reference_ranges(target);const auto base=reader_theme::background(target);
+    if(references.empty()||references.front().first>=formats.size())return base;
+    const auto& format=formats[references.front().first];return(format.dwEffects&CFE_AUTOBACKCOLOR)?base:format.crBackColor;
+}
 COLORREF pending(HWND target) {
-    return reader_theme::unread_color(reader_theme::background(target));
+    const auto formats=ink(target);return reader_theme::unread_colors(reader_theme::background(target),semantic_surface(target,formats)).first;
 }
 double contrast(COLORREF first,COLORREF second){const auto luminance=[](COLORREF value){const auto linear=[](BYTE channel){const auto fraction=channel/255.;return fraction<=.04045?fraction/12.92:std::pow((fraction+.055)/1.055,2.4);};return .2126*linear(GetRValue(value))+.7152*linear(GetGValue(value))+.0722*linear(GetBValue(value));};const auto a=luminance(first),b=luminance(second);return(std::max(a,b)+.05)/(std::min(a,b)+.05);}
 void styles_equal(const CHARFORMAT2W& before,const CHARFORMAT2W& after) {
@@ -57,7 +62,8 @@ void styles_equal(const CHARFORMAT2W& before,const CHARFORMAT2W& after) {
 void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t boundary,bool native_math = false) {
     const auto after = ink(edit); require(after.size() == before.size(),"Shading changed the original displayed text length");
     const auto native = native_math ? wide(edit_text(edit)) : std::wstring{};
-    const auto references=rich_text_reference_ranges(edit);
+    const auto base=reader_theme::background(edit),semantic=semantic_surface(edit,before);
+    const auto grays=reader_theme::unread_colors(base,semantic);
     for (std::size_t index = 0; index < after.size(); ++index) {
         // OfficeMath's noncharacter delimiters have object-level formatting;
         // they are not displayed glyphs. Inspect each actual letter, number
@@ -66,20 +72,16 @@ void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t bounda
         styles_equal(before[index],after[index]);
         const auto original_background=(before[index].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(edit):before[index].crBackColor;
         const auto actual_background=(after[index].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(edit):after[index].crBackColor;
-        const bool reference=std::ranges::any_of(references,[&](const auto& range){return range.first<=index&&index<range.second;});
-        if (index < boundary || reference) {
+        if (index < boundary) {
             require(after[index].crTextColor == before[index].crTextColor,"A read token did not recover its original syntax color");
             require((after[index].dwEffects & CFE_AUTOCOLOR) == (before[index].dwEffects & CFE_AUTOCOLOR),
                     "A read token lost its automatic color identity");
-        } else require(after[index].crTextColor == reader_theme::unread_color((before[index].dwEffects&CFE_AUTOBACKCOLOR)
-                           ?reader_theme::background(edit):before[index].crBackColor) && !(after[index].dwEffects & CFE_AUTOCOLOR),
+        } else require(after[index].crTextColor == (original_background==semantic?grays.second:original_background==base?grays.first:reader_theme::unread_color(original_background))
+                           && !(after[index].dwEffects & CFE_AUTOCOLOR),
                        "An unread word, operator or punctuation mark escaped the pending gray");
-        if(reference&&index>=boundary){const auto original_ink=(before[index].dwEffects&CFE_AUTOCOLOR)?reader_theme::foreground(edit):before[index].crTextColor;
-            require(actual_background==reader_theme::unread_reference_background(edit,original_background,original_ink),
-                "An unread renderer-identified reference lost its neutral pending background");
-        }else require(actual_background==original_background&&
+        require(actual_background==original_background&&
             (before[index].dwEffects&CFE_AUTOBACKCOLOR)==(after[index].dwEffects&CFE_AUTOBACKCOLOR),
-            "A read/restored reference or ordinary prose lost its exact original background");
+            "Narration changed the exact original reference/prose background");
     }
 }
 std::size_t source_units(std::string_view source,std::size_t bytes) { return wide(source.substr(0,bytes)).size(); }
@@ -238,8 +240,7 @@ int main(int argc,char* argv[]) {
         require(((before[technical].dwEffects&CFE_AUTOBACKCOLOR)!=0)==high_contrast&&
             (before[0].dwEffects&CFE_AUTOBACKCOLOR)&&(before[language].dwEffects&CFE_AUTOBACKCOLOR),
             "The real prose renderer did not keep its technical background or the C++ exception");
-        if(!high_contrast){const auto fill=before[technical].crBackColor;
-            require(GetRValue(fill)==GetGValue(fill)&&GetGValue(fill)==GetBValue(fill),"A technical reference acquired a colored background");}
+        if(!high_contrast)require(before[technical].crBackColor==reader_theme::reference_background(field.edit),"A technical reference lost the exact migrated Android backing");
         CHARRANGE selected{1,7};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
         POINT position{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
         const auto events=SendMessageW(field.edit,EM_GETEVENTMASK,0,0),modified=SendMessageW(field.edit,EM_GETMODIFY,0,0);
@@ -411,8 +412,10 @@ int main(int argc,char* argv[]) {
             for(const auto bytes:{std::size_t{0},source.find("std::cout"),source.find("std::cout")+9,std::size_t{0},source.size()}){
                 const auto boundary=source_units(source,bytes);shade.read_through(boundary);
                 prefix(field.edit,before,mapping->source_to_native.at(boundary),true);
-                require(character(field.edit,static_cast<LONG>(at)).crTextColor==original_ink,
-                    "The actual mixed OfficeMath reader dimmed its C++ reference ink");
+                const auto grays=reader_theme::unread_colors(reader_theme::background(field.edit),semantic_surface(field.edit,before));
+                const auto expected=at<mapping->source_to_native.at(boundary)?original_ink:grays.second;
+                require(character(field.edit,static_cast<LONG>(at)).crTextColor==expected,
+                    "The actual mixed OfficeMath reader failed to gray/restore its C++ reference at the supplied boundary");
             }
         }
         prefix(field.edit,before,before.size(),true);
@@ -426,7 +429,7 @@ int main(int argc,char* argv[]) {
         require(rejected&&rich_text_reference_ranges(field.edit)==references,"An invalid nonmonotone map replaced valid reference ownership");
         prefix(field.edit,before,before.size(),true);
     });
-    test("Renderer-identified code and neutral numbers retain exact ink without automatic underlines during read and restore",[] {
+    test("Code and neutral numbers turn pending gray then restore exact ink without changing backgrounds or adding underlines",[] {
         const std::string source = "𐐀 Negrita cursiva y `std::cout << \"área\";` final.\r\nEn C++, `3 * 5` produce 15.\r\nAntes: `5`\r\nAhora: `8` (Stroustrup, 2024).";
         const std::vector<lgaed::curriculum::Emphasis> emphasis{{"Negrita",0,"bold"},{"cursiva",0,"italic"}};
         Field field(source,false,emphasis,true); const auto displayed = edit_text(field.edit);
@@ -483,29 +486,55 @@ int main(int argc,char* argv[]) {
         const auto before=ink(field.edit);shade->read_through(0);shade->restore();shade.reset();
         prefix(field.edit,before,before.size());
     });
-    test("Reference backgrounds are neutral and accent-independent while actual high contrast retains its system surface",[]{
+    test("Static reference backgrounds match Android alpha8 alpha16 and light C++ backing without accent or reading-state tints",[]{
         Field field("La referencia `valor` y el resultado 15.");
-        const auto static_fill=reader_theme::reference_background(field.edit);
         const bool high_contrast=reader_theme::palette(field.edit).high_contrast;
-        if(high_contrast)require(static_fill==reader_theme::background(field.edit),"High contrast replaced its actual system surface");
-        else require(GetRValue(static_fill)==GetGValue(static_fill)&&GetGValue(static_fill)==GetBValue(static_fill),
-            "The static reference surface is not neutral gray");
+        // Independent source-over oracle from LessonReadingColor.composite:
+        // the background is opaque, so Android truncates each channel /255.
+        const auto composite=[](COLORREF tint,COLORREF surface,unsigned alpha){
+            const auto channel=[&](unsigned front,unsigned back){return(front*alpha+back*(255-alpha))/255;};
+            return RGB(channel(GetRValue(tint),GetRValue(surface)),channel(GetGValue(tint),GetGValue(surface)),channel(GetBValue(tint),GetBValue(surface)));};
+        for(const bool mathematics:{false,true}){
+            reader_theme::set_reference_mathematics(field.parent,mathematics);
+            require(reader_theme::reference_mathematics(field.edit)==std::optional<bool>{mathematics},"Reference route context did not inherit through the native HWND parent");
+            for(const auto surface:{reader_theme::Surface::canvas,reader_theme::Surface::card,reader_theme::Surface::field}){
+                reader_theme::apply(field.edit,surface);const auto base=reader_theme::background(field.edit);
+                for(const auto tint:{RGB(205,208,215),RGB(235,239,245),RGB(180,220,190)}){
+                    reader_theme::set_reference_tint(field.edit,tint);
+                    const auto expected=high_contrast?base:!mathematics&&contrast(reader_theme::foreground(field.edit),RGB(255,255,255))>=4.5?
+                        RGB(31,35,48):composite(tint,base,mathematics?16:8);
+                    require(reader_theme::reference_background(field.edit)==expected,"Reference backing differs from the exact migrated Android composite");
+                    require(reader_theme::unread_reference_background(field.edit,expected,reader_theme::foreground(field.edit))==expected,
+                        "Reading state introduced a different reference background");
+                }
+            }
+        }
+        reader_theme::set_reference_mathematics(field.parent,false);reader_theme::set_text_color(field.edit,RGB(32,32,32));
+        require(reader_theme::reference_background(field.edit)==(high_contrast?reader_theme::background(field.edit):RGB(31,35,48)),
+            "Android's readable light C++ backing predicate was replaced by an invented fill");
+        const auto static_fill=reader_theme::reference_background(field.edit);
         const std::pair<COLORREF,COLORREF> samples[]={{RGB(16,16,16),RGB(218,221,228)},{RGB(28,28,28),RGB(224,151,109)},
             {RGB(255,255,255),RGB(32,32,32)},{RGB(238,238,238),RGB(74,45,116)}};
-        for(const auto& [background,foreground]:samples){const auto marked=reader_theme::unread_reference_background(field.edit,background,foreground);
-            require(contrast(foreground,marked)>=4.5,"A reference pending background lost the original readable contrast");
-            if(high_contrast)require(marked==background,"High contrast forced a replacement reference cue");
-            else require(GetRValue(marked)==GetGValue(marked)&&GetGValue(marked)==GetBValue(marked)&&marked!=background&&
-                std::abs(int(GetRValue(marked))-int(GetRValue(background)))<=12,
-                "An ordinary pending reference fill is colored, absent or not a discreet gray variation");
+        for(const auto& sample:samples){const auto background=sample.first,gray=reader_theme::unread_color(background);
+            require(GetRValue(gray)==GetGValue(gray)&&GetGValue(gray)==GetBValue(gray)&&contrast(gray,background)>=4.5,
+                "A pending reference lacks opaque neutral gray with readable contrast");
             for(const auto accent:{RGB(255,0,0),RGB(0,230,110),RGB(50,120,250)}){
                 reader_theme::set_accent(field.parent,accent);
                 require(reader_theme::reference_background(field.edit)==static_fill&&
-                    reader_theme::unread_reference_background(field.edit,background,foreground)==marked,
-                    "A red/accent/progress-like color contaminated the neutral reference fill");
+                    reader_theme::unread_color(background)==gray,
+                    "A red/accent/progress-like color contaminated reference backgrounds or pending gray ink");
             }
         }
         reader_theme::set_accent(field.parent,{});
+    });
+    test("Android pending ink chooses a common gray for prose and semantic surfaces before its safe fallback",[]{
+        const auto common=reader_theme::unread_colors(RGB(255,255,255),RGB(0,0,0));
+        require(common.first==RGB(118,118,118)&&common.first==common.second&&contrast(common.first,RGB(255,255,255))>=4.5&&
+            contrast(common.second,RGB(0,0,0))>=4.5,"Pending ink did not select Android's closest common gray across both surfaces");
+        const auto fallback=reader_theme::unread_colors(RGB(112,112,112),RGB(144,144,144));
+        require(fallback.first==reader_theme::unread_color(RGB(112,112,112))&&fallback.second==reader_theme::unread_color(RGB(144,144,144))&&
+            contrast(fallback.first,RGB(112,112,112))>=4.5&&contrast(fallback.second,RGB(144,144,144))>=4.5,
+            "Pending ink lost Android's per-surface contrast fallback when no common gray exists");
     });
     test("Selection scroll geometry event mask modified flag and native Undo Redo are unchanged",[] {
         std::string source; for (int line = 0; line < 60; ++line) source += "línea de lectura con acento\n";

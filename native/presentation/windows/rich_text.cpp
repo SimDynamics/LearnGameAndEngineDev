@@ -75,24 +75,31 @@ struct SemanticBackground {
             Microsoft::WRL::ComPtr<ITextRange> range;
             return document->Range(at,at,&range)==S_OK&&range&&range->GetPoint(coordinates|align,&value.x,&value.y)==S_OK;
         };
-        const auto trim=[&](LONG first,LONG last){
-            if(first>=last)return;
-            POINTL top{},bottom{},end{};
-            if(!point(last-1,TA_TOP|TA_LEFT,top)||!point(last-1,TA_BOTTOM|TA_RIGHT,bottom)||
-                bottom.y<=clip.top||top.y>=clip.bottom||!point(last,TA_TOP|TA_LEFT,end)||end.y!=top.y)return;
-            const auto line=SendMessageW(edit,EM_EXLINEFROMCHAR,0,last-1);
+        int numerator=0,denominator=0;
+        SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        if(numerator<=0||denominator<=0){numerator=1;denominator=1;}
+        const auto dpi=GetDpiForWindow(edit);
+        // One logical pixel of breathing room, scaled like the text. The
+        // font's real descent already includes p/q/g; this is not a glyph-
+        // dependent pad or an alteration of RichEdit's paragraph geometry.
+        const auto margin=std::max<LONG>(1,MulDiv(static_cast<int>(dpi),numerator,96*denominator));
+        CHARRANGE selection{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        const auto metrics_dc=GetDC(edit);
+        struct ReleaseMetrics {HWND edit;HDC dc;~ReleaseMetrics(){if(dc)ReleaseDC(edit,dc);}} release{edit,metrics_dc};
+        const auto paint_line=[&](LONG line){
             const auto line_start=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,line,0));
             auto line_end=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,line+1,0));
+            if(line_start<0||line_start>=length)return;
             if(line_end<0)line_end=length;
             Microsoft::WRL::ComPtr<ITextRange> row;
             Microsoft::WRL::ComPtr<ITextPara> paragraph;
             if(document->Range(line_start,line_end,&row)!=S_OK||!row||FAILED(row->GetPara(&paragraph))||!paragraph)return;
             long rule=0;float factor=0,before=0,after=0;
             if(FAILED(paragraph->GetLineSpacingRule(&rule))||rule!=tomLineSpaceMultiple||
-                FAILED(paragraph->GetLineSpacing(&factor))||!std::isfinite(factor)||factor<=1||
+                FAILED(paragraph->GetLineSpacing(&factor))||!std::isfinite(factor)||factor<=0||
                 FAILED(paragraph->GetSpaceBefore(&before))||FAILED(paragraph->GetSpaceAfter(&after))||before!=0||after!=0)return;
             // A built-up OfficeMath/OLE row has its own vertical layout. Keep
-            // its native backdrop until its natural descent is demonstrable.
+            // its native backdrop; a prose font's metrics do not describe it.
             Microsoft::WRL::ComPtr<ITextFont> font;
             Microsoft::WRL::ComPtr<ITextFont2> math_font;
             long math=tomFalse;
@@ -102,48 +109,74 @@ struct SemanticBackground {
                 if(FAILED(rich->GetObject(object,&entry,REO_GETOBJ_NO_INTERFACES))||
                     (entry.cp>=line_start&&entry.cp<line_end))return;
             }
-            // Android Layout.getSelectionPath excludes line-spacing extra
-            // only on the range's final line. Native BackColor includes it.
-            // Invert the actual proportional line box, never a font/pixel
-            // offset: this also follows fallback fonts, zoom and DPI rounding.
-            const auto natural=static_cast<LONG>(std::lround((bottom.y-top.y)/static_cast<double>(factor)));
-            const auto cut=std::max(clip.top,top.y+natural),limit=std::min(clip.bottom,bottom.y);
-            if(natural<=0||cut>=limit)return;
+            POINTL first_top{},first_bottom{},baseline{};
+            if(!point(line_start,TA_TOP|TA_LEFT,first_top)||!point(line_start,TA_BOTTOM|TA_RIGHT,first_bottom)||
+                !point(line_start,TA_BASELINE|TA_LEFT,baseline))return;
+            LONG top=first_top.y,natural_bottom=first_top.y+
+                static_cast<LONG>(std::ceil((first_bottom.y-first_top.y)/static_cast<double>(factor)));
+            LONG ascent=0,descent=0;
+            std::vector<std::pair<LONG,LONG>> backed;
+            for(auto at=line_start;at<line_end;){
+                Microsoft::WRL::ComPtr<ITextRange> run;Microsoft::WRL::ComPtr<ITextFont> run_font;
+                if(document->Range(at,at+1,&run)!=S_OK||!run||FAILED(run->GetFont(&run_font))||!run_font)return;
+                long background=tomAutoColor,end=at+1,delta=0;
+                if(FAILED(run_font->GetBackColor(&background)))return;
+                if(SUCCEEDED(run->EndOf(tomCharFormat,tomExtend,&delta)))run->GetEnd(&end);
+                end=std::clamp<LONG>(end,at+1,line_end);
+                if(background==static_cast<long>(color))backed.emplace_back(at,end);
+                POINTL run_top{},run_bottom{};
+                if(point(at,TA_TOP|TA_LEFT,run_top)&&point(at,TA_BOTTOM|TA_RIGHT,run_bottom)){
+                    top=std::min(top,run_top.y);
+                    natural_bottom=std::max(natural_bottom,run_top.y+
+                        static_cast<LONG>(std::ceil((run_bottom.y-run_top.y)/static_cast<double>(factor))));
+                }
+                float points=0;BSTR face=nullptr;long bold=tomFalse,italic=tomFalse;
+                if(metrics_dc&&SUCCEEDED(run_font->GetSize(&points))&&std::isfinite(points)&&points>0&&
+                    SUCCEEDED(run_font->GetName(&face))){
+                    run_font->GetBold(&bold);run_font->GetItalic(&italic);
+                    const auto height=std::max<LONG>(1,static_cast<LONG>(std::lround(points*dpi*numerator/(72.0*denominator))));
+                    const auto measured=CreateFontW(-height,0,0,0,bold==tomTrue?FW_BOLD:FW_NORMAL,italic==tomTrue,FALSE,FALSE,
+                        DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,face);
+                    if(measured){const auto previous=SelectObject(metrics_dc,measured);TEXTMETRICW metrics{};
+                        if(GetTextMetricsW(metrics_dc,&metrics)){ascent=std::max(ascent,metrics.tmAscent);descent=std::max(descent,metrics.tmDescent);}
+                        SelectObject(metrics_dc,previous);DeleteObject(measured);
+                    }
+                }
+                SysFreeString(face);at=end;
+            }
+            if(backed.empty())return;
+            // Every sample on this visual row uses the same ascent/descent,
+            // including fonts introduced by emphasis or fallback. Never infer
+            // its height from the final token's font or reading-state ink.
+            const auto fill_top=std::min(top,baseline.y-ascent)-margin;
+            const auto fill_bottom=std::max(natural_bottom,baseline.y+descent)+margin;
             const auto backdrop=pixel(color),surface=pixel(reader_theme::background(edit));
-            for(auto at=std::max(first,line_start);at<last;++at){POINTL left{},right{};
-                if(!point(at,TA_TOP|TA_LEFT,left)||!point(at,TA_BOTTOM|TA_RIGHT,right)||left.y!=top.y)continue;
+            for(const auto& [first,last]:backed)for(auto at=first;at<last;++at){
+                // Selection remains entirely native, including its backdrop.
+                if(at>=selection.cpMin&&at<selection.cpMax)continue;
+                POINTL left{},right{};
+                if(!point(at,TA_TOP|TA_LEFT,left)||!point(at,TA_BOTTOM|TA_RIGHT,right)||right.y<=left.y)continue;
                 const auto start=std::max(clip.left,std::min(left.x,right.x)),finish=std::min(clip.right,std::max(left.x,right.x));
-                for(auto y=cut;y<limit;++y)for(auto x=start;x<finish;++x){auto& value=pixels[static_cast<std::size_t>(y-dirty.top)*width+x-dirty.left];
-                    // Keep native selection, caret and every glyph/antialias
-                    // pixel, including the narrator's dimmed foreground.
-                    if((value&0xffffffu)==backdrop)value=(value&0xff000000u)|surface;
+                const auto first_y=std::max(clip.top,std::min(left.y,fill_top)),last_y=std::min(clip.bottom,std::max(right.y,fill_bottom));
+                for(auto y=first_y;y<last_y;++y)for(auto x=start;x<finish;++x){auto& value=pixels[static_cast<std::size_t>(y-dirty.top)*width+x-dirty.left];
+                    // Never paint a glyph/antialias pixel, native caret or
+                    // selection. Only the two exact flat backdrop colors may
+                    // change, so text and its natural descenders remain native.
+                    const auto rgb=value&0xffffffu;
+                    if(y>=fill_top&&y<fill_bottom){if(rgb==surface)value=(value&0xff000000u)|backdrop;}
+                    else if(rgb==backdrop)value=(value&0xff000000u)|surface;
                 }
             }
         };
-        // Traverse native format runs in the dirty visible lines, rather than
-        // all characters of a paragraph on every narration word. Coalesce
-        // syntax/emphasis/reading-ink runs by their unchanged BackColor.
+        // Include a neighboring row for the small overhang into line spacing
+        // and for partial-row scrolling. Dirty clipping remains caller-owned.
         POINTL hit{viewport.left,clip.top};
         const auto first_hit=std::clamp<LONG>(static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&hit))),0,length-1);
         const auto first_line=SendMessageW(edit,EM_EXLINEFROMCHAR,0,first_hit);
-        auto at=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,first_line,0));
         hit={viewport.right,clip.bottom-1};
         const auto last_hit=std::clamp<LONG>(static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&hit))),0,length-1);
         const auto last_line=SendMessageW(edit,EM_EXLINEFROMCHAR,0,last_hit);
-        auto visible_end=static_cast<LONG>(SendMessageW(edit,EM_LINEINDEX,last_line+1,0));
-        if(visible_end<0)visible_end=length;
-        LONG first=-1;
-        while(at>=0&&at<length&&at<visible_end){
-            Microsoft::WRL::ComPtr<ITextRange> run;Microsoft::WRL::ComPtr<ITextFont> font;
-            if(document->Range(at,at+1,&run)!=S_OK||!run||FAILED(run->GetFont(&font))||!font)return;
-            long background=tomAutoColor,end=at+1,delta=0;
-            if(FAILED(font->GetBackColor(&background)))return;
-            if(background==static_cast<long>(color)){if(first<0)first=at;}
-            else if(first>=0){trim(first,at);first=-1;}
-            if(SUCCEEDED(run->EndOf(tomCharFormat,tomExtend,&delta)))run->GetEnd(&end);
-            at=std::clamp<LONG>(end,at+1,length);
-        }
-        if(first>=0&&at==length)trim(first,length);
+        for(auto line=std::max<LRESULT>(0,first_line-1);line<=last_line+1;++line)paint_line(static_cast<LONG>(line));
     }
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
         auto* self=reinterpret_cast<SemanticBackground*>(raw);
@@ -793,6 +826,10 @@ void default_format(HWND edit, bool code, RichTextRole role) {
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_BACKCOLOR | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE;
     style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(edit);
     if(role!=RichTextRole::body&&!reader_theme::palette().high_contrast)style.crTextColor=RGB(255,255,255);
+    // Capture the authored/base tint before lexical colors and reading ink.
+    // Android's body tint differs from the generic Windows UI foreground.
+    reader_theme::set_reference_tint(edit,!reader_theme::palette(edit).high_contrast&&role==RichTextRole::body&&
+        style.crTextColor==reader_theme::palette(edit).text?RGB(205,208,215):style.crTextColor);
     style.dwEffects = CFE_AUTOBACKCOLOR | (role == RichTextRole::body ? 0 : CFE_BOLD);
     wcscpy_s(style.szFaceName, code ? reader_theme::code_font_face() : L"Roboto");
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&style));
@@ -1004,6 +1041,25 @@ void style_cpp(HWND edit) {
     base.crTextColor = reader_theme::foreground(edit);
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
+}
+bool rich_text_naming_choice_samples(std::string_view question,std::span<const std::string> options) {
+    // An invalid identifier is still a sample in a naming exercise. Require
+    // the public naming question AND a whole set of name-like alternatives,
+    // so adjacent explanatory multiple-choice sentences retain ordinary ink.
+    const auto prompt=wide(question);
+    if(options.empty()||!technical_prose::has(prompt,
+        LR"(\b(?:nombre|identificador|name|identifier|nom|identifiant)\b)",true)||
+        !technical_prose::has(prompt,LR"(\b(?:v[aá]lid[oa]s?|valid(?:e|es|s)?|convenci[oó]n|convention|variable|identificador|identifier|identifiant)\b)",true))return false;
+    for(const auto& option:options){
+        const auto sample=wide(option);std::size_t words=0;bool in_word=false;
+        if(sample.empty()||technical_prose::space(sample.front())||technical_prose::space(sample.back()))return false;
+        for(const auto value:sample){
+            if(value==L' '||value==L'\t'){in_word=false;continue;}
+            if(!technical_prose::letter(value)&&!technical_prose::digit(value)&&value!=L'_'&&value!=L'-')return false;
+            if(!in_word){in_word=true;if(++words>3)return false;}
+        }
+    }
+    return true;
 }
 void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role,
     std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context) {
@@ -1230,12 +1286,19 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         // Keep a language name's ordinary ink/bold treatment while allowing
         // its version digits (C++20) the same neutral numeric background.
         append_references(roles.numbers);
+        if(context.technical_sample&&!source.empty())references.emplace_back(0,source.size());
         technical_prose::curricular_role_detail::merge(references);
         technical_prose::curricular_role_detail::subtract(references,roles.citations);
         technical_prose::curricular_role_detail::subtract(references,semantic.protected_ranges);
         std::vector<technical_prose::Range> tokens;
         for(const auto& [first,last]:references){
             if(first>=last||last>source.size())continue;
+            // Spaces can be the deliberate error in a candidate name. Keep
+            // the entire sample's backdrop, while reference ownership below
+            // still excludes whitespace exactly like other curricular text.
+            if(context.technical_sample&&has_background){select(edit,first,last);CHARFORMAT2W style{};style.cbSize=sizeof(style);
+                style.dwMask=CFM_BACKCOLOR;style.crBackColor=semantic_color;
+                SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));}
             auto at=first;
             while(at<last){
                 while(at<last&&technical_prose::space(source[at]))++at;

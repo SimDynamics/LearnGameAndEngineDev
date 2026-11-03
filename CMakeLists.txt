@@ -114,6 +114,7 @@ target_link_libraries(lgaed_system_speech_host PRIVATE lgaed_platform_windows)
 set_target_properties(lgaed_system_speech_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 add_library(lgaed_presentation_windows STATIC
+    native/presentation/windows/window_fullscreen.cpp
     native/presentation/windows/window_frame.cpp
     native/presentation/windows/internal_window.cpp
     native/presentation/windows/lesson_view.cpp
@@ -229,6 +230,12 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_window_frame_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.window_frame COMMAND lgaed_window_frame_tests)
     set_tests_properties(native.window_frame PROPERTIES TIMEOUT 20)
+    add_executable(lgaed_window_fullscreen_tests native/presentation/windows/window_fullscreen_tests.cpp
+        native/presentation/windows/window_fullscreen.cpp)
+    target_include_directories(lgaed_window_fullscreen_tests PRIVATE native)
+    target_link_libraries(lgaed_window_fullscreen_tests PRIVATE lgaed_host_options user32 comctl32)
+    add_test(NAME native.window_fullscreen COMMAND lgaed_window_fullscreen_tests)
+    set_tests_properties(native.window_fullscreen PROPERTIES TIMEOUT 20)
     add_executable(lgaed_exact_prediction_view_tests native/presentation/windows/exact_prediction_view_tests.cpp)
     target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.exact_prediction_view COMMAND lgaed_exact_prediction_view_tests)
@@ -895,7 +902,8 @@ if(BUILD_TESTING)
     endforeach()
     add_custom_target(lgaed_curricular_color_checks DEPENDS LearnGameAndEngineDev
         lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_technical_context_view_tests
-        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests lgaed_window_frame_tests)
+        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests
+        lgaed_math_puzzle_view_tests lgaed_window_frame_tests lgaed_window_fullscreen_tests lgaed_catalog_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
         LearnGameAndEngineDev lgaed_editorial_return_tests lgaed_editorial_return_view_tests
         lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests

@@ -16,7 +16,13 @@ enum class RichTextRole { body, prompt, heading, lesson_title };
 struct RichTextContext {
     std::string_view prose;
     std::string_view code;
+    // A visible exercise can present deliberately invalid technical samples.
+    // This adds a backdrop only, without claiming validity or changing ink.
+    bool technical_sample = false;
 };
+// Public question and alternatives only; explanatory answer sentences are not
+// name samples. Never accepts or inspects a correct index or hidden feedback.
+[[nodiscard]] bool rich_text_naming_choice_samples(std::string_view question,std::span<const std::string> options);
 [[nodiscard]] constexpr LONG rich_text_height(RichTextRole role = RichTextRole::body) {
     return 15 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : 18);
 }

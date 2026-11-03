@@ -223,24 +223,38 @@ La clasificación sólo utiliza el contexto visible, sin consultar respuestas
 ocultas ni añadir propiedades al JSON. Conserva negritas, cursivas, texto,
 offsets de narración y contratos de estado.
 
-Durante la lectura, las referencias resaltadas conservan su tinta. El tramo
-pendiente se distingue mediante un fondo gris neutro que respeta el
-contraste de la tinta; al leerlo recupera su fondo original. La prosa ordinaria
-mantiene el gris de pendiente. Retroceder vuelve a aplicar el indicador, y al
-cerrar el lector se restauran los fondos originales. El fondo no utiliza el
-color de acento ni el de progreso. La identificación de referencias se almacena
+Las muestras técnicas de opciones incorrectas tienen el mismo fondo que las
+demás muestras: se clasifican por el enunciado y las alternativas visibles,
+sin consultar la respuesta correcta. El fondo usa la composición original de
+Android sobre la superficie local (alfa 8 en Programación y 16 en Matemáticas,
+con su respaldo oscuro original para programación sobre superficies claras).
+Las referencias de una misma línea comparten una altura que incluye las
+métricas de sus fuentes y un pequeño margen escalado arriba y abajo.
+
+Durante la lectura todo el texto pendiente pasa a gris, incluidas las
+referencias coloreadas. El gris común sigue la política de contraste de
+Android; al avanzar o cerrar el lector se recupera la tinta original.
+Retroceder vuelve a atenuar las letras. El fondo permanece idéntico antes,
+durante y después de la lectura: nunca depende del estado leído/pendiente,
+del acento ni del progreso. La identificación de referencias se almacena
 como metadatos del renderizador, sin depender de un estilo tipográfico.
 El alto contraste utiliza
 los colores del sistema. `lgaed_curricular_color_checks` compila la aplicación
 y las pruebas de formato, montaje curricular y reproducción real afectadas.
 
 La barra de título principal mantiene los botones y el comportamiento nativos
-de Windows. Al activarse utiliza el acento general guardado en Apariencia;
+de Windows. Al activarse utiliza el acento de la pantalla actual: el global en
+el menú principal y el de la ruta dentro de sus cursos y opciones;
 al desactivarse utiliza gris neutro, con texto de contraste en ambos estados.
-Guardar otro acento actualiza también la barra. Los atributos de
+Navegar o guardar otro acento actualiza también la barra. Los atributos de
 [DWM](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute)
 sólo afectan a esta ventana: el alto contraste conserva los colores del sistema
 y una plataforma que no los admita mantiene su marco predeterminado.
+
+F12 alterna pantalla completa sin marco y restaura el tamaño, posición y
+estado maximizado anteriores al pulsarlo de nuevo. Funciona también desde
+editores, opciones y diálogos internos, conservando los mismos documentos y
+la reproducción. Mantener F12 pulsado no repite la alternancia.
 
 La predicción, la selección, el relleno y el ordenamiento usan los contratos del
 contenido. Enter comprueba una respuesta de una línea sin avanzar de página.

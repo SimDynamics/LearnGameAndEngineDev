@@ -44,8 +44,9 @@ struct CatalogView {
     CatalogActionHandler on_action;
     CatalogActionAvailability can_action;
     CatalogMathValidator validate_math;
+    CatalogLocationChanged location_changed;
     std::map<std::string,bool> math_validation;
-    bool updating = false, owned_by_window = false;
+    bool updating = false, owned_by_window = false, rendered = false;
     std::vector<CatalogAction> home_actions;
     std::vector<CatalogProgress> completion;
     std::vector<CatalogScope> scopes;
@@ -69,8 +70,9 @@ struct CatalogView {
     }
 
     CatalogView(const WindowsEnvironment& env,std::filesystem::path content,
-        std::function<void(const std::filesystem::path&)> callback,CatalogActionHandler action,CatalogActionAvailability availability,CatalogMathValidator math)
-        : environment(env),root(std::move(content)),on_open(std::move(callback)),on_action(std::move(action)),can_action(std::move(availability)),validate_math(std::move(math)) {
+        std::function<void(const std::filesystem::path&)> callback,CatalogActionHandler action,CatalogActionAvailability availability,CatalogMathValidator math,
+        CatalogLocationChanged changed)
+        : environment(env),root(std::move(content)),on_open(std::move(callback)),on_action(std::move(action)),can_action(std::move(availability)),validate_math(std::move(math)),location_changed(std::move(changed)) {
         if (!on_open) throw std::invalid_argument("El catálogo necesita una acción para abrir lecciones.");
     }
     ~CatalogView() { for(auto face:{font,heading_font,card_font,section_font,action_font,route_font,subtitle_font,ordinal_font,scope_font})if(face)DeleteObject(face); }
@@ -160,6 +162,7 @@ struct CatalogView {
     }
     void render(CatalogLocation location,bool remember = true) {
         auto loaded = windows::load_catalog(root,location);
+        const bool changed = !rendered || page.location != loaded.location;
         if (remember && list) write_position(false);
         updating = true; page = std::move(loaded); progress = load_state();
         reader_theme::set_accent(window,reader_theme::appearance_accent(progress,page.location.route));
@@ -235,6 +238,8 @@ struct CatalogView {
         if(group!=progress.preferences.end()&&group->second.contains(key+"/scroll"))
             set_card_list_scroll_offset(list,static_cast<int>(std::clamp(state::integer_value(progress,"native_windows",key+"/scroll"),std::int64_t{0},std::int64_t{INT_MAX/2})));
         if (remember) write_position();
+        rendered = true;
+        if (changed && location_changed) location_changed(window);
     }
     void initialize(HWND target) {
         window = target; reader_theme::apply(window,reader_theme::Surface::screen);
@@ -491,14 +496,14 @@ LRESULT CALLBACK catalog_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
 }
 HWND create_catalog_view(HWND parent,const WindowsEnvironment& environment,const std::filesystem::path& root,
     std::function<void(const std::filesystem::path&)> on_open,CatalogActionHandler on_action,CatalogActionAvailability can_action,
-    CatalogMathValidator validate_math) {
+    CatalogMathValidator validate_math,CatalogLocationChanged location_changed) {
     static const bool registered = [] {
         WNDCLASSW type{}; type.lpfnWndProc = catalog_proc; type.hInstance = GetModuleHandleW(nullptr);
         type.hCursor = LoadCursorW(nullptr,IDC_ARROW); type.lpszClassName = catalog_class;
         return RegisterClassW(&type) != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
     }();
     if (!registered) throw std::runtime_error("No se pudo registrar el catálogo.");
-    auto data = std::make_unique<CatalogView>(environment,root,std::move(on_open),std::move(on_action),std::move(can_action),std::move(validate_math));
+    auto data = std::make_unique<CatalogView>(environment,root,std::move(on_open),std::move(on_action),std::move(can_action),std::move(validate_math),std::move(location_changed));
     const auto window = CreateWindowExW(WS_EX_CONTROLPARENT,catalog_class,L"Catálogo curricular",WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,
         0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),data.get());
     if (!window) throw std::runtime_error("No se pudo abrir el catálogo curricular.");

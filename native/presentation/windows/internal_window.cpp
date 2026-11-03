@@ -1,5 +1,6 @@
 #include "presentation/windows/internal_window.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/window_fullscreen.hpp"
 #include <commctrl.h>
 #include <algorithm>
 #include <exception>
@@ -181,6 +182,7 @@ INT_PTR show_internal_dialog(HWND owner,const DLGTEMPLATE* layout,DLGPROC proced
     while(!state.done&&IsWindow(dialog)){
         const auto got=GetMessageW(&message,nullptr,0,0);
         if(got<=0){quitting=got==0;quit=static_cast<int>(message.wParam);break;}
+        if(dispatch_window_fullscreen_key(GetAncestor(dialog,GA_ROOT),message))continue;
         if(!IsDialogMessageW(dialog,&message)){TranslateMessage(&message);DispatchMessageW(&message);}
     }
     if(IsWindow(dialog))DestroyWindow(dialog);

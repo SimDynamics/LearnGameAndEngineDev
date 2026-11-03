@@ -65,6 +65,72 @@ std::wstring row_caption(HWND list,std::size_t index){
     std::wstring result(static_cast<std::size_t>(length)+1,L'\0');
     const auto read=SendMessageW(list,LB_GETTEXT,index,reinterpret_cast<LPARAM>(result.data()));check(read!=LB_ERR,"Read real catalog card text");result.resize(static_cast<std::size_t>(read));return result;
 }
+void location_notifications(HWND host,const std::filesystem::path& root){
+    using curriculum::CatalogLocation;
+    const auto environment=resolve_windows_environment({ProfileId::Codex,L"catalog-notification-"+
+        std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    check(!std::filesystem::exists(environment.paths.root),"The notification QA profile already exists");
+    initialize_profile_directories(environment.paths);
+    struct Observation{
+        HWND view;
+        CatalogLocation location;
+        state::StateData saved;
+        reader_theme::Palette palette;
+        std::wstring title;
+        LRESULT rows;
+        bool back_enabled;
+    };
+    std::vector<Observation> events;
+    const auto create=[&]{
+        return create_catalog_view(host,environment,root,[](const auto&){},{},{},{},[&](HWND view){
+            state::StateStore store(environment.paths.root);
+            events.push_back({view,catalog_location(view),store.load(),reader_theme::palette(view),
+                caption(GetDlgItem(view,4108)),SendMessageW(GetDlgItem(view,4105),LB_GETCOUNT,0,0),
+                IsWindowEnabled(GetDlgItem(view,4101))!=FALSE});
+        });
+    };
+    auto view=create();
+    const auto expect=[&](std::size_t count,const CatalogLocation& location){
+        check(events.size()==count,"Catalog navigation did not notify synchronously exactly once");
+        const auto& event=events.back();
+        check(event.view==view&&event.location==location&&catalog_location(view)==location,
+            "The location callback observed the preceding catalog destination");
+        check(state::string_value(event.saved,"native_windows","catalog/locale","es")==location.locale&&
+            state::string_value(event.saved,"native_windows","catalog/route")==location.route&&
+            state::string_value(event.saved,"native_windows","catalog/course")==location.course&&
+            state::string_value(event.saved,"native_windows","catalog/unit")==location.unit,
+            "The location callback ran before the destination was persisted");
+        check(event.rows>0&&!event.title.empty()&&event.back_enabled==!location.route.empty(),
+            "The location callback ran before the new catalog controls were applied");
+        check(event.palette.high_contrast||event.palette.accent==reader_theme::appearance_accent(event.saved,location.route),
+            "The location callback observed the preceding screen accent");
+        if(location.route.empty())check(event.title==L"LearnGameAndEngineDev","The home notification retained the route heading");
+    };
+    const CatalogLocation home{"es",{},{},{}},programming{"es","programming",{},{}},math{"es","math_physics",{},{}};
+    expect(1,home);
+    {state::StateStore store(environment.paths.root);check(store.empty(),"An initial home notification wrote the empty profile");}
+    navigate_catalog(view,programming);expect(2,programming);
+    const auto saved=events.back().saved;
+    refresh_catalog_view(view);
+    check(events.size()==2,"Refreshing the same catalog location emitted a navigation event");
+    {state::StateStore store(environment.paths.root);check(store.load()==saved,"The read-only notification refresh changed saved data");}
+    navigate_catalog(view,programming);
+    check(events.size()==2,"Re-rendering the same location emitted a navigation event");
+    // This is the real Back button route. No message pump or timer may be
+    // needed for a consumer to see home's accent after the click returns.
+    SendMessageW(GetDlgItem(view,4101),BM_CLICK,0,0);expect(3,home);
+    check(!navigate_catalog_back(view)&&events.size()==3,"Back at home emitted a location change");
+    navigate_catalog(view,math);expect(4,math);
+    navigate_catalog_home(view);expect(5,home);
+    bool rejected=false;
+    try{navigate_catalog(view,{"es","missing-qa-route",{},{}});}catch(const std::exception&){rejected=true;}
+    check(rejected&&events.size()==5&&catalog_location(view)==home,"A rejected destination emitted a location event");
+    navigate_catalog(view,programming);expect(6,programming);
+    state::StateStore before(environment.paths.root);const auto restored=before.load();
+    DestroyWindow(view);view=create();expect(7,programming);
+    {state::StateStore after(environment.paths.root);check(after.load()==restored,"Restoring the callback's location rewrote saved data");}
+    DestroyWindow(view);
+}
 LRESULT CALLBACK host_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) { return DefWindowProcW(window,message,wparam,lparam); }
 }
 int main() {
@@ -375,7 +441,8 @@ int main() {
             state::StateStore verify(environment.paths.root);check(rejected&&verify.load()==external,"The catalogue fix bypassed rejection of a real stale external writer");
             DestroyWindow(reader);
         }
-        DestroyWindow(view); DestroyWindow(host); UnregisterClassW(type.lpszClassName,type.hInstance);
+        DestroyWindow(view);location_notifications(host,root);
+        DestroyWindow(host); UnregisterClassW(type.lpszClassName,type.hInstance);
         std::cout << "Native catalog: real home/actions, indices, keyboard/card ownership, mouse wheel/drag, list restoration, profile state and independent UI language: PASS\n";
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

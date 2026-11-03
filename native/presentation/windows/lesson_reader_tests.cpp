@@ -1642,7 +1642,7 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
                 &&!(frame.ink.dwEffects&CFE_UNDERLINE)&&!(frame.plain.dwEffects&CFE_UNDERLINE),
                 "The actual reference lacks background ownership or acquired an unwanted underline");
             if(!reader_theme::palette(frame.target).high_contrast)check(!(frame.ink.dwEffects&CFE_AUTOBACKCOLOR)
-                &&frame.ink.crBackColor==reader_theme::reference_background(frame.target),"A reference lacks its neutral background");
+                &&frame.ink.crBackColor==reader_theme::reference_background(frame.target),"A reference lacks its exact migrated Android background");
             SendMessageW(frame.target,EM_GETZOOM,reinterpret_cast<WPARAM>(&frame.zoom_n),reinterpret_cast<LPARAM>(&frame.zoom_d));
             check(frame.zoom_d>0&&frame.zoom_n*100==frame.zoom_d*125,"The persisted QA text scale was not applied");
             frame.undo=SendMessageW(frame.target,EM_CANUNDO,0,0);frame.modified=SendMessageW(frame.target,EM_GETMODIFY,0,0);
@@ -1665,9 +1665,12 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
             const auto current=style(frame.target,frame.glyph),plain=style(frame.target,frame.ordinary);
             int numerator=0,denominator=0;SendMessageW(frame.target,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
             CHARRANGE selected{};SendMessageW(frame.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
-            check(current.crTextColor==frame.ink.crTextColor&&same_shape(current,frame.ink)&&same_shape(plain,frame.plain)
+            check(same_shape(current,frame.ink)&&same_shape(plain,frame.plain)
                 &&frame.text==edit_text(frame.target)&&numerator==frame.zoom_n&&denominator==frame.zoom_d&&selected.cpMin==0&&selected.cpMax==1,
-                "Real reader shading changed semantic ink, styles, face, zoom, text or selection");
+                "Real reader shading changed styles, face, zoom, text or selection");
+            check(background(frame.target,current)==background(frame.target,frame.ink)
+                &&(current.dwEffects&CFE_AUTOBACKCOLOR)==(frame.ink.dwEffects&CFE_AUTOBACKCOLOR),
+                "Real reader shading changed the reference's exact original background");
             check(SendMessageW(frame.target,EM_CANUNDO,0,0)==frame.undo&&SendMessageW(frame.target,EM_GETMODIFY,0,0)==frame.modified,
                 "Reader formatting changed the original document's Undo availability or modified flag");
             check(read_lesson_state(f.view).preferences.at("curricular_colors_opaque")==opaque,"The actual reader changed unrelated typed QA state");
@@ -1698,25 +1701,32 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
         // inferred, and real playback must enter the selected word's WAV.
         if(word->start_ms==0){check(index>0,"A zero-timed reference needs an earlier real part for a pending preview");reopen(index-1);}
         const auto base_background=background(frame.target,frame.ink);
-        const auto pending=reader_theme::unread_reference_background(frame.target,base_background,frame.ink.crTextColor);
-        check(background(frame.target,style(frame.target,frame.glyph))==pending
-            &&style(frame.target,frame.ordinary).crTextColor==reader_theme::unread_color(background(frame.target,frame.plain)),
-            "Pending reference ink/prose does not use the neutral background/gray policy");invariant();
+        const auto pending_colors=reader_theme::unread_colors(reader_theme::background(frame.target),base_background);
+        const auto pending=pending_colors.second;
+        check(style(frame.target,frame.glyph).crTextColor==pending
+            &&style(frame.target,frame.ordinary).crTextColor==pending_colors.first,
+            "Pending technical/numeric references and prose do not use neutral gray ink");invariant();
         f.reader->toggle();wait([&]{const auto value=f.snapshot();check(value.index<=index,"Actual color-reader playback passed the selected part");
             return value.playing&&value.index==index&&value.playback_rate==.5&&value.offset>=word->start_ms+std::min(40.,(word->end_ms-word->start_ms)/3.)
-                &&background(frame.target,style(frame.target,frame.glyph))==base_background;},"actual ef_dora word playback restores the reference background");
+                &&style(frame.target,frame.glyph).crTextColor==frame.ink.crTextColor;},"actual ef_dora word playback restores the reference's original ink");
         f.reader->pause();const auto paused=f.snapshot();invariant();
-        check(paused.index==index&&!paused.playing&&!paused.allocated&&paused.offset>0,"The actual colored word was not paused in its own recording");
+        check(paused.index==index&&!paused.playing&&!paused.allocated&&paused.offset>0
+            &&style(frame.target,frame.glyph).crTextColor==frame.ink.crTextColor,"The actual read word lost its restored ink or exact paused recording");
         reopen();const auto restored=f.snapshot();invariant();
         check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset&&restored.heard_through==paused.heard_through
             &&!restored.playing&&!restored.allocated&&restored.segments[index].recording==selected.recording,"Reopening changed the exact real colored-word pause or recording");
+        check(style(frame.target,frame.glyph).crTextColor==frame.ink.crTextColor,"A real read word lost its restored ink after a silent reopen");
         f.reader->toggle();await_resumed_player([&]{return f.snapshot();},restored,"Actual curricular color resume");
         wait([&]{const auto value=f.snapshot();return value.playing&&value.index==index&&value.offset>restored.offset+30;},"actual same-WAV colored-word continuation");
-        f.reader->pause();invariant();f.reader->seek_seconds(-60);invariant();
-        check(background(frame.target,style(frame.target,frame.glyph))==pending,"Rewinding did not restore the pending reference background with unchanged ink");
+        f.reader->pause();invariant();check(style(frame.target,frame.glyph).crTextColor==frame.ink.crTextColor,
+            "Pausing actual same-WAV continuation lost the reference's restored ink");
+        f.reader->seek_seconds(-60);invariant();
+        check(style(frame.target,frame.glyph).crTextColor==pending,"Rewinding did not restore pending gray for the reference");
+        f.reader.reset();invariant();check(style(frame.target,frame.glyph).crTextColor==frame.ink.crTextColor,
+            "Stopping the real reader did not restore the reference's original ink");
         check(state::sha256(state::read_bytes(selected.recording))==wave_hash&&std::filesystem::last_write_time(selected.recording)==wave_stamp
             &&state::read_bytes(asset)==original,"Color-reader playback/reopen rewrote actual audio or the curricular asset");
-        std::cout<<"PASS current curricular source "<<number+1<<": actual ef_dora/.5 PCM and word timing, colored ink/neutral background without underline, pause/reopen/resume/rewind, exact QA text/emphasis/zoom/selection; explanation is a plain QA copy, not activated original feedback\n";
+        std::cout<<"PASS current curricular source "<<number+1<<": actual ef_dora/.5 PCM and word timing, pending gray/read original ink, unchanged neutral backgrounds without underline, pause/reopen/resume/rewind/stop, exact QA text/emphasis/zoom/selection; explanation is a plain QA copy, not activated original feedback\n";
     }
 }
 void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>& backend) {
@@ -1770,18 +1780,25 @@ void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>&
     SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&old_selection));
     const auto original_background=(word_style.dwEffects&CFE_AUTOBACKCOLOR)
         ?reader_theme::background(old_part.target):word_style.crBackColor;
-    const auto pending_ink=reader_theme::unread_color(original_background);
-    const auto reference_ranges=rich_text_reference_ranges(old_part.target);
-    const bool reference=std::ranges::any_of(reference_ranges,[&](const auto& range){return range.first<=character&&character<range.second;});
-    const auto pending_background=reader_theme::unread_reference_background(old_part.target,original_background,word_style.crTextColor);
+    const auto surface=reader_theme::background(old_part.target);auto semantic_surface=surface;
+    const auto references=rich_text_reference_ranges(old_part.target);
+    if(!references.empty()){
+        CHARRANGE first_reference{static_cast<LONG>(references.front().first),static_cast<LONG>(references.front().first+1)};
+        SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&first_reference));CHARFORMAT2W semantic{};semantic.cbSize=sizeof(semantic);
+        SendMessageW(old_part.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&semantic));
+        SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&old_selection));
+        semantic_surface=(semantic.dwEffects&CFE_AUTOBACKCOLOR)?surface:semantic.crBackColor;
+    }
+    const auto grays=reader_theme::unread_colors(surface,semantic_surface);
+    const auto pending_ink=original_background==semantic_surface?grays.second:original_background==surface?grays.first:reader_theme::unread_color(original_background);
     const auto word_is_pending=[&]{
         CHARRANGE selection{};SendMessageW(old_part.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
         SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&timed_word));CHARFORMAT2W current{};current.cbSize=sizeof(current);
         SendMessageW(old_part.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&current));
         SendMessageW(old_part.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
-        if(reference){check(current.crTextColor==word_style.crTextColor&&!(current.dwEffects&CFE_UNDERLINE),
-            "Missing-audio recovery changed a reference's semantic ink or added an unwanted underline");
-            return !(current.dwEffects&CFE_AUTOBACKCOLOR)&&current.crBackColor==pending_background;}
+        check((current.dwEffects&CFE_AUTOBACKCOLOR)==(word_style.dwEffects&CFE_AUTOBACKCOLOR)
+            &&((current.dwEffects&CFE_AUTOBACKCOLOR)||current.crBackColor==word_style.crBackColor),
+            "Missing-audio recovery changed the timed word's original background");
         return current.crTextColor==pending_ink;
     };
     check(!word_is_pending(),"The real word was not read before deleting its private recording");

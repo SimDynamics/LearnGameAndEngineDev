@@ -74,15 +74,6 @@ void color(HWND edit,ITextDocument* document,long start,long end,COLORREF color,
         if(SUCCEEDED(document->Range(start,end,&range))&&range){const auto queried=range->GetFont(&font);range->Release();
             if(SUCCEEDED(queried)&&font){const auto result=font->SetForeColor(automatic?tomAutoColor:static_cast<long>(color));font->Release();if(SUCCEEDED(result))return;}}}
     CHARRANGE selection{start,end};SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_COLOR;format.dwEffects=automatic?CFE_AUTOCOLOR:0;format.crTextColor=color;SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));}
-void background(HWND edit,ITextDocument* document,long start,long end,COLORREF fill,bool automatic=false){
-    if(end<=start)return;
-    if(document){ITextRange* range=nullptr;ITextFont* font=nullptr;
-        if(SUCCEEDED(document->Range(start,end,&range))&&range){const auto queried=range->GetFont(&font);range->Release();
-            if(SUCCEEDED(queried)&&font){const auto result=font->SetBackColor(automatic?tomAutoColor:static_cast<long>(fill));font->Release();if(SUCCEEDED(result))return;}}}
-    CHARRANGE selection{start,end};SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
-    CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_BACKCOLOR;format.dwEffects=automatic?CFE_AUTOBACKCOLOR:0;format.crBackColor=fill;
-    SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
-}
 }
 ReadingShade::ReadingShade(HWND window,std::string source):window_(window),source_(wide(source)){
     if(!IsWindow(window_))return;displayed_=native_text(window_);map_.resize(source_.size()+1);
@@ -111,7 +102,7 @@ ReadingShade::ReadingShade(HWND window,std::string source):window_(window),sourc
         if(first>=last||first<previous_end||last>displayed_.size())return;
         previous_end=last;
     }
-    Transaction transaction(window_);std::size_t reference_index=0;
+    Transaction transaction(window_);
     for(long at=0;at<static_cast<long>(displayed_.size());++at){OriginalInk ink;
         // Reading a TOM range is allowed on readonly text and leaves the UI
         // selection untouched, including while changing narration segments.
@@ -120,11 +111,13 @@ ReadingShade::ReadingShade(HWND window,std::string source):window_(window),sourc
             ink.automatic=(format.dwEffects&CFE_AUTOCOLOR)!=0;ink.color=ink.automatic?0:format.crTextColor;
             ink.automatic_background=(format.dwEffects&CFE_AUTOBACKCOLOR)!=0;ink.background=ink.automatic_background?0:format.crBackColor;
         }
-        while(reference_index<references_.size()&&references_[reference_index].second<=static_cast<std::size_t>(at))++reference_index;
-        const bool reference=reference_index<references_.size()&&references_[reference_index].first<=static_cast<std::size_t>(at);
         if(!ink_.empty()&&ink_.back().color==ink.color&&ink_.back().automatic==ink.automatic&&ink_.back().background==ink.background&&
-            ink_.back().automatic_background==ink.automatic_background&&ink_.back().reference==reference)ink_.back().end=at+1;
-        else ink_.push_back({at,at+1,ink.color,ink.background,ink.automatic,ink.automatic_background,reference});}
+            ink_.back().automatic_background==ink.automatic_background)ink_.back().end=at+1;
+        else ink_.push_back({at,at+1,ink.color,ink.background,ink.automatic,ink.automatic_background});}
+    surface_=reader_theme::background(window_);semantic_surface_=surface_;
+    if(!references_.empty())for(const auto& ink:ink_)if(static_cast<std::size_t>(ink.start)<=references_.front().first&&references_.front().first<static_cast<std::size_t>(ink.end)){
+        semantic_surface_=ink.automatic_background?surface_:ink.background;break;}
+    const auto grays=reader_theme::unread_colors(surface_,semantic_surface_);prose_gray_=grays.first;semantic_gray_=grays.second;
     valid_=true;
 }
 ReadingShade::~ReadingShade(){restore();}
@@ -136,12 +129,8 @@ void ReadingShade::read_through(std::size_t source){
         for(const auto& ink:ink_)if(ink.end>start&&ink.start<end){
             const auto begin=std::max(ink.start,start),last=std::min(ink.end,end);
             const auto surface=ink.automatic_background?reader_theme::background(window_):ink.background;
-            if(ink.reference){
-                color(window_,transaction.document,begin,last,ink.color,ink.automatic);
-                const auto fill=reader_theme::unread_reference_background(window_,surface,
-                    ink.automatic?reader_theme::foreground(window_):ink.color);
-                if(fill!=surface)background(window_,transaction.document,begin,last,fill);
-            }else color(window_,transaction.document,begin,last,reader_theme::unread_color(surface));
+            const auto gray=surface==semantic_surface_?semantic_gray_:surface==surface_?prose_gray_:reader_theme::unread_color(surface);
+            color(window_,transaction.document,begin,last,gray);
         }
     };
     if(boundary_<0){
@@ -152,7 +141,6 @@ void ReadingShade::read_through(std::size_t source){
         // or unread lines below the current word.
         for(const auto& ink:ink_)if(ink.end>boundary_&&ink.start<boundary){
             color(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.color,ink.automatic);
-            if(ink.reference)background(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.background,ink.automatic_background);
         }
     }else{
         // Seeking backward dims only the interval that became unread again.
@@ -165,7 +153,6 @@ void ReadingShade::restore(){
     Transaction transaction(window_,true);
     for(const auto& ink:ink_)if(ink.end>boundary_){
         color(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.color,ink.automatic);
-        if(ink.reference)background(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.background,ink.automatic_background);
     }
     boundary_=-1;
 }

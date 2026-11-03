@@ -42,14 +42,13 @@ void reference_background(HWND target,std::size_t at){const auto style=character
     const auto ranges=rich_text_reference_ranges(target);
     const bool covered=std::ranges::any_of(ranges,[&](const auto& range){return range.first<=at&&at<range.second;});
     const bool valid=!(style.dwEffects&CFE_AUTOBACKCOLOR)&&background==expected
-        &&GetRValue(background)==GetGValue(background)&&GetGValue(background)==GetBValue(background)
         &&background!=reader_theme::background(target)&&covered;
     if(!valid){std::cerr<<"Reference background mismatch: id="<<GetDlgCtrlID(target)<<" utf16="<<at
         <<" ink="<<style.crTextColor<<" background="<<background<<" expected="<<expected<<" surface="<<reader_theme::background(target)
         <<" auto="<<((style.dwEffects&CFE_AUTOBACKCOLOR)!=0)<<" effects="<<style.dwEffects<<" font="<<utf8(style.szFaceName)<<" ranges=";
         for(const auto& [first,last]:ranges)std::cerr<<'['<<first<<','<<last<<')';
         std::cerr<<" visible="<<edit_text(target)<<'\n';}
-    check(valid,"An actual reference lacks its neutral background/native range or uses a colored accent");
+    check(valid,"An actual reference lacks its exact static Android background/native range");
 }
 struct View{
     WindowsEnvironment environment;
@@ -300,6 +299,9 @@ void source_and_shading(View& fixture,HWND target,std::string_view source,std::s
     for(std::size_t at=0;at<shown.size();++at)before.push_back(character(target,static_cast<LONG>(at)));
     const auto references=rich_text_reference_ranges(target);
     for(const auto& [first,last]:references)check(first<last&&last<=shown.size(),"A native reference range falls outside actual displayed UTF16 text");
+    const auto surface=reader_theme::background(target);
+    const auto semantic=references.empty()?surface:(before[references.front().first].dwEffects&CFE_AUTOBACKCOLOR)?surface:before[references.front().first].crBackColor;
+    const auto grays=reader_theme::unread_colors(surface,semantic);
     for(const auto& style:before)check(!(style.dwEffects&CFE_UNDERLINE),"Automatically rendered curriculum acquired a typographic underline");
     for(const auto& range:curriculum::emphasis_ranges(source,emphasis)){
         const auto start=wide(visible_prose(std::string(source.substr(0,range.start)))).size();
@@ -308,21 +310,18 @@ void source_and_shading(View& fixture,HWND target,std::string_view source,std::s
         for(auto at=start;at<end;++at)check(((before.at(at).dwEffects&CFE_BOLD)!=0)==bold&&((before.at(at).dwEffects&CFE_ITALIC)!=0)==italic,
             "Technical references replaced the actual authored partial emphasis");
     }
-    CHARRANGE selected{3,8};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    CHARRANGE selected{static_cast<LONG>(std::min<std::size_t>(3,shown.size())),static_cast<LONG>(std::min<std::size_t>(8,shown.size()))};
+    SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
     {ReadingShade shade(target,std::string(source));shade.read_through(0);
         for(std::size_t at=0;at<before.size();++at){const auto pending=character(target,static_cast<LONG>(at));
             check((pending.dwEffects&(CFE_BOLD|CFE_ITALIC|CFE_UNDERLINE))==(before[at].dwEffects&(CFE_BOLD|CFE_ITALIC|CFE_UNDERLINE)),
                 "Actual pending narration changed an existing style or partial emphasis");
-            const bool reference=std::ranges::any_of(references,[&](const auto& range){return range.first<=at&&at<range.second;});
             const auto original_background=(before[at].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(target):before[at].crBackColor;
-            if(reference){const auto background=(pending.dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(target):pending.crBackColor;
-                check(pending.crTextColor==before[at].crTextColor&&background==reader_theme::unread_reference_background(target,original_background,before[at].crTextColor),
-                    "An actual pending reference lost its exact category ink or neutral background");
-                if(!reader_theme::palette(target).high_contrast)check(GetRValue(background)==GetGValue(background)&&GetGValue(background)==GetBValue(background),"A pending reference inherited a red/colored accent");
-            }else check(pending.crTextColor==reader_theme::unread_color(original_background)
+            const auto expected_gray=original_background==semantic?grays.second:original_background==surface?grays.first:reader_theme::unread_color(original_background);
+            check(pending.crTextColor==expected_gray
                 &&(pending.dwEffects&CFE_AUTOBACKCOLOR)==(before[at].dwEffects&CFE_AUTOBACKCOLOR)
                 &&((before[at].dwEffects&CFE_AUTOBACKCOLOR)||pending.crBackColor==before[at].crBackColor),
-                "Ordinary pending curricular prose escaped gray reading policy or acquired a background");}
+                "Pending curricular glyphs escaped uniform gray reading policy or changed their original static background");}
         shade.read_through(wide(source).size());shade.restore();}
     CHARRANGE after{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
     check(after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&edit_text(target)==displayed,"Actual reader shading changed selection or source text");
@@ -334,6 +333,47 @@ void source_and_shading(View& fixture,HWND target,std::string_view source,std::s
     const auto state_after=read_lesson_state(fixture.view);
     if(state_after!=state_before)native_differences(state_before.preferences.at("native_windows"),state_after.preferences.at("native_windows"));
     check(state_after==state_before,"A formatting-only transaction changed progress, attempts, compiler drafts, responses, preferences or narration");
+}
+void naming_options(){
+    const auto relative="objetos_y_estado/lesson_nombres_con_intencion.json";
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+    const auto original=state::read_bytes(path);const auto lesson=load(relative);
+    const auto location=curriculum::stable_block_position(lesson,"block_0001_0002");
+    check(location&&location->page==1&&location->block==2,"The real U2L4 naming exercise moved");
+    const auto& block=lesson.pages[1].blocks[2];
+    check(block.question=="¿Cuál es un nombre válido según la convención del curso?"&&
+        block.options==std::vector<std::string>{"2cajas","cajas_totales","cajas totales"},"The independently identified visible naming samples changed");
+    View fixture(lesson,1,true);
+    std::vector<std::vector<CHARFORMAT2W>> original_styles;
+    const auto verify=[&]{
+        for(std::size_t option=0;option<block.options.size();++option){const auto target=fixture.item(2,21+static_cast<int>(option)*2);
+            const auto shown=wide(edit_text(target));check(edit_text(target)==block.options[option],"The naming specimen was repaired or rewritten to look valid");
+            std::vector<CHARFORMAT2W> styles;
+            for(std::size_t at=0;at<shown.size();++at){const auto style=character(target,static_cast<LONG>(at));styles.push_back(style);
+                check(!(style.dwEffects&CFE_UNDERLINE),"A valid/invalid option acquired a typographic underline");
+                if(!reader_theme::palette(target).high_contrast){
+                    check(!(style.dwEffects&CFE_AUTOBACKCOLOR)&&style.crBackColor==reader_theme::reference_background(target),"An invalid naming sample or its meaningful internal space lacks the same static Android backdrop");
+                    if(shown[at]!=L' ')reference_background(target,at);
+                }
+            }
+            if(original_styles.size()<block.options.size())original_styles.push_back(styles);
+            else for(std::size_t at=0;at<styles.size();++at)check(styles[at].crTextColor==original_styles[option][at].crTextColor&&
+                styles[at].dwEffects==original_styles[option][at].dwEffects&&styles[at].crBackColor==original_styles[option][at].crBackColor,
+                "Selecting/reopening an option changed its formatting according to correctness or selection");
+            source_and_shading(fixture,target,block.options[option]);
+        }
+        // The neighboring question has prose explanations, not identifier
+        // specimens. Its ordinary words must never all become colored names.
+        const auto& ordinary=lesson.pages[1].blocks[3];
+        for(std::size_t option=0;option<ordinary.options.size();++option){const auto target=fixture.item(3,21+static_cast<int>(option)*2);
+            const auto text=wide(ordinary.options[option]);ordinary_span(target,text,text);}
+        check(edit_text(fixture.item(2,4)).empty()&&edit_text(fixture.item(3,4)).empty(),"Technical-option formatting exposed hidden solution/feedback before checking");
+    };
+    verify();
+    for(const int selected:{0,1,2}){SendMessageW(fixture.item(2,20+selected*2),BM_CLICK,0,0);pump();verify();
+        fixture.reopen();verify();check(SendMessageW(fixture.item(2,20+selected*2),BM_GETCHECK,0,0)==BST_CHECKED,"Reopening lost the actual selected alternative");}
+    check(state::read_bytes(path)==original,"Technical-option QA changed the current authored JSON");
+    std::cout<<"PASS actual U2L4 naming options: all three valid/invalid samples equally backed, ordinary explanation choices preserved, no solution exposure, selection/reopen, source/narration/state and static backgrounds\n";
 }
 void current_u2_roles(){
     const auto relative="objetos_y_estado/lesson_estado_asignacion_y_copia.json";const auto lesson=load(relative);
@@ -456,9 +496,9 @@ void current_u2_roles(){
     check(hash==state::sha256(state::read_bytes(source)),"Color/background QA changed the current U2 asset");
     std::cout<<"PASS actual U2 trace, operands/result, current choices/created feedback, Before/After outputs, bibliography, neutral backgrounds without underlines, source/partial emphasis, original narration, exact state and reopen; synthetic compiler prerequisites are formatting-only, not execution evidence\n";
 }
-void preview(unsigned page){
-    View fixture(load("objetos_y_estado/lesson_estado_asignacion_y_copia.json"),page-1);
-    const auto title=L"LGAED - Color y resaltado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
+void preview(unsigned page,bool naming=false){
+    View fixture(load(naming?"objetos_y_estado/lesson_nombres_con_intencion.json":"objetos_y_estado/lesson_estado_asignacion_y_copia.json"),page-1);
+    const auto title=naming?std::wstring(L"LGAED - Opciones de nombres QA"):L"LGAED - Color y resaltado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
     check(SetWindowSubclass(fixture.host,[](HWND host,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw)->LRESULT{
         if(message==WM_CLOSE){const auto& view=*reinterpret_cast<const View*>(raw);if(IsWindow(view.view))(void)flush_lesson_view(view.view);}
         return DefSubclassProc(host,message,wp,lp);
@@ -472,10 +512,11 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);
     const auto module=LoadLibraryW(L"Msftedit.dll");int result=0;
     try{check(module,"Cannot load RichEdit");reader_theme::prepare_fonts();
-        if(argc==3&&std::string_view(argv[1])=="--preview"){
+        if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
+        else if(argc==3&&std::string_view(argv[1])=="--preview"){
             const std::string_view page=argv[2];check(page=="4"||page=="6"||page=="7"||page=="9","Preview admits only the actual registered U2 pages 4, 6, 7 and 9");
             preview(static_cast<unsigned>(page[0]-'0'));
-        }else{check(argc==1,"Unknown technical-context test arguments");escape_choice();constructor_question();existing_curricular_mentions();created_buffer_feedback();current_u2_roles();}}
+        }else{check(argc==1,"Unknown technical-context test arguments");escape_choice();constructor_question();existing_curricular_mentions();created_buffer_feedback();naming_options();current_u2_roles();}}
     catch(const std::exception& error){std::cerr<<"FAIL technical context: "<<error.what()<<'\n';result=1;}
     if(module)FreeLibrary(module);OleUninitialize();return result;
 }

@@ -420,6 +420,10 @@ struct LessonView {
                 if(current.type==BlockType::multiple_choice)for(const auto& option:current.options){
                     visible_prose+='\n';visible_prose+=option;
                 }
+                const auto part=(id-1000)%100;
+                if(current.type==BlockType::multiple_choice&&part>=21&&(part-21)%2==0&&
+                    static_cast<std::size_t>((part-21)/2)<current.options.size())
+                    context.technical_sample=rich_text_naming_choice_samples(current.question,current.options);
                 if(current.type==BlockType::order_code)for(const auto& fragment:current.fragments){
                     visible_prose+='\n';visible_prose+=fragment;
                 }
@@ -1569,6 +1573,7 @@ struct LessonView {
     }
     void initialize(HWND target) {
         window = target;
+        reader_theme::set_reference_mathematics(window,route=="math_physics");
         reader_theme::set_accent(window,reader_theme::appearance_accent(data,laboratory()?std::string_view{}:std::string_view(route)));
         reader_theme::apply(window,laboratory()?reader_theme::Surface::screen:reader_theme::Surface::canvas);
         title = control(MSFTEDIT_CLASS, "", ES_READONLY | ES_MULTILINE, 105, window);

@@ -1,6 +1,7 @@
 #include "presentation/windows/cpp_project_view.hpp"
 #include "presentation/windows/card_list.hpp"
 #include "presentation/windows/internal_window.hpp"
+#include "presentation/windows/window_fullscreen.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/settings_view.hpp"
@@ -101,6 +102,7 @@ struct Dialog {
     void run(){layout_internal_windows(GetAncestor(owner,GA_ROOT));layout();
         ShowWindow(window,SW_SHOW);SetFocus(input?input:body?body:close);if(initialize)initialize();MSG message{};
         while(window&&IsWindow(window)){const auto result=GetMessageW(&message,nullptr,0,0);if(result<=0){if(result==0)PostQuitMessage(static_cast<int>(message.wParam));if(window)DestroyWindow(window);break;}
+            if(dispatch_window_fullscreen_key(GetAncestor(window,GA_ROOT),message))continue;
             if(input&&message.message==WM_KEYDOWN&&message.wParam==VK_RETURN){SendMessageW(window,WM_COMMAND,IDOK,0);continue;}
             if(!IsDialogMessageW(window,&message)){TranslateMessage(&message);DispatchMessageW(&message);}}
     }

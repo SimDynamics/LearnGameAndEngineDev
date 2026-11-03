@@ -28,6 +28,8 @@ constexpr wchar_t premium_property[] = L"LGAED.ReaderPremiumButton";
 constexpr wchar_t switch_property[] = L"LGAED.ReaderSwitchButton";
 constexpr wchar_t accent_property[] = L"LGAED.ReaderAccent";
 constexpr wchar_t text_property[] = L"LGAED.ReaderTextColor";
+constexpr wchar_t reference_math_property[] = L"LGAED.ReaderReferenceMathematics";
+constexpr wchar_t reference_tint_property[] = L"LGAED.ReaderReferenceTint";
 constexpr wchar_t scroll_paint_pending_property[] = L"LGAED.ReaderScrollbarPaintPending";
 constexpr wchar_t scroll_theme_policy_property[] = L"LGAED.ReaderScrollbarThemePolicy";
 constexpr wchar_t native_scroll_theme_property[] = L"LGAED.ReaderNativeScrollbarTheme";
@@ -68,6 +70,7 @@ LRESULT CALLBACK focus_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UIN
     if(message==WM_NCDESTROY){
         RemoveWindowSubclass(window,focus_subclass,focus_subclass_id);
         RemovePropW(window,completed_property);RemovePropW(window,icon_property);RemovePropW(window,premium_property);RemovePropW(window,switch_property);
+        RemovePropW(window,reference_math_property);RemovePropW(window,reference_tint_property);
         return DefSubclassProc(window,message,wp,lp);
     }
     if(message==WM_LBUTTONDOWN||message==WM_RBUTTONDOWN||message==WM_POINTERDOWN)keyboard_focus=false;
@@ -607,26 +610,44 @@ COLORREF unread_color(COLORREF background){
     for(int channel=0;channel<=255;++channel)if(contrast_ratio(gray(channel),background)>=4.5&&std::abs(channel-preferred)<distance){selected=channel;distance=std::abs(channel-preferred);}
     return gray(selected);
 }
-static COLORREF neutral_reference_fill(COLORREF surface,COLORREF ink,int shift,int radius){
-    const auto minimum=std::min(4.5,contrast_ratio(ink,surface));
-    const auto suitable=[&](COLORREF fill){return fill!=surface&&contrast_ratio(ink,fill)+1e-9>=minimum;};
-    const auto level=(GetRValue(surface)*299+GetGValue(surface)*587+GetBValue(surface)*114)/1000;
-    const auto preferred=std::clamp(static_cast<int>(level)+(luminance(surface)<.35?shift:-shift),0,255);
-    // Search grayscale only. The HWND's accent (including a red theme) and
-    // completion/feedback fills never participate in a pending-reading cue.
-    COLORREF selected=surface;int distance=256;
-    for(int channel=std::max(0,static_cast<int>(level)-radius);channel<=std::min(255,static_cast<int>(level)+radius);++channel){const auto fill=RGB(channel,channel,channel);
-        if(suitable(fill)&&std::abs(channel-preferred)<distance){selected=fill;distance=std::abs(channel-preferred);}}
-    return selected;
+std::pair<COLORREF,COLORREF> unread_colors(COLORREF surface,COLORREF semantic_surface){
+    const auto semantic=unread_color(semantic_surface);
+    if(contrast_ratio(semantic,surface)>=4.5)return {semantic,semantic};
+    std::optional<COLORREF> common;int distance=256;
+    for(int channel=0;channel<=255;++channel){const auto candidate=RGB(channel,channel,channel);
+        if(contrast_ratio(candidate,surface)>=4.5&&contrast_ratio(candidate,semantic_surface)>=4.5&&std::abs(channel-int(GetRValue(semantic)))<distance){
+            common=candidate;distance=std::abs(channel-int(GetRValue(semantic)));}}
+    return common?std::pair{*common,*common}:std::pair{unread_color(surface),semantic};
+}
+void set_reference_mathematics(HWND window,std::optional<bool> mathematics){
+    if(!IsWindow(window))return;
+    if(mathematics)SetPropW(window,reference_math_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(*mathematics?2:1)));
+    else RemovePropW(window,reference_math_property);
+}
+std::optional<bool> reference_mathematics(HWND window){
+    for(auto current=window;current;current=GetParent(current)){
+        const auto value=reinterpret_cast<ULONG_PTR>(GetPropW(current,reference_math_property));
+        if(value==1||value==2)return value==2;
+    }
+    return {};
+}
+void set_reference_tint(HWND window,std::optional<COLORREF> tint){
+    if(!IsWindow(window))return;
+    if(tint)SetPropW(window,reference_tint_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(*tint&0xFFFFFF)+1));
+    else RemovePropW(window,reference_tint_property);
 }
 COLORREF reference_background(HWND context){
     if(palette(context).high_contrast)return background(context);
-    return neutral_reference_fill(background(context),foreground(context),12,255);
+    const auto surface=background(context),base=foreground(context);
+    const bool mathematics=reference_mathematics(context).value_or(false);
+    if(!mathematics&&contrast_ratio(base,RGB(255,255,255))>=4.5)return RGB(31,35,48);
+    const auto stored=reinterpret_cast<ULONG_PTR>(GetPropW(context,reference_tint_property));
+    const auto tint=stored?static_cast<COLORREF>(stored-1):base;
+    const unsigned alpha=mathematics?16:8;
+    const auto composite=[&](unsigned front,unsigned back){return (front*alpha+back*(255-alpha))/255;};
+    return RGB(composite(GetRValue(tint),GetRValue(surface)),composite(GetGValue(tint),GetGValue(surface)),composite(GetBValue(tint),GetBValue(surface)));
 }
-COLORREF unread_reference_background(HWND context,COLORREF surface,COLORREF ink){
-    if(palette(context).high_contrast)return surface;
-    return neutral_reference_fill(surface,ink,8,12);
-}
+COLORREF unread_reference_background(HWND,COLORREF surface,COLORREF){return surface;}
 HBRUSH brush(Surface surface) { static Brushes brushes; return brushes.get(surface); }
 bool applied(HWND window) { return window && GetPropW(window, surface_property) != nullptr; }
 COLORREF completion_background(COLORREF surface) {

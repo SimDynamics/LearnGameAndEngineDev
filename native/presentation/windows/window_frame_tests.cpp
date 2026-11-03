@@ -40,7 +40,7 @@ void check_colors(const WindowFrameColors& actual,const WindowFrameColors& expec
 void policy(){
     for(const auto accent:{RGB(0,0,0),RGB(255,255,255),RGB(255,255,0),RGB(25,55,220),RGB(89,240,252),RGB(128,128,128)}){
         const auto active=window_frame_colors(accent,true,false),inactive=window_frame_colors(accent,false,false);
-        check(active.caption==accent&&active.border==accent,"Active chrome did not use the exact application accent");
+        check(active.caption==accent&&active.border==accent,"Active chrome did not use the exact current-screen accent");
         check(inactive.caption==window_frame_colors(RGB(3,4,5),false,false).caption,
             "Inactive chrome inherited an application accent instead of a neutral gray");
         check(GetRValue(inactive.caption)==GetGValue(inactive.caption)&&GetGValue(inactive.caption)==GetBValue(inactive.caption),
@@ -51,7 +51,7 @@ void policy(){
             check(hc.caption==DWMWA_COLOR_DEFAULT&&hc.text==DWMWA_COLOR_DEFAULT&&hc.border==DWMWA_COLOR_DEFAULT,
                 "High contrast did not reset every custom DWM color to the Windows default");}
     }
-    std::cout<<"PASS native frame policy: exact global accent, neutral inactive gray, contrasting text, high-contrast defaults\n";
+    std::cout<<"PASS native frame policy: exact supplied screen accent, neutral inactive gray, contrasting text, high-contrast defaults\n";
 }
 void native_frame(){
     Window frame;const auto style=GetWindowLongPtrW(frame.value,GWL_STYLE),extended=GetWindowLongPtrW(frame.value,GWL_EXSTYLE);
@@ -85,6 +85,22 @@ void native_frame(){
             SendMessageW(frame.value,message,0,0);check(query(frame.value,actual),"DWM lost colors during a system-theme refresh");
             check_colors(actual,window_frame_colors(accent,true,current_high_contrast()));
         }
+        for(const auto route:{"programming","","math_physics","","programming"}){
+            accent=reader_theme::appearance_accent(preferences,route);
+            update_window_frame(frame.value,accent);
+            check(query(frame.value,actual),"DWM lost colors when the current route changed");
+            check_colors(actual,window_frame_colors(accent,true,current_high_contrast()));
+        }
+        auto changed=preferences;
+        changed.preferences["appearance_settings"]["route_accent_red_programming"]=std::int64_t{180};
+        changed.preferences["appearance_settings"]["route_accent_green_programming"]=std::int64_t{25};
+        changed.preferences["appearance_settings"]["route_accent_blue_programming"]=std::int64_t{45};
+        check(reader_theme::appearance_accent(changed)==reader_theme::appearance_accent(preferences),
+            "Route-accent QA unexpectedly changed the home/global color");
+        accent=reader_theme::appearance_accent(changed,"programming");update_window_frame(frame.value,accent);
+        check(query(frame.value,actual),"DWM lost colors when the current route's saved accent changed");
+        check_colors(actual,window_frame_colors(accent,true,current_high_contrast()));
+        std::cout<<"PASS real DWM route colors: Programming/home/Math/home/Programming and saved route-accent refresh without changing the global color\n";
         std::cout<<"PASS real DWM attributes: active/click-active/inactive, live accent and system-theme refresh; current HC="
             <<current_high_contrast()<<'\n';
     }else{
