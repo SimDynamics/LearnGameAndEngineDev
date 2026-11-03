@@ -57,6 +57,19 @@ CHARFORMAT2W character(HWND edit, LONG position) {
     SendMessageW(edit, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&before));
     return result;
 }
+bool reference_at(HWND target,std::size_t position){
+    const auto ranges=lgaed::presentation::rich_text_reference_ranges(target);
+    return std::ranges::any_of(ranges,[&](const auto& range){return range.first<=position&&position<range.second;});
+}
+void neutral_reference_background(HWND target,const CHARFORMAT2W& style){
+    using namespace lgaed::presentation;
+    check(!(style.dwEffects&CFE_UNDERLINE),"Curricular highlighting introduced a line under the letters");
+    if(reader_theme::palette(target).high_contrast)return;
+    const auto background=style.crBackColor;
+    check(!(style.dwEffects&CFE_AUTOBACKCOLOR)&&background==reader_theme::reference_background(target)
+        &&GetRValue(background)==GetGValue(background)&&GetGValue(background)==GetBValue(background)
+        &&background!=reader_theme::background(target),"A curricular reference lacks its real neutral background or inherited a colored accent");
+}
 struct NativeRaster {LONG width=0,height=0;std::vector<DWORD> pixels;};
 void save_native_raster(const NativeRaster& raster,const std::string& path){
     BITMAPFILEHEADER file{};BITMAPINFOHEADER info{};info.biSize=sizeof(info);info.biWidth=raster.width;info.biHeight=-raster.height;
@@ -331,6 +344,45 @@ int technical_range_parity(const char* path,const char* diagnostics){
     }
     std::cout<<"Canonical Android range parity: "<<checked<<" cases, "<<failed<<" mismatches\n";return failed?1:0;
 }
+void reference_ranges_follow_effective_text_changes(){
+    using namespace lgaed::presentation;
+    Window parent{CreateWindowExW(0,L"STATIC",L"Hidden reference ownership QA",WS_OVERLAPPEDWINDOW,
+        0,0,600,400,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    Window target{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE|ES_READONLY,
+        0,0,500,200,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    check(parent.value&&target.value,"Cannot create the native readonly reference ownership fixture");
+    reader_theme::apply(target.value,reader_theme::Surface::canvas);
+    const std::string source="𐐀 La variable `valor` vale `2`. El resultado es 15.";
+    const std::string visible="𐐀 La variable valor vale 2. El resultado es 15.";
+    const auto text=wide(visible);
+    const std::vector<std::pair<std::size_t,std::size_t>> expected{{text.find(L"valor"),text.find(L"valor")+5},
+        {text.find(L"2"),text.find(L"2")+1},{text.find(L"15"),text.find(L"15")+2}};
+    const auto publish=[&]{set_rich_text(target.value,source);
+        check(edit_text(target.value)==visible&&rich_text_reference_ranges(target.value)==expected,
+            "The renderer did not publish the independently expected native UTF16 reference ranges");};
+    publish();SendMessageW(target.value,EM_EMPTYUNDOBUFFER,0,0);
+    CHARRANGE selected{static_cast<LONG>(expected.front().first),static_cast<LONG>(expected.front().second)};
+    SendMessageW(target.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    // Clipboard operations are deliberately unnecessary: native character,
+    // clear and empty Undo/Redo attempts exercise rejected readonly input.
+    for(const UINT message:{WM_CHAR,WM_CLEAR,WM_UNDO,EM_UNDO,EM_REDO}){
+        SendMessageW(target.value,message,message==WM_CHAR?L'X':0,0);
+        if(edit_text(target.value)!=visible||rich_text_reference_ranges(target.value)!=expected)
+            std::cerr<<"Readonly reference ownership mismatch after message="<<message<<'\n';
+        check((GetWindowLongPtrW(target.value,GWL_STYLE)&ES_READONLY)&&edit_text(target.value)==visible
+            &&rich_text_reference_ranges(target.value)==expected,"Rejected readonly input invalidated unchanged reference ownership");
+    }
+    const std::wstring replacement=L"Texto realmente reemplazado 7.";
+    SendMessageW(target.value,WM_SETTEXT,0,reinterpret_cast<LPARAM>(replacement.c_str()));
+    check(edit_text(target.value)==utf8(replacement)&&rich_text_reference_ranges(target.value).empty(),
+        "A real programmatic replacement retained references belonging to the old document");
+    publish();const auto same_text=wide(visible);
+    SendMessageW(target.value,WM_SETTEXT,0,reinterpret_cast<LPARAM>(same_text.c_str()));
+    check(edit_text(target.value)==visible&&rich_text_reference_ranges(target.value).empty(),
+        "Replacing document formatting with the same text retained stale reference ownership");
+    publish();
+    std::cout<<"PASS reference ownership: rejected readonly input preserves exact UTF16 ranges; real and same-text document replacement invalidate them\n";
+}
 void curricular_role_formatting(){
     using namespace lgaed::presentation;
     Window parent{CreateWindowExW(0,L"STATIC",L"Hidden curricular role QA",WS_OVERLAPPEDWINDOW,
@@ -366,14 +418,18 @@ void curricular_role_formatting(){
             set_rich_text(target.value,source,emphasis);SendMessageW(target.value,EM_SETZOOM,zoom,100);
             check(edit_text(target.value)==displayed,"Curricular roles rewrote text, Unicode, CRLF projection or visible delimiters");
             const auto text=wide(displayed);const auto prose=character(target.value,0).crTextColor;
-            const auto expect=[&](std::wstring_view context,std::wstring_view token,COLORREF expected,bool underlined){
+            const auto expect=[&](std::wstring_view context,std::wstring_view token,COLORREF expected,bool highlighted){
                 const auto start=text.find(context),local=context.find(token);
                 check(start!=text.npos&&local!=context.npos,"The independently authored role fixture lost a passage");
                 for(std::size_t at=start+local;at<start+local+token.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
-                    if(style.crTextColor!=expected||((style.dwEffects&CFE_UNDERLINE)!=0)!=underlined)
+                    if(style.crTextColor!=expected||(style.dwEffects&CFE_UNDERLINE))
                         std::cerr<<"Curricular role mismatch: surface="<<surface<<" zoom="<<zoom<<" context="<<utf8(context)<<" token="<<utf8(token)<<" offset="<<at-start<<'\n';
-                    check(style.crTextColor==expected&&((style.dwEffects&CFE_UNDERLINE)!=0)==underlined,
-                        "A curricular reference lost its role ink/real underline or decorated adjacent prose/citation");
+                    check(style.crTextColor==expected&&!(style.dwEffects&CFE_UNDERLINE),
+                        "A curricular reference lost its role ink or acquired an automatic underline");
+                    if(highlighted){neutral_reference_background(target.value,style);
+                        if(!reader_theme::palette(target.value).high_contrast)check(reference_at(target.value,at),"A real highlighted reference has no native reading range");
+                    }else check((style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target.value,at),
+                        "Ordinary prose or a bibliographic citation acquired a reference background/range");
                 }
             };
             expect(L"a vale 2",L"a",code_ink(L"a"),true);
@@ -407,7 +463,7 @@ void curricular_role_formatting(){
             const auto bold=character(target.value,static_cast<LONG>(text.find(L"variable")));
             check((bold.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)
                 &&(character(target.value,static_cast<LONG>(text.find(L"produce"))).dwEffects&CFE_ITALIC),
-                "Automatic curricular underlining replaced authored bold/italic");
+                "Curricular highlighting replaced authored bold/italic");
             const std::string question="Ordena las acciones para conservar primero el valor 3 en anterior y luego imprimir 8 3.";
             // This is an actual visible fragment of the current ordering
             // exercise, not its hidden correctOrder or success explanation.
@@ -416,8 +472,11 @@ void curricular_role_formatting(){
                 set_rich_text(target.value,question,{},false,RichTextRole::body,"es",{},RichTextContext{supplied?std::string_view(visible_fragment):std::string_view{}, {}});
                 const auto first=wide(question).find(L"anterior");check(first!=std::wstring::npos&&edit_text(target.value)==question,"Visible context changed the actual ordering question");
                 for(std::size_t offset=0;offset<std::wstring_view(L"anterior").size();++offset){const auto style=character(target.value,static_cast<LONG>(first+offset));
-                    check(style.crTextColor==(supplied?code_ink(L"anterior"):reader_theme::foreground(target.value))&&((style.dwEffects&CFE_UNDERLINE)!=0)==supplied,
+                    check(style.crTextColor==(supplied?code_ink(L"anterior"):reader_theme::foreground(target.value))&&!(style.dwEffects&CFE_UNDERLINE),
                         "The ordering identifier ignored visible fragment context or invented a code role without that reference");}
+                for(std::size_t offset=0;offset<std::wstring_view(L"anterior").size();++offset){const auto style=character(target.value,static_cast<LONG>(first+offset));
+                    if(supplied)neutral_reference_background(target.value,style);
+                    else check((style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target.value,first+offset),"An ordering name without visible context acquired a technical background");}
             }
             // set_rich_text loads a whole document via EM_STREAMIN; it is not
             // an in-place edit transaction. The editor's syntax-only refresh
@@ -427,8 +486,21 @@ void curricular_role_formatting(){
             check(after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&edit_text(reference.value)==program,
                 "Refreshing the independent native code palette moved selection or changed source");
         }
+        const auto reference_background_before=reader_theme::reference_background(target.value);
+        reader_theme::set_accent(parent.value,RGB(228,50,72));set_rich_text(target.value,source,emphasis);
+        check(reader_theme::reference_background(target.value)==reference_background_before,"A red route accent recolored the static reference background");
+        const auto actual_reference=wide(edit_text(target.value)).find(L"turnos");
+        neutral_reference_background(target.value,character(target.value,static_cast<LONG>(actual_reference)));
+        reader_theme::set_accent(parent.value,std::nullopt);
+        set_rich_text(target.value,"Lección 3 de 6: página 9",{},false,RichTextRole::lesson_title);
+        const auto heading=wide(edit_text(target.value));const auto heading_ink=character(target.value,0).crTextColor;
+        check(rich_text_reference_ranges(target.value).empty(),"Lesson chrome acquired curricular reference metadata");
+        for(std::size_t at=0;at<heading.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
+            check(!(style.dwEffects&CFE_UNDERLINE)&&(style.dwEffects&CFE_AUTOBACKCOLOR)&&style.crTextColor==heading_ink,
+                "A lesson header/counter acquired curricular background, numeric ink or underline");}
     }
-    std::cout<<"PASS curricular roles: native C++ palette, active mathematics neutral, actual underline, citations/homonyms, Unicode/CRLF, emphasis and four zooms; actual contrast mode only\n";
+    reference_ranges_follow_effective_text_changes();
+    std::cout<<"PASS curricular roles: native C++ palette, active mathematics neutral, neutral background without underlines/red accents, citations/homonyms, Unicode/CRLF, emphasis, lesson chrome and four zooms; actual contrast mode only\n";
 }
 }
 int main(int argc,char** argv) {
@@ -700,18 +772,15 @@ int main(int argc,char** argv) {
                 set_rich_text(editor.value,"std::cout",{},false,role,"es");const auto style=character(editor.value,0);
                 if(reader_theme::palette().high_contrast)check(style.dwEffects&CFE_AUTOBACKCOLOR,"A semantic role replaced the system high-contrast background");
                 else{
-                    const auto surface=reader_theme::background(editor.value);const auto ink=role==RichTextRole::body?RGB(205,208,215):RGB(255,255,255);
-                    // Android's view.currentTextColor is the tint reference:
-                    // 8/255 foreground over 247/255 surface, integer floor.
-                    const auto expected=RGB((GetRValue(ink)*8+GetRValue(surface)*247)/255,(GetGValue(ink)*8+GetGValue(surface)*247)/255,(GetBValue(ink)*8+GetBValue(surface)*247)/255);
-                    check(!(style.dwEffects&CFE_AUTOBACKCOLOR)&&style.crBackColor==expected,"A semantic role did not retain Android's exact current-text-color background tint");
+                    if(role!=RichTextRole::lesson_title)neutral_reference_background(editor.value,style);
+                    else check(style.dwEffects&CFE_AUTOBACKCOLOR,"A lesson title acquired a curricular reference background");
                 }
+                check(!(style.dwEffects&CFE_UNDERLINE),"A body/prompt/heading/title introduced a typographic underline");
             }
             if(!reader_theme::palette().high_contrast){
                 reader_theme::set_text_color(editor.value,RGB(235,239,245));set_rich_text(editor.value,"std::cout");
-                const auto surface=reader_theme::background(editor.value);const auto expected=RGB((235*8+GetRValue(surface)*247)/255,(239*8+GetGValue(surface)*247)/255,(245*8+GetBValue(surface)*247)/255);
-                check(character(editor.value,0).crBackColor==expected&&reader_theme::foreground(editor.value)==RGB(235,239,245),
-                    "The legacy paragraph tint replaced an explicit mathematics-widget foreground reference");
+                neutral_reference_background(editor.value,character(editor.value,0));
+                check(reader_theme::foreground(editor.value)==RGB(235,239,245),"The neutral background replaced an explicit mathematics-widget foreground reference");
                 reader_theme::set_text_color(editor.value,std::nullopt);
             }
             const std::string source="𐐀 Lee std::cout y continúa con C++. El operador es << y conserva. No añadas ; a cualquier línea; luego lee.";
@@ -725,8 +794,8 @@ int main(int argc,char** argv) {
                 const bool decorated=technical_prose::overlaps({at,at+1},expected)&&!reader_theme::palette().high_contrast;
                 const auto style=character(editor.value,static_cast<LONG>(at));
                 check(((style.dwEffects&CFE_AUTOBACKCOLOR)==0)==decorated,"The Android backdrop missed a technical glyph or spilled into adjacent prose/C++");
-                check(((style.dwEffects&CFE_UNDERLINE)!=0)==technical_prose::overlaps({at,at+1},expected),
-                    "Technical prose lacks its real underline or underlines an ordinary prose/C++ neighbor");
+                check(!(style.dwEffects&CFE_UNDERLINE),"Technical highlighting added a typographic underline");
+                if(decorated)neutral_reference_background(editor.value,style);
             }
             const auto technical=character(editor.value,static_cast<LONG>(visible.find(L"std::cout"))),language=character(editor.value,static_cast<LONG>(visible.find(L"C++")));
             check((technical.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&technical.yHeight==270&&std::wstring_view(technical.szFaceName)==reader_theme::code_font_face(),

@@ -23,6 +23,32 @@ namespace lgaed::presentation {
 namespace {
 constexpr UINT_PTR hint_subclass_id=0x4c474854;
 constexpr UINT_PTR semantic_background_subclass_id=0x4c475342;
+constexpr UINT_PTR reference_ranges_subclass_id=0x4c475246;
+struct ReferenceRanges {
+    std::wstring text;
+    std::vector<std::pair<std::size_t,std::size_t>> ranges;
+    static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
+        auto* self=reinterpret_cast<ReferenceRanges*>(raw);
+        if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,reference_ranges_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
+        // Read-only controls reject typing/paste/Undo without changing their
+        // document. Their reference ownership must survive those attempts.
+        // The getter also checks the complete current text for actual edits.
+        if(message==WM_SETTEXT||message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL){self->text.clear();self->ranges.clear();}
+        return DefSubclassProc(edit,message,wp,lp);
+    }
+};
+void publish_references(HWND edit,std::wstring_view text,std::vector<std::pair<std::size_t,std::size_t>> ranges){
+    DWORD_PTR attached=0;
+    ReferenceRanges* state=nullptr;
+    if(GetWindowSubclass(edit,ReferenceRanges::proc,reference_ranges_subclass_id,&attached))state=reinterpret_cast<ReferenceRanges*>(attached);
+    else if(!ranges.empty()){
+        auto created=std::make_unique<ReferenceRanges>();
+        if(!SetWindowSubclass(edit,ReferenceRanges::proc,reference_ranges_subclass_id,reinterpret_cast<DWORD_PTR>(created.get())))
+            throw std::runtime_error("Cannot attach curricular reference metadata");
+        state=created.release();
+    }
+    if(state){state->text=text;state->ranges=std::move(ranges);}
+}
 struct SemanticBackground {
     COLORREF color=0;
     bool painting=false;
@@ -417,12 +443,6 @@ void format(HWND edit, std::size_t start, std::size_t end, COLORREF color, const
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_COLOR; style.crTextColor = color;
     if (font) { style.dwMask |= CFM_FACE; wcscpy_s(style.szFaceName, font); }
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&style));
-}
-void underline(HWND edit,std::size_t start,std::size_t end,bool enabled=true) {
-    if(start>=end)return;select(edit,start,end);
-    CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_UNDERLINE|CFM_UNDERLINETYPE;
-    style.dwEffects=enabled?CFE_UNDERLINE:0;style.bUnderlineType=enabled?CFU_UNDERLINE:CFU_UNDERLINENONE;
-    SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
 }
 bool identifier_start(wchar_t c) { return (c >= L'A' && c <= L'Z') || (c >= L'a' && c <= L'z') || c == L'_'; }
 bool identifier_part(wchar_t c) { return identifier_start(c) || (c >= L'0' && c <= L'9'); }
@@ -929,6 +949,36 @@ std::string edit_text(HWND edit) {
     }
     return utf8(normalized);
 }
+std::vector<std::pair<std::size_t,std::size_t>> rich_text_reference_ranges(HWND edit){
+    DWORD_PTR attached=0;
+    if(!IsWindow(edit)||!GetWindowSubclass(edit,ReferenceRanges::proc,reference_ranges_subclass_id,&attached))return {};
+    const auto* state=reinterpret_cast<const ReferenceRanges*>(attached);
+    if(state->ranges.empty()||state->text!=wide(edit_text(edit)))return {};
+    return state->ranges;
+}
+void map_rich_text_reference_ranges(HWND edit,
+        std::span<const std::pair<std::size_t,std::size_t>> source_ranges,
+        std::span<const std::size_t> source_to_native){
+    if(!IsWindow(edit))throw std::invalid_argument("The transformed reference control is unavailable");
+    const auto native=wide(edit_text(edit));
+    if(source_to_native.empty()||source_to_native.front()!=0||source_to_native.back()!=native.size()||
+            !std::ranges::is_sorted(source_to_native))
+        throw std::invalid_argument("The transformed reference map is not a complete monotone UTF-16 map");
+    std::vector<std::pair<std::size_t,std::size_t>> mapped;
+    std::size_t previous_end=0;
+    for(const auto& [first,last]:source_ranges){
+        if(first>=last||first<previous_end||last>=source_to_native.size())
+            throw std::invalid_argument("An original reference range is outside its UTF-16 map");
+        previous_end=last;
+        const auto begin=source_to_native[first],end=source_to_native[last];
+        const auto split=[&](std::size_t at){return at>0&&at<native.size()&&IS_HIGH_SURROGATE(native[at-1])&&IS_LOW_SURROGATE(native[at]);};
+        if(split(begin)||split(end))throw std::invalid_argument("A transformed reference range splits a Unicode character");
+        if(begin==end)continue;
+        if(!mapped.empty()&&mapped.back().second>=begin)mapped.back().second=std::max(mapped.back().second,end);
+        else mapped.emplace_back(begin,end);
+    }
+    publish_references(edit,native,std::move(mapped));
+}
 void set_edit_text(HWND edit, std::string_view text) {
     auto source = wide(text); if (source.find(L'\0') != source.npos) throw std::runtime_error("Editor text contains a null character");
     std::wstring native;
@@ -995,9 +1045,10 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         const auto begin_byte=byte_boundaries[first],end_byte=byte_boundaries[last];
         if(begin_byte==std::string_view::npos||end_byte==std::string_view::npos)throw std::invalid_argument("A mathematical range splits a UTF-16 character");
         displayed_mathematics.emplace_back(wide(std::string_view(displayed).substr(0,mapping[begin_byte])).size(),wide(std::string_view(displayed).substr(0,mapping[end_byte])).size());}}
-    auto semantic=code?technical_prose::Analysis{}:technical_prose::analyze(source,locale,inline_fragments,displayed_mathematics);
-    const auto contextual_strings=code?std::vector<technical_prose::Range>{}:contextual_string_characters(edit,source,context);
-    if(!code){
+    const bool curricular=!code&&role!=RichTextRole::lesson_title;
+    auto semantic=curricular?technical_prose::analyze(source,locale,inline_fragments,displayed_mathematics):technical_prose::Analysis{};
+    const auto contextual_strings=curricular?contextual_string_characters(edit,source,context):std::vector<technical_prose::Range>{};
+    if(curricular){
         for(const auto& range:unambiguous_cpp_types(source,locale))
             if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
         for(const auto& range:direct_cpp_initializers(source))
@@ -1009,8 +1060,8 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     // Resolve prose/code boundaries before any lexical color pass. A classic
     // analyzer can otherwise expand an explicitly isolated operator into the
     // surrounding natural-language words once its backticks are hidden.
-    const auto roles=code?technical_prose::CurricularRoles{}:technical_prose::curricular_roles(
-        source,locale,semantic,wide(context.prose),wide(context.code),inline_fragments);
+    const auto roles=curricular?technical_prose::curricular_roles(
+        source,locale,semantic,wide(context.prose),wide(context.code),inline_fragments):technical_prose::CurricularRoles{};
     if(!code)semantic.fragments=roles.code;
     const bool has_background=!reader_theme::palette().high_contrast;
     const auto backed=[&](std::size_t start,std::size_t end){return has_background&&std::ranges::any_of(semantic.fragments,[&](const auto& part){return part.first<=start&&part.second>=end;});};
@@ -1120,15 +1171,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     }
     COLORREF semantic_color=0;
     if(!code&&has_background){
-        const auto surface=reader_theme::background(edit);
-        auto foreground=role==RichTextRole::body?reader_theme::foreground(edit):RGB(255,255,255);
-        // Android LessonActivity.addParagraph keeps its legacy tint reference
-        // (205,208,215) while body glyphs brighten. Explicit widget ink, such as
-        // MathWidgetUi's 235/239/245, remains its own semantic reference.
-        if(role==RichTextRole::body&&reader_theme::applied(edit)&&foreground==reader_theme::palette(edit).text)
-            foreground=RGB(205,208,215);
-        const auto blend=[](BYTE ink,BYTE background){return static_cast<BYTE>((ink*8+background*247)/255);};
-        const auto background=1.05/(luminance(foreground)+.05)>=4.5?RGB(31,35,48):RGB(blend(GetRValue(foreground),GetRValue(surface)),blend(GetGValue(foreground),GetGValue(surface)),blend(GetBValue(foreground),GetBValue(surface)));
+        const auto background=reader_theme::reference_background(edit);
         semantic_color=background;
         const auto paint_background=[&](std::size_t first,std::size_t last){if(first>=last)return;select(edit,first,last);
             CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_BACKCOLOR;style.crBackColor=background;
@@ -1139,39 +1182,27 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             paint_background(begin,last);
         }
     }
-    if(!code){
-        const auto underline_tokens=[&](technical_prose::Range range){
-            if(range.first>=range.second||range.second>source.size())return;
-            auto at=range.first;
-            while(at<range.second){
-                while(at<range.second&&technical_prose::space(source[at]))++at;
-                const auto first=at;
-                while(at<range.second&&!technical_prose::space(source[at]))++at;
-                underline(edit,first,at);
-            }
-        };
+    std::vector<technical_prose::Range> references;
+    if(curricular){
         // The editor and prose references use the same lexer and exact ink
         // categories. No face/size/emphasis or adjacent prose is reformatted.
         for(const auto& [first,last]:roles.code){
             if(first>=last||last>source.size())continue;
             for(const auto& ink:cpp_ink(edit,std::wstring_view(source).substr(first,last-first)))
                 format(edit,first+ink.start,first+ink.end,ink.color);
-            underline_tokens({first,last});
         }
-        for(const auto& range:roles.numbers)underline_tokens(range);
         // Context can identify string contents without their C++ quote marks
         // (an escape's named character, or a displayed output such as Carga
         // lista). Relexing those contents as identifiers must not erase the
         // already established string role. Numeric outputs still win below.
         const auto string_roles=[&](const auto& ranges){for(const auto& [first,last]:ranges){
             if(first>=last||last>source.size()||protected_text(first,last))continue;
-            format(edit,first,last,cpp_color(edit,CppInk::string));underline_tokens({first,last});
+            format(edit,first,last,cpp_color(edit,CppInk::string));
         }};
         string_roles(explicit_strings);string_roles(quoted_literals);string_roles(contextual_strings);
         for(const auto& [first,last]:prose_language_names){
             format(edit,first,last,role==RichTextRole::body||reader_theme::palette().high_contrast
                 ?reader_theme::foreground(edit):RGB(255,255,255));
-            underline(edit,first,last,false);
         }
         // Bibliographic numbers stay ordinary text. Actual source literals
         // are excluded by the role classifier, even when their value is a year.
@@ -1179,7 +1210,6 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             if(first>=last||last>source.size())continue;
             format(edit,first,last,role==RichTextRole::body||reader_theme::palette().high_contrast
                 ?reader_theme::foreground(edit):RGB(255,255,255));
-            underline(edit,first,last,false);
         }
         // Last ink wins over legacy code/output heuristics, including explicit
         // numeric spans. Use the existing mathematical foreground policy.
@@ -1187,7 +1217,34 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             if(first>=last||last>source.size()||technical_prose::overlaps({first,last},roles.citations))continue;
             format(edit,first,last,reader_theme::foreground(edit));
         }
+        // Background highlighting and reference ownership are independent of
+        // typography. Never introduce underline lines or category-colored fills.
+        references=roles.code;
+        references.insert(references.end(),roles.numbers.begin(),roles.numbers.end());
+        const auto append_references=[&](const auto& extra){references.insert(references.end(),extra.begin(),extra.end());};
+        append_references(explicit_strings);append_references(quoted_literals);append_references(contextual_strings);
+        technical_prose::curricular_role_detail::merge(references);
+        technical_prose::curricular_role_detail::subtract(references,roles.citations);
+        technical_prose::curricular_role_detail::subtract(references,prose_language_names);
+        technical_prose::curricular_role_detail::subtract(references,semantic.protected_ranges);
+        std::vector<technical_prose::Range> tokens;
+        for(const auto& [first,last]:references){
+            if(first>=last||last>source.size())continue;
+            auto at=first;
+            while(at<last){
+                while(at<last&&technical_prose::space(source[at]))++at;
+                const auto begin=at;
+                while(at<last&&!technical_prose::space(source[at]))++at;
+                if(begin==at)continue;
+                tokens.emplace_back(begin,at);
+                if(has_background){select(edit,begin,at);CHARFORMAT2W style{};style.cbSize=sizeof(style);
+                    style.dwMask=CFM_BACKCOLOR;style.crBackColor=semantic_color;
+                    SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));}
+            }
+        }
+        references=std::move(tokens);
     }
-    semantic_background(edit,semantic_color,!code&&has_background&&!semantic.fragments.empty());
+    publish_references(edit,source,references);
+    semantic_background(edit,semantic_color,!code&&has_background&&!references.empty());
 }
 } // namespace lgaed::presentation

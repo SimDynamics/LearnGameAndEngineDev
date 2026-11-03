@@ -56,6 +56,7 @@ void styles_equal(const CHARFORMAT2W& before,const CHARFORMAT2W& after) {
 void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t boundary,bool native_math = false) {
     const auto after = ink(edit); require(after.size() == before.size(),"Shading changed the original displayed text length");
     const auto native = native_math ? wide(edit_text(edit)) : std::wstring{};
+    const auto references=rich_text_reference_ranges(edit);
     for (std::size_t index = 0; index < after.size(); ++index) {
         // OfficeMath's noncharacter delimiters have object-level formatting;
         // they are not displayed glyphs. Inspect each actual letter, number
@@ -64,7 +65,7 @@ void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t bounda
         styles_equal(before[index],after[index]);
         const auto original_background=(before[index].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(edit):before[index].crBackColor;
         const auto actual_background=(after[index].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(edit):after[index].crBackColor;
-        const bool reference=(before[index].dwEffects&CFE_UNDERLINE)!=0;
+        const bool reference=std::ranges::any_of(references,[&](const auto& range){return range.first<=index&&index<range.second;});
         if (index < boundary || reference) {
             require(after[index].crTextColor == before[index].crTextColor,"A read token did not recover its original syntax color");
             require((after[index].dwEffects & CFE_AUTOCOLOR) == (before[index].dwEffects & CFE_AUTOCOLOR),
@@ -74,7 +75,7 @@ void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t bounda
                        "An unread word, operator or punctuation mark escaped the pending gray");
         if(reference&&index>=boundary){const auto original_ink=(before[index].dwEffects&CFE_AUTOCOLOR)?reader_theme::foreground(edit):before[index].crTextColor;
             require(actual_background==reader_theme::unread_reference_background(edit,original_background,original_ink),
-                "An unread underlined reference lost its theme-derived pending background");
+                "An unread renderer-identified reference lost its neutral pending background");
         }else require(actual_background==original_background&&
             (before[index].dwEffects&CFE_AUTOBACKCOLOR)==(after[index].dwEffects&CFE_AUTOBACKCOLOR),
             "A read/restored reference or ordinary prose lost its exact original background");
@@ -227,7 +228,7 @@ int main(int argc,char* argv[]) {
     test("Readonly and editable word ticks preserve real colors and UI state without selection or visibility changes",readonly_word_ticks_use_ranges_without_selecting_or_hiding_text);
     if(readonly_only){FreeLibrary(module);return failed?1:0;}
     test("Fenced and inline code keep original UTF16 reading offsets and native math mapping",fenced_code_keeps_original_reading_offsets);
-    test("Android technical backgrounds survive readonly forward backward and restored narration",[]{
+    test("Neutral technical backgrounds survive readonly forward backward and restored narration",[]{
         const std::string source="Lee std::cout y continúa con C++.";Field field(source,false,{},true);
         const auto before=ink(field.edit);const auto displayed=wide(edit_text(field.edit));
         const auto technical=displayed.find(L"std::cout"),language=displayed.find(L"C++");
@@ -235,7 +236,9 @@ int main(int argc,char* argv[]) {
         const bool high_contrast=reader_theme::palette(field.edit).high_contrast;
         require(((before[technical].dwEffects&CFE_AUTOBACKCOLOR)!=0)==high_contrast&&
             (before[0].dwEffects&CFE_AUTOBACKCOLOR)&&(before[language].dwEffects&CFE_AUTOBACKCOLOR),
-            "The real prose renderer did not keep Android's technical background or the C++ exception");
+            "The real prose renderer did not keep its technical background or the C++ exception");
+        if(!high_contrast){const auto fill=before[technical].crBackColor;
+            require(GetRValue(fill)==GetGValue(fill)&&GetGValue(fill)==GetBValue(fill),"A technical reference acquired a colored background");}
         CHARRANGE selected{1,7};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
         POINT position{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
         const auto events=SendMessageW(field.edit,EM_GETEVENTMASK,0,0),modified=SendMessageW(field.edit,EM_GETMODIFY,0,0);
@@ -332,20 +335,66 @@ int main(int argc,char* argv[]) {
         shade.read_through(source.size()); prefix(field.edit,before,before.size(),true);
         require(native_math_text_mapping(field.edit,source)->native_text == mapping->native_text,"Shading changed a mathematical glyph or operator");
     });
-    test("Automatically underlined code and neutral numbers retain their exact ink during pending read and restore",[] {
+    test("OfficeMath keeps positive native reference metadata after supplementary scalars and hidden inline delimiters",[]{
+        const std::string source="á 😀 La fracción \\(\\frac{x}{2}\\) conserva su forma.\r\nDespués `std::cout` mantiene su tinta y produce 15.";
+        Field field(source,false,{},true);
+        const auto initial=wide(edit_text(field.edit));const auto old_at=initial.find(L"std::cout");
+        require(old_at!=initial.npos,"The mixed native-math fixture lost its actual code reference");
+        const auto original_ink=character(field.edit,static_cast<LONG>(old_at)).crTextColor;
+        require(set_native_math_inline_text(field.edit,source),"The mixed fixture did not build real native OfficeMath");
+        const auto mapping=native_math_text_mapping(field.edit,source);
+        require(mapping&&mapping->built_up,"The mixed fixture lacks its actual built-up source map");
+        const auto displayed=wide(edit_text(field.edit));const auto at=displayed.find(L"std::cout"),number=displayed.find(L"15");
+        const auto references=rich_text_reference_ranges(field.edit);
+        const auto covers=[&](std::size_t first,std::size_t last){return std::ranges::any_of(references,[&](const auto& range){return range.first<=first&&last<=range.second;});};
+        require(at!=displayed.npos&&number!=displayed.npos&&covers(at,at+9)&&covers(number,number+2),
+            "OfficeMath invalidated actual C++/number reference metadata outside the formula");
+        require(displayed.find(L'`')==displayed.npos&&mapping->source_to_native.at(source_units(source,source.find("std::cout")))==at,
+            "Mixed math/reference ownership uses pre-delimiter, CRLF or pre-supplementary UTF-16 offsets");
+        require(character(field.edit,static_cast<LONG>(at)).crTextColor==original_ink,
+            "Native formula conversion changed the actual C++ reference ink");
+        const auto before=ink(field.edit);
+        require(std::ranges::none_of(before,[](const auto& value){return(value.dwEffects&CFE_UNDERLINE)!=0;}),
+            "Native math conversion introduced an automatic underline");
+        {ReadingShade shade(field.edit,source);require(shade.matches(field.edit,source),"The remapped mixed source cannot create its actual ReadingShade");
+            for(const auto bytes:{std::size_t{0},source.find("std::cout"),source.find("std::cout")+9,std::size_t{0},source.size()}){
+                const auto boundary=source_units(source,bytes);shade.read_through(boundary);
+                prefix(field.edit,before,mapping->source_to_native.at(boundary),true);
+                require(character(field.edit,static_cast<LONG>(at)).crTextColor==original_ink,
+                    "The actual mixed OfficeMath reader dimmed its C++ reference ink");
+            }
+        }
+        prefix(field.edit,before,before.size(),true);
+        require(rich_text_reference_ranges(field.edit)==references&&wide(edit_text(field.edit))==displayed,
+            "Reading the mixed source changed native text or reference ownership");
+        // Invalid map publication is atomic and does not repaint or discard the
+        // positive native metadata that the real conversion just produced.
+        std::vector<std::size_t> invalid(displayed.size()+1);for(std::size_t index=0;index<invalid.size();++index)invalid[index]=index;
+        invalid[1]=displayed.size();bool rejected=false;
+        try{map_rich_text_reference_ranges(field.edit,references,invalid);}catch(const std::invalid_argument&){rejected=true;}
+        require(rejected&&rich_text_reference_ranges(field.edit)==references,"An invalid nonmonotone map replaced valid reference ownership");
+        prefix(field.edit,before,before.size(),true);
+    });
+    test("Renderer-identified code and neutral numbers retain exact ink without automatic underlines during read and restore",[] {
         const std::string source = "𐐀 Negrita cursiva y `std::cout << \"área\";` final.\r\nEn C++, `3 * 5` produce 15.\r\nAntes: `5`\r\nAhora: `8` (Stroustrup, 2024).";
         const std::vector<lgaed::curriculum::Emphasis> emphasis{{"Negrita",0,"bold"},{"cursiva",0,"italic"}};
         Field field(source,false,emphasis,true); const auto displayed = edit_text(field.edit);
         const auto at = static_cast<LONG>(wide(displayed).find(L"std::cout"));
         const auto before = ink(field.edit);
-        require(before[static_cast<std::size_t>(at)].dwEffects&CFE_UNDERLINE,"The real renderer did not automatically underline its code reference");
+        const auto references=rich_text_reference_ranges(field.edit);
+        const auto reference=[&](std::size_t point){return std::ranges::any_of(references,[&](const auto& range){return range.first<=point&&point<range.second;});};
+        require(reference(static_cast<std::size_t>(at)),"The real renderer did not identify its decorated code reference");
+        require(std::ranges::none_of(before,[](const auto& item){return (item.dwEffects&CFE_UNDERLINE)!=0;}),
+            "The real renderer automatically underlined curricular text");
         require(before[wide(displayed).find(L"Negrita")].dwEffects & CFE_BOLD,"The real renderer did not apply bold to the fixture");
         require(before[wide(displayed).find(L"cursiva")].dwEffects & CFE_ITALIC,"The real renderer did not apply italic to the fixture");
         for(const auto token:{L"15",L"Antes: 5",L"Ahora: 8"}){const std::wstring_view text=token;
             const auto number=text.find_first_of(L"0123456789");const auto start=wide(displayed).find(text)+number;
-            require(start<before.size()&&(before[start].dwEffects&CFE_UNDERLINE)&&before[start].crTextColor==reader_theme::foreground(field.edit),
-                "The actual renderer did not produce a neutral underlined output/result numeral");}
-        const auto year=wide(displayed).find(L"2024");require(year<before.size()&&!(before[year].dwEffects&CFE_UNDERLINE),"A citation year acquired a technical underline");
+            require(start<before.size()&&reference(start)&&before[start].crTextColor==reader_theme::foreground(field.edit),
+                "The actual renderer did not identify a neutral output/result numeral");}
+        const auto year=wide(displayed).find(L"2024");require(year<before.size()&&!reference(year),"A citation year acquired technical-reference metadata");
+        require(!reference(wide(displayed).find(L"Negrita"))&&!reference(wide(displayed).find(L"cursiva")),
+            "Ordinary emphasized prose acquired technical-reference metadata");
         CHARRANGE selected{3,9};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
         POINT scroll{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         { ReadingShade shade(field.edit,source);
@@ -359,14 +408,53 @@ int main(int argc,char* argv[]) {
         }
         prefix(field.edit,before,before.size());
     });
-    test("Reference pending backgrounds keep readable dark light and actual high-contrast palettes without changing Windows",[]{
+    test("An unrelated typographic underline never identifies a technical reference",[]{
+        const std::string source="Una palabra ordinaria conserva su estilo.";Field field(source,false,{},true);
+        require(rich_text_reference_ranges(field.edit).empty(),"The ordinary fixture unexpectedly contains a reference");
+        CHARRANGE marked{4,11};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&marked));
+        CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_UNDERLINE|CFM_UNDERLINETYPE;
+        format.dwEffects=CFE_UNDERLINE;format.bUnderlineType=CFU_UNDERLINE;
+        SendMessageW(field.edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
+        const auto before=ink(field.edit);require(before[4].dwEffects&CFE_UNDERLINE,"Cannot add the isolated native underline");
+        {ReadingShade shade(field.edit,source);shade.read_through(0);prefix(field.edit,before,0);
+            require(character(field.edit,4).crTextColor==pending(field.edit),"An unrelated underline selected technical ink treatment");
+            shade.read_through(12);prefix(field.edit,before,12);shade.read_through(0);prefix(field.edit,before,0);}
+        prefix(field.edit,before,before.size());
+    });
+    test("Reclassifying identical text invalidates old reading decoration without repainting the new document",[]{
+        const std::string source="El objeto contador conserva su nombre.";Field field(source);
+        set_rich_text(field.edit,source,{},false,RichTextRole::body,"es",{},RichTextContext{{},"int contador = 0;"});
+        require(!rich_text_reference_ranges(field.edit).empty(),"The visible source context did not identify its reference");
+        auto shade=std::make_unique<ReadingShade>(field.edit,source);shade->read_through(0);
+        set_rich_text(field.edit,source);
+        require(rich_text_reference_ranges(field.edit).empty()&&!shade->matches(field.edit,source),
+            "A changed renderer role reused the old same-text reading metadata");
+        const auto before=ink(field.edit);shade->read_through(0);shade->restore();shade.reset();
+        prefix(field.edit,before,before.size());
+    });
+    test("Reference backgrounds are neutral and accent-independent while actual high contrast retains its system surface",[]{
         Field field("La referencia `valor` y el resultado 15.");
+        const auto static_fill=reader_theme::reference_background(field.edit);
+        const bool high_contrast=reader_theme::palette(field.edit).high_contrast;
+        if(high_contrast)require(static_fill==reader_theme::background(field.edit),"High contrast replaced its actual system surface");
+        else require(GetRValue(static_fill)==GetGValue(static_fill)&&GetGValue(static_fill)==GetBValue(static_fill),
+            "The static reference surface is not neutral gray");
         const std::pair<COLORREF,COLORREF> samples[]={{RGB(16,16,16),RGB(218,221,228)},{RGB(28,28,28),RGB(224,151,109)},
             {RGB(255,255,255),RGB(32,32,32)},{RGB(238,238,238),RGB(74,45,116)}};
         for(const auto& [background,foreground]:samples){const auto marked=reader_theme::unread_reference_background(field.edit,background,foreground);
             require(contrast(foreground,marked)>=4.5,"A reference pending background lost the original readable contrast");
-            if(!reader_theme::palette(field.edit).high_contrast)require(marked!=background,"A typical dark/light reference has no distinct pending background");
+            if(high_contrast)require(marked==background,"High contrast forced a replacement reference cue");
+            else require(GetRValue(marked)==GetGValue(marked)&&GetGValue(marked)==GetBValue(marked)&&marked!=background&&
+                std::abs(int(GetRValue(marked))-int(GetRValue(background)))<=12,
+                "An ordinary pending reference fill is colored, absent or not a discreet gray variation");
+            for(const auto accent:{RGB(255,0,0),RGB(0,230,110),RGB(50,120,250)}){
+                reader_theme::set_accent(field.parent,accent);
+                require(reader_theme::reference_background(field.edit)==static_fill&&
+                    reader_theme::unread_reference_background(field.edit,background,foreground)==marked,
+                    "A red/accent/progress-like color contaminated the neutral reference fill");
+            }
         }
+        reader_theme::set_accent(field.parent,{});
     });
     test("Selection scroll geometry event mask modified flag and native Undo Redo are unchanged",[] {
         std::string source; for (int line = 0; line < 60; ++line) source += "línea de lectura con acento\n";

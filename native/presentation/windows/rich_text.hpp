@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <cstddef>
 #include <utility>
+#include <vector>
 
 namespace lgaed::presentation {
 // Android sp at font scale 1 are logical pixels, not Windows points.
@@ -27,6 +28,15 @@ struct RichTextContext {
 // Plain editing preserves the original characters and exposes paragraph breaks as LF.
 [[nodiscard]] std::string edit_text(HWND edit);
 void set_edit_text(HWND edit, std::string_view text);
+// Native displayed UTF-16 ranges decorated as curricular references. This is
+// presentation metadata, not a font style, and is cleared when text is edited.
+[[nodiscard]] std::vector<std::pair<std::size_t,std::size_t>> rich_text_reference_ranges(HWND edit);
+// Republish reference ownership after a verified native text transformation.
+// The full monotone map uses native UTF-16 boundaries before/after conversion.
+// Updates presentation metadata only, never text, formatting or editing state.
+void map_rich_text_reference_ranges(HWND edit,
+    std::span<const std::pair<std::size_t,std::size_t>> source_ranges,
+    std::span<const std::size_t> source_to_native);
 // Keep the RichEdit renderer/syntax colors, but accept only text from paste/drop.
 // Idempotent; the HWND owns the callback and releases it when destroyed.
 void use_plain_text_input(HWND edit);
@@ -41,9 +51,9 @@ void compact_code_spaces(HWND edit);
 // system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);
 // Display-only inline delimiters are hidden; original lesson strings remain untouched.
-// Curricular references share the editor's syntax ink and use native single
-// underlining. Prose/output numbers use the mathematical foreground; citations
-// retain ordinary styling. These layers preserve emphasis and source offsets.
+// Curricular references share the editor's syntax ink and a neutral background.
+// Prose/output numbers use the mathematical foreground; citations retain ordinary
+// styling. No automatic typographic underline is added.
 void set_rich_text(HWND edit, std::string_view text,
     std::span<const curriculum::Emphasis> emphasis = {}, bool code = false,
     RichTextRole role = RichTextRole::body, std::string_view locale = "es",

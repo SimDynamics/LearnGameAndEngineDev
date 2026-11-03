@@ -51,20 +51,20 @@ struct Transaction {
         SendMessageW(window,EM_SETEVENTMASK,0,events);
     }
 };
-struct OriginalInk {COLORREF color=0,background=0;bool automatic=false,automatic_background=true,underlined=false;};
+struct OriginalInk {COLORREF color=0,background=0;bool automatic=false,automatic_background=true;};
 bool original_ink(ITextDocument* document,long at,OriginalInk& ink){
     if(!document)return false;
     ITextRange* range=nullptr;ITextFont* font=nullptr;
     if(FAILED(document->Range(at,at+1,&range))||!range)return false;
     const auto queried=range->GetFont(&font);range->Release();
     if(FAILED(queried)||!font)return false;
-    long foreground=tomUndefined,background=tomUndefined,underline=tomUndefined;
+    long foreground=tomUndefined,background=tomUndefined;
     const auto front=font->GetForeColor(&foreground),back=font->GetBackColor(&background);
-    const auto under=font->GetUnderline(&underline);font->Release();
+    font->Release();
     if(FAILED(front)||FAILED(back)||foreground==tomUndefined||background==tomUndefined)return false;
     ink.automatic=foreground==tomAutoColor;ink.color=ink.automatic?0:static_cast<COLORREF>(foreground);
     ink.automatic_background=background==tomAutoColor;ink.background=ink.automatic_background?0:static_cast<COLORREF>(background);
-    ink.underlined=SUCCEEDED(under)&&underline!=tomNone&&underline!=tomUndefined;return true;
+    return true;
 }
 void color(HWND edit,ITextDocument* document,long start,long end,COLORREF color,bool automatic=false){
     if(end<=start)return;
@@ -105,7 +105,13 @@ ReadingShade::ReadingShade(HWND window,std::string source):window_(window),sourc
         if(project({})!=displayed_){const auto spans=technical_prose::inline_code_spans(source_);
             if(project(spans.wrappers)!=displayed_)return;}
     }
-    Transaction transaction(window_);
+    references_=rich_text_reference_ranges(window_);
+    std::size_t previous_end=0;
+    for(const auto& [first,last]:references_){
+        if(first>=last||first<previous_end||last>displayed_.size())return;
+        previous_end=last;
+    }
+    Transaction transaction(window_);std::size_t reference_index=0;
     for(long at=0;at<static_cast<long>(displayed_.size());++at){OriginalInk ink;
         // Reading a TOM range is allowed on readonly text and leaves the UI
         // selection untouched, including while changing narration segments.
@@ -113,26 +119,28 @@ ReadingShade::ReadingShade(HWND window,std::string source):window_(window),sourc
             CHARRANGE selection{at,at+1};SendMessageW(window_,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(window_,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
             ink.automatic=(format.dwEffects&CFE_AUTOCOLOR)!=0;ink.color=ink.automatic?0:format.crTextColor;
             ink.automatic_background=(format.dwEffects&CFE_AUTOBACKCOLOR)!=0;ink.background=ink.automatic_background?0:format.crBackColor;
-            ink.underlined=(format.dwEffects&CFE_UNDERLINE)!=0;
         }
+        while(reference_index<references_.size()&&references_[reference_index].second<=static_cast<std::size_t>(at))++reference_index;
+        const bool reference=reference_index<references_.size()&&references_[reference_index].first<=static_cast<std::size_t>(at);
         if(!ink_.empty()&&ink_.back().color==ink.color&&ink_.back().automatic==ink.automatic&&ink_.back().background==ink.background&&
-            ink_.back().automatic_background==ink.automatic_background&&ink_.back().underlined==ink.underlined)ink_.back().end=at+1;
-        else ink_.push_back({at,at+1,ink.color,ink.background,ink.automatic,ink.automatic_background,ink.underlined});}
+            ink_.back().automatic_background==ink.automatic_background&&ink_.back().reference==reference)ink_.back().end=at+1;
+        else ink_.push_back({at,at+1,ink.color,ink.background,ink.automatic,ink.automatic_background,reference});}
     valid_=true;
 }
 ReadingShade::~ReadingShade(){restore();}
-bool ReadingShade::matches(HWND window,std::string_view source)const{return valid_&&window==window_&&IsWindow(window_)&&wide(source)==source_&&native_text(window_)==displayed_;}
+bool ReadingShade::matches(HWND window,std::string_view source)const{return valid_&&window==window_&&IsWindow(window_)&&wide(source)==source_&&native_text(window_)==displayed_&&rich_text_reference_ranges(window_)==references_;}
 void ReadingShade::read_through(std::size_t source){
-    if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_)return;const auto boundary=static_cast<long>(map_[std::min(source,map_.size()-1)]);if(boundary==boundary_)return;
+    if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_||rich_text_reference_ranges(window_)!=references_)return;const auto boundary=static_cast<long>(map_[std::min(source,map_.size()-1)]);if(boundary==boundary_)return;
     Transaction transaction(window_,true);
     const auto dim=[&](long start,long end){
         for(const auto& ink:ink_)if(ink.end>start&&ink.start<end){
             const auto begin=std::max(ink.start,start),last=std::min(ink.end,end);
             const auto surface=ink.automatic_background?reader_theme::background(window_):ink.background;
-            if(ink.underlined){
+            if(ink.reference){
                 color(window_,transaction.document,begin,last,ink.color,ink.automatic);
-                background(window_,transaction.document,begin,last,reader_theme::unread_reference_background(window_,surface,
-                    ink.automatic?reader_theme::foreground(window_):ink.color));
+                const auto fill=reader_theme::unread_reference_background(window_,surface,
+                    ink.automatic?reader_theme::foreground(window_):ink.color);
+                if(fill!=surface)background(window_,transaction.document,begin,last,fill);
             }else color(window_,transaction.document,begin,last,reader_theme::unread_color(surface));
         }
     };
@@ -144,7 +152,7 @@ void ReadingShade::read_through(std::size_t source){
         // or unread lines below the current word.
         for(const auto& ink:ink_)if(ink.end>boundary_&&ink.start<boundary){
             color(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.color,ink.automatic);
-            if(ink.underlined)background(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.background,ink.automatic_background);
+            if(ink.reference)background(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.background,ink.automatic_background);
         }
     }else{
         // Seeking backward dims only the interval that became unread again.
@@ -153,11 +161,11 @@ void ReadingShade::read_through(std::size_t source){
     boundary_=boundary;
 }
 void ReadingShade::restore(){
-    if(!valid_||boundary_<0||!IsWindow(window_)||native_text(window_)!=displayed_)return;
+    if(!valid_||boundary_<0||!IsWindow(window_)||native_text(window_)!=displayed_||rich_text_reference_ranges(window_)!=references_)return;
     Transaction transaction(window_,true);
     for(const auto& ink:ink_)if(ink.end>boundary_){
         color(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.color,ink.automatic);
-        if(ink.underlined)background(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.background,ink.automatic_background);
+        if(ink.reference)background(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.background,ink.automatic_background);
     }
     boundary_=-1;
 }

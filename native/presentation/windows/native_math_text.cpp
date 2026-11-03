@@ -210,6 +210,7 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
         throw std::runtime_error("This RichEdit cannot enable native mathematical display");
     DisplayTransaction transaction(window);
     set_rich_text(window,utf8(projection.linear),fragments.empty()?std::span<const curriculum::Emphasis>(displayed_emphasis):std::span<const curriculum::Emphasis>{},false,role,locale,converted.spans);
+    const auto reference_ranges=rich_text_reference_ranges(window);
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_MATH; style.dwEffects = CFE_MATH;
     style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(window); wcscpy_s(style.szFaceName,L"Cambria Math");
     Microsoft::WRL::ComPtr<IRichEditOle> rich; SendMessageW(window,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
@@ -233,6 +234,10 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
         SendMessageW(window,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&emphasis_style));
     }
     NativeMathTextMapping mapping; mapping.source = original; mapping.native_text = raw_text(window); mapping.built_up = built;
+    // Reference ownership was published after hiding inline delimiters, before
+    // TOM expanded mathematical scalars/objects. Remap those native boundaries,
+    // rather than treating them as offsets into the still-delimited linear text.
+    map_rich_text_reference_ranges(window,reference_ranges,align(before_math,mapping.native_text));
     const auto linear_mapping = align(projection.linear,mapping.native_text); mapping.source_to_native.reserve(projection.mapping.size());
     for (const auto position : projection.mapping) mapping.source_to_native.push_back(linear_mapping.at(std::min(position,linear_mapping.size() - 1)));
     mapping.source_to_native.front() = 0; mapping.source_to_native.back() = mapping.native_text.size();

@@ -204,6 +204,16 @@ struct CppFillView::Impl {
         const auto dc=GetDC(host);const auto old=SelectObject(dc,font);SIZE size{};const auto text=wide(value);
         GetTextExtentPoint32W(dc,text.c_str(),static_cast<int>(text.size()),&size);SelectObject(dc,old);ReleaseDC(host,dc);return size.cx;
     }
+    int source_gutter_width(std::size_t lines)const{
+        // Match the fixed readonly CodeGutter: the number band owns 3dp of
+        // horizontal room plus one glyph-protection pixel, followed by a
+        // separate 10dp text gap. Source indentation stays in its own glyphs.
+        const auto dc=GetDC(host);const auto old=SelectObject(dc,font);int digit_width=1;
+        for(wchar_t digit=L'0';digit<=L'9';++digit){SIZE size{};GetTextExtentPoint32W(dc,&digit,1,&size);
+            digit_width=std::max(digit_width,static_cast<int>(size.cx));}
+        SelectObject(dc,old);ReleaseDC(host,dc);
+        return std::max(px(18),digit_width*static_cast<int>(std::to_string(lines).size())+px(3)+1);
+    }
     struct InlineMetrics { int top=0,baseline=0,bottom=0; };
     InlineMetrics inline_metrics(HWND item)const{
         const auto dc=GetDC(host);const auto old=SelectObject(dc,font);TEXTMETRICW fallback{};
@@ -234,8 +244,8 @@ struct CppFillView::Impl {
         if(laying_out)return;laying_out=true;
         struct Guard{bool& flag;~Guard(){flag=false;}} guard{laying_out};
         const auto count=1+static_cast<std::size_t>(std::ranges::count(block.code_template,'\n'));
-        gutter_width=std::max(px(14),measure(std::string(std::to_string(count).size(),'0'))+px(3));
-        const int start=gutter_width+px(6),right=std::max(start+px(12),width-px(6));
+        gutter_width=source_gutter_width(count);
+        const int start=gutter_width+px(10),right=std::max(start+px(12),width-px(6));
         const int available=right-start,line=std::max(MulDiv(px(22),text_scale,100),text_height()+px(2));
         struct Placement{HWND item;int x,y,w,h,baseline;bool hole;};std::vector<Placement> positions;
         int x=start,y=px(8),ascent=0,descent=0,logical_top=y,logical_baseline=-1;
@@ -293,7 +303,7 @@ struct CppFillView::Impl {
         if(laying_out)return;laying_out=true;
         struct Guard{bool& value;~Guard(){value=false;}} guard{laying_out};
         const auto count=1+static_cast<std::size_t>(std::ranges::count(block.code_template,'\n'));
-        gutter_width=std::max(px(18),measure(std::string(std::to_string(count).size(),'0'))+px(3)+1);
+        gutter_width=source_gutter_width(count);
         const int start=gutter_width+px(10),right=std::max(start+px(12),width-px(10));
         const int available=std::max(px(12),right-start),line=drag()?std::max(px(22),text_height()):MulDiv(px(40),text_scale,100);
         struct Placement{HWND item;int x,y,width,height;};std::vector<Placement> placements;

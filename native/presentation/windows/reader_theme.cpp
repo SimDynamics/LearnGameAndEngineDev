@@ -607,22 +607,25 @@ COLORREF unread_color(COLORREF background){
     for(int channel=0;channel<=255;++channel)if(contrast_ratio(gray(channel),background)>=4.5&&std::abs(channel-preferred)<distance){selected=channel;distance=std::abs(channel-preferred);}
     return gray(selected);
 }
-COLORREF unread_reference_background(HWND context,COLORREF surface,COLORREF ink){
-    const auto colors=palette(context);
+static COLORREF neutral_reference_fill(COLORREF surface,COLORREF ink,int shift,int radius){
     const auto minimum=std::min(4.5,contrast_ratio(ink,surface));
     const auto suitable=[&](COLORREF fill){return fill!=surface&&contrast_ratio(ink,fill)+1e-9>=minimum;};
-    if(colors.high_contrast){
-        for(const auto candidate:{COLOR_HIGHLIGHT,COLOR_BTNFACE,COLOR_INFOBK,COLOR_WINDOWFRAME}){
-            const auto fill=GetSysColor(candidate);if(suitable(fill))return fill;
-        }
-        return surface;
-    }
-    for(const auto tint:{colors.accent,colors.muted,colors.text})for(unsigned alpha=48;alpha>0;--alpha){
-        const auto blend=[&](unsigned foreground,unsigned background){return (foreground*alpha+background*(255-alpha)+127)/255;};
-        const auto fill=RGB(blend(GetRValue(tint),GetRValue(surface)),blend(GetGValue(tint),GetGValue(surface)),blend(GetBValue(tint),GetBValue(surface)));
-        if(suitable(fill))return fill;
-    }
-    return surface;
+    const auto level=(GetRValue(surface)*299+GetGValue(surface)*587+GetBValue(surface)*114)/1000;
+    const auto preferred=std::clamp(static_cast<int>(level)+(luminance(surface)<.35?shift:-shift),0,255);
+    // Search grayscale only. The HWND's accent (including a red theme) and
+    // completion/feedback fills never participate in a pending-reading cue.
+    COLORREF selected=surface;int distance=256;
+    for(int channel=std::max(0,static_cast<int>(level)-radius);channel<=std::min(255,static_cast<int>(level)+radius);++channel){const auto fill=RGB(channel,channel,channel);
+        if(suitable(fill)&&std::abs(channel-preferred)<distance){selected=fill;distance=std::abs(channel-preferred);}}
+    return selected;
+}
+COLORREF reference_background(HWND context){
+    if(palette(context).high_contrast)return background(context);
+    return neutral_reference_fill(background(context),foreground(context),12,255);
+}
+COLORREF unread_reference_background(HWND context,COLORREF surface,COLORREF ink){
+    if(palette(context).high_contrast)return surface;
+    return neutral_reference_fill(surface,ink,8,12);
 }
 HBRUSH brush(Surface surface) { static Brushes brushes; return brushes.get(surface); }
 bool applied(HWND window) { return window && GetPropW(window, surface_property) != nullptr; }

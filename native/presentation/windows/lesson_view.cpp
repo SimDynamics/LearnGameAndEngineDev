@@ -1115,12 +1115,13 @@ struct LessonView {
     }
     HWND rich(std::string_view text, int id, bool code = false,
               std::span<const curriculum::Emphasis> emphasis = {}, bool editable = false,
-              RichTextRole role = RichTextRole::body) {
+              RichTextRole role = RichTextRole::body,
+              std::optional<reader_theme::Surface> surface = {}) {
         auto result = control(MSFTEDIT_CLASS, "", ES_MULTILINE | ES_AUTOVSCROLL | WS_TABSTOP
             | (code&&!editable?WS_HSCROLL|ES_AUTOHSCROLL:0)
             | (editable ? WS_VSCROLL | WS_HSCROLL | ES_AUTOHSCROLL : ES_READONLY), id);
-        reader_theme::apply(result,laboratory()?reader_theme::Surface::screen:editable ? reader_theme::Surface::field
-            : code ? reader_theme::Surface::card : reader_theme::Surface::canvas);
+        reader_theme::apply(result,surface.value_or(laboratory()?reader_theme::Surface::screen:editable ? reader_theme::Surface::field
+            : code ? reader_theme::Surface::card : reader_theme::Surface::canvas));
         if(code)reader_theme::use_native_scrollbar_theme(result);
         SendMessageW(result, EM_SETEVENTMASK, 0, ENM_REQUESTRESIZE | ENM_CHANGE | ENM_SELCHANGE);
         SendMessageW(result, EM_EXLIMITTEXT, 0, 2 * 1024 * 1024);
@@ -1138,8 +1139,9 @@ struct LessonView {
         return result;
     }
     void text_row(std::string_view text, int id, bool code = false,
-                  std::span<const curriculum::Emphasis> emphasis = {}, RichTextRole role = RichTextRole::body) {
-        const auto item = rich(text, id, code, emphasis, false, role);
+                  std::span<const curriculum::Emphasis> emphasis = {}, RichTextRole role = RichTextRole::body,
+                  std::optional<reader_theme::Surface> surface = {}) {
+        const auto item = rich(text, id, code, emphasis, false, role, surface);
         rows.push_back({{item}, {0}, 26, true});
         if(!code){rows.back().padding_before=role==RichTextRole::heading?18:0;
             rows.back().padding_after=role==RichTextRole::lesson_title?28:role==RichTextRole::heading?10:18;}
@@ -1570,7 +1572,7 @@ struct LessonView {
         reader_theme::set_accent(window,reader_theme::appearance_accent(data,laboratory()?std::string_view{}:std::string_view(route)));
         reader_theme::apply(window,laboratory()?reader_theme::Surface::screen:reader_theme::Surface::canvas);
         title = control(MSFTEDIT_CLASS, "", ES_READONLY | ES_MULTILINE, 105, window);
-        set_rich_text(title,ui("Lección","Lesson","Leçon"));
+        set_rich_text(title,ui("Lección","Lesson","Leçon"),{},false,RichTextRole::lesson_title);
         CHARFORMAT2W heading{}; heading.cbSize = sizeof(heading); heading.dwMask = CFM_SIZE | CFM_BOLD;
         heading.yHeight = rich_text_height(); heading.dwEffects = CFE_BOLD;
         SendMessageW(title,EM_SETSEL,0,-1);
@@ -2190,7 +2192,7 @@ struct LessonView {
                 break;
             }
             const auto caption = label + "  " + std::to_string(page + 1) + ui(" de "," of "," sur ") + std::to_string(lesson.pages.size());
-            set_rich_text(title,caption);
+            set_rich_text(title,caption,{},false,RichTextRole::lesson_title);
             SendMessageW(title,EM_SETSEL,0,-1);
             PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
             paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
@@ -2564,8 +2566,7 @@ struct LessonView {
             rows.push_back({{vm.fill->window()},{0},80,false});
         } else if (current.type == BlockType::multiple_choice) {
             if(const auto history=choice_history_text(index);!history.empty()){
-                text_row(history,control_id(index,40));
-                reader_theme::apply(find_item(control_id(index,40)),reader_theme::Surface::card);
+                text_row(history,control_id(index,40),false,{},RichTextRole::body,reader_theme::Surface::card);
             }
             for (std::size_t option = 0; option < current.options.size(); ++option) {
                 const auto radio = control(L"BUTTON", "", BS_RADIOBUTTON | WS_TABSTOP,
@@ -2574,9 +2575,10 @@ struct LessonView {
                 actions.push_back({control_id(index, 20 + static_cast<int>(option) * 2), ActionType::choose, index, option});
                 SendMessageW(radio, BM_SETCHECK, !vm.response.historical_choice&&vm.response.selected == static_cast<std::int64_t>(option) ? BST_CHECKED : BST_UNCHECKED, 0);
                 vm.choices.push_back(radio);
-                auto label = rich(current.options[option], control_id(index, 21 + static_cast<int>(option) * 2));
+                auto label = rich(current.options[option], control_id(index, 21 + static_cast<int>(option) * 2),
+                    false,{},false,RichTextRole::body,reader_theme::Surface::card);
                 choice_labels.emplace(label,radio);
-                reader_theme::apply(radio,reader_theme::Surface::card);reader_theme::apply(label,reader_theme::Surface::card);
+                reader_theme::apply(radio,reader_theme::Surface::card);
                 rows.push_back({{radio, label}, {28, 0}, 28, true});
                 rows.back().simulated_card=index*2+1;rows.back().card_end=option+1==current.options.size();
             }
@@ -2857,7 +2859,9 @@ struct LessonView {
             const bool order_body=block_index<controls.size()&&controls[block_index].order_view&&row.cells.size()==1
                 &&row.cells.front()==controls[block_index].order_view->window();
             const bool readonly_body=block_index<controls.size()&&row.cells.front()==controls[block_index].simulated_code;
-            const int inset=row.simulated_card?px(row.card_header?14:order_body||readonly_body?0:18):px(row.horizontal_inset),row_width=width-inset*2;
+            const bool fill_body=block_index<controls.size()&&controls[block_index].fill&&row.cells.size()==1
+                &&row.cells.front()==controls[block_index].fill->window();
+            const int inset=row.simulated_card?px(row.card_header?14:order_body||readonly_body||fill_body?0:18):px(row.horizontal_inset),row_width=width-inset*2;
             int fixed_width = 0; for (auto value : row.widths) if (value) fixed_width += px(value);
             const int remaining = std::max(px(30), row_width - fixed_width - gap * (static_cast<int>(row.cells.size()) - 1));
             if(row.cells.size()==1){

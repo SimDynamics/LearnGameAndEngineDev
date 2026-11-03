@@ -1,13 +1,18 @@
 #include "presentation/windows/cpp_fill_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/code_gutter.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/state_store.hpp"
+#include "core/view_preferences.hpp"
 #include "native_build_config.hpp"
 #include <commctrl.h>
 #include <richedit.h>
 #include <windowsx.h>
 #include <array>
 #include <algorithm>
+#include <cstdlib>
 #include <limits>
 #include <iostream>
 #include <stdexcept>
@@ -16,6 +21,10 @@ namespace {
 using namespace lgaed::presentation;
 void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
 void replace(HWND item,std::string_view value){const auto text=lgaed::presentation::wide(value);SendMessageW(item,EM_SETSEL,0,-1);SendMessageW(item,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(text.c_str()));}
+void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}}
+HWND descendant(HWND parent,int id){struct Search{int id;HWND result=nullptr;} search{id};
+    EnumChildWindows(parent,[](HWND item,LPARAM raw)->BOOL{auto& value=*reinterpret_cast<Search*>(raw);
+        if(GetDlgCtrlID(item)==value.id){value.result=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));return search.result;}
 void physical_tab(HWND host,HWND field,bool reverse=false){
     std::array<BYTE,256> previous{},keys{};check(GetKeyboardState(previous.data()),"Cannot read this test thread's keyboard state");keys=previous;
     keys[VK_SHIFT]=reverse?BYTE{0x80}:BYTE{0};check(SetKeyboardState(keys.data()),"Cannot provide the Shift modifier to this test thread");
@@ -44,6 +53,71 @@ std::vector<COLORREF> raster(HWND item){RECT area{};GetClientRect(item,&area);co
     check(dc&&bitmap,"Cannot create code-token rendering surface");const auto before=SelectObject(dc,bitmap);FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));
     SendMessageW(item,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT|PRF_CHILDREN);GdiFlush();std::vector<COLORREF> pixels;
     for(int y=0;y<area.bottom;++y)for(int x=0;x<area.right;++x)pixels.push_back(GetPixel(dc,x,y));SelectObject(dc,before);DeleteObject(bitmap);DeleteDC(dc);return pixels;}
+void actual_u2_inline_left_alignment(HWND host){
+    using namespace lgaed;
+    const auto asset=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json";
+    const auto original=state::read_bytes(asset);const auto lesson=windows::load_lesson(asset);
+    check(lesson.pages.size()>5&&lesson.pages[5].blocks.size()>4&&
+        lesson.pages[5].blocks[4].type==curriculum::BlockType::inline_fill_code,
+        "The actual U2L3 p6b5 inline exercise changed location/type");
+    check(lesson.pages[5].blocks[4].code_template.starts_with("#include")&&
+        lesson.pages[5].blocks[4].code_template.find("    int cantidad = 4;")!=std::string::npos,
+        "The current inline source no longer has an unindented directive and authored main indentation");
+    auto environment=resolve_windows_environment({ProfileId::Codex,L"fill-alignment-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64()),false});
+    check(!std::filesystem::exists(environment.paths.root),"Alignment QA must not reuse an existing profile");
+    initialize_profile_directories(environment.paths);state::StateStore store(environment.paths.root);(void)store.load();
+    state::StateData initial;state::prepare_lesson_state(initial,lesson);state::save_current_page(initial,lesson,5);
+    initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    appearance::save_global_text_scale(initial,100);store.save(initial);
+    HWND view=nullptr;
+    struct Cleanup{HWND& view;~Cleanup(){if(view&&IsWindow(view)){(void)flush_lesson_view(view);DestroyWindow(view);}}} cleanup{view};
+    const auto open=[&]{view=create_lesson_view(host,environment,lesson);check(view,"Cannot mount actual U2L3 alignment QA");
+        MoveWindow(view,0,0,880,650,TRUE);pump();check(lesson_page_state(view).index==5,"Alignment QA did not restore its explicit p6 position");};
+    const auto verify=[&]{
+        const auto fill=descendant(view,1405),reference=descendant(view,1201);
+        check(fill&&reference,"Actual p6 lost its inline card or adjacent readonly C++ source");
+        const auto directive=GetDlgItem(fill,1000),first_hole=GetDlgItem(fill,100),second_hole=GetDlgItem(fill,101);
+        check(directive&&first_hole&&second_hole,"Actual p6 inline code lost its fixed directive or two physical blanks");
+        check(edit_text(directive)=="#include <iostream>","Source alignment changed the original directive characters");
+        const auto fill_bounds=bounds(fill,view),reference_bounds=bounds(reference,view);
+        check(fill_bounds.left==reference_bounds.left&&fill_bounds.right==reference_bounds.right,
+            "The actual inline code card retains an extra outer inset instead of sharing the readonly card's left edge");
+        const auto glyph=[&](HWND item,LONG index){POINTL local{};SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&local),index);
+            POINT result{local.x,local.y};MapWindowPoints(item,view,&result,1);return result;};
+        const auto fill_origin=glyph(directive,0),reference_origin=glyph(reference,0);
+        if(std::abs(fill_origin.x-reference_origin.x)>1)
+            std::cerr<<"Actual p6 source origin: inline="<<fill_origin.x<<" readonly="<<reference_origin.x
+                <<" inline-body="<<fill_bounds.left<<" readonly-body="<<reference_bounds.left<<'\n';
+        check(std::abs(fill_origin.x-reference_origin.x)<=1,
+            "The actual inline #include does not share the readonly source's number-column/text origin");
+        check(windows::code_gutter_snapshot(reference).active,"The alignment reference lost its actual fixed line numbers");
+        HWND quantity=nullptr;
+        for(auto item=GetWindow(fill,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT))
+            if(GetDlgCtrlID(item)>=1000&&edit_text(item)=="    int cantidad = 4;"){quantity=item;break;}
+        check(quantity&&edit_text(quantity)=="    int cantidad = 4;","Alignment removed or replaced the real four-space main indentation");
+        check(glyph(quantity,4).x>glyph(quantity,0).x,"Authored source indentation collapsed into the shared number margin");
+        return std::array<HWND,3>{directive,first_hole,second_hole};
+    };
+    open();check(flush_lesson_view(view),"Cannot capture the initial isolated inline state");
+    const auto original_state=read_lesson_state(view);const auto handles=verify();
+    SendMessageW(handles[0],EM_SETSEL,2,6);SendMessageW(handles[1],EM_SETSEL,0,0);
+    for(const int scale:{150,75,100}){
+        update_lesson_preferences(view,[&](state::StateData& data){appearance::save_global_text_scale(data,scale);});pump();
+        check(verify()==handles,"Changing real lesson scale recreated a fixed source or answer field");
+        CHARRANGE selected{};SendMessageW(handles[0],EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        check(selected.cpMin==2&&selected.cpMax==6,"Aligning the actual p6 source changed its text selection");
+    }
+    const auto after=read_lesson_state(view);
+    check(after==original_state,
+        "Source alignment modified actual QA lesson answers or progress");
+    check(flush_lesson_view(view),"Cannot persist actual inline geometry QA");DestroyWindow(view);view=nullptr;open();verify();
+    check(edit_text(GetDlgItem(descendant(view,1405),100)).empty()&&edit_text(GetDlgItem(descendant(view,1405),101)).empty(),
+        "Reopening the actual inline card leaked expected answers into its fields");
+    check(state::read_bytes(asset)==original,"Source alignment QA changed the real curricular asset");
+    std::cout<<"PASS actual U2L3 p6 inline/readonly left edges, fixed gutter, authored indentation,75/100/150percent scale, stable fields and reopening\n";
+}
 void fixed_template_parity(HWND host){
     using namespace lgaed;curriculum::Block model;model.type=curriculum::BlockType::inline_fill_code;
     model.code_template="    std::cout << [];";model.answers={"1"};
@@ -200,6 +274,7 @@ int main(){
         }
         fixed_template_parity(host);
         drag_parity(host);
+        actual_u2_inline_left_alignment(host);
         DestroyWindow(host);std::cout<<"PASS native C++ inline/drag controls, real Tab/Shift+Tab blank navigation, wrap/number margin, independent alternatives, Enter, exact drafts and card identities\n";return 0;
     }catch(const std::exception& e){if(IsWindow(host))DestroyWindow(host);std::cerr<<"FAIL C++ fill view: "<<e.what()<<'\n';return 1;}
 }

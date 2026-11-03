@@ -890,7 +890,7 @@ if(BUILD_TESTING)
     endforeach()
     add_custom_target(lgaed_curricular_color_checks DEPENDS LearnGameAndEngineDev
         lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_technical_context_view_tests
-        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests)
+        lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
         LearnGameAndEngineDev lgaed_editorial_return_tests lgaed_editorial_return_view_tests
         lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests

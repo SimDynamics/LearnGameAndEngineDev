@@ -209,20 +209,24 @@ esta primera interfaz utiliza español.
 
 Los controles Win32 conservan párrafos separados, énfasis y coloreado C++.
 Las referencias técnicas dentro de prosa, preguntas, opciones y explicaciones
-visibles usan la misma paleta y el mismo lexer que el editor, con subrayado
-tipográfico real. Los números de salida, resultados y cantidades en prosa usan
-el neutro activo de Matemáticas y subrayado; los literales que pertenecen al
+visibles usan la misma paleta y el mismo lexer que el editor para el color de
+las letras. El resaltado de fondo es neutro e independiente de esas categorías,
+sin añadir líneas de subrayado. Los números de salida, resultados y cantidades
+en prosa usan la tinta neutra activa de Matemáticas y el mismo fondo; los literales que pertenecen al
 código conservan su categoría C++. Los años y localizadores de citas
 parentéticas o narrativas mantienen su tratamiento bibliográfico ordinario.
 La clasificación sólo utiliza el contexto visible, sin consultar respuestas
 ocultas ni añadir propiedades al JSON. Conserva negritas, cursivas, texto,
 offsets de narración y contratos de estado.
 
-Durante la lectura, las referencias subrayadas conservan su tinta. El tramo
-pendiente se distingue mediante un fondo derivado del tema que respeta el
+Durante la lectura, las referencias resaltadas conservan su tinta. El tramo
+pendiente se distingue mediante un fondo gris neutro que respeta el
 contraste de la tinta; al leerlo recupera su fondo original. La prosa ordinaria
 mantiene el gris de pendiente. Retroceder vuelve a aplicar el indicador, y al
-cerrar el lector se restauran los fondos originales. El alto contraste utiliza
+cerrar el lector se restauran los fondos originales. El fondo no utiliza el
+color de acento ni el de progreso. La identificación de referencias se almacena
+como metadatos del renderizador, sin depender de un estilo tipográfico.
+El alto contraste utiliza
 los colores del sistema. `lgaed_curricular_color_checks` compila la aplicación
 y las pruebas de formato, montaje curricular y reproducción real afectadas.
 

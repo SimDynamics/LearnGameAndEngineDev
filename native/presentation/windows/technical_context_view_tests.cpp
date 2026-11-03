@@ -33,6 +33,24 @@ CHARFORMAT2W character(HWND target,LONG at){CHARRANGE before{},one{at,at+1};Send
     SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return value;}
 COLORREF ink(HWND target,std::wstring_view token){const auto source=wide(edit_text(target));const auto offset=source.find(token);
     check(offset!=source.npos,"The mounted control lost its authored technical mention");return character(target,static_cast<LONG>(offset)).crTextColor;}
+bool reference_at(HWND target,std::size_t position){const auto ranges=rich_text_reference_ranges(target);
+    return std::ranges::any_of(ranges,[&](const auto& range){return range.first<=position&&position<range.second;});}
+void reference_background(HWND target,std::size_t at){const auto style=character(target,static_cast<LONG>(at));
+    check(!(style.dwEffects&CFE_UNDERLINE),"Actual curricular highlighting introduced a typographic underline");
+    if(reader_theme::palette(target).high_contrast)return;
+    const auto background=style.crBackColor,expected=reader_theme::reference_background(target);
+    const auto ranges=rich_text_reference_ranges(target);
+    const bool covered=std::ranges::any_of(ranges,[&](const auto& range){return range.first<=at&&at<range.second;});
+    const bool valid=!(style.dwEffects&CFE_AUTOBACKCOLOR)&&background==expected
+        &&GetRValue(background)==GetGValue(background)&&GetGValue(background)==GetBValue(background)
+        &&background!=reader_theme::background(target)&&covered;
+    if(!valid){std::cerr<<"Reference background mismatch: id="<<GetDlgCtrlID(target)<<" utf16="<<at
+        <<" ink="<<style.crTextColor<<" background="<<background<<" expected="<<expected<<" surface="<<reader_theme::background(target)
+        <<" auto="<<((style.dwEffects&CFE_AUTOBACKCOLOR)!=0)<<" effects="<<style.dwEffects<<" font="<<utf8(style.szFaceName)<<" ranges=";
+        for(const auto& [first,last]:ranges)std::cerr<<'['<<first<<','<<last<<')';
+        std::cerr<<" visible="<<edit_text(target)<<'\n';}
+    check(valid,"An actual reference lacks its neutral background/native range or uses a colored accent");
+}
 struct View{
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
@@ -60,7 +78,12 @@ struct View{
     }
     ~View(){if(view){(void)flush_lesson_view(view);DestroyWindow(view);}if(host)DestroyWindow(host);}
     void open(){view=create_lesson_view(host,environment,lesson);check(view,"Cannot mount the actual curricular lesson");MoveWindow(view,0,0,1100,850,TRUE);pump();
-        check(!IsWindowVisible(host),"Color QA must not take the user's desktop");}
+        check(!IsWindowVisible(host),"Color QA must not take the user's desktop");
+        const auto heading=descendant(view,105);check(heading,"The actual lesson header control is missing");
+        check(rich_text_reference_ranges(heading).empty(),"The actual lesson header acquired reference metadata");
+        for(std::size_t at=0;at<wide(edit_text(heading)).size();++at){const auto style=character(heading,static_cast<LONG>(at));
+            check(!(style.dwEffects&CFE_UNDERLINE)&&(style.dwEffects&CFE_AUTOBACKCOLOR),"The actual lesson header acquired a curricular underline/background");}
+    }
     void reopen(){check(flush_lesson_view(view),"Cannot save isolated color QA");DestroyWindow(view);open();}
     HWND item(std::size_t block,int part){auto result=descendant(view,1000+static_cast<int>(block)*100+part);
         if(!result)throw std::runtime_error("Missing real text control in "+lesson.id+" page="+std::to_string(lesson_page_state(view).index+1)+" block="+std::to_string(block+1)+" part="+std::to_string(part));return result;}
@@ -75,7 +98,7 @@ void escape_choice(){
         check(edit_text(choice)==lesson.pages[2].blocks[6].options[2],"Context changed the exact distractor text");
         const auto green=ink(question,L"\\n");const auto text=wide(edit_text(choice));const auto at=text.rfind(L"n.");check(at!=text.npos,"Missing the authored escape letter");
         check(character(choice,static_cast<LONG>(at)).crTextColor==green,"The actual escape distractor did not inherit the visible question's string category");
-        check(character(choice,static_cast<LONG>(at)).dwEffects&CFE_UNDERLINE,"The actual escape-letter reference has no typographic underline");
+        reference_background(choice,at);
         check(edit_text(fixture.item(6,4)).empty(),"Coloring exposed hidden feedback before an answer");
         CHARRANGE selection{3,8};SendMessageW(choice,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
         ReadingShade shade(choice,lesson.pages[2].blocks[6].options[2]);shade.read_through(0);shade.read_through(text.size());shade.restore();
@@ -91,7 +114,7 @@ void constructor_question(){
     const auto lesson=load("datos_propios_y_estado_valido/lesson_construir_e_inicializar_miembros.json");View fixture(lesson,1);
     check(ink(fixture.item(1,0),L"int")==ink(fixture.item(1,25),L"int"),"The real constructor question and declaration use different int categories");
     for(const auto target:{fixture.item(1,0),fixture.item(1,25)}){const auto at=wide(edit_text(target)).find(L"int");
-        check(character(target,static_cast<LONG>(at)).dwEffects&CFE_UNDERLINE,"An actual constructor type mention has no real underline");}
+        reference_background(target,at);}
     check(edit_text(fixture.item(1,0))==lesson.pages[1].blocks[1].question,"Context rewrote the constructor question");
     check(edit_text(fixture.item(1,4)).empty(),"Contextual formatting exposed the constructor solution");
     std::cout<<"PASS actual U9L5 question matches its existing constructor declaration ink\n";
@@ -127,7 +150,7 @@ void existing_curricular_mentions(){
             std::cerr<<"Curricular color mismatch: "<<plan.file<<" page="<<plan.page+1<<" block="<<plan.block+1<<" token="<<utf8(plan.token)<<" offset="<<offset<<'\n';
             DestroyWindow(reference);check(false,"A registered real curricular mention differs from its native C++ category");}
         for(std::size_t offset=0;offset<plan.token.size();++offset)if(std::wstring_view(L" {}[],()").find(plan.token[offset])==std::wstring_view::npos)
-            check(character(target,static_cast<LONG>(start+offset)).dwEffects&CFE_UNDERLINE,"A registered U9/U11 technical mention lacks its actual underline");
+            reference_background(target,start+offset);
         DestroyWindow(reference);
     }
     std::cout<<"PASS twelve actual U9/U11 prose/question/option mentions against native C++ categories\n";
@@ -158,7 +181,7 @@ void created_buffer_feedback(){
         for(std::size_t offset=0;offset<token.size();++offset)if(std::wstring_view(L" {}[],()").find(token[offset])==std::wstring_view::npos){
             check(character(target,static_cast<LONG>(start+offset)).crTextColor==character(reference,static_cast<LONG>(offset)).crTextColor,
                 "A newly created buffer feedback token differs from its native C++ category");
-            check(character(target,static_cast<LONG>(start+offset)).dwEffects&CFE_UNDERLINE,"A newly created buffer feedback reference lost its underline");}
+            reference_background(target,start+offset);}
     };
     const auto question=[&]{
         check(edit_text(fixture.item(location->block,0))==visible(block.question),"Feedback creation rewrote the current buffer question");
@@ -244,16 +267,18 @@ void role_reference(View& fixture,HWND target,std::wstring_view context,std::wst
         // punctuation inside a categorized literal still uses that literal ink.
         if(!neutral&&!reader_theme::palette(target).high_contrast&&std::wstring_view(L";{}[],()").find(token[offset])!=std::wstring_view::npos
             &&expected==reader_theme::foreground(reference))expected=RGB(216,216,216);
-        if(actual.crTextColor!=expected||!(actual.dwEffects&CFE_UNDERLINE))
+        if(actual.crTextColor!=expected||(actual.dwEffects&CFE_UNDERLINE))
             std::cerr<<"Actual role mismatch: lesson="<<fixture.lesson.id<<" page="<<lesson_page_state(fixture.view).index+1
                 <<" context="<<utf8(context)<<" token="<<utf8(token)<<" offset="<<offset<<" neutral="<<neutral<<'\n';
-        check(actual.crTextColor==expected&&(actual.dwEffects&CFE_UNDERLINE),"A current curricular reference differs from native code/math ink or lacks its real underline");
+        check(actual.crTextColor==expected&&!(actual.dwEffects&CFE_UNDERLINE),"A current curricular reference differs from native code/math ink or acquired an underline");
+        reference_background(target,start+offset);
     }
 }
 void ordinary_span(HWND target,std::wstring_view context,std::wstring_view token){
     const auto start=passage_offset(target,context,token);const auto foreground=character(target,0).crTextColor;
     for(std::size_t offset=0;offset<token.size();++offset){const auto style=character(target,static_cast<LONG>(start+offset));
-        check(style.crTextColor==foreground&&!(style.dwEffects&CFE_UNDERLINE),"A bibliographic citation or ordinary neighboring prose acquired technical color/underline");}
+        check(style.crTextColor==foreground&&!(style.dwEffects&CFE_UNDERLINE)&&(style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target,start+offset),
+            "A bibliographic citation or ordinary neighboring prose acquired technical color/background/underline");}
 }
 void native_differences(const state::Preferences& before,const state::Preferences& after){
     const auto describe=[](const state::Value* value){if(!value)return std::string("missing");
@@ -269,10 +294,13 @@ void source_and_shading(View& fixture,HWND target,std::string_view source,std::s
     const auto state_before=read_lesson_state(fixture.view);
     const auto displayed=visible_prose(std::string(source));check(edit_text(target)==displayed,"Formatting rewrote actual current curricular text");
     bool found=false;for(const auto& region:lesson_reading_regions(fixture.view))if(region.target==target){found=true;
-        check(region.source_text==source,"Color/underline formatting changed an original narration source");}
+        check(region.source_text==source,"Color/background formatting changed an original narration source");}
     check(found,"A visible curricular source disappeared from narration");
     const auto shown=wide(displayed);std::vector<CHARFORMAT2W> before;
     for(std::size_t at=0;at<shown.size();++at)before.push_back(character(target,static_cast<LONG>(at)));
+    const auto references=rich_text_reference_ranges(target);
+    for(const auto& [first,last]:references)check(first<last&&last<=shown.size(),"A native reference range falls outside actual displayed UTF16 text");
+    for(const auto& style:before)check(!(style.dwEffects&CFE_UNDERLINE),"Automatically rendered curriculum acquired a typographic underline");
     for(const auto& range:curriculum::emphasis_ranges(source,emphasis)){
         const auto start=wide(visible_prose(std::string(source.substr(0,range.start)))).size();
         const auto end=wide(visible_prose(std::string(source.substr(0,range.end)))).size();
@@ -284,17 +312,24 @@ void source_and_shading(View& fixture,HWND target,std::string_view source,std::s
     {ReadingShade shade(target,std::string(source));shade.read_through(0);
         for(std::size_t at=0;at<before.size();++at){const auto pending=character(target,static_cast<LONG>(at));
             check((pending.dwEffects&(CFE_BOLD|CFE_ITALIC|CFE_UNDERLINE))==(before[at].dwEffects&(CFE_BOLD|CFE_ITALIC|CFE_UNDERLINE)),
-                "Actual pending narration changed underline or partial emphasis");
-            if(before[at].dwEffects&CFE_UNDERLINE)check(pending.crTextColor==before[at].crTextColor,"An actual pending code/output reference lost its exact category ink");
-            else check(pending.crTextColor==reader_theme::unread_color((before[at].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(target):before[at].crBackColor),
-                "Ordinary pending curricular prose escaped the original gray reading policy");}
+                "Actual pending narration changed an existing style or partial emphasis");
+            const bool reference=std::ranges::any_of(references,[&](const auto& range){return range.first<=at&&at<range.second;});
+            const auto original_background=(before[at].dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(target):before[at].crBackColor;
+            if(reference){const auto background=(pending.dwEffects&CFE_AUTOBACKCOLOR)?reader_theme::background(target):pending.crBackColor;
+                check(pending.crTextColor==before[at].crTextColor&&background==reader_theme::unread_reference_background(target,original_background,before[at].crTextColor),
+                    "An actual pending reference lost its exact category ink or neutral background");
+                if(!reader_theme::palette(target).high_contrast)check(GetRValue(background)==GetGValue(background)&&GetGValue(background)==GetBValue(background),"A pending reference inherited a red/colored accent");
+            }else check(pending.crTextColor==reader_theme::unread_color(original_background)
+                &&(pending.dwEffects&CFE_AUTOBACKCOLOR)==(before[at].dwEffects&CFE_AUTOBACKCOLOR)
+                &&((before[at].dwEffects&CFE_AUTOBACKCOLOR)||pending.crBackColor==before[at].crBackColor),
+                "Ordinary pending curricular prose escaped gray reading policy or acquired a background");}
         shade.read_through(wide(source).size());shade.restore();}
     CHARRANGE after{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
     check(after.cpMin==selected.cpMin&&after.cpMax==selected.cpMax&&edit_text(target)==displayed,"Actual reader shading changed selection or source text");
     for(std::size_t at=0;at<before.size();++at){const auto restored=character(target,static_cast<LONG>(at));
         check(restored.crTextColor==before[at].crTextColor&&restored.dwEffects==before[at].dwEffects
             &&((before[at].dwEffects&CFE_AUTOBACKCOLOR)||restored.crBackColor==before[at].crBackColor),
-            "Actual reader restoration changed original category ink, underline or technical background");}
+            "Actual reader restoration changed original category ink, styles or technical background");}
     check(flush_lesson_view(fixture.view),"Cannot snapshot state after an actual formatting-only transaction");
     const auto state_after=read_lesson_state(fixture.view);
     if(state_after!=state_before)native_differences(state_before.preferences.at("native_windows"),state_after.preferences.at("native_windows"));
@@ -357,7 +392,7 @@ void current_u2_roles(){
                 }
             }
         };
-        verify();check(flush_lesson_view(fixture.view)&&read_lesson_state(fixture.view)==initial,"Color/underline/shading changed drafts, response addresses, progress, preferences or stored narration");
+        verify();check(flush_lesson_view(fixture.view)&&read_lesson_state(fixture.view)==initial,"Color/background/shading changed drafts, response addresses, progress, preferences or stored narration");
         fixture.reopen();verify();check(flush_lesson_view(fixture.view)&&read_lesson_state(fixture.view)==initial,"Reopening role-aware U2 prose changed existing student state");
     }
     // Create the real current feedback through the existing UI, then inspect
@@ -418,12 +453,12 @@ void current_u2_roles(){
     const auto displayed_scroll=static_cast<std::int64_t>(MulDiv(GetScrollPos(fixture.view,SB_VERT),96,static_cast<int>(GetDpiForWindow(fixture.view))));
     expected_native[scroll_key]=displayed_scroll;
     check(actual_native==expected_native,"Actual answer/reopen actions changed compiler receipts or native settings beyond their real page scroll");
-    check(hash==state::sha256(state::read_bytes(source)),"Color/subrayado QA changed the current U2 asset");
-    std::cout<<"PASS actual U2 trace, operands/result, current choices/created feedback, Before/After outputs, bibliography, underlines, source/partial emphasis, original narration, exact state and reopen; synthetic compiler prerequisites are formatting-only, not execution evidence\n";
+    check(hash==state::sha256(state::read_bytes(source)),"Color/background QA changed the current U2 asset");
+    std::cout<<"PASS actual U2 trace, operands/result, current choices/created feedback, Before/After outputs, bibliography, neutral backgrounds without underlines, source/partial emphasis, original narration, exact state and reopen; synthetic compiler prerequisites are formatting-only, not execution evidence\n";
 }
 void preview(unsigned page){
     View fixture(load("objetos_y_estado/lesson_estado_asignacion_y_copia.json"),page-1);
-    const auto title=L"LGAED - Color y subrayado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
+    const auto title=L"LGAED - Color y resaltado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
     check(SetWindowSubclass(fixture.host,[](HWND host,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw)->LRESULT{
         if(message==WM_CLOSE){const auto& view=*reinterpret_cast<const View*>(raw);if(IsWindow(view.view))(void)flush_lesson_view(view.view);}
         return DefSubclassProc(host,message,wp,lp);
