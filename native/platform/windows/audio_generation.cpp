@@ -217,7 +217,8 @@ struct AudioGeneration::Impl {
                     {std::lock_guard lock(mutex);if(revision!=epoch)break;progress.running=true;progress.page=id;progress.voice=voice;progress.error.clear();}
                     try{
                         const auto raw=read_json_source(page.asset);
-                        const auto plan=JsonObject::Parse(winrt::to_hstring(worker->curriculum_plan(raw,page.page,page.language,voice,current.ui_language,stop)));
+                        const auto plan=JsonObject::Parse(winrt::to_hstring(worker->curriculum_plan(raw,page.page,page.language,voice,current.ui_language,stop,
+                            page.location.route=="programming"?"cpp":"auto")));
                         bool generated=false;std::vector<CachedArtifact> artifacts;
                         for(const auto& item:plan.GetNamedArray(L"segments")){
                             if(stop.stop_requested())break;const auto value=item.GetObject();

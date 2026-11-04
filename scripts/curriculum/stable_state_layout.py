@@ -142,7 +142,8 @@ def validate_compile_check_contract(block: dict) -> dict | None:
     return spec
 
 
-# CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5: five individually reviewed
+# CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5 and CPP_PRECISION_EXCEPCIONES_U11L14:
+# seven individually reviewed
 # Spanish options. A protected digest covers every response/code field, not
 # merely this string. The whole first revision also pins its exact guidance.
 _CHOICE_PREFIX = "cpp_fundamentals__texto_interpretacion_y_flujos__"
@@ -197,10 +198,34 @@ CHOICE_OPTION_REVISIONS = {
         "protected_before": "2c62ea997577dd3e617968b33746ed53576100e3ae0a16b220cdb9f15b59a917",
         "protected_after": "b3a836a39bae7b92db9b357b530681316c69af866e35c3b5f8b7190eeb026bf3",
     },
+    (_CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion", "block_0007_0001"): {
+        "option": 1,
+        "before": "Lanzar un diagnóstico de recuperación y terminar ese recorrido.",
+        "after": "Lanzar una excepción de recuperación y terminar ese recorrido.",
+        "feedback": None,
+        "full_before": "1a4a51d3a8dcc2c9ace27e6d9422d8fff1d2fe5acb7e7da49eed6b4efe6a52f6",
+        "full_after": "571e7f17ffd3bf84f8a15c500503af9cfeceed04f8e6a23738c9ed2856a4f1ba",
+        "protected_before": "8b90e1ce9f7e75fbc2dab47db07e49977857ae41e648abf8d0d03957e03ac021",
+        "protected_after": "9f4dcd56c9d45f79d3aa799b7a29ac7b68ee97797d89e32f68d4152ef963223c",
+    },
+    (_CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion", "block_0003_0004"): {
+        "option": 0,
+        "before": "Para conservarla como la primera unidad que la gramática todavía debe consumir.",
+        "after": "Para conservar ese token inicial, que la gramática todavía debe consumir.",
+        "feedback": None,
+        "full_before": "a2b0f46e6254179eaf9d67047e4c5c6c1dd7acd1807e260a923a24bc44accc9a",
+        "full_after": "cb07aff65f16ac14875e50631d73cd447262afbc2a033cafa9bf5958fefcc8a2",
+        "protected_before": "2c203b9684c188f398b35cbcdea5e1ef47001f7c76a84b94df1ff3e5be410863",
+        "protected_after": "996400efadbb06a1a18764ee4306065a0d7f2697af3cd863493970744a0b53ce",
+        "paired_explanation": {
+            "before": "El ciclo miró una unidad sólo para distinguir final de una operación disponible. La devuelve porque pertenece a la regla que va a interpretar la expresión.",
+            "after": "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación.",
+        },
+    },
 }
 
 
-# CPP_CASOS_ADICIONALES_CON_PROGRESO: four closed Spanish output contracts.
+# CPP_CASOS_ADICIONALES_CON_PROGRESO: seven closed Spanish output contracts.
 # Initial code, owner and every existing case are protected independently of
 # editable guidance. The complete original block is archived in the v2 map.
 COMPILER_CASE_REVISIONS = {
@@ -227,10 +252,25 @@ COMPILER_CASE_REVISIONS = {
         "after": "55b38dc4d94d9cea6ed446040c7e043dde447be7a18ead7735df182de91cee01",
         "suffix": "Resultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\n",
     },
+    (_CHOICE_PREFIX + "terminos_prioridad_y_division_segura", "block_0004_0003"): {
+        "before": "9bddda66a2a7024ef1280fc82a82e7ad59cd189a2b3089138b5f06c06de78f1d",
+        "after": "dcd52cc803827c671d2d783d6af8e423e79cb8ef7377a365ff5afbcec05a926e",
+        "suffix": "Error: Resultado fuera de dominio\n",
+    },
+    (_CHOICE_PREFIX + "signos_unarios_parentesis_y_progreso_recursivo", "block_0004_0004"): {
+        "before": "ffef99d8c0504d333a81d68da83eb473974d43ba573626a4808eab6015bddd30",
+        "after": "efcd239dc6e8f02d04a418f2b81e0c18e54e8125c7dc0c6dcac57e45abc57300",
+        "suffix": "Error: Resultado fuera de dominio\nError: Anidamiento excesivo\n",
+    },
+    (_CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion", "block_0004_0004"): {
+        "before": "dc68860e953dd941d4495f68d295b6a7cbca70fe286ee356675f405bb8bd2502",
+        "after": "cf3c9ab1f070195689b4f2bce4bd635ae8368f760384663a2ebecbb5a1f7bfdd",
+        "suffix": "Caso 11\nError: Caracter no admitido\nResultado: 4\n",
+    },
 }
 
 
-# The three in-program batteries need their complete static reference to grow
+# The six in-program batteries need their complete static reference to grow
 # with the same reviewed calls. These are paired with their compiler revision.
 COMPILER_REFERENCE_REVISIONS = {
     (_CHOICE_PREFIX + "tokens_con_categoria_y_valor", "block_0004_0004"): {
@@ -250,6 +290,24 @@ COMPILER_REFERENCE_REVISIONS = {
         "before": "05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d",
         "after": "eee52db854d07ecc2e3319731c18c07940ed543f9836b722ba85ea5e790cc5e4",
         "insert": '    probar("99+1;");\n    probar("0-99-1;");\n    probar("99+2-2;");\n    probar("0-99-2+2;");\n',
+    },
+    (_CHOICE_PREFIX + "terminos_prioridad_y_division_segura", "block_0004_0003"): {
+        "id": "block_0008_0001",
+        "before": "44f26849307e799bc3263578b3353b4979218eae494c39a906c2fe09bafb2cb5",
+        "after": "a396321ffa32d8e9c4ca4cc1df1f01cf8e8acef762295d2ec6a8e8077460074a",
+        "insert": '    probar("11*10/2;");\n',
+    },
+    (_CHOICE_PREFIX + "signos_unarios_parentesis_y_progreso_recursivo", "block_0004_0004"): {
+        "id": "block_0009_0001",
+        "before": "70662e3574fbc6db855250d8a9579466ef5827e0ea768477076290e6191b577b",
+        "after": "44dc46d8aace0591bb180e11022c9a3b171c20e4b792fdc91da672a6618c0a44",
+        "insert": '    probar("11*10/2;");\n    probar("(((((((((1)))))))));");\n',
+    },
+    (_CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion", "block_0004_0004"): {
+        "id": "block_0008_0001",
+        "before": "61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6",
+        "after": "6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6",
+        "insert": '    std::cout << "Caso 11\\n";\n    probar("?z;4;");\n',
     },
 }
 _COMPILER_REFERENCE_TAIL = "    return 0;\n}\n"
@@ -299,7 +357,7 @@ def _reviewed_compiler(block: dict) -> dict | None:
 
 
 def historical_compiler_payload(block: dict) -> dict:
-    """Project only four exact expanded output contracts, keeping current guidance."""
+    """Project only the seven exact expanded contracts, keeping current guidance."""
     spec = _reviewed_compiler(block)
     if spec is None:
         return block
@@ -329,7 +387,7 @@ def _reviewed_choice(block: dict) -> dict | None:
 
 
 def historical_choice_payload(block: dict) -> dict:
-    """Normalize only five exact new response contracts, without relaxing prose."""
+    """Normalize only seven exact response contracts, without relaxing prose."""
     spec = _reviewed_choice(block)
     if spec is None:
         return block
@@ -337,6 +395,22 @@ def historical_choice_payload(block: dict) -> dict:
     result["options"][spec["option"]] = spec["before"]
     require(fingerprint(_choice_payload(result)) == spec["protected_before"], "Invalid reviewed choice revision")
     return result
+
+
+def _validate_choice_pair(block: dict, spec: dict | None) -> None:
+    """Keep the one reviewed token option/explanation in its real version.
+
+    The first full editorial edge alone is insufficient: a forged later edge
+    must not mix the new option with the old explanation, including archives.
+    Other reviewed choices retain their ordinary editorial-text policy.
+    """
+    if spec is None or "paired_explanation" not in spec:
+        return
+    signature = fingerprint(_choice_payload(block))
+    if signature in (spec["protected_before"], spec["protected_after"]):
+        version = "after" if signature == spec["protected_after"] else "before"
+        require(block.get("explanation") == spec["paired_explanation"][version],
+                "The reviewed token option and its explanation must belong to the same exact version")
 
 
 def historical_math_payload(block: dict) -> dict:
@@ -357,7 +431,7 @@ def state_payload(block: dict) -> dict:
     """Only explicit editorial fields may vary without changing a response contract.
 
     The curricular validator still decides which prose changes are authorized.
-    Closed reviewed options, compiler expansions and their three references
+    Closed reviewed options, compiler expansions and their six references
     normalize to historical contracts; document validation additionally requires
     their v2 context, paired archives and proofs. Maths retains its exact
     contract except one reviewed label.
@@ -455,7 +529,14 @@ def _choice_revisions(document: dict) -> dict[str, dict]:
 def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
     # Only callers that have validated the complete document/transition use
     # this projection. Keep current prose/guidance for its ordinary validator.
-    return historical_choice_payload(block) if identity in _choice_revisions(document) else block
+    if identity not in _choice_revisions(document):
+        return block
+    result = historical_choice_payload(block)
+    spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
+    if spec is not None and "paired_explanation" in spec:
+        _validate_choice_pair(block, spec)
+        result["explanation"] = spec["paired_explanation"]["before"]
+    return result
 
 
 def _compiler_revisions(document: dict) -> dict[str, dict]:
@@ -700,6 +781,7 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         "The reviewed mathematical label belongs to its original Spanish activity")
             block = pages[p]["blocks"][b]
             reviewed = _reviewed_choice(block)
+            _validate_choice_pair(block, CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)))
             if reviewed is not None or identity in choices:
                 require(meta["locale"] == "es" and identity in choices
                         and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
@@ -1073,6 +1155,7 @@ def _validate_retirement_history(document: dict) -> None:
                 _identity(block_id)
                 require(block_id in available and block_id not in seen_blocks, "Unknown or repeated historical reading block")
                 reviewed = _reviewed_choice(block)
+                _validate_choice_pair(block, CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)))
                 if reviewed is not None:
                     # The global payload alias is not evidence that this
                     # presentation ever owned the new wording. Older, original
@@ -1236,14 +1319,14 @@ def refine_order_lines(document: dict, identity: str) -> dict:
 
 
 def revise_choice_option(document: dict, identity: str) -> dict:
-    """Prepare exactly one reviewed option and its guidance, never edit assets."""
+    """Prepare one closed option revision and its exact paired fields in memory."""
     validate(document)
     meta = document.get("stateLayout", {})
     require(meta.get("version") == 2 and meta.get("locale") == "es",
             "Prepare the published Spanish family as stateLayout v2 before revising a choice")
     _identity(identity)
     spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
-    require(spec is not None, "The choice option is not one of the five reviewed activities")
+    require(spec is not None, "The choice option is not one of the seven reviewed activities")
     if identity in _choice_revisions(document):
         return deepcopy(document)
     original = _blocks(document).get(identity)
@@ -1254,6 +1337,8 @@ def revise_choice_option(document: dict, identity: str) -> dict:
     actual["options"][spec["option"]] = spec["after"]
     if spec["feedback"] is not None:
         actual["reviewFeedback"][spec["option"]] = spec["feedback"]
+    if "paired_explanation" in spec:
+        actual["explanation"] = spec["paired_explanation"]["after"]
     require(fingerprint(actual) == spec["full_after"], "The reviewed choice option/guidance does not match its approved first revision")
     result["stateLayout"].setdefault("choiceRevisions", []).append({"id": identity, "block": deepcopy(original)})
     result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": spec["full_before"],
@@ -1270,7 +1355,7 @@ def revise_compiler_cases(document: dict, identity: str) -> dict:
             "Prepare the published Spanish family as stateLayout v2 before revising a compiler")
     _identity(identity)
     spec = COMPILER_CASE_REVISIONS.get((document.get("id"), identity))
-    require(spec is not None, "The compiler is not one of the four reviewed activities")
+    require(spec is not None, "The compiler is not one of the seven reviewed activities")
     if identity in _compiler_revisions(document):
         return deepcopy(document)
     original = _blocks(document).get(identity)

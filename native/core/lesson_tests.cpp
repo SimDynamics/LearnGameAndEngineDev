@@ -355,15 +355,21 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
         const auto integrated=lgaed::windows::load_lesson(folder/plan.filename);
         const auto before=lgaed::test::choice_revision_before(integrated,plan.identity);
         const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);
-        rejects([&]{(void)lgaed::test::revise_choice_lesson(integrated,plan.identity);},
-            "An integrated choice was accepted as a new historical transition");
         const auto metadata=lgaed::windows::parse_lesson_progress_metadata(current.raw_json);
         const auto position=stable_block_position(current,plan.identity);check(position.has_value(),"Reviewed choice lost its stable identity");
         const auto& old=before.pages[position->page].blocks[position->block];const auto& block=current.pages[position->page].blocks[position->block];
         const auto live=stable_block_position(integrated,plan.identity);
-        check(live==position&&lgaed::test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))==
-                lgaed::test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(integrated.pages[live->page].blocks[live->block].raw_json)))
-            &&old.options!=block.options,"Historical choice revision did not reproduce the distinct current authored payload");
+        check(live==position&&old.options!=block.options,"A choice proposal changed its authored identity or retained the old options");
+        const auto live_fingerprint=lgaed::test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(
+            integrated.pages[live->page].blocks[live->block].raw_json)));
+        if(integrated.pages[live->page].blocks[live->block].choice_revision) {
+            rejects([&]{(void)lgaed::test::revise_choice_lesson(integrated,plan.identity);},
+                "An integrated choice was accepted as a new historical transition");
+            check(live_fingerprint==plan.after_full,"Historical choice revision did not reproduce the current authored payload");
+        } else check(plan.allow_unexpanded_source&&live_fingerprint==plan.before_full,
+            "An unintegrated choice proposal changed its independently pinned source");
+        check(block.explanation==(plan.explanation?plan.explanation:old.explanation),
+            "The choice proposal omitted its exact paired explanation or changed unrelated prose");
         check(block.choice_revision&&block.choice_revision->original_options==old.options&&block.choice_revision->original_review_feedback_options==old.review_feedback_options
             &&block.choice_revision->original_question==old.question&&block.choice_revision->original_explanation==old.explanation
             &&block.choice_revision->original_correct_index==old.correct_index&&block.choice_revision->sha256==plan.before_full,
@@ -441,6 +447,26 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
             rejects([&]{(void)lgaed::windows::parse_lesson_json(invalid);},"Unapproved choice/source/provenance revision passed the full loader");
             rejects([&]{(void)lgaed::windows::parse_lesson_progress_metadata(invalid);},"Unapproved choice revision passed catalog projection");
         }
+        if(plan.explanation) {
+            for(const bool historical:{false,true}) {
+                const auto root=JsonObject::Parse(winrt::to_hstring(historical?retired_after.raw_json:current.raw_json));
+                const auto pages=historical?root.GetNamedObject(L"stateLayout").GetNamedArray(L"retirementHistory").GetObjectAt(0).GetNamedArray(L"pages")
+                    :root.GetNamedArray(L"pages");
+                const auto target=pages.GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(position->block));
+                target.Insert(L"explanation",JsonValue::CreateStringValue(winrt::to_hstring(old.explanation)));
+                if(!historical) {
+                    // Even a continuous later editorial edge cannot split
+                    // this one explicitly paired option/explanation revision.
+                    JsonObject proof;proof.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(plan.identity)));
+                    proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(plan.after_full)));
+                    proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(lgaed::test::compile_check_test_fingerprint(target))));
+                    root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Append(proof);
+                }
+                const auto invalid=winrt::to_string(root.Stringify());
+                rejects([&]{(void)lgaed::windows::parse_lesson_json(invalid);},"A token option borrowed the old explanation from another revision");
+                rejects([&]{(void)lgaed::windows::parse_lesson_progress_metadata(invalid);},"Catalog accepted a mixed token option/explanation revision");
+            }
+        }
         if(std::string_view(plan.identity)=="block_0006_0004") {
             const auto root=JsonObject::Parse(winrt::to_hstring(current.raw_json));
             root.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(position->page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(position->block)).GetObject().Insert(L"explanation",JsonValue::CreateStringValue(L"QA subsequent editorial text"));
@@ -453,7 +479,7 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
                 "A later editorial explanation replaced the historical choice snapshot");
         }
     }
-    std::cout<<"PASS five exact choice revisions: original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
+    std::cout<<"PASS seven exact choice revisions (two proposals remain in memory): original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
 }
 void reviewed_matching_label_preserves_historical_contract() {
     using namespace winrt::Windows::Data::Json;
@@ -877,13 +903,16 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
         check(position.has_value(),"A reviewed compiler disappeared from its published identity");
         const auto current=test::revise_compiler_lesson(before,plan.identity);const auto& old=before.pages[position->page].blocks[position->block];
         const auto& block=current.pages[position->page].blocks[position->block];
-        rejects([&]{(void)test::revise_compiler_lesson(integrated,plan.identity);},
-            "An integrated compiler was accepted as a new historical transition");
         const auto live=stable_block_position(integrated,plan.identity);
-        check(live==position&&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))==
-                test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(integrated.pages[live->page].blocks[live->block].raw_json)))
-            &&reference_objective_frame(before,old)!=reference_objective_frame(current,block),
-            "Historical compiler expansion did not reproduce the distinct current authored payload");
+        check(live==position,"A compiler proposal changed its current authored identity");
+        const auto live_fingerprint=test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(
+            integrated.pages[live->page].blocks[live->block].raw_json)));
+        if(integrated.pages[live->page].blocks[live->block].compiler_revision) {
+            rejects([&]{(void)test::revise_compiler_lesson(integrated,plan.identity);},
+                "An integrated compiler was accepted as a new historical transition");
+            check(live_fingerprint==plan.after_full,"Historical compiler expansion did not reproduce the current authored payload");
+        } else check(plan.allow_unexpanded_source&&live_fingerprint==plan.before_full,
+            "An unintegrated proposal changed its independently pinned authored source");
         check(block.compiler_revision&&block.compiler_revision->sha256==plan.before_full&&block.compiler_revision->current_payload==plan.after_full&&
             block.compiler_revision->previous_output_check.cases.size()==old.output_check->cases.size(),"The complete compiler expansion archive did not reach the model");
         check(current.state_layout.lineage==before.state_layout.lineage&&exercise_key(current,block)==exercise_key(before,old)&&
@@ -941,7 +970,7 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
             rejects([&]{(void)windows::parse_lesson_progress_metadata(winrt::to_string(invalid.Stringify()),"es");},"Catalog projection accepted a forged compiler expansion");
         }
     }
-    std::cout<<"PASS four exact compiler expansions: immutable originals, distinct execution goals, original families/addresses and forged archive/payload/owner/proof rejection\n";
+    std::cout<<"PASS seven exact compiler expansions (three proposals remain in memory): immutable originals, distinct execution goals, original families/addresses and forged archive/payload/owner/proof rejection\n";
 }
 void reviewed_compile_diagnostics_require_the_intended_source_change() {
     using namespace lgaed;

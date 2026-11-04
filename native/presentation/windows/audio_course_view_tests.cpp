@@ -62,7 +62,7 @@ void unicode_window_tests(const Fixture& fixture){
     verify("en","programming",L"Programming",L"Information",L"Checking saved audio for the current voices and languages…");
     DestroyWindow(owner);
 }
-std::string plan(std::string_view raw,std::size_t,std::string_view language,std::string_view voice,std::string_view,std::stop_token){check(language=="es"&&voice=="em_santa","Scan changed the effective voice or language");const bool programming=raw.find("programming")!=std::string_view::npos;return std::string("{\"segments\":[{\"key\":\"")+shared+"\"}"+(programming?",{\"key\":\""+unique+"\"}":std::string{})+"]}";}
+std::string plan(std::string_view raw,std::size_t,std::string_view language,std::string_view voice,std::string_view,std::stop_token,std::string_view reading_context){check(language=="es"&&voice=="em_santa","Scan changed the effective voice or language");const bool programming=raw.find("programming")!=std::string_view::npos;check(reading_context==(programming?"cpp":"auto"),"Cross-route audio ownership planning lost its explicit reading context");return std::string("{\"segments\":[{\"key\":\"")+shared+"\"}"+(programming?",{\"key\":\""+unique+"\"}":std::string{})+"]}";}
 }
 int wmain(int argc,wchar_t** argv){
     try{check(argc==2,"The test needs its existing isolated QA parent");

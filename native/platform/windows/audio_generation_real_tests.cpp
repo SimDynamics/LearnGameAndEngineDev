@@ -101,7 +101,8 @@ void check_selected_kokoro(NarrationWorker& worker,const Inventory& fixture,cons
         const auto bytes=state::read_bytes(fixture.root/"es"/curriculum::catalog_lesson_path(location,fixture.lessons[which]));
         const std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
         for(unsigned page=0;page<2;++page){
-            const auto plan=JsonObject::Parse(winrt::to_hstring(worker.curriculum_plan(source,page,"es",selection.voices.at("es"),"es")));
+            const auto plan=JsonObject::Parse(winrt::to_hstring(worker.curriculum_plan(source,page,"es",selection.voices.at("es"),"es",{},
+                location.route=="programming"?"cpp":"auto")));
             for(const auto& value:plan.GetNamedArray(L"segments")){const auto row=value.GetObject();const auto key=winrt::to_string(row.GetNamedString(L"key"));
                 const auto wav=cache/winrt::to_hstring(key+".wav").c_str();check(std::filesystem::is_regular_file(wav),"The selected voice's independently planned key was not stored");real_pcm(wav);++hits;}
         }

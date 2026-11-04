@@ -506,6 +506,8 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
             require(selected_choice_text(*restored,block)==(old.selected<0?std::string{}:old_block.options[static_cast<std::size_t>(old.selected)])
                 &&choice_incorrect_feedback(*restored,block)==incorrect_feedback(old_block,old.selected<0?std::nullopt:std::optional<std::size_t>(static_cast<std::size_t>(old.selected))),
                 "An old response was attributed the corrected option or new guidance");
+            if(restored->correct)require(choice_correct_feedback(*restored,block)==old_block.explanation,
+                "A historical success was attributed the new explanation instead of its original text");
             rejects([&]{put_response(data,current,block,*restored);});require(data==untouched,"Rejecting an implicit historical-to-current write changed data");
             validate_lesson_state(data,current);prepare_lesson_state(data,current);const auto adopted=data;
             const auto pin="lesson_"+current.id+"_state_choice_revisions_v1_es";
@@ -539,6 +541,8 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
                 &&string_value(reopened,"learning_progress",original_key)==original_raw&&actual->raw_json.find("incorrectAttempts")==std::string::npos,
                 "A new choice overwrote or inherited an old attempt's text, verdict or opaque metadata");
             if(plan.feedback)require(choice_incorrect_feedback(*actual,block)==plan.feedback,"The revised incorrect choice lost its own exact guidance");
+            if(actual->correct)require(choice_correct_feedback(*actual,block)==block.explanation,
+                "A newly checked choice retained its historical success explanation");
             store.save(reopened);const auto saved=store.load();require(saved==reopened&&!get_response(saved,current,block)->historical_choice,"New choice provenance failed normal reopening");
             Response reset;put_response(reopened,current,block,reset);require(get_response(reopened,current,block)->selected==-1&&!get_response(reopened,current,block)->correct
                 &&!get_response(reopened,current,block)->historical_choice&&string_value(reopened,"learning_progress",original_key)==original_raw,
@@ -554,7 +558,7 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
             ++groups;
         }
     }
-    std::cout<<"PASS five reviewed choice revisions: old draft/rejection/success text and guidance, opaque history, separate current selection/reset, append-only pins, native reopen and Android import\n";
+    std::cout<<"PASS seven reviewed choice revisions: old draft/rejection/success text and explanations, opaque history, separate current selection/reset, append-only pins, native reopen and Android import\n";
 }
 void reviewed_compiler_expansions_preserve_execution_history(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
@@ -644,7 +648,7 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
                 "Explicit Reset revived old compiler credit or retained a completed expansion");
         }
     }
-    std::cout<<"PASS four reviewed compiler expansions: native empty/partial/completed proofs and reopen, unchanged-case reuse, new outputs, Edit/Undo and Reset; Android drafts/pins retained without invented native credit or reserved-domain import\n";
+    std::cout<<"PASS seven reviewed compiler expansions: native empty/partial/completed proofs and reopen, unchanged-case reuse, new outputs, Edit/Undo and Reset; Android drafts/pins retained without invented native credit or reserved-domain import\n";
 }
 void diagnostic_contracts_preserve_native_and_imported_state(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;

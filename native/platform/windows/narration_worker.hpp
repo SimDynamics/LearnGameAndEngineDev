@@ -67,9 +67,13 @@ public:
     [[nodiscard]] std::optional<NarrationPriorityLease> try_idle_maintenance_lease();
     // Only cache misses are limited. Existing recordings remain reusable.
     void set_storage_budget(std::uint64_t bytes);
-    [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={});
+    // cpp_previous_parentheses reconstructs one historical C++ speech policy
+    // solely for bookmark authentication. It is not a curricular mathMode.
+    [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={},
+        std::string_view reading_context="auto",std::string_view math_mode="auto");
     [[nodiscard]] std::string curriculum_plan(std::string_view raw_lesson,std::size_t page,
-        std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={});
+        std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={},
+        std::string_view reading_context="auto");
     [[nodiscard]] NarrationAudio prepare(const NarrationSegment&,std::string_view language,std::string_view voice,
         const std::filesystem::path& output,unsigned threads,std::stop_token={},
         NarrationCpuClass work=NarrationCpuClass::current_page);

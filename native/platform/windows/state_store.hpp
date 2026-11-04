@@ -35,6 +35,7 @@ void put_response(StateData&, const curriculum::Lesson&, const curriculum::Block
 void mark_response_reviewed(Response&, const curriculum::Block&);
 void clear_response_review(Response&) noexcept;
 [[nodiscard]] std::string selected_choice_text(const Response&, const curriculum::Block&);
+[[nodiscard]] std::string choice_correct_feedback(const Response&, const curriculum::Block&);
 [[nodiscard]] std::string choice_incorrect_feedback(const Response&, const curriculum::Block&);
 [[nodiscard]] Draft get_draft(const StateData&, std::string_view draft_key,
                               std::string_view initial_code, std::string_view initial_input = {});

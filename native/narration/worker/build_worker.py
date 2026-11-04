@@ -694,6 +694,41 @@ def windows_reading_source(name: str, code: str) -> str:
             selected[index]?.let { match ->""")
         code = exact(code, "                    add(codeSymbols[next] ?: readIdentifier(next.toString()))",
                      """                    add(if (next == '"') "comilla" else codeSymbols[next] ?: readIdentifier(next.toString()))""")
+        # Only an explicitly typed Windows C++ puzzle owns these bare numeric
+        # expressions. Other prose and explicit mathematical modes keep their
+        # existing detectors, source owners and recording identities.
+        code = exact(code, 'val pureMath = !forcedMath &&', 'val pureMath = mathMode !in listOf("cpp", "cpp_previous_parentheses") && !forcedMath &&')
+        code = exact(code, 'private fun codeEnd(text: String, index: Int): Int? {',
+            'private fun codeEnd(text: String, index: Int, mathMode: String): Int? {\n'
+            '        if (mathMode in listOf("cpp", "cpp_previous_parentheses")) WindowsNarrationSpeechRules.cppNumericExpressionEnd(text, index)?.let { return it }')
+        code = exact(code, 'val technicalEnd = codeEnd(text, index)', 'val technicalEnd = codeEnd(text, index, mathMode)')
+        code = exact(code, 'readCode(text.substring(index, technicalEnd), index, selected, onPiece)',
+            'readCode(text.substring(index, technicalEnd), index, selected, onPiece,\n'
+            '                    numericExpression = mathMode in listOf("cpp", "cpp_previous_parentheses") && WindowsNarrationSpeechRules.cppNumericExpressionEnd(text, index) == technicalEnd)')
+        code = exact(code, '''        selected: Map<Int, ManualEnglishTerms.Match> = emptyMap(),
+        onPiece: ((Int, Int, String) -> Unit)? = null
+    ): String {''', '''        selected: Map<Int, ManualEnglishTerms.Match> = emptyMap(),
+        onPiece: ((Int, Int, String) -> Unit)? = null,
+        numericExpression: Boolean = false
+    ): String {''')
+        code = exact(code, '            val name = when (char) {',
+            '            val name = when (char) {\n                \'=\' -> if (numericExpression) "igual a" else codeSymbols[char]')
+        code = exact(code, '            val symbol = when (text[index]) {',
+            '            val symbol = when (text[index]) {\n'
+            '                \'(\', \')\' -> if (mathMode == "cpp" &&\n'
+            '                    WindowsNarrationSpeechRules.isIsolatedCppParenthesisMention(text, index)) codeSymbols[text[index]] else null')
+    elif name == "NarrationWordMappings":
+        code = exact(code, 'listOf("auto", "text", "inline", "block")',
+                     'listOf("auto", "text", "inline", "block", "cpp", "cpp_previous_parentheses")')
+    elif name == "LessonNarrationText":
+        code = exact(code, 'append(output, block.string("question"))',
+                     'append(output, block.string("question"), block.mode())', count=2)
+        code = exact(code, 'options(output, block.optJSONArray("options"))',
+                     'options(output, block.optJSONArray("options"), block.mode())')
+        code = exact(code, 'private fun options(output: MutableList<String>, options: JSONArray?)',
+                     'private fun options(output: MutableList<String>, options: JSONArray?, mathMode: String = "auto")')
+        code = exact(code, 'else append(output, scalar(options.opt(index)))',
+                     'else append(output, scalar(options.opt(index)), mathMode)')
     elif name == "NarrationSegments":
         code = exact(code, "ManualEnglishSpeech.segment(paragraph, ::plainSentences)",
                      "ManualEnglishSpeech.segment(paragraph) { plainSentences(it, prosePauses = true) }")
@@ -763,7 +798,7 @@ def host_sources() -> list[Path]:
     sources = []
     for name in PURE_NARRATION:
         path = APP / "narration" / f"{name}.kt"
-        if name in {"SpanishTechnicalSpeech", "NarrationSegments"}:
+        if name in {"SpanishTechnicalSpeech", "NarrationSegments", "NarrationWordMappings"}:
             sources.append(generated(f"{name}.kt", windows_reading_source(name, path.read_text(encoding="utf-8-sig"))))
         else:
             sources.append(path)
@@ -803,7 +838,9 @@ def host_sources() -> list[Path]:
     parser = re.sub(r"^\s*fun resolveMessage\(context: android\.content\.Context\): String = uiMessage\.resolve\(context\)\n", "\n", parser, flags=re.MULTILINE)
     sources.append(generated("MathLatexParser.kt", parser))
     sources += math_host_sources()
-    sources += [APP / "CodeExerciseLanguage.kt", APP / "narration/LessonNarrationText.kt"]
+    sources.append(APP / "CodeExerciseLanguage.kt")
+    sources.append(generated("LessonNarrationText.kt", windows_reading_source("LessonNarrationText",
+        (APP / "narration/LessonNarrationText.kt").read_text(encoding="utf-8-sig"))))
     math_ui = (APP / "math/MathPuzzleUiInstructions.kt").read_text(encoding="utf-8-sig")
     math_ui = exact(math_ui,
         '        "math_rigid_angle_copy" -> listOf(resolve(RIGID_ANGLE_HELP), resolve(RIGID_ANGLE_LEGEND))',

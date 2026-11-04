@@ -61,9 +61,19 @@ curriculum::StatePosition identity_position(const curriculum::Lesson& lesson,std
     const auto position=curriculum::stable_block_position(lesson,identity);
     check(position.has_value(),"Missing authored reader identity "+std::string(identity));return *position;
 }
-COLORREF color(HWND target,LONG offset){CHARRANGE before{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
+CHARFORMAT2W character_format(HWND target,LONG offset){CHARRANGE before{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
     CHARRANGE range{offset,offset+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));CHARFORMAT2W format{};format.cbSize=sizeof(format);
-    SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return format.crTextColor;
+    SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return format;
+}
+COLORREF color(HWND target,LONG offset){return character_format(target,offset).crTextColor;}
+COLORREF pending_color(HWND target,LONG offset){
+    const auto surface=reader_theme::background(target);
+    const auto background=[&](LONG character){const auto format=character_format(target,character);
+        return(format.dwEffects&CFE_AUTOBACKCOLOR)?surface:format.crBackColor;};
+    const auto references=rich_text_reference_ranges(target);
+    const auto semantic_surface=references.empty()?surface:background(static_cast<LONG>(references.front().first));
+    const auto actual_surface=background(offset);const auto grays=reader_theme::unread_colors(surface,semantic_surface);
+    return actual_surface==semantic_surface?grays.second:actual_surface==surface?grays.first:reader_theme::unread_color(actual_surface);
 }
 std::string verify_feedback_recording(const LessonReaderSegmentSnapshot& part) {
     const auto bytes = state::read_bytes(part.recording);
@@ -1839,6 +1849,522 @@ void current_curricular_colors_reader(const std::shared_ptr<windows::NarrationWo
         std::cout<<"PASS current curricular source "<<number+1<<": actual ef_dora/.5 PCM and word timing, pending gray/read original ink, unchanged neutral backgrounds without underline, pause/reopen/resume/rewind/stop, exact QA text/emphasis/zoom/selection; explanation is a plain QA copy, not activated original feedback\n";
     }
 }
+struct LegacyAutoReadingProbe {
+    HWND view=nullptr;
+    std::string context;
+    explicit LegacyAutoReadingProbe(HWND target,std::string previous_context="auto"):view(target),context(std::move(previous_context)) {
+        check(SetWindowSubclass(view,proc,88,reinterpret_cast<DWORD_PTR>(this))!=FALSE,"Cannot install the isolated historical reading descriptor probe");
+    }
+    ~LegacyAutoReadingProbe(){detach();}
+    void detach(){if(view){RemoveWindowSubclass(view,proc,88);view=nullptr;}}
+    static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR data) {
+        const auto result=DefSubclassProc(window,message,wp,lp);
+        // QA emulates the previously published descriptor, not its audio or
+        // listening history. The actual source, controls and answers stay real.
+        if(message==lesson_reading_regions_message&&lp&&wp<4)
+            for(auto& region:*reinterpret_cast<std::vector<LessonReadingRegion>*>(lp))
+                if(region.reading_context=="cpp"&&region.math_mode=="auto")
+                    region.reading_context=reinterpret_cast<LegacyAutoReadingProbe*>(data)->context;
+        return result;
+    }
+};
+
+void current_cpp_numeric_context_reader(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    const auto asset=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_terminos_prioridad_y_division_segura.json";
+    const auto asset_bytes=state::read_bytes(asset);const auto lesson=windows::load_lesson(asset);
+    const auto prediction=identity_position(lesson,"block_0006_0001"),choice=identity_position(lesson,"block_0006_0002");
+    const auto owner=identity_position(lesson,"block_0004_0003");
+    const auto& goal=lesson.pages[prediction.page].blocks[prediction.block];
+    const auto initial_bookmark_page=lesson.pages.size()-1;
+    check(prediction.page==6&&prediction.block==1&&choice.page==6&&choice.block==2
+        &&goal.type==curriculum::BlockType::output_prediction&&goal.answers==std::vector<std::string>{"Resultado: 13"}
+        &&goal.explanation.find("11/2")!=goal.explanation.npos&&lesson.compiler_puzzles_required
+        &&initial_bookmark_page>=prediction.page+2,
+        "The current U11L12 numeric narration source or its prerequisites changed");
+    Fixture f(backend,false,true,true,"es",lesson,false,initial_bookmark_page,true,true,[](HWND view){
+        update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=.5;});
+    },[&](state::StateData& data){
+        // The sole prerequisite receipt isolates this reader regression. It is
+        // deliberately synthetic QA provenance, never a claimed C++ execution.
+        const auto& block=lesson.pages[owner.page].blocks[owner.block];
+        check(block.output_check&&block.output_check->cases.size()==1,"Numeric reader QA needs one aggregate compiler prerequisite");
+        windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
+        const auto& item=block.output_check->cases.front();
+        curriculum::FreshExecution execution{request.revision,true,true,0,item.standard_input,item.outputs.front()};
+        check(windows::record_compiler_puzzle_case(data,lesson,block,request,execution,"Synthetic numeric-reader QA prerequisite; no execution"),
+            "Cannot isolate the current numeric reader prerequisite");
+        data.preferences["cpp_numeric_reader_qa"]["unrelated"]=std::string(" \t conservar\r\n");
+    });
+    check(lesson_page_state(f.view).index==initial_bookmark_page&&!IsWindowVisible(f.host),
+        "The numeric reader QA opened another page or exposed the desktop");
+    const auto unrelated=read_lesson_state(f.view).preferences.at("cpp_numeric_reader_qa");
+    // These two slots are earned by playback on later authored pages, then
+    // navigation goes backward to the focal puzzle. Forward navigation from
+    // an unanswered earlier page must keep its real ordinary-puzzle gate.
+    std::vector<narration::Bookmark> other_positions;
+    for(const std::size_t page:{initial_bookmark_page,initial_bookmark_page-1}) {
+        if(lesson_page_state(f.view).index!=page)f.page(page);
+        f.reader->toggle();
+        wait([&]{const auto value=f.snapshot();return value.playing&&value.offset>100;},"real other-page numeric-reader bookmark");
+        f.reader->pause();const auto paused=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));
+        const auto found=std::ranges::find(history.entries,paused.key,&narration::Bookmark::key);
+        check(found!=history.entries.end()&&found->position.milliseconds==paused.offset&&!found->position.finished,
+            "Actual other-page playback did not persist its exact pause");other_positions.push_back(*found);
+    }
+    f.page(prediction.page);f.answer(goal.answers.front(),prediction.block);
+    const auto response=state::get_response(read_lesson_state(f.view),lesson,goal);
+    check(response&&response->correct&&response->answer==goal.answers.front(),
+        "The numeric narration feedback was not activated by its real answer control");
+    const auto regions=lesson_reading_regions(f.view);const auto planned=f.snapshot();
+    std::vector<windows::NarrationSegment> all_expected;
+    std::optional<std::size_t> selected;std::size_t selected_slash=0;
+    std::size_t cpp_numeric_regions=0;
+    for(const auto& region:regions) {
+        const bool typed=region.block_index==prediction.block||region.block_index==choice.block;
+        if(typed)check(region.reading_context=="cpp"&&region.math_mode=="auto",
+            "A current C++ puzzle region lost its typed arithmetic context");
+        if(region.block_index==0||region.block_index==std::numeric_limits<std::size_t>::max())
+            check(region.reading_context=="auto","A lesson heading was forced into C++ arithmetic");
+        auto expected=backend->plan(region.source_text,"es",{},region.reading_context,region.math_mode);
+        all_expected.insert(all_expected.end(),expected.begin(),expected.end());
+        std::vector<const LessonReaderSegmentSnapshot*> actual;
+        for(const auto& part:planned.segments)if(part.region==region.key)actual.push_back(&part);
+        check(actual.size()==expected.size(),"The actual numeric reader changed the worker's segment boundaries");
+        for(std::size_t index=0;index<expected.size();++index) {
+            const auto& want=expected[index];const auto& have=*actual[index];
+            check(have.source==want.text&&have.spoken==want.spoken&&have.start==want.start&&have.end==want.end,
+                "The actual reader ignored its region's contextual worker plan");
+            check(want.end>=want.start&&wide(want.text).size()==want.end-want.start,
+                "Contextual planning changed the curricular UTF-16 source range");
+            if(!typed||have.source.find("11/2")==have.source.npos)continue;
+            ++cpp_numeric_regions;
+            check(have.spoken.find("medios")==have.spoken.npos&&have.spoken.find("barra")!=have.spoken.npos,
+                "The C++ integer division was still narrated as a mathematical fraction");
+            check(want.displayed_ranges.size()==want.spoken_ranges.size()&&!want.displayed_ranges.empty(),
+                "The contextual C++ plan lost its paired spoken/source ownership");
+            const auto source=wide(want.text),spoken=wide(want.spoken);const auto slash=source.find(L'/');
+            check(slash!=source.npos,"A numeric source lost its literal slash");bool owned=false;
+            for(std::size_t word=0;word<want.displayed_ranges.size();++word) {
+                const auto& visible=want.displayed_ranges[word];const auto& audible=want.spoken_ranges[word];
+                check(visible.start<visible.end&&visible.end<=source.size()&&audible.start<audible.end&&audible.end<=spoken.size(),
+                    "The contextual numeric plan has an invalid UTF-16 ownership range");
+                if(visible.start<=slash&&visible.end>slash) {
+                    const auto words=spoken.substr(audible.start,audible.end-audible.start);
+                    owned=owned||words.find(L"barra")!=words.npos;
+                }
+            }
+            check(owned,"The spoken division operator does not belong to its displayed slash");
+            check(std::ranges::any_of(have.timings,[&](const auto& timing){return timing.start<=slash&&timing.end>slash;}),
+                "The real numeric recording lost the displayed slash's word timing");
+            if(region.feedback&&!selected) {
+                selected=static_cast<std::size_t>(actual[index]-planned.segments.data());selected_slash=slash;
+            }
+        }
+    }
+    check(cpp_numeric_regions>=3&&selected.has_value(),
+        "The current feedback, question and choice did not all expose their real 11/2 source");
+    const auto page_identity=lesson_page_state(f.view).narration_page_identity;
+    check(backend->identity(page_identity,"es","ef_dora",all_expected)==planned.key,
+        "The reader page key does not reflect its contextual prepared segments");
+    const auto& focal=planned.segments[*selected];const auto hash=verify_feedback_recording(focal);
+    const auto stamp=std::filesystem::last_write_time(focal.recording);
+    const auto slash_word=std::ranges::find_if(focal.timings,[&](const auto& timing){return timing.start<=selected_slash&&timing.end>selected_slash;});
+    check(slash_word!=focal.timings.end()&&planned.index<=*selected,"The selected current feedback has no reachable timed division word");
+    f.reader->toggle();
+    wait([&]{const auto value=f.snapshot();check(value.index<=*selected,"Playback skipped the selected contextual division recording");
+        return value.playing&&value.index==*selected&&value.offset>=slash_word->start_ms
+            &&value.offset<focal.duration_ms-20;},"the current C++ division word really plays");
+    f.reader->pause();const auto paused=f.snapshot();
+    check(!paused.playing&&!paused.allocated&&paused.index==*selected&&paused.offset>0&&!paused.finished,
+        "Pausing the actual contextual division retained a player or finished the page");
+    const auto history=narration::read_history(read_lesson_state(f.view));
+    const auto preserve_other_slots=[&]{const auto current=narration::read_history(read_lesson_state(f.view));
+        check(current.entries.size()==3,"Contextual reading lost the bounded three-page history");
+        for(const auto& old:other_positions){const auto found=std::ranges::find(current.entries,old.key,&narration::Bookmark::key);
+            check(found!=current.entries.end()&&*found==old,"Contextual playback rewrote another genuinely heard page position");}};
+    preserve_other_slots();
+    const auto reopen=[&]{
+        f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the current numeric lesson");DestroyWindow(f.view);f.view=nullptr;
+        f.view=create_lesson_view(f.host,f.environment,lesson);check(f.view!=nullptr,"Cannot reopen the actual numeric lesson");MoveWindow(f.view,0,0,980,720,TRUE);
+        LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
+        hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+        hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};set_lesson_view_hooks(f.view,std::move(hooks));
+        f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+    };
+    reopen();const auto restored=f.snapshot();
+    check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset
+        &&restored.heard_through==paused.heard_through&&!restored.playing&&!restored.allocated
+        &&restored.segments[restored.index].recording==focal.recording&&narration::read_history(read_lesson_state(f.view))==history,
+        "Reopening changed the genuine contextual division pause, certificate or recording");
+    f.reader->toggle();await_resumed_player([&]{return f.snapshot();},restored,"same contextual division recording resumes");
+    wait([&]{const auto value=f.snapshot();return value.playing&&value.index==restored.index&&value.offset>restored.offset+20;},
+        "the resumed contextual division advances from its real saved offset");f.reader->pause();
+    f.reader->seek_seconds(-60);const auto rewound=f.snapshot();
+    check(!rewound.playing&&!rewound.allocated&&!rewound.finished
+        &&(rewound.index<paused.index||(rewound.index==paused.index&&rewound.offset<paused.offset)),
+        "Rewinding the contextual recording invented playback or did not restore an earlier position");preserve_other_slots();
+    check(state::sha256(state::read_bytes(focal.recording))==hash&&std::filesystem::last_write_time(focal.recording)==stamp,
+        "Reopening/resuming/rewinding regenerated the compatible contextual recording");
+
+    // The same numeric bytes keep distinct semantic recordings. A genuine
+    // mathematical puzzle below additionally checks the native auto-context
+    // path rather than treating every route's slash as a C++ operator.
+    const auto math_plan=backend->plan("11/2","es");const auto cpp_plan=backend->plan("11/2","es",{},"cpp");
+    const auto chain=backend->plan("24/4/2","es",{},"cpp");
+    const auto explicit_cpp_fraction=backend->plan("11/2","es",{},"cpp","inline");
+    const auto explicit_auto_fraction=backend->plan("11/2","es",{},"auto","inline");
+    check(math_plan.size()==1&&cpp_plan.size()==1&&!chain.empty()
+        &&math_plan.front().spoken.find("medios")!=std::string::npos&&cpp_plan.front().spoken.find("barra")!=std::string::npos
+        &&math_plan.front().prepared!=cpp_plan.front().prepared,"C++ division and genuine fractions share the wrong prepared identity");
+    check(explicit_cpp_fraction.size()==1&&explicit_auto_fraction.size()==1
+        &&explicit_cpp_fraction.front().prepared==explicit_auto_fraction.front().prepared
+        &&explicit_cpp_fraction.front().spoken==explicit_auto_fraction.front().spoken
+        &&explicit_cpp_fraction.front().spoken.find("medios")!=std::string::npos,
+        "An explicit mathematical mode did not override the automatic C++ context");
+    std::string chain_spoken;for(const auto& part:chain)chain_spoken+=part.spoken;
+    const auto first_division=chain_spoken.find("barra");check(first_division!=chain_spoken.npos
+        &&chain_spoken.find("barra",first_division+1)!=chain_spoken.npos,"Repeated C++ division lost one of its two operators");
+    bool supplementary_owner=false;
+    for(const auto& part:backend->plan("🧭 11/2=5","es",{},"cpp")) {
+        const auto visible=wide(part.text),spoken=wide(part.spoken);const auto slash=visible.find(L'/');
+        if(slash==visible.npos)continue;
+        check(part.displayed_ranges.size()==part.spoken_ranges.size(),"The supplementary source lost paired ownership ranges");
+        check(part.start+slash==5,"The source slash after a supplementary character did not retain its UTF-16 offset");
+        for(std::size_t index=0;index<part.displayed_ranges.size();++index) {
+            const auto& display=part.displayed_ranges[index];const auto& sound=part.spoken_ranges[index];
+            if(display.start<=slash&&display.end>slash&&sound.end<=spoken.size())
+                supplementary_owner=supplementary_owner||spoken.substr(sound.start,sound.end-sound.start).find(L"barra")!=spoken.npos;
+        }
+    }
+    check(supplementary_owner,"A supplementary character displaced C++ operator ownership from its UTF-16 source");
+    const auto math_audio=backend->prepare(math_plan.front(),"es","ef_dora",f.environment.paths.cache/L"kokoro",0);
+    const auto cpp_audio=backend->prepare(cpp_plan.front(),"es","ef_dora",f.environment.paths.cache/L"kokoro",0);
+    const auto cpp_hash=state::sha256(state::read_bytes(cpp_audio.wav));const auto cpp_stamp=std::filesystem::last_write_time(cpp_audio.wav);
+    const auto cached=backend->prepare(cpp_plan.front(),"es","ef_dora",f.environment.paths.cache/L"kokoro",0);
+    check(math_audio.key!=cpp_audio.key&&math_audio.wav!=cpp_audio.wav&&cached.cache_hit&&cached.key==cpp_audio.key
+        &&cached.wav==cpp_audio.wav&&state::sha256(state::read_bytes(cached.wav))==cpp_hash&&std::filesystem::last_write_time(cached.wav)==cpp_stamp,
+        "Contextual arithmetic aliased a fraction cache key or rewrote a reusable recording");
+
+    const auto open_legacy_reader=[&]{
+        f.reader.reset();auto probe=std::make_unique<LegacyAutoReadingProbe>(f.view);
+        f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();return probe;
+    };
+    // A genuine paused AUTO recording whose prepared sentence did not change
+    // keeps its exact position/file when a different passage changes the key.
+    {
+        auto probe=open_legacy_reader();f.reader->restart();
+        wait([&]{const auto value=f.snapshot();return value.playing&&value.index==0&&value.offset>100;},
+            "a genuinely played unchanged sentence in the historical AUTO script");
+        f.reader->pause();const auto old=f.snapshot();const auto old_part=old.segments[old.index];
+        const auto old_hash=verify_feedback_recording(old_part);const auto old_stamp=std::filesystem::last_write_time(old_part.recording);
+        probe->detach();reopen();const auto migrated=f.snapshot();
+        check(migrated.key!=old.key&&!migrated.playing&&!migrated.allocated&&!migrated.finished
+            &&migrated.segments[migrated.index].region==old_part.region&&migrated.segments[migrated.index].source==old_part.source
+            &&migrated.offset==old.offset&&migrated.heard_through<=old.heard_through
+            &&migrated.segments[migrated.index].recording==old_part.recording,
+            "AUTO-to-C++ migration lost an unchanged real pause or invented listening credit");
+        check(state::sha256(state::read_bytes(old_part.recording))==old_hash&&std::filesystem::last_write_time(old_part.recording)==old_stamp,
+            "Migrating another sentence rewrote the unchanged AUTO recording");preserve_other_slots();
+    }
+    // A genuinely heard fraction cannot donate its offset/certificate to the
+    // corrected C++ pronunciation. Retry is performed through the real puzzle.
+    {
+        auto probe=open_legacy_reader();SendMessageW(child(f.view,1012+static_cast<int>(prediction.block)*100),BM_CLICK,0,0);
+        f.reader->pause();f.ready();f.answer(goal.answers.front(),prediction.block);const auto old_plan=f.snapshot();
+        const auto fraction=std::ranges::find_if(old_plan.segments,[&](const auto& part){return part.block==prediction.block
+            &&part.feedback&&part.source.find("11/2")!=part.source.npos&&part.spoken.find("medios")!=part.spoken.npos;});
+        check(fraction!=old_plan.segments.end(),"The historical AUTO descriptor did not reconstruct its actual fraction recording");
+        const auto at=static_cast<std::size_t>(fraction-old_plan.segments.begin());
+        const auto old_hash=verify_feedback_recording(*fraction);const auto old_stamp=std::filesystem::last_write_time(fraction->recording);
+        f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==at&&value.offset>150
+            &&value.offset<fraction->duration_ms-20;},"the historical AUTO fraction has a real partial playback offset");
+        f.reader->pause();const auto old=f.snapshot();
+        probe->detach();reopen();const auto migrated=f.snapshot();
+        check(migrated.key!=old.key&&!migrated.playing&&!migrated.allocated&&!migrated.finished&&migrated.offset==0
+            &&migrated.segments[migrated.index].region==fraction->region&&migrated.segments[migrated.index].source==fraction->source
+            &&migrated.segments[migrated.index].spoken.find("barra")!=std::string::npos
+            &&migrated.segments[migrated.index].recording!=fraction->recording
+            &&migrated.heard_through<=static_cast<std::int64_t>(migrated.index),
+            "A changed AUTO fraction donated its old offset, PCM or listening credit to corrected C++ speech");
+        const auto migrated_history=narration::read_history(read_lesson_state(f.view));const auto entry=std::ranges::find(migrated_history.entries,migrated.key,&narration::Bookmark::key);
+        check(entry!=migrated_history.entries.end()&&(!entry->position.heard_prefix||entry->position.heard_prefix->microseconds==0),
+            "Migrating changed speech retained a certificate for the historical fraction");
+        check(state::sha256(state::read_bytes(fraction->recording))==old_hash&&std::filesystem::last_write_time(fraction->recording)==old_stamp,
+            "Corrected speech replaced the independently preserved historical fraction WAV");preserve_other_slots();
+    }
+    // Finish the old page by answering its remaining puzzles with their own
+    // controls and really playing every segment. The changed earlier feedback
+    // must still be replayed after migration, even if the final sentence matches.
+    {
+        auto probe=open_legacy_reader();const auto& multiple=lesson.pages[choice.page].blocks[choice.block];
+        check(multiple.correct_index.has_value(),"The current numeric choice lost its authored answer");
+        SendMessageW(child(f.view,1020+static_cast<int>(choice.block)*100+static_cast<int>(*multiple.correct_index)*2),BM_CLICK,0,0);
+        SendMessageW(child(f.view,1003+static_cast<int>(choice.block)*100),BM_CLICK,0,0);f.reader->pause();f.ready();
+        const auto last=identity_position(lesson,"block_0003_0003");
+        check(last.page==prediction.page&&lesson.pages[last.page].blocks[last.block].answers.size()==1,
+            "The current numeric page lost its final diagnostic prediction");
+        f.answer(lesson.pages[last.page].blocks[last.block].answers.front(),last.block);
+        update_lesson_preferences(f.view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
+        f.reader->settings_changed();f.reader->restart();wait([&]{return f.snapshot().finished;},
+            "the complete historical AUTO page is really played before its migration",120000);
+        const auto old=f.snapshot();check(!old.allocated&&old.finished,"The complete AUTO page retained a decoder");
+        const auto changed=std::ranges::find_if(old.segments,[&](const auto& part){return part.block==prediction.block&&part.feedback
+            &&part.source.find("11/2")!=part.source.npos;});check(changed!=old.segments.end(),"The finished AUTO script lost the changed feedback");
+        probe->detach();reopen();const auto migrated=f.snapshot();
+        check(migrated.key!=old.key&&!migrated.finished&&!migrated.playing&&!migrated.allocated&&migrated.offset==0
+            &&migrated.segments[migrated.index].region==changed->region&&migrated.segments[migrated.index].source==changed->source
+            &&migrated.heard_through<=static_cast<std::int64_t>(migrated.index),
+            "A finished AUTO page falsely credited changed earlier C++ feedback because its last sentence matched");
+        preserve_other_slots();
+    }
+
+    const auto math_asset=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/math_physics/math_algebra_elemental/sistemas_lineales/lesson_dos_incognitas_y_soluciones_simultaneas.json";
+    const auto math_bytes=state::read_bytes(math_asset);const auto math_lesson=windows::load_lesson(math_asset);
+    auto math_goal=math_lesson.pages.at(2).blocks.at(3);
+    check(math_goal.type==curriculum::BlockType::math_puzzle&&math_goal.raw_json.find("11/2")!=std::string::npos,
+        "The genuine mathematical fraction control source changed");
+    auto guard=model();guard.id="qa_current_cpp_numeric_math_guard";guard.title="Control matemático.";guard.pages.resize(1);
+    guard.pages.front().blocks.front().text="Control matemático.";math_goal.address={0,1,{},{}};guard.pages.front().blocks.push_back(math_goal);
+    Fixture mathematical(backend,false,true,true,"es",guard,false,0,true);
+    bool genuine_fraction=false;
+    for(const auto& region:lesson_reading_regions(mathematical.view))if(region.block_index==1) {
+        check(region.reading_context=="auto","A genuine mathematics control was forced into C++ context");
+        if(region.source_text.find("11/2")==region.source_text.npos)continue;
+        for(const auto& part:backend->plan(region.source_text,"es",{},region.reading_context,region.math_mode))
+            genuine_fraction=genuine_fraction||part.spoken.find("medios")!=std::string::npos;
+    }
+    check(genuine_fraction,"The mounted authentic mathematics control lost fraction pronunciation in auto mode");
+    check(read_lesson_state(f.view).preferences.at("cpp_numeric_reader_qa")==unrelated&&state::read_bytes(asset)==asset_bytes
+        &&state::read_bytes(math_asset)==math_bytes,"Contextual numeric QA changed assets or unrelated preferences");
+    std::cout<<"PASS current U11L12 p7 numeric reader: typed feedback/question/choice plans, slash UTF-16 ownership and real PCM, distinct fraction/division cache keys, repeated division, released exact pause/reopen/resume/rewind and three genuinely heard page slots; real historical AUTO pauses/finished page migrate unchanged speech exactly and changed feedback without invented credit; authentic mathematical control stays auto. One compiler prerequisite is explicitly synthetic QA, no C++ execution, full curricular traversal or human listening claimed.\n";
+}
+
+void current_cpp_parenthesis_context_reader(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    const auto asset=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_signos_unarios_parentesis_y_progreso_recursivo.json";
+    const auto asset_bytes=state::read_bytes(asset);auto lesson=windows::load_lesson(asset);
+    const auto prediction=identity_position(lesson,"block_0003_0001"),following=identity_position(lesson,"block_0003_0003");
+    const auto owner=identity_position(lesson,"block_0004_0004");
+    check(prediction.page==4&&prediction.block==1&&following.page==prediction.page&&following.block==2
+        &&lesson.pages[prediction.page].blocks[prediction.block].explanation.find("consume )")!=std::string::npos
+        &&lesson.pages[prediction.page].blocks[prediction.block].answers==std::vector<std::string>{"Resultado: 21"}
+        &&lesson.compiler_puzzles_required&&lesson.pages.size()>=prediction.page+3,
+        "The current U11L13 parenthesis source or its real predictions changed");
+    const auto original_goal=lesson.pages[prediction.page].blocks[prediction.block].raw_json;
+    // Explicitly QA-only: this added visible puzzle makes the preceding C++
+    // policy's numeric reading distinguishable from AUTO in the full page key.
+    // Every real curricular field stays intact. This extra activity remains
+    // unanswered; no source program is executed and no page is completed.
+    curriculum::Block numeric_control;numeric_control.type=curriculum::BlockType::output_prediction;
+    numeric_control.id=numeric_control.stable_id="qa_cpp_parenthesis_numeric_control";
+    numeric_control.language="cpp";numeric_control.question="El código calcula 11/2.";numeric_control.answers={"5"};
+    numeric_control.address={prediction.page,99,"cpp_parenthesis_reader_qa","qa_cpp_parenthesis_reader_page"};
+    const auto numeric_index=lesson.pages[prediction.page].blocks.size();
+    lesson.pages[prediction.page].blocks.push_back(numeric_control);
+    const auto& goal=lesson.pages[prediction.page].blocks[prediction.block];
+    const auto& second=lesson.pages[following.page].blocks[following.block];
+    const auto initial_page=lesson.pages.size()-1;
+    Fixture f(backend,false,true,true,"es",lesson,false,initial_page,true,true,[](HWND view){
+        update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=2.;});
+    },[&](state::StateData& data){
+        // The compiler receipt isolates the prerequisite. It is synthetic QA,
+        // separate from the genuine WAV playback asserted below.
+        const auto& compiler=lesson.pages[owner.page].blocks[owner.block];
+        check(compiler.output_check&&compiler.output_check->cases.size()==1,"Parenthesis reader QA needs its aggregate compiler prerequisite");
+        windows::CppRunRequest request;request.revision=1;request.source_utf8=compiler.initial_code;
+        const auto& expected=compiler.output_check->cases.front();
+        curriculum::FreshExecution execution{1,true,true,0,expected.standard_input,expected.outputs.front()};
+        check(windows::record_compiler_puzzle_case(data,lesson,compiler,request,execution,"Synthetic parenthesis-reader QA prerequisite; no execution"),
+            "Cannot isolate the current parenthesis reader prerequisite");
+        data.preferences["cpp_parenthesis_reader_qa"]["unrelated"]=std::string(" \t conservar\r\n");
+    });
+    const auto unrelated=read_lesson_state(f.view).preferences.at("cpp_parenthesis_reader_qa");
+    std::vector<narration::Bookmark> other_positions;
+    for(const std::size_t page:{initial_page,initial_page-1}){
+        if(lesson_page_state(f.view).index!=page)f.page(page);
+        f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.offset>100;},
+            "actual other-page playback before the C++ parenthesis policy migration");
+        f.reader->pause();const auto paused=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));
+        const auto entry=std::ranges::find(history.entries,paused.key,&narration::Bookmark::key);
+        check(entry!=history.entries.end()&&entry->position.milliseconds==paused.offset&&!entry->position.finished
+            &&entry->position.heard_prefix&&entry->position.heard_prefix->microseconds>0,
+            "Another page's parenthesis-migration slot was not earned by actual playback");
+        other_positions.push_back(*entry);
+    }
+    f.page(prediction.page);
+    // Both actual predictions use their real answer/check controls. The
+    // additional QA numeric question must remain pending after them.
+    f.answer(goal.answers.front(),prediction.block);f.answer(second.answers.front(),following.block);
+    const auto responses=read_lesson_state(f.view);
+    const auto first_response=state::get_response(responses,lesson,goal),second_response=state::get_response(responses,lesson,second);
+    check(first_response&&first_response->correct&&second_response&&second_response->correct
+        &&!state::get_response(responses,lesson,numeric_control),"The actual predictions or unanswered QA control were not kept distinct");
+    const auto preserve_other_slots=[&]{const auto history=narration::read_history(read_lesson_state(f.view));
+        check(history.entries.size()==3,"Parenthesis policy migration changed the three-slot limit");
+        for(const auto& old:other_positions){const auto found=std::ranges::find(history.entries,old.key,&narration::Bookmark::key);
+            check(found!=history.entries.end()&&*found==old,"Parenthesis policy migration rewrote another genuinely heard page slot");}};
+    const auto reopen=[&]{
+        f.reader.reset();check(flush_lesson_view(f.view),"Cannot flush the current parenthesis lesson");DestroyWindow(f.view);f.view=nullptr;
+        f.view=create_lesson_view(f.host,f.environment,lesson);check(f.view!=nullptr,"Cannot reopen the actual parenthesis lesson");MoveWindow(f.view,0,0,980,720,TRUE);
+        LessonViewHooks hooks;hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};
+        hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
+        hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};set_lesson_view_hooks(f.view,std::move(hooks));
+        f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();
+    };
+    const auto old_reader=[&]{f.reader.reset();auto probe=std::make_unique<LegacyAutoReadingProbe>(f.view,"cpp_previous_parentheses");
+        f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();return probe;};
+    struct RecordingEvidence{LessonReaderSegmentSnapshot part;std::string hash;std::filesystem::file_time_type stamp;};
+    const auto recordings=[&](const LessonReaderSnapshot& snapshot,std::string_view phase){std::vector<RecordingEvidence> result;
+        check(snapshot.index<snapshot.segments.size()&&!snapshot.playing&&!snapshot.allocated&&snapshot.offset>0,
+            "Recording evidence requires a released genuine pause: "+std::string(phase));
+        const auto& played=snapshot.segments[snapshot.index];
+        try{check(played.available,"The actually played part is not available");(void)verify_feedback_recording(played);}
+        catch(const std::exception& error){throw std::runtime_error(std::string(phase)+" played block="+std::to_string(played.block)
+            +" index="+std::to_string(snapshot.index)+" WAV="+utf8(played.recording.native())+": "+error.what());}
+        for(const auto& part:snapshot.segments)if(part.available&&!part.recording.empty()){
+            // The code-announcement UI label has real PCM but no lexical
+            // alignment. Preserve every available file; require the full
+            // feedback contract for both actual explanations and, above, for
+            // whichever sentence was genuinely played before this pause.
+            if(part.feedback&&(part.block==prediction.block||part.block==following.block)){
+                try{(void)verify_feedback_recording(part);}
+                catch(const std::exception& error){throw std::runtime_error(std::string(phase)+" feedback block="+std::to_string(part.block)
+                    +" duration="+std::to_string(part.duration_ms)+" timings="+std::to_string(part.timings.size())
+                    +" source="+part.source+" WAV="+utf8(part.recording.native())+": "+error.what());}
+            }
+            const auto bytes=state::read_bytes(part.recording);
+            check(!bytes.empty(),std::string(phase)+" available block="+std::to_string(part.block)
+                +" has an empty WAV="+utf8(part.recording.native()));
+            result.push_back({part,state::sha256(bytes),std::filesystem::last_write_time(part.recording)});
+        }
+        return result;};
+    const auto preserve_recordings=[&](const std::vector<RecordingEvidence>& old,const LessonReaderSnapshot& current){
+        std::size_t compatible=0;
+        for(const auto& item:old){check(state::sha256(state::read_bytes(item.part.recording))==item.hash
+                &&std::filesystem::last_write_time(item.part.recording)==item.stamp,"Parenthesis migration changed a historical WAV or timestamp");
+            const auto match=std::ranges::find_if(current.segments,[&](const auto& part){return part.region==item.part.region
+                &&part.source==item.part.source&&part.spoken==item.part.spoken&&part.start==item.part.start&&part.end==item.part.end;});
+            if(match!=current.segments.end()){++compatible;check(match->recording==item.part.recording,
+                "An unchanged parenthesis-policy sentence did not reuse its compatible WAV");}}
+        check(compatible>=2,"The parenthesis migration did not exercise compatible recordings");};
+    const auto assert_old_policy=[&](const LessonReaderSnapshot& snapshot){
+        std::vector<windows::NarrationSegment> old,automatic;bool typed_numeric=false;
+        for(const auto& region:lesson_reading_regions(f.view)){
+            const auto previous=backend->plan(region.source_text,"es",{},region.reading_context,region.math_mode);
+            old.insert(old.end(),previous.begin(),previous.end());
+            const auto auto_context=region.reading_context=="cpp_previous_parentheses"?"auto":region.reading_context;
+            const auto legacy=backend->plan(region.source_text,"es",{},auto_context,region.math_mode);
+            automatic.insert(automatic.end(),legacy.begin(),legacy.end());
+            if(region.block_index==numeric_index){check(region.reading_context=="cpp_previous_parentheses","The QA numeric control did not use the actual typed C++ descriptor");
+                typed_numeric=std::ranges::any_of(previous,[](const auto& part){return part.spoken.find("barra")!=std::string::npos&&part.spoken.find("medios")==std::string::npos;});}
+        }
+        const auto page=lesson_page_state(f.view).narration_page_identity;
+        check(typed_numeric&&backend->identity(page,"es","ef_dora",old)==snapshot.key
+            &&backend->identity(page,"es","ef_dora",automatic)!=snapshot.key,
+            "The historical C++ page key aliases AUTO and would not require the parenthesis-specific migration fallback");
+    };
+    const auto assert_same_slot=[&](const narration::History& before,std::string_view old_key,const LessonReaderSnapshot& current){
+        const auto after=narration::read_history(read_lesson_state(f.view));
+        const auto old=std::ranges::find(before.entries,old_key,&narration::Bookmark::key);
+        const auto migrated=std::ranges::find(after.entries,current.key,&narration::Bookmark::key);
+        check(before.entries.size()==3&&after.entries.size()==3&&old!=before.entries.end()&&migrated!=after.entries.end()
+            &&old-before.entries.begin()==migrated-after.entries.begin()
+            &&old->page==migrated->page&&std::ranges::none_of(after.entries,[&](const auto& item){return item.key==old_key;}),
+            "The previous C++ bookmark did not migrate in place in its original page slot");preserve_other_slots();
+    };
+    {
+        auto probe=old_reader();assert_old_policy(f.snapshot());f.reader->restart();
+        wait([&]{const auto value=f.snapshot();return value.playing&&value.index==0&&value.offset>100;},
+            "an unchanged U11L13 sentence really plays under the preceding C++ policy");
+        f.reader->pause();const auto old=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));const auto evidence=recordings(old,"unchanged opening pause");
+        probe->detach();reopen();const auto current=f.snapshot();
+        check(current.key!=old.key&&!current.playing&&!current.allocated&&!current.finished&&current.offset==old.offset
+            &&current.segments[current.index].region==old.segments[old.index].region
+            &&current.segments[current.index].source==old.segments[old.index].source
+            &&current.segments[current.index].recording==old.segments[old.index].recording,
+            "The preceding C++ policy lost the exact compatible pause during parenthesis migration");
+        const auto migrated_history=narration::read_history(read_lesson_state(f.view));
+        const auto before=std::ranges::find(history.entries,old.key,&narration::Bookmark::key),after=std::ranges::find(migrated_history.entries,current.key,&narration::Bookmark::key);
+        check(before!=history.entries.end()&&after!=migrated_history.entries.end()&&before->position.heard_prefix==after->position.heard_prefix,
+            "An unchanged C++ recording lost its genuinely heard prefix certificate");
+        assert_same_slot(history,old.key,current);preserve_recordings(evidence,current);
+    }
+    {
+        auto probe=old_reader();assert_old_policy(f.snapshot());f.reader->restart();const auto planned=f.snapshot();
+        const auto selected=std::ranges::find_if(planned.segments,[&](const auto& part){return part.block==prediction.block&&part.feedback
+            &&part.source.find("consume )")!=std::string::npos;});
+        check(selected!=planned.segments.end()&&selected->spoken.find(')')!=std::string::npos
+            &&selected->spoken.find("cierra paréntesis")==std::string::npos,"The historical policy did not reconstruct the actual unlexicalized parenthesis feedback");
+        const auto at=static_cast<std::size_t>(selected-planned.segments.begin());
+        wait([&]{const auto value=f.snapshot();check(value.index<=at,"Historical playback skipped the selected U11L13 feedback");
+            return value.playing&&value.index==at&&value.offset>150&&value.offset<selected->duration_ms-20;},
+            "the historical U11L13 parenthesis feedback has a genuine partial playback offset");
+        f.reader->pause();const auto old=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));const auto evidence=recordings(old,"changed parenthesis feedback pause");
+        const auto old_entry=std::ranges::find(history.entries,old.key,&narration::Bookmark::key);
+        check(old_entry!=history.entries.end()&&old_entry->position.heard_prefix&&old_entry->position.heard_prefix->microseconds>0,
+            "The changed historical sentence had no genuine playback certificate");
+        probe->detach();reopen();const auto current=f.snapshot();
+        check(current.key!=old.key&&!current.playing&&!current.allocated&&!current.finished&&current.offset==0
+            &&current.segments[current.index].region==selected->region&&current.segments[current.index].source==selected->source
+            &&current.segments[current.index].spoken.find("cierra paréntesis")!=std::string::npos
+            &&current.segments[current.index].recording!=selected->recording&&current.heard_through<=static_cast<std::int64_t>(current.index),
+            "The changed parenthesis feedback inherited an old offset, recording or listening credit");
+        const auto migrated_history=narration::read_history(read_lesson_state(f.view));
+        const auto entry=std::ranges::find(migrated_history.entries,current.key,&narration::Bookmark::key);
+        check(entry!=migrated_history.entries.end()&&(!entry->position.heard_prefix||entry->position.heard_prefix->microseconds==0),
+            "The corrected parenthesis sentence inherited the old policy's heard-prefix certificate");
+        assert_same_slot(history,old.key,current);preserve_recordings(evidence,current);
+        reopen();const auto restored=f.snapshot();
+        check(restored.key==current.key&&restored.index==current.index&&restored.offset==0&&restored.heard_through==current.heard_through
+            &&!restored.playing&&!restored.allocated&&narration::read_history(read_lesson_state(f.view))==migrated_history,
+            "Silent reopen changed the migrated parenthesis position, listening credit or slot");
+        preserve_other_slots();preserve_recordings(evidence,restored);
+    }
+    {
+        // A compatible pause AFTER changed successful feedback is different
+        // from the unchanged opening pause above. Even an unfinished page
+        // must revisit the new explanation before it can resume beyond it.
+        auto probe=old_reader();assert_old_policy(f.snapshot());f.reader->restart();const auto planned=f.snapshot();
+        const auto changed=std::ranges::find_if(planned.segments,[&](const auto& part){return part.block==prediction.block&&part.feedback
+            &&part.source.find("consume )")!=std::string::npos;});
+        const auto later=std::ranges::find_if(planned.segments,[&](const auto& part){return part.block==following.block&&part.feedback
+            &&part.source.find("La unidad produce -9.")!=std::string::npos;});
+        check(changed!=planned.segments.end()&&later!=planned.segments.end()&&changed<later,
+            "The actual U11L13 page no longer has compatible feedback after the changed parenthesis sentence");
+        const auto at=static_cast<std::size_t>(later-planned.segments.begin());
+        wait([&]{const auto value=f.snapshot();check(value.index<=at,"Historical playback skipped the later compatible explanation");
+            return value.playing&&value.index==at&&value.offset>150&&value.offset<later->duration_ms-20;},
+            "the historical reader really reaches compatible feedback after the changed explanation");
+        f.reader->pause();const auto old=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));const auto evidence=recordings(old,"later compatible feedback pause");
+        const auto old_entry=std::ranges::find(history.entries,old.key,&narration::Bookmark::key);
+        check(!old.finished&&old.heard_through>static_cast<std::int64_t>(changed-planned.segments.begin())
+            &&old_entry!=history.entries.end()&&old_entry->position.heard_prefix&&old_entry->position.heard_prefix->microseconds>0,
+            "The later pause did not actually play through the old successful explanation");
+        probe->detach();reopen();const auto current=f.snapshot();
+        check(current.key!=old.key&&!current.playing&&!current.allocated&&!current.finished&&current.offset==0
+            &&current.segments[current.index].region==changed->region&&current.segments[current.index].source==changed->source
+            &&current.segments[current.index].spoken.find("cierra paréntesis")!=std::string::npos
+            &&current.heard_through<=static_cast<std::int64_t>(current.index),
+            "An unfinished later compatible pause skipped the corrected successful explanation");
+        const auto migrated_history=narration::read_history(read_lesson_state(f.view));
+        const auto entry=std::ranges::find(migrated_history.entries,current.key,&narration::Bookmark::key);
+        check(entry!=migrated_history.entries.end()&&(!entry->position.heard_prefix||entry->position.heard_prefix->microseconds==0),
+            "Revisiting changed earlier feedback retained the later recording's heard-prefix certificate");
+        assert_same_slot(history,old.key,current);preserve_recordings(evidence,current);
+        f.reader->toggle();await_resumed_player([&]{return f.snapshot();},current,"resuming migrated earlier parenthesis feedback");
+        wait([&]{const auto value=f.snapshot();check(value.index==current.index,"Resuming after migration skipped the new parenthesis recording");
+            return value.playing&&value.offset>80;},"the corrected explanation is actually played before later compatible prose");
+        f.reader->pause();preserve_other_slots();
+    }
+    const auto saved=read_lesson_state(f.view);
+    check(saved.preferences.at("cpp_parenthesis_reader_qa")==unrelated&&!state::get_response(saved,lesson,numeric_control)
+        &&goal.raw_json==original_goal&&state::read_bytes(asset)==asset_bytes,
+        "Parenthesis migration changed unrelated state, completed the QA control or modified the curricular source");
+    std::cout<<"PASS actual U11L13 parenthesis feedback: preceding C++ policy with corrected numeric reading has its own non-AUTO key; genuine opening/changed/later-compatible pauses migrate in the same three heard page slots, retain compatible WAVs, clear new-speech credit and revisit corrected earlier feedback, with silent reopen. One visible numeric puzzle is QA-only and remains unanswered; one compiler prerequisite is synthetic, no compilation/full traversal/human listening claimed.\n";
+}
+
 void missing_recording_recovery(const std::shared_ptr<windows::NarrationWorker>& backend) {
     const auto owned_cache=std::filesystem::path(build::source_root)/"out/qa"/
         (L"reader-missing-wave-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()));
@@ -1952,7 +2478,10 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool missing_recording_only=argc==2&&std::string_view(argv[1])=="--missing-recording";
     const bool changed_recording_only=argc==2&&std::string_view(argv[1])=="--changed-recording";
     const bool curricular_colors_only=argc==2&&std::string_view(argv[1])=="--curricular-colors";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only)return 2;
+    const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
+    const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
+    const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -1960,6 +2489,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         if(required_compiler_only){current_required_compiler_reader(backend);return 0;}
         if(curricular_colors_only){current_curricular_colors_reader(backend);return 0;}
+        if(cpp_numeric_context_only){current_cpp_numeric_context_reader(backend);return 0;}
+        if(cpp_parenthesis_context_only){current_cpp_parenthesis_context_reader(backend);return 0;}
         if(missing_recording_only){missing_recording_recovery(backend);return 0;}
         if(changed_recording_only){replaced_recording_is_verified_before_released_resume(backend);return 0;}
         if(seek_keys_only){reader_arrow_aliases_preserve_control_keys(backend);return 0;}
@@ -1970,14 +2501,19 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(integrated_matching_only){integrated_matching_reader_bookmarks(backend);return 0;}
         if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
-        runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
-        extended_reader_playback_rates(backend);
-        checked_compilation_keeps_keyboard_reader_control(backend);
-        reader_arrow_aliases_preserve_control_keys(backend);
-        dependent_puzzle_reader_bookmarks(backend);
-        independent_feedback_does_not_complete_a_pending_compiler(backend);
-        integrated_u1_reader_flow(backend);
-        integrated_order_reader_flow(backend);
+        // These independent flows have their own selectors. State migration
+        // checks can run without the separate real foreground-focus scenario;
+        // the default suite keeps its existing coverage.
+        if(!state_compatibility_only){
+            runtime_stderr_reader_objective(backend);if(stderr_only)return 0;
+            extended_reader_playback_rates(backend);
+            checked_compilation_keeps_keyboard_reader_control(backend);
+            reader_arrow_aliases_preserve_control_keys(backend);
+            dependent_puzzle_reader_bookmarks(backend);
+            independent_feedback_does_not_complete_a_pending_compiler(backend);
+            integrated_u1_reader_flow(backend);
+            integrated_order_reader_flow(backend);
+        }
         {
             Fixture f(backend,true);KeyboardStateScope keyboard;ReaderCommandProbe probe(f.reader->bar());
             const auto edit=child(f.view,1102),play=GetDlgItem(f.reader->bar(),6504);SetFocus(edit);
@@ -2188,10 +2724,15 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 std::cout<<"PASS floating reader icons: captured mouse and accessible speed/play/pause activation, exact single dispatch and released media/capture\n";
             }
             f.reader->toggle();
-            wait([&]{const auto s=f.snapshot();return s.playing&&s.index==1&&s.offset>700&&s.offset<2500;},"paragraph real playback");
+            wait([&]{const auto s=f.snapshot();if(!s.playing||s.index!=1)return false;
+                const auto& part=s.segments[s.index];return part.timings.size()>1
+                    &&s.offset>=part.timings.front().end_ms&&s.offset<part.timings.back().start_ms;
+            },"paragraph playback between its actual first and last word timings");
             const auto moving=f.snapshot();const auto& segment=moving.segments[moving.index];
-            const auto pending=reader_theme::unread_color(reader_theme::background(segment.target));
-            check(color(segment.target,0)!=pending&&color(segment.target,static_cast<LONG>(wide(segment.source).size()-2))==pending,
+            const auto read_offset=static_cast<LONG>(segment.start+segment.timings.front().start);
+            const auto pending_offset=static_cast<LONG>(segment.start+segment.timings.back().start);
+            const auto pending=pending_color(segment.target,pending_offset);
+            check(color(segment.target,read_offset)!=pending&&color(segment.target,pending_offset)==pending,
                 "Read and pending words do not coexist inside the real paragraph");
             auto expected_visibility_settings=read_lesson_state(f.view).preferences.at("lesson_narration_settings");
             expected_visibility_settings["controls_visible"]=false;
@@ -2225,7 +2766,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
             wait([&]{const auto s=f.snapshot();return s.playing&&s.offset>=paused.offset;},"real resumed media position");
             f.reader->pause();const auto before=f.snapshot();f.reader->seek_seconds(-3);const auto back=f.snapshot();
             check(back.index<before.index||(back.index==before.index&&back.offset<before.offset),"Rewind did not move actual reading position");
-            check(color(segment.target,static_cast<LONG>(wide(segment.source).size()-2))==pending,"Rewind left later words read");
+            check(color(segment.target,pending_offset)==pending,"Rewind left later words read");
             f.reader->seek_seconds(3);const auto forward=f.snapshot();check(forward.index>back.index||forward.offset>back.offset,"Manual forward did not advance visual position");
             f.reader->restart();check(f.snapshot().index==0&&f.snapshot().offset<100&&f.snapshot().heard_through==0,"Restart kept old playback or listening evidence");
             wait([&]{return f.snapshot().finished;},"natural page finish");const auto ended=f.snapshot();
@@ -2432,17 +2973,17 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                     &&value.offset>=part.timings[1].start_ms&&value.offset<part.timings.back().start_ms;
             },"real word-aligned compiler feedback playback");
             f.reader->pause();const auto paused=f.snapshot();const auto& current=paused.segments[paused.index];
-            const auto pending=reader_theme::unread_color(reader_theme::background(current.target));
             const auto displayed=wide(edit_text(current.target));const auto technical_word=displayed.find(L"std::cout"),later_word=displayed.find(L"previsto");
             check(technical_word!=std::wstring::npos&&later_word!=std::wstring::npos
-                    &&color(current.target,static_cast<LONG>(technical_word))!=pending&&color(current.target,static_cast<LONG>(later_word))==pending,
+                    &&color(current.target,static_cast<LONG>(technical_word))!=pending_color(current.target,static_cast<LONG>(technical_word))
+                    &&color(current.target,static_cast<LONG>(later_word))==pending_color(current.target,static_cast<LONG>(later_word)),
                 "Compiler feedback did not keep read and pending technical words inside the same narration segment");
             f.reader->toggle();await_resumed_player([&]{return f.snapshot();},paused,"Resuming compiler feedback");
             wait([&]{const auto value=f.snapshot();return value.playing&&value.segments[value.index].block==2;},
                 "fully heard correct compiler feedback continues into the following paragraph");
             wait([&]{return f.snapshot().finished;},"checked compiler narration reaches the real page end");
             const auto previous_prose=child(f.view,1000);const auto previous_ink=color(previous_prose,0);
-            check(previous_ink!=reader_theme::unread_color(reader_theme::background(previous_prose)),"The completed paragraph remained pending");
+            check(previous_ink!=pending_color(previous_prose,0),"The completed paragraph remained pending");
             f.edit_program(compiler_source("Mal"));
             check(color(previous_prose,0)==previous_ink,
                 "Removing an old compiler verdict temporarily darkened previously read prose during replanning");
@@ -2626,9 +3167,9 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
                 return part.block==0&&part.timings.size()>5&&current.offset>=part.timings[1].start_ms&&
                     current.offset<part.timings.back().start_ms;},"real word-aligned "+language+" playback");
             f.reader->pause();const auto paused=f.snapshot();const auto& part=paused.segments[paused.index];
-            const auto pending=reader_theme::unread_color(reader_theme::background(part.target));
             const auto read=static_cast<LONG>(part.start+part.timings.front().start);
             const auto unread=static_cast<LONG>(part.start+part.timings.back().start);
+            const auto pending=pending_color(part.target,unread);
             check(color(part.target,read)!=pending&&color(part.target,unread)==pending,
                 "Real "+language+" playback did not show read and pending words inside one technical paragraph");
             check(!paused.allocated&&!paused.playing,"A language-specific pause kept MediaPlayer alive");

@@ -247,7 +247,13 @@ std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_leas
     ++state->heavy;
     return NarrationPriorityLease([state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();});
 }
-std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop){ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
+std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
+    std::string_view reading_context,std::string_view math_mode){
+    if(reading_context!="auto"&&reading_context!="cpp"&&reading_context!="cpp_previous_parentheses")throw std::invalid_argument("Invalid narration reading context");
+    if(math_mode!="auto"&&math_mode!="text"&&math_mode!="inline"&&math_mode!="block")throw std::invalid_argument("Invalid narration mathematical mode");
+    ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);
+    put(request,L"readingContext",reading_context);put(request,L"mathMode",math_mode);
+    const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};
         segment.spoken=string(object,L"spokenText");
         const auto ranges=[&](const wchar_t* key,std::vector<SpeechRange>& target){if(!object.HasKey(key))return;
@@ -282,8 +288,10 @@ NarrationAudio NarrationWorker::prepare_system(const NarrationSegment& segment,s
     try{return impl_->system_speech.prepare(segment,language,voice,output,operation.get_token(),impl_->storage_budget.load()).audio;}
     catch(...){if(background.stop.stop_requested()&&!stop.stop_requested())throw NarrationPreempted{};throw;}
 }
-std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop){
+std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop,std::string_view reading_context){
+    if(reading_context!="auto"&&reading_context!="cpp")throw std::invalid_argument("Invalid curriculum narration reading context");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);
+    put(request,L"readingContext",reading_context);
     request.Insert(L"page",JsonValue::CreateNumberValue(static_cast<double>(page)));put(request,L"language",language);put(request,L"voice",voice);put(request,L"uiLanguage",ui_language);
     std::string reply;(void)impl_->call(request,stop,&reply,false,NarrationCpuClass::background);return reply;
 }

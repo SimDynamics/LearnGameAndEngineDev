@@ -693,6 +693,17 @@ struct LessonView {
         if(!next){fullscreen_palette_height=0;ShowWindow(fullscreen_palette,SW_HIDE);}
         return reparented;
     }
+    void reading_context(LessonReadingRegion& region,const curriculum::Block& current) const {
+        const bool cpp_puzzle=current.type==BlockType::multiple_choice||current.type==BlockType::fill_code
+            ||current.type==BlockType::inline_fill_code||current.type==BlockType::output_prediction
+            ||current.type==BlockType::order_code||current.type==BlockType::drag_fill_code;
+        if(route=="programming"&&cpp_puzzle
+            &&(current.language.empty()||current.language=="cpp"||current.language=="c++"))region.reading_context="cpp";
+        if(!current.raw_json.empty()){
+            const auto raw=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(current.raw_json));
+            region.math_mode=winrt::to_string(raw.GetNamedString(L"mathMode",L"auto"));
+        }
+    }
     std::vector<LessonReadingRegion> reading_regions(int script_version=0) const {
         const bool legacy_programming=script_version==1;
         std::vector<LessonReadingRegion> result;
@@ -712,6 +723,7 @@ struct LessonView {
                 is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback||compiler_gate,
                 compiler_gate?windows::compiler_puzzle_completed(data,lesson,current):compiler_feedback?vm.feedback_correct:vm.response.correct});
             result.back().required_compiler=compiler_gate;
+            reading_context(result.back(),current);
             result.back().anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id
                 +"/part/"+std::to_string(GetDlgCtrlID(target)-control_id(index,0));
         };
@@ -745,6 +757,7 @@ struct LessonView {
                 if(!region.target || region.source_text.empty()) continue;
                 result.push_back({lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+region.key,
                     region.source_text,region.target,index,false,false,true,vm.response.correct});
+                reading_context(result.back(),current);
             }
             add(index,vm.feedback,vm.feedback_source,true);
             if(script_version==0&&current.type==BlockType::cpp_compiler)
@@ -774,6 +787,7 @@ struct LessonView {
             // Keep the current HWND and stable anchor. Archived data changes
             // only this prose source; it creates no controls or old feedback.
             region->source_text=winrt::to_string(previous.GetNamedString(L"text"));
+            region->math_mode=winrt::to_string(previous.GetNamedString(L"mathMode",L"auto"));
             archives.push_back({identity,regions});
         }
         return archives;
@@ -807,6 +821,7 @@ struct LessonView {
             const auto emit=[&](std::size_t index,const curriculum::Block& current,int part,std::string text,bool passive=false){
                 if(text.empty())return;
                 LessonReadingRegion region;region.block_index=index;region.source_text=std::move(text);region.passive_label=passive;
+                reading_context(region,current);
                 const auto prefix=lesson.id+'/'+lesson.locale+'/'+page_id+'/'+current.stable_id;
                 region.key=prefix+'/'+std::to_string(control_id(index,part));region.anchor=prefix+"/part/"+std::to_string(part);
                 if(curriculum::retired_block(lesson,current.stable_id))if(const auto next=curriculum::active_block_successor(lesson,current.stable_id))
@@ -832,7 +847,11 @@ struct LessonView {
                 if(current.type==BlockType::cpp_compiler&&windows::compiler_puzzle_completed(data,historical,current)){
                     const auto stored=windows::compiler_puzzle_feedback(data,historical,current);const auto body=stored.find_first_of("\r\n");
                     prior_feedback=verdict_text(true);if(body!=std::string::npos)prior_feedback+=stored.substr(body);correct=true;
-                }else if(response&&response->correct){prior_feedback=verdict_text(true)+(current.explanation.empty()?"":"\n"+current.explanation);correct=true;}
+                }else if(response&&response->correct){
+                    const auto explanation=current.type==BlockType::multiple_choice
+                        ?state::choice_correct_feedback(*response,current):current.explanation;
+                    prior_feedback=verdict_text(true)+(explanation.empty()?"":"\n"+explanation);correct=true;
+                }
                 else if(response&&exercise(current.type)&&state::response_reviewed(*response,current)){
                     const auto review=current.type==BlockType::multiple_choice?state::choice_incorrect_feedback(*response,current)
                         :curriculum::incorrect_feedback(current,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
@@ -2362,7 +2381,9 @@ struct LessonView {
             auto text=verdict_text(true);if(body!=std::string::npos)text+=restored.substr(body);
             feedback(index,text,true,true);
         } else if (vm.response.correct) {
-            auto explanation = block(index).explanation;
+            const auto& current=block(index);
+            const auto explanation=current.type==BlockType::multiple_choice
+                ?state::choice_correct_feedback(vm.response,current):current.explanation;
             feedback(index, verdict_text(true) + (explanation.empty() ? "" : "\n" + explanation), true, true);
         } else if (exercise(block(index).type) && state::response_reviewed(vm.response, block(index))) {
             const auto& current = block(index);

@@ -17,6 +17,8 @@ struct ChoiceRevisionCase {
     const char* feedback;
     const char* before_full;
     const char* after_full;
+    const char* explanation=nullptr;
+    bool allow_unexpanded_source=false;
 };
 inline const std::vector<ChoiceRevisionCase>& choice_revision_cases() {
     static const std::vector<ChoiceRevisionCase> cases{
@@ -38,7 +40,14 @@ inline const std::vector<ChoiceRevisionCase>& choice_revision_cases() {
         {"lesson_tokens_con_categoria_y_valor.json","block_0006_0001",2,
             "Los tres se rechazan al combinar tokens, porque todo error de una expresión es de gramática.",
             "Un orden de unidades permitido puede incumplir las condiciones de una operación. Distingue su forma de los valores con los que se intenta calcular.",
-            "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91","123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1"}
+            "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91","123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1"},
+        {"lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json","block_0007_0001",1,
+            "Lanzar una excepción de recuperación y terminar ese recorrido.",nullptr,
+            "1a4a51d3a8dcc2c9ace27e6d9422d8fff1d2fe5acb7e7da49eed6b4efe6a52f6","571e7f17ffd3bf84f8a15c500503af9cfeceed04f8e6a23738c9ed2856a4f1ba",nullptr,true},
+        {"lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json","block_0003_0004",0,
+            "Para conservar ese token inicial, que la gramática todavía debe consumir.",nullptr,
+            "a2b0f46e6254179eaf9d67047e4c5c6c1dd7acd1807e260a923a24bc44accc9a","cb07aff65f16ac14875e50631d73cd447262afbc2a033cafa9bf5958fefcc8a2",
+            "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación.",true}
     };
     return cases;
 }
@@ -61,6 +70,14 @@ inline curriculum::Lesson choice_revision_before(const curriculum::Lesson& integ
     const auto root=JsonObject::Parse(winrt::to_hstring(validated.raw_json)),layout=root.GetNamedObject(L"stateLayout");
     const auto blocks=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks");
     const auto current=blocks.GetObjectAt(static_cast<unsigned>(position->block));
+    if(compile_check_test_fingerprint(current)==entry.before_full) {
+        if(!entry.allow_unexpanded_source||validated.pages[position->page].blocks[position->block].choice_revision)
+            throw std::runtime_error("An already integrated choice QA asset lost its published revision");
+        if(layout.HasKey(L"choiceRevisions"))for(const auto& value:layout.GetNamedArray(L"choiceRevisions"))
+            if(winrt::to_string(value.GetObject().GetNamedString(L"id"))==identity)
+                throw std::runtime_error("An unrevised QA choice retained its archive");
+        auto result=validated;result.source_path=integrated.source_path;return result;
+    }
     if(compile_check_test_fingerprint(current)!=entry.after_full)
         throw std::runtime_error("The integrated choice differs from its independently pinned current payload");
     const auto& active=validated.pages[position->page].blocks[position->block];
@@ -106,6 +123,7 @@ inline std::string choice_revision_json(const curriculum::Lesson& original,std::
     const auto old=JsonObject::Parse(block.Stringify());
     block.GetNamedArray(L"options").SetAt(static_cast<unsigned>(entry->option),JsonValue::CreateStringValue(winrt::to_hstring(entry->replacement)));
     if(entry->feedback)block.GetNamedArray(L"reviewFeedback").SetAt(static_cast<unsigned>(entry->option),JsonValue::CreateStringValue(winrt::to_hstring(entry->feedback)));
+    if(entry->explanation)block.Insert(L"explanation",JsonValue::CreateStringValue(winrt::to_hstring(entry->explanation)));
     if(compile_check_test_fingerprint(block)!=entry->after_full)
         throw std::runtime_error("Choice QA proposal differs from the independently pinned integrated payload");
     const auto records=layout.HasKey(L"choiceRevisions")?layout.GetNamedArray(L"choiceRevisions"):JsonArray{};

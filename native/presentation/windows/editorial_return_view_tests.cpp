@@ -15,6 +15,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <stdexcept>
 
 namespace {
@@ -27,11 +28,26 @@ void wait(const std::function<bool()>& done,std::string_view reason){
     do{pump();if(done())return;MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);}while(GetTickCount64()<until);
     throw std::runtime_error(std::string(reason));
 }
-COLORREF text_color(HWND target,LONG offset){
+CHARFORMAT2W character_format(HWND target,LONG offset){
     CHARRANGE saved{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&saved));
     CHARRANGE point{offset,offset+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&point));
     CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
-    SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&saved));return format.crTextColor;
+    SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&saved));return format;
+}
+COLORREF text_color(HWND target,LONG offset){return character_format(target,offset).crTextColor;}
+COLORREF pending_color(HWND target,LONG offset){
+    const auto surface=reader_theme::background(target);
+    const auto background=[&](LONG character){const auto format=character_format(target,character);
+        return(format.dwEffects&CFE_AUTOBACKCOLOR)?surface:format.crBackColor;};
+    const auto references=rich_text_reference_ranges(target);
+    const auto semantic=references.empty()?surface:background(static_cast<LONG>(references.front().first));
+    const auto grays=reader_theme::unread_colors(surface,semantic);const auto actual=background(offset);
+    return actual==semantic?grays.second:actual==surface?grays.first:reader_theme::unread_color(actual);
+}
+LONG visible_numeral(HWND target,std::string_view pair){
+    const auto visible=edit_text(target);const auto start=visible.find(pair);
+    check(start!=std::string::npos,"The native paragraph does not expose its exact visible output pair");
+    return static_cast<LONG>(wide(visible.substr(0,start+std::string_view("Antes: ").size())).size());
 }
 struct Recording{std::string hash;std::filesystem::file_time_type modified;};
 struct View {
@@ -89,8 +105,19 @@ struct View {
         if(const auto old=recordings.find(part.recording);old!=recordings.end())check(old->second.hash==actual.hash&&old->second.modified==actual.modified,"Compatible return audio was replaced");
         else recordings.emplace(part.recording,actual);
     }
-    LessonReaderSnapshot play_pause(){const auto before=snapshot();const auto first_word=before.segments[before.index].timings.front().start_ms;reader->toggle();
-        wait([&]{const auto now=snapshot();check(now.key==before.key&&now.index==before.index,"Real return playback selected another sentence");return now.playing&&now.allocated&&now.offset>before.offset+80&&now.offset>=first_word+5;},"Return PCM did not actually play");
+    windows::NarrationTiming word_timing(const LessonReaderSnapshot& current,std::size_t source_character){
+        const auto& part=current.segments[current.index];
+        const auto word=std::ranges::find_if(part.timings,[&](const auto& timing){
+            return part.start+timing.start<=source_character&&source_character<part.start+timing.end;});
+        check(word!=part.timings.end()&&word->start_ms>=0&&word->end_ms>word->start_ms,
+            "The exact original numeral has no positive-duration UTF-16 word timing");return *word;
+    }
+    LessonReaderSnapshot play_pause(std::optional<std::size_t> source_character={}){
+        const auto before=snapshot();check(!before.segments[before.index].timings.empty(),"Return playback has no actual word timings");
+        const auto word=source_character?word_timing(before,*source_character):before.segments[before.index].timings.front();
+        const auto target=source_character?word.start_ms+std::min(40.,(word.end_ms-word.start_ms)/3.):word.start_ms+5.;
+        reader->toggle();
+        wait([&]{const auto now=snapshot();check(now.key==before.key&&now.index==before.index,"Real return playback selected another sentence");return now.playing&&now.allocated&&now.offset>before.offset+80&&now.offset>=target;},"Return PCM did not reach the selected original word's actual timing");
         reader->pause();const auto after=snapshot();check(!after.playing&&!after.allocated,"Pausing kept the return player alive");recording(after.segments[after.index]);return after;
     }
     void preview(const curriculum::Lesson& lesson,std::size_t index){
@@ -139,9 +166,14 @@ void run(std::shared_ptr<windows::NarrationWorker> worker){
         const auto target=std::ranges::find_if(plan.segments,[&](const auto& part){return part.block==block&&part.start<=number&&part.end>number;});
         check(target!=plan.segments.end(),"The actual marked output pair is absent from the reader");
         const auto index=static_cast<std::size_t>(target-plan.segments.begin());qa.preview(baseline,index);
-        const auto paused=qa.play_pause();const auto old_part=paused.segments[paused.index];const auto old_slot=qa.bookmark(paused.key);
+        const auto paused=qa.play_pause(number);const auto old_part=paused.segments[paused.index];const auto old_slot=qa.bookmark(paused.key);
+        const auto old_word=qa.word_timing(paused,number);
+        const auto old_visible=visible_numeral(old_part.target,test::editorial_return_cases[test_index].plain);
+        check(paused.offset>old_word.start_ms&&text_color(old_part.target,old_visible)!=pending_color(old_part.target,old_visible),
+            "Actual pre-return playback did not reach and restore the exact numeral's original ink");
         check(historical||old_part.source.find('`')!=std::string::npos,"The intermediate source does not exercise inline delimiters");
-        check(old_slot.position.heard_prefix&&old_slot.position.heard_prefix->microseconds>0,"Actual pre-return playback did not capture a listened-prefix certificate");
+        check(old_slot.position.heard_prefix&&old_slot.position.heard_prefix->microseconds>static_cast<std::int64_t>(old_word.start_ms*1000.),
+            "Actual pre-return playback did not certify reaching the selected numeral's audio timing");
         qa.close();qa.open(fixture.returned,6);const auto returned=qa.snapshot();const auto& new_part=returned.segments[returned.index];
         const auto& current_paragraph=fixture.returned.pages[6].blocks[block].text;
         const auto current_marker=current_paragraph.find(test::editorial_return_cases[test_index].plain);
@@ -164,11 +196,11 @@ void run(std::shared_ptr<windows::NarrationWorker> worker){
         if(historical)check(returned_slot.position.heard_prefix==old_slot.position.heard_prefix,"The identical genuine A recording lost its valid listened-prefix certificate");
         else check(!returned_slot.position.heard_prefix||(returned_slot.position.heard_prefix->fingerprint!=old_slot.position.heard_prefix->fingerprint
             &&returned_slot.position.heard_prefix->microseconds==0),"A changed source inherited unverified heard-prefix credit");
-        const auto visible=edit_text(new_part.target);const auto visible_pair=visible.find(test::editorial_return_cases[test_index].plain);
-        check(visible_pair!=visible.npos,"The native paragraph does not expose its exact visible output pair");
-        const auto visible_number=wide(visible.substr(0,visible_pair+std::string_view("Antes: ").size())).size();
-        check(text_color(new_part.target,static_cast<LONG>(visible_number))!=reader_theme::unread_color(reader_theme::background(new_part.target)),
-            "The exact paused numeral was shaded using stale source coordinates");
+        const auto visible_number=visible_numeral(new_part.target,test::editorial_return_cases[test_index].plain);
+        const auto current_word=qa.word_timing(returned,current_number);
+        const auto pending=pending_color(new_part.target,visible_number);
+        check((text_color(new_part.target,visible_number)!=pending)==(returned.offset>=current_word.start_ms),
+            "The exact migrated numeral's ink disagrees with its current recording's word boundary");
         for(const auto& other:other_slots)check(qa.bookmark(other.key)==other,"Adopting a return changed one of the other two real paused slots");
         check(narration::read_history(qa.saved()).entries.size()==3,"Editorial return added or evicted a bounded narration slot");
         const auto second=qa.play_pause();
@@ -183,6 +215,19 @@ void run(std::shared_ptr<windows::NarrationWorker> worker){
         if(test_index)check(windows::compiler_puzzle_completed(qa.saved(),fixture.returned,fixture.returned.pages[6].blocks[2])
             &&state::get_draft(qa.saved(),curriculum::draft_key("programming",fixture.returned,fixture.returned.pages[6].blocks[2]),"").source==View::copy_source(),
             "Return/reopen lost the actual prerequisite compilation or exact program draft");
+        // The exact migration/resume/certificate assertions above precede this
+        // explicit replay. A changed recording must itself reach its numeral;
+        // a restored millisecond offset alone is not listening evidence.
+        qa.preview(fixture.returned,returned.index);const auto heard=qa.play_pause(current_number);
+        const auto heard_word=qa.word_timing(heard,current_number);const auto& heard_part=heard.segments[heard.index];
+        const auto heard_visible=visible_numeral(heard_part.target,test::editorial_return_cases[test_index].plain);
+        const auto heard_slot=qa.bookmark(heard.key);
+        check(heard.offset>heard_word.start_ms&&heard_slot.position.heard_prefix
+            &&heard_slot.position.heard_prefix->microseconds>static_cast<std::int64_t>(heard_word.start_ms*1000.)
+            &&text_color(heard_part.target,heard_visible)!=pending_color(heard_part.target,heard_visible),
+            "Replaying current PCM did not certify the exact numeral or restore its original ink");
+        for(const auto& other:other_slots)check(qa.bookmark(other.key)==other,"Explicit numeral replay changed another real paused slot");
+        check(narration::read_history(qa.saved()).entries.size()==3,"Explicit numeral replay changed the bounded slot count");
         qa.preserved_recordings();check(state::read_bytes(fixture.source)==fixture.source_bytes,"Return QA wrote the live curriculum");
         check(state::read_bytes(fixture.original_archive)==original_bytes&&state::read_bytes(fixture.intermediate_archive)==intermediate_bytes,
             "Return playback/compilation modified an authenticated A/B historical document");

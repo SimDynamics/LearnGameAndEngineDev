@@ -56,7 +56,7 @@ struct CourseAudioReport {
     std::vector<CourseAudioSource> sources;
     bool complete=false;
 };
-using CourseAudioPlanner=std::function<std::string(std::string_view,std::size_t,std::string_view,std::string_view,std::string_view,std::stop_token)>;
+using CourseAudioPlanner=std::function<std::string(std::string_view,std::size_t,std::string_view,std::string_view,std::string_view,std::stop_token,std::string_view)>;
 // Pure planning and read-only, verified file inventory. Never synthesizes audio,
 // touches access timestamps, creates cache files, or changes any preference.
 [[nodiscard]] CourseAudioReport scan_course_audio(const std::filesystem::path& content,

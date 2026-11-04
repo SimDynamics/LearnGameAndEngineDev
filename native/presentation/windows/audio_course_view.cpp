@@ -115,7 +115,8 @@ CourseAudioReport scan_course_audio(const std::filesystem::path& content,const s
                         check_cancelled(stop);const auto language=explicit_language(pages.GetObjectAt(page)).value_or(explicit_language(json).value_or(result.profile.language));
                         const auto voice=result.profile.voices.find(language);if(voice==result.profile.voices.end())throw std::runtime_error("The selected language has no valid Kokoro voice");
                         std::string reply;
-                        while(true){check_cancelled(stop);try{reply=plan(raw,page,language,voice->second,result.profile.ui_language,stop);break;}catch(const windows::NarrationPreempted&){
+                        while(true){check_cancelled(stop);try{reply=plan(raw,page,language,voice->second,result.profile.ui_language,stop,
+                            std::string_view(path)=="programming"?"cpp":"auto");break;}catch(const windows::NarrationPreempted&){
                             for(int wait=0;wait<20;++wait){check_cancelled(stop);std::this_thread::sleep_for(10ms);}}}
                         const auto segments=JsonObject::Parse(winrt::to_hstring(reply)).GetNamedArray(L"segments");for(const auto& value:segments){const auto key=winrt::to_string(value.GetObject().GetNamedString(L"key"));if(!cache_key(key))throw std::runtime_error("The narration plan returned an invalid cache key");item.expected.insert(key);}
                     }
@@ -250,7 +251,7 @@ struct CourseAudioWindow {
         status(removal?tr("Identificando los audios exclusivos y los compartidos entre cursos…","Identifying exclusive audio and audio shared between courses…","Identification des audios exclusifs et partagés entre les cours…"):tr("Comprobando los audios guardados para las voces e idiomas actuales…","Checking saved audio for the current voices and languages…","Vérification des audios enregistrés pour les voix et langues actuelles…"));
         const auto callbacks=access;const auto selected_profile=profile;const auto selected_route=route;
         begin(removal?Operation::preview:Operation::report,[callbacks,selected_profile,selected_route,target,removal](std::stop_token stop){Reply reply;reply.operation=removal?Operation::preview:Operation::report;
-            const CourseAudioPlanner planner=[backend=callbacks.worker](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token cancelled){return backend->curriculum_plan(raw,page,language,voice,ui,cancelled);};
+            const CourseAudioPlanner planner=[backend=callbacks.worker](std::string_view raw,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui,std::stop_token cancelled,std::string_view reading_context){return backend->curriculum_plan(raw,page,language,voice,ui,cancelled,reading_context);};
             auto report=scan_course_audio(callbacks.content,callbacks.cache,selected_profile,selected_route,removal,planner,stop);
             if(removal){if(!target)throw std::runtime_error("No selected course");reply.preview=std::make_shared<CourseAudioRemovalPreview>(preview_course_audio_removal(std::move(report),*target));}
             else reply.report=std::make_shared<CourseAudioReport>(std::move(report));return reply;});

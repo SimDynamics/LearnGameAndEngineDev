@@ -1074,7 +1074,8 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 
 # Pedidos de Work: la explicación de U1L2, la pregunta de U11L2 y las dos
 # explicaciones de U11L11, la excepción/diagnóstico de U11L12 y la pregunta
-# sobre profundidad de U11L13. Cada par fija texto, coordenada histórica y la
+# sobre profundidad de U11L13, y la excepción de la predicción de U11L14.
+# Cada par fija texto, coordenada histórica y la
 # identidad explícita original (None exige que el campo id no exista).
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
@@ -1103,6 +1104,10 @@ WORK_EXACT_EDITORIAL_REVISIONS = {
      8, 2, 'multiple_choice', 'question', None): (
         '7f18d783ddecec3d24ee6484f02e59633c749e0a62423a19d3a78833ed090064',
         '77027e5a050155971e7d4df8a9c71e48bf6d6c8203d35d48a95cf7ecedd7126b'),
+    ('texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json',
+     7, 3, 'output_prediction', 'explanation', None): (
+        'a90bdfb0e52d5a6cec6df305dc03ba2ce949bfff65683bc6e7812a091d605806',
+        'a9b2baed596a3e465940d3b425f065c17eed32115e2c4632b4d03e0ab56a2f90'),
 }
 
 

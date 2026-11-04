@@ -286,6 +286,13 @@ std::string selected_choice_text(const Response& response,const curriculum::Bloc
     if(static_cast<std::uint64_t>(response.selected)>=options.size())throw std::runtime_error("La selección no pertenece a esta edición.");
     return options[static_cast<std::size_t>(response.selected)];
 }
+std::string choice_correct_feedback(const Response& response,const curriculum::Block& block) {
+    if(response.historical_choice) {
+        if(!block.choice_revision)throw std::runtime_error("Falta la explicación de la respuesta histórica.");
+        return block.choice_revision->original_explanation;
+    }
+    return block.explanation;
+}
 std::string choice_incorrect_feedback(const Response& response,const curriculum::Block& block) {
     if(response.historical_choice) {
         if(!block.choice_revision)throw std::runtime_error("Falta la guía de la respuesta histórica.");

@@ -71,7 +71,10 @@ void compiler_revisions_keep_prior_progress(){
         {"lesson_construir_un_lector_de_entrada_preparada.json","block_0003_0005",true},
         {"lesson_tokens_con_categoria_y_valor.json","block_0004_0004",false},
         {"lesson_numeros_de_varios_digitos_y_limites.json","block_0004_0003",false},
-        {"lesson_una_gramatica_para_sumar_y_restar.json","block_0004_0003",false}};
+        {"lesson_una_gramatica_para_sumar_y_restar.json","block_0004_0003",false},
+        {"lesson_terminos_prioridad_y_division_segura.json","block_0004_0003",false},
+        {"lesson_signos_unarios_parentesis_y_progreso_recursivo.json","block_0004_0004",false},
+        {"lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json","block_0004_0004",false}};
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
     std::size_t scenarios=0;
     for(const auto& plan:plans){const auto path=folder/plan.filename;const auto original_hash=state::sha256(state::read_bytes(path));
@@ -132,7 +135,7 @@ void compiler_revisions_keep_prior_progress(){
         }
         check(state::sha256(state::read_bytes(path))==original_hash,"A compiler revision UI regression changed an authored asset");
     }
-    std::cout<<"PASS "<<scenarios<<" hidden real compiler views: exact four expansions, prior empty/partial/complete receipts, same-program projection, current gate, original drafts/preferences, reader history, completion, Reset and reopen\n";
+    std::cout<<"PASS "<<scenarios<<" hidden real compiler views: seven exact in-memory expansions, prior empty/partial/complete receipts, same-program projection, current gate, original drafts/preferences, reader history, completion, Reset and reopen (synthetic QA receipts, no compilation claimed)\n";
 }
 }
 int main(){const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;

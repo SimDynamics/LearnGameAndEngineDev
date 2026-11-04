@@ -1,4 +1,4 @@
-"""Five exact option revisions preserve immutable contracts and editorial history."""
+"""Seven exact option revisions preserve immutable contracts and editorial history."""
 from copy import deepcopy
 from functools import lru_cache
 import hashlib
@@ -15,6 +15,8 @@ import validar_json_programacion as contract
 
 
 BASELINE = "16c497c7751f49d1f3f641cf3937b0275aa62e0f"
+PROPOSAL_BASELINE = "c570ceb3643592d16f46c25969cf82202313efe0"
+PROPOSAL_LESSON = layout._CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion"
 PREFIX = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
 
 
@@ -24,7 +26,8 @@ def asset_path(lesson):
 
 @lru_cache(maxsize=None)
 def published_bytes(lesson, locale="es"):
-    return subprocess.check_output(["git", "show", BASELINE + ":" + PREFIX.replace("/es/", "/" + locale + "/") + asset_path(lesson)], cwd=contract.ROOT)
+    baseline = PROPOSAL_BASELINE if lesson == PROPOSAL_LESSON else BASELINE
+    return subprocess.check_output(["git", "show", baseline + ":" + PREFIX.replace("/es/", "/" + locale + "/") + asset_path(lesson)], cwd=contract.ROOT)
 
 
 def published(lesson, locale="es"):
@@ -56,8 +59,82 @@ def historical_block(document, identity):
 
 
 class ChoiceOptionRevisionTest(unittest.TestCase):
-    def test_exact_five_revisions_keep_all_other_fields_and_historical_addresses(self):
-        self.assertEqual(5, len(layout.CHOICE_OPTION_REVISIONS))
+    def test_u11l14_proposals_match_the_exact_requested_fields_and_keep_all_other_bytes(self):
+        pins = {
+            "block_0007_0001": (1, "5794fa047a8ca524287843d5781a4df11705b7582092345247bd23a4f7538820",
+                               "075fc288e13b1ea1a971f0da9b501632b51b0b2301e8d055d2967d16552eac0b"),
+            "block_0003_0004": (0, "6bf57ddb3ae17371c3fa19164f5f206f7828b8e441451d62cf4fffea7abc0438",
+                               "c96666829c6ae46967980c801c3c5ac54aafa363cb4381ad9b7033f929ff00b1"),
+        }
+        for identity, (index, before_sha, after_sha) in pins.items():
+            with self.subTest(identity=identity):
+                before, current = published(PROPOSAL_LESSON), revised(PROPOSAL_LESSON, identity)
+                old, new = block(before, identity), block(current, identity)
+                self.assertEqual(index, old["correctIndex"])
+                self.assertEqual(before_sha, hashlib.sha256(old["options"][index].encode()).hexdigest())
+                self.assertEqual(after_sha, hashlib.sha256(new["options"][index].encode()).hexdigest())
+                expected = deepcopy(new); expected["options"][index] = old["options"][index]
+                if identity == "block_0003_0004":
+                    self.assertEqual("b2fc2397105a6bce67a5106761ebbd7ac65cd53ed12816e6e5378f87e5cc8dae",
+                                     hashlib.sha256(old["explanation"].encode()).hexdigest())
+                    self.assertEqual("4778999c0c13e7b94dc8ab9fb30c142c4274489890e9242c86c9d1570dada68c",
+                                     hashlib.sha256(new["explanation"].encode()).hexdigest())
+                    expected["explanation"] = old["explanation"]
+                self.assertEqual(old, expected)
+                self.assertEqual(old, block(layout.align_for_previous_validation(before, current), identity))
+                self.assertEqual(layout.original_projection(before)["pages"], layout.original_projection(current)["pages"])
+
+    def test_token_option_and_explanation_cannot_be_split_even_with_a_later_editorial_edge(self):
+        identity = "block_0003_0004"; before = published(PROPOSAL_LESSON)
+        good = revised(PROPOSAL_LESSON, identity); old = block(before, identity); new = block(good, identity)
+        for explanation in (old["explanation"], "Una explicación sin revisar."):
+            with self.subTest(explanation=explanation):
+                bad = deepcopy(good); target = block(bad, identity); target["explanation"] = explanation
+                bad["stateLayout"]["editorial"].append({"id": identity,
+                    "beforeSha256": layout.fingerprint(new), "afterSha256": layout.fingerprint(target)})
+                with self.assertRaisesRegex(layout.LayoutError, "same exact version"): layout.validate(bad)
+                with self.assertRaises(layout.LayoutError): layout.align_for_previous_validation(before, bad)
+                bad = layout.retire(good, ["block_0000_0001"])
+                historical_block(bad, identity)["explanation"] = explanation
+                with self.assertRaisesRegex(layout.LayoutError, "same exact version"): layout.validate(bad)
+        # The converse half-change is equally invalid, even though explanation
+        # text normally does not participate in the response contract digest.
+        bad = deepcopy(before); block(bad, identity)["explanation"] = new["explanation"]
+        bad["stateLayout"]["editorial"].append({"id": identity,
+            "beforeSha256": layout.fingerprint(old), "afterSha256": layout.fingerprint(block(bad, identity))})
+        with self.assertRaisesRegex(layout.LayoutError, "same exact version"): layout.validate(bad)
+
+    def test_u11l14_revisions_append_independently_and_coexist_with_the_closed_compiler_proposal(self):
+        before = published(PROPOSAL_LESSON); ids = ("block_0003_0004", "block_0007_0001")
+        first = layout.revise_choice_option(before, ids[0]); both = layout.revise_choice_option(first, ids[1])
+        self.assertEqual(first["stateLayout"]["choiceRevisions"], both["stateLayout"]["choiceRevisions"][:1])
+        self.assertEqual(first["stateLayout"]["editorial"], both["stateLayout"]["editorial"][:-1])
+        alternate = layout.revise_choice_option(layout.revise_choice_option(before, ids[1]), ids[0])
+        self.assertEqual(both["pages"], alternate["pages"])
+        layout.validate_transition(before, both); layout.validate_transition(before, alternate)
+        expanded = layout.revise_compiler_cases(both, "block_0004_0004")
+        self.assertEqual(both["stateLayout"]["choiceRevisions"], expanded["stateLayout"]["choiceRevisions"])
+        self.assertEqual(layout.original_projection(before)["pages"], layout.original_projection(expanded)["pages"])
+
+    def test_u11l14_cli_builds_two_real_proposals_without_overwriting_the_active_asset(self):
+        source = contract.ROOT / (PREFIX + asset_path(PROPOSAL_LESSON)); original_bytes = source.read_bytes()
+        for identity in ("block_0003_0004", "block_0007_0001"):
+            with self.subTest(identity=identity), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary) / "proposal.json"
+                command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-choice-option", str(source),
+                           "--locale", "es", "--base-ref", PROPOSAL_BASELINE, "--identity", identity, "--output", str(output)]
+                result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                expected = layout.revise_choice_option(json.loads(original_bytes), identity)
+                proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
+                self.assertNotEqual(json.loads(original_bytes), expected)
+                self.assertNotEqual(0, subprocess.run(command, cwd=contract.ROOT, capture_output=True).returncode)
+                self.assertEqual(proposal, output.read_bytes())
+                self.assertNotEqual(0, subprocess.run(command[:-1] + [str(source)], cwd=contract.ROOT, capture_output=True).returncode)
+                self.assertEqual(original_bytes, source.read_bytes())
+
+    def test_exact_seven_revisions_keep_all_other_fields_and_historical_addresses(self):
+        self.assertEqual(7, len(layout.CHOICE_OPTION_REVISIONS))
         for (lesson, identity), spec in layout.CHOICE_OPTION_REVISIONS.items():
             with self.subTest(lesson=lesson, identity=identity):
                 before = published(lesson)
@@ -75,6 +152,8 @@ class ChoiceOptionRevisionTest(unittest.TestCase):
                 expected["options"][spec["option"]] = spec["after"]
                 if spec["feedback"] is not None:
                     expected["reviewFeedback"][spec["option"]] = spec["feedback"]
+                if "paired_explanation" in spec:
+                    expected["explanation"] = spec["paired_explanation"]["after"]
                 self.assertEqual(expected, new)
                 self.assertEqual(before, untouched)
                 self.assertEqual(current, layout.revise_choice_option(current, identity))
@@ -173,6 +252,8 @@ class ChoiceOptionRevisionTest(unittest.TestCase):
                 forged["options"][spec["option"]] = spec["after"]
                 if spec["feedback"] is not None:
                     forged["reviewFeedback"][spec["option"]] = spec["feedback"]
+                if "paired_explanation" in spec:
+                    forged["explanation"] = spec["paired_explanation"]["after"]
                 self.assertEqual(spec["full_after"], layout.fingerprint(forged))
                 self.assertEqual(spec["full_before"], layout.fingerprint(block(current, identity)))
                 self.assertNotIn("choiceRevisions", current["stateLayout"])

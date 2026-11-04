@@ -240,6 +240,8 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_exact_prediction_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.exact_prediction_view COMMAND lgaed_exact_prediction_view_tests)
     set_tests_properties(native.exact_prediction_view PROPERTIES TIMEOUT 90)
+    add_test(NAME native.u11_precision_prediction COMMAND lgaed_exact_prediction_view_tests --u11-precision)
+    set_tests_properties(native.u11_precision_prediction PROPERTIES TIMEOUT 60)
     add_test(NAME native.prepared_input_predictions COMMAND lgaed_exact_prediction_view_tests --prepared-input)
     set_tests_properties(native.prepared_input_predictions PROPERTIES TIMEOUT 90)
     add_executable(lgaed_legacy_response_view_tests native/presentation/windows/legacy_response_view_tests.cpp)
@@ -503,6 +505,11 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_current_reference_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_test(NAME native.current_reference_reader COMMAND lgaed_current_reference_reader_tests)
     set_tests_properties(native.current_reference_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    add_executable(lgaed_equality_count_reader_tests native/presentation/windows/equality_count_reader_tests.cpp)
+    target_link_libraries(lgaed_equality_count_reader_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_equality_count_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+    add_test(NAME native.equality_count_reader COMMAND lgaed_equality_count_reader_tests)
+    set_tests_properties(native.equality_count_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     foreach(inline_case RANGE 1 9)
         add_test(NAME native.current_inline_feedback_${inline_case}
             COMMAND lgaed_lesson_reader_tests --current-inline-feedback ${inline_case})
@@ -511,6 +518,8 @@ if(BUILD_TESTING)
     add_test(NAME native.lesson_reader COMMAND lgaed_lesson_reader_tests)
     # Includes full real playback for the added prerequisite/bookmark cases.
     set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 360)
+    add_test(NAME native.reader_state_compatibility COMMAND lgaed_lesson_reader_tests --state-compatibility)
+    set_tests_properties(native.reader_state_compatibility PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.reader_missing_recording COMMAND lgaed_lesson_reader_tests --missing-recording)
     set_tests_properties(native.reader_missing_recording PROPERTIES TIMEOUT 90)
     add_test(NAME native.reader_changed_recording COMMAND lgaed_lesson_reader_tests --changed-recording)
@@ -525,6 +534,10 @@ if(BUILD_TESTING)
     set_tests_properties(native.compiler_reader_focus PROPERTIES TIMEOUT 90)
     add_test(NAME native.required_compiler_reader COMMAND lgaed_lesson_reader_tests --required-compiler)
     set_tests_properties(native.required_compiler_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    add_test(NAME native.cpp_numeric_reader COMMAND lgaed_lesson_reader_tests --cpp-numeric-context)
+    set_tests_properties(native.cpp_numeric_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    add_test(NAME native.cpp_parenthesis_reader COMMAND lgaed_lesson_reader_tests --cpp-parenthesis-context)
+    set_tests_properties(native.cpp_parenthesis_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_executable(lgaed_narration_player_tests native/platform/windows/narration_player_tests.cpp)
     target_link_libraries(lgaed_narration_player_tests PRIVATE lgaed_platform_windows)
     add_test(NAME native.narration_player_rates COMMAND lgaed_narration_player_tests "${CMAKE_SOURCE_DIR}/out/qa/narration-playback-rate")
@@ -591,6 +604,12 @@ if(BUILD_TESTING)
     add_test(NAME native.spanish_prose_boundaries COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_spanish_prose_boundaries.py")
     set_tests_properties(native.spanish_prose_boundaries PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
+    add_test(NAME native.cpp_numeric_context COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_cpp_numeric_context.py")
+    set_tests_properties(native.cpp_numeric_context PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
+    add_test(NAME native.cpp_parenthesis_context COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_cpp_parenthesis_context.py")
+    set_tests_properties(native.cpp_parenthesis_context PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.math_editor_worker COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_math_editor.py")
     add_test(NAME native.math_calculator_task COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_calculator_task.py")
     add_test(NAME native.worker_dependencies COMMAND "${Python3_EXECUTABLE}" -m unittest discover
@@ -906,6 +925,14 @@ if(BUILD_TESTING)
         lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_technical_context_view_tests
         lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests
         lgaed_math_puzzle_view_tests lgaed_window_frame_tests lgaed_window_fullscreen_tests lgaed_catalog_view_tests)
+    add_custom_target(lgaed_compiler_revision_checks DEPENDS LearnGameAndEngineDev
+        lgaed_lesson_tests lgaed_state_tests lgaed_compiler_revision_view_tests
+        lgaed_lesson_reader_tests lgaed_choice_revision_view_tests lgaed_exact_prediction_view_tests)
+    add_custom_target(lgaed_cpp_narration_checks DEPENDS LearnGameAndEngineDev
+        lgaed_lesson_reader_tests lgaed_narration_worker_tests lgaed_math_narration_plan_tests
+        lgaed_audio_course_view_tests lgaed_audio_generation_tests lgaed_audio_generation_real_tests)
+    add_custom_target(lgaed_curricular_reader_checks DEPENDS LearnGameAndEngineDev
+        lgaed_equality_count_reader_tests lgaed_editorial_return_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
         LearnGameAndEngineDev lgaed_editorial_return_tests lgaed_editorial_return_view_tests
         lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests

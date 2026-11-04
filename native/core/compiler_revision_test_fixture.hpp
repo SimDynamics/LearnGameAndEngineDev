@@ -18,6 +18,7 @@ struct CompilerRevisionCase {
     const char* reference_before=nullptr;
     const char* reference_after=nullptr;
     const char* calls=nullptr;
+    bool allow_unexpanded_source=false;
 };
 inline const std::vector<CompilerRevisionCase>& compiler_revision_cases() {
     static const std::vector<CompilerRevisionCase> cases{
@@ -35,7 +36,22 @@ inline const std::vector<CompilerRevisionCase>& compiler_revision_cases() {
             "3e793a0dcd1ed13fd57e97c68f4a22f960585f9acf8611c7aa09927a5c8404f2","55b38dc4d94d9cea6ed446040c7e043dde447be7a18ead7735df182de91cee01",
             "Resultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\n",
             "block_0008_0001","05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d","eee52db854d07ecc2e3319731c18c07940ed543f9836b722ba85ea5e790cc5e4",
-            "    probar(\"99+1;\");\n    probar(\"0-99-1;\");\n    probar(\"99+2-2;\");\n    probar(\"0-99-2+2;\");\n"}
+            "    probar(\"99+1;\");\n    probar(\"0-99-1;\");\n    probar(\"99+2-2;\");\n    probar(\"0-99-2+2;\");\n"},
+        {"lesson_terminos_prioridad_y_division_segura.json","block_0004_0003",
+            "9bddda66a2a7024ef1280fc82a82e7ad59cd189a2b3089138b5f06c06de78f1d","dcd52cc803827c671d2d783d6af8e423e79cb8ef7377a365ff5afbcec05a926e",
+            "Error: Resultado fuera de dominio\n",
+            "block_0008_0001","44f26849307e799bc3263578b3353b4979218eae494c39a906c2fe09bafb2cb5","a396321ffa32d8e9c4ca4cc1df1f01cf8e8acef762295d2ec6a8e8077460074a",
+            "    probar(\"11*10/2;\");\n",true},
+        {"lesson_signos_unarios_parentesis_y_progreso_recursivo.json","block_0004_0004",
+            "ffef99d8c0504d333a81d68da83eb473974d43ba573626a4808eab6015bddd30","efcd239dc6e8f02d04a418f2b81e0c18e54e8125c7dc0c6dcac57e45abc57300",
+            "Error: Resultado fuera de dominio\nError: Anidamiento excesivo\n",
+            "block_0009_0001","70662e3574fbc6db855250d8a9579466ef5827e0ea768477076290e6191b577b","44dc46d8aace0591bb180e11022c9a3b171c20e4b792fdc91da672a6618c0a44",
+            "    probar(\"11*10/2;\");\n    probar(\"(((((((((1)))))))));\");\n",true},
+        {"lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json","block_0004_0004",
+            "dc68860e953dd941d4495f68d295b6a7cbca70fe286ee356675f405bb8bd2502","cf3c9ab1f070195689b4f2bce4bd635ae8368f760384663a2ebecbb5a1f7bfdd",
+            "Caso 11\nError: Caracter no admitido\nResultado: 4\n",
+            "block_0008_0001","61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6","6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6",
+            "    std::cout << \"Caso 11\\n\";\n    probar(\"?z;4;\");\n",true}
     };return cases;
 }
 inline const CompilerRevisionCase& compiler_revision_case(const curriculum::Lesson& lesson,std::string_view identity) {
@@ -48,6 +64,8 @@ inline const CompilerRevisionCase& compiler_revision_case(const curriculum::Less
 // QA projection immediately before this compiler's reviewed expansion. Complete
 // archived blocks and references are authenticated independently of live data;
 // unrelated integrated changes are intentionally retained, not dated backwards.
+// A not-yet-integrated proposal starts only from the independently pinned full
+// original editor/reference, with no existing revision archive for that owner.
 inline curriculum::Lesson compiler_revision_before(const curriculum::Lesson& integrated,std::string_view identity) {
     using namespace winrt::Windows::Data::Json;
     const auto& entry=compiler_revision_case(integrated,identity);
@@ -56,6 +74,22 @@ inline curriculum::Lesson compiler_revision_before(const curriculum::Lesson& int
     if(!position)throw std::runtime_error("Missing integrated QA compiler identity");
     const auto root=JsonObject::Parse(winrt::to_hstring(validated.raw_json)),layout=root.GetNamedObject(L"stateLayout");
     const auto blocks=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks");
+    if(compile_check_test_fingerprint(blocks.GetObjectAt(static_cast<unsigned>(position->block)))==entry.before_full) {
+        if(!entry.allow_unexpanded_source)
+            throw std::runtime_error("An already integrated compiler QA asset lost its published expansion");
+        if(validated.pages[position->page].blocks[position->block].compiler_revision)
+            throw std::runtime_error("An unexpanded QA source cannot already own a compiler revision");
+        if(layout.HasKey(L"compilerRevisions"))for(const auto& value:layout.GetNamedArray(L"compilerRevisions"))
+            if(winrt::to_string(value.GetObject().GetNamedString(L"id"))==identity)
+                throw std::runtime_error("An unexpanded QA source retained its revision archive");
+        if(entry.reference_identity) {
+            const auto reference=curriculum::stable_block_position(validated,entry.reference_identity);
+            if(!reference||compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(
+                validated.pages[reference->page].blocks[reference->block].raw_json)))!=entry.reference_before)
+                throw std::runtime_error("An unexpanded QA source changed its complete original reference");
+        }
+        auto result=validated;result.source_path=integrated.source_path;return result;
+    }
     if(compile_check_test_fingerprint(blocks.GetObjectAt(static_cast<unsigned>(position->block)))!=entry.after_full)
         throw std::runtime_error("The integrated compiler differs from its independently pinned current payload");
     const auto& active=validated.pages[position->page].blocks[position->block];

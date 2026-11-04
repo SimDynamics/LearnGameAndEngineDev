@@ -250,6 +250,7 @@ std::string state_fingerprint(const JsonObject& original) {
 }
 struct ReviewedChoice {
     std::string_view lesson,identity,before_payload,after_payload,before_full,first_after_full;
+    std::string_view paired_explanation_before,paired_explanation_after;
 };
 const std::vector<ReviewedChoice>& reviewed_choices() {
     static const std::vector<ReviewedChoice> values{
@@ -267,7 +268,15 @@ const std::vector<ReviewedChoice>& reviewed_choices() {
             "9b28a5432859a50e1d336098022614188ad75f81eb7cb2db87284b98838efca1","4d598fee502105e520f800f975a57486947851153339a448ea92cdff768ac400"},
         {"cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor","block_0006_0001",
             "2c62ea997577dd3e617968b33746ed53576100e3ae0a16b220cdb9f15b59a917","b3a836a39bae7b92db9b357b530681316c69af866e35c3b5f8b7190eeb026bf3",
-            "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91","123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1"}
+            "8f36e0a7b384b20953b45f76011c01c1fab1766eb641ff11ce7f4c94c62e5a91","123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__diagnosticar_y_recuperar_hasta_fin_de_operacion","block_0007_0001",
+            "8b90e1ce9f7e75fbc2dab47db07e49977857ae41e648abf8d0d03957e03ac021","9f4dcd56c9d45f79d3aa799b7a29ac7b68ee97797d89e32f68d4152ef963223c",
+            "1a4a51d3a8dcc2c9ace27e6d9422d8fff1d2fe5acb7e7da49eed6b4efe6a52f6","571e7f17ffd3bf84f8a15c500503af9cfeceed04f8e6a23738c9ed2856a4f1ba"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__diagnosticar_y_recuperar_hasta_fin_de_operacion","block_0003_0004",
+            "2c203b9684c188f398b35cbcdea5e1ef47001f7c76a84b94df1ff3e5be410863","996400efadbb06a1a18764ee4306065a0d7f2697af3cd863493970744a0b53ce",
+            "a2b0f46e6254179eaf9d67047e4c5c6c1dd7acd1807e260a923a24bc44accc9a","cb07aff65f16ac14875e50631d73cd447262afbc2a033cafa9bf5958fefcc8a2",
+            "El ciclo miró una unidad sólo para distinguir final de una operación disponible. La devuelve porque pertenece a la regla que va a interpretar la expresión.",
+            "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación."}
     };
     return values;
 }
@@ -275,6 +284,14 @@ const ReviewedChoice* reviewed_choice_owner(std::string_view lesson,std::string_
     const auto& values=reviewed_choices();
     const auto found=std::ranges::find_if(values,[&](const auto& item){return item.lesson==lesson&&item.identity==identity;});
     return found==values.end()?nullptr:&*found;
+}
+void validate_choice_pair(const JsonObject& block,const ReviewedChoice* reviewed) {
+    if(!reviewed||reviewed->paired_explanation_before.empty())return;
+    const auto digest=state_fingerprint(block);
+    if(digest==reviewed->before_payload||digest==reviewed->after_payload)
+        require(text(block,"explanation")==
+            (digest==reviewed->after_payload?reviewed->paired_explanation_after:reviewed->paired_explanation_before),
+            "The reviewed token option and explanation must belong to the same exact version");
 }
 bool reviewed_choice_payload(std::string_view digest) {
     return std::ranges::any_of(reviewed_choices(),[&](const auto& item){return item.after_payload==digest;});
@@ -302,7 +319,16 @@ const std::vector<ReviewedCompiler>& reviewed_compilers() {
             "block_0008_0001","1b9b8dc7b0973c441205dcff6182317983b4dfa6865f15738fa20d61bc165055","10f38c37b8a211edd53a6a9bb059296360bd2c2fe5c11d865a8b48d29d8b5c07"},
         {"cpp_fundamentals__texto_interpretacion_y_flujos__una_gramatica_para_sumar_y_restar","block_0004_0003",
             "3e793a0dcd1ed13fd57e97c68f4a22f960585f9acf8611c7aa09927a5c8404f2","55b38dc4d94d9cea6ed446040c7e043dde447be7a18ead7735df182de91cee01",
-            "block_0008_0001","05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d","eee52db854d07ecc2e3319731c18c07940ed543f9836b722ba85ea5e790cc5e4"}
+            "block_0008_0001","05a7b84c5fe6eecd11e75fb9548d9051cc7575dbe421894fdb9ef3cab207256d","eee52db854d07ecc2e3319731c18c07940ed543f9836b722ba85ea5e790cc5e4"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__terminos_prioridad_y_division_segura","block_0004_0003",
+            "9bddda66a2a7024ef1280fc82a82e7ad59cd189a2b3089138b5f06c06de78f1d","dcd52cc803827c671d2d783d6af8e423e79cb8ef7377a365ff5afbcec05a926e",
+            "block_0008_0001","44f26849307e799bc3263578b3353b4979218eae494c39a906c2fe09bafb2cb5","a396321ffa32d8e9c4ca4cc1df1f01cf8e8acef762295d2ec6a8e8077460074a"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__signos_unarios_parentesis_y_progreso_recursivo","block_0004_0004",
+            "ffef99d8c0504d333a81d68da83eb473974d43ba573626a4808eab6015bddd30","efcd239dc6e8f02d04a418f2b81e0c18e54e8125c7dc0c6dcac57e45abc57300",
+            "block_0009_0001","70662e3574fbc6db855250d8a9579466ef5827e0ea768477076290e6191b577b","44dc46d8aace0591bb180e11022c9a3b171c20e4b792fdc91da672a6618c0a44"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__diagnosticar_y_recuperar_hasta_fin_de_operacion","block_0004_0004",
+            "dc68860e953dd941d4495f68d295b6a7cbca70fe286ee356675f405bb8bd2502","cf3c9ab1f070195689b4f2bce4bd635ae8368f760384663a2ebecbb5a1f7bfdd",
+            "block_0008_0001","61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6","6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6"}
     };return values;
 }
 const ReviewedCompiler* reviewed_compiler_owner(std::string_view lesson,std::string_view identity) {
@@ -605,7 +631,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     std::map<std::string,const ReviewedCompiler*> revised_compiler_references;
     if(metadata.HasKey(L"compilerRevisions")) {
         const auto records=array(metadata,"compilerRevisions");
-        require(result.version==2&&records.Size()<=4&&(!records.Size()||locale=="es"),"Reviewed compiler expansions require Spanish v2 ownership");
+        require(result.version==2&&records.Size()<=reviewed_compilers().size()&&(!records.Size()||locale=="es"),"Reviewed compiler expansions require Spanish v2 ownership");
         for(const auto& value:records) {
             const auto item=value.GetObject();allowed_keys(item,{"id","block","references"});const auto id=text(item,"id");
             const auto* reviewed=reviewed_compiler_owner(lesson_id,id);
@@ -633,7 +659,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     if(metadata.HasKey(L"choiceRevisions")) {
         const auto records=array(metadata,"choiceRevisions");
-        require(result.version==2&&records.Size()<=5&&(!records.Size()||locale=="es"),"Reviewed choices require their Spanish v2 ownership");
+        require(result.version==2&&records.Size()<=reviewed_choices().size()&&(!records.Size()||locale=="es"),"Reviewed choices require their Spanish v2 ownership");
         for(const auto& value:records) {
             const auto item=value.GetObject();allowed_keys(item,{"id","block"},true);
             const auto id=text(item,"id");const auto* reviewed=reviewed_choice_owner(lesson_id,id);
@@ -773,6 +799,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
             const auto digest=state_fingerprint(block);
+            validate_choice_pair(block,reviewed_choice_owner(lesson_id,id));
             if(block.HasKey(L"compileCheck")) {
                 const auto spec=reviewed_compile_check(text(block.GetNamedObject(L"compileCheck"),"diagnostic"));
                 require(spec&&result.version==2&&locale=="es"&&lesson_id==spec->lesson&&id==spec->identity,
@@ -832,6 +859,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto digest = state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject());
+                    validate_choice_pair(blocks.GetAt(static_cast<unsigned>(b)).GetObject(),reviewed_choice_owner(lesson_id,id));
                     snapshot_contracts.emplace(id,digest);
                     if(reviewed_compiler_payload(digest))require(revised_compilers.contains(id)&&revised_compilers.at(id)->lesson==lesson_id&&locale=="es",
                         "An expanded historical compiler needs its active reviewed snapshot");

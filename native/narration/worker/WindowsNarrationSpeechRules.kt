@@ -8,6 +8,57 @@ internal object WindowsNarrationSpeechRules {
     private val assignmentOperators = listOf("<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "=")
     private val expressionOperators = listOf("<=>", "<<=", ">>=", "->*", ".*", "==", "!=", "<=", ">=", "&&", "||", "<<", ">>",
         "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "+", "-", "*", "/", "%", "<", ">", "&", "|", "^", "=", "?", ":")
+    private val numericOperators = listOf("==", "!=", "<=", ">=", "+", "-", "*", "/", "%", "=", "<", ">")
+    private val numericProtected = Regex("https?://\\S+|[A-Za-z]:[/\\\\]\\S+|(?<![\\p{L}\\p{N}\\\\])/\\S+|[A-Za-z_][\\w.-]*[/\\\\][\\w./\\\\-]+|\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'")
+    private val numericProseCue = Regex("(?iu)(?:\\b(?:fecha|día|dia|fechado|fracción|fraccion|fracciones|razón|razon|proporción|proporcion)(?:[ \\t]+(?:es|del|de|matemática|matematica))?[ \\t:]+(?:[−+-][ \\t]*)?)$")
+
+    /** A typed C++ puzzle may contain bare numeric expressions, unlike ordinary
+     * prose. Preserve every source boundary and use the canonical code reader;
+     * no identifier, quoted value, path or explicit mathematical intent is inferred. */
+    fun cppNumericExpressionEnd(text: String, start: Int): Int? {
+        val initial = text.getOrNull(start) ?: return null
+        if (initial !in '0'..'9' && initial !in "+-(.") return null
+        if (start > 0 &&
+                (Character.isUnicodeIdentifierPart(text.codePointBefore(start)) || text[start - 1] in ".\\\\/")) return null
+        // Do not resume inside an excluded decimal or signed operand. The
+        // complete expression was already considered at its original start.
+        if (start > 1 && text[start - 1] == ',' && text[start - 2] in '0'..'9') return null
+        if (start > 0 && text[start - 1] in "+-−") return null
+        if (numericProtected.findAll(text).any { start in it.range } ||
+                numericProseCue.containsMatchIn(text.substring((start - 96).coerceAtLeast(0), start))) return null
+        fun expression(from: Int, depth: Int): Pair<Int,Int>? {
+            if (depth > 16) return null
+            fun operand(from: Int): Pair<Int,Int>? {
+                var at = horizontal(text, from)
+                while (text.getOrNull(at) in listOf('+', '-')) at = horizontal(text, at + 1)
+                if (text.getOrNull(at) == '(') {
+                    val end = expression(at + 1, depth + 1) ?: return null
+                    val closing = horizontal(text, end.first)
+                    return if (text.getOrNull(closing) == ')') closing + 1 to end.second else null
+                }
+                val number = implicitNumber.matchAt(text, at) ?: return null
+                var end = number.range.last + 1
+                // An undelimited final period is prose punctuation. Explicit
+                // source literals such as `2.` keep the established code path.
+                if (text[end - 1] == '.' && (end == text.length || text[end].isWhitespace())) end--
+                if (end <= at || text.getOrNull(end)?.let { it == '_' || it.isLetterOrDigit() } == true) return null
+                return end to 0
+            }
+            val initial = operand(from) ?: return null
+            var end = initial.first
+            var operators = initial.second
+            while (end < text.length) {
+                val next = horizontal(text, end)
+                val operator = numericOperators.firstOrNull { text.startsWith(it, next) } ?: break
+                val following = operand(next + operator.length) ?: break
+                operators += 1 + following.second
+                end = following.first
+            }
+            return end to operators
+        }
+        val result = expression(start, 0) ?: return null
+        return result.first.takeIf { result.second > 0 }
+    }
 
     private fun horizontal(text: String, start: Int): Int {
         var at = start
@@ -153,16 +204,46 @@ internal object WindowsNarrationSpeechRules {
     }
 
     private val namedLetter = Regex("(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:letra|carácter|caracter)[ \\t]+$")
+    private val coordinatedNounPhrase = Regex("(?iu)[ \\t]+(?:el|la|los|las|un|una|unos|unas)[ \\t]+(?=\\p{L})")
 
     /** A named ASCII letter is one technical token; its following colon is prose.
      * Quotes, code and formulas are handled first by the canonical normalizer. */
     fun isNamedLetter(text: String, index: Int): Boolean {
         if (text[index] !in 'a'..'z' && text[index] !in 'A'..'Z') return false
+        // In prose, "un carácter y el intento" coordinates two noun phrases;
+        // its y is not that character's name. Do not cross punctuation/lines
+        // or affect uppercase Y, "letra y es", "letra y:" or explicit code.
+        if (text[index] == 'y' && coordinatedNounPhrase.matchAt(text, index + 1) != null) return false
         val next = text.getOrNull(index + 1)
         if (next != null && (next.isLetterOrDigit() || next == '_' ||
                 Character.getType(next) in setOf(Character.NON_SPACING_MARK.toInt(),
                     Character.COMBINING_SPACING_MARK.toInt(), Character.ENCLOSING_MARK.toInt()))) return false
         return namedLetter.containsMatchIn(text.substring((index - 64).coerceAtLeast(0), index))
+    }
+
+    private val parenthesisMention = Regex(
+        "(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:consume|consumir|espera|esperaba|esperado|devuelve|devolver|" +
+        "conserva|conservar|obtiene|obtener|lee|leer|mismo|símbolo|simbolo|signo|token|carácter|caracter)[ \\t]+$")
+
+    /** A token mentioned in C++ prose is not a punctuation pause. The caller
+     * supplies the explicit C++ reading context; authored code, math and
+     * citations have already been handled by their canonical paths. */
+    fun isIsolatedCppParenthesisMention(text: String, index: Int): Boolean {
+        if (text.getOrNull(index) !in listOf('(', ')') || index == 0 || !text[index - 1].isWhitespace()) return false
+        val next = text.getOrNull(index + 1)
+        if (next != null && !next.isWhitespace() && next !in ".,;:!?") return false
+        if (!parenthesisMention.containsMatchIn(text.substring((index - 96).coerceAtLeast(0), index))) return false
+        // Ambiguous balanced prose asides retain punctuation, including spaced
+        // ones: "obtiene ( una respuesta opcional )" is not a token mention.
+        if (text[index] == '(' && groupEnd(text, index) != null) return false
+        if (text[index] == ')') {
+            var opening = text.lastIndexOf('(', index - 1)
+            while (opening >= 0 && index - opening <= 512) {
+                if (groupEnd(text, opening) == index + 1) return false
+                opening = text.lastIndexOf('(', opening - 1)
+            }
+        }
+        return true
     }
 
     private fun isolatedEscapeBoundary(c: Char): Boolean =

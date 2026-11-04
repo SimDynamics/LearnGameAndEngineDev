@@ -135,9 +135,18 @@ private class Backend(private val resources: File, private val englishResources:
         check(visible.toString() == ManualEnglishSpeech.strip(text)) { "Source annotation display contract changed" }
         return segment.spoken.map { ReadingTextRange(boundaries[it.start],boundaries[it.endExclusive]) }
     }
+    private fun readingMode(request: JSONObject): String {
+        val mode = request.optString("mathMode","auto")
+        val context = request.optString("readingContext","auto")
+        require(mode in setOf("auto","text","inline","block")) { "Invalid mathematical reading mode" }
+        require(context in setOf("auto","cpp","cpp_previous_parentheses")) { "Invalid reading context" }
+        // The previous policy is a private bookmark-compatibility request,
+        // never an authored mathMode or a curriculum/background context.
+        return if (mode == "auto" && context in setOf("cpp","cpp_previous_parentheses")) context else mode
+    }
     private fun planned(source: String, language: NarrationLanguage, mode: String): List<Pair<IntRange,Segment>> {
         require(source.length in 1..32768 && '\u0000' !in source) { "Narration text must contain 1–32768 original UTF-16 characters" }
-        require(mode in setOf("auto","text","inline","block")) { "Invalid mathematical reading mode" }
+        require(mode in setOf("auto","text","inline","block","cpp","cpp_previous_parentheses")) { "Invalid mathematical reading mode" }
         // The Android feedback presentation omits only its leading native
         // verdict mark. Keep that exact rule and map all speech back onto the
         // original visible text, including the mark with the first real word.
@@ -167,7 +176,7 @@ private class Backend(private val resources: File, private val englishResources:
         }
     }
     fun plan(request: JSONObject): JSONObject {
-        val items = planned(request.getString("text"),language(request),request.optString("mathMode","auto"))
+        val items = planned(request.getString("text"),language(request),readingMode(request))
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->
             JSONObject().put("text",segment.source).put("preparedText",segment.prepared)
                 .put("spokenText",ManualEnglishSpeech.strip(segment.prepared))
@@ -189,7 +198,26 @@ private class Backend(private val resources: File, private val englishResources:
     fun curriculumPlan(request: JSONObject): JSONObject {
         val lang = language(request)
         val uiLanguage = request.optString("uiLanguage",lang.tag)
-        val script = LessonNarrationScript.page(JSONObject(request.getString("lessonJson")),request.getInt("page"),
+        val context = request.optString("readingContext","auto")
+        require(context in setOf("auto","cpp")) { "Invalid reading context" }
+        // This parsed request-local projection changes no authored or stored
+        // metadata. Only public block type/language/mode select C++ reading.
+        val lesson = JSONObject(request.getString("lessonJson"))
+        run {
+            val types = setOf("multiple_choice","fill_code","inline_fill_code","output_prediction","order_code","drag_fill_code")
+            val pages = lesson.optJSONArray("pages")
+            for (page in 0 until (pages?.length() ?: 0)) {
+                val blocks = pages?.optJSONObject(page)?.optJSONArray("blocks") ?: continue
+                for (index in 0 until blocks.length()) {
+                    val block = blocks.optJSONObject(index) ?: continue
+                    val mode = block.optString("mathMode","auto")
+                    require(mode in setOf("auto","text","inline","block")) { "Invalid mathematical reading mode" }
+                    if (context == "cpp" && block.optString("type") in types && block.optString("language") in setOf("","cpp","c++") &&
+                            mode == "auto") block.put("mathMode","cpp")
+                }
+            }
+        }
+        val script = LessonNarrationScript.page(lesson,request.getInt("page"),
             lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
         val segments = NarrationSegments.sentences(script.texts).map { prepared ->
             // Background preparation uses the canonical already-normalized script.
@@ -311,11 +339,12 @@ private class Backend(private val resources: File, private val englishResources:
         try {
             val language = language(request)
             val source = request.getString("text")
+            val mode = readingMode(request)
             val audioOnly = request.optBoolean("audioOnly",false)
             val selected = if (request.has("preparedText")) {
                 plans[planKey(language,source,request.getString("preparedText"))]
                     ?: error("Prepared text has no current original-source plan; request plan first")
-            } else planned(source,language,request.optString("mathMode","auto")).singleOrNull()?.second
+            } else planned(source,language,mode).singleOrNull()?.second
                 ?: error("Request plan first when a block contains several sentences")
             val voice = request.optString("voice",language.defaultVoice)
             require(KokoroVoiceCatalog.find(voice)?.language == language) { "Voice does not belong to the selected language" }

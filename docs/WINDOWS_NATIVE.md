@@ -200,6 +200,61 @@ clave, y las grabaciones compatibles se conservan y reutilizan. Las pruebas
 la preparación, la correspondencia de palabras y audio Kokoro real; no sustituyen
 la escucha humana de la pronunciación.
 
+Los campos de puzzles C++ de la ruta Programación transmiten un contexto
+interno de lectura, tanto al lector visible como a la generación anticipada y
+al informe de audios. En español, las expresiones numéricas de esos campos se
+leen como operadores: `11/2` conserva la barra y una igualdad de resultados usa
+«igual a». Las asignaciones de código mantienen «asigna». La prosa general y
+los componentes matemáticos conservan su contexto automático; las fórmulas
+explícitas y el `mathMode` curricular prevalecen. Sus valores siguen siendo
+`auto`, `text`, `inline` y `block`; el contexto técnico no añade otro modo de
+autoría ni modifica los JSON.
+
+El lector reconoce el guion automático anterior por su clave completa y
+traslada su marcador dentro del mismo historial de tres páginas. Una frase
+cuya preparación cambia vuelve a su inicio sin heredar tiempos ni evidencia
+de escucha de la grabación anterior. Las posiciones compatibles y los otros
+dos marcadores se conservan; una página terminada tampoco acredita una
+explicación nueva. No se borran ni se sustituyen los audios anteriores.
+`native.cpp_numeric_context` contrasta los planes inmediatos y anticipados y
+las tres voces españolas; `native.cpp_numeric_reader` comprueba audio real,
+correspondencia UTF-16 y migración de pausas y páginas terminadas. Son pruebas
+técnicas y no sustituyen la escucha ni la aceptación curricular de Work.
+
+En ese mismo contexto C++, una mención aislada de `(` o `)` después de un
+verbo de lectura o de un nombre de token se prepara como «abre paréntesis» o
+«cierra paréntesis». Los incisos balanceados, las citas y las fórmulas conservan
+su tratamiento. La política anterior puede reconstruirse exclusivamente para
+autenticar un marcador guardado, manteniendo la lectura numérica C++ que ya
+tenía. La frase cuya grabación cambia vuelve a cero sin heredar escucha;
+las posiciones compatibles y los otros marcadores se conservan. El modo
+curricular y los archivos de contenido permanecen iguales.
+Si una pausa está después de una explicación acertada cuya lectura cambió,
+también vuelve a esa explicación nueva, aunque la página no estuviera terminada.
+`native.cpp_parenthesis_context` verifica planes y PCM en tres voces;
+`native.cpp_parenthesis_reader` contrasta pausas reales antes, dentro y después
+del cambio, la migración en el mismo historial y la reapertura sin autoplay.
+
+`native.equality_count_reader` comprueba el recorrido actual de los cuatro
+conteos de U9L12. Parte de un perfil vacío y ejecuta mediante los controles el
+programa inicial y la referencia completa con MSVC. Comprueba el bloqueo del
+puzzle dependiente, los cuatro campos identificados por sus nombres accesibles,
+borrador parcial, rechazo, corrección, guía y explicación. Las pausas se obtienen
+reproduciendo PCM real y se restauran al reabrir la vista; los otros dos
+marcadores, los WAV y el objetivo del compilador se conservan. La prueba se
+detiene ante el siguiente puzzle pendiente y no acredita el cierre de la lección.
+
+Para comprobar ese recorrido en la aplicación completa, el mismo ejecutable de
+prueba admite `--prepare-visual visual-equality-<token-nuevo>`. Crea una QA Codex
+nueva en el editor previo, sin respuestas, recibos ni código resuelto; rechaza
+un perfil que ya exista. Se abre el ejecutable instalado con `--profile Codex`
+y `--qa-instance visual-equality-<token-nuevo>`. La opción `--inspect-visual` con
+ese mismo token sólo lee respuestas, fuente, recibo, página, desplazamiento e
+historial, y comprueba que los hashes del estado y del asset no cambien durante
+la inspección. Conviene cerrar la QA antes de inspeccionarla para evitar una
+escritura concurrente. Los contadores de archivos y marcadores no sustituyen
+la comprobación de la ejecución ni demuestran reproducción o escucha.
+
 El inicio normal abre las seis páginas existentes de «Construir y leer un primer
 programa», desde el JSON original bajo `app/src/main/assets/content/es/`.
 No se genera una segunda copia del contenido. El adaptador comprueba el contrato

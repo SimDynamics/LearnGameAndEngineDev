@@ -1,4 +1,5 @@
 #include "core/attempts.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
@@ -10,6 +11,7 @@
 #include <commctrl.h>
 #include <ole2.h>
 #include <richedit.h>
+#include <winrt/Windows.Data.Json.h>
 #include <array>
 #include <chrono>
 #include <iostream>
@@ -343,6 +345,106 @@ struct View {
         check(text(2).empty()&&text(4).empty()&&IsWindowEnabled(control(2))&&!IsWindowEnabled(control(3)),"Explicit Reset failed to restore an unanswered prediction");}
 };
 
+constexpr std::string_view recovery_before_full="c646f1115a768fe8c66e97960f30082e01f3f656e1b393a7463697aba151612a";
+constexpr std::string_view recovery_after_full="874ca9f94a235149ee8e93866c35cf7daed4aba3d0ad97adce4fcccfd1bce4a6";
+curriculum::Lesson recovery_explanation_before(const curriculum::Lesson& live){
+    using namespace winrt::Windows::Data::Json;
+    // Independent full-block pins come from c570ceb and the one reviewed field
+    // replacement. Work may integrate the final text without breaking this QA.
+    auto validated=windows::parse_lesson_json(live.raw_json,live.locale);
+    validated.source_path=live.source_path;
+    const auto at=curriculum::stable_block_position(validated,"block_0006_0002");
+    check(at&&at->page==6&&at->block==2,"The recovery fixture lost its authored identity");
+    const auto root=JsonObject::Parse(winrt::to_hstring(validated.raw_json));
+    const auto block=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(at->page))
+        .GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(at->block));
+    const auto digest=test::compile_check_test_fingerprint(block);
+    if(digest==recovery_before_full)return validated;
+    check(digest==recovery_after_full,"The recovery fixture differs from its independent before/after payloads");
+    const auto layout=root.GetNamedObject(L"stateLayout");
+    JsonArray retained;unsigned removed=0;bool terminal=false;
+    for(const auto& value:layout.GetNamedArray(L"editorial")){
+        const auto proof=value.GetObject();
+        if(proof.GetNamedString(L"id")==L"block_0006_0002"){
+            terminal=winrt::to_string(proof.GetNamedString(L"beforeSha256"))==recovery_before_full
+                &&winrt::to_string(proof.GetNamedString(L"afterSha256"))==recovery_after_full;
+            if(terminal){++removed;continue;}
+        }
+        retained.Append(value);
+    }
+    check(removed==1&&terminal,"The integrated recovery explanation needs its exact terminal editorial edge");
+    block.Insert(L"explanation",JsonValue::CreateStringValue(L"El lector consume ? y lanza. La recuperación descarta +9; como resto de la operación incorrecta; la siguiente operación produce 4."));
+    check(test::compile_check_test_fingerprint(block)==recovery_before_full,"The complete original recovery prediction was not recovered");
+    layout.Insert(L"editorial",retained);
+    auto before=windows::parse_lesson_json(winrt::to_string(root.Stringify()),live.locale);
+    before.source_path=live.source_path;return before;
+}
+
+void proposed_u11_recovery_explanation(){
+    using namespace winrt::Windows::Data::Json;
+    active_case="U11L14 / block_0006_0002 explanation proposal";
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json";
+    const auto original_bytes=state::read_bytes(path);
+    const auto original=recovery_explanation_before(windows::load_lesson(path));
+    const auto at=curriculum::stable_block_position(original,"block_0006_0002");
+    check(at&&at->page==6&&at->block==2,"The recovery prediction lost its authored identity");
+    const auto& old=original.pages[at->page].blocks[at->block];
+    check(old.type==curriculum::BlockType::output_prediction&&
+        state::sha256(old.explanation)=="a90bdfb0e52d5a6cec6df305dc03ba2ce949bfff65683bc6e7812a091d605806",
+        "The proposed recovery explanation no longer starts from its pinned original");
+    const std::string explanation="El lector consume ? y lanza una excepción. La recuperación descarta +9; como resto de la operación incorrecta; la siguiente operación produce 4.";
+    check(state::sha256(explanation)=="a9b2baed596a3e465940d3b425f065c17eed32115e2c4632b4d03e0ab56a2f90",
+        "The recovery proposal differs from the exact reviewed explanation");
+    const auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    const auto block=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(at->page))
+        .GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(at->block));
+    const auto before=test::compile_check_test_fingerprint(block);
+    check(before==recovery_before_full,"The recovery proposal lost its independent complete original");
+    block.Insert(L"explanation",JsonValue::CreateStringValue(winrt::to_hstring(explanation)));
+    check(test::compile_check_test_fingerprint(block)==recovery_after_full,"The recovery proposal differs from its independently pinned final payload");
+    JsonObject proof;proof.Insert(L"id",JsonValue::CreateStringValue(L"block_0006_0002"));
+    proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(before)));
+    proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(test::compile_check_test_fingerprint(block))));
+    root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Append(proof);
+    auto proposed=windows::parse_lesson_json(winrt::to_string(root.Stringify()),original.locale);
+    proposed.source_path=original.source_path;
+    const auto reconstructed=recovery_explanation_before(proposed);
+    const auto original_proofs=JsonObject::Parse(winrt::to_hstring(original.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    const auto restored_proofs=JsonObject::Parse(winrt::to_hstring(reconstructed.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    check(restored_proofs.Stringify()==original_proofs.Stringify()
+        &&reconstructed.pages[at->page].blocks[at->block].explanation==old.explanation,
+        "An integrated recovery fixture lost its original editorial prefix or became an unchanged transition");
+    // Reject a final-looking source without the authenticated reviewed edge.
+    const auto missing=JsonObject::Parse(winrt::to_hstring(proposed.raw_json));
+    const auto proofs=missing.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");proofs.RemoveAtEnd();
+    auto unproven=proposed;unproven.raw_json=winrt::to_string(missing.Stringify());bool rejected=false;
+    try{(void)recovery_explanation_before(unproven);}catch(const std::exception&){rejected=true;}
+    check(rejected,"The recovery fixture accepted a final payload without its reviewed historical transition");
+    const auto& current=proposed.pages[at->page].blocks[at->block];
+    check(current.code==old.code&&current.answers==old.answers&&current.review_feedback==old.review_feedback
+        &&current.output_comparison==old.output_comparison&&current.explanation==explanation
+        &&curriculum::exercise_key(proposed,current)==curriculum::exercise_key(original,old),
+        "The exact explanation proposal changed its program, answer, guide or state address");
+    // Native fields supply both attempts. Only earlier compiler prerequisites
+    // are explicitly synthetic; this does not claim a compiler execution.
+    View view(original,*at,true);
+    const std::string wrong="Resultado: 4";
+    check(!curriculum::evaluate_text_answer(old,wrong).correct,"The recovery retry fixture is not incorrect");
+    view.draft(wrong);view.rejected(wrong,true);view.accepted(old.answers.front());
+    const auto previous=view.saved();const auto answer=state::get_response(previous,original,old);
+    check(answer&&answer->correct,"The original recovery prediction has no actual accepted answer");
+    view.lesson=std::move(proposed);view.reopen();view.verify_feedback(true);
+    const auto restored=view.saved();const auto retained=state::get_response(restored,view.lesson,view.target());
+    check(retained&&retained->correct&&retained->raw_json==answer->raw_json&&retained->answer==answer->answer
+        &&attempt_preferences(restored)==attempt_preferences(previous)
+        &&restored.preferences.at("exact_prediction_qa_unrelated")==previous.preferences.at("exact_prediction_qa_unrelated"),
+        "The recovery explanation revision lost the accepted response, attempts or unrelated preferences");
+    view.reset();view.draft(wrong);view.rejected(wrong,true);view.accepted(view.target().answers.front());
+    check(state::read_bytes(path)==original_bytes,"Recovery explanation QA changed the authored asset");
+    std::cout<<"PASS exact U11L14 recovery explanation proposal: real draft/retry/success, precise reader source, prior accepted payload preserved, scoped Reset and reopen; no asset edits or audio playback claimed\n";
+}
+
 void current_literal_predictions(PredictionGroup group){
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     std::size_t exact=0,trimmed=0,rejected=0,native_rejected=0,core_only_rejected=0;
@@ -416,11 +518,12 @@ void current_literal_predictions(PredictionGroup group){
 
 int main(int argc,char** argv){
     const bool prepared_input=argc==2&&std::string_view(argv[1])=="--prepared-input";
-    if(argc!=1&&!prepared_input){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
+    const bool u11_precision=argc==2&&std::string_view(argv[1])=="--u11-precision";
+    if(argc!=1&&!prepared_input&&!u11_precision){const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
             &&(std::string_view(argv[2])=="u11l2"||std::string_view(argv[2])=="u11l11"||std::string_view(argv[2])=="u11l11-choice"||std::string_view(argv[2])=="u2l9-stages"||std::string_view(argv[2])=="u2l9-variants");
         const auto raw=shape?std::string_view(argv[3]):std::string_view{};const std::wstring token(raw.begin(),raw.end());
         if(!shape||!is_valid_qa_instance(token)){
-            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants> <safe-new-QA-token>]\n";return 2;}
+            std::cerr<<"Usage: exact_prediction_view_tests [--prepared-input | --u11-precision | --prepare-visual <u11l2|u11l11|u11l11-choice|u2l9-stages|u2l9-variants> <safe-new-QA-token>]\n";return 2;}
         // Preparation performs JSON/state/file operations only. Native control
         // and apartment initialization belong solely to the normal regression.
         try{prepare_visual_profile(argv[2],token);return 0;}
@@ -428,7 +531,8 @@ int main(int argc,char** argv){
     }
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
-    try{current_literal_predictions(prepared_input?PredictionGroup::prepared_input:PredictionGroup::baseline);}
+    try{if(u11_precision)proposed_u11_recovery_explanation();
+        else current_literal_predictions(prepared_input?PredictionGroup::prepared_input:PredictionGroup::baseline);}
     catch(const std::exception& error){std::cerr<<active_case<<" ["<<active_step<<"]: "<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }

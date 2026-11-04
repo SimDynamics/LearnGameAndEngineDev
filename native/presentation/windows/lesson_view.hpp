@@ -40,6 +40,9 @@ struct LessonReadingRegion {
     // Stable component identity survives removal of preceding visual controls.
     std::string anchor, retired_successor;
     bool required_compiler = false;
+    // Presentation context is explicit; it never rewrites the visible source.
+    // An authored mathematical mode takes precedence over the technical domain.
+    std::string reading_context = "auto", math_mode = "auto";
 };
 struct LessonReadingArchive {
     std::string page_identity;

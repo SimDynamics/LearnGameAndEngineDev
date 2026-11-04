@@ -44,6 +44,15 @@ struct HiddenLesson {
     void open(){view=create_lesson_view(host,environment,lesson);check(view!=nullptr,"Cannot create the real lesson view");
         MoveWindow(view,0,0,1100,850,TRUE);pump();check(!IsWindowVisible(host),"A hidden choice revision test activated the desktop");}
     void reopen(){check(flush_lesson_view(view),"Cannot persist the choice revision view");DestroyWindow(view);view=nullptr;open();}
+    void restore_qa_page(std::size_t page){
+        // Select another authored page through only this owned QA store. This
+        // isolates simultaneous revisions without inventing answers to the
+        // intervening puzzles or claiming that ordinary navigation was tested.
+        auto initial=saved();DestroyWindow(view);view=nullptr;
+        state::save_current_page(initial,lesson,page);
+        state::StateStore store(environment.paths.root);(void)store.load();store.save(initial);open();
+        check(lesson_page_state(view).index==page,"The isolated choice bookmark did not restore its authored page");
+    }
     HWND control(std::size_t block,int part)const{const auto result=descendant(view,control_id(block,part));check(result!=nullptr,"A real choice revision control is missing");return result;}
     void click(std::size_t block,int part){const auto target=control(block,part);check(IsWindowEnabled(target),"A disabled choice revision control was clicked");SendMessageW(target,BM_CLICK,0,0);pump();}
     std::string text(std::size_t block,int part)const{return edit_text(control(block,part));}
@@ -64,8 +73,19 @@ void seed_required_compilers(state::StateData& data,const curriculum::Lesson& le
         check(windows::compiler_puzzle_completed(data,lesson,block),"The isolated choice-view prerequisite could not be seeded");
     }
 }
+void exact_feedback(HiddenLesson& view,std::size_t index,std::string_view explanation,bool correct){
+    const auto expected=std::string(correct?"✓ Correcto":"✗ Incorrecto")
+        +(explanation.empty()?"":"\n\n"+std::string(explanation));
+    check(view.text(index,4)==expected,"The choice view displayed a different explanation or verdict than its actual response");
+    const auto regions=lesson_reading_regions(view.view);
+    const auto region=std::ranges::find_if(regions,[&](const auto& item){return item.block_index==index&&item.feedback;});
+    check(region!=regions.end()&&region->source_text==expected&&region->correct==correct&&region->solved==correct
+        &&region->target==view.control(index,4)&&region->is_exercise,
+        "The choice reader source lost the response's exact explanation, target or answer boundary");
+}
 void reviewed_choices_preserve_the_displayed_response(){
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
+    check(test::choice_revision_cases().size()==7,"The native choice revision inventory must cover all seven exact reviews");
     std::size_t groups=0;
     for(const auto& plan:test::choice_revision_cases()){
         const auto source=folder/plan.filename;const auto hash=state::sha256(state::read_bytes(source));
@@ -74,6 +94,10 @@ void reviewed_choices_preserve_the_displayed_response(){
         const auto revised=test::revise_choice_lesson(original,plan.identity);
         const auto position=curriculum::stable_block_position(original,plan.identity);check(position.has_value(),"The reviewed choice lost its historical address");
         const auto index=position->block;const auto& old=original.pages[position->page].blocks[index];const auto& current=revised.pages[position->page].blocks[index];
+        check(current.options.at(plan.option)==plan.replacement&&current.correct_index==old.correct_index
+            &&current.question==old.question,"An exact choice proposal changed its question/index or lost the reviewed option");
+        if(plan.explanation)check(current.explanation==plan.explanation&&old.explanation!=current.explanation,
+            "The paired token proposal lost its exact new explanation or its distinct original");
         const auto legacy=curriculum::exercise_key(original,old),sidecar=state::response_storage_key(revised,current);
         check(legacy!=sidecar,"A choice revision reused its old response slot");
         for(const std::string mode:{"empty","draft","wrong","correct"}){
@@ -83,7 +107,7 @@ void reviewed_choices_preserve_the_displayed_response(){
             state::save_current_page(data,original,position->page);
             state::Response previous;previous.raw_json=R"({"incorrectAttempts":4,"opaque":{"caret":7}})";
             const auto wrong=plan.option==*old.correct_index?(*old.correct_index+1)%old.options.size():plan.option;
-            previous.selected=static_cast<std::int64_t>(mode=="correct"?*old.correct_index:wrong);previous.correct=mode=="correct";
+            previous.selected=static_cast<std::int64_t>(mode=="correct"?*old.correct_index:mode=="draft"?plan.option:wrong);previous.correct=mode=="correct";
             if(mode=="wrong")state::mark_response_reviewed(previous,old);
             if(mode!="empty")state::put_response(data,legacy,previous);
             const auto original_json=state::string_value(data,"learning_progress",legacy);
@@ -106,13 +130,17 @@ void reviewed_choices_preserve_the_displayed_response(){
                 check(script(view.view).find(view.text(index,40))!=std::string::npos,"The reader omitted the historical choice summary");
             }
             const auto prior_script=script(view.view);
+            if(current.explanation!=old.explanation)check(prior_script.find(current.explanation)==std::string::npos,
+                "A new success explanation was attributed to a historical or unanswered choice");
             if(mode=="wrong"){
                 const auto old_guide=curriculum::incorrect_feedback(old,static_cast<std::size_t>(previous.selected));
                 check(!old_guide.empty()&&prior_script.find(old_guide)!=std::string::npos,"The reader restored a current guide over an old rejection");
+                exact_feedback(view,index,old_guide,false);
                 if(plan.feedback&&old_guide!=plan.feedback)check(prior_script.find(plan.feedback)==std::string::npos,"A revised guide appeared before the student selected its option");
-            }else if(mode=="correct")check(view.text(index,4).starts_with("✓ Correcto"),"The revised view lost a previous achievement");
+            }else if(mode=="correct")exact_feedback(view,index,old.explanation,true);
             else check(view.text(index,4).empty(),"An unsubmitted selection received an invented verdict");
             preserved();view.reopen();preserved();
+            if(mode=="correct")exact_feedback(view,index,old.explanation,true);
             check(attempts::balance(view.saved(),"programming",now_ms()).available==available,"Reopening a historical choice consumed an attempt");
             if(mode=="correct")view.click(index,12);
             view.click(index,20+static_cast<int>(wrong)*2);
@@ -123,20 +151,91 @@ void reviewed_choices_preserve_the_displayed_response(){
             check(response&&!response->correct&&response->selected==static_cast<std::int64_t>(wrong),"A new distractor was not rejected in its own response slot");
             const auto guide=curriculum::incorrect_feedback(current,wrong);
             check(!guide.empty()&&script(view.view).find(guide)!=std::string::npos,"The current distractor lost its own reader feedback");
+            exact_feedback(view,index,guide,false);
+            const auto rejected_slot=state::string_value(after_wrong,"learning_progress",sidecar);
+            check(!rejected_slot.empty(),"A current rejection was not stored in its independent revision slot");
             preserved();view.click(index,3);
             check(attempts::balance(view.saved(),"programming",now_ms()).available==attempts::balance(after_wrong,"programming",now_ms()).available,
                 "Repeating the same current rejection consumed another attempt");
+            view.reopen();preserved();exact_feedback(view,index,guide,false);
+            check(state::string_value(view.saved(),"learning_progress",sidecar)==rejected_slot,
+                "Reopening rewrote the current rejection's independent response blob");
             view.click(index,20+static_cast<int>(*current.correct_index)*2);view.click(index,3);
-            check(view.text(index,4).starts_with("✓ Correcto"),"The current correct option lost its normal explanation or verdict");preserved();
+            exact_feedback(view,index,current.explanation,true);preserved();
+            const auto approved_slot=state::string_value(view.saved(),"learning_progress",sidecar);
             view.reopen();preserved();const auto solved=state::get_response(view.saved(),revised,current);
             check(solved&&solved->correct&&!solved->historical_choice&&!IsWindowEnabled(view.control(index,20)),"The current achievement did not survive reopening");
+            exact_feedback(view,index,current.explanation,true);
+            check(state::string_value(view.saved(),"learning_progress",sidecar)==approved_slot,
+                "Reopening rewrote the current achievement's independent response blob");
             view.click(index,12);view.reopen();preserved();const auto reset=state::get_response(view.saved(),revised,current);
             check(reset&&!reset->correct&&reset->selected<0&&!reset->historical_choice&&view.text(index,4).empty(),
                 "Explicit reset resurrected the old achievement or changed its archive");++groups;
         }
         check(state::sha256(state::read_bytes(source))==hash,"A native choice revision test wrote the authored asset");
     }
-    std::cout<<"PASS "<<groups<<" hidden real lesson-view cases: five choice revisions, previous text/guide, real new selection, preserved blobs/attempts, reader sources, reset and reopen\n";
+    check(groups==28,"The seven choice revisions did not exercise all four independent historical response states");
+    std::cout<<"PASS "<<groups<<" hidden real lesson-view cases: seven choice revisions, previous text/guide/explanation, real new selection, preserved blobs/attempts, exact reader sources, reset and reopen; no synthesized audio claimed\n";
+}
+void paired_u11_revisions_keep_independent_response_slots(){
+    constexpr std::string_view token_id="block_0003_0004",exception_id="block_0007_0001";
+    const auto source=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json";
+    const auto hash=state::sha256(state::read_bytes(source));const auto integrated=windows::load_lesson(source);
+    const auto original=test::choice_revision_before(test::choice_revision_before(integrated,token_id),exception_id);
+    const auto revised=test::revise_choice_lesson(test::revise_choice_lesson(original,exception_id),token_id);
+    const auto reverse=test::revise_choice_lesson(test::revise_choice_lesson(original,token_id),exception_id);
+    const auto token_at=curriculum::stable_block_position(original,token_id),exception_at=curriculum::stable_block_position(original,exception_id);
+    check(token_at&&exception_at,"The paired U11L14 choice identities are missing");
+    const auto& old_token=original.pages[token_at->page].blocks[token_at->block];
+    const auto& old_exception=original.pages[exception_at->page].blocks[exception_at->block];
+    const auto& token=revised.pages[token_at->page].blocks[token_at->block];
+    const auto& exception=revised.pages[exception_at->page].blocks[exception_at->block];
+    const auto old_token_key=curriculum::exercise_key(original,old_token),old_exception_key=curriculum::exercise_key(original,old_exception);
+    const auto token_key=state::response_storage_key(revised,token),exception_key=state::response_storage_key(revised,exception);
+    check(token_key!=exception_key&&token_key!=old_token_key&&exception_key!=old_exception_key
+        &&token_key==state::response_storage_key(reverse,reverse.pages[token_at->page].blocks[token_at->block])
+        &&exception_key==state::response_storage_key(reverse,reverse.pages[exception_at->page].blocks[exception_at->block]),
+        "Paired choice revision order changed or merged its independent current response identities");
+    state::StateData data;state::prepare_lesson_state(data,original);seed_required_compilers(data,original);
+    data.preferences["native_windows"]["ui_language"]=std::string("es");state::save_current_page(data,original,token_at->page);
+    for(const auto* block:{&old_token,&old_exception}){
+        state::Response response;response.correct=true;response.selected=static_cast<std::int64_t>(*block->correct_index);
+        response.raw_json=R"({"incorrectAttempts":3,"opaque":{"source":"paired U11 QA"}})";
+        state::mark_response_reviewed(response,*block);state::put_response(data,curriculum::exercise_key(original,*block),response);
+    }
+    const auto previous_token=state::string_value(data,"learning_progress",old_token_key);
+    const auto previous_exception=state::string_value(data,"learning_progress",old_exception_key);
+    HiddenLesson view(revised,data);
+    const auto originals_preserved=[&]{const auto saved=view.saved();
+        check(state::string_value(saved,"learning_progress",old_token_key)==previous_token
+            &&state::string_value(saved,"learning_progress",old_exception_key)==previous_exception,
+            "A paired current choice attempt or Reset overwrote either historical response blob");};
+    exact_feedback(view,token_at->block,old_token.explanation,true);originals_preserved();
+    view.click(token_at->block,12);view.click(token_at->block,20+static_cast<int>(*token.correct_index)*2);view.click(token_at->block,3);
+    exact_feedback(view,token_at->block,token.explanation,true);
+    const auto accepted_token=state::string_value(view.saved(),"learning_progress",token_key);
+    check(!accepted_token.empty(),"The paired token response did not create its own current sidecar");
+    view.restore_qa_page(exception_at->page);originals_preserved();
+    exact_feedback(view,exception_at->block,old_exception.explanation,true);
+    check(state::string_value(view.saved(),"learning_progress",token_key)==accepted_token
+        &&!state::find(view.saved(),"learning_progress",exception_key),
+        "Opening the second revision changed the first current response or manufactured the second attempt");
+    view.click(exception_at->block,12);view.click(exception_at->block,20+static_cast<int>(*exception.correct_index)*2);view.click(exception_at->block,3);
+    exact_feedback(view,exception_at->block,exception.explanation,true);
+    const auto accepted_exception=state::string_value(view.saved(),"learning_progress",exception_key);
+    check(!accepted_exception.empty(),"The paired exception response did not create its own current sidecar");
+    view.restore_qa_page(token_at->page);originals_preserved();exact_feedback(view,token_at->block,token.explanation,true);
+    view.click(token_at->block,12);view.reopen();originals_preserved();
+    check(state::string_value(view.saved(),"learning_progress",exception_key)==accepted_exception
+        &&view.text(token_at->block,4).empty(),"Resetting the token revision changed the independent exception achievement");
+    view.restore_qa_page(exception_at->page);exact_feedback(view,exception_at->block,exception.explanation,true);
+    const auto reset_token=state::string_value(view.saved(),"learning_progress",token_key);
+    view.click(exception_at->block,12);view.reopen();originals_preserved();
+    check(state::string_value(view.saved(),"learning_progress",token_key)==reset_token
+        &&view.text(exception_at->block,4).empty()&&state::sha256(state::read_bytes(source))==hash,
+        "Resetting the exception revision changed the independent token reset or authored asset");
+    std::cout<<"PASS paired U11L14 choice revisions: order-independent current identities, original success explanations, separate real new answers, exact reader regions, durable blobs and scoped Reset; page bookmarks isolated in QA only\n";
 }
 void ordinary_choices_keep_their_own_controls(){
     std::string source=R"({"id":"qa_many_choice_options","title":"Opciones conservadas","pages":[{"blocks":[{"type":"multiple_choice","question":"Elige el primer inciso.","options":[)";
@@ -157,7 +256,8 @@ void ordinary_choices_keep_their_own_controls(){
     std::cout<<"PASS ordinary multiple-choice controls: eleven options retain labels and reset without revision history\n";
 }
 void archived_reading_keeps_choice_provenance(){
-    const auto& plan=test::choice_revision_cases().front();
+    for(const auto& plan:test::choice_revision_cases()){
+    if(&plan!=&test::choice_revision_cases().front()&&!plan.explanation)continue;
     const auto integrated=windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
     const auto original=test::choice_revision_before(integrated,plan.identity);
@@ -172,24 +272,32 @@ void archived_reading_keeps_choice_provenance(){
             :test::revise_choice_lesson(test::retire_lesson(original,removal),plan.identity);
         state::StateData data;state::prepare_lesson_state(data,original);seed_required_compilers(data,original);
         data.preferences["native_windows"]["ui_language"]=std::string("es");state::save_current_page(data,original,position->page);
-        state::Response previous;previous.selected=static_cast<std::int64_t>(plan.option);state::mark_response_reviewed(previous,old);
+        state::Response previous;previous.correct=plan.explanation!=nullptr;
+        previous.selected=static_cast<std::int64_t>(previous.correct?*old.correct_index:plan.option);state::mark_response_reviewed(previous,old);
         const auto key=curriculum::exercise_key(original,old);state::put_response(data,key,previous);
         const auto raw=state::string_value(data,"learning_progress",key);HiddenLesson view(model,data);
         const auto active=curriculum::stable_block_position(model,plan.identity);check(active.has_value(),"Retirement lost the active choice identity");
-        const auto summary=view.text(active->block,40);const auto guide=curriculum::incorrect_feedback(old,plan.option);
+        const auto summary=view.text(active->block,40);
+        const auto body=previous.correct?old.explanation:curriculum::incorrect_feedback(old,plan.option);
+        const auto expected=std::string(previous.correct?"✓ Correcto":"✗ Incorrecto")+"\n\n"+body;
         std::string archived;for(const auto& region:retired_lesson_reading_regions(view.view))archived+=region.source_text+'\n';
-        check(archived.find(guide)!=std::string::npos&&archived.find(plan.feedback)==std::string::npos,
+        check(archived.find(expected)!=std::string::npos,"Archived narration lost the original response's exact verdict and explanation");
+        if(plan.feedback&&body!=plan.feedback)check(archived.find(plan.feedback)==std::string::npos,
             "Archived narration attributed a new guide to an old selection");
+        if(plan.explanation)check(archived.find(plan.explanation)==std::string::npos,
+            "Archived narration attributed a new success explanation to an old achievement");
+        exact_feedback(view,active->block,body,previous.correct);
         check((archived.find(summary)!=std::string::npos)==revision_first,
             "Archived narration lost or invented the choice summary for its actual presentation version");
         check(state::string_value(view.saved(),"learning_progress",key)==raw,"Reconstructing an archived reader script rewrote the original choice");
     }
-    std::cout<<"PASS archived narration before/after option revision: original selection/guide and version-correct history summary\n";
+    }
+    std::cout<<"PASS archived narration before/after option and paired explanation revisions: exact original selection/guide/success explanation and version-correct history summary\n";
 }
 }
 int main(){
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);
-    int result=0;try{reviewed_choices_preserve_the_displayed_response();ordinary_choices_keep_their_own_controls();archived_reading_keeps_choice_provenance();}catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
+    int result=0;try{reviewed_choices_preserve_the_displayed_response();paired_u11_revisions_keep_independent_response_slots();ordinary_choices_keep_their_own_controls();archived_reading_keeps_choice_provenance();}catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }

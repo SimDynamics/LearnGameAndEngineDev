@@ -189,7 +189,7 @@ capacidad no amplía el motor Android conservado.
 
 ## Ampliaciones revisadas con conservación en Windows
 
-La extensión `stateLayout.compilerRevisions` admite las cuatro ampliaciones
+La extensión `stateLayout.compilerRevisions` admite las siete ampliaciones
 cerradas de `CPP_CASOS_ADICIONALES_CON_PROGRESO`; su contrato de autoría está en
 `docs/curriculum/STABLE_LESSON_STATE.md`. No es una excepción general para editar
 los esperados de un compilador publicado.
@@ -198,17 +198,27 @@ En U11L7 se conservan los 19 casos originales y se añaden dos. Una prueba anter
 válida puede reutilizarse exclusivamente para el mismo caso del mismo programa
 capturado; no acredita ninguno de los dos casos nuevos. Una edición de fuentes
 antes de completar el objetivo ampliado mantiene las reglas de invalidación de
-intentos. En U11L8, U11L10 y U11L11 el caso único exige un stdout ampliado: el logro
+intentos. En U11L8 y U11L10–L14 el caso único exige un stdout ampliado: el logro
 anterior se conserva como histórico, separado de la nueva comprobación completa.
 Ni una salida anterior ni un booleano antiguo aprueban silenciosamente el objetivo
 ampliado. El botón Reiniciar elimina el intento activo y evita que una prueba
 histórica vuelva a proyectarse como acreditación corriente.
 
-Las tres ampliaciones de stdout modifican simultáneamente la referencia estática
+Las seis ampliaciones de stdout modifican simultáneamente la referencia estática
 posterior: únicamente añaden sus llamadas revisadas antes del `return 0;` final
 de `main`. El mapa conserva el bloque anterior completo en el archivo
 `references` de su revisión. No se permite ampliar el esperado dejando una
 referencia incompatible ni usar este contrato para cambiar otros programas.
+
+U11L12 añade el rechazo del parcial `11*10/2;`; U11L13 añade ese contraste y la
+novena agrupación; U11L14 añade `?z;4;`, que exige descartar sin retokenizar y
+recuperar la operación siguiente. Conservan los stdout anteriores completos y
+añaden exclusivamente los sufijos revisados de 34, 62 y 49 bytes LF. Son baterías
+dentro del programa con stdin vacío: un logro anterior completo conserva su
+1/1 histórico y deja la nueva comprobación en 0/1. Los estados sin comprobar
+siguen sin crédito; los informes impresos no son recibos individuales.
+El helper prepara propuestas sin escribir los assets; Work integra conjuntamente
+consigna, esperado y referencia después de la ampliación técnica.
 
 La ampliación no crea otro editor, no copia borradores ni altera las traducciones.
 Work sigue siendo responsable de integrar las consignas y referencias revisadas;

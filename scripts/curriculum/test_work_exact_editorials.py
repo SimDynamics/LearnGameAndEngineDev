@@ -32,6 +32,10 @@ CASES = (
 )
 
 U11_PROPOSAL_BASE = "ab13ae4a258a68487ba4b91519baed1736252cc9"
+U11_PROPOSAL_BASES = {
+    "texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json":
+        "c570ceb3643592d16f46c25969cf82202313efe0",
+}
 U11_PROPOSALS = (
     ("texto_interpretacion_y_flujos/lesson_terminos_prioridad_y_division_segura.json",
      3, 3, "block_0003_0003", "output_prediction", "explanation",
@@ -45,6 +49,12 @@ U11_PROPOSALS = (
      "Una versión devuelve el mismo ( que acaba de obtener y vuelve a pedir la expresión sin consumirlo ni incrementar la profundidad. ¿Qué defecto tiene?",
      "7f18d783ddecec3d24ee6484f02e59633c749e0a62423a19d3a78833ed090064",
      "77027e5a050155971e7d4df8a9c71e48bf6d6c8203d35d48a95cf7ecedd7126b"),
+    ("texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json",
+     6, 2, "block_0006_0002", "output_prediction", "explanation",
+     "El lector consume ? y lanza. La recuperación descarta +9; como resto de la operación incorrecta; la siguiente operación produce 4.",
+     "El lector consume ? y lanza una excepción. La recuperación descarta +9; como resto de la operación incorrecta; la siguiente operación produce 4.",
+     "a90bdfb0e52d5a6cec6df305dc03ba2ce949bfff65683bc6e7812a091d605806",
+     "a9b2baed596a3e465940d3b425f065c17eed32115e2c4632b4d03e0ab56a2f90"),
 )
 
 
@@ -167,8 +177,9 @@ class WorkExactEditorialTest(unittest.TestCase):
 
 class U11LaterExactEditorialTest(unittest.TestCase):
     def candidate(self, case):
-        previous = published(U11_PROPOSAL_BASE, case[0])
-        family = {locale: published(U11_PROPOSAL_BASE, case[0], locale) for locale in ("es", "en", "fr")}
+        revision = U11_PROPOSAL_BASES.get(case[0], U11_PROPOSAL_BASE)
+        previous = published(revision, case[0])
+        family = {locale: published(revision, case[0], locale) for locale in ("es", "en", "fr")}
         source = deepcopy(previous)
         layout._blocks(source)[case[3]][case[5]] = case[7]
         prepared = layout.prepare_v2(source, "es", family, previous)

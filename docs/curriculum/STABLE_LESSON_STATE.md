@@ -127,8 +127,8 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `editorial` | Pruebas encadenadas `{id, beforeSha256, afterSha256}` de los bloques completos cuya prosa cambia. |
 | `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
-| `choiceRevisions` | Opcional. Archivo acumulativo de las cinco revisiones de opción españolas autorizadas, con `{id, block}` y el bloque publicado anterior íntegro. No permite sustituciones generales de respuestas. |
-| `compilerRevisions` | Opcional. Archivo acumulativo de las cuatro ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. U11L8/L10/L11 incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. No permite cambiar otros programas o esperados. |
+| `choiceRevisions` | Opcional. Archivo acumulativo de las siete revisiones de opción españolas autorizadas, con `{id, block}` y el bloque publicado anterior íntegro. U11L14 token conserva una transición atómica de opción y explicación. No permite sustituciones generales de respuestas. |
+| `compilerRevisions` | Opcional. Archivo acumulativo de las siete ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las seis baterías programadas U11L8/L10/L11/L12/L13/L14 incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. No permite cambiar otros programas o esperados. |
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
@@ -232,7 +232,7 @@ huella de respuesta anterior sólo para el bloque revisado completo; la vista y
 el lector reciben el rótulo nuevo. Cualquier otro cambio sigue necesitando su
 contrato propio. Esta excepción Windows no cambia el motor Android conservado.
 
-## Cinco revisiones exactas de opciones en Windows
+## Siete revisiones exactas de opciones en Windows
 
 `CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5` admite exclusivamente una opción en
 U11L5 (`block_0006_0004`, índice 2), U11L6 (`block_0005_0004`, índice 2),
@@ -244,11 +244,21 @@ las otras cuatro revisan un distractor y su guía correspondiente. Se mantienen
 el índice correcto, las demás opciones, la pregunta, la explicación, los IDs,
 las dependencias, los programas y las direcciones históricas.
 
+`CPP_PRECISION_EXCEPCIONES_U11L14` añade dos revisiones cerradas de la misma
+lección `diagnosticar_y_recuperar_hasta_fin_de_operacion`: `block_0007_0001`,
+índice 1, cambia «Lanzar un diagnóstico de recuperación» por «Lanzar una
+excepción de recuperación»; `block_0003_0004`, índice 0, cambia la opción sobre
+la primera unidad por el token inicial e incorpora simultáneamente su explicación
+exacta revisada. Ambas opciones siguen siendo las correctas, con sus índices y
+guías intactos. La segunda transición es una pareja indivisible de opción y
+explicación; no autoriza otra redacción de esos campos ni cambios independientes
+en la explicación. Los bloques anteriores completos permanecen archivados.
+
 `revise_choice_option(documento_v2, identidad_estable)` prepara una copia en
 memoria, añade a `stateLayout.choiceRevisions` una entrada
 `{"id": "identidad_estable", "block": bloque_publicado_anterior_completo}`
 y añade la arista editorial exacta del bloque anterior a la primera versión
-revisada, incluida su guía. El CLI `revise-choice-option` usa `--identity`,
+revisada, incluida su guía o su explicación pareada cuando corresponda. El CLI `revise-choice-option` usa `--identity`,
 `--locale es`, `--base-ref` publicado y `--output` nuevo. No modifica el asset
 de origen ni consulta progreso. Si falta el mapa, primero se prepara v2 con
 la familia publicada; no se regeneran familias ni orígenes existentes.
@@ -260,30 +270,48 @@ las herramientas exigen su firma completa, la arista editorial revisada dentro
 de la cadena y el contrato protegido nuevo exacto. Una versión sin mapa, v1,
 otro idioma, otra identidad o una alteración de otra opción se rechaza.
 La firma de estado conserva el contrato protegido histórico sólo para esas
-cinco sustituciones. No se cambian los hashes de `origin`, `family` o
+siete sustituciones. No se cambian los hashes de `origin`, `family` o
 `additions`, ni se reasignan posiciones.
 
-Las revisiones posteriores de pregunta, explicación o guías conservan las
+Salvo la explicación pareada cerrada de U11L14, las revisiones posteriores de pregunta, explicación o guías conservan las
 reglas editoriales ordinarias: añaden su procedencia sin reescribir el snapshot
 original ni sustituir la primera arista revisada. La proyección usada por el
 validador curricular restaura exclusivamente la opción histórica, después de
-validar la transición completa; no oculta cambios de prosa ni añade excepciones
-generales para opciones. La revisión de otra opción necesita su propio contrato.
+validar la transición completa. Sólo para la pareja de token U11L14 restaura
+también su explicación exacta anterior; no reemplaza el bloque entero ni oculta
+otros cambios de prosa. El cargador y la autoría rechazan versiones mezcladas
+de esa pareja, incluso con una arista editorial posterior o dentro de una
+presentación histórica. La revisión de otra opción necesita su propio contrato.
 
 El soporte técnico no activa automáticamente estas sustituciones en los JSON.
-Work integra las cinco revisiones y comprueba rechazo, acierto, reapertura,
+Work integra las revisiones y comprueba rechazo, acierto, reapertura,
 presentación y escucha. Los intentos históricos conservan su respuesta y su
 procedencia; una elección anterior no se presenta como una elección del texto
 nuevo. La aceptación curricular y visual queda separada de las pruebas de
 contrato Python y de conservación nativa Windows.
 
-## Cuatro ampliaciones exactas de comprobación en Windows
+Las cinco sustituciones anteriores ya tienen integración curricular; las dos de
+U11L14 se preparan y verifican en memoria sin escribir los assets activos.
+Un acierto histórico conserva su opción y su explicación originales: la nueva
+explicación del token sólo corresponde a una elección nueva comprobada. Los
+intentos históricos, incluidos borradores, rechazos y aciertos, mantienen sus
+datos y procedencia; no heredan el texto de una representación que aún no existía.
+
+La explicación de la predicción U11L14 `block_0006_0002` (p7 b3 histórica)
+tiene una autorización editorial independiente y exacta: «lanza» pasa a
+«lanza una excepción» dentro de la redacción revisada completa. El validador
+fija ambos hashes, la coordenada, el tipo y la ausencia original de `id`;
+no autoriza otras explicaciones ni cambios de programa, respuesta o guía.
+Esta precisión también permanece como propuesta, sin editar el JSON activo.
+
+## Siete ampliaciones exactas de comprobación en Windows
 
 `CPP_CASOS_ADICIONALES_CON_PROGRESO` admite exclusivamente las ampliaciones
 revisadas de U11L7 (`block_0003_0005`), U11L8 (`block_0004_0004`), U11L10 y
-U11L11 (ambas `block_0004_0003` de sus respectivas lecciones). La primera añade
+U11L11 (ambas `block_0004_0003` de sus respectivas lecciones), U11L12
+(`block_0004_0003`) y U11L13/L14 (ambas `block_0004_0004`). La primera añade
 dos casos al final de los 19 publicados, manteniendo cada caso previo y su orden.
-Las otras tres añaden únicamente sus informes revisados al esperado de su caso
+Las otras seis añaden únicamente sus informes revisados al esperado de su caso
 existente y las llamadas correspondientes al `main` de su referencia estática
 completa posterior. Los programas iniciales del editor, entradas iniciales, modos
 de comparación, propietarios y demás campos protegidos permanecen iguales.
@@ -291,11 +319,12 @@ de comparación, propietarios y demás campos protegidos permanecen iguales.
 `revise_compiler_cases(documento_v2, identidad_estable)` prepara una copia en
 memoria y añade a `stateLayout.compilerRevisions` una entrada
 `{"id": "identidad_estable", "block": editor_publicado_anterior_completo}`.
-Para U11L8/L10/L11 añade también `references: [{"id": "referencia_estable",
+Para U11L8/L10/L11/L12/L13/L14 añade también `references: [{"id": "referencia_estable",
 "block": referencia_publicada_anterior_completa}]`, modifica esa referencia con
 las llamadas exactas antes del `return 0;` final y conserva ambas aristas
-editoriales anteriores/ampliadas. U11L8 usa `block_0007_0001`; U11L10/L11 usan
-`block_0008_0001` de su lección correspondiente. El CLI
+editoriales anteriores/ampliadas. U11L8 usa `block_0007_0001`; U11L10/L11/L12/L14
+usan `block_0008_0001`; U11L13 usa `block_0009_0001`. Cada identidad pertenece
+exclusivamente a su lección. El CLI
 `revise-compiler-cases` recibe `--identity`, `--locale es`, el `--base-ref`
 publicado y un `--output` nuevo; nunca sobrescribe el asset ni una propuesta
 existente. No consulta preferencias ni progreso del estudiante.
@@ -313,20 +342,39 @@ Las presentaciones anteriores al cambio conservan su contrato anterior; un
 retiro posterior de otros bloques conserva la presentación ampliada real.
 
 La proyección para el validador curricular restaura únicamente esos casos o
-esperados y las tres referencias exactas después de validar la transición
+esperados y las seis referencias exactas después de validar la transición
 completa. Las guías posteriores
 siguen pasando por las guardas editoriales existentes. Añadir una exigencia
 `standardError: "nonBlank"` conserva su regla propia: una publicación posterior
-no puede retirarla. Las cuatro revisiones no autorizan respuestas generales,
+no puede retirarla. Las siete revisiones no autorizan respuestas generales,
 otras ampliaciones de casos ni cambios de fuentes.
 
 Las pruebas de ejecución anteriores permanecen vinculadas a su objetivo,
 idioma y programa capturado. En U11L7 sólo las pruebas válidas de casos idénticos
 del mismo programa pueden contribuir a los 21; los dos casos nuevos siguen
-pendientes. En las otras tres actividades el esperado completo cambia: el logro
+pendientes. En las otras seis actividades el esperado completo cambia: el logro
 anterior conserva su procedencia, pero la ampliación necesita una nueva ejecución
 completa. Una acreditación anterior no se convierte en prueba del contraste nuevo.
 Reiniciar explícitamente impide recuperar pruebas anteriores como intento activo.
+
+Las tres ampliaciones U11L12–L14 tienen un único caso de ejecución, con stdin
+vacío; sus informes son líneas del stdout producido por llamadas en `main`,
+no comprobaciones individuales del campo Entrada:
+
+| Lección | Llamadas añadidas al final de la batería | Informes y bytes LF |
+| --- | --- | --- |
+| U11L12 | `probar("11*10/2;");` | 11→12; 199→233 bytes. Rechaza el parcial 110 antes de dividir. |
+| U11L13 | `probar("11*10/2;");` y `probar("(((((((((1)))))))));");` | 14→16; 248→310 bytes. Rechaza el parcial y la novena agrupación. |
+| U11L14 | `std::cout << "Caso 11\n";` y `probar("?z;4;");` | 10→11 casos impresos; 357→406 bytes. Descarta sin retokenizar y conserva el resultado 4. |
+
+Conservan íntegros y ordenados todos los informes y llamadas anteriores. El
+logro anterior completo conserva su 1/1 histórico; al adoptar la ampliación
+deja 0/1 ejecuciones del esperado nuevo. Los estados sin comprobar siguen sin
+crédito. No
+acredita el contraste añadido por conservar once, catorce o diez informes.
+Autoría y cargador contrastan los hashes exactos de ambos bloques completos.
+Estas tres transiciones se verifican como propuestas en memoria; su soporte
+técnico no significa que Work ya haya modificado los assets activos.
 
 El soporte no modifica automáticamente los JSON. Work incorpora las consignas,
 casos y referencias correspondientes después de preparar esta transición y

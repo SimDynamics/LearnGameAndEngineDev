@@ -1,6 +1,7 @@
 """Closed compiler expansions keep immutable originals and reviewed output contracts."""
 from copy import deepcopy
 from functools import lru_cache
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -13,6 +14,10 @@ import validar_json_programacion as contract
 
 
 BASELINE = "f410040c7a2b36468f36b15f6d04be7a28b347a7"
+PROPOSAL_BASELINE = "c570ceb3643592d16f46c25969cf82202313efe0"
+PROPOSAL_LESSONS = frozenset({"terminos_prioridad_y_division_segura",
+                             "signos_unarios_parentesis_y_progreso_recursivo",
+                             "diagnosticar_y_recuperar_hasta_fin_de_operacion"})
 PREFIX = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
 
 
@@ -20,9 +25,15 @@ def asset_path(lesson):
     return "texto_interpretacion_y_flujos/lesson_" + lesson.split("__")[-1] + ".json"
 
 
+def baseline(lesson):
+    # The new three are authenticated proposals from the current publication;
+    # the older four retain their independent pre-integration source commits.
+    return PROPOSAL_BASELINE if lesson.split("__")[-1] in PROPOSAL_LESSONS else BASELINE
+
+
 @lru_cache(maxsize=None)
 def published_bytes(lesson, locale="es"):
-    return subprocess.check_output(["git", "show", BASELINE + ":" + PREFIX.replace("/es/", "/" + locale + "/")
+    return subprocess.check_output(["git", "show", baseline(lesson) + ":" + PREFIX.replace("/es/", "/" + locale + "/")
                                     + asset_path(lesson)], cwd=contract.ROOT)
 
 
@@ -50,8 +61,44 @@ def history_block(document, identity):
 
 
 class CompilerCaseRevisionTest(unittest.TestCase):
-    def test_four_exact_expansions_preserve_the_original_program_map_and_translations(self):
-        self.assertEqual(4, len(layout.COMPILER_CASE_REVISIONS))
+    def test_three_pending_batteries_append_only_the_independently_pinned_reports_and_calls(self):
+        # Pins are independent of the authoring allowlist. These remain QA
+        # proposals; a report count is not a count of execution receipts.
+        plans = [
+            ("terminos_prioridad_y_division_segura", "block_0004_0003", "block_0008_0001", 199, 233,
+             "a34d52d3096f1ea54d998807701c6d02b943f1c637aca0e2b929a8c76715ae22",
+             "5bd75ba1888258cd6d02ceb255724439cbcdfbdee7f65590784caf5bd9b50915",
+             '    probar("11*10/2;");\n'),
+            ("signos_unarios_parentesis_y_progreso_recursivo", "block_0004_0004", "block_0009_0001", 248, 310,
+             "a161812776b989acf7ff05023a94228b5dfd39f0fa6590fbb389f3b33e02e32d",
+             "81607dd072f0f3c6867a4b567753b0b131b42476464a74255863dccdc9fd5d43",
+             '    probar("11*10/2;");\n    probar("(((((((((1)))))))));");\n'),
+            ("diagnosticar_y_recuperar_hasta_fin_de_operacion", "block_0004_0004", "block_0008_0001", 357, 406,
+             "a4a5cb2f5ff65a572e8803577ac0705409598f65895167e7aa92e5de8c82ba99",
+             "9e1ab256574d1c00240942829ea735907caac6af57258c972b49a1c31bc4b30e",
+             '    std::cout << "Caso 11\\n";\n    probar("?z;4;");\n'),
+        ]
+        for name, identity, reference_id, before_size, after_size, before_sha, after_sha, calls in plans:
+            with self.subTest(lesson=name):
+                lesson = layout._CHOICE_PREFIX + name
+                before, after = published(lesson), revised(lesson, identity)
+                old, new = block(before, identity), block(after, identity)
+                self.assertEqual(1, len(old["outputCheck"]["cases"]))
+                self.assertEqual(1, len(new["outputCheck"]["cases"]))
+                self.assertEqual("", old["outputCheck"]["cases"][0]["standardInput"])
+                self.assertEqual(old.get("initialStandardInput"), new.get("initialStandardInput"))
+                old_output, new_output = (item["outputCheck"]["cases"][0]["outputs"][0].encode("utf-8")
+                                          for item in (old, new))
+                self.assertEqual((before_size, after_size), (len(old_output), len(new_output)))
+                self.assertEqual(before_sha, hashlib.sha256(old_output).hexdigest())
+                self.assertEqual(after_sha, hashlib.sha256(new_output).hexdigest())
+                self.assertTrue(new_output.startswith(old_output))
+                tail = "    return 0;\n}\n"
+                self.assertEqual(block(before, reference_id)["code"][:-len(tail)] + calls + tail,
+                                 block(after, reference_id)["code"])
+
+    def test_seven_exact_expansions_preserve_the_original_program_map_and_translations(self):
+        self.assertEqual(7, len(layout.COMPILER_CASE_REVISIONS))
         for (lesson, identity), spec in layout.COMPILER_CASE_REVISIONS.items():
             with self.subTest(lesson=lesson):
                 before = published(lesson); untouched = deepcopy(before)
@@ -103,7 +150,8 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                 aligned = layout.align_for_previous_validation(before, current)
                 self.assertTrue(contract.preserves_previous_compiler(PREFIX + asset_path(lesson), page, position,
                     block(before, identity), block(aligned, identity), before))
-                self.assertEqual(before["pages"], layout.original_projection(current)["pages"])
+                self.assertEqual(layout.original_projection(before)["pages"],
+                                 layout.original_projection(current)["pages"])
 
     def test_v2_spanish_owner_archive_and_exact_first_editorial_edge_are_required(self):
         for lesson, identity in layout.COMPILER_CASE_REVISIONS:
@@ -184,8 +232,10 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                 target = history_block(forged, identity); target.clear(); target.update(deepcopy(block(revised(lesson, identity), identity)))
                 with self.assertRaisesRegex(layout.LayoutError, "historical revised compiler"): layout.validate(forged)
                 current = layout.retire(revised(lesson, identity), ["block_0000_0001"])
-                _, page, position = identity.split("_"); page, position = int(page), int(position)
-                blocks = current["stateLayout"]["retirementHistory"][0]["pages"][page]["blocks"]
+                snapshot = current["stateLayout"]["retirementHistory"][0]
+                page, position = next((pn, record["blocks"].index(identity))
+                                      for pn, record in enumerate(snapshot["current"]) if identity in record["blocks"])
+                blocks = snapshot["pages"][page]["blocks"]
                 blocks[position - 1], blocks[position] = blocks[position], blocks[position - 1]
                 with self.assertRaises(layout.LayoutError): layout.validate(current)
 
@@ -268,8 +318,8 @@ class CompilerCaseRevisionTest(unittest.TestCase):
         self.assertFalse(contract.preserves_previous_compiler(PREFIX + asset_path(lesson), page, position,
             block(published(lesson), identity), block(aligned, identity), published(lesson)))
 
-    def test_three_reference_expansions_require_their_matching_compiler_and_immutable_archive(self):
-        self.assertEqual(3, len(layout.COMPILER_REFERENCE_REVISIONS))
+    def test_six_reference_expansions_require_their_matching_compiler_and_immutable_archive(self):
+        self.assertEqual(6, len(layout.COMPILER_REFERENCE_REVISIONS))
         for (lesson, identity), reference in layout.COMPILER_REFERENCE_REVISIONS.items():
             before, good = published(lesson), revised(lesson, identity)
             reference_id = reference["id"]
@@ -316,25 +366,31 @@ class CompilerCaseRevisionTest(unittest.TestCase):
 
     def test_cli_never_overwrites_source_or_an_existing_proposal(self):
         for (lesson, identity), spec in layout.COMPILER_CASE_REVISIONS.items():
-            with self.subTest(lesson=lesson, source="current integrated asset"):
+            with self.subTest(lesson=lesson, source="current asset, integrated or pending proposal"):
                 source = contract.ROOT / (PREFIX + asset_path(lesson)); source_bytes = source.read_bytes()
                 current = json.loads(source_bytes); layout.validate(current)
-                archives = [entry for entry in current["stateLayout"]["compilerRevisions"] if entry["id"] == identity]
-                self.assertEqual(1, len(archives))
-                self.assertEqual(spec["before"], layout.fingerprint(archives[0]["block"]))
-                self.assertIn({"id": identity, "beforeSha256": spec["before"], "afterSha256": spec["after"]},
-                              current["stateLayout"]["editorial"])
-                # This is the already integrated source, not a historical
-                # transition. Its exact proposal must retain every subsequent
-                # editorial/choice revision, rather than reconstruct the older
-                # document from which that compiler expansion was first made.
+                archives = [entry for entry in current["stateLayout"].get("compilerRevisions", []) if entry["id"] == identity]
+                if archives:
+                    self.assertEqual(1, len(archives))
+                    self.assertEqual(spec["before"], layout.fingerprint(archives[0]["block"]))
+                    self.assertIn({"id": identity, "beforeSha256": spec["before"], "afterSha256": spec["after"]},
+                                  current["stateLayout"]["editorial"])
+                    expected = current
+                else:
+                    self.assertIn(lesson.split("__")[-1], PROPOSAL_LESSONS)
+                    self.assertEqual(spec["before"], layout.fingerprint(block(current, identity)))
+                    expected = layout.revise_compiler_cases(current, identity)
+                    self.assertNotEqual(current, expected)
+                # Retain every subsequent editorial/choice revision from the
+                # current source. Integrated revisions are no-ops; pending
+                # proposals must actually expand their pinned original.
                 with tempfile.TemporaryDirectory() as directory:
                     output = Path(directory) / "proposal.json"
                     command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-compiler-cases", str(source),
-                               "--locale", "es", "--base-ref", BASELINE, "--identity", identity, "--output", str(output)]
+                               "--locale", "es", "--base-ref", baseline(lesson), "--identity", identity, "--output", str(output)]
                     result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
                     self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-                    proposal = output.read_bytes(); self.assertEqual(current, json.loads(proposal))
+                    proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
                     again = subprocess.run(command, cwd=contract.ROOT, capture_output=True)
                     self.assertNotEqual(0, again.returncode); self.assertEqual(proposal, output.read_bytes())
                     overwrite_source = subprocess.run(command[:-1] + [str(source)], cwd=contract.ROOT, capture_output=True)

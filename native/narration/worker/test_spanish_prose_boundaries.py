@@ -17,6 +17,7 @@ from test_worker import ROOT, Worker
 
 
 ASSET = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_estado_asignacion_y_copia.json"
+U11_ASSET = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json"
 OUT = ROOT / "out/qa/spanish-prose-boundaries"
 VOICES = ("ef_dora", "em_alex", "em_santa")
 # Exact historical explanation from 22443d8, independently checked before the fix.
@@ -55,6 +56,12 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         if block["type"] != "multiple_choice" or block["correctIndex"] != 2:
             raise AssertionError("The current U2L3 choice identity changed")
         cls.current = block["explanation"]
+        cls.u11_bytes = U11_ASSET.read_bytes()
+        u11 = json.loads(cls.u11_bytes.decode("utf-8-sig"))
+        cls.u11_source = u11["pages"][2]["blocks"][3]["text"]
+        cls.u11_sentence = cls.u11_source.split(". ", 1)[0] + "."
+        if "cada get válido consume un carácter y el intento final llega al fin." not in cls.u11_sentence:
+            raise AssertionError("The current U11L14 p3b4 narration identity changed")
         cls.worker = Worker()
 
     @classmethod
@@ -62,6 +69,8 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         cls.worker.close()
         if ASSET.read_bytes() != cls.asset_bytes:
             raise AssertionError("Narration QA changed the curricular asset")
+        if U11_ASSET.read_bytes() != cls.u11_bytes:
+            raise AssertionError("Narration QA changed the current U11L14 asset")
 
     def checked_plan(self, source, voice):
         plan = self.worker.ask("plan", text=source, language="es", voice=voice)
@@ -169,6 +178,91 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         OUT.mkdir(parents=True, exist_ok=True)
         (OUT / "recordings.json").write_text(json.dumps(recordings, ensure_ascii=False, indent=2), encoding="utf-8")
         print("PASS actual PCM/timings/cache/reopen for all three Spanish voices; human listening remains separate")
+
+    def test_03_current_u11_conjunction_keeps_prose_and_named_letter_negatives(self):
+        positive = (self.u11_source, self.u11_sentence, "𐐀 " + self.u11_sentence,
+                    "El carácter y la línea permanecen.", "Cada carácter y un intento cuentan.",
+                    "Cada letra y las palabras permanecen.")
+        # Explicit code/math reaches the established canonical readers before
+        # this Windows-only prose rule. Bare named letters retain that reading,
+        # including a second y that really is the conjunction after their name.
+        negatives = {
+            "La letra y es una consonante.": "La letra i griega es una consonante.",
+            "El carácter Y es válido.": "El carácter i griega es válido.",
+            "El carácter y: una letra.": "El carácter i griega: una letra.",
+            "El carácter y y la letra z son distintos.": "El carácter i griega y la letra zeta son distintos.",
+            "El carácter 'y' es válido.": "El carácter abre comilla simple i griega cierra comilla simple es válido.",
+            "La variable `y` contiene 1.": "La variable i griega contiene 1.",
+            "`int y = 1;` conserva la variable.": "int i griega asigna uno punto y coma conserva la variable.",
+            "$y+1$ conserva la variable.": "ye más uno conserva la variable.",
+            "El carácter y_el continúa.": "El carácter i griega guion bajo el continúa.",
+            "La función f(y) conserva el carácter.": "La función f(y) conserva el carácter.",
+            "Cada carácter (Stroustrup, 2024) conserva su posición.": "Cada carácter, Stroustrup, 2024 conserva su posición.",
+            "El carácter y\n\nel intento permanece.": "El carácter i griega el intento permanece.",
+            "El carácter y, el intento permanece.": "El carácter i griega, el intento permanece.",
+        }
+        for voice in VOICES:
+            for source in positive:
+                with self.subTest(voice=voice, source=source):
+                    plan = self.checked_plan(source, voice)
+                    spoken = " ".join(part["spokenText"] for part in plan["segments"])
+                    self.assertNotIn("i griega", spoken)
+                    if "carácter y el intento" in source:
+                        self.assertIn("carácter y el intento", spoken)
+                    for part in plan["segments"]:
+                        for match in re.finditer(r"\by\b", part["text"]):
+                            first, last = units(part["text"][:match.start()]), units(part["text"][:match.end()])
+                            owners = [(s, d) for s, d in zip(part["spokenRanges"], part["displayedRanges"])
+                                      if owns_word(part["text"], d, first, last)]
+                            self.assertTrue(any(slice_units(part["spokenText"], s["start"], s["end"]) == "y"
+                                                for s, _ in owners), "The conjunctive y lost its exact UTF-16 owner")
+                    self.assertEqual(plan["segments"], self.worker.ask("plan", text=source,
+                                     language="es", voice=voice)["segments"])
+            for source, expected in negatives.items():
+                with self.subTest(voice=voice, negative=source):
+                    plan = self.checked_plan(source, voice)
+                    self.assertEqual(expected, " ".join(part["spokenText"] for part in plan["segments"]))
+
+    def test_04_current_u11_conjunction_real_pcm_timings_and_cache_in_three_voices(self):
+        recordings = {}
+        for voice in VOICES:
+            plan = self.checked_plan(self.u11_sentence, voice)
+            rows = []
+            self.assertNotIn("i griega", " ".join(part["spokenText"] for part in plan["segments"]))
+            for part in plan["segments"]:
+                request = dict(text=part["text"], preparedText=part["preparedText"], language="es", voice=voice,
+                               threads=2, outputDirectory=str(OUT / "u11-conjunction-audio"))
+                result = self.worker.ask("prepare", **request)
+                self.assertEqual(part["key"], result["key"])
+                self.assertEqual(part["text"], result["sourceText"])
+                self.assertTrue(result["alignmentAvailable"])
+                audio = Path(result["wav"])
+                with wave.open(str(audio), "rb") as wav:
+                    self.assertEqual((1, 2, 24000), (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()))
+                    samples = struct.unpack("<" + "h" * wav.getnframes(), wav.readframes(wav.getnframes()))
+                    self.assertGreater(max(map(abs, samples)), 50)
+                    self.assertEqual(result["sampleCount"], len(samples))
+                self.assertGreater(result["durationMs"], 150)
+                previous = 0
+                for timing in result["timings"]:
+                    self.assertTrue(0 <= timing["start"] < timing["end"] <= units(part["text"]))
+                    self.assertTrue(previous <= timing["startMs"] < timing["endMs"] <= result["durationMs"])
+                    previous = timing["startMs"]
+                for word in ("carácter", "y", "intento", "fin"):
+                    for match in re.finditer(r"\b" + word + r"\b", part["text"]):
+                        first, last = units(part["text"][:match.start()]), units(part["text"][:match.end()])
+                        self.assertTrue(any(owns_word(part["text"], timing, first, last) for timing in result["timings"]),
+                                        f"Actual model timing lost the complete original word: {word}")
+                stamp = (audio.stat().st_mtime_ns, hashlib.sha256(audio.read_bytes()).hexdigest())
+                repeated = self.worker.ask("prepare", **request)
+                self.assertTrue(repeated["cacheHit"])
+                self.assertEqual(result["timings"], repeated["timings"])
+                self.assertEqual(stamp, (audio.stat().st_mtime_ns, hashlib.sha256(audio.read_bytes()).hexdigest()))
+                rows.append(dict(plan=part, recording=result, sha256=stamp[1]))
+            recordings[voice] = rows
+        OUT.mkdir(parents=True, exist_ok=True)
+        (OUT / "u11-recordings.json").write_text(json.dumps(recordings, ensure_ascii=False, indent=2), encoding="utf-8")
+        print("PASS current U11L14 original conjunction: actual three-voice PCM, UTF-16 word timing and cache reuse; listening remains separate")
 
 
 if __name__ == "__main__":
