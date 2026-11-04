@@ -47,6 +47,9 @@ struct LessonReadingRegion {
 struct LessonReadingArchive {
     std::string page_identity;
     std::vector<LessonReadingRegion> regions;
+    // Exact region keys whose authenticated semantic revision needs new audio.
+    // Unchanged earlier passages retain their own compatible pause.
+    std::vector<std::string> revised_regions;
 };
 struct LessonViewHooks {
     std::string lesson_label = "Lección";

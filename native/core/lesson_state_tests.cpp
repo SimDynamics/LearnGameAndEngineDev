@@ -564,6 +564,7 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
 }
 void reviewed_compiler_expansions_preserve_execution_history(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
+    using namespace winrt::Windows::Data::Json;
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
     for(std::size_t index=0;index<test::compiler_revision_cases().size();++index) {
         const auto& plan=test::compiler_revision_cases()[index];
@@ -595,8 +596,35 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
                 if(std::string_view(damage)=="seal")malformed.preferences["native_windows"][old_base+"completed"]=std::string("forged");
                 const auto preserved=malformed;rejects([&]{prepare_lesson_state(malformed,current);});require(malformed==preserved,"Rejecting a corrupt inherited compiler receipt partially adopted its state");
             }
-            for(const auto& [domain,preferences]:original.preferences)for(const auto& [name,value]:preferences)
-                require(find(data,domain,name)&&*find(data,domain,name)==value,"Adopting a compiler expansion rewrote historical or unrelated data");
+            // Once Work integrates both L15 editors, restoring only this
+            // editor's previous contract retains the other published row.
+            // Adoption must append exactly the independently pinned new row;
+            // every old row remains byte-identical and in its original order.
+            const auto pin="lesson_"+current.id+"_state_compiler_revisions_v1_es";
+            auto expected_pin=find(original,"learning_progress",pin)
+                ?JsonArray::Parse(winrt::to_hstring(string_value(original,"learning_progress",pin))):JsonArray{};
+            JsonArray expected_row;
+            for(const auto field:{plan.identity,plan.before_full,plan.after_full})expected_row.Append(JsonValue::CreateStringValue(winrt::to_hstring(field)));
+            if(plan.reference_identity)for(const auto field:{plan.reference_identity,plan.reference_before,plan.reference_after})
+                expected_row.Append(JsonValue::CreateStringValue(winrt::to_hstring(field)));
+            expected_pin.Append(expected_row);const auto expected_pin_text=winrt::to_string(expected_pin.Stringify());
+            require(string_value(data,"learning_progress",pin)==expected_pin_text,
+                "Compiler adoption changed a previous provenance row or did not append exactly its independently pinned compiler/reference revision");
+            for(const auto& [domain,preferences]:original.preferences)for(const auto& [name,value]:preferences){
+                const auto actual=find(data,domain,name);
+                const bool exact_append=domain=="learning_progress"&&name==pin;
+                const bool preserved=exact_append?actual&&std::holds_alternative<std::string>(*actual)
+                    &&std::get<std::string>(*actual)==expected_pin_text:actual&&*actual==value;
+                if(!preserved){
+                    std::cerr<<"Compiler adoption mismatch: index="<<index<<" identity="<<plan.identity<<" mode="<<mode
+                        <<" domain="<<domain<<" key="<<name<<" expected-type="<<value.index()<<" actual-type=";
+                    if(actual)std::cerr<<actual->index();else std::cerr<<"absent";
+                    if(const auto text=std::get_if<std::string>(&value))std::cerr<<" expected="<<*text;
+                    if(actual)if(const auto text=std::get_if<std::string>(actual))std::cerr<<" actual="<<*text;
+                    std::cerr<<'\n';
+                }
+                require(preserved,"Adopting a compiler expansion rewrote historical or unrelated data");
+            }
             require(!compiler_puzzle_completed(data,current,block)&&compiler_puzzle_historical_case_count(data,current,block)==seeded&&
                 compiler_puzzle_historical_completed(data,current,block)==(seeded==old.output_check->cases.size()),
                 "Historical cases became current completion or lost their provenance");
@@ -642,7 +670,7 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
             require(compiler_puzzle_completed(reopened,current,block)&&compiler_puzzle_feedback(reopened,current,block)=="Correcto ampliado."&&
                 compiler_puzzle_historical_case_count(reopened,current,block)==seeded,"The fresh complete expanded program lost old credit or failed its new objective");
             invalidate_compiler_puzzle_attempt(reopened,current,block,other);require(compiler_puzzle_completed(reopened,current,block),"Editing revoked a completed expanded objective");
-            const auto pin="lesson_"+current.id+"_state_compiler_revisions_v1_es";auto malformed=reopened;malformed.preferences["learning_progress"][pin]=std::string("[\"invalid\"]");
+            auto malformed=reopened;malformed.preferences["learning_progress"][pin]=std::string("[\"invalid\"]");
             const auto preserved=malformed;rejects([&]{prepare_lesson_state(malformed,current);});require(malformed==preserved,"Rejecting corrupted compiler provenance changed data");
             reset_compiler_puzzle(reopened,current,block);prepare_lesson_state(reopened,current);
             require(!compiler_puzzle_completed(reopened,current,block)&&!compiler_puzzle_historical_completed(reopened,current,block)&&
@@ -737,6 +765,7 @@ void late_compiler_batteries_keep_one_historical_execution_receipt(const std::fi
 }
 void second_u11_compiler_starter_preserves_independent_drafts_and_receipts(const std::filesystem::path& base){
     using namespace lgaed;using namespace curriculum;using namespace windows;
+    using namespace winrt::Windows::Data::Json;
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json";
     const auto bytes=read_bytes(path);const auto before=test::compiler_revision_before(load_lesson(path),"block_0006_0003");
     const auto after=test::revise_compiler_lesson(before,"block_0006_0003");
@@ -797,8 +826,34 @@ void second_u11_compiler_starter_preserves_independent_drafts_and_receipts(const
             check(value.preferences.at("second_starter_qa")==original.preferences.at("second_starter_qa"),"Starter adoption changed unrelated preferences");
         };
         prepare_lesson_state(data,after);validate_lesson_state(data,after);verify(data,true,"adopt");
-        for(const auto& [domain,preferences]:original.preferences)for(const auto& [name,value]:preferences)
-            require(find(data,domain,name)&&*find(data,domain,name)==value,"Starter adoption rewrote an authenticated old receipt or unrelated historical byte");
+        // The independent first editor can already have its expanded contract.
+        // Its entire pinned row remains unchanged; only this closed second
+        // compiler/reference pair is appended to the same provenance array.
+        const auto pin="lesson_"+after.id+"_state_compiler_revisions_v1_es";
+        auto expected_pin=find(original,"learning_progress",pin)
+            ?JsonArray::Parse(winrt::to_hstring(string_value(original,"learning_progress",pin))):JsonArray{};
+        const auto& starter_plan=test::compiler_revision_case(after,"block_0006_0003");JsonArray expected_row;
+        for(const auto field:{starter_plan.identity,starter_plan.before_full,starter_plan.after_full,
+            starter_plan.reference_identity,starter_plan.reference_before,starter_plan.reference_after})
+            expected_row.Append(JsonValue::CreateStringValue(winrt::to_hstring(field)));
+        expected_pin.Append(expected_row);const auto expected_pin_text=winrt::to_string(expected_pin.Stringify());
+        require(string_value(data,"learning_progress",pin)==expected_pin_text,
+            "Starter adoption changed the first editor's provenance or appended a compiler/reference pair outside its independent pins");
+        for(const auto& [domain,preferences]:original.preferences)for(const auto& [entry_name,value]:preferences){
+            const auto actual=find(data,domain,entry_name);
+            const bool exact_append=domain=="learning_progress"&&entry_name==pin;
+            const bool preserved=exact_append?actual&&std::holds_alternative<std::string>(*actual)
+                &&std::get<std::string>(*actual)==expected_pin_text:actual&&*actual==value;
+            if(!preserved){
+                std::cerr<<"Starter adoption mismatch: mode="<<mode<<" domain="<<domain<<" key="<<entry_name
+                    <<" expected-type="<<value.index()<<" actual-type=";
+                if(actual)std::cerr<<actual->index();else std::cerr<<"absent";
+                if(const auto text=std::get_if<std::string>(&value))std::cerr<<" expected="<<*text;
+                if(actual)if(const auto text=std::get_if<std::string>(actual))std::cerr<<" actual="<<*text;
+                std::cerr<<'\n';
+            }
+            require(preserved,"Starter adoption rewrote an authenticated old receipt or unrelated historical byte");
+        }
         require(compiler_puzzle_historical_case_count(data,after,current)==(success?1:0)
             &&compiler_puzzle_historical_completed(data,after,current)==success
             &&(!success||compiler_puzzle_historical_feedback(data,after,current)=="Synthetic original four-report receipt")
@@ -1114,14 +1169,15 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
 }
 int main(int argc, char** argv) {
     try {
-        require(argc==2||(argc==3&&std::string_view(argv[2])=="--u11-starter")
+        require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"))
             ||(argc==4&&std::string_view(argv[2])=="--remainder-editorial"),
-            "Supply an isolated output/QA directory, optional --u11-starter or --remainder-editorial <authenticated before fixture>");
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions or --remainder-editorial <authenticated before fixture>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
-        if(argc==3){second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
+        if(argc==3){if(std::string_view(argv[2])=="--compiler-expansions")reviewed_compiler_expansions_preserve_execution_history(base);
+            else second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
         if(argc==4){remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);

@@ -570,6 +570,9 @@ if(BUILD_TESTING)
     set_tests_properties(native.cpp_numeric_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_test(NAME native.cpp_parenthesis_reader COMMAND lgaed_lesson_reader_tests --cpp-parenthesis-context)
     set_tests_properties(native.cpp_parenthesis_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    add_test(NAME native.u11_domain_revision_reader COMMAND lgaed_lesson_reader_tests --u11-domain-revision)
+    add_test(NAME native.u11_domain_race_reader COMMAND lgaed_lesson_reader_tests --u11-domain-race)
+    set_tests_properties(native.u11_domain_revision_reader native.u11_domain_race_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_executable(lgaed_narration_player_tests native/platform/windows/narration_player_tests.cpp)
     target_link_libraries(lgaed_narration_player_tests PRIVATE lgaed_platform_windows)
     add_test(NAME native.narration_player_rates COMMAND lgaed_narration_player_tests "${CMAKE_SOURCE_DIR}/out/qa/narration-playback-rate")
@@ -972,6 +975,9 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_cpp_narration_checks DEPENDS LearnGameAndEngineDev
         lgaed_lesson_reader_tests lgaed_narration_worker_tests lgaed_math_narration_plan_tests
         lgaed_audio_course_view_tests lgaed_audio_generation_tests lgaed_audio_generation_real_tests)
+    add_custom_target(lgaed_math_label_reader_checks DEPENDS LearnGameAndEngineDev
+        lgaed_lesson_reader_tests lgaed_lesson_tests lgaed_state_tests
+        lgaed_editorial_matching_view_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_curricular_reader_checks DEPENDS LearnGameAndEngineDev
         lgaed_equality_count_reader_tests lgaed_editorial_return_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS

@@ -106,6 +106,12 @@ struct CompilerRevision {
     OutputCheck previous_output_check;
     std::vector<CompilerReferenceRevision> references;
 };
+// Derived only from a complete, closed mathematical label review. This is
+// reading provenance, never another authored field or response identity.
+struct MathLabelRevision {
+    std::string region_key, previous_text, current_text;
+    bool operator==(const MathLabelRevision&) const = default;
+};
 struct Block {
     BlockType type{};
     std::string stable_id, id, text, question, code, initial_code, language;
@@ -125,6 +131,7 @@ struct Block {
     std::optional<OrderRefinement> order_refinement;
     std::optional<ChoiceRevision> choice_revision;
     std::optional<CompilerRevision> compiler_revision;
+    std::optional<MathLabelRevision> math_label_revision;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
