@@ -274,6 +274,11 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_u11_names_integration_view_tests lgaed_cpp_tool_host)
     add_test(NAME native.u11_names_integration_view COMMAND lgaed_u11_names_integration_view_tests)
     set_tests_properties(native.u11_names_integration_view PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    add_executable(lgaed_u11_names_reader_tests native/presentation/windows/u11_names_reader_tests.cpp)
+    target_link_libraries(lgaed_u11_names_reader_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_u11_names_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+    add_test(NAME native.u11_names_reader COMMAND lgaed_u11_names_reader_tests)
+    set_tests_properties(native.u11_names_reader PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     add_executable(lgaed_legacy_response_view_tests native/presentation/windows/legacy_response_view_tests.cpp)
     target_link_libraries(lgaed_legacy_response_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.legacy_response_view COMMAND lgaed_legacy_response_view_tests)
@@ -996,7 +1001,7 @@ if(BUILD_TESTING)
         lgaed_lesson_reader_tests lgaed_lesson_tests lgaed_state_tests
         lgaed_editorial_matching_view_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_u11_names_checks DEPENDS LearnGameAndEngineDev
-        lgaed_u11_names_integration_view_tests lgaed_lesson_tests lgaed_state_tests)
+        lgaed_u11_names_integration_view_tests lgaed_u11_names_reader_tests lgaed_lesson_tests lgaed_state_tests)
     add_custom_target(lgaed_curricular_reader_checks DEPENDS LearnGameAndEngineDev
         lgaed_equality_count_reader_tests lgaed_editorial_return_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
