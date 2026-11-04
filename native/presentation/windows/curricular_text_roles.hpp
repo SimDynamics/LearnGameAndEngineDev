@@ -91,6 +91,29 @@ inline bool output_number(std::wstring_view text,Range number,std::span<const Ra
     }
     return has(prefix,LR"((?:\b(?:antes|ahora|before|after|avant|après|resultado|result|résultat|salida|output|sortie)\s*:\s*|\b(?:la\s+)?(?:consola|console|salida|output|sortie|mensaje|message|resultado|result|résultat)\s+(?:muestra|imprime|es|son|contiene|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|produce|produces|produit)\s*)(?:[+−-]?[0-9]+(?:[.,][0-9]+)?[ \t,;]*(?:(?:y|and|et)[ \t]+)?)*$)",true);
 }
+// A complete integer remainder expression has operands on both sides of %.
+// A percentage, decimal, identifier suffix or incomplete group supplies no
+// such evidence. Bound work/depth independently of the lesson's input length.
+inline std::size_t remainder_expression_end(std::wstring_view text,std::size_t first) {
+    if(first>=text.size()||(!digit(text[first])&&text[first]!=L'(')||
+        (first&&(identifier(text[first-1])||text[first-1]==L'.'||text[first-1]==L'%'||text[first-1]==L'(')))return first;
+    const auto limit=std::min(text.size(),first+256);bool remainder=false;
+    const auto expression=[&](auto& self,std::size_t& cursor,unsigned depth)->bool{
+        if(depth>16)return false;
+        const auto atom=[&]()->bool{
+            if(cursor>=limit)return false;
+            if(text[cursor]==L'('){++cursor;if(!self(self,cursor,depth+1)||cursor>=limit||text[cursor]!=L')')return false;++cursor;return true;}
+            const auto start=cursor;while(cursor<limit&&digit(text[cursor]))++cursor;return cursor>start;
+        };
+        if(!atom())return false;
+        while(cursor<limit&&text[cursor]==L'%'){remainder=true;++cursor;if(!atom())return false;}
+        return true;
+    };
+    auto end=first;
+    if(!expression(expression,end,0)||!remainder)return first;
+    if(end<text.size()&&(identifier(text[end])||text[end]==L'.'||text[end]==L'%'||text[end]==L'('))return first;
+    return end;
+}
 }
 
 inline CurricularRoles curricular_roles(std::wstring_view text,std::string_view locale,const Analysis& semantic,
@@ -124,6 +147,17 @@ inline CurricularRoles curricular_roles(std::wstring_view text,std::string_view 
     if(!visible_prose.empty()){
         const auto context=analyze(visible_prose,locale);
         for(const auto range:context.fragments){const auto found=names(visible_prose.substr(range.first,range.second-range.first));known.insert(found.begin(),found.end());}
+    }
+    // A bounded assumption explicitly binds two already visible code names.
+    // Seeing the same words in source alone never colors ordinary directions.
+    matches(text,LR"(\b(?:sup[oó]n|supongamos)\s+([A-Za-z_][A-Za-z_0-9]*)\s+y\s+([A-Za-z_][A-Za-z_0-9]*)\s+en\s+[+-]?[0-9]+\s*\.\.\s*[+-]?[0-9]+)",[&](const auto& match){
+        if(!known.contains(match[1].str())||!known.contains(match[2].str()))return;
+        for(const auto group:{1,2})add_code(static_cast<std::size_t>(match.position(group)),static_cast<std::size_t>(match.position(group)+match.length(group)));
+    },true);
+    // Context is supplied only for public, unlocked programming controls. Do
+    // not promote bare mathematical text or fetch a hidden model/answer.
+    if(!visible_prose.empty()||!visible_code.empty())for(std::size_t at=0;at<text.size();++at){
+        const auto end=remainder_expression_end(text,at);if(end>at){add_code(at,end);at=end-1;}
     }
     for(std::size_t at=0;at<text.size();){
         if(!letter(text[at])&&text[at]!=L'_'){++at;continue;}

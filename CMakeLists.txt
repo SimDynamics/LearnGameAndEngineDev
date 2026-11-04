@@ -224,6 +224,10 @@ if(BUILD_TESTING)
         native.narration_distribution native.first_unit_manifest_export PROPERTIES TIMEOUT 60)
     add_executable(lgaed_technical_context_view_tests native/presentation/windows/technical_context_view_tests.cpp)
     target_link_libraries(lgaed_technical_context_view_tests PRIVATE lgaed_presentation_windows)
+    add_executable(lgaed_remainder_context_view_tests native/presentation/windows/remainder_context_view_tests.cpp)
+    target_link_libraries(lgaed_remainder_context_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.remainder_technical_context COMMAND lgaed_remainder_context_view_tests)
+    set_tests_properties(native.remainder_technical_context PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     set(LGAED_WORK_EXACT_EDITORIAL_DIR "${CMAKE_CURRENT_BINARY_DIR}/work-exact-editorials")
     set(LGAED_WORK_EXACT_EDITORIAL_FIXTURES
         "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-before.json"
@@ -859,8 +863,13 @@ if(BUILD_TESTING)
     set_tests_properties(native.cpp_project_view PROPERTIES TIMEOUT 120)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
+    add_dependencies(lgaed_state_tests lgaed_work_exact_editorial_fixtures)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
     add_test(NAME native.u11_starter_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state" --u11-starter)
+    add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
+        --remainder-editorial "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json")
+    set_tests_properties(native.remainder_editorial_state_import PROPERTIES TIMEOUT 120)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
@@ -951,14 +960,15 @@ if(BUILD_TESTING)
         endif()
     endforeach()
     add_custom_target(lgaed_curricular_color_checks DEPENDS LearnGameAndEngineDev
-        lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_technical_context_view_tests
+        lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_technical_context_view_tests lgaed_remainder_context_view_tests
         lgaed_lesson_reader_tests lgaed_current_reference_reader_tests lgaed_cpp_fill_view_tests
         lgaed_math_puzzle_view_tests lgaed_window_frame_tests lgaed_window_fullscreen_tests lgaed_catalog_view_tests)
     add_custom_target(lgaed_compiler_revision_checks DEPENDS LearnGameAndEngineDev
         lgaed_lesson_tests lgaed_state_tests lgaed_compiler_revision_view_tests
         lgaed_lesson_reader_tests lgaed_choice_revision_view_tests lgaed_exact_prediction_view_tests)
     add_custom_target(lgaed_work_revision_checks DEPENDS LearnGameAndEngineDev
-        lgaed_technical_context_view_tests lgaed_editorial_matching_view_tests lgaed_lesson_tests lgaed_state_tests)
+        lgaed_technical_context_view_tests lgaed_remainder_context_view_tests lgaed_editorial_matching_view_tests lgaed_lesson_tests lgaed_state_tests
+        lgaed_rich_text_tests lgaed_reading_shade_tests lgaed_lesson_reader_tests)
     add_custom_target(lgaed_cpp_narration_checks DEPENDS LearnGameAndEngineDev
         lgaed_lesson_reader_tests lgaed_narration_worker_tests lgaed_math_narration_plan_tests
         lgaed_audio_course_view_tests lgaed_audio_generation_tests lgaed_audio_generation_real_tests)

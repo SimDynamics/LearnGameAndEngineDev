@@ -6,6 +6,7 @@
 #include "core/compiler_revision_test_fixture.hpp"
 #include "core/compile_check_test_fixture.hpp"
 #include "core/math_label_test_fixture.hpp"
+#include "core/narration_state.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
@@ -881,6 +882,110 @@ void reviewed_u11_math_label_preserves_native_and_imported_state(const std::file
     require(read_bytes(path)==asset,"U11 matching import QA changed the curricular asset");
     std::cout<<"PASS U11 domain label: empty/partial/rejected/successful historical matching payload, original Android fingerprint, independent source/stdin draft, native adoption/reopen and explicit Android import; no invented compiler receipts or playback\n";
 }
+void remainder_editorial_preserves_native_and_imported_state(const std::filesystem::path& base,const std::filesystem::path& before_path){
+    using namespace lgaed;using namespace curriculum;using namespace winrt::Windows::Data::Json;
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json";
+    const auto before_bytes=read_bytes(before_path),asset=read_bytes(path);
+    require(sha256(before_bytes)=="e46f006765a5fa313430b13dd5b1b0a305a6add572beea529fe84f14ab0bf739",
+        "The remainder import fixture differs from its pinned Git publication");
+    const auto before=windows::load_lesson(before_path),current=windows::load_lesson(path);
+    const auto previous_at=stable_block_position(before,"block_0002_0002"),current_at=stable_block_position(current,"block_0002_0002");
+    require(previous_at&&current_at&&*previous_at==*current_at&&previous_at->page==2&&previous_at->block==2,
+        "The remainder explanation import changed its stable or visible address");
+    const auto& old=before.pages[previous_at->page].blocks[previous_at->block];
+    const auto& block=current.pages[current_at->page].blocks[current_at->block];
+    require(before.id==current.id&&before.locale=="es"&&current.locale=="es"&&old.type==BlockType::order_code&&block.type==old.type
+        &&old.id=="cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e04"&&block.id==old.id
+        &&old.fragments==block.fragments&&old.correct_order==std::vector<std::size_t>{1,2,3,0}&&block.correct_order==old.correct_order
+        &&old.question==block.question&&old.review_feedback==block.review_feedback
+        &&exercise_key(before,old)==exercise_key(current,block)&&response_storage_key(before,old)==response_storage_key(current,block)
+        &&order_representation_frame(old)==order_representation_frame(block)&&before.state_layout.lineage==current.state_layout.lineage,
+        "The remainder editorial changed a protected puzzle, owner, answer or storage contract");
+    const auto old_text_hash=sha256(old.explanation),new_text_hash=sha256(block.explanation);
+    require(old_text_hash=="c3df0179bd09fbe11d54af6e11c1fb18a140dbc9ee57894070ef1bd11eb25d9b"
+        &&new_text_hash=="0d826e2c9c883119e498ec90650b531ec9fe8a1ed3ae5417dfa653e2f3c7238d"
+        &&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(old.raw_json)))=="524e9d5823d04f180a87ea73f34ac891b0d102450036493991026f93ce65ae2e"
+        &&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))=="f1d3e2efbfd02a258da6416c5de3ad4590e2130eb4db28283f97c4a05b1270c0",
+        "The remainder import did not use the independently authenticated complete editorial pair");
+    StateData current_metadata;prepare_lesson_state(current_metadata,current);
+    const auto editor_at=stable_block_position(before,"block_0003_0004");require(editor_at.has_value(),"Remainder import lost the independent compiler editor");
+    const auto& editor=before.pages[editor_at->page].blocks[editor_at->block];const auto editor_key=draft_key("programming",before,editor);
+    const auto storage=response_storage_key(before,old);
+    for(const auto mode:{"empty","draft","incorrect","correct"}){
+        const auto stage=std::string_view(mode);StateData original;prepare_lesson_state(original,before);save_current_page(original,before,previous_at->page);
+        original.preferences["attempt_reserve_seconds_test"]["remaining"]=std::int64_t{763};
+        original.preferences["attempt_reserve_seconds_test"]["opaque"]=std::string(" \t original reserve\r\n");
+        original.preferences["remainder_editorial_qa"]["labels"]=std::vector<std::string>{"preservar"," \t original\r\n"};
+        original.preferences["narration_settings"]["language"]=std::string("es");
+        Draft draft;draft.source="    // borrador propio anterior\r\nint main() { return 0; }\n";draft.input=" \t entrada\r\n";
+        draft.indentation_json=make_indentation_metadata(draft.source,{0});put_draft(original,editor_key,draft);
+        if(stage!="empty"){
+            Response response;response.order={0,1,2,3};
+            if(stage=="incorrect")response.order={1,3,2,0};
+            else if(stage=="correct"){response.order.assign(old.correct_order.begin(),old.correct_order.end());response.correct=true;}
+            JsonObject opaque;opaque.Insert(L"incorrectAttempts",JsonValue::CreateNumberValue(4));
+            opaque.Insert(L"explanationAtAttempt",JsonValue::CreateStringValue(winrt::to_hstring(old.explanation)));
+            opaque.Insert(L"opaque",JsonObject::Parse(LR"({"selection":17,"note":"original Android QA"})"));response.raw_json=winrt::to_string(opaque.Stringify());
+            if(stage=="incorrect")mark_response_reviewed(response,old);put_response(original,before,old,response);
+        }
+        // This is stored prior narration metadata, not evidence of synthesis or
+        // listening. The new explanation must not inherit its heard prefix.
+        auto history=narration::begin({},"remainder-old-explanation-qa","remainder-import-qa",{0,137,0,false},old.explanation,"remainder-page-qa");
+        history.entries.front().position.heard_prefix=narration::HeardPrefix{old_text_hash,137000,1000000};narration::write_history(original,history);
+        original.preferences.erase("native_windows");validate_lesson_state(original,before);const auto raw=string_value(original,"learning_progress",storage);
+        const auto verify=[&](const StateData& data){
+            const auto response=get_response(data,current,block),previous=get_response(original,before,old);
+            require(response.has_value()==previous.has_value()&&string_value(data,"learning_progress",storage)==raw,
+                "Remainder editorial import invented, removed or reserialized a historical answer");
+            if(previous)require(response->order==previous->order&&response->correct==previous->correct&&response->raw_json==previous->raw_json
+                &&response->reviewed_answer_identity==previous->reviewed_answer_identity&&response_reviewed(*response,block)==(stage=="incorrect"),
+                "Remainder editorial import regraded an order or changed its reviewed identity/attempt metadata");
+            const auto restored=get_draft(data,editor_key,"");require(restored.source==draft.source&&restored.input==draft.input
+                &&restored.indentation_json==draft.indentation_json&&restored.has_saved,
+                "Remainder editorial import changed the independent source/stdin/indentation draft");
+            require(current_page(data,current)==previous_at->page&&narration::read_history(data)==history
+                &&narration::heard_prefix_matches(narration::read_history(data).entries.front().position,old_text_hash,1000000)
+                &&!narration::heard_prefix_matches(narration::read_history(data).entries.front().position,new_text_hash,1000000),
+                "Remainder editorial import changed the bookmark or credited the new explanation as previously heard");
+            for(const auto& [domain,values]:original.preferences)for(const auto& [key,value]:values)
+                require(find(data,domain,key)&&*find(data,domain,key)==value,"Remainder editorial import overwrote original typed preferences, attempts or reading provenance");
+            for(const auto& [domain,values]:data.preferences)for(const auto& [key,value]:values)if(!find(original,domain,key))
+                require(find(current_metadata,domain,key)&&*find(current_metadata,domain,key)==value,
+                    "Remainder editorial import added state beyond authenticated current metadata");
+            for(const auto& page:current.pages)for(const auto& candidate:page.blocks)if(candidate.type==BlockType::cpp_compiler&&candidate.output_check)
+                require(!windows::compiler_puzzle_completed(data,current,candidate)&&windows::compiler_puzzle_case_count(data,current,candidate)==0
+                    &&windows::compiler_puzzle_historical_case_count(data,current,candidate)==0,"Remainder import manufactured a Windows compiler execution receipt");
+        };
+        auto adopted=original;validate_lesson_state(adopted,current);require(adopted==original,"Read-only remainder editorial validation modified state");
+        prepare_lesson_state(adopted,current);verify(adopted);const auto prepared=adopted;prepare_lesson_state(adopted,current);
+        require(adopted==prepared,"Remainder editorial adoption is not idempotent");
+        const auto name=std::string("remainder-editorial-")+mode;StateStore native(base/(name+"-native"));(void)native.load();native.save(adopted);
+        auto native_reopened=native.load();validate_lesson_state(native_reopened,current);verify(native_reopened);
+        require(native_reopened==adopted,"Remainder editorial native reopening changed the adopted snapshot");
+        const auto exported=base/(name+"-export");export_preferences(exported,original,true);
+        const auto preview=inspect_android_export(exported);require(preview.data==original,"Remainder Android export/import changed typed source values");
+        const auto preserved_preview=preview.data;validate_lesson_state(preview.data,current);require(preview.data==preserved_preview,"Remainder import preview validation mutated source state");verify(preview.data);
+        const auto destination=base/(name+"-import");commit_android_import(preview,destination);StateStore imported(destination);auto imported_data=imported.load();
+        prepare_lesson_state(imported_data,current);validate_lesson_state(imported_data,current);verify(imported_data);imported.save(imported_data);
+        const auto imported_reopened=imported.load();require(imported_reopened==imported_data,"Remainder imported state changed on a second Windows reopen");verify(imported_reopened);
+        for(const auto& file:preview.files)require(sha256(read_bytes(exported/file.relative_path))==file.sha256
+            &&sha256(read_bytes(destination/"state/active/android"/file.relative_path))==file.sha256,
+            "Remainder import modified its Android source or archived original bytes");
+        if(stage=="correct"){
+            auto corrupt=imported_data;auto changed=*get_response(corrupt,current,block);changed.order={1,3,2,0};put_response(corrupt,current,block,changed);
+            const auto retained=corrupt;rejects([&]{validate_lesson_state(corrupt,current);});require(corrupt==retained,"Rejecting a forged correct order changed imported data");
+        }
+        ++groups;
+    }
+    for(const auto identity_drift:{false,true}){
+        auto invalid=JsonObject::Parse(winrt::to_hstring(current.raw_json));auto changed=invalid.GetNamedArray(L"pages").GetObjectAt(2).GetNamedArray(L"blocks").GetObjectAt(2);
+        if(identity_drift)changed.Insert(L"id",JsonValue::CreateStringValue(L"unrelated_editorial_owner"));
+        else changed.Insert(L"explanation",JsonValue::CreateStringValue(L"Lanzar otra excepción sin la autorización exacta."));
+        rejects([&]{(void)windows::parse_lesson_json(winrt::to_string(invalid.Stringify()),"es");});
+    }
+    require(read_bytes(before_path)==before_bytes&&read_bytes(path)==asset,"Remainder editorial import QA changed fixture or curricular bytes");
+    std::cout<<"PASS integrated U11L16 exception explanation: authenticated prior/current complete payloads, empty/draft/rejected/correct historical orders, opaque attempts and original compiler draft, read-only preview, real Android XML import/archive and Windows reopen; old narration metadata stays old, with no new heard prefix or execution credit. No synthesis/listening claimed\n";
+}
 void diagnostic_contracts_preserve_native_and_imported_state(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
@@ -1009,12 +1114,15 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
 }
 int main(int argc, char** argv) {
     try {
-        require(argc==2||(argc==3&&std::string_view(argv[2])=="--u11-starter"),"Supply an isolated output/QA directory and optional --u11-starter");
+        require(argc==2||(argc==3&&std::string_view(argv[2])=="--u11-starter")
+            ||(argc==4&&std::string_view(argv[2])=="--remainder-editorial"),
+            "Supply an isolated output/QA directory, optional --u11-starter or --remainder-editorial <authenticated before fixture>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
         if(argc==3){second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
+        if(argc==4){remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);
@@ -1023,6 +1131,7 @@ int main(int argc, char** argv) {
         late_compiler_batteries_keep_one_historical_execution_receipt(base);
         second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);
         reviewed_u11_math_label_preserves_native_and_imported_state(base);
+        remainder_editorial_preserves_native_and_imported_state(base,std::filesystem::path(LGAED_WORK_EXACT_EDITORIAL_DIR)/"remainder-before.json");
         diagnostic_contracts_preserve_native_and_imported_state(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");

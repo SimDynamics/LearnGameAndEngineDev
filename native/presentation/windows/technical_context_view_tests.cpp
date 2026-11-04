@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <vector>
@@ -574,6 +575,58 @@ void exact_editorial_view(const std::filesystem::path& before_path,const std::fi
     check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,"Native editorial QA rewrote immutable fixtures");
     std::cout<<"PASS exact editorial "<<identity<<": native partial/rejected/correct input, whole response/review/permutation and prerequisite/history preservation, current question/feedback, shade/source/selection and reopen; synthetic prerequisites, no compiler execution or listening claim\n";
 }
+void remainder_visual_profile(std::wstring_view token,bool inspect){
+    check(is_valid_qa_instance(token)&&token.starts_with(L"visual-remainder-"),"Unsafe remainder visual QA token");
+    const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json";
+    const auto asset_hash=state::sha256(state::read_bytes(source));const auto lesson=windows::load_lesson(source);
+    const auto at=curriculum::stable_block_position(lesson,"block_0002_0002");
+    check(at&&at->page==2,"The current remainder visual target moved");const auto& block=lesson.pages[at->page].blocks[at->block];
+    check(block.type==curriculum::BlockType::order_code&&block.correct_order==std::vector<std::size_t>{1,2,3,0}
+        &&state::sha256(block.explanation)=="0d826e2c9c883119e498ec90650b531ec9fe8a1ed3ae5417dfa653e2f3c7238d",
+        "Remainder visual QA requires the exact integrated exception explanation and original answer");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,std::wstring(token),false});const auto& root=environment.paths.root;
+    check(root.parent_path().filename()==L"qa"&&root.parent_path().parent_path().filename()==L"Codex"&&root.filename()==token,
+        "Remainder visual QA resolved outside its isolated Codex profile");state::require_safe_path(root);
+    if(!inspect){
+        check(!std::filesystem::exists(root),"Remainder visual preparation refuses an existing profile");
+        std::filesystem::create_directories(root.parent_path());check(std::filesystem::create_directory(root),"Another process reserved the QA profile");
+        initialize_profile_directories(environment.paths);state::StateStore store(root);check(store.load().preferences.empty(),"The new QA profile is not empty");
+        state::StateData data;state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,at->page);
+        for(std::size_t page=0;page<at->page;++page)for(const auto& prior:lesson.pages[page].blocks)
+            check(!curriculum::has_compiler_objective(prior),"The visual target now needs a prior compiler execution");
+        auto& preferences=data.preferences["native_windows"];
+        preferences["ui_language"]=std::string("es");preferences["content_language"]=std::string("es");preferences["catalog/locale"]=std::string("es");
+        preferences["catalog/route"]=std::string("programming");preferences["catalog/course"]=std::string("cpp_fundamentals");
+        preferences["catalog/unit"]=lesson.id.substr(0,lesson.id.rfind("__"));preferences["navigation/lesson"]=lesson.id;
+        // Visual-only QA: no playback, background generation, synthetic answers,
+        // receipts or listening credit. The personal profile is never opened.
+        data.preferences["lesson_narration_settings"]["enabled"]=false;
+        data.preferences["lesson_narration_settings"]["kokoro_advance_generation"]=false;
+        for(const auto& page:lesson.pages)for(const auto& item:page.blocks){
+            check(!state::get_response(data,lesson,item),"Visual preparation fabricated a response");
+            if(curriculum::has_compiler_objective(item))check(windows::compiler_puzzle_case_count(data,lesson,item)==0,"Visual preparation fabricated a compiler receipt");
+        }
+        check(narration::read_history(data).entries.empty(),"Visual preparation fabricated listening history");
+        state::validate_lesson_state(data,lesson);store.save(data);check(store.load()==data,"The new visual QA state did not persist exactly");
+        std::cout<<"qa_instance="<<utf8(token)<<"\ndata_root="<<utf8(root.native())<<"\npage=3\nquiz_responses=none\ncompiler_receipts=none\nreading_history=none\nnarration=disabled_visual_only\n";
+    }else{
+        const auto active=root/L"state/active/state.bin";check(std::filesystem::is_regular_file(active),"Remainder inspection needs an existing QA state");
+        const auto tree=[&]{std::map<std::filesystem::path,std::string> result;
+            for(const auto& entry:std::filesystem::recursive_directory_iterator(root/L"state")){
+                state::require_safe_path(entry.path());check(entry.is_directory()||entry.is_regular_file(),"Special entry in QA state tree");
+                result.emplace(entry.path().lexically_relative(root),entry.is_directory()?"directory":state::sha256(state::read_bytes(entry.path())));
+            }return result;};
+        const auto before=tree();state::StateStore store(root);const auto data=store.load();state::validate_lesson_state(data,lesson);
+        const auto response=state::get_response(data,lesson,block);
+        std::cout<<"qa_instance="<<utf8(token)<<"\nasset_sha256="<<asset_hash<<"\nstate_sha256="<<state::sha256(state::read_bytes(active))
+            <<"\npage="<<state::current_page(data,lesson)+1<<"\nresponse_present="<<response.has_value()<<"\ncorrect="<<(response&&response->correct)
+            <<"\nreviewed="<<(response&&state::response_reviewed(*response,block))<<"\nresponse_sha256="<<(response?state::sha256(response->raw_json):"")<<"\norder=";
+        if(response)for(const auto piece:response->order)std::cout<<piece<<',';
+        std::cout<<"\nreading_history_entries="<<narration::read_history(data).entries.size()<<"\n";
+        check(tree()==before,"Read-only visual inspection changed QA state");std::cout<<"read_only=1\n";
+    }
+    check(state::sha256(state::read_bytes(source))==asset_hash,"Remainder visual QA changed the curricular asset");
+}
 void preview(unsigned page,bool naming=false){
     View fixture(load(naming?"objetos_y_estado/lesson_nombres_con_intencion.json":"objetos_y_estado/lesson_estado_asignacion_y_copia.json"),page-1);
     const auto title=naming?std::wstring(L"LGAED - Opciones de nombres QA"):L"LGAED - Color y resaltado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
@@ -590,7 +643,9 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);
     const auto module=LoadLibraryW(L"Msftedit.dll");int result=0;
     try{check(module,"Cannot load RichEdit");reader_theme::prepare_fonts();
-        if(argc==4&&std::string_view(argv[1])=="--duplication-revision")exact_editorial_view(argv[2],argv[3],true);
+        if(argc==3&&(std::string_view(argv[1])=="--prepare-remainder-visual"||std::string_view(argv[1])=="--inspect-remainder-visual"))
+            remainder_visual_profile(wide(argv[2]),std::string_view(argv[1])=="--inspect-remainder-visual");
+        else if(argc==4&&std::string_view(argv[1])=="--duplication-revision")exact_editorial_view(argv[2],argv[3],true);
         else if(argc==4&&std::string_view(argv[1])=="--remainder-revision")exact_editorial_view(argv[2],argv[3],false);
         else if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
         else if(argc==3&&std::string_view(argv[1])=="--preview"){
