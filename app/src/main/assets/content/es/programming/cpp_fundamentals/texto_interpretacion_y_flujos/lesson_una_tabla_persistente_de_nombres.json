@@ -10,11 +10,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Un token de nombre todavía no dice cuánto vale ese nombre. La tabla conserva pares nombre/valor entre operaciones de la misma ejecución. Después de crear saldo con valor cinco, consultar saldo recupera cinco; una segunda consulta no crea otra entrada ni reinicia el valor. La tabla vive fuera del bucle de operaciones."
+          "text": "En la lección anterior, un token de nombre conservaba en `texto` la palabra reconocida. Para calcular con ese nombre necesitamos también recuperar el valor que tiene asociado. Llamaremos tabla de nombres a la colección que guarda esas asociaciones entre nombre y valor (Stroustrup, 2024).\n\nSi registramos el nombre `\"saldo\"` con valor 5, consultarlo dos veces debe recuperar 5 en ambas ocasiones mientras no se cambie su asociación. Consultar no crea otra entrada ni reinicia lo que había guardado.\n\nAquí la asociación persiste entre operaciones de una misma ejecución: creamos la tabla antes del bucle de operaciones y reutilizamos ese mismo objeto en cada vuelta. Así, terminar una consulta no destruye el estado que necesitará la siguiente.",
+          "emphasis": [
+            {
+              "text": "tabla de nombres",
+              "style": "bold"
+            },
+            {
+              "text": "una misma ejecución",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El estado se guarda en un vector de Vinculo, donde cada elemento reúne una string y un int. Los nombres son únicos, sensibles a mayúsculas, siguen el contrato de uno a doce caracteres y no pueden ser la palabra crea. Cada valor está en -100..100. Para esta sesión pequeña la tabla admite hasta ocho vínculos; saturarse es un rechazo explícito, no una razón para reemplazar otro nombre."
+          "text": "Usaremos el registro C++ `Vinculo` para reunir dos miembros: `nombre`, de tipo `std::string`, y `valor`, de tipo `int`. Un `std::vector<Vinculo>` almacenará esos registros, manteniendo juntos cada nombre y su valor.\n\nLa tabla aplica el contrato de nombres ya estudiado: de 1 a 12 caracteres; comienza con una letra ASCII y continúa con letras, dígitos o guion bajo. Compara mayúsculas y minúsculas tal como se escribieron y excluye la palabra reservada `\"crea\"`. Cada nombre aparece una sola vez y se asocia con un entero entre -100 y 100, incluidos ambos extremos y el cero.\n\nFijamos para este programa un máximo de 8 asociaciones. Al llenarse la tabla, incorporar otro nombre debe rechazarse conservando las asociaciones anteriores. Este máximo es una regla de nuestra tabla.",
+          "emphasis": [
+            {
+              "text": "manteniendo juntos cada nombre y su valor",
+              "style": "bold"
+            },
+            {
+              "text": "máximo de 8 asociaciones",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -26,7 +46,12 @@
           ],
           "correctIndex": 1,
           "explanation": "Cero es un valor legítimo. Consultar debe observar el estado; una ausencia se diagnostica y no inserta un vínculo.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e01"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e01",
+          "reviewFeedback": [
+            "Distingue el valor que devuelve una operación del cambio que realiza en la colección. Revisa si el nombre ausente estaba antes y si aparece después.",
+            "Comprueba por separado si el valor cero puede estar almacenado y si consultar debe añadir una asociación.",
+            "El enunciado describe una inserción. Compara esa acción con diagnosticar que el nombre no estaba registrado."
+          ]
         }
       ]
     },
@@ -34,15 +59,35 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Búsqueda constante y modificación por referencia"
+          "text": "Buscar sin modificar y actualizar por referencia"
         },
         {
           "type": "paragraph",
-          "text": "contiene responde si el nombre existe. consultar entrega su valor o diagnostica ausencia. definir comprueba nombre, valor, duplicados y capacidad antes de añadir. asignar requiere un nombre existente y modifica su miembro mediante una referencia. La interfaz impide que un cliente cambie la colección directamente."
+          "text": "La interfaz de `Tabla_nombres` separa cuatro operaciones. `contiene` responde con un `bool` si el nombre ya está registrado. `consultar` entrega el entero asociado; si no encuentra el nombre, lanza una excepción con el diagnóstico correspondiente. Ninguna de esas dos consultas añade vínculos.\n\n`definir` incorpora una asociación nueva después de comprobar nombre, valor, duplicados y capacidad. `asignar` busca una asociación existente y cambia su valor; un nombre ausente se rechaza. Son acciones distintas: comprobar que un nombre no está no basta para decidir que deba crearse (Stroustrup, 2024).\n\nLa colección será un miembro privado de la tabla. El cliente utiliza estas operaciones públicas para que las modificaciones pasen por sus comprobaciones.",
+          "emphasis": [
+            {
+              "text": "cuatro operaciones",
+              "style": "bold"
+            },
+            {
+              "text": "Ninguna de esas dos consultas añade vínculos.",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "No escribimos dos vectores paralelos: el nombre y su valor deben permanecer asociados. Consultar usa const Vinculo&; modificar usa Vinculo&. Cambiar una copia local dentro del recorrido dejaría el valor almacenado sin actualizar."
+          "text": "La búsqueda recorre los registros uno tras otro. En cada vuelta compara el miembro `dato.nombre` con el nombre solicitado. Al encontrarlo, una consulta devuelve `dato.valor`; una actualización asigna el valor nuevo a ese miembro. Si termina el recorrido sin coincidencias, el nombre no está definido (Stroustrup, 2024).\n\nEn las consultas, `const Vinculo& dato` permite observar el elemento almacenado sin copiarlo ni modificarlo a través de esa referencia. Para actualizar usamos `Vinculo& dato`: la asignación a `dato.valor` alcanza el elemento del vector. En cambio, `Vinculo dato` construye una copia para esa vuelta; cambiarla deja intacto el registro almacenado (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "sin copiarlo",
+              "style": "bold"
+            },
+            {
+              "text": "alcanza el elemento del vector",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -53,7 +98,8 @@
             "Sur=8"
           ],
           "explanation": "dato es una copia. La modificación no alcanza el segundo elemento del vector.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e02"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e02",
+          "reviewFeedback": "Sigue qué objeto designa dato en cada vuelta. Después distingue el objeto que se modificó del elemento que utiliza la instrucción de salida."
         },
         {
           "type": "inline_fill_code",
@@ -63,7 +109,9 @@
           "answers": [
             "&"
           ],
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e03"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e03",
+          "reviewFeedback": "El recorrido debe trabajar con el elemento almacenado. Recupera la notación de referencia y comprueba que permita modificar ese elemento.",
+          "explanation": "En `Vinculo& dato`, `dato` designa el elemento del vector en esa vuelta. Por eso la asignación a `dato.valor` modifica el valor almacenado; con una copia local no lo cambiaría."
         }
       ]
     },
@@ -75,7 +123,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta implementación reutiliza nombre_valido y resultado_en_dominio del módulo de tokens. Aunque aparezca un error del lenguaje diagnosticado, ninguna rama de rechazo añade un vínculo ni cambia un valor. No conserva una referencia al elemento mientras hace crecer el vector. La firma const std::vector<Vinculo>& entradas() const devuelve una referencia al vector datos_, que pertenece a la tabla: el & del resultado evita copiar esa colección. El primer const impide modificar el vector a través del resultado; el const final indica que el método es una consulta que no modifica los miembros de la tabla en este modelo. La referencia no es propietaria: la tabla debe seguir viva mientras se use. En estas prácticas no guardamos esa referencia más allá de la vida de la tabla ni modificamos la colección durante su inspección. Usar const auto& vista = tabla.entradas() conserva esa relación; const auto copia = tabla.entradas() construye otra colección independiente."
+          "text": "El programa siguiente añade `Vinculo` y `Tabla_nombres` al módulo de tokens. Recupera `nombre_valido` para comprobar el nombre y `resultado_en_dominio` para comprobar el entero. Las comprobaciones de cada modificación se realizan antes de añadir un registro o cambiar su valor; los rechazos diagnosticados por estas reglas conservan el estado anterior.\n\nEl método `entradas()` permite inspeccionar la colección. En `const std::vector<Vinculo>& entradas() const`, el tipo del resultado es una referencia al propio vector `datos_`, que pertenece a la tabla. El `&` evita copiar esa colección al devolverla. El primer `const` impide modificarla a través del resultado; el `const` final identifica el método como una consulta que no modifica los miembros de la tabla en este modelo. La tabla debe seguir existiendo mientras se utilice esa referencia (Köppe et al., 2023).\n\n`const auto& vista = tabla.entradas();` conserva una referencia a esa colección. `const auto copia = tabla.entradas();` crea otro vector con sus propios registros. Una modificación autorizada de la tabla puede verse después a través de `vista`, mientras `copia` conserva sus propios valores. En estas prácticas, la tabla sigue viva y no se modifica la colección durante su inspección (Köppe et al., 2023).\n\nLas referencias a elementos durante un recorrido requieren además cuidar los cambios de almacenamiento: añadir al vector puede recolocar sus elementos. Esta implementación termina la búsqueda antes de insertar; no conserva una referencia a un elemento mientras hace crecer el vector (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "una referencia al propio vector",
+              "style": "bold"
+            },
+            {
+              "text": "crea otro vector con sus propios registros",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -84,7 +142,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida distingue Patio y patio: 9 2. Son dos nombres, no una normalización a minúsculas. La palabra crea se reserva de forma exacta; Crea sí puede ser un nombre."
+          "text": "El cliente define `\"Patio\"` y `\"patio\"`, y después asigna `9` al primero. La salida es 9 2: la comparación conserva las mayúsculas y minúsculas de cada nombre, de modo que son dos asociaciones. La palabra `\"crea\"` se reserva por coincidencia exacta; `\"Crea\"` sí puede ser un nombre de esta tabla."
         },
         {
           "type": "output_prediction",
@@ -95,7 +153,8 @@
           "answers": [
             "8 3"
           ],
-          "explanation": "vista nombra el vector de la tabla y observa ocho; copia conservó los registros con valor tres. const impide escribir a través de vista, pero no prohíbe que una operación autorizada de la tabla cambie antes su valor. La tabla, la vista y la copia siguen vivas al imprimir; no se modifica la colección mientras se inspecciona."
+          "explanation": "vista nombra el vector de la tabla y observa ocho; copia conservó los registros con valor tres. const impide escribir a través de vista, pero no prohíbe que una operación autorizada de la tabla cambie antes su valor. La tabla, la vista y la copia siguen vivas al imprimir; no se modifica la colección mientras se inspecciona.",
+          "reviewFeedback": "Identifica qué declaración conserva una referencia y cuál crea otra colección. Sigue la actualización de la tabla y sólo después consulta las dos colecciones."
         }
       ]
     },
@@ -114,7 +173,8 @@
             "Nombre ya definido\nNombre no definido\n4 1"
           ],
           "explanation": "Ni la redefinición ni la consulta ausente cambian la tabla. El valor sigue en cuatro y sólo existe un vínculo.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e04"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e04",
+          "reviewFeedback": "Después de cada intento, comprueba si se llegó a la instrucción que modifica la colección. Sigue por separado el tamaño de la tabla y el valor de su vínculo original."
         },
         {
           "type": "multiple_choice",
@@ -126,7 +186,12 @@
           ],
           "correctIndex": 0,
           "explanation": "La capacidad es parte del dominio de esta tabla. Un rechazo no elige silenciosamente otro nombre que perder.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e05"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e05",
+          "reviewFeedback": [
+            "Comprueba si el intento llegó a insertar o se detuvo antes. El tamaño y las asociaciones anteriores son datos que deben conservarse ante el rechazo.",
+            "Las asociaciones aceptadas deben conservarse. Revisa si el contrato autoriza eliminar una entrada para registrar otra.",
+            "Que cero sea un valor permitido no cambia el máximo de asociaciones de esta tabla."
+          ]
         }
       ]
     },
@@ -138,7 +203,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Copiar Tabla_nombres copia su vector y sus registros. Podemos ensayar cambios sobre la copia sin publicarlos en la tabla de la sesión. Si el procedimiento que valida la operación acepta el candidato, reemplazamos la tabla al final. Consultar se hace sobre una tabla ya definida; no inventa un valor provisional para facilitar el cálculo."
+          "text": "Copiar `Tabla_nombres` copia su vector y los registros que contiene. En `Tabla_nombres candidata = tabla;`, `candidata` empieza con las mismas asociaciones y puede modificarse por separado. Si el cliente acepta el candidato, `tabla = candidata;` reemplaza el contenido de la tabla original al final; si lo descarta, conserva el contenido original (Köppe et al., 2023).\n\nEn la ordenación siguiente, `tabla` ya contiene `\"Sala\"` con un valor válido. Así, la llamada a `asignar` modifica un nombre existente en la copia. `validar(candidata)` representa la comprobación posterior solicitada por el ejercicio: devuelve un `bool` y no modifica `tabla`. La asignación a la original sólo se realiza si esa comprobación devuelve `true`.\n\nConsultar una asociación presupone que el nombre está definido. La consulta diagnostica su ausencia; no inserta un valor provisional para poder seguir calculando.",
+          "emphasis": [
+            {
+              "text": "ya contiene `\"Sala\"` con un valor válido",
+              "style": "bold"
+            },
+            {
+              "text": "sólo se realiza si esa comprobación devuelve `true`",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "order_code",
@@ -158,7 +233,8 @@
             2
           ],
           "explanation": "La tabla candidata existe antes de modificarla. El reemplazo queda condicionado al éxito de la validación. Una validación fallida deja intacta tabla.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e06"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e06",
+          "reviewFeedback": "La copia debe existir antes de usarla. Distingue el cambio sobre esa copia de la instrucción que reemplaza la tabla original y localiza el cuerpo condicionado por la validación."
         },
         {
           "type": "multiple_choice",
@@ -170,7 +246,12 @@
             "5, porque la copia contiene registros independientes y no se publicó."
           ],
           "correctIndex": 2,
-          "explanation": "Copiar Tabla_nombres copia su vector y registros. Modificar la copia no reemplaza la original; la aceptación debe realizar esa asignación de forma explícita."
+          "explanation": "Copiar Tabla_nombres copia su vector y registros. Modificar la copia no reemplaza la original; la aceptación debe realizar esa asignación de forma explícita.",
+          "reviewFeedback": [
+            "Revisa si el programa realizó una asignación del candidato a la tabla original. Crear una copia con el mismo contenido no convierte sus registros en un único objeto compartido.",
+            "Descartar la copia no ejecuta una modificación sobre el vector original. Sigue qué tabla recibe cada operación.",
+            "Distingue el contenido de la copia del contenido aceptado en la tabla original."
+          ]
         }
       ]
     },
@@ -182,10 +263,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la interfaz y construye un cliente con un vínculo Zona=5.\n\nCopia la tabla, cambia Zona a ocho en la copia y descarta ese candidato: al consultar la tabla original debe seguir apareciendo cinco.\n\nConstruye una segunda copia, cambia Zona a once y acéptala; la tabla original debe pasar a once.\n\nImprime Original: 5, Candidato: 8, Descartado: 5 y Aceptado: 11, una línea por etiqueta.\n\nConstruye una sola batería con esas cuatro líneas iniciales y las pruebas siguientes.\n\nEn otra tabla define Cero=0, Min=-100 y Max=100 y muestra Limites: 0:-100:100.\n\nIntenta asignar 101 a Max; captura Error: Resultado fuera de dominio y muestra Conservado: 100.\n\nIntenta consultar Ausente; captura Error: Nombre no definido y muestra Ausente: 0;Tamano: 3 usando contiene y entradas().\n\nEn otra tabla define n0..n7 con sus valores 0..7; intenta añadir n8=8, captura Error: Tabla llena y muestra Tamano: 8.\n\nIntenta redefinir n0=9, captura Error: Nombre ya definido y muestra Duplicado: 8:0 como tamaño y valor conservados.\n\nLas etiquetas llevan los espacios indicados; cada línea termina con salto.\n\nUsa Compilar, ejecutar y comprobar con todo el programa; otros nombres de variables y funciones son válidos.",
+          "text": "Construye en este editor el cliente de `Tabla_nombres`, conservando la interfaz y sus comprobaciones del programa trabajado. Es una integración guiada: recupera esas definiciones y organiza las operaciones de `main` para ensayar, descartar y aceptar candidatos.\n\nComienza con un vínculo `\"Zona\"` asociado a 5. Crea una copia, cambia `\"Zona\"` a 8 en esa copia y descártala: la consulta en la original debe seguir devolviendo 5. Crea una segunda copia, cambia `\"Zona\"` a 11 y acéptala reemplazando la original. Imprime estas cuatro líneas, en orden:\nOriginal: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\n\nAñade a la misma batería los ensayos siguientes, usando tablas independientes cuando se indica.\n\nEn otra tabla define `\"Cero\"` con 0, `\"Min\"` con -100 y `\"Max\"` con 100. Imprime Limites: 0:-100:100. Intenta asignar 101 a `\"Max\"`; captura la excepción e imprime Error: Resultado fuera de dominio. Comprueba después el valor almacenado imprimiendo Conservado: 100.\n\nIntenta consultar `\"Ausente\"` en esa tabla; captura la excepción e imprime Error: Nombre no definido. Usa `contiene` y el tamaño de `entradas()` para imprimir Ausente: 0;Tamano: 3. Aquí 0 representa que el nombre no está presente.\n\nEn otra tabla define los nombres `\"n0\"` a `\"n7\"` con los valores 0 a 7. Intenta añadir `\"n8\"` con 8, captura la excepción e imprime Error: Tabla llena. Comprueba el tamaño con Tamano: 8.\n\nIntenta redefinir `\"n0\"` con 9 en esa misma tabla llena, captura la excepción e imprime Error: Nombre ya definido. Comprueba tamaño y valor conservados con Duplicado: 8:0.\n\nEl resultado completo tiene 13 líneas. Conserva las etiquetas, los espacios y los separadores indicados; cada línea termina con salto. Usa Compilar, ejecutar y comprobar con todo el programa. Puedes utilizar otros nombres de variables y funciones mientras se cumpla el comportamiento solicitado.",
           "emphasis": [
             {
+              "text": "integración guiada",
+              "style": "bold"
+            },
+            {
+              "text": "13 líneas",
+              "style": "bold"
+            },
+            {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de la construcción: separar la tabla original de cada candidato; modificar una copia sin cambiar la original; reemplazar ésta sólo al aceptar; distinguir cero de ausencia; y comprobar los rechazos antes de cambiar tamaño, asociaciones o valores.\n\nLas 13 líneas del botón contrastan los candidatos, los extremos del valor, el rechazo de 101, la consulta ausente, la capacidad y el duplicado. Esas trazas no comprueban por sí solas todas las ramas de tu implementación. La recuperación posterior contrasta también un nombre inválido al definir y un nombre ausente al asignar.",
+          "emphasis": [
+            {
+              "text": "antes de cambiar tamaño, asociaciones o valores",
               "style": "bold"
             }
           ]
@@ -203,10 +302,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "paragraph",
-          "text": "Las pruebas de la batería cubren ausencia, cero, extremos, rechazo de 101, capacidad y duplicados. Consultar no añade vínculos; cada rechazo conserva tamaño, asociaciones y valores previos. Las copias sólo reemplazan a la tabla original cuando el cliente acepta explícitamente el candidato."
         }
       ]
     },
@@ -214,7 +309,19 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia después de la práctica"
+          "text": "Recuperar los rechazos y contrastar el cliente"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__recuperacion_nombre_y_asignacion",
+          "question": "Este `main` utiliza sin cambios `Tabla_nombres` y las funciones auxiliares del programa trabajado «Una interfaz pequeña con sus invariantes». Aquí se muestra sólo el cliente. Predice las tres líneas de salida, en orden, conservando los dos puntos y sin añadir comillas.",
+          "language": "cpp",
+          "code": "int main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Mesa\", 4);\n    try {\n        tabla.definir(\"crea\", 7);\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Definir: \" << error.what() << \"\\n\";\n    }\n    try {\n        tabla.asignar(\"Otra\", 8);\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Asignar: \" << error.what() << \"\\n\";\n    }\n    std::cout << \"Estado: \" << tabla.entradas().size()\n              << ':' << tabla.consultar(\"Mesa\") << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "Definir: Nombre invalido\nAsignar: Nombre no definido\nEstado: 1:4"
+          ],
+          "explanation": "El nombre `\"crea\"` está reservado y `definir` lo rechaza antes de insertar. `\"Otra\"` no existe y `asignar` lo rechaza sin crear una asociación. Por eso la tabla conserva un único vínculo, `\"Mesa\"` con valor 4; los dos intentos se diagnostican por separado y ninguno cambia ese estado.",
+          "reviewFeedback": "Sigue las comprobaciones de cada operación antes de buscar una instrucción que cambie la tabla. Conserva por separado el tamaño de la colección y el valor del nombre que sí existía."
         },
         {
           "type": "code",
@@ -223,11 +330,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Copiar una tabla es posible porque contiene un vector de registros copiables; copiar el lector no lo es porque contiene istringstream. La próxima lección reemplazará esta decisión manual de aceptación por una sentencia completa terminada en ;."
+          "text": "Este cliente parcial usa `\"Tramo\"` con los valores `3`, `7` y `12` para variar el ejemplo de copia y aceptación. Sus cuatro líneas muestran cómo descartar un candidato y aceptar otro; la página siguiente reúne la batería completa solicitada en el editor.\n\nCopiar una tabla es posible porque contiene un vector de registros copiables. El lector de tokens conserva su `std::istringstream`, que no se copia. La próxima lección utilizará estas operaciones de tabla al procesar una sentencia completa terminada en `;`."
         },
         {
           "type": "note",
-          "text": "Una tabla de nombres conserva asociaciones entre nombre y valor. Una búsqueda lineal puede localizar una asociación para consultarla o modificarla; declarar requiere comprobar antes si el nombre ya existe (Stroustrup, 2024, sección 6.8.1). La interfaz de Tabla_nombres mantiene separadas consulta, modificación e incorporación. Copiar la tabla permite preparar un candidato sin modificar el estado persistente hasta aceptarlo."
+          "text": "Una tabla de nombres conserva asociaciones entre nombre y valor. Buscar recorre los registros hasta encontrar una coincidencia; consultar recupera el valor y asignar cambia el valor de una asociación existente. Definir comprueba también que el nombre no esté registrado antes de añadirlo (Stroustrup, 2024).\n\nEn nuestro programa, las comprobaciones de nombre, dominio y capacidad preceden al cambio correspondiente. Preparar una copia permite probar un candidato y conservar la tabla de la sesión hasta aceptarlo explícitamente."
         }
       ]
     },
@@ -466,14 +573,15 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
-          "block_0005_0002",
-          "block_0005_0003"
+          "block_0005_0003",
+          "block_0005_0002"
         ]
       },
       {
         "id": "page_0006",
         "blocks": [
           "block_0006_0000",
+          "work_u11l18_rechazos_sin_cambio",
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003"
@@ -962,12 +1070,137 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "work_u11l18_rechazos_sin_cambio",
+        "sha256": "d86d0ec6afc0e419bea8e65c0736f08cf96f3d4e32c61997abc571496e4fc885",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0004_0002",
         "beforeSha256": "2249a9999f1bdc9d3e1f8c3d8b65ad209e3227e137abc22a2617e10c924824cb",
         "afterSha256": "6c0acba8726944fb4dd44963ce1cc93ca759677dbea86682a1f57d65c2d17082"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "4e12f6436d1dfa4bec84eb37bc8de30a83e8f52a4a6e25a5b81169d62d82de9e",
+        "afterSha256": "ffaf78b36017354ad11dbd7ae3cac73edd176735c070447bf07a147b378a4a82"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "14394a505b447e6f32188e41366b3a6aa9d079b05b908cdbeb3b1e1421c36763",
+        "afterSha256": "c664af7aae1f3af27a6c8316954855bbc9164e5392511be0cda63d7d9eb24322"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "e3316bd7c0d9e235d08c379a8fa4360d6131025d44c391199dc58683a8a5543f",
+        "afterSha256": "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "b9f3e42aa9d68a660db902b6f5e043a4fe860da9ecbdc28bdc33f2ff5d2fcb36",
+        "afterSha256": "7b7b73a034b6a135541a3a8a2a601b0d25830b8a97024818ab69a0101084f846"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "1817687561febb7bd3b0628d0aaa748d35875bfee03b0d9f8f09704adb4eec25",
+        "afterSha256": "40c8202d3efa0a01ad42cbf16af00d1ef7bc082fabed5fb8660396af3324cfbb"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "744009ad751471e9c87ecae7bc9ac4b3e1118f190c627f6859e9d04948bc6cfc",
+        "afterSha256": "1740db5002e82dd957491bd7ddb7c939e6053c24c046dbd4f638f69e6144a1a1"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "641c9fc6083e47316bce8393f7556f3d7040fc888d28f9a6f101cfa3c0541047",
+        "afterSha256": "f199470986729a2f1456d8447391bb656c65a1e9052ec68db2583b406183a91d"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "66b456438b666731a6af7c37015ab5b2f10f3e0b4bf08ac93022de2b3c2a7285",
+        "afterSha256": "9ae75d3c4d608efdc7f59a8095dea2081600fe9d1e7b4b02028ad53483a6bd50"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "37f1cc6c767f7d9d0cddda6ee1778a49581c4edd233c5bf268739124c1f8e42d",
+        "afterSha256": "a4ec95872ac651681abf6454b256e7c228c1f3449a4ee028a9a3eb519bc88d3c"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "9a2bece86087ce6f2eb45e36bede9ccb80c8316292b09d2f9bf99fd7b862b812",
+        "afterSha256": "35108b008d6ef33d1b224cb89b9157747c24377dfc22aeebbbc68a95d508e274"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "f0ab99bfc6b8badbd19e703507b78471bc270b3a9b17d190abcd0e9ff329ba97",
+        "afterSha256": "9c181deb435438ad33a97ffb725cc4ec868acab6fba77c78098c276a6b7547b8"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "df14fc28c9a6991d6b2c346c56258feea7986d8e12a77a34afc79e4910666c84",
+        "afterSha256": "428b61f346948c4717a9426c563771728e3a626df93cc7d70b291290f3c36783"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "25c7aa47cd9f6f239463f7ffc8305743f59d53e56b7c4d1547f89df051b1124f",
+        "afterSha256": "0464d5da16b4fbcf16b28859a43b86ddc17fbc9dbb41964e2840648d877c7074"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "08b76f96fd7386ea2f462444962041ef7cb14b929faaa6a9cc0405bd229b55cf",
+        "afterSha256": "43798d9ebd69108853afc64df500c4e72363ce48679c3d1c792b565bbe6e3be9"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "6c0acba8726944fb4dd44963ce1cc93ca759677dbea86682a1f57d65c2d17082",
+        "afterSha256": "73f816adb9359c37b5a686ff1be8dbbfaee4fe7ea460fdea47fa925a4fbc517c"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "7089ea1e0a3d17e97c1c6378e78c89247107940a59c8a4c73d60c66b77461489",
+        "afterSha256": "1bff8e236ca22d1df9efb53f3bf755c7b6c8ce251aa3d62010ae01ddd845ae37"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "06b6cc9fc1159c76eec9f37667894ad4e760fb7d489d6adb192c4149b54f88b4",
+        "afterSha256": "75d852bd5e089da9a940cf335508117f95412ce59e352b088093eb7c5e8d7b5f"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "0898a0b3f8c7154672a9d8c80a9f58d4667e56bf9182cfe55164a223423d1cd8",
+        "afterSha256": "026b878a28a6aea9591d6d55d04a31ea1b81f56890b9ef2824ee5da1fb7f191f"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "1fdaee89293942574974920d0c38001c1a5c656d1b6a6e0a967203af1dc9fed9",
+        "afterSha256": "596ffc8a35e1df9cba6f2c2d413a6af93c47c3da2ae3561c5b74616bf046e8b5"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "842fdad4f98514fee7520c8e55a2d95225b6cd61e68d209cc609e1a0d8391132",
+        "afterSha256": "9a02c97a015e9d29d28e230f65834629aa1716bd74f20633bdcb82d56d6883a6"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "3cdc8f311d78eabe0932c4785e1a44e5002ec4f62d433b51be5083a0d749faa1",
+        "afterSha256": "cb0f539ea898cc4ebf400d73ae375e6b0fb22a4eaae8dc230cbd98f6447500ed"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "35108b008d6ef33d1b224cb89b9157747c24377dfc22aeebbbc68a95d508e274",
+        "afterSha256": "6945392ad80ad5be34d7b999c0a0991cd5fe108071d5af154c9392f3b5aa02e4"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "9a02c97a015e9d29d28e230f65834629aa1716bd74f20633bdcb82d56d6883a6",
+        "afterSha256": "bb600bc281eac9dc0fa98f1cf0eabfe09e4065c460a37fb96d88f1ff6104331d"
       }
     ],
     "orderRefinements": [
@@ -991,5 +1224,27 @@
         }
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "work_u11l18_rechazos_sin_cambio",
+      "requires": [
+        "block_0005_0002"
+      ]
+    }
+  ]
 }
