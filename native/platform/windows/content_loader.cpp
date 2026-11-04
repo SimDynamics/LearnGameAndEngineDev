@@ -1182,6 +1182,18 @@ void resolve_addresses(Lesson& lesson) {
                 block.order_refinement = *refinement->second;
             }
             apply_reviewed_order_equivalences(lesson,block);
+            if(block.type==BlockType::math_puzzle)if(const auto reviewed=reviewed_math_label(JsonObject::Parse(key(block.raw_json)))){
+                require(layout.version==2&&lesson.locale=="es"&&lesson.id==reviewed->lesson&&block.stable_id==reviewed->identity,
+                    "A mathematical reading revision belongs to its authenticated Spanish activity");
+                const auto prior=JsonObject::Parse(key(block.raw_json));
+                const auto response=prior.GetNamedArray(L"responses").GetObjectAt(0);
+                const auto source=response.GetNamedArray(L"sources").GetObjectAt(reviewed->source_index);
+                const auto current_label=text(source,"label");
+                source.Insert(L"label",JsonValue::CreateStringValue(key(reviewed->label_before)));
+                require(fingerprint(prior)==reviewed->before,"A mathematical reading archive differs from the complete reviewed original");
+                block.math_label_revision=MathLabelRevision{text(response,"id")+"/source/"+text(source,"id"),
+                    std::string(reviewed->label_before),current_label};
+            }
             if(const auto choice=choices.find(block.stable_id);choice!=choices.end()) {
                 choice->second->representation_signature=sha256(choice_representation_frame(block));
                 block.choice_revision=*choice->second;

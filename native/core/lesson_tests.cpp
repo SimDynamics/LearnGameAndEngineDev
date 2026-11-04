@@ -491,7 +491,7 @@ void mathematical_puzzle_identity_remains_optional() {
     for(const auto* lesson:{&runtime,&catalog}){
         const auto& block=lesson->pages.at(0).blocks.at(0);
         check(block.type==BlockType::math_puzzle&&block.id.empty()&&block.prompt=="Escribe un número."
-            &&block.raw_json.find("\"responses\":[{\"id\":\"value\"")!=std::string::npos,
+            &&block.raw_json.find("\"responses\":[{\"id\":\"value\"")!=std::string::npos&&!block.math_label_revision,
             "A valid mathematical puzzle without an authored id failed loading or lost its response");
     }
     check(exercise_key(runtime,runtime.pages[0].blocks[0])==exercise_key(catalog,catalog.pages[0].blocks[0]),
@@ -525,6 +525,34 @@ void reviewed_matching_label_preserves_historical_contract() {
         "Reviewed matching label moved saved answers or metadata progress");
     check(current.pages[7].blocks[1].raw_json.find("desde código y unidades") != std::string::npos,
         "Historical state compatibility hid the corrected matching label");
+    const auto label_response=block.GetNamedArray(L"responses").GetObjectAt(0);
+    const auto region=winrt::to_string(label_response.GetNamedString(L"id"))+"/source/"+winrt::to_string(source.GetNamedString(L"id"));
+    const MathLabelRevision expected{region,"Construcción que termina normalmente",winrt::to_string(revised)};
+    check(region=="contratos/source/construccion"&&current.pages[7].blocks[1].math_label_revision==expected
+        &&metadata.pages[7].blocks[1].math_label_revision==expected,
+        "The reviewed matching label lacks its exact derived reading key and old/current text in runtime or catalog metadata");
+    const auto previous_document=JsonObject::Parse(winrt::to_hstring(raw));
+    const auto previous_block=previous_document.GetNamedArray(L"pages").GetObjectAt(7).GetNamedArray(L"blocks").GetObjectAt(1);
+    previous_block.GetNamedArray(L"responses").GetObjectAt(0).GetNamedArray(L"sources").GetObjectAt(0)
+        .Insert(L"label",JsonValue::CreateStringValue(L"Construcción que termina normalmente"));
+    check(lgaed::test::compile_check_test_fingerprint(previous_block)=="ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d",
+        "The original matching-label metadata sample is not the complete authenticated historical block");
+    JsonArray previous_proofs;unsigned removed=0;
+    for(const auto& value:previous_document.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial")){
+        const auto proof=value.GetObject();
+        if(proof.GetNamedString(L"id")==L"block_0007_0001"
+            &&proof.GetNamedString(L"beforeSha256")==L"ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d"
+            &&proof.GetNamedString(L"afterSha256")==L"20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b")++removed;
+        else previous_proofs.Append(value);
+    }
+    check(removed==1,"The matching-label metadata sample did not remove exactly its closed editorial edge");
+    previous_document.GetNamedObject(L"stateLayout").Insert(L"editorial",previous_proofs);
+    const auto previous_raw=winrt::to_string(previous_document.Stringify());
+    const auto previous=parse_lesson_json(previous_raw),previous_metadata=lgaed::windows::parse_lesson_progress_metadata(previous_raw);
+    check(!previous.pages[7].blocks[1].math_label_revision&&!previous_metadata.pages[7].blocks[1].math_label_revision
+        &&previous.state_layout.signatures==current.state_layout.signatures&&previous.state_layout.lineage==current.state_layout.lineage
+        &&exercise_key(previous,previous.pages[7].blocks[1])==exercise_key(current,current.pages[7].blocks[1]),
+        "The original matching label acquired a spurious reading revision or changed its protected progress contract");
     for (const auto change : {"pair", "label", "feedback", "identity", "lesson", "proof", "origin", "unmapped", "v1"}) {
         const auto bad = JsonObject::Parse(winrt::to_hstring(raw));
         const auto puzzle = bad.GetNamedArray(L"pages").GetAt(7).GetObject().GetNamedArray(L"blocks").GetAt(1).GetObject();
@@ -568,6 +596,14 @@ void reviewed_u11_domain_label_preserves_historical_contract(){
     const auto corrected=JsonObject::Parse(winrt::to_hstring(current.raw_json));
     check(corrected.GetNamedArray(L"responses").GetObjectAt(0).GetNamedArray(L"sources").GetObjectAt(5).GetNamedString(L"label")==L"99+2;",
         "The historical response projection hid the corrected U11 source label");
+    const auto label_response=corrected.GetNamedArray(L"responses").GetObjectAt(0),label_source=label_response.GetNamedArray(L"sources").GetObjectAt(5);
+    const auto region=winrt::to_string(label_response.GetNamedString(L"id"))+"/source/"+winrt::to_string(label_source.GetNamedString(L"id"));
+    const MathLabelRevision expected{region,"100+1;","99+2;"};
+    const auto previous_metadata=windows::parse_lesson_progress_metadata(fixture.before.raw_json);
+    check(region=="casos/source/dominio"&&current.math_label_revision==expected
+        &&metadata.pages[8].blocks[2].math_label_revision==expected&&!old.math_label_revision
+        &&!previous_metadata.pages[8].blocks[2].math_label_revision,
+        "The closed U11 label reading metadata changed its source key/texts, lost catalog parity or aliased the original block");
     const auto reconstructed=test::u11_domain_label_fixture(fixture.after);
     check(reconstructed.before.raw_json==fixture.before.raw_json&&reconstructed.after.raw_json==fixture.after.raw_json,
         "An integrated U11 matching fixture became an unchanged or incomplete revision");

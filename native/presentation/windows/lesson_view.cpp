@@ -767,7 +767,7 @@ struct LessonView {
     }
 
     std::vector<LessonReadingArchive> editorial_reading_archives() const {
-        if(import_open||!pane||!IsWindow(pane)||lesson.state_layout.editorial_returns.empty())return {};
+        if(import_open||!pane||!IsWindow(pane))return {};
         auto regions=reading_regions();std::vector<LessonReadingArchive> archives;
         const auto identity=page_state().narration_page_identity;
         for(auto prior=lesson.state_layout.editorial_returns.rbegin();prior!=lesson.state_layout.editorial_returns.rend();++prior){
@@ -789,6 +789,22 @@ struct LessonView {
             region->source_text=winrt::to_string(previous.GetNamedString(L"text"));
             region->math_mode=winrt::to_string(previous.GetNamedString(L"mathMode",L"auto"));
             archives.push_back({identity,regions});
+        }
+        // Reconstruct only the closed label review supplied by the loader.
+        // Card placement, current HWNDs, answers and all other text stay as
+        // displayed; no validator or hidden feedback is used as narration.
+        auto previous_scripts=archives;
+        previous_scripts.push_back({identity,reading_regions()});
+        for(auto& archived:previous_scripts){bool changed=false;
+            for(const auto& current:lesson.pages[page].blocks)if(current.math_label_revision){
+                const auto& revision=*current.math_label_revision;
+                const auto key=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+revision.region_key;
+                const auto exact=[&](const auto& region){return region.key==key&&!region.feedback&&region.source_text==revision.current_text;};
+                if(std::ranges::count_if(archived.regions,exact)!=1)continue;
+                std::ranges::find_if(archived.regions,exact)->source_text=revision.previous_text;
+                archived.revised_regions.push_back(key);changed=true;
+            }
+            if(changed)archives.push_back(std::move(archived));
         }
         return archives;
     }

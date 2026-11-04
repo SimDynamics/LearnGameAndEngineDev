@@ -12,6 +12,7 @@
 #include "platform/windows/winrt_apartment.hpp"
 #include "core/lesson.hpp"
 #include "core/retirement_test_fixture.hpp"
+#include "core/math_label_test_fixture.hpp"
 #include "core/narration_state.hpp"
 #include "core/narration_speed.hpp"
 #include "native_build_config.hpp"
@@ -21,6 +22,7 @@
 #include <winrt/Windows.Data.Json.h>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -154,7 +156,7 @@ curriculum::Lesson compiler_model(bool required=false){
 }
 struct Fixture{
     WindowsEnvironment environment;HWND host=nullptr,view=nullptr;std::unique_ptr<LessonReader> reader;
-    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={},std::function<void(state::StateData&)> initialize_state={},std::filesystem::path private_cache={}):
+    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={},std::function<void(state::StateData&)> initialize_state={},std::filesystem::path private_cache={},bool validate_math=false):
         environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})){
         check(!std::filesystem::exists(environment.paths.root),"QA profile already exists");
         if(!private_cache.empty()){
@@ -175,7 +177,9 @@ struct Fixture{
             prefs["engine"]=std::string("KOKORO");prefs["language"]=std::string("es");prefs["kokoro_voice:es"]=std::string("ef_dora");prefs["rate"]=2.;prefs["kokoro_advance_generation"]=advance;});
         LessonViewHooks hooks;hooks.before_page_change=[this](HWND){if(reader)reader->pause();};
         hooks.content_changed=[this](HWND){if(reader)reader->content_changed();};
-        hooks.feedback_changed=[this](HWND,std::size_t block,bool correct){if(reader)reader->feedback(block,correct);};set_lesson_view_hooks(view,std::move(hooks));
+        hooks.feedback_changed=[this](HWND,std::size_t block,bool correct){if(reader)reader->feedback(block,correct);};
+        if(validate_math)hooks.validate_math=[backend](std::string_view block,std::string_view answers,std::string_view locale,std::stop_token stop){return backend->validate_math(block,answers,locale,stop);};
+        set_lesson_view_hooks(view,std::move(hooks));
         if(before_reader)before_reader(view);
         reader=std::make_unique<LessonReader>(view,environment,std::move(backend),[]{});
         if(wait_initial){if(advance)ready();else wait([&]{const auto s=snapshot();return s.planned&&!s.segments.empty()&&s.segments.front().available;},"current segment without advance preparation");}
@@ -194,6 +198,7 @@ struct Fixture{
         wait([&]{return IsWindowEnabled(action);},"real checked compiler execution");if(pause_after)reader->pause();ready();
         if(pause_after)check(!snapshot().playing&&!snapshot().allocated,"Compiler feedback preparation overrode a subsequent pause");}
 };
+#include "presentation/windows/u11_domain_reader_test.hpp"
 void runtime_stderr_reader_objective(const std::shared_ptr<windows::NarrationWorker>& backend) {
     auto lesson=compiler_model(true);lesson.id="qa_native_reader_runtime_stderr";
     auto& expected=lesson.pages[0].blocks[1].output_check->cases[0];
@@ -2466,6 +2471,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool integrated_only=argc==2&&std::string_view(argv[1])=="--integrated-u1";
     const bool integrated_order_only=argc==2&&std::string_view(argv[1])=="--integrated-order";
     const bool integrated_matching_only=argc==2&&std::string_view(argv[1])=="--integrated-matching";
+    const bool u11_domain_revision_only=argc==2&&std::string_view(argv[1])=="--u11-domain-revision";
+    const bool u11_domain_race_only=argc==2&&std::string_view(argv[1])=="--u11-domain-race";
     const bool current_inline_only=(argc==2||argc==3)&&std::string_view(argv[1])=="--current-inline-feedback";
     std::optional<std::size_t> current_inline_case;
     if(current_inline_only&&argc==3){const std::string_view value=argv[2];
@@ -2481,7 +2488,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
     const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -2499,6 +2506,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(integrated_only){integrated_u1_reader_flow(backend);return 0;}
         if(integrated_order_only){integrated_order_reader_flow(backend);return 0;}
         if(integrated_matching_only){integrated_matching_reader_bookmarks(backend);return 0;}
+        if(u11_domain_revision_only){u11_domain_label_reader_revision(backend);return 0;}
+        if(u11_domain_race_only){u11_domain_label_reader_revision(backend,true);return 0;}
         if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         // These independent flows have their own selectors. State migration
