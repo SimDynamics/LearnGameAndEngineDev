@@ -224,8 +224,29 @@ if(BUILD_TESTING)
         native.narration_distribution native.first_unit_manifest_export PROPERTIES TIMEOUT 60)
     add_executable(lgaed_technical_context_view_tests native/presentation/windows/technical_context_view_tests.cpp)
     target_link_libraries(lgaed_technical_context_view_tests PRIVATE lgaed_presentation_windows)
+    set(LGAED_WORK_EXACT_EDITORIAL_DIR "${CMAKE_CURRENT_BINARY_DIR}/work-exact-editorials")
+    set(LGAED_WORK_EXACT_EDITORIAL_FIXTURES
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-before.json"
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-after.json"
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json"
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-after.json"
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/manifest.json")
+    add_custom_command(OUTPUT ${LGAED_WORK_EXACT_EDITORIAL_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/work_exact_editorial_fixture_source.py"
+            --output-dir "${LGAED_WORK_EXACT_EDITORIAL_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/work_exact_editorial_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        VERBATIM)
+    add_custom_target(lgaed_work_exact_editorial_fixtures DEPENDS ${LGAED_WORK_EXACT_EDITORIAL_FIXTURES})
+    add_dependencies(lgaed_technical_context_view_tests lgaed_work_exact_editorial_fixtures)
     add_test(NAME native.technical_context_view COMMAND lgaed_technical_context_view_tests)
     set_tests_properties(native.technical_context_view PROPERTIES TIMEOUT 120)
+    add_test(NAME native.duplication_code_mention COMMAND lgaed_technical_context_view_tests --duplication-revision
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-before.json" "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-after.json")
+    add_test(NAME native.remainder_exception_editorial COMMAND lgaed_technical_context_view_tests --remainder-revision
+        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json" "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-after.json")
+    set_tests_properties(native.duplication_code_mention native.remainder_exception_editorial PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_executable(lgaed_window_frame_tests native/presentation/windows/window_frame_tests.cpp)
     target_link_libraries(lgaed_window_frame_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.window_frame COMMAND lgaed_window_frame_tests)
@@ -256,6 +277,8 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_editorial_matching_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.editorial_matching_view COMMAND lgaed_editorial_matching_view_tests)
     set_tests_properties(native.editorial_matching_view PROPERTIES TIMEOUT 120)
+    add_test(NAME native.u11_domain_matching_revision COMMAND lgaed_editorial_matching_view_tests --u11-domain)
+    set_tests_properties(native.u11_domain_matching_revision PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
     add_test(NAME native.editorial_matching_fixture_source COMMAND "${Python3_EXECUTABLE}" -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_editorial_matching_fixture_source.py)
     set_tests_properties(native.editorial_matching_fixture_source PROPERTIES TIMEOUT 30)
@@ -486,6 +509,10 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_compiler_revision_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.compiler_revision_view COMMAND lgaed_compiler_revision_view_tests)
     set_tests_properties(native.compiler_revision_view PROPERTIES TIMEOUT 120)
+    add_test(NAME native.u11_late_compiler_revision_view COMMAND lgaed_compiler_revision_view_tests --u11-late)
+    set_tests_properties(native.u11_late_compiler_revision_view PROPERTIES TIMEOUT 120)
+    add_test(NAME native.u11_starter_compiler_revision_view COMMAND lgaed_compiler_revision_view_tests --u11-starter)
+    set_tests_properties(native.u11_starter_compiler_revision_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_executable(lgaed_cpp_fill_view_tests native/presentation/windows/cpp_fill_view_tests.cpp)
     target_link_libraries(lgaed_cpp_fill_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.cpp_fill_view COMMAND lgaed_cpp_fill_view_tests)
@@ -517,7 +544,8 @@ if(BUILD_TESTING)
     endforeach()
     add_test(NAME native.lesson_reader COMMAND lgaed_lesson_reader_tests)
     # Includes full real playback for the added prerequisite/bookmark cases.
-    set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 360)
+    # Its foreground-focus scenario also owns the desktop during this test.
+    set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.reader_state_compatibility COMMAND lgaed_lesson_reader_tests --state-compatibility)
     set_tests_properties(native.reader_state_compatibility PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.reader_missing_recording COMMAND lgaed_lesson_reader_tests --missing-recording)
@@ -832,6 +860,7 @@ if(BUILD_TESTING)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
+    add_test(NAME native.u11_starter_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state" --u11-starter)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
@@ -928,6 +957,8 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_compiler_revision_checks DEPENDS LearnGameAndEngineDev
         lgaed_lesson_tests lgaed_state_tests lgaed_compiler_revision_view_tests
         lgaed_lesson_reader_tests lgaed_choice_revision_view_tests lgaed_exact_prediction_view_tests)
+    add_custom_target(lgaed_work_revision_checks DEPENDS LearnGameAndEngineDev
+        lgaed_technical_context_view_tests lgaed_editorial_matching_view_tests lgaed_lesson_tests lgaed_state_tests)
     add_custom_target(lgaed_cpp_narration_checks DEPENDS LearnGameAndEngineDev
         lgaed_lesson_reader_tests lgaed_narration_worker_tests lgaed_math_narration_plan_tests
         lgaed_audio_course_view_tests lgaed_audio_generation_tests lgaed_audio_generation_real_tests)

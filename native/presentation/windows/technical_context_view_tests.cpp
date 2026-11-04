@@ -14,6 +14,7 @@
 #include <ole2.h>
 #include <richedit.h>
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -414,7 +415,11 @@ void current_u2_roles(){
                 for(std::size_t option=0;option<3;++option){const auto control=fixture.item(choice,21+static_cast<int>(option)*2);
                     const auto text=wide(lesson.pages[page].blocks[choice].options[option]);role_reference(fixture,control,text,text);
                     source_and_shading(fixture,control,lesson.pages[page].blocks[choice].options[option]);}
-                const auto fill=block_at("block_0005_0004",page);role_reference(fixture,fixture.item(fill,0),L"duplicar 4",L"4",true);
+                const auto fill=block_at("block_0005_0004",page);const auto& question=lesson.pages[page].blocks[fill].question;
+                const bool code_literal=question=="Completa las partes derechas para duplicar `4` y luego reducir el resultado en dos.";
+                check(code_literal||question=="Completa las partes derechas para duplicar 4 y luego reducir el resultado en dos.",
+                    "The current duplication question is neither reviewed exact presentation");
+                role_reference(fixture,fixture.item(fill,0),L"duplicar 4",L"4",!code_literal);
                 check(edit_text(fixture.item(choice,4)).empty(),"Unanswered U2 choice exposed its solution for color inference");
             }else{
                 const std::vector<std::string_view> ids=page==6?std::vector<std::string_view>{"block_0006_0001","block_0006_0005"}:std::vector<std::string_view>{"block_0008_0002"};
@@ -496,6 +501,79 @@ void current_u2_roles(){
     check(hash==state::sha256(state::read_bytes(source)),"Color/background QA changed the current U2 asset");
     std::cout<<"PASS actual U2 trace, operands/result, current choices/created feedback, Before/After outputs, bibliography, neutral backgrounds without underlines, source/partial emphasis, original narration, exact state and reopen; synthetic compiler prerequisites are formatting-only, not execution evidence\n";
 }
+void exact_editorial_view(const std::filesystem::path& before_path,const std::filesystem::path& after_path,bool duplication){
+    const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
+    const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
+    const std::string identity=duplication?"block_0005_0004":"block_0002_0002";
+    const auto at=curriculum::stable_block_position(before,identity),next=curriculum::stable_block_position(after,identity);
+    check(at&&next&&*at==*next&&before.id==after.id,"An exact editorial fixture changed its lesson/address");
+    const auto& old=before.pages[at->page].blocks[at->block];const auto& revised=after.pages[next->page].blocks[next->block];
+    check(old.type==revised.type&&old.code==revised.code&&old.answers==revised.answers
+        &&old.fragments==revised.fragments&&old.correct_order==revised.correct_order,"The editorial fixture changed a protected answer/program");
+    if(duplication)check(old.question=="Completa las partes derechas para duplicar 4 y luego reducir el resultado en dos."
+        &&revised.question=="Completa las partes derechas para duplicar `4` y luego reducir el resultado en dos."
+        &&old.explanation==revised.explanation,"The exact numeric code-mention proposal changed");
+    else check(old.question==revised.question&&old.explanation!=revised.explanation
+        &&revised.explanation.find("Lanzar la excepción")!=std::string::npos,"The exact exception explanation changed");
+    const auto same_response=[](const state::Response& a,const state::Response& b){return a.answer==b.answer&&a.correct==b.correct
+        &&a.raw_json==b.raw_json&&a.selected==b.selected&&a.order==b.order&&a.reviewed_answer_identity==b.reviewed_answer_identity;};
+    for(int phase=0;phase<3;++phase){View fixture(before,at->page,true);
+        const auto fields=[&]{const auto host=fixture.item(at->block,5);
+            return std::vector<HWND>{GetDlgItem(host,100),GetDlgItem(host,101)};};
+        const auto order=[&]{std::vector<std::pair<LONG,std::size_t>> positions;
+            const auto host=fixture.item(at->block,5);
+            for(std::size_t i=0;i<old.fragments.size();++i){const auto row=GetDlgItem(host,100+static_cast<int>(i));RECT bounds{};
+                check(row&&GetWindowRect(row,&bounds),"The exact ordering lost an individual native row");positions.emplace_back(bounds.top,i);}
+            std::ranges::sort(positions);std::vector<std::size_t> result;for(const auto& item:positions)result.push_back(item.second);return result;};
+        const auto arrange=[&](const std::vector<std::size_t>& wanted){const auto host=fixture.item(at->block,5);
+            for(std::size_t target=0;target<wanted.size();++target){auto current=order();auto from=std::ranges::find(current,wanted[target])-current.begin();
+                check(from<static_cast<std::ptrdiff_t>(current.size()),"An exact ordering piece disappeared");
+                while(from>static_cast<std::ptrdiff_t>(target)){SendMessageW(GetDlgItem(host,100+static_cast<int>(wanted[target])),WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump();--from;}}
+            check(order()==wanted,"The actual keyboard ordering did not retain its exact permutation");};
+        const auto prompt=fixture.item(at->block,0);
+        if(duplication){role_reference(fixture,prompt,L"duplicar 4",L"4",true);source_and_shading(fixture,prompt,old.question);
+            const auto inputs=fields();check(inputs[0]&&inputs[1],"The current inline puzzle lost its two inputs");
+            const std::array<const wchar_t*,2> values{L"*",phase==0?L"":phase==1?L"+":L"-"};
+            for(std::size_t i=0;i<2;++i){SendMessageW(inputs[i],EM_SETSEL,0,-1);SendMessageW(inputs[i],EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(values[i]));pump();}
+        }else{source_and_shading(fixture,prompt,old.question);auto wanted=old.correct_order;
+            check(wanted.size()>1,"The registered guard ordering lost its original pieces");
+            if(phase!=2)std::swap(wanted[0],wanted[1]);
+            check(curriculum::evaluate_order(old,wanted).correct==(phase==2),"The exact ordering control sample is not discriminating");arrange(wanted);}
+        if(phase>0){check(IsWindowEnabled(fixture.item(at->block,3)),"The authored Check control is unavailable");
+            SendMessageW(fixture.item(at->block,3),BM_CLICK,0,0);pump();}
+        check(flush_lesson_view(fixture.view),"Cannot save an actual editorial draft/answer");
+        const auto saved=read_lesson_state(fixture.view);const auto answer=state::get_response(saved,before,old);
+        check(answer&&answer->correct==(phase==2)&&state::response_reviewed(*answer,old)==(phase==1),"The native editorial sample lost its draft/rejection/success state");
+        const auto old_history=narration::read_history(saved);
+        const auto selected_order=duplication?std::vector<std::size_t>{}:order();
+        fixture.lesson=after;fixture.reopen();
+        const auto verify=[&]{const auto current=read_lesson_state(fixture.view);const auto response=state::get_response(current,after,revised);
+            check(response&&same_response(*answer,*response)&&state::response_reviewed(*response,revised)==(phase==1),"The editorial transition rewrote the stored native response/review");
+            check(narration::read_history(current)==old_history&&current.preferences.at("color_underline_opaque_qa")==saved.preferences.at("color_underline_opaque_qa"),
+                "The editorial transition invented listening credit or changed unrelated preferences");
+            const auto previous_attempts=saved.preferences.find("attempt_reserve_seconds_test"),current_attempts=current.preferences.find("attempt_reserve_seconds_test");
+            check((previous_attempts==saved.preferences.end())==(current_attempts==current.preferences.end())
+                &&(previous_attempts==saved.preferences.end()||previous_attempts->second==current_attempts->second),
+                "Editorial adoption or reopening consumed/replaced the existing attempt reserve");
+            for(const auto& page:before.pages)for(const auto& compiler:page.blocks)if(compiler.type==curriculum::BlockType::cpp_compiler&&compiler.output_check)
+                check(windows::compiler_puzzle_case_count(saved,before,compiler)==windows::compiler_puzzle_case_count(current,after,compiler),"An editorial transition changed its prerequisite receipts");
+            const auto question=fixture.item(at->block,0);check(edit_text(question)==visible_prose(revised.question),"The new question changed visible text or leaked formatting marks");
+            source_and_shading(fixture,question,revised.question,revised.emphasis);
+            if(duplication){role_reference(fixture,question,L"duplicar 4",L"4");const auto inputs=fields();
+                check(edit_text(inputs[0])=="*"&&edit_text(inputs[1])==(phase==0?"":phase==1?"+":"-"),"Inline editorial adoption changed the exact input draft");
+                if(phase==2)for(const auto input:inputs)check(!IsWindowEnabled(input)||(GetWindowLongPtrW(input,GWL_STYLE)&ES_READONLY),"A correct inline answer became editable after adoption");
+            }else check(order()==selected_order,"Editorial adoption changed the physical ordered answer");
+            const auto feedback=fixture.item(at->block,4);const auto body=edit_text(feedback);
+            if(phase==0)check(body.empty(),"An unchecked editorial draft revealed feedback");
+            else if(phase==1)check(body.find("Incorrecto")!=std::string::npos&&body.find(revised.explanation)==std::string::npos,"A rejected editorial attempt revealed success");
+            else{check(body==visible_prose(std::string("✓ Correcto\n\n")+revised.explanation)&&!IsWindowEnabled(fixture.item(at->block,3)),"The current exact success explanation is incomplete or unlocked");
+                source_and_shading(fixture,feedback,std::string("✓ Correcto\n\n")+revised.explanation);}
+        };
+        verify();fixture.reopen();verify();
+    }
+    check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,"Native editorial QA rewrote immutable fixtures");
+    std::cout<<"PASS exact editorial "<<identity<<": native partial/rejected/correct input, whole response/review/permutation and prerequisite/history preservation, current question/feedback, shade/source/selection and reopen; synthetic prerequisites, no compiler execution or listening claim\n";
+}
 void preview(unsigned page,bool naming=false){
     View fixture(load(naming?"objetos_y_estado/lesson_nombres_con_intencion.json":"objetos_y_estado/lesson_estado_asignacion_y_copia.json"),page-1);
     const auto title=naming?std::wstring(L"LGAED - Opciones de nombres QA"):L"LGAED - Color y resaltado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
@@ -512,7 +590,9 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);
     const auto module=LoadLibraryW(L"Msftedit.dll");int result=0;
     try{check(module,"Cannot load RichEdit");reader_theme::prepare_fonts();
-        if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
+        if(argc==4&&std::string_view(argv[1])=="--duplication-revision")exact_editorial_view(argv[2],argv[3],true);
+        else if(argc==4&&std::string_view(argv[1])=="--remainder-revision")exact_editorial_view(argv[2],argv[3],false);
+        else if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
         else if(argc==3&&std::string_view(argv[1])=="--preview"){
             const std::string_view page=argv[2];check(page=="4"||page=="6"||page=="7"||page=="9","Preview admits only the actual registered U2 pages 4, 6, 7 and 9");
             preview(static_cast<unsigned>(page[0]-'0'));

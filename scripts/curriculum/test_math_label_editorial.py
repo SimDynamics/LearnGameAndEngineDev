@@ -170,5 +170,108 @@ class MathLabelEditorialTest(unittest.TestCase):
                     layout.validate_transition(self.old, bad)
 
 
+U11_BASELINE = "5cfd5514c879341216c1c34c313e34a16f60ea32"
+U11_LESSON = "texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json"
+U11_RELATIVE = "app/src/main/assets/content/es/programming/cpp_fundamentals/" + U11_LESSON
+U11_OWNER = ("cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_interprete_con_historial_y_pruebas", "block_0008_0002")
+
+
+@lru_cache(maxsize=None)
+def u11_published(locale="es"):
+    return json.loads(subprocess.check_output(["git", "show", U11_BASELINE + ":" +
+        U11_RELATIVE.replace("/es/", "/" + locale + "/")], cwd=contract.ROOT))
+
+
+class U11DomainLabelEditorialTest(unittest.TestCase):
+    def setUp(self):
+        self.old = deepcopy(u11_published())
+        self.new = deepcopy(self.old)
+        self.new["pages"][8]["blocks"][2]["responses"][0]["sources"][5]["label"] = "99+2;"
+        self.family = {locale: deepcopy(u11_published(locale)) for locale in self.old["stateLayout"]["family"]}
+        self.new = layout.prepare_v2(self.new, "es", self.family, self.old)
+
+    def preserved(self, old=None, new=None, relative=U11_RELATIVE, page=8, block=2):
+        return contract.preserves_previous_exercise(relative, page, block,
+            self.old["pages"][8]["blocks"][2] if old is None else old,
+            self.new["pages"][8]["blocks"][2] if new is None else new)
+
+    def test_exact_original_and_final_blocks_preserve_the_complete_contract(self):
+        spec = layout.MATH_LABEL_REVISIONS[U11_OWNER]
+        old, new = self.old["pages"][8]["blocks"][2], self.new["pages"][8]["blocks"][2]
+        self.assertEqual("fed5b6d2dcfb3321715725fe61a366c8c1f337d1b24a7e3e0b1fd43ef1be0549", layout.fingerprint(old))
+        self.assertEqual("d2ec5c530dba31ba0c4d2b3575d609bfbd688fca0dbb4d94a0fd1524a9803187", layout.fingerprint(new))
+        self.assertEqual(old, layout.historical_math_payload(new))
+        self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(new))
+        self.assertTrue(self.preserved())
+        self.assertEqual(self.old["stateLayout"]["editorial"] + [{"id": U11_OWNER[1],
+            "beforeSha256": spec["before"], "afterSha256": spec["after"]}], self.new["stateLayout"]["editorial"])
+        for field in ("origin", "current", "family", "additions"):
+            self.assertEqual(self.old["stateLayout"][field], self.new["stateLayout"][field])
+        self.assertEqual((8, 2), layout.validate(self.new)[8, 2])
+        self.assertEqual(self.new, layout.prepare_v2(self.new, "es", dict(self.family, es=self.new)))
+        layout.check_localized_family([self.new, self.family["en"], self.family["fr"]], ["es", "en", "fr"])
+        self.assertEqual("limite", new["responses"][0]["validator"]["expected"]["dominio"])
+        self.assertEqual(6, len(new["responses"][0]["sources"]))
+
+    def test_whole_lesson_preservation_loop_uses_only_the_exact_label_exception(self):
+        aligned = layout.align_for_previous_validation(self.old, self.new)
+        positions = layout.validate(self.old)
+        for page, record in enumerate(self.old["pages"]):
+            for block, old in enumerate(record["blocks"]):
+                current = aligned["pages"][page]["blocks"][block]
+                pn, bn = positions[page, block]
+                if old["type"] == "cpp_compiler":
+                    self.assertTrue(contract.preserves_previous_compiler(U11_RELATIVE, pn, bn, old, current,
+                        layout.original_projection(self.old)))
+                elif old["type"] in contract.EXERCISES | {"code"}:
+                    self.assertTrue(contract.preserves_previous_exercise(U11_RELATIVE, pn, bn, old, current))
+
+    def test_owner_coordinates_language_and_complete_payload_are_closed(self):
+        old, new = self.old["pages"][8]["blocks"][2], self.new["pages"][8]["blocks"][2]
+        for page, block in ((7, 2), (8, 1), (8, 3)):
+            self.assertFalse(self.preserved(page=page, block=block))
+        self.assertFalse(self.preserved(relative=U11_RELATIVE.replace("historial", "otro_historial")))
+        for field in ("id", "prompt", "feedback", "responses", "extra"):
+            changed = deepcopy(new)
+            if field == "responses": changed[field][0]["validator"]["expected"]["dominio"] = "completa"
+            elif field == "feedback": changed[field]["correct"] += " Otra guía."
+            else: changed[field] = "NO AUTORIZADO"
+            self.assertFalse(self.preserved(new=changed))
+            bad = deepcopy(self.new);bad["pages"][8]["blocks"][2] = changed
+            with self.assertRaises(layout.LayoutError): layout.validate_transition(self.old, bad)
+        changed = deepcopy(old);changed["responses"][0]["sources"][5]["label"] = "100+2;"
+        self.assertFalse(self.preserved(old=changed))
+        for change in ("lesson", "locale", "identity", "unmapped", "v1", "proof"):
+            bad = deepcopy(self.new)
+            if change == "lesson": bad["id"] += "_other"
+            elif change == "locale": bad["stateLayout"]["locale"] = "en"
+            elif change == "identity":
+                bad["stateLayout"]["current"][8]["blocks"][1:3] = reversed(bad["stateLayout"]["current"][8]["blocks"][1:3])
+            elif change == "unmapped": del bad["stateLayout"]
+            elif change == "v1": bad["stateLayout"] = {"version": 1, "origin": self.old["stateLayout"]["origin"], "current": self.old["stateLayout"]["current"]}
+            else: bad["stateLayout"]["editorial"].pop()
+            with self.subTest(change=change), self.assertRaises(layout.LayoutError): layout.validate(bad)
+
+    def test_serialized_order_and_origin_cannot_be_regenerated(self):
+        bad = deepcopy(self.new)
+        source = bad["pages"][8]["blocks"][2]["responses"][0]["sources"][5]
+        source["id"] = source.pop("id")
+        with self.assertRaisesRegex(layout.LayoutError, "JSON key order"): layout.validate_transition(self.old, bad)
+        for change in ("origin", "family"):
+            bad = deepcopy(self.new)
+            if change == "origin": bad["stateLayout"]["origin"][8]["blocks"][2]["sha256"] = "0" * 64
+            else: bad["stateLayout"]["family"]["es"]["sha256"] = "0" * 64
+            with self.assertRaises(layout.LayoutError): layout.validate_transition(self.old, bad)
+
+    def test_reopen_and_reorder_keep_the_original_matching_storage_slot(self):
+        reopened = json.loads(json.dumps(self.new, ensure_ascii=False))
+        layout.validate_transition(self.old, reopened)
+        plan = deepcopy(reopened["stateLayout"]["current"]);plan[8]["blocks"].reverse()
+        moved = layout.reorder(reopened, plan)
+        at = next(at for at, original in layout.validate(moved).items() if original == (8, 2))
+        self.assertEqual(U11_OWNER[1], moved["stateLayout"]["current"][at[0]]["blocks"][at[1]])
+        layout.validate_transition(self.old, moved)
+
+
 if __name__ == "__main__":
     unittest.main()

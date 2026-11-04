@@ -1075,11 +1075,20 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 # Pedidos de Work: la explicación de U1L2, la pregunta de U11L2 y las dos
 # explicaciones de U11L11, la excepción/diagnóstico de U11L12 y la pregunta
 # sobre profundidad de U11L13, y la excepción de la predicción de U11L14.
+# Incluye la mención literal de U2L3 y la explicación de throw en U11L16.
 # Cada par fija texto, coordenada histórica y la
 # identidad explícita original (None exige que el campo id no exista).
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
 WORK_EXACT_EDITORIAL_REVISIONS = {
+    ('objetos_y_estado/lesson_estado_asignacion_y_copia.json',
+     6, 5, 'inline_fill_code', 'question', None): (
+        '499b03798d78be94d5f25f003249520c62cd0584df04d26cc36dfe63ab85c260',
+        '585e6dc1fe82669a8828ea3283d52307db4da0ae87d1473d6affb274fe4375cf'),
+    ('texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json',
+     3, 3, 'order_code', 'explanation', 'cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e04'): (
+        'c3df0179bd09fbe11d54af6e11c1fb18a140dbc9ee57894070ef1bd11eb25d9b',
+        '0d826e2c9c883119e498ec90650b531ec9fe8a1ed3ae5417dfa653e2f3c7238d'),
     ('programas_y_ejecucion/lesson_primer_programa_y_salida.json',
      4, 3, 'order_code', 'explanation', 'armar_programa'): (
         'c50562e326eb30529a30379fdc5fc521f83e6361b8d3cb2b2e4fb4bb53425bb5',
@@ -1241,11 +1250,11 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
     location = (lesson_path, pn + 1, bn + 1)
-    if (location == ("datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json", 8, 2)
-            and old.get("type") == "math_puzzle"
-            and _state_layout.fingerprint(old) == _state_layout.MATH_LABEL_BEFORE
-            and _state_layout.fingerprint(current) == _state_layout.MATH_LABEL_AFTER):
-        return _state_layout.historical_math_payload(current) == old
+    for revision in _state_layout.MATH_LABEL_REVISIONS.values():
+        if (location == revision["location"] and old.get("type") == current.get("type") == "math_puzzle"
+                and _state_layout.fingerprint(old) == revision["before"]
+                and _state_layout.fingerprint(current) == revision["after"]):
+            return _state_layout.historical_math_payload(current) == old
     current = restore_approved_editorial_fields(location, old, current)
     if current == old:
         return True

@@ -92,6 +92,29 @@ MATH_LABEL_LESSON = "cpp_fundamentals__datos_propios_y_estado_valido__construir_
 MATH_LABEL_IDENTITY = "block_0007_0001"
 MATH_LABEL_BEFORE = "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d"
 MATH_LABEL_AFTER = "20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b"
+MATH_LABEL_REVISIONS = {
+    (MATH_LABEL_LESSON, MATH_LABEL_IDENTITY): {
+        "before": MATH_LABEL_BEFORE, "after": MATH_LABEL_AFTER,
+        "source_index": 0,
+        "label_before": "Construcción que termina normalmente",
+        "label_after": "Construcción desde código y unidades que termina normalmente",
+        "location": ("datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json", 8, 2),
+    },
+    ("cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_interprete_con_historial_y_pruebas", "block_0008_0002"): {
+        "before": "fed5b6d2dcfb3321715725fe61a366c8c1f337d1b24a7e3e0b1fd43ef1be0549",
+        "after": "d2ec5c530dba31ba0c4d2b3575d609bfbd688fca0dbb4d94a0fd1524a9803187",
+        "source_index": 5, "label_before": "100+1;", "label_after": "99+2;",
+        "location": ("texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json", 9, 3),
+    },
+}
+
+
+def reviewed_math_label(block: dict) -> dict | None:
+    """Identify an exact complete reviewed block, never arbitrary label prose."""
+    if block.get("type") != "math_puzzle":
+        return None
+    digest = fingerprint(block)
+    return next((spec for spec in MATH_LABEL_REVISIONS.values() if digest == spec["after"]), None)
 
 # CPP_ACREDITACION_DIAGNOSTICO_INTENCIONAL: a new Windows goal for exactly
 # these five published editors. Source, owner and historical storage stay fixed.
@@ -225,9 +248,10 @@ CHOICE_OPTION_REVISIONS = {
 }
 
 
-# CPP_CASOS_ADICIONALES_CON_PROGRESO: seven closed Spanish output contracts.
+# CPP_CASOS_ADICIONALES_CON_PROGRESO: ten closed Spanish output contracts.
 # Initial code, owner and every existing case are protected independently of
-# editable guidance. The complete original block is archived in the v2 map.
+# editable guidance. Only the second U11L15 starter admits its exact initial
+# insertion; the complete original block is archived in the v2 map.
 COMPILER_CASE_REVISIONS = {
     (_CHOICE_PREFIX + "construir_un_lector_de_entrada_preparada", "block_0003_0005"): {
         "before": "0ff28cd1a7cb92334d0a2486d5fcd773c7727813c84a082f8908950a6a3399c6",
@@ -267,10 +291,34 @@ COMPILER_CASE_REVISIONS = {
         "after": "cf3c9ab1f070195689b4f2bce4bd635ae8368f760384663a2ebecbb5a1f7bfdd",
         "suffix": "Caso 11\nError: Caracter no admitido\nResultado: 4\n",
     },
+    (_CHOICE_PREFIX + "construir_un_interprete_con_historial_y_pruebas", "block_0002_0002"): {
+        "before": "ebf1067d19fbf87bce3ddef2bae69442972df180055d5572faef4473eb76c34e",
+        "after": "7b30da24db7834b2b8cc9ca2014b05de9dfeea69637764e8a9834dbe90b69f5b",
+        "suffix": "Caso 15\nError: Resultado fuera de dominio\nAceptadas: 0\nRechazadas: 1\nSuma: 0\nHistorial:\n"
+                  "Caso 16\nError: Anidamiento excesivo\nAceptadas: 0\nRechazadas: 1\nSuma: 0\nHistorial:\n"
+                  "Caso 17\nError: Caracter no admitido\nValor: 4\nAceptadas: 1\nRechazadas: 1\nSuma: 4\nHistorial: 4\n"
+                  "Caso 18\nValor: 14\nAceptadas: 1\nRechazadas: 0\nSuma: 14\nHistorial: 14\n"
+                  "Caso 19\nValor: 3\nAceptadas: 1\nRechazadas: 0\nSuma: 3\nHistorial: 3\n",
+    },
+    (_CHOICE_PREFIX + "construir_un_interprete_con_historial_y_pruebas", "block_0006_0003"): {
+        "before": "b7e77211fde9c243eee599d2711c8cf0cb2f11fbb47de347de298147188a2e47",
+        "after": "7b9c4229709dc9caf07a9c0bd56bf496e62b0148195f69797290cd8ac63be83f",
+        "initial_insert": '    std::cout << "Caso 5\\n";\n    probar("2;2;");\n',
+        "suffix": "Caso 5\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 0\nSuma: 4\nHistorial: 2 2\nPositivos: 2\nNegativos: 0\n",
+    },
+    (_CHOICE_PREFIX + "resto_y_asociacion_en_el_interprete", "block_0003_0004"): {
+        # Work's U11L16 JSON-text SHA pins authenticate these same complete
+        # objects; stateLayout uses typed canonical framing, as all other cases.
+        "before": "c03fef34aa19969bac10860c7229545551733638be93dcc84104a56e61227b22",
+        "after": "247c41d8494fe203bcc83908dacb2c4e563ae6959e81438452991a30c31c561b",
+        "suffix": "Caso 10\nValor: -2\nAceptadas: 1\nRechazadas: 0\nSuma: -2\nHistorial: -2\n"
+                  "Caso 11\nValor: 14\nAceptadas: 1\nRechazadas: 0\nSuma: 14\nHistorial: 14\n"
+                  "Caso 12\nError: Anidamiento excesivo\nAceptadas: 0\nRechazadas: 1\nSuma: 0\nHistorial:\n",
+    },
 }
 
 
-# The six in-program batteries need their complete static reference to grow
+# The nine in-program batteries need their complete static reference to grow
 # with the same reviewed calls. These are paired with their compiler revision.
 COMPILER_REFERENCE_REVISIONS = {
     (_CHOICE_PREFIX + "tokens_con_categoria_y_valor", "block_0004_0004"): {
@@ -308,6 +356,30 @@ COMPILER_REFERENCE_REVISIONS = {
         "before": "61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6",
         "after": "6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6",
         "insert": '    std::cout << "Caso 11\\n";\n    probar("?z;4;");\n',
+    },
+    (_CHOICE_PREFIX + "construir_un_interprete_con_historial_y_pruebas", "block_0002_0002"): {
+        "id": "block_0009_0001",
+        "before": "778473599281a1b2165b4dabb9acedde00904b55d9b907c8dedeb9831de20618",
+        "after": "96bcd1d3821c7e80908dd178e855705206d366ead6fbe1831fc891a85969087b",
+        "insert": '    std::cout << "Caso 15\\n";\n    probar("11*10/2;");\n'
+                  '    std::cout << "Caso 16\\n";\n    probar("(((((((((1)))))))));");\n'
+                  '    std::cout << "Caso 17\\n";\n    probar("?z;4;");\n'
+                  '    std::cout << "Caso 18\\n";\n    probar("2+3*4;");\n'
+                  '    std::cout << "Caso 19\\n";\n    probar("9-4-2;");\n',
+    },
+    (_CHOICE_PREFIX + "construir_un_interprete_con_historial_y_pruebas", "block_0006_0003"): {
+        "id": "block_0010_0001",
+        "before": "9f88cd2b376b8b869b2fa3dd6fb569fce823ce3deae64c138a0f9a2c643fcccc",
+        "after": "80ee77eccf110d4438d2643a1dd2c2cb9be696d5f50e57ef285b162e37a0a8a1",
+        "insert": '    std::cout << "Caso 5\\n";\n    probar("2;2;");\n',
+    },
+    (_CHOICE_PREFIX + "resto_y_asociacion_en_el_interprete", "block_0003_0004"): {
+        "id": "block_0006_0001",
+        "before": "14fa456ea18c3478fb9fb2476d70f337bdab5ee3cfad5d6b3224b07bc36db0b2",
+        "after": "1e16cb31b5885fa0ae2f3faa6ffd2687391d088f304a035a7cd124278316d2e2",
+        "insert": '    std::cout << "Caso 10\\n";\n    probar("-14/5;");\n'
+                  '    std::cout << "Caso 11\\n";\n    probar("2+3*4;");\n'
+                  '    std::cout << "Caso 12\\n";\n    probar("(((((((((1)))))))));");\n',
     },
 }
 _COMPILER_REFERENCE_TAIL = "    return 0;\n}\n"
@@ -357,7 +429,7 @@ def _reviewed_compiler(block: dict) -> dict | None:
 
 
 def historical_compiler_payload(block: dict) -> dict:
-    """Project only the seven exact expanded contracts, keeping current guidance."""
+    """Project only the ten exact expanded contracts, keeping current guidance."""
     spec = _reviewed_compiler(block)
     if spec is None:
         return block
@@ -369,6 +441,10 @@ def historical_compiler_payload(block: dict) -> dict:
         output = cases[0]["outputs"][0]
         require(output.endswith(spec["suffix"]), "Invalid reviewed compiler suffix")
         cases[0]["outputs"][0] = output[:-len(spec["suffix"])]
+    if "initial_insert" in spec:
+        tail = spec["initial_insert"] + _COMPILER_REFERENCE_TAIL
+        require(result["initialCode"].endswith(tail), "Invalid reviewed compiler initial tail")
+        result["initialCode"] = result["initialCode"][:-len(tail)] + _COMPILER_REFERENCE_TAIL
     require(fingerprint(_compiler_payload(result)) == spec["before"], "Invalid reviewed compiler revision")
     return result
 
@@ -414,15 +490,16 @@ def _validate_choice_pair(block: dict, spec: dict | None) -> None:
 
 
 def historical_math_payload(block: dict) -> dict:
-    """One reviewed label revision; every other mathematical byte stays protected.
+    """Closed reviewed label revisions; every other mathematical byte stays protected.
 
     The full block digest includes puzzle/response/source IDs, matching pairs,
     validators and feedback. This is not a general exemption for display labels.
     """
-    if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
+    spec = reviewed_math_label(block)
+    if spec is not None:
         result = deepcopy(block)
-        result["responses"][0]["sources"][0]["label"] = "Construcción que termina normalmente"
-        require(fingerprint(result) == MATH_LABEL_BEFORE, "Invalid reviewed mathematics revision")
+        result["responses"][0]["sources"][spec["source_index"]]["label"] = spec["label_before"]
+        require(fingerprint(result) == spec["before"], "Invalid reviewed mathematics revision")
         return result
     return block
 
@@ -431,7 +508,7 @@ def state_payload(block: dict) -> dict:
     """Only explicit editorial fields may vary without changing a response contract.
 
     The curricular validator still decides which prose changes are authorized.
-    Closed reviewed options, compiler expansions and their six references
+    Closed reviewed options, compiler expansions and their nine references
     normalize to historical contracts; document validation additionally requires
     their v2 context, paired archives and proofs. Maths retains its exact
     contract except one reviewed label.
@@ -775,9 +852,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         for b, identity in enumerate(record["blocks"]):
             identity = _identity(identity)
             require(identity in storage, "Unknown block identity")
-            if pages[p]["blocks"][b].get("type") == "math_puzzle" and fingerprint(pages[p]["blocks"][b]) == MATH_LABEL_AFTER:
-                require(document.get("id") == MATH_LABEL_LESSON and meta["locale"] == "es"
-                        and identity == MATH_LABEL_IDENTITY,
+            reviewed_math = reviewed_math_label(pages[p]["blocks"][b])
+            if reviewed_math is not None:
+                require(meta["locale"] == "es"
+                        and MATH_LABEL_REVISIONS.get((document.get("id"), identity)) == reviewed_math,
                         "The reviewed mathematical label belongs to its original Spanish activity")
             block = pages[p]["blocks"][b]
             reviewed = _reviewed_choice(block)
@@ -895,8 +973,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     for index in range(len(chain) - 1)),
                 "A compiler reference needs its exact original-to-reviewed editorial edge")
     for identity, block in actual.items():
-        if block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER:
-            require(chains.get(identity) == [MATH_LABEL_BEFORE, MATH_LABEL_AFTER],
+        reviewed_math = reviewed_math_label(block)
+        if reviewed_math is not None:
+            require(chains.get(identity) == [reviewed_math["before"], reviewed_math["after"]],
                     "The reviewed mathematical label needs its exact published editorial proof")
     return mapping
 
@@ -984,7 +1063,7 @@ def _validate_state_layout(document: dict) -> dict[tuple[int, int], tuple[int, i
     pages = _pages(document)
     meta = document.get("stateLayout")
     if type(meta) is not dict or meta.get("version") != 2:
-        require(not any(block.get("type") == "math_puzzle" and fingerprint(block) == MATH_LABEL_AFTER
+        require(not any(reviewed_math_label(block) is not None
                         for page in pages for block in page.get("blocks", [])),
                 "The reviewed mathematical label requires its published v2 identity and proof")
         require(not any(_reviewed_choice(block) is not None for page in pages for block in page.get("blocks", [])),
@@ -1355,7 +1434,7 @@ def revise_compiler_cases(document: dict, identity: str) -> dict:
             "Prepare the published Spanish family as stateLayout v2 before revising a compiler")
     _identity(identity)
     spec = COMPILER_CASE_REVISIONS.get((document.get("id"), identity))
-    require(spec is not None, "The compiler is not one of the seven reviewed activities")
+    require(spec is not None, "The compiler is not one of the ten reviewed activities")
     if identity in _compiler_revisions(document):
         return deepcopy(document)
     original = _blocks(document).get(identity)
@@ -1367,6 +1446,9 @@ def revise_compiler_cases(document: dict, identity: str) -> dict:
         actual["outputCheck"]["cases"].extend(deepcopy(spec["append"]))
     else:
         actual["outputCheck"]["cases"][0]["outputs"][0] += spec["suffix"]
+    if "initial_insert" in spec:
+        require(actual["initialCode"].endswith(_COMPILER_REFERENCE_TAIL), "Invalid published compiler initial ending")
+        actual["initialCode"] = actual["initialCode"][:-len(_COMPILER_REFERENCE_TAIL)] + spec["initial_insert"] + _COMPILER_REFERENCE_TAIL
     require(fingerprint(actual) == spec["after"], "The expanded compiler does not match its reviewed first revision")
     archive = {"id": identity, "block": deepcopy(original)}
     result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": spec["before"],

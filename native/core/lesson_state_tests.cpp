@@ -5,6 +5,7 @@
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
 #include "core/compile_check_test_fixture.hpp"
+#include "core/math_label_test_fixture.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
@@ -648,7 +649,237 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
                 "Explicit Reset revived old compiler credit or retained a completed expansion");
         }
     }
-    std::cout<<"PASS seven reviewed compiler expansions: native empty/partial/completed proofs and reopen, unchanged-case reuse, new outputs, Edit/Undo and Reset; Android drafts/pins retained without invented native credit or reserved-domain import\n";
+    std::cout<<"PASS ten reviewed compiler expansions: native empty/partial/completed proofs and reopen, unchanged-case reuse, new outputs, Edit/Undo and Reset; Android drafts/pins retained without invented native credit or reserved-domain import\n";
+}
+void late_compiler_batteries_keep_one_historical_execution_receipt(const std::filesystem::path& base){
+    using namespace lgaed;using namespace curriculum;using namespace windows;
+    const auto directory=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
+    std::size_t owners=0;
+    for(const auto& plan:test::compiler_revision_cases())if(plan.reports_before&&!plan.initial_insert){
+        ++owners;const auto path=directory/plan.filename;const auto bytes=read_bytes(path);
+        const auto before=test::compiler_revision_before(load_lesson(path),plan.identity);
+        const auto after=test::revise_compiler_lesson(before,plan.identity);
+        const auto at=stable_block_position(before,plan.identity),reference=stable_block_position(before,plan.reference_identity);
+        require(at&&reference,"A late compiler battery lost its stable editor/reference");
+        const auto& original=before.pages[at->page].blocks[at->block];const auto& expanded=after.pages[at->page].blocks[at->block];
+        require(original.output_check->cases.size()==1&&expanded.output_check->cases.size()==1,
+            "Printed late-battery reports were incorrectly represented as separate receipts");
+        const auto& old_goal=original.output_check->cases.front();const auto& new_goal=expanded.output_check->cases.front();
+        for(const auto mode:{"empty","draft","complete"}){
+            const auto name=std::string(plan.identity)+'-'+std::to_string(owners)+'-'+mode;
+            StateData data;prepare_lesson_state(data,before);
+            data.preferences["late_compiler_battery_qa"]["opaque"]=std::string(" \t retained metadata\r\n");
+            const auto key=draft_key("programming",before,original);
+            const bool has_draft=std::string_view(mode)!="empty",completed=std::string_view(mode)=="complete";
+            CppRunRequest captured;captured.revision=17;
+            captured.source_utf8=completed?before.pages[reference->page].blocks[reference->block].code:
+                original.initial_code+"\n// QA partial construction, not executed\n";
+            if(has_draft){Draft draft;draft.source=captured.source_utf8;draft.input=" \t personal input\n";put_draft(data,key,draft);}
+            Response legacy;legacy.correct=completed;legacy.raw_json=R"({"incorrectAttempts":4,"opaque":{"origin":"stored compiler QA"}})";
+            if(has_draft)put_response(data,before,original,legacy);
+            // An aggregate native receipt represents the entire original
+            // stdout. This QA API fixture does not claim a compiler execution.
+            if(completed){FreshExecution execution{captured.revision,true,true,0,old_goal.standard_input,old_goal.outputs.front()};
+                require(record_compiler_puzzle_case(data,before,original,captured,execution,"Synthetic aggregate old receipt; no execution"),
+                    "Cannot prepare the single historical late-battery receipt");}
+            const auto historical=data;const auto old_response=get_response(historical,before,original);
+            const auto old_draft=get_draft(historical,key,original.initial_code,original.standard_input.value_or(""));
+            prepare_lesson_state(data,after);validate_lesson_state(data,after);
+            const auto verify_draft_and_legacy=[&](const StateData& current){
+                const auto draft=get_draft(current,key,expanded.initial_code,expanded.standard_input.value_or(""));
+                require(draft.source==old_draft.source&&draft.input==old_draft.input&&draft.has_saved==old_draft.has_saved,
+                    "A late compiler expansion replaced an empty starter or personalized source/stdin draft");
+                const auto response=get_response(current,after,expanded);
+                require(response.has_value()==old_response.has_value(),"A late compiler expansion invented or removed legacy progress");
+                if(old_response)require(response->raw_json==old_response->raw_json&&response->correct==old_response->correct,
+                    "A late compiler expansion rewrote the original achievement/attempt metadata");
+                require(current.preferences.at("late_compiler_battery_qa")==historical.preferences.at("late_compiler_battery_qa"),
+                    "A late compiler expansion changed unrelated data");
+            };
+            verify_draft_and_legacy(data);
+            require(compiler_puzzle_historical_case_count(data,after,expanded)==(completed?1:0)
+                &&compiler_puzzle_historical_completed(data,after,expanded)==completed
+                &&compiler_puzzle_case_count(data,after,expanded)==0&&!compiler_puzzle_completed(data,after,expanded),
+                "An old aggregate late-battery achievement was counted as printed reports or as the expanded objective");
+            StateStore store(base/("late-compiler-native-"+name));(void)store.load();store.save(data);auto reopened=store.load();
+            require(reopened==data,"Reopening changed a late compiler expansion's exact adopted state");verify_draft_and_legacy(reopened);
+            // Android keeps its original response/draft but has no Windows
+            // execution seals. Removing the reserved native domain is explicit.
+            auto android=historical;android.preferences.erase("native_windows");
+            const auto exported=base/("late-compiler-export-"+name);export_preferences(exported,android,true);
+            const auto export_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+            const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,after);verify_draft_and_legacy(preview.data);
+            const auto destination=base/("late-compiler-import-"+name);commit_android_import(preview,destination);
+            StateStore imported_store(destination);auto imported=imported_store.load();prepare_lesson_state(imported,after);validate_lesson_state(imported,after);
+            verify_draft_and_legacy(imported);
+            require(!compiler_puzzle_case_count(imported,after,expanded)&&!compiler_puzzle_historical_case_count(imported,after,expanded)
+                &&!compiler_puzzle_completed(imported,after,expanded),"Android import manufactured a late-battery native execution receipt");
+            require(sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"))==export_hash,"Late-battery import changed its source export");
+            FreshExecution incomplete{captured.revision,true,true,0,new_goal.standard_input,old_goal.outputs.front()};
+            require(!record_compiler_puzzle_case(reopened,after,expanded,captured,incomplete,"Only the original printed reports")
+                &&!compiler_puzzle_case_count(reopened,after,expanded)&&!compiler_puzzle_completed(reopened,after,expanded),
+                "The old aggregate stdout incorrectly passed the expanded late-battery objective");
+            FreshExecution complete{captured.revision,true,true,0,new_goal.standard_input,new_goal.outputs.front()};
+            require(record_compiler_puzzle_case(reopened,after,expanded,captured,complete,"Synthetic aggregate expanded receipt; no execution")
+                &&compiler_puzzle_case_count(reopened,after,expanded)==1&&compiler_puzzle_completed(reopened,after,expanded)
+                &&compiler_puzzle_historical_case_count(reopened,after,expanded)==(completed?1:0),
+                "A full late-battery stdout did not create exactly one new receipt or erased its old provenance");
+            reset_compiler_puzzle(reopened,after,expanded);prepare_lesson_state(reopened,after);
+            require(!compiler_puzzle_case_count(reopened,after,expanded)&&!compiler_puzzle_historical_case_count(reopened,after,expanded)
+                &&!compiler_puzzle_completed(reopened,after,expanded),"Reset resurrected an old late-battery aggregate receipt");
+            verify_draft_and_legacy(reopened);++groups;
+        }
+        require(read_bytes(path)==bytes,"Late compiler-battery QA changed a curricular asset");
+    }
+    require(owners==2,"Dedicated late-battery conservation did not cover U11L15 and U11L16");
+    std::cout<<"PASS U11L15/L16 late compiler batteries: empty starter, personalized draft and old aggregate success; one historical receipt rather than14/9, separate expanded goal, native reopen, explicit Android import without native credit and scoped Reset. All receipts are synthetic QA; no compiler execution or audio claimed\n";
+}
+void second_u11_compiler_starter_preserves_independent_drafts_and_receipts(const std::filesystem::path& base){
+    using namespace lgaed;using namespace curriculum;using namespace windows;
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json";
+    const auto bytes=read_bytes(path);const auto before=test::compiler_revision_before(load_lesson(path),"block_0006_0003");
+    const auto after=test::revise_compiler_lesson(before,"block_0006_0003");
+    const auto at=stable_block_position(before,"block_0006_0003"),reference=stable_block_position(before,"block_0010_0001"),
+        first_at=stable_block_position(before,"block_0002_0002"),first_ref=stable_block_position(before,"block_0009_0001");
+    require(at&&reference&&first_at&&first_ref,"The paired U11L15 editor QA lost a stable owner/reference");
+    const auto& old=before.pages[at->page].blocks[at->block];const auto& current=after.pages[at->page].blocks[at->block];
+    const auto& first=before.pages[first_at->page].blocks[first_at->block];const auto& first_current=after.pages[first_at->page].blocks[first_at->block];
+    const auto first_payload=test::compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(first.raw_json)));
+    const auto& first_plan=test::compiler_revision_case(before,"block_0002_0002");
+    require(first_payload==first_plan.before_full||first_payload==first_plan.after_full,"The independent first editor lost its complete authenticated payload");
+    const auto key=draft_key("programming",before,old),first_key=draft_key("programming",before,first);
+    require(old.output_check->cases.size()==1&&current.output_check->cases.size()==1
+        &&current.compiler_revision->previous_initial_code==old.initial_code&&current.initial_code!=old.initial_code,
+        "The starter-aware revision lost its single historical objective or previous initial source");
+    const auto& old_goal=old.output_check->cases.front();const auto& new_goal=current.output_check->cases.front();
+    for(const auto mode:{"empty","draft","complete"}){
+        const auto name=std::string("u11-second-starter-")+mode;const bool saved=std::string_view(mode)!="empty",success=std::string_view(mode)=="complete";
+        StateData data;prepare_lesson_state(data,before);data.preferences["second_starter_qa"]["opaque"]=std::string(" \t unrelated\r\n");
+        CppRunRequest first_program;first_program.revision=31;first_program.source_utf8=before.pages[first_ref->page].blocks[first_ref->block].code;
+        Draft first_draft;first_draft.source=first_program.source_utf8+"\n// personal first editor draft\n";first_draft.input=" first stdin \t\n";put_draft(data,first_key,first_draft);
+        FreshExecution first_execution{31,true,true,0,first.output_check->cases.front().standard_input,first.output_check->cases.front().outputs.front()};
+        require(record_compiler_puzzle_case(data,before,first,first_program,first_execution,"Synthetic independent first-editor receipt"),
+            "Cannot prepare the independent first editor's aggregate receipt");
+        CppRunRequest captured;captured.revision=47;captured.source_utf8=success?before.pages[reference->page].blocks[reference->block].code:
+            old.initial_code+"\n// personal second editor draft with four calls\n";
+        if(saved){Draft draft;draft.source=captured.source_utf8;draft.input=" second stdin \t\n";put_draft(data,key,draft);
+            Response response;response.correct=success;response.raw_json=R"({"incorrectAttempts":3,"opaque":{"owner":"second editor historical QA"}})";put_response(data,before,old,response);}
+        if(success){FreshExecution execution{47,true,true,0,old_goal.standard_input,old_goal.outputs.front()};
+            require(record_compiler_puzzle_case(data,before,old,captured,execution,"Synthetic original four-report receipt"),
+                "Cannot prepare the second editor's one historical aggregate receipt");}
+        const auto original=data;const auto old_draft=get_draft(original,key,old.initial_code,old.standard_input.value_or(""));
+        const auto old_response=get_response(original,before,old),first_response=get_response(original,before,first);
+        const auto verify=[&](const StateData& value,bool native,std::string_view phase){
+            const auto check=[&](bool condition,std::string_view message){if(!condition)throw std::runtime_error(name+" / "+std::string(phase)+": "+std::string(message));};
+            const auto draft=get_draft(value,key,current.initial_code,current.standard_input.value_or(""));
+            check(draft.has_saved==saved&&draft.source==(saved?old_draft.source:current.initial_code)
+                &&draft.input==(saved?old_draft.input:current.standard_input.value_or("")),
+                "Starter adoption overwrote a personal four-call draft or denied the new five-call initial to an empty editor");
+            const auto prior=get_response(value,after,current);check(prior.has_value()==old_response.has_value(),"Starter adoption invented or discarded legacy achievement metadata");
+            if(prior)check(prior->raw_json==old_response->raw_json&&prior->correct==old_response->correct,"Starter adoption changed the historical response/attempt payload");
+            const auto first_saved=get_draft(value,first_key,first_current.initial_code,first_current.standard_input.value_or(""));
+            check(first_saved.has_saved,"The second compiler revision removed the first editor's saved-draft flag");
+            check(first_saved.source==first_draft.source,"The second compiler revision changed the first editor's exact personal source");
+            check(first_saved.input==first_draft.input,"The second compiler revision changed the first editor's exact stdin");
+            // The QA transition Stringify serializes the surrounding lesson;
+            // JSON whitespace is independent of its complete pinned payload.
+            check(test::compile_check_test_fingerprint(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(first_current.raw_json)))==first_payload,
+                "The second compiler revision changed the first editor's complete authenticated payload");
+            const auto first_prior=get_response(value,after,first_current);
+            check(first_prior.has_value()==first_response.has_value(),"The second compiler revision invented or removed the first editor's response");
+            if(first_prior)check(first_prior->raw_json==first_response->raw_json&&first_prior->correct==first_response->correct,
+                "The second compiler revision changed the first editor's exact response/attempt metadata");
+            check(compiler_puzzle_completed(value,after,first_current)==native,"The second compiler revision/reset changed first-editor completion or Android import manufactured it");
+            check(compiler_puzzle_case_count(value,after,first_current)==(native?1:0),"The second compiler revision/reset changed the first editor's receipt count");
+            check(!native||compiler_puzzle_feedback(value,after,first_current)=="Synthetic independent first-editor receipt",
+                "The second compiler revision/reset changed the first editor's exact saved feedback");
+            check(value.preferences.at("second_starter_qa")==original.preferences.at("second_starter_qa"),"Starter adoption changed unrelated preferences");
+        };
+        prepare_lesson_state(data,after);validate_lesson_state(data,after);verify(data,true,"adopt");
+        for(const auto& [domain,preferences]:original.preferences)for(const auto& [name,value]:preferences)
+            require(find(data,domain,name)&&*find(data,domain,name)==value,"Starter adoption rewrote an authenticated old receipt or unrelated historical byte");
+        require(compiler_puzzle_historical_case_count(data,after,current)==(success?1:0)
+            &&compiler_puzzle_historical_completed(data,after,current)==success
+            &&(!success||compiler_puzzle_historical_feedback(data,after,current)=="Synthetic original four-report receipt")
+            &&!compiler_puzzle_case_count(data,after,current)&&!compiler_puzzle_completed(data,after,current),
+            "Four old reports lost their one aggregate receipt or silently became a fifth-report achievement");
+        const auto adopted=data;prepare_lesson_state(data,after);require(data==adopted,"Starter-aware compiler adoption is not idempotent");
+        StateStore store(base/name);(void)store.load();store.save(data);auto reopened=store.load();validate_lesson_state(reopened,after);
+        require(reopened==data,"Reopening changed starter-aware adopted state");verify(reopened,true,"reopen");
+        auto android=original;android.preferences.erase("native_windows");const auto exported=base/(name+"-export");export_preferences(exported,android,true);
+        const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+        const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,after);verify(preview.data,false,"import preview");
+        const auto destination=base/(name+"-import");commit_android_import(preview,destination);StateStore import_store(destination);auto imported=import_store.load();
+        prepare_lesson_state(imported,after);validate_lesson_state(imported,after);verify(imported,false,"import reopen");
+        require(!compiler_puzzle_case_count(imported,after,current)&&!compiler_puzzle_historical_case_count(imported,after,current)
+            &&!compiler_puzzle_completed(imported,after,current)&&sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"))==source_hash,
+            "Starter-aware Android import manufactured receipts or changed its source export");
+        FreshExecution incomplete{47,true,true,0,new_goal.standard_input,old_goal.outputs.front()};
+        require(!record_compiler_puzzle_case(reopened,after,current,captured,incomplete,"Only four reports")&&!compiler_puzzle_completed(reopened,after,current),
+            "The second editor accepted its original four-report stdout as the expanded five-report objective");
+        FreshExecution complete{47,true,true,0,new_goal.standard_input,new_goal.outputs.front()};
+        require(record_compiler_puzzle_case(reopened,after,current,captured,complete,"Synthetic five-report receipt")
+            &&compiler_puzzle_case_count(reopened,after,current)==1&&compiler_puzzle_historical_case_count(reopened,after,current)==(success?1:0),
+            "The second editor did not preserve distinct one-receipt old/new aggregate objectives");
+        auto reset_first=reopened;reset_compiler_puzzle(reset_first,after,first_current);prepare_lesson_state(reset_first,after);
+        require(!compiler_puzzle_completed(reset_first,after,first_current)&&compiler_puzzle_completed(reset_first,after,current)
+            &&compiler_puzzle_case_count(reset_first,after,current)==1&&compiler_puzzle_historical_case_count(reset_first,after,current)==(success?1:0)
+            &&get_draft(reset_first,key,current.initial_code,current.standard_input.value_or("")).source==(saved?old_draft.source:current.initial_code),
+            "Reset of the independent first editor erased the second editor's draft or old/new aggregate proof");
+        verify(reopened,true,"new success");reset_compiler_puzzle(reopened,after,current);prepare_lesson_state(reopened,after);verify(reopened,true,"reset second");
+        require(!compiler_puzzle_case_count(reopened,after,current)&&!compiler_puzzle_historical_case_count(reopened,after,current)
+            &&!compiler_puzzle_completed(reopened,after,current),"Reset restored an obsolete second-editor receipt");++groups;
+    }
+    require(read_bytes(path)==bytes,"Starter-aware compiler QA modified curricular bytes");
+    std::cout<<"PASS second U11L15 starter: empty gets five calls; four-call draft/legacy response/one aggregate achievement stay exact, new goal remains pending; reopen/import/scoped Reset preserve independent first editor. Receipts are synthetic QA, not execution evidence\n";
+}
+void reviewed_u11_math_label_preserves_native_and_imported_state(const std::filesystem::path& base){
+    using namespace lgaed;using namespace winrt::Windows::Data::Json;
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json";
+    const auto asset=read_bytes(path);const auto fixture=test::u11_domain_label_fixture(windows::load_lesson(path));
+    const auto& original=fixture.before.pages[8].blocks[2];const auto& current=fixture.after.pages[8].blocks[2];
+    const auto authored=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    for(const auto mode:{"empty","partial","incorrect","correct"}){
+        StateData data;prepare_lesson_state(data,fixture.before);
+        data.preferences["learning_progress"]["u11_domain_opaque_qa"]=std::string(" \t unchanged\r\n");
+        const auto compiler=curriculum::stable_block_position(fixture.before,"block_0002_0002");
+        require(compiler.has_value(),"U11 matching import QA lost its independent compiler draft");
+        const auto draft_key_value=draft_key("programming",fixture.before,fixture.before.pages[compiler->page].blocks[compiler->block]);
+        Draft draft;draft.source="// isolated original student draft\n\tint value = 7;\n";draft.input=" \t entrada\n";put_draft(data,draft_key_value,draft);
+        if(std::string_view(mode)!="empty"){
+            const auto pairs=JsonObject::Parse(authored.GetNamedArray(L"responses").GetObjectAt(0).GetNamedObject(L"validator").GetNamedObject(L"expected").Stringify());
+            if(std::string_view(mode)=="partial")pairs.Remove(L"dominio");
+            else if(std::string_view(mode)=="incorrect"){pairs.Insert(L"dominio",JsonValue::CreateStringValue(L"completa"));pairs.Insert(L"valida",JsonValue::CreateStringValue(L"limite"));}
+            JsonObject matching;matching.Insert(L"type",JsonValue::CreateStringValue(L"matching"));matching.Insert(L"pairs",pairs);
+            JsonObject answers;answers.Insert(L"casos",matching);JsonObject payload;payload.Insert(L"responses",answers);
+            payload.Insert(L"contentFingerprint",JsonValue::CreateStringValue(winrt::to_hstring(test::u11_domain_android_before)));
+            payload.Insert(L"incorrectAttempts",JsonValue::CreateNumberValue(3));payload.Insert(L"opaque",JsonObject::Parse(LR"({"selected":17,"origin":"historical matching import QA"})"));
+            Response response;response.raw_json=winrt::to_string(payload.Stringify());response.correct=std::string_view(mode)=="correct";
+            if(std::string_view(mode)=="incorrect")mark_response_reviewed(response,original);put_response(data,fixture.before,original,response);
+        }
+        // These are stored historical fixtures, never evidence of playback or
+        // native compiler execution. Android must not acquire Windows receipts.
+        data.preferences.erase("native_windows");const auto before=data;
+        const auto verify=[&](const StateData& value){const auto old=get_response(before,fixture.before,original),saved=get_response(value,fixture.after,current);
+            require(old.has_value()==saved.has_value(),"U11 math-label adoption invented or discarded a response");
+            if(old)require(saved->raw_json==old->raw_json&&saved->correct==old->correct
+                &&response_reviewed(*saved,current)==(std::string_view(mode)=="incorrect"),"U11 math-label adoption changed historical matching metadata/credit");
+            const auto restored=get_draft(value,draft_key_value,"");require(restored.source==draft.source&&restored.input==draft.input,"U11 math-label adoption overwrote another editor draft");
+            require(string_value(value,"learning_progress","u11_domain_opaque_qa")==" \t unchanged\r\n","U11 math-label adoption changed unrelated progress");
+            for(const auto& page:fixture.after.pages)for(const auto& block:page.blocks)if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check)
+                require(!windows::compiler_puzzle_completed(value,fixture.after,block),"U11 matching import manufactured a compiler execution receipt");
+        };
+        prepare_lesson_state(data,fixture.after);validate_lesson_state(data,fixture.after);verify(data);
+        StateStore store(base/(std::string("u11-matching-native-")+mode));(void)store.load();store.save(data);verify(store.load());
+        const auto exported=base/(std::string("u11-matching-export-")+mode);export_preferences(exported,before,true);
+        const auto export_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+        const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,fixture.after);verify(preview.data);
+        const auto destination=base/(std::string("u11-matching-import-")+mode);commit_android_import(preview,destination);
+        StateStore imported(destination);auto reopened=imported.load();prepare_lesson_state(reopened,fixture.after);validate_lesson_state(reopened,fixture.after);verify(reopened);
+        require(sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"))==export_hash,"U11 matching import changed the source export");++groups;
+    }
+    require(read_bytes(path)==asset,"U11 matching import QA changed the curricular asset");
+    std::cout<<"PASS U11 domain label: empty/partial/rejected/successful historical matching payload, original Android fingerprint, independent source/stdin draft, native adoption/reopen and explicit Android import; no invented compiler receipts or playback\n";
 }
 void diagnostic_contracts_preserve_native_and_imported_state(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
@@ -778,16 +1009,20 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
 }
 int main(int argc, char** argv) {
     try {
-        require(argc == 2, "Supply an isolated output/QA directory");
+        require(argc==2||(argc==3&&std::string_view(argv[2])=="--u11-starter"),"Supply an isolated output/QA directory and optional --u11-starter");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
+        if(argc==3){second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);
         reviewed_choice_revisions_preserve_responses(base);
         reviewed_compiler_expansions_preserve_execution_history(base);
+        late_compiler_batteries_keep_one_historical_execution_receipt(base);
+        second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);
+        reviewed_u11_math_label_preserves_native_and_imported_state(base);
         diagnostic_contracts_preserve_native_and_imported_state(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");

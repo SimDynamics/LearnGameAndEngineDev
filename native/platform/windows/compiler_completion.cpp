@@ -45,6 +45,7 @@ std::string diagnostic_proof(const std::string& key,std::string_view program,con
 }
 curriculum::Block historical_block(const curriculum::Block& block) {
     auto original=block;original.output_check=block.compiler_revision->previous_output_check;
+    original.initial_code=block.compiler_revision->previous_initial_code;
     original.raw_json=block.compiler_revision->raw_json;original.compiler_revision.reset();return original;
 }
 bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& right) {

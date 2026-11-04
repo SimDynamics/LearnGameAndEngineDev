@@ -3,6 +3,7 @@
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
 #include "core/compile_check_test_fixture.hpp"
+#include "core/math_label_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
@@ -481,6 +482,25 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
     }
     std::cout<<"PASS seven exact choice revisions (two proposals remain in memory): original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
 }
+void mathematical_puzzle_identity_remains_optional() {
+    using namespace lgaed::windows;
+    // Same valid, unnamed puzzle used by the reader's mathematical keyboard
+    // fixture; reviewed label permissions must not require an authored id.
+    constexpr auto source=R"({"id":"qa_reader_math_keyboard","title":"Prueba.","pages":[{"blocks":[{"type":"math_puzzle","prompt":"Escribe un número.","responses":[{"id":"value","type":"math_numeric_input"}]}]}]})";
+    const auto runtime=parse_lesson_json(source),catalog=parse_lesson_progress_metadata(source);
+    for(const auto* lesson:{&runtime,&catalog}){
+        const auto& block=lesson->pages.at(0).blocks.at(0);
+        check(block.type==BlockType::math_puzzle&&block.id.empty()&&block.prompt=="Escribe un número."
+            &&block.raw_json.find("\"responses\":[{\"id\":\"value\"")!=std::string::npos,
+            "A valid mathematical puzzle without an authored id failed loading or lost its response");
+    }
+    check(exercise_key(runtime,runtime.pages[0].blocks[0])==exercise_key(catalog,catalog.pages[0].blocks[0]),
+        "An unnamed mathematical puzzle changed its catalog progress address");
+    auto invalid=std::string(source);replace_once(invalid,"\"type\":\"math_puzzle\"","\"type\":\"math_puzzle\",\"id\":42");
+    rejects([&]{(void)parse_lesson_json(invalid);},"An optional mathematical identity accepted a present non-string value");
+    rejects([&]{(void)parse_lesson_progress_metadata(invalid);},"Catalog metadata accepted a present non-string mathematical identity");
+    std::cout<<"PASS mathematical puzzle id remains optional in full loading and catalog progress, with present identity type validation retained\n";
+}
 void reviewed_matching_label_preserves_historical_contract() {
     using namespace winrt::Windows::Data::Json;
     using lgaed::windows::parse_lesson_json;
@@ -529,6 +549,48 @@ void reviewed_matching_label_preserves_historical_contract() {
         rejects([&] { (void)lgaed::windows::parse_lesson_progress_metadata(invalid); },"Unapproved mathematical change passed catalog metadata");
     }
     std::cout << "PASS exact matching label revision, preserved state/metadata addresses and negative response/provenance guards\n";
+}
+void reviewed_u11_domain_label_preserves_historical_contract(){
+    using namespace winrt::Windows::Data::Json;
+    using namespace lgaed;
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json";
+    const auto bytes=state::read_bytes(path);
+    const auto fixture=test::u11_domain_label_fixture(windows::load_lesson(path));
+    const auto& old=fixture.before.pages[fixture.position.page].blocks[fixture.position.block];
+    const auto& current=fixture.after.pages[fixture.position.page].blocks[fixture.position.block];
+    const auto metadata=windows::parse_lesson_progress_metadata(fixture.after.raw_json);
+    check(fixture.before.state_layout.signatures==fixture.after.state_layout.signatures
+        &&fixture.before.state_layout.lineage==fixture.after.state_layout.lineage,
+        "The exact U11 domain label changed the original response family");
+    check(exercise_key(fixture.before,old)==exercise_key(fixture.after,current)
+        &&exercise_key(metadata,metadata.pages[8].blocks[2])==exercise_key(fixture.before,old),
+        "The U11 domain label moved its state or catalog address");
+    const auto corrected=JsonObject::Parse(winrt::to_hstring(current.raw_json));
+    check(corrected.GetNamedArray(L"responses").GetObjectAt(0).GetNamedArray(L"sources").GetObjectAt(5).GetNamedString(L"label")==L"99+2;",
+        "The historical response projection hid the corrected U11 source label");
+    const auto reconstructed=test::u11_domain_label_fixture(fixture.after);
+    check(reconstructed.before.raw_json==fixture.before.raw_json&&reconstructed.after.raw_json==fixture.after.raw_json,
+        "An integrated U11 matching fixture became an unchanged or incomplete revision");
+    for(const auto change:{"pair","label","feedback","identity","lesson","proof","origin","unmapped","v1"}){
+        const auto bad=JsonObject::Parse(winrt::to_hstring(fixture.after.raw_json));
+        const auto puzzle=bad.GetNamedArray(L"pages").GetObjectAt(8).GetNamedArray(L"blocks").GetObjectAt(2);
+        const auto response=puzzle.GetNamedArray(L"responses").GetObjectAt(0);
+        if(std::string_view(change)=="pair")response.GetNamedObject(L"validator").GetNamedObject(L"expected").Insert(L"dominio",JsonValue::CreateStringValue(L"completa"));
+        else if(std::string_view(change)=="label")response.GetNamedArray(L"sources").GetObjectAt(5).Insert(L"label",JsonValue::CreateStringValue(L"99+3;"));
+        else if(std::string_view(change)=="feedback")puzzle.GetNamedObject(L"feedback").Insert(L"correct",JsonValue::CreateStringValue(L"Other feedback"));
+        else if(std::string_view(change)=="identity")puzzle.Insert(L"id",JsonValue::CreateStringValue(L"another_puzzle"));
+        else if(std::string_view(change)=="lesson")bad.Insert(L"id",JsonValue::CreateStringValue(L"another_lesson"));
+        else if(std::string_view(change)=="proof")bad.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").RemoveAtEnd();
+        else if(std::string_view(change)=="origin")bad.GetNamedObject(L"stateLayout").GetNamedArray(L"origin").GetObjectAt(8).GetNamedArray(L"blocks").GetObjectAt(2).Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(test::u11_domain_after)));
+        else if(std::string_view(change)=="unmapped")bad.Remove(L"stateLayout");
+        else {const auto layout=bad.GetNamedObject(L"stateLayout");JsonObject v1;v1.Insert(L"version",JsonValue::CreateNumberValue(1));
+            v1.Insert(L"origin",layout.GetNamedArray(L"origin"));v1.Insert(L"current",layout.GetNamedArray(L"current"));bad.Insert(L"stateLayout",v1);}
+        const auto raw=winrt::to_string(bad.Stringify());
+        rejects([&]{(void)windows::parse_lesson_json(raw);},"The runtime accepted an unreviewed U11 matching revision");
+        rejects([&]{(void)windows::parse_lesson_progress_metadata(raw);},"Catalog metadata accepted an unreviewed U11 matching revision");
+    }
+    check(state::read_bytes(path)==bytes,"U11 matching contract QA modified the curricular asset");
+    std::cout<<"PASS closed U11 domain label 100+1 to99+2: full before/after pins, immutable family/address, catalog, integrated-source fixture and negative payload/owner/proof guards\n";
 }
 std::string root_property(std::string_view source, std::string_view name, std::string_view value) {
     // Replace a property through the JSON object, including when Work has already
@@ -897,6 +959,8 @@ void standard_error_objective_tests(const Lesson& real_lesson) {
 void reviewed_compiler_expansions_keep_the_original_contract() {
     using namespace winrt::Windows::Data::Json;using namespace lgaed;
     const auto directory=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos";
+    check(test::compiler_revision_cases().size()==10,"The closed compiler revision inventory lost one of its ten exact owners");
+    std::size_t late_aggregate_owners=0;
     for(const auto& plan:test::compiler_revision_cases()) {
         const auto integrated=windows::load_lesson(directory/plan.filename);
         const auto before=test::compiler_revision_before(integrated,plan.identity);const auto position=stable_block_position(before,plan.identity);
@@ -914,13 +978,47 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
         } else check(plan.allow_unexpanded_source&&live_fingerprint==plan.before_full,
             "An unintegrated proposal changed its independently pinned authored source");
         check(block.compiler_revision&&block.compiler_revision->sha256==plan.before_full&&block.compiler_revision->current_payload==plan.after_full&&
-            block.compiler_revision->previous_output_check.cases.size()==old.output_check->cases.size(),"The complete compiler expansion archive did not reach the model");
+            block.compiler_revision->previous_output_check.cases.size()==old.output_check->cases.size()
+            &&block.compiler_revision->previous_initial_code==old.initial_code,"The complete compiler expansion archive did not reach the model");
+        auto expected_initial=old.initial_code;
+        if(plan.initial_insert){const auto at=expected_initial.rfind("    return 0;\n}\n");
+            check(at!=std::string::npos,"The reviewed starter lost its final return");expected_initial.insert(at,plan.initial_insert);}
         check(current.state_layout.lineage==before.state_layout.lineage&&exercise_key(current,block)==exercise_key(before,old)&&
-            draft_key("programming",current,block)==draft_key("programming",before,old)&&block.initial_code==old.initial_code&&block.standard_input==old.standard_input,
+            draft_key("programming",current,block)==draft_key("programming",before,old)&&block.initial_code==expected_initial&&block.standard_input==old.standard_input,
             "A compiler expansion changed family, address, program or prepared input");
+        check(block.compiler_revision->starter_append==
+            (plan.initial_insert?std::optional<std::string>{plan.initial_insert}:std::nullopt),
+            "A compiler exposed an unreviewed starter insert or omitted its authenticated added calls");
+        if(plan.initial_insert)check(old.initial_code.size()==7771&&block.initial_code.size()==7820
+            &&state::sha256(old.initial_code)=="6377abdeb131d6cbed90bc1993da42604854f60669321a3ed236c835faeec2c6"
+            &&state::sha256(block.initial_code)=="36a5c835a62bcb62134cbec7f5d0af63424b713f2d58b7f3ac8fccc21b1c6382"
+            &&block.compiler_revision->starter_append->size()==49,
+            "The second U11L15 starter changed outside its exact 49-byte fifth call");
         check(reference_objective_frame(current,block)!=reference_objective_frame(before,old),"An expanded compiler objective reused its historical execution seal");
+        if(plan.reports_before){
+            ++late_aggregate_owners;
+            check(old.output_check&&block.output_check&&old.output_check->cases.size()==1&&block.output_check->cases.size()==1,
+                "A late compiler battery turned its printed reports into separate execution cases");
+            const auto& previous=old.output_check->cases.front();const auto& expanded=block.output_check->cases.front();
+            check(previous.standard_input.empty()&&expanded.standard_input.empty()&&previous.outputs.size()==1&&expanded.outputs.size()==1,
+                "A late in-program battery changed its aggregate stdin/stdout contract");
+            const auto& original=previous.outputs.front();const auto& revised=expanded.outputs.front();
+            const auto reports=[](std::string_view value){std::size_t count=0,at=0;
+                while((at=value.find("Caso ",at))!=value.npos){++count;at+=5;}return count;};
+            check(original.size()==plan.bytes_before&&revised.size()==plan.bytes_after
+                &&static_cast<std::size_t>(std::count(original.begin(),original.end(),'\n'))==plan.lines_before
+                &&static_cast<std::size_t>(std::count(revised.begin(),revised.end(),'\n'))==plan.lines_after
+                &&reports(original)==plan.reports_before&&reports(revised)==plan.reports_after
+                &&revised==original+plan.suffix,
+                "A late compiler expansion changed a previous report, appended another suffix or confused reports with receipts");
+            check(plan.initial_insert||(old.initial_code==block.initial_code&&old.initial_code.find("Caso 15")==std::string::npos),
+                "The independent late compiler construction changed its original minimal starter");
+        }
         const auto json=test::compiler_revision_json(before,plan.identity);const auto summary=windows::parse_lesson_progress_metadata(json,"es");
-        check(summary.pages[position->page].blocks[position->block].compiler_revision.has_value(),"Catalog metadata lost an expanded compiler objective");
+        const auto& summarized=summary.pages[position->page].blocks[position->block];
+        check(summarized.compiler_revision&&summarized.compiler_revision->previous_initial_code==old.initial_code
+            &&summarized.compiler_revision->starter_append==block.compiler_revision->starter_append
+            &&summarized.initial_code==expected_initial,"Catalog metadata lost an expanded compiler objective or its exact old/new starter");
         std::string retirement;
         for(const auto& page:before.pages)for(const auto& candidate:page.blocks)if(retirement.empty()&&candidate.type==BlockType::paragraph)retirement=candidate.stable_id;
         const std::vector<std::string> retiring{retirement};check(!retirement.empty(),"Compiler revision QA needs an independent paragraph for reading history");
@@ -932,6 +1030,10 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
             const auto& historical=history.pages[position->page].blocks[position->block];
             check(historical.compiler_revision.has_value()==after&&historical.output_check->cases.size()==(after?block.output_check->cases.size():old.output_check->cases.size()),
                 "A reading archive confused the original and expanded compiler objective");
+            check(historical.initial_code==(after?expected_initial:old.initial_code)
+                &&(!after||(historical.compiler_revision->previous_initial_code==old.initial_code
+                    &&historical.compiler_revision->starter_append==block.compiler_revision->starter_append)),
+                "A reading archive lost the authenticated starter or exposed new calls as an old objective");
         }
         if(plan.reference_identity)for(const bool replace_compiler:{false,true}) {
             const auto mixed=JsonObject::Parse(winrt::to_hstring(retired_after.raw_json));
@@ -969,8 +1071,26 @@ void reviewed_compiler_expansions_keep_the_original_contract() {
             rejects([&]{(void)windows::parse_lesson_json(winrt::to_string(invalid.Stringify()),"es");},"An unreviewed compiler expansion bypassed provenance validation");
             rejects([&]{(void)windows::parse_lesson_progress_metadata(winrt::to_string(invalid.Stringify()),"es");},"Catalog projection accepted a forged compiler expansion");
         }
+        if(plan.initial_insert)for(const auto mode:{"expected-only","starter-only","starter-changed"}){
+            const auto invalid=JsonObject::Parse(winrt::to_hstring(json)),metadata=invalid.GetNamedObject(L"stateLayout");
+            const auto target=invalid.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(position->block));
+            if(std::string_view(mode)=="expected-only")target.Insert(L"initialCode",JsonValue::CreateStringValue(winrt::to_hstring(old.initial_code)));
+            else if(std::string_view(mode)=="starter-only")target.Insert(L"outputCheck",JsonObject::Parse(winrt::to_hstring(old.raw_json)).GetNamedValue(L"outputCheck"));
+            else{auto changed=block.initial_code;replace_once(changed,"probar(\"2;2;\");","probar(\"2;3;\");");target.Insert(L"initialCode",JsonValue::CreateStringValue(winrt::to_hstring(changed)));}
+            const auto digest=test::compile_check_test_fingerprint(target);
+            if(std::string_view(mode)=="expected-only")check(digest=="24819112ab0cd2468968824326b0b7eb4c445bc801dd1e64af7be08d6b3c7794",
+                "The rejected expected-only fixture no longer addresses its exact superseded proposal");
+            // Give the changed payload its honest digest: rejection must come
+            // from the closed reviewed pair, not merely a stale proof string.
+            for(const auto& value:metadata.GetNamedArray(L"editorial")){const auto proof=value.GetObject();
+                if(winrt::to_string(proof.GetNamedString(L"id"))==plan.identity)proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(digest)));}
+            const auto raw=winrt::to_string(invalid.Stringify());
+            rejects([&]{(void)windows::parse_lesson_json(raw);},"A partial or modified starter/output pair became an authorized compiler revision");
+            rejects([&]{(void)windows::parse_lesson_progress_metadata(raw);},"Catalog accepted a partial or modified starter/output pair");
+        }
     }
-    std::cout<<"PASS seven exact compiler expansions (three proposals remain in memory): immutable originals, distinct execution goals, original families/addresses and forged archive/payload/owner/proof rejection\n";
+    check(late_aggregate_owners==3,"The dedicated U11L15/L16 aggregate contracts were not all exercised");
+    std::cout<<"PASS ten exact compiler expansions: immutable originals, distinct execution goals and stable addresses; paired starter/output/reference pins, historical reading and catalog projection, expected-only/partial/forged rejection; U11L15/L16 each retain one aggregate stdout execution case\n";
 }
 void reviewed_compile_diagnostics_require_the_intended_source_change() {
     using namespace lgaed;
@@ -1158,6 +1278,7 @@ int main() {
         using lgaed::windows::parse_lesson_json;
         const auto root = std::filesystem::path(lgaed::build::source_root);
         inline_feedback_optional_contract_tests();
+        mathematical_puzzle_identity_remains_optional();
         const auto path = root / "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
         // Exact published input for migration/legacy-coordinate regressions.
         const auto lesson = lgaed::test::load_pre_retirement_lesson(path.filename().string());
@@ -1168,6 +1289,7 @@ int main() {
         reviewed_compiler_expansions_keep_the_original_contract();
         reviewed_compile_diagnostics_require_the_intended_source_change();
         reviewed_matching_label_preserves_historical_contract();
+        reviewed_u11_domain_label_preserves_historical_contract();
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();
         standard_error_objective_tests(lesson);

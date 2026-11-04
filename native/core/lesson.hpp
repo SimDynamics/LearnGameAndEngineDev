@@ -99,6 +99,10 @@ struct CompilerReferenceRevision {
 };
 struct CompilerRevision {
     std::string id, raw_json, sha256, previous_payload, current_payload;
+    std::string previous_initial_code;
+    // Computed only from a closed reviewed starter expansion, never authored
+    // metadata. It lets an existing draft obtain the added calls separately.
+    std::optional<std::string> starter_append;
     OutputCheck previous_output_check;
     std::vector<CompilerReferenceRevision> references;
 };

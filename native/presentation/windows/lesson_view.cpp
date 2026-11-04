@@ -95,7 +95,7 @@ enum class ActionType { check, choose, move_up, move_down, run, reset, tab, edit
     copy_source, copy_console, clear_console, undo, redo, fullscreen_source, fullscreen_console,
     select_stdout, select_stderr, select_diagnostics, copy_simulated, copy_readonly, reset_answer, simulated_menu,
     toggle_wrap, compiler_info, cut_source,paste_source,copy_source_selection,select_all_source,
-    copy_console_selection,select_all_console };
+    copy_console_selection,select_all_console,copy_compiler_append };
 struct Action { int control; ActionType type; std::size_t block; std::size_t option = 0; };
 struct PreferenceUpdateRequest {
     const std::function<void(state::StateData&)>* update;
@@ -1178,7 +1178,7 @@ struct LessonView {
         auto result = button("",id,action); decorate_icon(result,icon,text);
         if(action.type==ActionType::fullscreen_source||action.type==ActionType::fullscreen_console
             ||action.type==ActionType::copy_simulated||action.type==ActionType::copy_readonly
-            ||action.type==ActionType::copy_source||action.type==ActionType::copy_console
+            ||action.type==ActionType::copy_source||action.type==ActionType::copy_console||action.type==ActionType::copy_compiler_append
             ||action.type==ActionType::reset||action.type==ActionType::reset_answer
             ||action.type==ActionType::undo||action.type==ActionType::redo||action.type==ActionType::toggle_wrap)
             SetWindowSubclass(result,console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));
@@ -2516,6 +2516,17 @@ struct LessonView {
             style_cpp(vm.source);
             rows.push_back({{vm.source}, {0}, laboratory()?200:220, !laboratory(),0,laboratory()?0:320});
             if(laboratory())rows.back().padding_after=20;
+            if(current.compiler_revision&&current.compiler_revision->starter_append){
+                // The loader supplies only the independently reviewed test-call
+                // insertion. Never replace or automatically edit a saved draft.
+                const auto label=rich(ui("Caso adicional de la batería","Additional test case","Cas de test supplémentaire"),control_id(index,41));
+                const auto append_copy=icon_button(ui("Copiar caso adicional","Copy additional case","Copier le cas supplémentaire"),
+                    control_id(index,43),{0,ActionType::copy_compiler_append,index},Icon::copy);
+                rows.push_back({{label,append_copy},{0,44},44,true});rows.back().padding_after=0;
+                const auto snippet=rich(*current.compiler_revision->starter_append,control_id(index,42),true);
+                style_cpp(snippet);apply_wrap(snippet);
+                rows.push_back({{snippet},{0},48,true});
+            }
             if(vm.project&&vm.project->configuration_window()){
                 SetWindowLongPtrW(vm.project->configuration_window(),GWLP_ID,control_id(index,6));
                 rows.push_back({{vm.project->configuration_window()},{0},160,false});
@@ -3704,6 +3715,11 @@ struct LessonView {
         case ActionType::copy_readonly: copy_text(block(action.block).code);show_settings_notice(window,ui("Código copiado","Code Copied","Code copié"));break;
         case ActionType::reset_answer: reset_answer(action.block);break;
         case ActionType::copy_source: copy_text(vm.source_editor->document().text);show_settings_notice(window,ui("Código copiado","Code Copied","Code copié")); break;
+        case ActionType::copy_compiler_append:
+            if(const auto& revision=block(action.block).compiler_revision;revision&&revision->starter_append){
+                copy_text(*revision->starter_append);show_settings_notice(window,ui("Caso copiado","Case Copied","Cas copié"));
+            }
+            break;
         case ActionType::copy_console: copy_text(edit_text(vm.console)); break;
         case ActionType::clear_console: vm.console_channels = {}; console_present(action.block); break;
         case ActionType::undo: SetFocus(vm.source); vm.source_editor->undo(); break;

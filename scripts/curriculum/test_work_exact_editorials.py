@@ -3,11 +3,16 @@ from copy import deepcopy
 from functools import lru_cache
 import hashlib
 import json
+from pathlib import Path
 import subprocess
+import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 import stable_state_layout as layout
 import validar_json_programacion as contract
+import work_exact_editorial_fixture_source as new_editorials
 
 
 PREFIX = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
@@ -86,6 +91,189 @@ def preserved(case, old, new, lesson=None, page=None, block=None):
     relative = PREFIX + (case[0] if lesson is None else lesson)
     return contract.preserves_previous_exercise(
         relative, case[1] if page is None else page, case[2] if block is None else block, old, new)
+
+
+class NewWorkExactEditorialTest(unittest.TestCase):
+    def preserved(self, case, old, new, *, lesson=None, page=None, block=None):
+        return contract.preserves_previous_exercise(PREFIX + (case["lesson"] if lesson is None else lesson),
+            case["historical"][0] if page is None else page,
+            case["historical"][1] if block is None else block, old, new)
+
+    def test_two_new_exact_pairs_require_their_own_closed_authorizations(self):
+        for name, case in new_editorials.CASES.items():
+            with self.subTest(name=name):
+                previous, prepared, _ = new_editorials.candidate(name)
+                old, new = (layout._blocks(document)[case["identity"]] for document in (previous, prepared))
+                self.assertEqual(case["activity_id"], old.get("id"))
+                self.assertTrue(contract.preserves_previous_exercise(PREFIX + case["lesson"], *case["historical"], old, new))
+
+    def test_complete_candidates_preserve_all_blocks_family_and_original_addresses(self):
+        for name, case in new_editorials.CASES.items():
+            with self.subTest(name=name):
+                previous, prepared, family = new_editorials.candidate(name)
+                old, new = (layout._blocks(document)[case["identity"]] for document in (previous, prepared))
+                self.assertEqual(case["type"], old["type"])
+                self.assertEqual(case["activity_id"], old.get("id"))
+                self.assertEqual(case["activity_id"] is not None, "id" in old)
+                self.assertEqual("id" in old, "id" in new)
+                self.assertEqual(case["before"], old[case["field"]])
+                self.assertEqual(case["after"], new[case["field"]])
+                self.assertEqual(case["text_hashes"], (text_hash(old[case["field"]]), text_hash(new[case["field"]])))
+                self.assertEqual({case["field"]}, {key for key in old.keys() | new.keys() if old.get(key) != new.get(key)})
+                self.assertEqual(old.get("reviewFeedback"), new.get("reviewFeedback"))
+                self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(new))
+                self.assertEqual(layout.lineage(previous), layout.lineage(prepared))
+                self.assertEqual(layout.validate(previous), layout.validate(prepared))
+                layout.validate_transition(previous, prepared)
+                layout.check_localized_family([prepared, family["en"], family["fr"]], ["es", "en", "fr"])
+                for field in previous["stateLayout"]:
+                    if field != "editorial": self.assertEqual(previous["stateLayout"][field], prepared["stateLayout"][field])
+                self.assertEqual(previous["stateLayout"]["editorial"], prepared["stateLayout"]["editorial"][:-1])
+                self.assertEqual({"id": case["identity"], "beforeSha256": layout.fingerprint(old),
+                                  "afterSha256": layout.fingerprint(new)}, prepared["stateLayout"]["editorial"][-1])
+                # Replacing the one field and removing its one appended proof
+                # restores the complete publication, including every other block.
+                restored = deepcopy(prepared)
+                layout._blocks(restored)[case["identity"]][case["field"]] = case["before"]
+                restored["stateLayout"]["editorial"].pop()
+                self.assertEqual(previous, restored)
+                aligned = layout.align_for_previous_validation(previous, prepared)
+                positions = layout.validate(previous)
+                for pn, page in enumerate(previous["pages"]):
+                    for bn, block in enumerate(page["blocks"]):
+                        current = aligned["pages"][pn]["blocks"][bn]
+                        origin_p, origin_b = positions[pn, bn]
+                        if block["type"] == "cpp_compiler":
+                            self.assertTrue(contract.preserves_previous_compiler(PREFIX + case["lesson"], origin_p,
+                                origin_b, block, current, layout.original_projection(previous)))
+                        elif block["type"] in contract.EXERCISES | {"code"}:
+                            self.assertTrue(contract.preserves_previous_exercise(PREFIX + case["lesson"], origin_p,
+                                origin_b, block, current), f"{name}: {pn},{bn} -> {origin_p},{origin_b}")
+
+    def test_exact_text_pair_direction_and_unrelated_fields_remain_closed(self):
+        for name, case in new_editorials.CASES.items():
+            previous, prepared, _ = new_editorials.candidate(name)
+            old, new = (layout._blocks(document)[case["identity"]] for document in (previous, prepared))
+            for side in ("old", "new"):
+                before, after = deepcopy(old), deepcopy(new)
+                (before if side == "old" else after)[case["field"]] += " Otra redacción."
+                with self.subTest(name=name, side=side): self.assertFalse(self.preserved(case, before, after))
+            self.assertFalse(self.preserved(case, new, old))
+            self.assertTrue(self.preserved(case, new, new))
+            for field in new.keys() - {case["field"], "reviewFeedback"}:
+                changed = deepcopy(new); value = changed[field]
+                changed[field] = value + " NO AUTORIZADO" if isinstance(value, str) else {"unreviewed": value}
+                with self.subTest(name=name, field=field): self.assertFalse(self.preserved(case, old, changed))
+            self.assertFalse(self.preserved(case, old, dict(new, campo_nuevo="NO AUTORIZADO")))
+
+    def test_original_type_actual_activity_identity_and_historical_location_are_closed(self):
+        for name, case in new_editorials.CASES.items():
+            previous, prepared, _ = new_editorials.candidate(name)
+            old, new = (layout._blocks(document)[case["identity"]] for document in (previous, prepared))
+            for kind in ("inline_fill_code", "order_code", "multiple_choice", "output_prediction"):
+                if kind != case["type"]:
+                    self.assertFalse(self.preserved(case, dict(old, type=kind), dict(new, type=kind)))
+            # Absent means absent for U2L3; U11L16 requires its actual e04 ID.
+            for identity in (None, 17, case["identity"], "otra_actividad"):
+                with self.subTest(name=name, identity=identity):
+                    self.assertFalse(self.preserved(case, old, dict(new, id=identity)))
+                    self.assertFalse(self.preserved(case, dict(old, id=identity), dict(new, id=identity)))
+            if case["activity_id"] is not None:
+                without_id = lambda value: {key: item for key, item in value.items() if key != "id"}
+                self.assertFalse(self.preserved(case, without_id(old), without_id(new)))
+            self.assertFalse(self.preserved(case, old, new, lesson=case["lesson"].replace("lesson_", "lesson_otra_")))
+            pn, bn = case["historical"]
+            self.assertFalse(self.preserved(case, old, new, page=pn + 1))
+            self.assertFalse(self.preserved(case, old, new, block=bn + 1))
+            for locale in ("en", "fr"):
+                with self.assertRaises(ValueError):
+                    contract.preserves_previous_exercise((PREFIX + case["lesson"]).replace("/es/", f"/{locale}/"),
+                        pn, bn, old, new)
+
+    def test_editorial_proof_and_owner_are_required_without_forging_original_history(self):
+        for name in new_editorials.CASES:
+            previous, prepared, _ = new_editorials.candidate(name)
+            for mutation in ("remove", "false_before", "false_after", "wrong_owner", "wrong_origin"):
+                bad = deepcopy(prepared)
+                if mutation == "remove": bad["stateLayout"]["editorial"].pop()
+                elif mutation == "false_before": bad["stateLayout"]["editorial"][-1]["beforeSha256"] = "0" * 64
+                elif mutation == "false_after": bad["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+                elif mutation == "wrong_owner": bad["stateLayout"]["editorial"][-1]["id"] = "block_0000_0000"
+                else: bad["stateLayout"]["origin"][0]["id"] = "otra_pagina"
+                with self.subTest(name=name, mutation=mutation), self.assertRaises(layout.LayoutError):
+                    layout.validate_transition(previous, bad)
+
+    def test_source_bytes_and_complete_after_documents_are_independently_pinned(self):
+        self.assertEqual("5cfd5514c879341216c1c34c313e34a16f60ea32", new_editorials.COMMIT)
+        for name, case in new_editorials.CASES.items():
+            for locale in ("es", "en", "fr"):
+                payload = new_editorials.historical_bytes(name, locale)
+                self.assertEqual(case["source_hashes"][locale], hashlib.sha256(payload).hexdigest())
+                with self.subTest(name=name, locale=locale), self.assertRaises(ValueError):
+                    new_editorials.verify_bytes(name, locale, payload + b"\n")
+            _, after, _ = new_editorials.candidate(name)
+            self.assertEqual(case["after_sha256"], hashlib.sha256(new_editorials.json_bytes(after)).hexdigest())
+        with patch.object(new_editorials.subprocess, "check_output", return_value=b"{}"), self.assertRaises(ValueError):
+            new_editorials.candidate("duplication")
+
+    def test_real_cli_exports_complete_pairs_manifest_and_is_idempotent_without_asset_writes(self):
+        paths = [contract.ROOT / (PREFIX + case["lesson"]).replace("/es/", f"/{locale}/")
+                 for case in new_editorials.CASES.values() for locale in ("es", "en", "fr")]
+        original = {path: path.read_bytes() for path in paths}
+        with tempfile.TemporaryDirectory(prefix="lgaed-work-exact-") as temporary:
+            output = Path(temporary) / "fixtures"
+            command = [sys.executable, "-B", str(Path(new_editorials.__file__).resolve()), "--output-dir", str(output)]
+            subprocess.run(command, cwd=contract.ROOT, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            exported = {path.name: path.read_bytes() for path in output.iterdir()}
+            self.assertEqual({"duplication-before.json", "duplication-after.json", "remainder-before.json",
+                              "remainder-after.json", "manifest.json"}, exported.keys())
+            before_stats = {path.name: path.stat().st_mtime_ns for path in output.iterdir()}
+            subprocess.run(command, cwd=contract.ROOT, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.assertEqual(exported, {path.name: path.read_bytes() for path in output.iterdir()})
+            self.assertEqual(before_stats, {path.name: path.stat().st_mtime_ns for path in output.iterdir()})
+            manifest = json.loads(exported["manifest.json"])
+            self.assertEqual(new_editorials.COMMIT, manifest["commit"])
+            self.assertEqual(0, manifest["coordinateBase"])
+            for name, case in new_editorials.CASES.items():
+                entry = manifest["cases"][name]
+                self.assertEqual(case["activity_id"], entry["activityId"])
+                self.assertEqual(case["activity_id"] is not None, entry["activityIdPresent"])
+                self.assertEqual(list(case["historical"]), entry["historical"])
+                self.assertEqual(case["text_hashes"], tuple(entry["textSha256"]))
+                self.assertEqual(case["source_hashes"], entry["sourceSha256"])
+                self.assertEqual(PREFIX + case["lesson"], entry["relative"])
+                previous, prepared, _ = new_editorials.candidate(name)
+                for side, document in (("before", previous), ("after", prepared)):
+                    payload = exported[entry[side]["file"]]
+                    self.assertEqual(entry[side]["sha256"], hashlib.sha256(payload).hexdigest())
+                    self.assertEqual(document, json.loads(payload))
+                    self.assertEqual(layout.fingerprint(layout._blocks(document)[case["identity"]]), entry[side]["blockSha256"])
+                self.assertEqual(new_editorials.historical_bytes(name), exported[entry["before"]["file"]])
+        self.assertEqual(original, {path: path.read_bytes() for path in paths})
+
+    def test_export_rejects_conflicts_sources_and_checkouts_before_any_write(self):
+        with tempfile.TemporaryDirectory(prefix="lgaed-work-exact-negative-") as temporary:
+            output = Path(temporary) / "bad-manifest"; output.mkdir()
+            (output / "manifest.json").write_bytes(b"unrelated")
+            with self.assertRaises(FileExistsError): new_editorials.export(output)
+            self.assertEqual({"manifest.json": b"unrelated"}, {path.name: path.read_bytes() for path in output.iterdir()})
+            wrong_type = Path(temporary) / "directory-target"; wrong_type.mkdir()
+            (wrong_type / "remainder-after.json").mkdir()
+            with self.assertRaises(FileExistsError): new_editorials.export(wrong_type)
+            self.assertEqual(["remainder-after.json"], [path.name for path in wrong_type.iterdir()])
+            absent = Path(temporary) / "invalid-source"
+            original = new_editorials.historical_bytes
+            def corrupt_second(name, locale="es"):
+                if name == "remainder": raise ValueError("Failed independent source authentication")
+                return original(name, locale)
+            with patch.object(new_editorials, "historical_bytes", side_effect=corrupt_second), self.assertRaises(ValueError):
+                new_editorials.export(absent)
+            self.assertFalse(absent.exists())
+            other_checkout = Path(temporary) / "other-checkout"; other_checkout.mkdir()
+            (other_checkout / ".git").write_text("unrelated checkout", encoding="utf-8")
+            with self.assertRaises(ValueError): new_editorials.export(other_checkout / "out")
+            self.assertFalse((other_checkout / "out").exists())
+        with self.assertRaises(ValueError): new_editorials.export(contract.ROOT / "scripts" / "curriculum")
 
 
 class WorkExactEditorialTest(unittest.TestCase):

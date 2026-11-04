@@ -2,6 +2,7 @@
 #include "core/profile.hpp"
 #include "core/narration_state.hpp"
 #include "core/attempts.hpp"
+#include "core/math_label_test_fixture.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
@@ -482,10 +483,125 @@ void run_case(const curriculum::Lesson& legacy, const curriculum::Lesson& curren
     std::cout << "PASS actual matching editorial " << mode
         << ": prerequisite gate, original payload/attempts/bookmark, current cards/feedback/reader and silent reopen\n";
 }
+void run_u11_domain(windows::NarrationWorker& worker){
+    const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json";
+    const auto bytes=state::read_bytes(source);const auto fixture=test::u11_domain_label_fixture(windows::load_lesson(source));
+    const auto& old=fixture.before.pages[8].blocks[2];const auto& revised=fixture.after.pages[8].blocks[2];
+    const auto authored=JsonObject::Parse(wide(old.raw_json));
+    const auto expected=authored.GetNamedArray(L"responses").GetObjectAt(0).GetNamedObject(L"validator").GetNamedObject(L"expected");
+    const auto answers=[&](std::string_view mode){
+        const auto pairs=JsonObject::Parse(expected.Stringify());
+        if(mode=="incorrect"){pairs.Insert(L"dominio",JsonValue::CreateStringValue(L"completa"));pairs.Insert(L"valida",JsonValue::CreateStringValue(L"limite"));}
+        else if(mode=="partial")pairs.Remove(L"dominio");
+        JsonObject value;value.Insert(L"type",JsonValue::CreateStringValue(L"matching"));value.Insert(L"pairs",pairs);
+        JsonObject result;result.Insert(L"casos",value);return result;
+    };
+    for(const auto mode:{"empty","partial","incorrect","correct"}){
+        state::StateData initial;state::prepare_lesson_state(initial,fixture.before);state::save_current_page(initial,fixture.before,8);
+        initial.preferences["native_windows"]["ui_language"]=std::string("es");
+        initial.preferences["u11_domain_qa"]["opaque"]=std::string(" \t unchanged\r\n");
+        for(const auto& page:fixture.before.pages)for(const auto& block:page.blocks)
+            if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check)qa_compiler_prerequisite(initial,fixture.before,block);
+        narration::History bookmark;bookmark.entries.push_back({state::sha256(old.raw_json),old.stable_id,{2,730,1,false},fixture.before.pages[8].stable_id});
+        narration::write_history(initial,bookmark); // Storage only, no audio playback is claimed.
+        auto original_answers=answers(mode);
+        if(std::string_view(mode)!="empty"){
+            const auto reply=JsonObject::Parse(wide(worker.validate_math(old.raw_json,utf8(original_answers.Stringify()),"es")));
+            require(utf8(reply.GetNamedString(L"contentFingerprint"))==test::u11_domain_android_before,
+                "The original U11 response did not use its independently pinned Android insertion-order fingerprint");
+            JsonObject payload;payload.Insert(L"responses",original_answers);payload.Insert(L"correct",JsonValue::CreateBooleanValue(std::string_view(mode)=="correct"));
+            payload.Insert(L"contentFingerprint",reply.GetNamedValue(L"contentFingerprint"));payload.Insert(L"incorrectAttempts",JsonValue::CreateNumberValue(3));
+            payload.Insert(L"opaque",JsonObject::Parse(LR"({"origin":"original U11 matching QA","selected":17})"));
+            state::Response response;response.raw_json=utf8(payload.Stringify());response.correct=std::string_view(mode)=="correct";
+            if(std::string_view(mode)=="incorrect")state::mark_response_reviewed(response,old);
+            state::put_response(initial,fixture.before,old,response);
+        }
+        const auto prior=state::get_response(initial,fixture.before,old);
+        const auto history=narration::read_history(initial);const auto opaque=initial.preferences.at("u11_domain_qa");
+        MountedLesson mounted(fixture.after,initial,worker,std::string("u11-")+mode);
+        const auto regions=[&]{return lesson_reading_regions(mounted.view);};
+        const auto find_region=[&](std::string_view suffix){const auto all=regions();
+            const auto found=std::ranges::find_if(all,[&](const auto& value){return value.key.ends_with(suffix);});
+            require(found!=all.end(),"An actual U11 matching source/target lost its reader region");return *found;};
+        const auto preserved=[&]{const auto data=mounted.saved();const auto saved=state::get_response(data,fixture.after,revised);
+            require(saved.has_value()==prior.has_value(),"U11 label adoption invented or removed a matching response");
+            if(prior)require(saved->raw_json==prior->raw_json&&saved->correct==prior->correct
+                &&state::response_reviewed(*saved,revised)==(std::string_view(mode)=="incorrect"),
+                "U11 label adoption rewrote historical pairs, attempts, metadata or reviewed state");
+            require(data.preferences.at("u11_domain_qa")==opaque&&narration::read_history(data)==history&&mounted.new_feedback_events==0,
+                "U11 label restoration altered unrelated data/bookmark or emitted a fresh feedback event");
+            require(lesson_page_state(mounted.view).index==8,"The explicit compiler QA prerequisites did not retain U11 page nine");
+            const auto label=find_region("casos/source/dominio");
+            require(label.source_text=="99+2;"&&edit_text(label.target)=="99+2;","U11 restored card or reader retained the literal-domain example");
+            std::size_t sources=0,targets=0;for(const auto& region:regions()){
+                sources+=region.key.find("casos/source/")!=std::string::npos;targets+=region.key.find("casos/target/")!=std::string::npos;}
+            require(sources==6&&targets==6,"U11 label adoption removed a source or target identity");
+        };
+        const auto historical_feedback=std::string_view(mode)=="correct"||std::string_view(mode)=="incorrect";
+        const auto revised_reply=JsonObject::Parse(wide(worker.validate_math(revised.raw_json,utf8(original_answers.Stringify()),"es")));
+        require(utf8(revised_reply.GetNamedString(L"contentFingerprint"))==test::u11_domain_android_before,
+            "The reviewed U11 label did not retain the authentic historical response fingerprint");
+        const auto expected_feedback=historical_feedback?utf8(JsonObject::Parse(wide(worker.validate_math(revised.raw_json,utf8(original_answers.Stringify()),"es"))).GetNamedString(L"feedback")):std::string{};
+        const auto verify=[&]{wait_for([&]{const auto feedback=descendant(mounted.view,1204);return feedback&&edit_text(feedback)==expected_feedback;},
+            "The U11 matching historical guide/success did not finish its compatible restoration");preserved();};
+        verify();mounted.reopen();verify();
+        const auto tap=[&](std::string_view key){const auto item=find_region(key).target;
+            SendMessageW(item,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(2,2));SendMessageW(item,WM_LBUTTONUP,0,MAKELPARAM(2,2));pump();};
+        const auto reset_matching=[&]{
+            const auto math=descendant(mounted.view,1205);require(math,"The U11 matching toolbar container is absent");
+            HWND button=nullptr;
+            EnumChildWindows(math,[](HWND item,LPARAM data)->BOOL{
+                wchar_t kind[32]{},caption[80]{};GetClassNameW(item,kind,32);GetWindowTextW(item,caption,80);
+                if(lstrcmpiW(kind,L"BUTTON")==0&&std::wstring_view(caption)==L"Reiniciar"){
+                    *reinterpret_cast<HWND*>(data)=item;return FALSE;
+                }return TRUE;
+            },reinterpret_cast<LPARAM>(&button));
+            require(button&&IsWindowEnabled(button),"The actual U11 mathematical Restart button is absent or disabled");
+            SendMessageW(button,BM_CLICK,0,0);pump();
+        };
+        if(prior)reset_matching();
+        // Real card controls create a new rejected attempt and then correct
+        // only the two swapped pairs. Original answers above were restored,
+        // never silently reinterpreted as these current responses.
+        const auto wrong=answers("incorrect").GetNamedObject(L"casos").GetNamedObject(L"pairs");
+        for(const auto& pair:wrong){tap("casos/source/"+utf8(pair.Key()));tap("casos/target/"+utf8(pair.Value().GetString()));}
+        SendMessageW(descendant(mounted.view,1203),BM_CLICK,0,0);
+        wait_for([&]{const auto value=state::get_response(mounted.saved(),fixture.after,revised);return value&&!value->correct&&state::response_reviewed(*value,revised);},
+            "The current U11 matching controls did not record their rejected swapped pairs");
+        const auto wrong_feedback=utf8(JsonObject::Parse(wide(worker.validate_math(revised.raw_json,utf8(answers("incorrect").Stringify()),"es"))).GetNamedString(L"feedback"));
+        require(edit_text(descendant(mounted.view,1204))==wrong_feedback,"U11 current rejection lost its exact guide");
+        tap("casos/source/valida");tap("casos/target/completa");tap("casos/source/dominio");tap("casos/target/limite");
+        SendMessageW(descendant(mounted.view,1203),BM_CLICK,0,0);
+        wait_for([&]{const auto value=state::get_response(mounted.saved(),fixture.after,revised);return value&&value->correct;},
+            "Correcting the two current U11 matching cards did not produce success");
+        const auto fresh=state::get_response(mounted.saved(),fixture.after,revised)->raw_json;
+        const auto success=utf8(JsonObject::Parse(wide(worker.validate_math(revised.raw_json,utf8(answers("correct").Stringify()),"es"))).GetNamedString(L"feedback"));
+        require(edit_text(descendant(mounted.view,1204))==success,"U11 current success lost its explanation");
+        const auto current_regions=regions();
+        require(std::ranges::any_of(current_regions,[&](const auto& region){return region.feedback&&region.block_index==2&&region.correct&&region.source_text==success;}),
+            "U11 current reader did not expose the exact successful feedback");
+        mounted.reopen();wait_for([&]{const auto value=state::get_response(mounted.saved(),fixture.after,revised);return value&&value->correct&&value->raw_json==fresh
+            &&edit_text(descendant(mounted.view,1204))==success;},"U11 current matching success did not reopen exactly");
+        reset_matching();
+        const auto reset=state::get_response(mounted.saved(),fixture.after,revised);
+        require(reset.has_value(),"U11 scoped Reset did not save its ordinary empty response record");
+        require(!reset->correct,"U11 scoped Reset retained the current success verdict");
+        require(!state::response_reviewed(*reset,revised),"U11 scoped Reset retained reviewed-answer metadata");
+        require(!JsonObject::Parse(wide(reset->raw_json)).HasKey(L"responses"),"U11 scoped Reset retained matching pairs in its response payload");
+        require(edit_text(descendant(mounted.view,1204)).empty(),"U11 scoped Reset retained current feedback");
+        require(mounted.saved().preferences.at("u11_domain_qa")==opaque,"U11 scoped Reset changed unrelated opaque preferences");
+        require(narration::read_history(mounted.saved())==history,"U11 scoped Reset changed the stored historical reading bookmark");
+        for(const auto& page:fixture.after.pages)for(const auto& compiler:page.blocks)if(compiler.type==curriculum::BlockType::cpp_compiler&&compiler.output_check)
+            require(windows::compiler_puzzle_completed(mounted.saved(),fixture.after,compiler),"Resetting U11 matching changed an independent compiler prerequisite");
+    }
+    require(state::read_bytes(source)==bytes,"U11 matching revision QA changed the curricular source");
+    std::cout<<"PASS current U11 domain matching label: original/revised full-block pins, empty/partial/rejected/successful historical state, exact current cards and reader sources, new real rejection/correction/success, silent reopen and scoped Reset. Compiler receipts/bookmark are synthetic QA, no execution/audio playback/human listening claimed.\n";
+}
 }
 
 int main(int argc, char** argv) {
-    if (argc != 1) {
+    const bool u11_domain=argc==2&&std::string_view(argv[1])=="--u11-domain";
+    if (argc != 1&&!u11_domain) {
         const bool prepare = argc == 3 && std::string_view(argv[1]) == "--prepare-visual";
         const bool inspect = argc == 3 && std::string_view(argv[1]) == "--inspect-visual";
         const bool shape = prepare || inspect;
@@ -509,6 +625,8 @@ int main(int argc, char** argv) {
     try {
         require(rich_edit, "Cannot load native RichEdit for matching QA");
         reader_theme::prepare_fonts();
+        if(u11_domain){windows::NarrationWorker worker(std::filesystem::path(build::source_root)/"out/narration/runtime.json");run_u11_domain(worker);}
+        else{
         const auto source = std::filesystem::path(build::source_root)
             / "app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido" / filename;
         const auto source_hash = state::sha256(state::read_bytes(source));
@@ -517,6 +635,7 @@ int main(int argc, char** argv) {
         windows::NarrationWorker worker(std::filesystem::path(build::source_root) / "out/narration/runtime.json");
         for (const auto mode : {"correct", "incorrect", "partial"}) run_case(legacy, current, worker, mode);
         require(state::sha256(state::read_bytes(source)) == source_hash, "Editorial matching QA modified the live curricular asset");
+        }
     } catch (const std::exception& error) {
         std::cerr << "FAIL editorial matching: " << error.what() << '\n';
         result = 1;

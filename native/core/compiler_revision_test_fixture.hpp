@@ -19,6 +19,9 @@ struct CompilerRevisionCase {
     const char* reference_after=nullptr;
     const char* calls=nullptr;
     bool allow_unexpanded_source=false;
+    std::size_t reports_before=0,reports_after=0;
+    std::size_t bytes_before=0,bytes_after=0,lines_before=0,lines_after=0;
+    const char* initial_insert=nullptr;
 };
 inline const std::vector<CompilerRevisionCase>& compiler_revision_cases() {
     static const std::vector<CompilerRevisionCase> cases{
@@ -51,7 +54,35 @@ inline const std::vector<CompilerRevisionCase>& compiler_revision_cases() {
             "dc68860e953dd941d4495f68d295b6a7cbca70fe286ee356675f405bb8bd2502","cf3c9ab1f070195689b4f2bce4bd635ae8368f760384663a2ebecbb5a1f7bfdd",
             "Caso 11\nError: Caracter no admitido\nResultado: 4\n",
             "block_0008_0001","61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6","6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6",
-            "    std::cout << \"Caso 11\\n\";\n    probar(\"?z;4;\");\n",true}
+            "    std::cout << \"Caso 11\\n\";\n    probar(\"?z;4;\");\n",true},
+        {"lesson_construir_un_interprete_con_historial_y_pruebas.json","block_0002_0002",
+            "ebf1067d19fbf87bce3ddef2bae69442972df180055d5572faef4473eb76c34e","7b30da24db7834b2b8cc9ca2014b05de9dfeea69637764e8a9834dbe90b69f5b",
+            "Caso 15\nError: Resultado fuera de dominio\nAceptadas: 0\nRechazadas: 1\nSuma: 0\nHistorial:\n"
+            "Caso 16\nError: Anidamiento excesivo\nAceptadas: 0\nRechazadas: 1\nSuma: 0\nHistorial:\n"
+            "Caso 17\nError: Caracter no admitido\nValor: 4\nAceptadas: 1\nRechazadas: 1\nSuma: 4\nHistorial: 4\n"
+            "Caso 18\nValor: 14\nAceptadas: 1\nRechazadas: 0\nSuma: 14\nHistorial: 14\n"
+            "Caso 19\nValor: 3\nAceptadas: 1\nRechazadas: 0\nSuma: 3\nHistorial: 3\n",
+            "block_0009_0001","778473599281a1b2165b4dabb9acedde00904b55d9b907c8dedeb9831de20618","96bcd1d3821c7e80908dd178e855705206d366ead6fbe1831fc891a85969087b",
+            "    std::cout << \"Caso 15\\n\";\n    probar(\"11*10/2;\");\n"
+            "    std::cout << \"Caso 16\\n\";\n    probar(\"(((((((((1)))))))));\");\n"
+            "    std::cout << \"Caso 17\\n\";\n    probar(\"?z;4;\");\n"
+            "    std::cout << \"Caso 18\\n\";\n    probar(\"2+3*4;\");\n"
+            "    std::cout << \"Caso 19\\n\";\n    probar(\"9-4-2;\");\n",true,14,19,1122,1518,92,123},
+        {"lesson_resto_y_asociacion_en_el_interprete.json","block_0003_0004",
+            "c03fef34aa19969bac10860c7229545551733638be93dcc84104a56e61227b22","247c41d8494fe203bcc83908dacb2c4e563ae6959e81438452991a30c31c561b",
+            "Caso 10\nValor: -2\nAceptadas: 1\nRechazadas: 0\nSuma: -2\nHistorial: -2\n"
+            "Caso 11\nValor: 14\nAceptadas: 1\nRechazadas: 0\nSuma: 14\nHistorial: 14\n"
+            "Caso 12\nError: Anidamiento excesivo\nAceptadas: 0\nRechazadas: 1\nSuma: 0\nHistorial:\n",
+            "block_0006_0001","14fa456ea18c3478fb9fb2476d70f337bdab5ee3cfad5d6b3224b07bc36db0b2","1e16cb31b5885fa0ae2f3faa6ffd2687391d088f304a035a7cd124278316d2e2",
+            "    std::cout << \"Caso 10\\n\";\n    probar(\"-14/5;\");\n"
+            "    std::cout << \"Caso 11\\n\";\n    probar(\"2+3*4;\");\n"
+            "    std::cout << \"Caso 12\\n\";\n    probar(\"(((((((((1)))))))));\");\n",true,9,12,677,895,58,76},
+        {"lesson_construir_un_interprete_con_historial_y_pruebas.json","block_0006_0003",
+            "b7e77211fde9c243eee599d2711c8cf0cb2f11fbb47de347de298147188a2e47","7b9c4229709dc9caf07a9c0bd56bf496e62b0148195f69797290cd8ac63be83f",
+            "Caso 5\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 0\nSuma: 4\nHistorial: 2 2\nPositivos: 2\nNegativos: 0\n",
+            "block_0010_0001","9f88cd2b376b8b869b2fa3dd6fb569fce823ce3deae64c138a0f9a2c643fcccc","80ee77eccf110d4438d2643a1dd2c2cb9be696d5f50e57ef285b162e37a0a8a1",
+            "    std::cout << \"Caso 5\\n\";\n    probar(\"2;2;\");\n",true,4,5,420,521,35,44,
+            "    std::cout << \"Caso 5\\n\";\n    probar(\"2;2;\");\n"}
     };return cases;
 }
 inline const CompilerRevisionCase& compiler_revision_case(const curriculum::Lesson& lesson,std::string_view identity) {
@@ -151,6 +182,11 @@ inline std::string compiler_revision_json(const curriculum::Lesson& original,std
         ||compile_check_test_fingerprint(block)!=entry->before_full)
         throw std::runtime_error("Compiler QA transition requires its pinned unexpanded source, never an integrated no-op");
     const auto old=JsonObject::Parse(block.Stringify());const auto outputs=block.GetNamedObject(L"outputCheck").GetNamedArray(L"cases");
+    if(entry->initial_insert){
+        auto code=winrt::to_string(block.GetNamedString(L"initialCode"));const auto at=code.rfind("    return 0;\n}\n");
+        if(at==std::string::npos)throw std::runtime_error("Missing final QA starter main return");
+        code.insert(at,entry->initial_insert);block.Insert(L"initialCode",JsonValue::CreateStringValue(winrt::to_hstring(code)));
+    }
     if(entry->suffix) {
         const auto expected=outputs.GetAt(0).GetObject().GetNamedArray(L"outputs");
         expected.SetAt(0,JsonValue::CreateStringValue(winrt::to_hstring(winrt::to_string(expected.GetAt(0).GetString())+entry->suffix)));

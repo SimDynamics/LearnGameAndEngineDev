@@ -128,7 +128,7 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
 | `choiceRevisions` | Opcional. Archivo acumulativo de las siete revisiones de opción españolas autorizadas, con `{id, block}` y el bloque publicado anterior íntegro. U11L14 token conserva una transición atómica de opción y explicación. No permite sustituciones generales de respuestas. |
-| `compilerRevisions` | Opcional. Archivo acumulativo de las siete ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las seis baterías programadas U11L8/L10/L11/L12/L13/L14 incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. No permite cambiar otros programas o esperados. |
+| `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
@@ -216,7 +216,7 @@ Este contrato pertenece al cargador y herramientas Windows. La app Android
 independiente conserva su contrato anterior. El retorno editorial tampoco
 declara implementado el color neutro ni el subrayado tipográfico.
 
-### Corrección exacta de un rótulo matemático en Windows
+### Correcciones exactas de rótulos matemáticos en Windows
 
 `CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO` admite exclusivamente en
 U9L13, `block_0007_0001`, respuesta `contratos`, origen `construccion`, el cambio
@@ -225,12 +225,24 @@ que termina normalmente». Work utiliza `prepare_v2` con la familia publicada y
 el documento anterior, conservando `origin`, `family` y las direcciones; el helper
 añade la prueba editorial completa. No hay que añadir un campo al puzzle.
 
+`CPP_CASO_DOMINIO_RESULTADO_U11L15` añade exclusivamente `block_0008_0002`,
+respuesta `casos`, origen `dominio`, de U11L15: `100+1;` pasa a `99+2;`.
+Se conservan los seis pares, sus IDs, validadores y respuestas. La tabla de
+autoría y el cargador autentican los payloads completos antes y después;
+el puente conserva sólo para ese bloque exacto su huella histórica de respuesta.
+No permite renombrar otras etiquetas ni reinterpretar una elección anterior.
+
 La autorización contrasta el bloque completo antes/después. Pares, validadores,
 IDs, otros textos y orden de claves JSON se conservan. El cargador Windows exige
 su identidad, idioma español y prueba exacta. El puente matemático conserva la
 huella de respuesta anterior sólo para el bloque revisado completo; la vista y
 el lector reciben el rótulo nuevo. Cualquier otro cambio sigue necesitando su
 contrato propio. Esta excepción Windows no cambia el motor Android conservado.
+
+Estas dos autorizaciones no vuelven obligatorio el campo `id` de los demás
+`math_puzzle`: los puzzles que lo omiten conservan su dirección calculada y
+se cargan también en el catálogo. Si el campo está presente, debe seguir siendo
+texto. Un puzzle sin ese ID exacto no recibe ninguna autorización de rótulo.
 
 ## Siete revisiones exactas de opciones en Windows
 
@@ -290,8 +302,9 @@ procedencia; una elección anterior no se presenta como una elección del texto
 nuevo. La aceptación curricular y visual queda separada de las pruebas de
 contrato Python y de conservación nativa Windows.
 
-Las cinco sustituciones anteriores ya tienen integración curricular; las dos de
-U11L14 se preparan y verifican en memoria sin escribir los assets activos.
+Las siete sustituciones, incluidas las dos de U11L14, ya tienen integración
+curricular. Sus pruebas conservan también la preparación histórica en memoria
+sin escribir los assets activos y la idempotencia después de integrarlas.
 Un acierto histórico conserva su opción y su explicación originales: la nueva
 explicación del token sólo corresponde a una elección nueva comprobada. Los
 intentos históricos, incluidos borradores, rechazos y aciertos, mantienen sus
@@ -302,28 +315,44 @@ tiene una autorización editorial independiente y exacta: «lanza» pasa a
 «lanza una excepción» dentro de la redacción revisada completa. El validador
 fija ambos hashes, la coordenada, el tipo y la ausencia original de `id`;
 no autoriza otras explicaciones ni cambios de programa, respuesta o guía.
-Esta precisión también permanece como propuesta, sin editar el JSON activo.
+Esta precisión ya está integrada en el JSON activo; las pruebas conservan su
+transición histórica exacta sin revertir el contenido publicado.
 
-## Siete ampliaciones exactas de comprobación en Windows
+Otras dos autorizaciones editoriales cerradas permiten que Work integre el
+marcado de `4` en la pregunta de U2L3 `block_0005_0004` y la precisión
+«Lanzar la excepción» en la explicación de U11L16 `block_0002_0002`.
+Ambas fijan campo, tipo, identidad, coordenada histórica y par de hashes;
+U2L3 exige la ausencia original de `id`, y U11L16 exige su ID publicado.
+Programas, huecos, fragmentos, respuestas y demás campos quedan protegidos.
+Las pruebas antes/después parten de snapshots Git autenticados, independientes
+de la integración posterior en los assets; no exigen conservar el texto antiguo
+en el currículo vivo. El CLI de las elecciones U11L14 también contrasta cambio
+histórico real e idempotencia del activo integrado sin sobrescribirlo.
+
+## Diez ampliaciones exactas de comprobación en Windows
 
 `CPP_CASOS_ADICIONALES_CON_PROGRESO` admite exclusivamente las ampliaciones
 revisadas de U11L7 (`block_0003_0005`), U11L8 (`block_0004_0004`), U11L10 y
 U11L11 (ambas `block_0004_0003` de sus respectivas lecciones), U11L12
-(`block_0004_0003`) y U11L13/L14 (ambas `block_0004_0004`). La primera añade
+(`block_0004_0003`), U11L13/L14 (ambas `block_0004_0004`), ambos editores de
+U11L15 (`block_0002_0002` y `block_0006_0003`) y U11L16 (`block_0003_0004`). La primera añade
 dos casos al final de los 19 publicados, manteniendo cada caso previo y su orden.
-Las otras seis añaden únicamente sus informes revisados al esperado de su caso
+Las otras nueve añaden sus informes revisados al esperado de su caso
 existente y las llamadas correspondientes al `main` de su referencia estática
-completa posterior. Los programas iniciales del editor, entradas iniciales, modos
-de comparación, propietarios y demás campos protegidos permanecen iguales.
+completa posterior. Sólo el segundo editor U11L15 añade también esos mismos
+49 bytes de cabecera y llamada a su `initialCode`. Los demás iniciales, entradas
+iniciales, modos de comparación, propietarios y campos protegidos permanecen iguales.
 
 `revise_compiler_cases(documento_v2, identidad_estable)` prepara una copia en
 memoria y añade a `stateLayout.compilerRevisions` una entrada
 `{"id": "identidad_estable", "block": editor_publicado_anterior_completo}`.
-Para U11L8/L10/L11/L12/L13/L14 añade también `references: [{"id": "referencia_estable",
+Para U11L8/L10/L11/L12/L13/L14/L15/L16 añade también `references: [{"id": "referencia_estable",
 "block": referencia_publicada_anterior_completa}]`, modifica esa referencia con
 las llamadas exactas antes del `return 0;` final y conserva ambas aristas
 editoriales anteriores/ampliadas. U11L8 usa `block_0007_0001`; U11L10/L11/L12/L14
-usan `block_0008_0001`; U11L13 usa `block_0009_0001`. Cada identidad pertenece
+usan `block_0008_0001`; U11L13 y el primer editor U11L15 usan `block_0009_0001`;
+el segundo editor U11L15 usa `block_0010_0001`; U11L16 usa
+`block_0006_0001`. Cada identidad pertenece
 exclusivamente a su lección. El CLI
 `revise-compiler-cases` recibe `--identity`, `--locale es`, el `--base-ref`
 publicado y un `--output` nuevo; nunca sobrescribe el asset ni una propuesta
@@ -342,22 +371,22 @@ Las presentaciones anteriores al cambio conservan su contrato anterior; un
 retiro posterior de otros bloques conserva la presentación ampliada real.
 
 La proyección para el validador curricular restaura únicamente esos casos o
-esperados y las seis referencias exactas después de validar la transición
-completa. Las guías posteriores
+esperados, las nueve referencias y el único inicial ampliado exacto después de
+validar la transición completa. Las guías posteriores
 siguen pasando por las guardas editoriales existentes. Añadir una exigencia
 `standardError: "nonBlank"` conserva su regla propia: una publicación posterior
-no puede retirarla. Las siete revisiones no autorizan respuestas generales,
+no puede retirarla. Las diez revisiones no autorizan respuestas generales,
 otras ampliaciones de casos ni cambios de fuentes.
 
 Las pruebas de ejecución anteriores permanecen vinculadas a su objetivo,
 idioma y programa capturado. En U11L7 sólo las pruebas válidas de casos idénticos
 del mismo programa pueden contribuir a los 21; los dos casos nuevos siguen
-pendientes. En las otras seis actividades el esperado completo cambia: el logro
+pendientes. En las otras nueve actividades el esperado completo cambia: el logro
 anterior conserva su procedencia, pero la ampliación necesita una nueva ejecución
 completa. Una acreditación anterior no se convierte en prueba del contraste nuevo.
 Reiniciar explícitamente impide recuperar pruebas anteriores como intento activo.
 
-Las tres ampliaciones U11L12–L14 tienen un único caso de ejecución, con stdin
+Las seis baterías U11L12–L16 tienen un único caso de ejecución, con stdin
 vacío; sus informes son líneas del stdout producido por llamadas en `main`,
 no comprobaciones individuales del campo Entrada:
 
@@ -366,15 +395,41 @@ no comprobaciones individuales del campo Entrada:
 | U11L12 | `probar("11*10/2;");` | 11→12; 199→233 bytes. Rechaza el parcial 110 antes de dividir. |
 | U11L13 | `probar("11*10/2;");` y `probar("(((((((((1)))))))));");` | 14→16; 248→310 bytes. Rechaza el parcial y la novena agrupación. |
 | U11L14 | `std::cout << "Caso 11\n";` y `probar("?z;4;");` | 10→11 casos impresos; 357→406 bytes. Descarta sin retokenizar y conserva el resultado 4. |
+| U11L15, primer editor | Cabeceras Caso 15–19 y `probar("11*10/2;");`, `probar("(((((((((1)))))))));");`, `probar("?z;4;");`, `probar("2+3*4;");`, `probar("9-4-2;");` | 14→19 informes; 1122→1518 bytes. Contrasta dominio intermedio, profundidad, recuperación, prioridad y asociación. |
+| U11L15, segundo editor | Cabecera Caso 5 y `probar("2;2;");`, tanto en inicial como referencia | 4→5 informes; 420→521 bytes. Dos valores positivos repetidos exigen un recuento de 2. |
+| U11L16 | Cabeceras Caso 10–12 y `probar("-14/5;");`, `probar("2+3*4;");`, `probar("(((((((((1)))))))));");` | 9→12 informes; 677→895 bytes. Contrasta división negativa, prioridad y profundidad. |
 
 Conservan íntegros y ordenados todos los informes y llamadas anteriores. El
 logro anterior completo conserva su 1/1 histórico; al adoptar la ampliación
 deja 0/1 ejecuciones del esperado nuevo. Los estados sin comprobar siguen sin
 crédito. No
-acredita el contraste añadido por conservar once, catorce o diez informes.
+acredita el contraste añadido por conservar sus informes anteriores.
 Autoría y cargador contrastan los hashes exactos de ambos bloques completos.
-Estas tres transiciones se verifican como propuestas en memoria; su soporte
-técnico no significa que Work ya haya modificado los assets activos.
+Las propuestas U11L15/L16 conservan fixtures auténticos anteriores y ampliados;
+no requieren que el asset activo permanezca sin integrar. Las pruebas de autoría contrastan
+también los SHA de JSON compacto de la evidencia de Work cuando difieren de
+los fingerprints con framing tipado del cargador: se trata de los mismos
+payloads completos, no de una autorización alternativa. El soporte técnico no
+significa que Work ya haya modificado los assets activos.
+
+El segundo editor U11L15 (`block_0006_0003`) exige una transición indivisible de
+inicial, esperado y referencia. La propuesta anterior que cambiaba sólo la
+salida sigue rechazada. El archivo conserva el inicial anterior íntegro y
+Windows lo restaura al reconstruir la identidad histórica del objetivo. Un
+logro de cuatro informes conserva un único recibo anterior y deja pendiente
+la ejecución del esperado nuevo completo.
+
+Un objetivo nuevo sin borrador usa el inicial de cinco llamadas. Los borradores
+guardados, incluso el documento intencionadamente vacío o una solución de cuatro
+llamadas, conservan su código y entrada. Windows ofrece el fragmento aprobado
+en «Caso adicional de la batería», dentro de la misma lección, con un botón
+para copiarlo. No lo inserta automáticamente ni muestra la solución de las
+consultas. Copiar conserva documento, selección, intentos, logros y marcadores;
+el cuerpo de ese código no se incorpora al guion del lector. Reiniciar sigue
+siendo la acción explícita que sustituye el documento por el inicial nuevo y
+limpia únicamente los recibos del segundo objetivo, conservando el primero.
+El fragmento y el inicial histórico son datos derivados del cargador autenticado;
+no se añaden propiedades de autoría JSON ni otra copia activa del currículo.
 
 El soporte no modifica automáticamente los JSON. Work incorpora las consignas,
 casos y referencias correspondientes después de preparar esta transición y

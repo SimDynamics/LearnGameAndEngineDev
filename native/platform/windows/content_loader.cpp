@@ -162,19 +162,36 @@ void canonical(const IJsonValue& value, std::string& output, unsigned depth = 0)
     }
 }
 std::string fingerprint(const IJsonValue& value) { std::string framing; canonical(value, framing); return sha256(framing); }
-// CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO: full block digests, not a
-// blanket exemption for matching labels. Keep in sync with stable_state_layout.
-constexpr std::string_view math_label_before = "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d";
-constexpr std::string_view math_label_after = "20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b";
-constexpr std::string_view math_label_lesson = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos";
-constexpr std::string_view math_label_identity = "block_0007_0001";
-constexpr auto math_label_puzzle = L"cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__reglas_de_los_caminos_publicos";
+// Full block digests, never a blanket exemption for mathematical labels.
+// Keep these closed reviews in sync with stable_state_layout.py.
+struct ReviewedMathLabel {
+    std::string_view lesson,identity,puzzle,before,after,label_before;
+    unsigned source_index;
+};
+const std::array<ReviewedMathLabel,2>& reviewed_math_labels(){
+    static constexpr std::array<ReviewedMathLabel,2> values{{
+        {"cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos","block_0007_0001",
+            "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__reglas_de_los_caminos_publicos",
+            "ef442a897e83b7550727c623445788d12299b77c9df6bbbf7fd67bbbf4743b1d","20d9dfd3fc510cdcbeb5951b20ac028451e6a2ad402b035d4e70ea20007c649b",
+            "Construcción que termina normalmente",0},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_interprete_con_historial_y_pruebas","block_0008_0002",
+            "cpp_fundamentals__texto_interpretacion_y_flujos__interprete_historial__casos_y_contratos",
+            "fed5b6d2dcfb3321715725fe61a366c8c1f337d1b24a7e3e0b1fd43ef1be0549","d2ec5c530dba31ba0c4d2b3575d609bfbd688fca0dbb4d94a0fd1524a9803187",
+            "100+1;",5}
+    }};return values;
+}
+const ReviewedMathLabel* reviewed_math_label(const JsonObject& block){
+    if(text(block,"type")!="math_puzzle")return nullptr;
+    const auto puzzle=optional_text(block,"id");
+    for(const auto& spec:reviewed_math_labels())if(puzzle==spec.puzzle&&fingerprint(block)==spec.after)return &spec;
+    return nullptr;
+}
 void reject_unmapped_reviewed_math(const JsonArray& pages) {
     for (const auto& page : pages) for (const auto& item : array(page.GetObject(),"blocks")) {
         const auto block = item.GetObject();
         // Unmapped math may contain exact fractional/large source numbers;
         // avoid applying the integer-only state-layout digest to those puzzles.
-        require(text(block,"type") != "math_puzzle" || block.GetNamedString(L"id",L"") != math_label_puzzle || fingerprint(block) != math_label_after,
+        require(reviewed_math_label(block)==nullptr,
             "The reviewed mathematical label requires its published v2 identity and proof");
     }
 }
@@ -241,10 +258,10 @@ std::string state_fingerprint(const JsonObject& original) {
                 object.Remove(L"standardError");
             }
         }
-    } else if (type == "math_puzzle" && fingerprint(value) == math_label_after) {
-        value.GetNamedArray(L"responses").GetAt(0).GetObject().GetNamedArray(L"sources").GetAt(0).GetObject()
-            .Insert(L"label", JsonValue::CreateStringValue(L"Construcción que termina normalmente"));
-        require(fingerprint(value) == math_label_before, "Invalid reviewed mathematical label");
+    } else if (const auto reviewed=reviewed_math_label(value);type == "math_puzzle"&&reviewed) {
+        value.GetNamedArray(L"responses").GetAt(0).GetObject().GetNamedArray(L"sources").GetAt(reviewed->source_index).GetObject()
+            .Insert(L"label", JsonValue::CreateStringValue(winrt::to_hstring(reviewed->label_before)));
+        require(fingerprint(value) == reviewed->before, "Invalid reviewed mathematical label");
     }
     return fingerprint(value);
 }
@@ -306,6 +323,7 @@ void reject_unmapped_reviewed_choices(const JsonArray& pages) {
 struct ReviewedCompiler {
     std::string_view lesson,identity,before,after;
     std::string_view reference_identity,reference_before,reference_after;
+    std::string_view starter_append;
 };
 const std::vector<ReviewedCompiler>& reviewed_compilers() {
     static const std::vector<ReviewedCompiler> values{
@@ -328,7 +346,17 @@ const std::vector<ReviewedCompiler>& reviewed_compilers() {
             "block_0009_0001","70662e3574fbc6db855250d8a9579466ef5827e0ea768477076290e6191b577b","44dc46d8aace0591bb180e11022c9a3b171c20e4b792fdc91da672a6618c0a44"},
         {"cpp_fundamentals__texto_interpretacion_y_flujos__diagnosticar_y_recuperar_hasta_fin_de_operacion","block_0004_0004",
             "dc68860e953dd941d4495f68d295b6a7cbca70fe286ee356675f405bb8bd2502","cf3c9ab1f070195689b4f2bce4bd635ae8368f760384663a2ebecbb5a1f7bfdd",
-            "block_0008_0001","61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6","6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6"}
+            "block_0008_0001","61c61981819c377ca9bc8194d889e9f8abfff6d1b572da2ac96a74b8658aa7e6","6a9952bd00bb00a74a3b51fba27757940cadcb72708a0ea3af5e8447660f18d6"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_interprete_con_historial_y_pruebas","block_0002_0002",
+            "ebf1067d19fbf87bce3ddef2bae69442972df180055d5572faef4473eb76c34e","7b30da24db7834b2b8cc9ca2014b05de9dfeea69637764e8a9834dbe90b69f5b",
+            "block_0009_0001","778473599281a1b2165b4dabb9acedde00904b55d9b907c8dedeb9831de20618","96bcd1d3821c7e80908dd178e855705206d366ead6fbe1831fc891a85969087b"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete","block_0003_0004",
+            "c03fef34aa19969bac10860c7229545551733638be93dcc84104a56e61227b22","247c41d8494fe203bcc83908dacb2c4e563ae6959e81438452991a30c31c561b",
+            "block_0006_0001","14fa456ea18c3478fb9fb2476d70f337bdab5ee3cfad5d6b3224b07bc36db0b2","1e16cb31b5885fa0ae2f3faa6ffd2687391d088f304a035a7cd124278316d2e2"},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_interprete_con_historial_y_pruebas","block_0006_0003",
+            "b7e77211fde9c243eee599d2711c8cf0cb2f11fbb47de347de298147188a2e47","7b9c4229709dc9caf07a9c0bd56bf496e62b0148195f69797290cd8ac63be83f",
+            "block_0010_0001","9f88cd2b376b8b869b2fa3dd6fb569fce823ce3deae64c138a0f9a2c643fcccc","80ee77eccf110d4438d2643a1dd2c2cb9be696d5f50e57ef285b162e37a0a8a1",
+            "    std::cout << \"Caso 5\\n\";\n    probar(\"2;2;\");\n"}
     };return values;
 }
 const ReviewedCompiler* reviewed_compiler_owner(std::string_view lesson,std::string_view identity) {
@@ -643,6 +671,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 "A compiler expansion changed its complete published original");
             CompilerRevision record;record.id=id;record.raw_json=utf8(snapshot.Stringify());record.sha256=fingerprint(snapshot);
             record.previous_payload=reviewed->before;record.current_payload=reviewed->after;
+            if(!reviewed->starter_append.empty())record.starter_append=std::string(reviewed->starter_append);
             require(item.HasKey(L"references")==!reviewed->reference_identity.empty(),"The expanded report and its reference must be revised together");
             if(item.HasKey(L"references")) {
                 const auto references=array(item,"references");require(references.Size()==1,"A compiler expansion has one exact reviewed reference");
@@ -792,10 +821,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         require(blocks.Size() == result.current[p].blocks.size(), "State map block count differs");
         for (std::size_t b = 0; b < result.current[p].blocks.size(); ++b) {
             const auto id = result.current[p].blocks[b]; const auto block = blocks.GetAt(static_cast<unsigned>(b)).GetObject();
-            if (text(block,"type") == "math_puzzle" && fingerprint(block) == math_label_after) {
-                require(result.version == 2 && locale == "es" && lesson_id == math_label_lesson && id == math_label_identity,
+            if (const auto reviewed=reviewed_math_label(block)) {
+                require(result.version == 2 && locale == "es" && lesson_id == reviewed->lesson && id == reviewed->identity,
                     "The reviewed mathematical label belongs to its original Spanish activity");
-                require(editorial.contains(id) && editorial.at(id) == math_label_after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(math_label_before)),
+                require(editorial.contains(id) && editorial.at(id) == reviewed->after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(reviewed->before)),
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
             const auto digest=state_fingerprint(block);
@@ -1125,6 +1154,7 @@ void resolve_addresses(Lesson& lesson) {
     for(auto& revision:layout.compiler_revisions) {
         const auto original=read_block(JsonObject::Parse(key(revision.raw_json)),revision.raw_json);
         require(original.output_check.has_value(),"An original compiler revision needs its exact output contract");
+        revision.previous_initial_code=original.initial_code;
         revision.previous_output_check=*original.output_check;compilers.emplace(revision.id,&revision);
     }
     for(auto& revision:layout.choice_revisions) {

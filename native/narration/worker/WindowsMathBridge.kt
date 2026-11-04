@@ -8,7 +8,7 @@ import kotlin.math.*
 
 /** A platform boundary around the original Android-independent parser and evaluators. */
 internal object WindowsMathBridge {
-    /** CPP_CORRECCION_EDITORIAL_MATH_PUZZLE_CON_ESTADO: one reviewed label,
+    /** Two exact reviewed labels,
      * not a new response contract. These are Android's complete, insertion-order
      * fingerprints; every other field and key order remains significant. The
      * original JSON still supplies the visible labels, narration and validator. */
@@ -18,6 +18,10 @@ internal object WindowsMathBridge {
             "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__reglas_de_los_caminos_publicos" &&
             fingerprint == "5a55c3f981833aabcc7f047765a3db66d1f9e6993bf69a14d69e8ae08c190095")
             "978c6526c69d056658f4ee8455eaa4c37f5e87d97d9feebd5ecf93bac352ed13"
+        else if (block.optString("id") ==
+            "cpp_fundamentals__texto_interpretacion_y_flujos__interprete_historial__casos_y_contratos" &&
+            fingerprint == "a7d0293021148d49a4fe25719292b52dc7becdb63d75b5f84e5dc93575abb77e")
+            "34045982a2a7b895013785d3756ebbee81e4da9b5e08de8cd22f53285c2186fb"
         else fingerprint
     }
     private data class NativeTextSelection(val path: List<MathCursorStep>,val start: Int,val end: Int)

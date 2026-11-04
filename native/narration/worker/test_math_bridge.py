@@ -431,6 +431,52 @@ class WindowsMathBridgeTest(unittest.TestCase):
         changed = self.worker.ask("validate_math",blockJson=json.dumps(reordered,ensure_ascii=False),responsesJson=json.dumps(answers),language="es")
         self.assertNotEqual(expected,changed["contentFingerprint"],"A sorted-key replacement silently changed Android's historical hash contract")
 
+    def test_08c_exact_u11_domain_label_keeps_original_android_identity_and_visible_cards(self):
+        path = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json")
+        lesson = json.loads(subprocess.check_output(["git", "show",
+            "5cfd5514c879341216c1c34c313e34a16f60ea32:" + path], cwd=ROOT))
+        original = lesson["pages"][8]["blocks"][2]
+        self.assertEqual({"id": "dominio", "label": "100+1;"}, original["responses"][0]["sources"][5])
+        current = copy.deepcopy(original);current["responses"][0]["sources"][5]["label"] = "99+2;"
+        def serialized(block): return json.dumps(block, ensure_ascii=False, separators=(",", ":"))
+        def golden(block): return hashlib.sha256(serialized(block).replace("/", "\\/").encode()).hexdigest()
+        before = "34045982a2a7b895013785d3756ebbee81e4da9b5e08de8cd22f53285c2186fb"
+        after = "a7d0293021148d49a4fe25719292b52dc7becdb63d75b5f84e5dc93575abb77e"
+        self.assertEqual(before, golden(original));self.assertEqual(after, golden(current))
+        correct = {"casos": known_answer(original["responses"][0]["validator"])}
+        wrong = copy.deepcopy(correct)
+        wrong["casos"]["pairs"]["dominio"], wrong["casos"]["pairs"]["valida"] = "completa", "limite"
+        partial = copy.deepcopy(correct);del partial["casos"]["pairs"]["dominio"]
+        for answers, accepted in ((correct, True), (wrong, False), (partial, False)):
+            for block in (original, current):
+                snapshot = copy.deepcopy(block);saved = copy.deepcopy(answers)
+                result = self.worker.ask("validate_math", blockJson=serialized(block), responsesJson=serialized(answers), language="es")
+                self.assertEqual(accepted, result["correct"]);self.assertEqual(before, result["contentFingerprint"])
+                self.assertEqual(snapshot, block);self.assertEqual(saved, answers)
+        description = self.worker.ask("describe_math", blockJson=serialized(current), language="es")
+        self.assertEqual(current["responses"][0]["sources"], description["responses"][0]["config"]["sources"])
+        self.assertEqual("99+2;", description["responses"][0]["config"]["sources"][5]["label"])
+        mutations = []
+        for field in ("label", "pair", "id", "feedback"):
+            block = copy.deepcopy(current)
+            if field == "label": block["responses"][0]["sources"][5]["label"] = "99+3;"
+            elif field == "pair":
+                expected = block["responses"][0]["validator"]["expected"]
+                expected["dominio"], expected["valida"] = expected["valida"], expected["dominio"]
+            elif field == "id": block["id"] += "_other"
+            else: block["feedback"]["correct"] += " extra"
+            mutations.append(block)
+        mutations.append({"id": current["id"], **{key: value for key, value in current.items() if key != "id"}})
+        for block in mutations:
+            result = self.worker.ask("validate_math", blockJson=serialized(block), responsesJson=serialized(correct), language="es")
+            self.assertEqual(golden(block), result["contentFingerprint"])
+            self.assertNotEqual(before, result["contentFingerprint"], "The exact U11 label licensed another payload/order change")
+        invalid = copy.deepcopy(current)
+        invalid["responses"][0]["validator"]["expected"]["dominio"] = "completa"
+        with self.assertRaisesRegex(AssertionError, "destino distinto"):
+            self.worker.ask("validate_math", blockJson=serialized(invalid), responsesJson=serialized(correct), language="es")
+
     def test_08b_exact_pedido_label_revision_preserves_response_identity_only(self):
         # Freeze the published source, independently of Work's later integration.
         path = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"

@@ -16,6 +16,7 @@ import validar_json_programacion as contract
 
 BASELINE = "16c497c7751f49d1f3f641cf3937b0275aa62e0f"
 PROPOSAL_BASELINE = "c570ceb3643592d16f46c25969cf82202313efe0"
+PROPOSAL_SOURCE_SHA256 = "83d473a2b10bd8aad9c548e5688df66dc87ea0096b98eb4ed064cdcba961135f"
 PROPOSAL_LESSON = layout._CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion"
 PREFIX = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
 
@@ -118,20 +119,67 @@ class ChoiceOptionRevisionTest(unittest.TestCase):
 
     def test_u11l14_cli_builds_two_real_proposals_without_overwriting_the_active_asset(self):
         source = contract.ROOT / (PREFIX + asset_path(PROPOSAL_LESSON)); original_bytes = source.read_bytes()
+        current = json.loads(original_bytes); layout.validate(current)
         for identity in ("block_0003_0004", "block_0007_0001"):
             with self.subTest(identity=identity), tempfile.TemporaryDirectory() as temporary:
+                spec = layout.CHOICE_OPTION_REVISIONS[PROPOSAL_LESSON, identity]
+                archives = [item for item in current["stateLayout"].get("choiceRevisions", []) if item["id"] == identity]
+                expected = layout.revise_choice_option(current, identity)
+                if archives:
+                    # A published revision is already adopted. Preserve every
+                    # later choice/compiler/editorial edge in the active asset.
+                    self.assertEqual(1, len(archives))
+                    self.assertEqual(spec["full_before"], layout.fingerprint(archives[0]["block"]))
+                    self.assertIn({"id": identity, "beforeSha256": spec["full_before"], "afterSha256": spec["full_after"]},
+                                  current["stateLayout"]["editorial"])
+                    self.assertEqual(current, expected)
+                else:
+                    self.assertEqual(spec["full_before"], layout.fingerprint(block(current, identity)))
+                    self.assertNotEqual(layout.fingerprint(current), layout.fingerprint(expected))
                 output = Path(temporary) / "proposal.json"
                 command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-choice-option", str(source),
                            "--locale", "es", "--base-ref", PROPOSAL_BASELINE, "--identity", identity, "--output", str(output)]
                 result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-                expected = layout.revise_choice_option(json.loads(original_bytes), identity)
                 proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
-                self.assertNotEqual(json.loads(original_bytes), expected)
                 self.assertNotEqual(0, subprocess.run(command, cwd=contract.ROOT, capture_output=True).returncode)
                 self.assertEqual(proposal, output.read_bytes())
                 self.assertNotEqual(0, subprocess.run(command[:-1] + [str(source)], cwd=contract.ROOT, capture_output=True).returncode)
                 self.assertEqual(original_bytes, source.read_bytes())
+
+    def test_u11l14_cli_really_revises_authenticated_historical_snapshots(self):
+        original_bytes = published_bytes(PROPOSAL_LESSON)
+        # This independent byte pin authenticates the complete c570ceb document,
+        # not a reconstruction from the integrated live asset or the allowlist.
+        self.assertEqual(PROPOSAL_SOURCE_SHA256, hashlib.sha256(original_bytes).hexdigest())
+        original = json.loads(original_bytes); layout.validate(original)
+        for identity in ("block_0003_0004", "block_0007_0001"):
+            with self.subTest(identity=identity), tempfile.TemporaryDirectory() as temporary:
+                spec = layout.CHOICE_OPTION_REVISIONS[PROPOSAL_LESSON, identity]
+                self.assertEqual(spec["full_before"], layout.fingerprint(block(original, identity)))
+                expected = revised(PROPOSAL_LESSON, identity)
+                self.assertNotEqual(layout.fingerprint(original), layout.fingerprint(expected))
+                self.assertEqual(spec["full_after"], layout.fingerprint(block(expected, identity)))
+                self.assertEqual([{"id": identity, "block": block(original, identity)}], expected["stateLayout"]["choiceRevisions"])
+                self.assertEqual(original["stateLayout"]["editorial"], expected["stateLayout"]["editorial"][:-1])
+                layout.validate_transition(original, expected)
+                source = Path(temporary) / "historical-source.json"
+                previous = Path(temporary) / "published-reference.json"
+                output = Path(temporary) / "proposal.json"
+                source.write_bytes(original_bytes); previous.write_bytes(original_bytes)
+                command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-choice-option", str(source),
+                           "--previous", str(previous), "--identity", identity, "--output", str(output)]
+                result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
+                self.assertNotEqual(0, subprocess.run(command, cwd=contract.ROOT, capture_output=True).returncode)
+                self.assertEqual(proposal, output.read_bytes())
+                for protected in (source, previous):
+                    overwrite = subprocess.run(command[:-1] + [str(protected)], cwd=contract.ROOT, capture_output=True)
+                    self.assertNotEqual(0, overwrite.returncode)
+                    self.assertEqual(original_bytes, protected.read_bytes())
+                self.assertEqual(original_bytes, source.read_bytes()); self.assertEqual(original_bytes, previous.read_bytes())
+                self.assertEqual(proposal, output.read_bytes())
 
     def test_exact_seven_revisions_keep_all_other_fields_and_historical_addresses(self):
         self.assertEqual(7, len(layout.CHOICE_OPTION_REVISIONS))
