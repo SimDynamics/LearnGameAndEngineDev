@@ -29,12 +29,48 @@ contratos y a los dominios admitidos por cada ruta. El proyecto sigue en desarro
 | Partículas y canales opcionales | Hay [ensayos controlados de desplazamiento procedural por emisor](../native/presentation/windows/smo_benchmark.cpp) y [contratos experimentales de evaluación diferida y canales opcionales](../native/presentation/windows/smo_lazy_task.hpp). No se presentan como un sistema completo de partículas o animación esquelética. |
 | Subdivisión duodecimal | El [ensayo de subdivisión](../native/presentation/windows/smo_subdivision_task.cpp) utiliza una cuadrícula `12^pasos`, de uno a seis pasos, con controles racionales/enteros y comparación exacta de estados, puntos e imagen. Sus [pruebas](../native/presentation/windows/smo_subdivision_task_tests.cpp) comparan variantes y trayectorias en las cuatro APIs. |
 | Instrumentación | Las [métricas de los ensayos](../native/presentation/windows/smo_subdivision_task.hpp) separan preparación, compilación de shaders, carga, calentamiento, conversión, tiempo GPU de cuadro y tiempo de pared con lecturas de retorno. Registran buffers explícitos y pico de RAM del proceso; este último no es la VRAM total. |
-| Pruebas locales de escenas | El autor confirmó el **4 de noviembre de 2026** que se realizaron pruebas locales con escenas de hasta **1920 × 1080 y 2048 cuerpos** ([ruta de escenas](../native/presentation/windows/smo_scene.cpp)). La fuente de esta ejecución es la confirmación directa del autor; esta revisión no recuperó tiempos ni FPS de esa carga. |
+| Pruebas locales de escenas | Se realizaron pruebas locales con escenas de hasta **1920 × 1080 y 2048 cuerpos**, documentadas en el informe histórico del Laboratorio SMO descrito a continuación y confirmadas por el autor el **4 de noviembre de 2026**. Véase la [ruta de escenas](../native/presentation/windows/smo_scene.cpp). |
 
 Estas capacidades forman parte de un motor y laboratorio gráfico experimental
 integrado en la aplicación educativa. El trazado de rayos se implementa mediante
 shaders de cómputo; aquí no se atribuye a núcleos RT dedicados. El alcance de cada
 ensayo y sus comprobaciones se conserva separado de la madurez del conjunto.
+
+## Laboratorio SMO: informe histórico de agrupamiento
+
+Se recuperó un informe histórico de ensayos locales, pegado por el autor en la
+conversación **«game engine con un nuevo lenguague de prog SMO»**, en el mensaje
+identificado internamente como `2c8c20da-3ec9-44b5-8a2e-5ad563fac6e1`. Se conserva
+esta identificación de procedencia; no se publica la conversación completa ni
+su enlace privado.
+
+El informe describe un Laboratorio SMO con **RTX 3070 Ti**, **1920 × 1080**,
+**2048 cuerpos** y **60 segundos por API**. Las siguientes son las medianas de
+tiempo GPU reportadas en ese informe:
+
+| API | Convencional directo (ms GPU) | Convencional agrupado (ms GPU) | SMO agrupado (ms GPU) |
+| --- | --- | --- | --- |
+| Direct3D 11 | 51,40 | 7,93 | 7,83 |
+| Direct3D 12 | 32,30 | 4,23 | 4,23 |
+| Vulkan | 27,42 | 3,76 | 3,76 |
+| OpenGL | 26,87 | 4,19 | 4,21 |
+
+Las tres variantes conservaron resultados equivalentes **dentro de cada API**.
+La reducción principal corresponde al **agrupamiento**: la variante convencional
+agrupada y SMO agrupado presentan tiempos similares. Esta tabla no aísla una
+ventaja exclusiva de SMO o de la base 12 y no representa los FPS globales.
+
+El mismo informe conservó **diferencias de trayectorias entre APIs**, con una
+comprobación fallida visible, y reportó **14 regresiones aprobadas**. Son alcances
+distintos: la coincidencia entre variantes de una misma API no acredita igualdad
+de trayectorias entre backends. El estado de esa comprobación en el HEAD actual
+no se ha reevaluado durante esta revisión.
+
+Las medianas de esta tabla proceden del informe histórico recuperado. No se
+recuperó un archivo externo de stdout de ese ensayo ni se volvió a ejecutarlo
+para preparar este documento. Los ensayos de reutilización por cara y escalado
+F12 que siguen son comparaciones diferentes; sus configuraciones y resultados
+no se extrapolan a esta tabla ni a la comprobación entre APIs.
 
 ## Reutilización por cara: ensayos locales en GPU física
 
