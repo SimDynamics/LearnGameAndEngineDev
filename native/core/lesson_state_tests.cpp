@@ -1041,6 +1041,132 @@ void remainder_editorial_preserves_native_and_imported_state(const std::filesyst
     require(read_bytes(before_path)==before_bytes&&read_bytes(path)==asset,"Remainder editorial import QA changed fixture or curricular bytes");
     std::cout<<"PASS integrated U11L16 exception explanation: authenticated prior/current complete payloads, empty/draft/rejected/correct historical orders, opaque attempts and original compiler draft, read-only preview, real Android XML import/archive and Windows reopen; old narration metadata stays old, with no new heard prefix or execution credit. No synthesis/listening claimed\n";
 }
+void u11_names_preserves_historical_and_added_prediction_state(const std::filesystem::path& base,const std::filesystem::path& before_path){
+    using namespace lgaed;using namespace curriculum;using namespace winrt::Windows::Data::Json;
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_nombres_del_lenguaje_y_tokens_con_texto.json";
+    const auto historical_bytes=read_bytes(before_path),asset=read_bytes(path);
+    require(historical_bytes.size()==36663&&sha256(historical_bytes)=="8a62de3022c0507a12d3cc372e12a92dc69801c7313a657516a7287b343d3003",
+        "The U11 names historical fixture differs from its authenticated 90e510f publication");
+    require(asset.size()==81062&&sha256(asset)=="335036782a5c6eb7d1edd1a60c1b062572a791e8c6e4ce54e14fd25b246df4b0",
+        "The U11 names current fixture differs from the audited Work revision");
+    const auto before=windows::load_lesson(before_path),current=windows::load_lesson(path);
+    require(before.id=="cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto"&&before.id==current.id
+        &&before.locale=="es"&&current.locale=="es"&&before.pages.size()==8&&current.pages.size()==8
+        &&before.state_layout.version==0&&current.state_layout.version==2&&current.compiler_puzzles_required,
+        "The U11 names import lost its unmapped historical owner or current required-compiler family");
+    const auto owner_at=stable_block_position(current,"block_0005_0003"),added_at=stable_block_position(current,"work_u11l17_reserva_textual");
+    require(owner_at&&added_at&&*owner_at==StatePosition{5,4}&&*added_at==StatePosition{6,1},"The U11 names compiler or added prediction moved outside its audited owners");
+    const auto& owner=current.pages[owner_at->page].blocks[owner_at->block];const auto& old_owner=before.pages[5].blocks[3];
+    const auto& added=current.pages[added_at->page].blocks[added_at->block];
+    const auto metadata=windows::parse_lesson_progress_metadata(current.raw_json);const auto& catalog_added=metadata.pages[6].blocks[1];
+    const auto added_namespace=sha256(current.state_layout.lineage+"/work_u11l17_reserva_textual");
+    require(current.state_layout.additions.size()==1&&added.type==BlockType::output_prediction
+        &&added.address.page==8&&added.address.block==0&&added.address.progress_page=="page_0006"&&added.address.addition_namespace==added_namespace
+        &&added.output_comparison==TextComparison::trimmed&&added.answers.size()==1&&added.answers.front().find('\n')!=std::string::npos
+        &&exercise_key(current,added)==exercise_key(metadata,catalog_added)&&catalog_added.address.progress_page=="page_0006"
+        &&activity_prerequisites(current,added)==std::vector<StatePosition>{*owner_at},
+        "The U11 names addition lost its dedicated 8/0 namespace, page-seven progress group or compiler prerequisite");
+    require(owner.type==BlockType::cpp_compiler&&old_owner.type==owner.type&&owner.initial_code==old_owner.initial_code
+        &&owner.output_check&&owner.output_check->cases.size()==1&&owner.output_check->cases.front().standard_input.empty()
+        &&owner.output_check->cases.front().outputs.front().size()==327
+        &&JsonObject::Parse(winrt::to_hstring(old_owner.raw_json)).GetNamedObject(L"outputCheck").Stringify()
+            ==JsonObject::Parse(winrt::to_hstring(owner.raw_json)).GetNamedObject(L"outputCheck").Stringify()
+        &&exercise_key(before,old_owner)==exercise_key(current,owner)&&draft_key("programming",before,old_owner)==draft_key("programming",current,owner),
+        "The U11 names migration changed the original nine-report aggregate objective or compiler draft address");
+    const auto added_key=exercise_key(current,added),editor_key=draft_key("programming",current,owner);
+    StateData historical;save_current_page(historical,before,7);
+    historical.preferences["learning_progress"]["lesson_"+before.id+"_started"]=true;
+    historical.preferences["learning_progress"]["lesson_"+before.id+"_completed"]=true;
+    historical.preferences["u11_names_opaque"]["original"]=std::string(" \t original data\r\n");
+    historical.preferences["u11_names_opaque"]["labels"]=std::vector<std::string>{"conservar"," \t segundo\n"};
+    historical.preferences["attempt_reserve_seconds_test"]["remaining"]=std::int64_t{731};
+    historical.preferences["lesson_narration_settings"]["engine"]=std::string("KOKORO");
+    historical.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string("ef_dora");
+    std::size_t protected_blocks=0,historical_exercises=0;
+    for(const auto& page:current.pages)for(const auto& block:page.blocks){
+        if(block.stable_id==added.stable_id)continue;
+        require(block.address.addition_namespace.empty()&&block.address.page<before.pages.size()
+            &&block.address.block<before.pages[block.address.page].blocks.size(),"An original U11 names block acquired a new or invalid state address");
+        const auto& old=before.pages[block.address.page].blocks[block.address.block];
+        require(old.type==block.type&&exercise_key(before,old)==exercise_key(current,block)&&exercise_key(current,block)!=added_key
+            &&old.code==block.code&&old.initial_code==block.initial_code,"The U11 names addition moved an original response slot or changed a protected program");
+        ++protected_blocks;Response response;response.correct=true;response.raw_json=R"({"incorrectAttempts":3,"opaque":{"original":"U11 names historical QA"}})";
+        if(old.type==BlockType::multiple_choice){require(old.correct_index.has_value(),"A historical U11 names selection lost its answer");response.selected=static_cast<std::int64_t>(*old.correct_index);}
+        else if(old.type==BlockType::inline_fill_code){JsonObject payload=JsonObject::Parse(winrt::to_hstring(response.raw_json));JsonArray answers;
+            for(const auto& answer:old.answers)answers.Append(JsonValue::CreateStringValue(winrt::to_hstring(answer)));payload.Insert(L"answers",answers);response.raw_json=winrt::to_string(payload.Stringify());}
+        else if(old.type==BlockType::fill_code||old.type==BlockType::output_prediction){require(!old.answers.empty(),"A historical U11 names text puzzle lost its answer");response.answer=old.answers.front();}
+        else continue;
+        put_response(historical,before,old,response);++historical_exercises;
+    }
+    require(protected_blocks==31&&historical_exercises==6,"The U11 names historical fixture omitted an original block or quiz response");
+    Draft draft;draft.source=old_owner.initial_code+"\n    // borrador propio conservado\r\n";draft.input=" \t entrada\r\n";
+    draft.selection_start=4;draft.selection_end=9;draft.indentation_json=make_indentation_metadata(draft.source,{});put_draft(historical,editor_key,draft);
+    Response opaque;opaque.correct=true;opaque.answer="Correcto anterior de Android, sin recibo nativo";
+    opaque.raw_json=R"({"incorrectAttempts":2,"opaque":{"receipt":"Android historical result, not Windows execution"}})";put_response(historical,before,old_owner,opaque);
+    const auto historical_compiler_json=string_value(historical,"learning_progress",exercise_key(before,old_owner));
+    // Storage-only bookmarks exercise conservation without asserting playback.
+    auto history=narration::begin({},"u11-names-other-first","names-owner-a",{0,117,0,false},"original other source","names-other-page-a");
+    history=narration::begin(std::move(history),"u11-names-other-second","names-owner-b",{0,239,0,false},"original second source","names-other-page-b");
+    history=narration::begin(std::move(history),"u11-names-historical-page","names-owner-c",{0,317,0,false},"original historical source","names-original-page");
+    narration::write_history(historical,history);validate_lesson_state(historical,before);
+    require(!historical.preferences.contains("native_windows")&&!get_response(historical,current,added),"Preparing the historical U11 names export invented native data or the new answer");
+    const auto progress=[&](const StateData& value,const Lesson& lesson){return catalog_lesson_page_progress(value,lesson,[&](const Block& block){
+        if(block.type==BlockType::cpp_compiler)return windows::compiler_puzzle_completed(value,lesson,block);
+        const auto response=get_response(value,lesson,block);return response&&response->correct;});};
+    require(progress(historical,before).completed==8,"The historical U11 names sample does not cover all eight previous pages");
+    const auto verify=[&](const StateData& value,bool solved){
+        for(const auto& [domain,values]:historical.preferences)for(const auto& [key,item]:values)
+            require(find(value,domain,key)&&*find(value,domain,key)==item,"U11 names adoption/import changed an original answer, opaque receipt, draft, attempts or typed setting");
+        const auto restored=get_draft(value,editor_key,"");require(restored.source==draft.source&&restored.input==draft.input&&restored.indentation_json==draft.indentation_json
+            &&restored.selection_start==draft.selection_start&&restored.selection_end==draft.selection_end&&restored.has_saved,
+            "U11 names import changed exact source/stdin/indentation or selection");
+        require(current_page(value,current)==7&&narration::read_history(value)==history&&catalog_lesson_completed(value,current.id)
+            &&string_value(value,"learning_progress",exercise_key(current,owner))==historical_compiler_json,
+            "U11 names migration changed the core historical page, stored narration or opaque prior achievement");
+        require(!windows::compiler_puzzle_completed(value,current,owner)&&windows::compiler_puzzle_case_count(value,current,owner)==0
+            &&windows::compiler_puzzle_historical_case_count(value,current,owner)==0,"U11 names Android data manufactured native compiler execution credit");
+        const auto pages=progress(value,current);require(pages.total==8&&pages.completed==(solved?7u:6u),
+            "Historical read/completed flags incorrectly completed the required compiler or new page-seven prediction");
+    };
+    auto adopted=historical;validate_lesson_state(adopted,current);require(adopted==historical,"Read-only U11 names adoption validation changed original state");
+    prepare_lesson_state(adopted,current);verify(adopted,false);require(!get_response(adopted,current,added),"Adopting U11 names selected the new prediction");
+    const auto prepared=adopted;prepare_lesson_state(adopted,current);require(adopted==prepared,"U11 names v2 adoption is not idempotent");
+    StateStore native(base/"u11-names-native");(void)native.load();native.save(adopted);require(native.load()==adopted,"U11 names native reopening changed the adopted state");
+    const auto roundtrip=[&](const StateData& source,std::string_view suffix,bool solved){
+        const auto exported=base/("u11-names-export-"+std::string(suffix));export_preferences(exported,source,true);const auto preview=inspect_android_export(exported);
+        require(preview.data==source,"U11 names Android XML inspection changed the exact exported values");
+        validate_lesson_state(preview.data,current);require(preview.data==source,"U11 names read-only import validation changed exported data");
+        const auto destination=base/("u11-names-import-"+std::string(suffix));commit_android_import(preview,destination);StateStore store(destination);auto imported=store.load();
+        prepare_lesson_state(imported,current);validate_lesson_state(imported,current);verify(imported,solved);store.save(imported);const auto reopened=store.load();
+        require(reopened==imported,"U11 names imported state changed on Windows reopening");verify(reopened,solved);
+        for(const auto& file:preview.files)require(sha256(read_bytes(exported/file.relative_path))==file.sha256
+            &&sha256(read_bytes(destination/"state/active/android"/file.relative_path))==file.sha256,"U11 names import changed its source XML or archived original bytes");
+        ++groups;return reopened;
+    };
+    const auto historical_import=roundtrip(historical,"historical",false);require(!get_response(historical_import,current,added),"Importing the previous 31 blocks fabricated an added answer");
+    for(const auto mode:{"empty","draft","incorrect","correct"}){
+        const auto stage=std::string_view(mode);auto sample=adopted;
+        if(stage!="empty"){
+            Response response;response.answer=stage=="draft"?"Lleno: Buffer ocupado\n":added.answers.front();response.correct=stage=="correct";
+            if(stage=="incorrect"){const auto position=response.answer.find("Guardado: v:0:f");require(position!=std::string::npos,"The U11 names prediction lost its discriminating preserved-token line");
+                response.answer.replace(position,std::string("Guardado: v:0:f").size(),"Guardado: n:7:x");}
+            response.raw_json=R"({"incorrectAttempts":2,"opaque":{"source":"new U11 names prediction QA"}})";
+            if(stage=="incorrect")mark_response_reviewed(response,added);put_response(sample,current,added,response);
+        }
+        validate_lesson_state(sample,current);verify(sample,stage=="correct");const auto original=get_response(sample,current,added);
+        const auto reopened=roundtrip(sample,mode,stage=="correct");const auto restored=get_response(reopened,current,added);
+        require(original.has_value()==restored.has_value(),"U11 names prediction import invented or discarded its empty state");
+        if(original)require(restored->raw_json==original->raw_json&&restored->answer==original->answer&&restored->correct==original->correct
+            &&restored->reviewed_answer_identity==original->reviewed_answer_identity&&response_reviewed(*restored,added)==(stage=="incorrect"),
+            "U11 names prediction import regraded its draft/rejection/success or changed opaque attempts");
+        if(stage=="correct"){
+            auto malformed=reopened;auto forged=*restored;forged.answer="Respuesta distinta";put_response(malformed,current,added,forged);
+            const auto retained=malformed;rejects([&]{validate_lesson_state(malformed,current);});require(malformed==retained,"Rejecting a forged U11 names success changed stored data");
+        }
+    }
+    require(read_bytes(before_path)==historical_bytes&&read_bytes(path)==asset,"U11 names conservation QA rewrote its historical fixture or active curriculum");
+    std::cout<<"PASS integrated U11L17 names: authenticated unmapped 31-block history, six exact old quiz responses, opaque unproved compiler achievement and personal draft, v2 adoption/reopen and Android XML archives; added prediction empty/draft/rejected/correct retains namespace8/0 and page-seven progress without invented native execution, answers or listening. Core bookmark conservation does not claim view gate redirection or audio\n";
+}
 void diagnostic_contracts_preserve_native_and_imported_state(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
     const auto folder=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido";
@@ -1170,15 +1296,16 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
 int main(int argc, char** argv) {
     try {
         require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"))
-            ||(argc==4&&std::string_view(argv[2])=="--remainder-editorial"),
-            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions or --remainder-editorial <authenticated before fixture>");
+            ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names")),
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --remainder-editorial <before fixture> or --u11-names <before fixture>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
         if(argc==3){if(std::string_view(argv[2])=="--compiler-expansions")reviewed_compiler_expansions_preserve_execution_history(base);
             else second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
-        if(argc==4){remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
+        if(argc==4){if(std::string_view(argv[2])=="--u11-names")u11_names_preserves_historical_and_added_prediction_state(base,argv[3]);
+            else remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);
@@ -1188,6 +1315,7 @@ int main(int argc, char** argv) {
         second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);
         reviewed_u11_math_label_preserves_native_and_imported_state(base);
         remainder_editorial_preserves_native_and_imported_state(base,std::filesystem::path(LGAED_WORK_EXACT_EDITORIAL_DIR)/"remainder-before.json");
+        u11_names_preserves_historical_and_added_prediction_state(base,LGAED_U11_NAMES_BEFORE_FILE);
         diagnostic_contracts_preserve_native_and_imported_state(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");

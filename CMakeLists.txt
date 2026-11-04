@@ -269,6 +269,11 @@ if(BUILD_TESTING)
     set_tests_properties(native.u11_precision_prediction PROPERTIES TIMEOUT 60)
     add_test(NAME native.prepared_input_predictions COMMAND lgaed_exact_prediction_view_tests --prepared-input)
     set_tests_properties(native.prepared_input_predictions PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_u11_names_integration_view_tests native/presentation/windows/u11_names_integration_view_tests.cpp)
+    target_link_libraries(lgaed_u11_names_integration_view_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_u11_names_integration_view_tests lgaed_cpp_tool_host)
+    add_test(NAME native.u11_names_integration_view COMMAND lgaed_u11_names_integration_view_tests)
+    set_tests_properties(native.u11_names_integration_view PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_executable(lgaed_legacy_response_view_tests native/presentation/windows/legacy_response_view_tests.cpp)
     target_link_libraries(lgaed_legacy_response_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.legacy_response_view COMMAND lgaed_legacy_response_view_tests)
@@ -868,6 +873,18 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
     add_dependencies(lgaed_state_tests lgaed_work_exact_editorial_fixtures)
+    set(LGAED_U11_NAMES_BEFORE_FILE "${CMAKE_CURRENT_BINARY_DIR}/u11-names-fixtures/before.json")
+    add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_names_fixture_source.py"
+            --output "${LGAED_U11_NAMES_BEFORE_FILE}" --git "${GIT_EXECUTABLE}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_names_fixture_source.py"
+        VERBATIM)
+    add_custom_target(lgaed_u11_names_fixture DEPENDS "${LGAED_U11_NAMES_BEFORE_FILE}")
+    add_dependencies(lgaed_state_tests lgaed_u11_names_fixture)
+    target_compile_definitions(lgaed_state_tests PRIVATE LGAED_U11_NAMES_BEFORE_FILE="${LGAED_U11_NAMES_BEFORE_FILE}")
+    add_test(NAME native.u11_names_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
+        --u11-names "${LGAED_U11_NAMES_BEFORE_FILE}")
+    set_tests_properties(native.u11_names_state_import PROPERTIES TIMEOUT 120)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
     add_test(NAME native.u11_starter_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state" --u11-starter)
     add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
@@ -978,6 +995,8 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_math_label_reader_checks DEPENDS LearnGameAndEngineDev
         lgaed_lesson_reader_tests lgaed_lesson_tests lgaed_state_tests
         lgaed_editorial_matching_view_tests lgaed_editorial_return_view_tests)
+    add_custom_target(lgaed_u11_names_checks DEPENDS LearnGameAndEngineDev
+        lgaed_u11_names_integration_view_tests lgaed_lesson_tests lgaed_state_tests)
     add_custom_target(lgaed_curricular_reader_checks DEPENDS LearnGameAndEngineDev
         lgaed_equality_count_reader_tests lgaed_editorial_return_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
