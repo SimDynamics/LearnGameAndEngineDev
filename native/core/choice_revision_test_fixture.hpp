@@ -47,7 +47,10 @@ inline const std::vector<ChoiceRevisionCase>& choice_revision_cases() {
         {"lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json","block_0003_0004",0,
             "Para conservar ese token inicial, que la gramática todavía debe consumir.",nullptr,
             "a2b0f46e6254179eaf9d67047e4c5c6c1dd7acd1807e260a923a24bc44accc9a","cb07aff65f16ac14875e50631d73cd447262afbc2a033cafa9bf5958fefcc8a2",
-            "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación.",true}
+            "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación.",true},
+        {"lesson_una_tabla_persistente_de_nombres.json","block_0000_0003",0,
+            "Conserva el estado de la tabla porque el valor devuelto es neutro.",nullptr,
+            "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e","701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4",nullptr,true}
     };
     return cases;
 }

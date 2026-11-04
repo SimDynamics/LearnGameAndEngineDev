@@ -1,4 +1,4 @@
-"""Seven exact option revisions preserve immutable contracts and editorial history."""
+"""Eight exact option revisions preserve immutable contracts and editorial history."""
 from copy import deepcopy
 from functools import lru_cache
 import hashlib
@@ -18,6 +18,10 @@ BASELINE = "16c497c7751f49d1f3f641cf3937b0275aa62e0f"
 PROPOSAL_BASELINE = "c570ceb3643592d16f46c25969cf82202313efe0"
 PROPOSAL_SOURCE_SHA256 = "83d473a2b10bd8aad9c548e5688df66dc87ea0096b98eb4ed064cdcba961135f"
 PROPOSAL_LESSON = layout._CHOICE_PREFIX + "diagnosticar_y_recuperar_hasta_fin_de_operacion"
+TABLE_BASELINE = "99c24262ce3eda1092d1f634165d663795d4aa28"
+TABLE_SOURCE_SHA256 = "2285e10782905dabcbf06aa1495e4c703acacb8bd37a988749fd0c5777a9da69"
+TABLE_LESSON = layout._CHOICE_PREFIX + "una_tabla_persistente_de_nombres"
+TABLE_IDENTITY = "block_0000_0003"
 PREFIX = "app/src/main/assets/content/es/programming/cpp_fundamentals/"
 
 
@@ -27,7 +31,7 @@ def asset_path(lesson):
 
 @lru_cache(maxsize=None)
 def published_bytes(lesson, locale="es"):
-    baseline = PROPOSAL_BASELINE if lesson == PROPOSAL_LESSON else BASELINE
+    baseline = TABLE_BASELINE if lesson == TABLE_LESSON else PROPOSAL_BASELINE if lesson == PROPOSAL_LESSON else BASELINE
     return subprocess.check_output(["git", "show", baseline + ":" + PREFIX.replace("/es/", "/" + locale + "/") + asset_path(lesson)], cwd=contract.ROOT)
 
 
@@ -60,6 +64,75 @@ def historical_block(document, identity):
 
 
 class ChoiceOptionRevisionTest(unittest.TestCase):
+    def test_u11l18_consultation_revision_changes_only_the_requested_distractor(self):
+        payload = published_bytes(TABLE_LESSON)
+        self.assertEqual(TABLE_SOURCE_SHA256, hashlib.sha256(payload).hexdigest())
+        before = json.loads(payload); layout.validate(before)
+        current = layout.revise_choice_option(before, TABLE_IDENTITY)
+        old, new = block(before, TABLE_IDENTITY), block(current, TABLE_IDENTITY)
+        self.assertEqual("cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e01", old["id"])
+        self.assertEqual("multiple_choice", old["type"])
+        self.assertEqual(1, old["correctIndex"])
+        self.assertEqual("La consulta sigue siendo pura porque devuelve un valor neutro.", old["options"][0])
+        self.assertEqual("Conserva el estado de la tabla porque el valor devuelto es neutro.", new["options"][0])
+        self.assertEqual("1e5b1ffd0e26a558a6ae93a8db16255e4ec748b459c256a27dff25762a89b826",
+                         hashlib.sha256(old["options"][0].encode("utf-8")).hexdigest())
+        self.assertEqual("c1e1fab1e27f3e843c4f214bca70cd46148ed4f1399108bdc49fd4d3e7175d53",
+                         hashlib.sha256(new["options"][0].encode("utf-8")).hexdigest())
+        for actual, expected in ((old, "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e"),
+                                 (new, "701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4")):
+            self.assertEqual(expected, layout.fingerprint(actual))
+        expected = deepcopy(before); block(expected, TABLE_IDENTITY)["options"][0] = new["options"][0]
+        self.assertEqual(expected["pages"], current["pages"])
+        self.assertEqual({key: value for key, value in before.items() if key not in ("pages", "stateLayout")},
+                         {key: value for key, value in current.items() if key not in ("pages", "stateLayout")})
+        self.assertEqual(before["stateLayout"]["editorial"], current["stateLayout"]["editorial"][:-1])
+        for field in ("family", "origin", "current", "additions", "orderRefinements", "retirementHistory"):
+            self.assertEqual(before["stateLayout"].get(field), current["stateLayout"].get(field))
+        self.assertEqual([{"id": TABLE_IDENTITY, "block": old}], current["stateLayout"]["choiceRevisions"])
+        self.assertEqual(old, layout.historical_choice_payload(new))
+        self.assertEqual(current, layout.revise_choice_option(current, TABLE_IDENTITY))
+        layout.validate_transition(before, current)
+
+    def test_u11l18_first_revision_refuses_changed_question_explanation_or_guidance(self):
+        original = published(TABLE_LESSON)
+        for field in ("question", "explanation", "reviewFeedback"):
+            with self.subTest(field=field):
+                before = deepcopy(original); actual = block(before, TABLE_IDENTITY)
+                if field == "reviewFeedback": actual[field][0] += " Texto adicional."
+                else: actual[field] += " Texto adicional."
+                before["stateLayout"]["editorial"].append({"id": TABLE_IDENTITY,
+                    "beforeSha256": layout.fingerprint(block(original, TABLE_IDENTITY)), "afterSha256": layout.fingerprint(actual)})
+                layout.validate(before); untouched = deepcopy(before)
+                with self.assertRaisesRegex(layout.LayoutError, "exact complete published block"):
+                    layout.revise_choice_option(before, TABLE_IDENTITY)
+                self.assertEqual(untouched, before)
+
+    def test_u11l18_cli_keeps_pending_and_future_integrated_source_and_historical_fixture(self):
+        active = contract.ROOT / (PREFIX + asset_path(TABLE_LESSON)); active_bytes = active.read_bytes()
+        live = json.loads(active_bytes); expected_live = layout.revise_choice_option(live, TABLE_IDENTITY)
+        historical_bytes = published_bytes(TABLE_LESSON)
+        self.assertEqual(TABLE_SOURCE_SHA256, hashlib.sha256(historical_bytes).hexdigest())
+        historical = json.loads(historical_bytes)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary); historical_source = directory / "historical-source.json"
+            historical_source.write_bytes(historical_bytes)
+            for name, source, reference, expected in (
+                ("active", active, ["--locale", "es", "--base-ref", TABLE_BASELINE], expected_live),
+                ("historical", historical_source, ["--previous", str(historical_source)], layout.revise_choice_option(historical, TABLE_IDENTITY))):
+                with self.subTest(source=name):
+                    output = directory / (name + "-proposal.json")
+                    command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-choice-option", str(source),
+                               *reference, "--identity", TABLE_IDENTITY, "--output", str(output)]
+                    result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                    proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
+                    self.assertNotEqual(0, subprocess.run(command, cwd=contract.ROOT, capture_output=True).returncode)
+                    self.assertEqual(proposal, output.read_bytes())
+                    self.assertNotEqual(0, subprocess.run(command[:-1] + [str(source)], cwd=contract.ROOT, capture_output=True).returncode)
+                    self.assertEqual(active_bytes, active.read_bytes()); self.assertEqual(historical_bytes, historical_source.read_bytes())
+        self.assertEqual(active_bytes, active.read_bytes())
+
     def test_u11l14_proposals_match_the_exact_requested_fields_and_keep_all_other_bytes(self):
         pins = {
             "block_0007_0001": (1, "5794fa047a8ca524287843d5781a4df11705b7582092345247bd23a4f7538820",
@@ -181,8 +254,8 @@ class ChoiceOptionRevisionTest(unittest.TestCase):
                 self.assertEqual(original_bytes, source.read_bytes()); self.assertEqual(original_bytes, previous.read_bytes())
                 self.assertEqual(proposal, output.read_bytes())
 
-    def test_exact_seven_revisions_keep_all_other_fields_and_historical_addresses(self):
-        self.assertEqual(7, len(layout.CHOICE_OPTION_REVISIONS))
+    def test_exact_eight_revisions_keep_all_other_fields_and_historical_addresses(self):
+        self.assertEqual(8, len(layout.CHOICE_OPTION_REVISIONS))
         for (lesson, identity), spec in layout.CHOICE_OPTION_REVISIONS.items():
             with self.subTest(lesson=lesson, identity=identity):
                 before = published(lesson)

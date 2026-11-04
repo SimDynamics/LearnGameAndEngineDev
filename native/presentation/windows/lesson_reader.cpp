@@ -530,7 +530,7 @@ struct LessonReader::Impl {
                     if(old==legacy.parts.end()||old-legacy.parts.begin()>=legacy_saved->heard_through)break;
                     position.heard_through=static_cast<std::int64_t>(i+1);
                 }
-                // A changed mathematical card is not formatting-equivalent.
+                // A changed choice or mathematical card needs new speech.
                 // Revisit its new speech only when the old pause reached or
                 // passed that exact region. Earlier compatible offsets remain.
                 std::optional<std::size_t> revised_boundary;

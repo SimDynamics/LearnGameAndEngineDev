@@ -806,6 +806,58 @@ struct LessonView {
             }
             if(changed)archives.push_back(std::move(archived));
         }
+        // A reviewed choice owns a complete authenticated original, including
+        // its old response slot. Rebuild its spoken script independently of
+        // any newer selection; the historical summary is new UI, not old audio.
+        previous_scripts=archives;
+        previous_scripts.push_back({identity,reading_regions()});
+        for(std::size_t index=0;index<lesson.pages[page].blocks.size();++index){
+            const auto& current=block(index);if(!current.choice_revision)continue;
+            const auto& revision=*current.choice_revision;auto original=current;
+            original.options=revision.original_options;original.question=revision.original_question;
+            original.correct_index=revision.original_correct_index;original.explanation=revision.original_explanation;
+            original.review_feedback=revision.original_review_feedback;original.review_feedback_options=revision.original_review_feedback_options;
+            original.raw_json=revision.raw_json;original.choice_revision.reset();
+            const auto response=state::get_response(data,lesson,original);
+            const bool solved=response&&response->correct;
+            std::string old_feedback;
+            if(solved)old_feedback="✓ "+verdict_text(true)+(original.explanation.empty()?"":"\n\n"+original.explanation);
+            else if(response&&state::response_reviewed(*response,original)){
+                auto review=state::choice_incorrect_feedback(*response,original);if(review.empty())review=default_review();
+                old_feedback="✗ "+verdict_text(false)+"\n\n"+review;
+            }
+            std::vector<LessonReadingArchive> variants;
+            for(const auto& previous:previous_scripts){
+                const auto question=std::ranges::find_if(previous.regions,[&](const auto& region){
+                    return region.block_index==index&&region.target==find_item(control_id(index,0))&&!region.feedback;
+                });
+                if(question==previous.regions.end())continue; // Hidden/locked activity was never narrated.
+                auto archived=previous;auto feedback_region=*question;
+                feedback_region.key=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+std::to_string(control_id(index,4));
+                feedback_region.anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+"/part/4";
+                feedback_region.target=controls[index].feedback;feedback_region.source_text=old_feedback;
+                feedback_region.feedback=true;feedback_region.correct=solved;feedback_region.solved=solved;
+                reading_context(feedback_region,original);
+                std::erase_if(archived.regions,[&](const auto& region){return region.block_index==index
+                    &&(region.feedback||region.target==find_item(control_id(index,40)));});
+                for(auto& region:archived.regions)if(region.block_index==index){
+                    region.solved=solved;region.correct=false;reading_context(region,original);
+                    if(region.target==find_item(control_id(index,0)))region.source_text=original.question;
+                    for(std::size_t option=0;option<original.options.size();++option)
+                        if(region.target==find_item(control_id(index,21+static_cast<int>(option)*2))){
+                            if(region.source_text!=original.options[option])archived.revised_regions.push_back(region.key);
+                            region.source_text=original.options[option];
+                        }
+                }
+                if(!old_feedback.empty()){
+                    const auto last=std::find_if(archived.regions.rbegin(),archived.regions.rend(),[&](const auto& region){return region.block_index==index;});
+                    archived.regions.insert(last.base(),std::move(feedback_region));
+                }
+                variants.push_back(std::move(archived));
+            }
+            archives.insert(archives.end(),variants.begin(),variants.end());
+            previous_scripts.insert(previous_scripts.end(),std::make_move_iterator(variants.begin()),std::make_move_iterator(variants.end()));
+        }
         return archives;
     }
 

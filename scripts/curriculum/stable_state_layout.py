@@ -165,8 +165,8 @@ def validate_compile_check_contract(block: dict) -> dict | None:
     return spec
 
 
-# CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5 and CPP_PRECISION_EXCEPCIONES_U11L14:
-# seven individually reviewed
+# CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5, CPP_PRECISION_EXCEPCIONES_U11L14
+# and CPP_PRECISION_OPCION_CONSULTA_U11L18: eight individually reviewed
 # Spanish options. A protected digest covers every response/code field, not
 # merely this string. The whole first revision also pins its exact guidance.
 _CHOICE_PREFIX = "cpp_fundamentals__texto_interpretacion_y_flujos__"
@@ -244,6 +244,16 @@ CHOICE_OPTION_REVISIONS = {
             "before": "El ciclo miró una unidad sólo para distinguir final de una operación disponible. La devuelve porque pertenece a la regla que va a interpretar la expresión.",
             "after": "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación.",
         },
+    },
+    (_CHOICE_PREFIX + "una_tabla_persistente_de_nombres", "block_0000_0003"): {
+        "option": 0,
+        "before": "La consulta sigue siendo pura porque devuelve un valor neutro.",
+        "after": "Conserva el estado de la tabla porque el valor devuelto es neutro.",
+        "feedback": None,
+        "full_before": "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e",
+        "full_after": "701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4",
+        "protected_before": "defd38f10fdaf2b5a1da80501b346a0383ec537ed1e884fd5be5e07bf37339f0",
+        "protected_after": "faef1ddda48892fff0bba2e8eccb4de2dc0df0204db7ca5b82137c7d56d78bb7",
     },
 }
 
@@ -463,7 +473,7 @@ def _reviewed_choice(block: dict) -> dict | None:
 
 
 def historical_choice_payload(block: dict) -> dict:
-    """Normalize only seven exact response contracts, without relaxing prose."""
+    """Normalize only eight exact response contracts, without relaxing prose."""
     spec = _reviewed_choice(block)
     if spec is None:
         return block
@@ -1405,7 +1415,7 @@ def revise_choice_option(document: dict, identity: str) -> dict:
             "Prepare the published Spanish family as stateLayout v2 before revising a choice")
     _identity(identity)
     spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
-    require(spec is not None, "The choice option is not one of the seven reviewed activities")
+    require(spec is not None, "The choice option is not one of the eight reviewed activities")
     if identity in _choice_revisions(document):
         return deepcopy(document)
     original = _blocks(document).get(identity)

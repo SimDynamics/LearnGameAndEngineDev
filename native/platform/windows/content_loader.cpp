@@ -293,7 +293,10 @@ const std::vector<ReviewedChoice>& reviewed_choices() {
             "2c203b9684c188f398b35cbcdea5e1ef47001f7c76a84b94df1ff3e5be410863","996400efadbb06a1a18764ee4306065a0d7f2697af3cd863493970744a0b53ce",
             "a2b0f46e6254179eaf9d67047e4c5c6c1dd7acd1807e260a923a24bc44accc9a","cb07aff65f16ac14875e50631d73cd447262afbc2a033cafa9bf5958fefcc8a2",
             "El ciclo miró una unidad sólo para distinguir final de una operación disponible. La devuelve porque pertenece a la regla que va a interpretar la expresión.",
-            "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación."}
+            "El ciclo leyó un token para distinguir el final del texto de la presencia de datos por analizar. Lo devuelve para que la gramática pueda consumirlo al interpretar la operación."},
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres","block_0000_0003",
+            "defd38f10fdaf2b5a1da80501b346a0383ec537ed1e884fd5be5e07bf37339f0","faef1ddda48892fff0bba2e8eccb4de2dc0df0204db7ca5b82137c7d56d78bb7",
+            "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e","701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4"}
     };
     return values;
 }

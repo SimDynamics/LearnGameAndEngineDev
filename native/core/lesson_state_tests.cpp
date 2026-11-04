@@ -479,11 +479,15 @@ void reviewed_order_equivalences_preserve_history(const std::filesystem::path& b
     }
     std::cout<<"PASS five reviewed order equivalents: unchanged keys/provenance, empty/draft/wrong/canonical history, explicit new success, native reopen, Android import and untouched translations\n";
 }
-void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& base) {
+void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& base,bool consult_only=false) {
     using namespace lgaed::curriculum;
     const auto content=std::filesystem::path(lgaed::build::source_root)/"app/src/main/assets/content";
+    require(lgaed::test::choice_revision_cases().size()==8,"The reviewed choice inventory must include the eight closed allowances");
+    std::size_t reviewed=0;
     for(std::size_t index=0;index<lgaed::test::choice_revision_cases().size();++index) {
         const auto& plan=lgaed::test::choice_revision_cases()[index];
+        const bool consult=std::string_view(plan.filename)=="lesson_una_tabla_persistente_de_nombres.json"&&std::string_view(plan.identity)=="block_0000_0003";
+        if(consult_only&&!consult)continue;++reviewed;
         const auto integrated=lgaed::windows::load_lesson(content/"es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
         const auto before=lgaed::test::choice_revision_before(integrated,plan.identity);
         const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);const auto position=stable_block_position(current,plan.identity);
@@ -496,8 +500,24 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
         for(const auto mode:{"draft","wrong","correct"}) {
             StateData data;prepare_lesson_state(data,before);
             data.preferences["choice_opaque"]["keep"]=std::string(" \t preserved \r\n");
+            std::string personal_draft_key;
+            if(consult){
+                require(position->page==0&&position->block==3&&plan.option==0&&old_block.correct_index==1,
+                    "The U11L18 consultation correction moved outside its exact published owner");
+                const auto editor_at=stable_block_position(before,"block_0005_0002");require(editor_at.has_value(),"The U11L18 personal draft owner is missing");
+                const auto& editor=before.pages[editor_at->page].blocks[editor_at->block];personal_draft_key=draft_key("programming",before,editor);
+                Draft draft;draft.source=editor.initial_code+"\n    // borrador personal conservado\r\n";draft.input=" \t entrada propia\r\n";
+                draft.indentation_json=make_indentation_metadata(draft.source,{});draft.selection_start=4;draft.selection_end=11;put_draft(data,personal_draft_key,draft);
+                save_current_page(data,before,7);data.preferences["learning_progress"]["lesson_"+before.id+"_started"]=true;
+                // These are stored legacy positions only. They are not a claim
+                // of played PCM or certificates for the revised option.
+                auto history=lgaed::narration::begin({},"consult-storage-page-a","consult-storage-owner-a",{0,117,0,false},"historical unrelated text A","consult-storage-page-a");
+                history=lgaed::narration::begin(std::move(history),"consult-storage-page-b","consult-storage-owner-b",{1,239,0,false},"historical unrelated text B","consult-storage-page-b");
+                history=lgaed::narration::begin(std::move(history),"consult-storage-page-c","consult-storage-owner-c",{2,317,0,false},old_block.options[0],"consult-storage-page-c");
+                lgaed::narration::write_history(data,history);
+            }
             Response old;old.raw_json=R"({"incorrectAttempts":4,"opaque":{"source":"original choice"}})";
-            old.selected=std::string_view(mode)=="draft"?-1:static_cast<std::int64_t>(std::string_view(mode)=="correct"?*old_block.correct_index:
+            old.selected=std::string_view(mode)=="draft"?(consult?static_cast<std::int64_t>(plan.option):-1):static_cast<std::int64_t>(std::string_view(mode)=="correct"?*old_block.correct_index:
                 plan.option==*old_block.correct_index?(plan.option+1)%old_block.options.size():plan.option);
             old.correct=std::string_view(mode)=="correct";if(std::string_view(mode)=="wrong")mark_response_reviewed(old,old_block);
             put_response(data,original_key,old);const auto original_raw=string_value(data,"learning_progress",original_key);const auto untouched=data;
@@ -529,13 +549,28 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
                 rejects([&]{(void)inspect_android_export(reserved);});
             }
             auto android=data;android.preferences.erase("native_windows");
-            const auto exported=base/("choice-export-"+name);export_preferences(exported,android);const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
+            // The consultation fixture checks exact CR/LF/tab preservation.
+            // Raw CRLF would be normalized by XML before import can retain it.
+            const auto exported=base/("choice-export-"+name);export_preferences(exported,android,consult);const auto source_hash=sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"));
             const auto preview=inspect_android_export(exported);validate_lesson_state(preview.data,current);
             require(get_response(preview.data,current,block)->historical_choice&&string_value(preview.data,"learning_progress",original_key)==original_raw,
                 "Imported choice lost its original blob or was silently promoted to current text");
             commit_android_import(preview,base/("choice-import-"+name));StateStore imported_store(base/("choice-import-"+name));const auto imported=imported_store.load();
             require(string_value(imported,"learning_progress",original_key)==original_raw&&sha256(read_bytes(exported/"shared_prefs/learning_progress.xml"))==source_hash,
                 "Choice import changed original response bytes or its source export");
+            if(consult){
+                require(imported==android,"The U11L18 import changed typed preferences");
+                require(lgaed::narration::read_history(imported)==lgaed::narration::read_history(untouched),
+                    "The U11L18 import changed stored narration positions");
+                require(current_page(imported,current)==7,"The U11L18 import changed the lesson page bookmark");
+                const auto draft=get_draft(imported,personal_draft_key,"");const auto previous_draft=get_draft(untouched,personal_draft_key,"");
+                require(draft.has_saved&&draft.source==previous_draft.source&&draft.input==previous_draft.input&&draft.indentation_json==previous_draft.indentation_json
+                    &&draft.selection_start==previous_draft.selection_start&&draft.selection_end==previous_draft.selection_end,
+                    "The U11L18 choice import changed an independent compiler draft, stdin, indentation or selection");
+                for(const auto& file:preview.files)require(sha256(read_bytes(exported/file.relative_path))==file.sha256
+                    &&sha256(read_bytes(base/("choice-import-"+name)/"state/active/android"/file.relative_path))==file.sha256,
+                    "The U11L18 choice import changed its original XML export or archived bytes");
+            }
             Response selected;selected.selected=static_cast<std::int64_t>(plan.option);selected.correct=evaluate_choice(block,plan.option).correct;
             if(!selected.correct)mark_response_reviewed(selected,block);put_response(reopened,current,block,selected);validate_lesson_state(reopened,current);
             const auto actual=get_response(reopened,current,block);
@@ -560,7 +595,8 @@ void reviewed_choice_revisions_preserve_responses(const std::filesystem::path& b
             ++groups;
         }
     }
-    std::cout<<"PASS seven reviewed choice revisions: old draft/rejection/success text and explanations, opaque history, separate current selection/reset, append-only pins, native reopen and Android import\n";
+    require(reviewed==(consult_only?1u:lgaed::test::choice_revision_cases().size()),"A reviewed choice case was skipped");
+    std::cout<<"PASS "<<reviewed<<" reviewed choice revisions: old draft/rejection/success text and explanations, opaque history, separate current selection/reset, append-only pins, native reopen and Android import; U11L18 also preserves its independent personal draft, typed progress and three storage-only bookmarks, without claiming synthesis or listening\n";
 }
 void reviewed_compiler_expansions_preserve_execution_history(const std::filesystem::path& base) {
     using namespace lgaed;using namespace curriculum;using namespace windows;
@@ -1295,14 +1331,15 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
 }
 int main(int argc, char** argv) {
     try {
-        require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"))
+        require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"||std::string_view(argv[2])=="--u11-consult"))
             ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names")),
-            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --remainder-editorial <before fixture> or --u11-names <before fixture>");
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --remainder-editorial <before fixture> or --u11-names <before fixture>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
-        if(argc==3){if(std::string_view(argv[2])=="--compiler-expansions")reviewed_compiler_expansions_preserve_execution_history(base);
+        if(argc==3){if(std::string_view(argv[2])=="--u11-consult")reviewed_choice_revisions_preserve_responses(base,true);
+            else if(std::string_view(argv[2])=="--compiler-expansions")reviewed_compiler_expansions_preserve_execution_history(base);
             else second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
         if(argc==4){if(std::string_view(argv[2])=="--u11-names")u11_names_preserves_historical_and_added_prediction_state(base,argv[3]);
             else remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}

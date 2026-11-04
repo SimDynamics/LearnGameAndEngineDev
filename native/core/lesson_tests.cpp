@@ -356,6 +356,9 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
         const auto integrated=lgaed::windows::load_lesson(folder/plan.filename);
         const auto before=lgaed::test::choice_revision_before(integrated,plan.identity);
         const auto current=lgaed::test::revise_choice_lesson(before,plan.identity);
+        const auto recovered=lgaed::test::choice_revision_before(current,plan.identity);
+        check(JsonObject::Parse(winrt::to_hstring(recovered.raw_json)).Stringify()==JsonObject::Parse(winrt::to_hstring(before.raw_json)).Stringify(),
+            "An integrated choice fixture did not recover its exact complete previous lesson");
         const auto metadata=lgaed::windows::parse_lesson_progress_metadata(current.raw_json);
         const auto position=stable_block_position(current,plan.identity);check(position.has_value(),"Reviewed choice lost its stable identity");
         const auto& old=before.pages[position->page].blocks[position->block];const auto& block=current.pages[position->page].blocks[position->block];
@@ -480,7 +483,7 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
                 "A later editorial explanation replaced the historical choice snapshot");
         }
     }
-    std::cout<<"PASS seven exact choice revisions (two proposals remain in memory): original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
+    std::cout<<"PASS exact choice revisions, including reviewed in-memory proposals: original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
 }
 void mathematical_puzzle_identity_remains_optional() {
     using namespace lgaed::windows;
