@@ -185,18 +185,111 @@ struct View {
     }
 };
 
+struct SourceCoverage { std::size_t controls = 0, normal_controls = 0, references = 0, digits = 0, colored_references = 0; } source_coverage;
+CHARFORMAT2W character(HWND target, std::size_t at) {
+    CHARRANGE selected{}, one{static_cast<LONG>(at), static_cast<LONG>(at + 1)};
+    SendMessageW(target, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&selected));
+    SendMessageW(target, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&one));
+    CHARFORMAT2W result{}; result.cbSize = sizeof(result);
+    SendMessageW(target, EM_GETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&result));
+    SendMessageW(target, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&selected)); return result;
+}
+bool same_style(const CHARFORMAT2W& before, const CHARFORMAT2W& after, bool pending) {
+    const auto effects = pending ? ~DWORD{CFE_AUTOCOLOR} : ~DWORD{0};
+    return (before.dwEffects & effects) == (after.dwEffects & effects)
+        && before.yHeight == after.yHeight && before.yOffset == after.yOffset
+        && before.bCharSet == after.bCharSet && before.bPitchAndFamily == after.bPitchAndFamily
+        && std::wstring_view(before.szFaceName) == after.szFaceName && before.wWeight == after.wWeight
+        && before.sSpacing == after.sSpacing && before.lcid == after.lcid && before.sStyle == after.sStyle
+        && before.wKerning == after.wKerning && before.bUnderlineType == after.bUnderlineType
+        && before.bAnimation == after.bAnimation && before.bRevAuthor == after.bRevAuthor;
+}
 void source(View& fixture, HWND target, std::string_view authored) {
     check(edit_text(target) == visible(std::string(authored)), "A full assignment question/explanation lost text or displayed backticks");
     const auto regions = lesson_reading_regions(fixture.view);
     check(std::ranges::any_of(regions, [&](const auto& region) { return region.target == target && region.source_text == authored; }),
         "The displayed assignment source differs from its complete reader source");
-    const auto before = fixture.saved(); const auto shown = wide(edit_text(target));
+    const auto before = fixture.saved(); const auto shown = wide(edit_text(target)), raw = wide(authored);
+    const bool high_contrast = reader_theme::palette(target).high_contrast;
+    std::vector<CHARFORMAT2W> original;
+    for (std::size_t at = 0; at < shown.size(); ++at) original.push_back(character(target, at));
+    const auto references = rich_text_reference_ranges(target);
+    std::size_t previous_end = 0, reference_count = 0, digit_count = 0, colored_count = 0;
+    for (const auto& [first, last] : references) {
+        check(first < last && first >= previous_end && last <= shown.size(), "An assignment reference falls outside its actual displayed UTF-16 text");
+        previous_end = last;
+    }
+    const auto reference_at = [&](std::size_t at) { return std::ranges::any_of(references,
+        [&](const auto& range) { return range.first <= at && at < range.second; }); };
+    const auto surface = reader_theme::background(target);
+    const auto background = [&](const CHARFORMAT2W& style) { return (style.dwEffects & CFE_AUTOBACKCOLOR) ? surface : style.crBackColor; };
+    const auto semantic_surface = references.empty() ? surface : background(original[references.front().first]);
+    const auto grays = reader_theme::unread_colors(surface, semantic_surface);
+    for (std::size_t at = 0; at < shown.size(); ++at) {
+        const auto& style = original[at]; const bool reference = reference_at(at), digit = shown[at] >= L'0' && shown[at] <= L'9';
+        check(!(style.dwEffects & CFE_UNDERLINE), "An assignment question or feedback acquired a typographic underline");
+        // These four activities' questions/guides/explanations have no citation
+        // years or chrome counters: every displayed digit is curricular text.
+        if (digit) { check(reference, "An assignment curricular number lacks reference ownership"); ++digit_count; }
+        if (reference) {
+            ++reference_count;
+            if (style.crTextColor != reader_theme::foreground(target)) ++colored_count;
+            if (!high_contrast)
+                check(!(style.dwEffects & CFE_AUTOBACKCOLOR) && style.crBackColor == reader_theme::reference_background(target),
+                    "An assignment technical/numeric reference lacks its exact migrated Android neutral background");
+        }
+    }
+    if (authored.find('`') != authored.npos)
+        check(reference_count > 0, "An explicitly marked assignment source has no actual technical reference ranges");
     CHARRANGE selection{0, static_cast<LONG>(std::min<std::size_t>(3, shown.size()))};
     SendMessageW(target, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&selection));
-    { ReadingShade shade(target, std::string(authored)); shade.read_through(0); shade.read_through(wide(authored).size()); shade.restore(); }
+    const auto verify_ink = [&](std::size_t read_boundary) {
+        check(edit_text(target) == visible(std::string(authored)) && rich_text_reference_ranges(target) == references,
+            "Assignment shading changed its text or technical reference ownership");
+        for (std::size_t at = 0; at < original.size(); ++at) {
+            const auto current = character(target, at); const auto& initial = original[at];
+            const bool pending = at >= read_boundary;
+            check(same_style(initial, current, pending), "Assignment shading changed a glyph's original style, typeface or dimensions");
+            check(background(current) == background(initial)
+                && (current.dwEffects & CFE_AUTOBACKCOLOR) == (initial.dwEffects & CFE_AUTOBACKCOLOR)
+                && ((initial.dwEffects & CFE_AUTOBACKCOLOR) || current.crBackColor == initial.crBackColor),
+                "Assignment reading state changed an original prose or neutral reference background");
+            if (pending) {
+                const auto original_surface = background(initial);
+                const auto gray = original_surface == semantic_surface ? grays.second
+                    : original_surface == surface ? grays.first : reader_theme::unread_color(original_surface);
+                check(current.crTextColor == gray && !(current.dwEffects & CFE_AUTOCOLOR),
+                    "An unread assignment glyph or colored technical phrase escaped the neutral gray policy");
+            } else check(current.crTextColor == initial.crTextColor,
+                "A read/restored assignment glyph did not recover its exact original category ink");
+        }
+        CHARRANGE current{}; SendMessageW(target, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&current));
+        check(current.cpMin == selection.cpMin && current.cpMax == selection.cpMax,
+            "Inspecting assignment ink or applying reading shade changed the native selection");
+    };
+    {
+        ReadingShade shade(target, std::string(authored));
+        check(shade.matches(target, authored), "The actual assignment text cannot map its original narration source");
+        shade.read_through(0); verify_ink(0);
+        // This source projection is independent of ReadingShade's map: these
+        // exact questions/feedback hide only backticks and normalize CRLF.
+        const auto midpoint = raw.size() / 2; std::size_t displayed_midpoint = 0;
+        for (std::size_t at = 0; at < midpoint; ++at)
+            if (raw[at] != L'`' && !(raw[at] == L'\r' && at + 1 < raw.size() && raw[at + 1] == L'\n')) ++displayed_midpoint;
+        check(displayed_midpoint > 0 && displayed_midpoint < shown.size(), "An assignment source lacks a genuine partial-reading boundary");
+        shade.read_through(midpoint); verify_ink(displayed_midpoint);
+        shade.read_through(0); verify_ink(0);
+        shade.read_through(raw.size()); verify_ink(shown.size());
+        // Restore while genuinely dimmed too; a full-read restore alone would
+        // not exercise restoration of the pending suffix.
+        shade.read_through(0); verify_ink(0); shade.restore(); verify_ink(shown.size());
+    }
     CHARRANGE after{}; SendMessageW(target, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&after));
     check(after.cpMin == selection.cpMin && after.cpMax == selection.cpMax && edit_text(target) == visible(std::string(authored))
         && fixture.saved() == before, "Source shading changed assignment text, selection or student state");
+    ++source_coverage.controls; source_coverage.normal_controls += !high_contrast;
+    source_coverage.references += reference_count; source_coverage.digits += digit_count;
+    source_coverage.colored_references += colored_count;
 }
 void feedback(View& fixture, std::size_t index, const curriculum::Block& block, int phase) {
     const auto target = fixture.item(index, 4); const auto regions = lesson_reading_regions(fixture.view);
@@ -484,6 +577,12 @@ void run(const std::filesystem::path& before_path, const std::filesystem::path& 
     }
     check(groups == 16 && state::read_bytes(before_path) == before_bytes && state::read_bytes(after_path) == after_bytes,
         "The assignment editorial regression changed its immutable fixtures or omitted a state");
+    check(source_coverage.controls > 0 && source_coverage.references > 0 && source_coverage.digits > 0
+        && (!source_coverage.normal_controls || source_coverage.colored_references > 0),
+        "Assignment shading coverage omitted actual numeric, technical or originally colored references");
+    std::cout << "PASS assignment source ink: " << source_coverage.controls << " actual question/feedback checks, "
+        << source_coverage.references << " reference glyphs including " << source_coverage.digits << " curricular digits and "
+        << source_coverage.colored_references << " originally colored glyphs; neutral Android backgrounds outside high contrast without underline, pending gray, partial/rewound/full-read and pending restoration, exact styles/text/selection/state\n";
     std::cout << "PASS U11L20 six exact editorial fields: sixteen real native empty/draft/rejected/correct groups; original responses, guides, answers, compiler draft/prerequisites, stored three-page history and attempts retained; full current questions/feedback, exact prior reading scripts/revised anchors, retry and reopen. Synthetic prerequisites/storage bookmarks only; no program execution, PCM, human listening, historical import or full curricular traversal claimed.\n";
 }
 } // namespace
