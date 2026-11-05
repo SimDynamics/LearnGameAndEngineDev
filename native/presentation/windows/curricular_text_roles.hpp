@@ -5,7 +5,7 @@
 namespace lgaed::presentation::technical_prose {
 // Displayed UTF-16 offsets only. Source strings, narration and authored state
 // remain unchanged; visible context must never contain unrevealed solutions.
-struct CurricularRoles { std::vector<Range> code,numbers,neutral_numbers,citations; };
+struct CurricularRoles { std::vector<Range> code,numbers,neutral_numbers,citations,outputs,strings; };
 
 namespace curricular_role_detail {
 inline void merge(std::vector<Range>& ranges) {
@@ -90,6 +90,78 @@ inline bool output_number(std::wstring_view text,Range number,std::span<const Ra
         }
     }
     return has(prefix,LR"((?:\b(?:antes|ahora|before|after|avant|après|resultado|result|résultat|salida|output|sortie)\s*:\s*|\b(?:la\s+)?(?:consola|console|salida|output|sortie|mensaje|message|resultado|result|résultat)\s+(?:muestra|imprime|es|son|contiene|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|produce|produces|produit)\s*)(?:[+−-]?[0-9]+(?:[.,][0-9]+)?[ \t,;]*(?:(?:y|and|et)[ \t]+)?)*$)",true);
+}
+inline bool output_cue(std::wstring_view prefix) {
+    return has(prefix,LR"((?:\b(?:la\s+)?(?:salida|consola|mensaje|resultado|output|console|sortie)\s+(?:(?:exact[oa]|final|esperad[oa])\s+)?(?:(?:debe|puede)\s+)?(?:ser|es|son|mostrar|muestra|imprime|contiene|produce|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|mostrar|imprimir|muestre|muestra|produce)\s+|\b(?:salida|output|sortie)(?:\s+exacta)?\s*[:=]\s*)$)",true);
+}
+inline bool string_cue(std::wstring_view prefix) {
+    return has(prefix,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:\s+de\s+(?:texto|caracteres))?|std::string)\s+(?:(?:exact[oa]|contiene|aporta|conserva|es|con|como)\s+)?$)",true);
+}
+inline std::wstring_view data_sentence(std::wstring_view prefix) {
+    std::size_t first=0;
+    for(std::size_t at=0;at<prefix.size();++at){
+        if(prefix[at]==L'"'||prefix[at]==L'“'||prefix[at]==L'«'){
+            auto end=prefix[at]==L'"'?closed_quote_end(prefix,at,prefix.size()):prefix.find(prefix[at]==L'“'?L'”':L'»',at+1);
+            if(end!=prefix.npos){if(prefix[at]!=L'"')++end;at=end-1;continue;}
+        }
+        if(std::wstring_view(L".!?\n").find(prefix[at])!=prefix.npos)first=at+1;
+    }
+    return prefix.substr(first);
+}
+inline void data_references(CurricularRoles& roles,std::wstring_view text,std::span<const Range> marked,
+        std::span<const Range> protected_ranges) {
+    const auto add=[&](std::vector<Range>& result,std::size_t first,std::size_t last){
+        if(first<last&&last<=text.size()&&!overlaps({first,last},protected_ranges))result.emplace_back(first,last);
+    };
+    // A displayed result block ends at its own blank line. A second result in
+    // the same paragraph is independent; the prose between them is not data.
+    matches(text,LR"((?:\bsalida[^\n:]{0,64}|\bconsola\s+debe\s+mostrar|\bmuestra\s+estas?\s+(?:(?:dos|tres|[0-9]+)\s+)?l[ií]neas)\s*:\s*\n[ \t]*\n)",[&](const auto& match){
+        const auto first=static_cast<std::size_t>(match.position()+match.length());
+        auto last=text.find(L"\n\n",first);if(last==text.npos)last=text.size();
+        add(roles.outputs,first,last);
+    },true);
+    for(const auto range:marked){
+        if(range.first>=range.second||range.second>text.size())continue;
+        const auto prefix=tail(text,range.first,192),fragment=text.substr(range.first,range.second-range.first);
+        if(output_cue(prefix))add(roles.outputs,range.first,range.second);
+        else if(fragment.find(L"::")==fragment.npos&&fragment.find(L':')!=fragment.npos&&
+            has(fragment,LR"(^[^:;{}=<>\n]+:[ \t]*$)")&&
+            !has(data_sentence(prefix),LR"(\b(?:literal|variable|s[ií]mbolo|operador)\b|etiqueta\s+C\+\+)",true)&&
+            (has(data_sentence(prefix),LR"(\b(?:prompt|salida|consola|muestra|mostrar|imprime)\b)",true)||
+                (has(prefix,LR"(\bprompt\b)",true)&&has(data_sentence(prefix),LR"(\bpor\s+ejemplo\s*,?\s*$)",true))))
+            add(roles.outputs,range.first,range.second);
+    }
+    for(std::size_t at=0;at<text.size();++at){
+        if(text[at]!=L'"'&&text[at]!=L'“'&&text[at]!=L'«')continue;
+        auto end=text[at]==L'"'?closed_quote_end(text,at,text.size()):text.find(text[at]==L'“'?L'”':L'»',at+1);
+        if(end==text.npos)continue;if(text[at]!=L'"')++end;
+        const auto prefix=tail(text,at,192);
+        const auto sentence=data_sentence(prefix);
+        if(output_cue(prefix))add(roles.outputs,at,end);
+        else if(string_cue(prefix)||has(sentence,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:s)?|etiquetas?\s+de\s+texto|concaten\w*|std::string)\b)",true)||
+            (has(sentence,LR"(^\s*En\s*$)",true)&&has(prefix,LR"(\bliteral\s+de\s+texto\b)",true)))
+            add(roles.strings,at,end);
+        at=end-1;
+    }
+    // Bare displayed words need a local operation cue and a clear data end.
+    // Do not promote arbitrary prose just because a matching word occurs in
+    // another program or in the answer key.
+    matches(text,LR"((?:\b(?:la\s+)?(?:salida|consola|mensaje)\s+(?:(?:exact[oa]|final|esperad[oa])\s+)?(?:(?:debe|puede)\s+)?(?:ser|es|son|mostrar|muestra|imprime|contiene|produce)\s+|\b(?:se\s+muestra|se\s+imprime|mostrar|imprimir|muestre)\s+|\bliteral\s+(?:contiene|aporta)\s+)([^\n,;.()!?]+))",[&](const auto& match){
+        auto first=static_cast<std::size_t>(match.position(1)),last=first+static_cast<std::size_t>(match.length(1));
+        while(last>first&&space(text[last-1]))--last;
+        const auto value=text.substr(first,last-first);
+        if(value.empty()||value.size()>96||value.find(L'"')!=value.npos||value.find(L'`')!=value.npos||
+            value.find(L"::")!=value.npos||value.find_first_of(L"{}=<>\\")!=value.npos)return;
+        WORD kind=0;const bool starts_capital=GetStringTypeW(CT_CTYPE1,value.data(),1,&kind)&&(kind&C1_UPPER);
+        if(!starts_capital&&!digit(value.front()))return;
+        const auto prefix=tail(text,first,192);
+        // A bare numeric literal is not thereby a character string. Its
+        // existing source/output numeric role remains authoritative.
+        const bool string=string_cue(prefix);
+        if(string&&!starts_capital)return;
+        add(string?roles.strings:roles.outputs,first,last);
+    },true);
+    merge(roles.outputs);merge(roles.strings);subtract(roles.strings,roles.outputs);
 }
 // A complete integer remainder expression has operands on both sides of %.
 // A percentage, decimal, identifier suffix or incomplete group supplies no
@@ -181,9 +253,13 @@ inline CurricularRoles curricular_roles(std::wstring_view text,std::string_view 
         }
     }
     merge(result.code);
+    data_references(result,text,trusted,semantic.protected_ranges);
+    result.code.insert(result.code.end(),result.outputs.begin(),result.outputs.end());
+    result.code.insert(result.code.end(),result.strings.begin(),result.strings.end());
+    merge(result.code);
     result.citations=bibliographic(text,result.code);
     subtract(result.code,result.citations);
-    std::vector<Range> strings;
+    std::vector<Range> strings=result.strings;
     for(std::size_t cursor=0;cursor<text.size();++cursor)if((text[cursor]==L'"'||text[cursor]==L'\'')&&contained({cursor,cursor+1},result.code)){
         const auto end=closed_quote_end(text,cursor,text.size());
         if(end!=text.npos&&contained({cursor,end},result.code)){strings.emplace_back(cursor,end);cursor=end-1;}

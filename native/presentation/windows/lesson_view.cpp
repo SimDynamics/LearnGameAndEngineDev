@@ -239,12 +239,30 @@ bool scrolls_internally(HWND window,int axis) {
     return GetScrollInfo(window,axis,&info) && info.nPage > 0
         && info.nMax - info.nMin + 1 > static_cast<int>(info.nPage);
 }
-// Autosized lesson text hands the wheel to its viewport; overflowing editors
-// and capped consoles retain their own real scrolling.
+// Autosized lesson text hands the wheel to its viewport. An overflowing
+// editor/console consumes only directions in which its own scrollbar can move;
+// reaching either edge must not strand the lesson underneath the pointer.
 LRESULT CALLBACK wheel_proc(HWND window, UINT message, WPARAM wparam, LPARAM lparam,
                             UINT_PTR, DWORD_PTR) {
-    if (message == WM_MOUSEWHEEL && !scrolls_internally(window,SB_VERT))
-        return SendMessageW(GetParent(window), message, wparam, lparam);
+    if (message == WM_MOUSEWHEEL && !(GET_KEYSTATE_WPARAM(wparam)&(MK_CONTROL|MK_SHIFT))) {
+        SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS};
+        const auto delta=GET_WHEEL_DELTA_WPARAM(wparam);
+        const bool range=scrolls_internally(window,SB_VERT)&&GetScrollInfo(window,SB_VERT,&info);
+        const auto last=info.nMax-std::max(0,static_cast<int>(info.nPage)-1);
+        const bool can_move=range&&((delta>0&&info.nPos>info.nMin)||(delta<0&&info.nPos<last));
+        if(delta&&!can_move)return SendMessageW(GetParent(window),message,wparam,lparam);
+        if(delta&&can_move&&std::abs(delta)>=WHEEL_DELTA){
+            POINT before{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+            HWND outer=GetParent(window);while(outer&&!scrolls_internally(outer,SB_VERT))outer=GetParent(outer);
+            SCROLLINFO old_parent{sizeof(old_parent),SIF_POS};if(outer)GetScrollInfo(outer,SB_VERT,&old_parent);
+            const auto result=DefSubclassProc(window,message,wparam,lparam);
+            POINT after{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+            SCROLLINFO new_parent{sizeof(new_parent),SIF_POS};if(outer)GetScrollInfo(outer,SB_VERT,&new_parent);
+            if(before.y==after.y&&(!outer||old_parent.nPos==new_parent.nPos))
+                return SendMessageW(GetParent(window),message,wparam,lparam);
+            return result;
+        }
+    }
     if (message == WM_NCDESTROY) RemoveWindowSubclass(window, wheel_proc, 1);
     return DefSubclassProc(window, message, wparam, lparam);
 }
@@ -354,6 +372,7 @@ struct LessonView {
     enum class DragAxis { pending, lesson_vertical, page_horizontal, editor_vertical, editor_horizontal };
     struct Drag {
         HWND origin = nullptr; POINT start{}, last{}, editor_scroll{};
+        int lesson_scroll = 0;
         WPARAM down_keys = 0; LPARAM down_point = 0;
         ULONGLONG started = 0;
         DragAxis axis = DragAxis::pending;
@@ -422,8 +441,10 @@ struct LessonView {
                 }
                 const auto part=(id-1000)%100;
                 if(current.type==BlockType::multiple_choice&&part>=21&&(part-21)%2==0&&
-                    static_cast<std::size_t>((part-21)/2)<current.options.size())
+                    static_cast<std::size_t>((part-21)/2)<current.options.size()){
                     context.technical_sample=rich_text_naming_choice_samples(current.question,current.options);
+                    context.reference_role=rich_text_choice_reference_role(current.question,text);
+                }
                 if(current.type==BlockType::order_code)for(const auto& fragment:current.fragments){
                     visible_prose+='\n';visible_prose+=fragment;
                 }
@@ -560,13 +581,16 @@ struct LessonView {
             bool editor = false;
             if (rich_control) {
                 CHARRANGE selection{}; SendMessageW(item,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
-                if (!choice_label&&selection.cpMin != selection.cpMax) return {};
                 if (!(GetWindowLongPtrW(item,GWL_STYLE) & ES_READONLY)) {
                     editor = std::ranges::any_of(controls,[&](const auto& vm) { return vm.source == item && vm.source_editor; });
                     if (!editor || hits_text(item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)})) return {};
                 }
+                // A blank-space pan does not edit or collapse an existing
+                // source selection. Hits on actual editable text stay native.
+                if (!editor&&!choice_label&&selection.cpMin != selection.cpMax) return {};
             }
             end_drag(); drag.origin = item; drag.start = {GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};
+            drag.lesson_scroll=scroll;
             drag.down_keys = wparam; drag.down_point = lparam; drag.started = GetTickCount64();
             drag.editor = editor || own_scroll(item,SB_VERT) || own_scroll(item,SB_HORZ);
             drag.text = rich_control && !choice_label && hits_text(item,drag.start);
@@ -600,11 +624,36 @@ struct LessonView {
             if (drag.axis == DragAxis::lesson_vertical) scroll_to(scroll - (point.y - drag.last.y));
             else if (drag.axis == DragAxis::editor_vertical || drag.axis == DragAxis::editor_horizontal) {
                 auto position = drag.editor_scroll;
-                if (drag.axis == DragAxis::editor_vertical) position.y = std::max<LONG>(0,position.y - dy);
+                const auto vertical=drag.axis==DragAxis::editor_vertical;
+                if(vertical){SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE};GetScrollInfo(item,SB_VERT,&range);
+                    // EM_SETSCROLLPOS accepts positions beyond the wheel's
+                    // useful viewport (leaving most of it blank). Keep a pan
+                    // within the published content extent minus its viewport.
+                    const auto last=std::max(range.nMin,range.nMax-static_cast<int>(range.nPage));
+                    position.y=std::clamp<LONG>(drag.editor_scroll.y-dy,range.nMin,last);}
                 else position.x = std::max<LONG>(0,position.x - dx);
                 const auto fill=std::ranges::find_if(controls,[&](const auto& vm){return vm.fill&&vm.fill->window()==item;});
                 if(fill!=controls.end())fill->fill->scroll_horizontal_to(position.x);
                 else SendMessageW(item,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+                if(vertical){POINT after{};SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+                    SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE|SIF_POS};GetScrollInfo(item,SB_VERT,&range);
+                    // EM_SETSCROLLPOS rounds to complete lines. Retain the
+                    // gesture's absolute requested offset so sub-line moves
+                    // accumulate inside the editor instead of leaking into
+                    // the parent at every rounded native step.
+                    const auto first=SendMessageW(item,EM_GETFIRSTVISIBLELINE,0,0);
+                    const auto a=SendMessageW(item,EM_LINEINDEX,first,0);
+                    auto b=SendMessageW(item,EM_LINEINDEX,first+1,0);
+                    if(b<0&&first>0)b=SendMessageW(item,EM_LINEINDEX,first-1,0);
+                    POINTL line_a{},line_b{};
+                    SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&line_a),a);
+                    if(b>=0)SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&line_b),b);
+                    const auto line=std::max<LONG>(1,b>=0?std::abs(line_b.y-line_a.y):1);
+                    const auto requested=drag.editor_scroll.y-dy;
+                    const auto last=range.nMax-std::max(0,static_cast<int>(range.nPage)-1);
+                    const bool edge=requested<after.y?range.nPos<=range.nMin:last-range.nPos<line;
+                    const auto remainder=edge?requested-after.y:0;
+                    scroll_to(drag.lesson_scroll+remainder);}
             }
             drag.last = point; return 0;
         }

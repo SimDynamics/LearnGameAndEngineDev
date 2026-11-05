@@ -70,7 +70,7 @@ void output_spans(HWND host){
         const std::string original=std::string(prefix)+"`Carga lista`, con un espacio.";set_rich_text(edit,original);
         check(edit_text(edit)==std::string(prefix)+"Carga lista, con un espacio.","Output styling rewrote visible text");
         if(!reader_theme::palette().high_contrast){const auto start=static_cast<LONG>(wide(prefix).size());
-            for(LONG i=0;i<11;++i)check(ink(edit,start+i)==RGB(122,195,141),"An output word was lexed as a C++ identifier");
+            for(LONG i=0;i<11;++i)check(ink(edit,start+i)==reader_theme::foreground(edit),"A displayed output word inherited C++ identifier/string ink");
             check(ink(edit,start+11)==reader_theme::foreground(edit),"Output styling colored adjacent punctuation");}
     }
     set_rich_text(edit,"Usa `std::cout` para enviar datos.");

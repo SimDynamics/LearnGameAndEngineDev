@@ -746,6 +746,7 @@ void remainder_visual_profile(std::wstring_view token,bool inspect){
     }
     check(state::sha256(state::read_bytes(source))==asset_hash,"Remainder visual QA changed the curricular asset");
 }
+#include "presentation/windows/console_string_context_view_test.hpp"
 void preview(unsigned page,bool naming=false){
     View fixture(load(naming?"objetos_y_estado/lesson_nombres_con_intencion.json":"objetos_y_estado/lesson_estado_asignacion_y_copia.json"),page-1);
     const auto title=naming?std::wstring(L"LGAED - Opciones de nombres QA"):L"LGAED - Color y resaltado QA - p"+std::to_wstring(page);SetWindowTextW(fixture.host,title.c_str());
@@ -767,6 +768,7 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
         else if(argc==4&&std::string_view(argv[1])=="--duplication-revision")exact_editorial_view(argv[2],argv[3],true);
         else if(argc==4&&std::string_view(argv[1])=="--remainder-revision")exact_editorial_view(argv[2],argv[3],false);
         else if(argc==4&&std::string_view(argv[1])=="--literal-spacing-revision")literal_spacing_editorial_view(argv[2],argv[3]);
+        else if(argc==2&&std::string_view(argv[1])=="--console-string-references")current_console_string_references();
         else if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
         else if(argc==3&&std::string_view(argv[1])=="--preview"){
             const std::string_view page=argv[2];check(page=="4"||page=="6"||page=="7"||page=="9","Preview admits only the actual registered U2 pages 4, 6, 7 and 9");

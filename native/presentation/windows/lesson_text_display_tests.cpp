@@ -24,8 +24,12 @@ COLORREF ink(HWND row,LONG index){
 void colored(HWND row,std::wstring_view part,COLORREF color){
     const auto text=wide(edit_text(row));const auto start=text.find(part);
     require(start!=std::wstring::npos,"Missing tested text");
-    for(std::size_t index=start;index<start+part.size();++index)
-        require(ink(row,static_cast<LONG>(index))==color,"Wrong color at character "+std::to_string(index));
+    for(std::size_t index=start;index<start+part.size();++index){
+        const auto actual=ink(row,static_cast<LONG>(index));
+        if(actual!=color)std::cerr<<"COLOR DIAGNOSTIC source="<<utf8(text)<<" part="<<utf8(part)
+            <<" index="<<index<<" expected="<<color<<" actual="<<actual<<'\n';
+        require(actual==color,"Wrong color at character "+std::to_string(index));
+    }
 }
 void string_prose(HWND host){
     const auto library=LoadLibraryW(L"Msftedit.dll");require(library!=nullptr,"Missing RichEdit");
@@ -41,9 +45,66 @@ void string_prose(HWND host){
     colored(row,LR"txt("std::cout // << \"sí\"")txt",green);colored(row,L" aporta el mensaje.",base);
     set_rich_text(row,"Un literal exacto \"\" representa una cadena vacía.");colored(row,L"\"\"",green);
     set_rich_text(row,"El literal \"sin cerrar no debe colorear todo el párrafo.");colored(row,L"sin cerrar",base);
-    set_rich_text(row,"La salida es `Carga lista`, con un espacio.");colored(row,L"Carga lista",green);colored(row,L", con un espacio.",base);
+    set_rich_text(row,"La salida es `Carga lista`, con un espacio.");colored(row,L"Carga lista",base);colored(row,L", con un espacio.",base);
+    const std::string mixed="El segundo contiene el literal `\"Carga lista\"`, que aporta los caracteres del mensaje.\n\nLa salida es `Carga lista`, con un espacio entre las palabras.";
+    set_rich_text(row,mixed);colored(row,L"\"Carga lista\"",green);colored(row,L"La salida es Carga lista",base);
+    const auto background_at=[&](std::wstring_view token){
+        const auto at=wide(edit_text(row)).find(token);require(at!=std::wstring::npos,"Missing backed data sample");
+        CHARRANGE selected{static_cast<LONG>(at),static_cast<LONG>(at+1)};SendMessageW(row,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        CHARFORMAT2W style{};style.cbSize=sizeof(style);SendMessageW(row,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
+        require(!(style.dwEffects&CFE_UNDERLINE),"A data reference gained an underline");
+        require(reader_theme::palette(row).high_contrast||(style.dwEffects&CFE_AUTOBACKCOLOR)==0,"A data reference lost its existing neutral backdrop");
+        return style.crBackColor;
+    };
+    require(background_at(L"\"Carga lista\"")==background_at(L"Carga lista, con"),"String/output roles use different neutral backdrops");
+    for(const auto option:{"0","Listo0","Listo"}){
+        const std::string question="Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?";
+        RichTextContext context;context.prose=question;context.reference_role=rich_text_choice_reference_role(question,option);
+        require(context.reference_role==RichTextReferenceRole::output,"A real output distractor lost its public question role");
+        set_rich_text(row,option,{},false,RichTextRole::body,"es",{},context);colored(row,wide(option),base);(void)background_at(wide(option));
+    }
+    const std::string output_question="El programa envía un mensaje. ¿Qué salida de texto produce?";
+    for(const auto option:{"¡Hola!","Hola.","Un turno","Una caja","Inicio: 7; fin: 3.","Hola.\nFin: 9","\"Hola.\\nFin: 9\""}){
+        RichTextContext context;context.prose=output_question;context.reference_role=rich_text_choice_reference_role(output_question,option);
+        require(context.reference_role==RichTextReferenceRole::output,"Punctuation, escapes or a line break removed a displayed output alternative's role");
+        set_rich_text(row,option,{},false,RichTextRole::body,"es",{},context);colored(row,wide(option),base);(void)background_at(wide(option));
+    }
+    const std::string long_output=std::string(160,'A')+".\nFin: 9";
+    require(rich_text_choice_reference_role(output_question,long_output)==RichTextReferenceRole::output,"A message's length changed its displayed output role");
+    for(const auto prose:{"Porque no se ejecuta la inserción.","El programa imprime el valor anterior.","Se muestra un diagnóstico.","No produce salida.",
+            "std::cout << \"Hola.\";","return 0;","int total = 7;"})
+        require(rich_text_choice_reference_role(output_question,prose)==RichTextReferenceRole::automatic,
+            "A causal explanation or C++ source statement became a displayed output alternative");
+    const std::string concat="Dos etiquetas de texto contienen \"04\" y \"2\". ¿Qué produce concatenarlas en ese orden?";
+    set_rich_text(row,concat);require(edit_text(row)==concat,"The current concatenation question changed its source");
+    colored(row,L"\"04\"",green);colored(row,L"\"2\"",green);
+    require(background_at(L"\"04\"")==background_at(L"\"2\""),"The current question's two string samples use different neutral backdrops");
+    for(const auto option:{"\"042\"","\"6\""}){
+        RichTextContext context;context.prose=concat;context.reference_role=rich_text_choice_reference_role(concat,option);
+        require(context.reference_role==RichTextReferenceRole::string,"A real concatenation alternative lost its visible string role");
+        set_rich_text(row,option,{},false,RichTextRole::body,"es",{},context);colored(row,wide(option),green);(void)background_at(wide(option));
+    }
+    require(rich_text_choice_reference_role(concat,"Una cantidad entera de valor 42")==RichTextReferenceRole::automatic,
+        "A prose alternative inherited string ink from another option");
+    const std::string blocks="La salida del caso inicial es:\n\nModulo 02\nInicio: 7\nAhora: 10\n\nLa variable `al_inicio` conserva el dato. La salida debe ser:\n\nModulo 02\nInicio: 0\nAhora: 2\n\nConserva los espacios.";
+    set_rich_text(row,blocks);colored(row,L"Modulo 02\nInicio: 7\nAhora: 10",base);colored(row,L"Modulo 02\nInicio: 0\nAhora: 2",base);
+    colored(row,L"al_inicio",RGB(171,141,227));(void)background_at(L"Modulo 02");
+    set_rich_text(row,"Un prompt es una salida. Por ejemplo, `Cantidad: ` puede avisar del dato. Es una salida producida por `std::cout`.");
+    colored(row,L"Cantidad:",base);
+    colored(row,L"std",RGB(171,141,227));colored(row,L"::",RGB(231,155,186));colored(row,L"cout",RGB(171,141,227));
+    (void)background_at(L"Cantidad:");
+    set_rich_text(row,"La consola muestra una cantidad. La etiqueta C++ `salida:` pertenece al código.");
+    colored(row,L"salida",RGB(171,141,227));
+    set_rich_text(row,"La cadena \"Sur\" conserva datos. La frase \"sin salir\" es una cita normal.");
+    colored(row,L"\"Sur\"",green);colored(row,L"\"sin salir\"",base);
+    set_rich_text(row,"El objetivo es:\n\nLeer el apartado\nContinuar con calma\n\nNo es una muestra de consola.");
+    require(rich_text_reference_ranges(row).empty(),"A generic objective block was treated as console output");
+    for(const auto output:{"C++","std::cout","int"}){
+        set_rich_text(row,std::string("La salida es `")+output+"`.");colored(row,wide(output),base);(void)background_at(wide(output));
+        set_rich_text(row,std::string("El literal \"")+output+"\" aporta esos caracteres.");colored(row,wide(output),green);(void)background_at(wide(output));
+    }
     DestroyWindow(row);FreeLibrary(library);
-    std::cout<<"PASS explicit string prose: page 6, quoted operators/escapes, empty/incomplete literals, ordinary quotes, output\n";
+    std::cout<<"PASS explicit string/output prose: real mixed U1 feedback, all output alternatives, quoted concatenation alternatives, independent output blocks and prompt labels; complete existing ink/backdrops, no source changes\n";
 }
 void ordered_text(HWND host){
     const std::vector<std::string> source={"#include <iostream>\nint main() {",

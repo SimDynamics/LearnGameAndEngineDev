@@ -3883,6 +3883,81 @@ void pure_scroll_motion_keeps_native_document(bool tall){
         <<": 48 actual drag moves plus wheel, no native content measurement/resize, exact positions and geometry, synchronous clean drag frames, same HWNDs/text/selection/internal scroll, preserved state and reopen; no timing threshold\n";
 }
 
+void compiler_pointer_scroll_ownership(){
+    const std::string initial=[&]{std::string code="int main() {\n";
+        for(int row=0;row<70;++row)code+="    // línea "+std::to_string(row)+"\n";
+        return code+"    // "+std::string(260,'x')+"\n    return 0;\n}\n";}();
+    Fixture f([](state::StateData& data,const curriculum::Lesson&){
+        data.preferences["compiler_pointer_qa"]["opaque"]=std::string(" \t conservar\r\n");
+    },[&](const curriculum::Lesson&){
+        curriculum::Lesson lesson;lesson.id="qa_compiler_pointer_scroll";lesson.locale="es";lesson.title="Desplazamiento del compilador";
+        curriculum::Page page;page.stable_id="page";curriculum::Block editor;
+        editor.type=BlockType::cpp_compiler;editor.stable_id="source";editor.initial_code=initial;editor.address={0,0,{},{}};page.blocks.push_back(editor);
+        for(int n=0;n<5;++n){curriculum::Block prose;prose.type=BlockType::paragraph;prose.stable_id="tail_"+std::to_string(n);
+            prose.address={0,page.blocks.size(),{},{}};for(int row=0;row<15;++row)prose.text+="Contenido que permite desplazar la lección.\n";
+            page.blocks.push_back(std::move(prose));}
+        lesson.pages.push_back(std::move(page));return lesson;
+    },true);
+    const auto editor=f.control(0,10),pane=descendant_class(f.view,L"LearnGameAndEngineDev.LessonPane");
+    require(editor&&pane&&!IsWindowVisible(f.host),"Compiler pointer QA must use a complete hidden isolated view");
+    f.replace(0,10,initial+"// historial conservado\n");const auto source=f.text(0,10);
+    const auto outer=[&]{SCROLLINFO value{sizeof(value),SIF_POS};require(GetScrollInfo(pane,SB_VERT,&value),"Missing real lesson scrollbar");return value.nPos;};
+    const auto inner=[&]{POINT value{};SendMessageW(editor,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&value));return value;};
+    const auto diagnostic=[&](std::string_view stage){SCROLLINFO info{sizeof(info),SIF_ALL};GetScrollInfo(editor,SB_VERT,&info);
+        const auto position=inner();std::cout<<"INFO compiler pointer "<<stage<<" inner="<<position.x<<','<<position.y
+            <<" range="<<info.nMin<<','<<info.nMax<<" page="<<info.nPage<<" pos="<<info.nPos<<" outer="<<outer()<<'\n';};
+    const auto wheel=[&](int delta){SendMessageW(editor,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(delta)),0);pump(f.host);};
+    const auto blank=[&]{RECT bounds{};GetClientRect(editor,&bounds);
+        for(int y=4;y<bounds.bottom-4;y+=6)for(int x=bounds.right-24;x>bounds.right/2;x-=12)
+            if(!rich_text_hit_test(editor,{x,y}))return POINT{x,y};
+        throw std::runtime_error("The compiler fixture has no genuine blank-space hit");};
+    const CHARRANGE selection{4,12};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    SendMessageW(editor,WM_VSCROLL,SB_TOP,0);SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);
+    const auto before=inner();wheel(-WHEEL_DELTA);
+    require(inner().y>before.y&&outer()==0,"A scrollable compiler failed to consume its own usable wheel direction");
+    SendMessageW(editor,WM_VSCROLL,SB_BOTTOM,0);pump(f.host);const auto bottom=inner();
+    require(bottom.y>0,"The actual source editor has no vertical overflow");diagnostic("before bottom wheel");wheel(-WHEEL_DELTA);diagnostic("after bottom wheel");
+    require(outer()>0&&inner().y==bottom.y,"The mouse wheel stopped at the compiler bottom instead of reaching the lesson");
+    const auto whole_notch=outer();SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);wheel(-WHEEL_DELTA/2);
+    require(outer()==0&&inner().y==bottom.y,"A partial compiler wheel notch escaped its accumulator");wheel(-WHEEL_DELTA/2);
+    require(outer()==whole_notch&&inner().y==bottom.y,"Two half wheel notches lost motion when handed from compiler to lesson");
+    const auto parent_before=outer();wheel(WHEEL_DELTA);
+    require(inner().y<bottom.y&&outer()==parent_before,"The compiler gave away a wheel direction that could still move its own contents");
+    SendMessageW(editor,WM_VSCROLL,SB_TOP,0);pump(f.host);wheel(WHEEL_DELTA);
+    require(outer()<parent_before&&inner().y==0,"The mouse wheel stopped at the compiler top instead of reaching the lesson");
+    // Blank space starts a pan even when the learner has selected code. At an
+    // internal edge its remaining movement belongs to the parent viewport.
+    SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    SendMessageW(editor,WM_VSCROLL,SB_TOP,0);SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);
+    f.drag_control(editor,blank(),{0,-60});
+    CHARRANGE retained{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    require(inner().y>0&&outer()==0&&retained.cpMin==selection.cpMin&&retained.cpMax==selection.cpMax,
+        "A selected blank-space drag could not scroll the compiler's usable inner viewport");
+    SendMessageW(editor,WM_VSCROLL,SB_BOTTOM,0);SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);
+    const auto drag_bottom=inner();f.drag_control(editor,blank(),{0,-72});
+    diagnostic("after selected bottom blank drag");
+    SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&retained));
+    require(outer()>0&&inner().y==drag_bottom.y&&retained.cpMin==selection.cpMin&&retained.cpMax==selection.cpMax
+        &&f.text(0,10)==source,"A blank-space compiler drag blocked at the edge or changed source/selection");
+    // A real glyph stays with native selection, rather than claiming a pan.
+    SendMessageW(editor,WM_VSCROLL,SB_TOP,0);SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);
+    POINTL glyph{};SendMessageW(editor,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&glyph),5);const POINT hit{glyph.x+1,glyph.y+4};
+    require(rich_text_hit_test(editor,hit),"The compiler selection test did not start on a real glyph");
+    const auto old_outer=outer();const auto old_inner=inner();f.drag_control(editor,hit,{80,0});
+    require(outer()==old_outer&&inner().x==old_inner.x&&inner().y==old_inner.y&&f.text(0,10)==source,
+        "A text hit was hijacked by blank-space scrolling");
+    require(SendMessageW(editor,WM_UNDO,0,0),"Pointer routing removed the source Undo transaction");pump(f.host);
+    require(f.text(0,10)==initial,"A pointer gesture edited code or corrupted Undo");
+    require(SendMessageW(editor,EM_REDO,0,0),"Pointer routing removed the source Redo transaction");pump(f.host);
+    require(f.text(0,10)==source,"Redo failed after compiler wheel/pan/selection routing");
+    // An autosized short source has no inner overflow at all.
+    f.replace(0,10,"int main() {}\n");SendMessageW(f.view,WM_VSCROLL,SB_TOP,0);pump(f.host);wheel(-WHEEL_DELTA);
+    require(outer()>0&&inner().y==0,"The fitted compiler swallowed vertical lesson scrolling");
+    const auto saved_state=f.saved();require(saved_state.preferences.at("compiler_pointer_qa")==f.initial_data.preferences.at("compiler_pointer_qa")
+        &&!state::get_response(saved_state,f.lesson,f.lesson.pages[0].blocks[0]),"Pointer scrolling changed unrelated preferences or manufactured an exercise result");
+    f.reopen();require(f.text(0,10)=="int main() {}\n"&&!IsWindowVisible(f.host),"Reopening lost the source draft or exposed a personal window");
+    std::cout<<"PASS actual compiler pointer routing: internal wheel while usable, top/bottom handoff, selected blank-space pan, native text hit, fitted editor, unchanged source/Undo/Redo and isolated reopen\n";
+}
 struct NarrationLayoutTrace {
     unsigned geometry=0,formatting=0,erases=0;
     std::vector<HWND> targets;
@@ -4073,6 +4148,7 @@ int main(int argc,char* argv[]) {
     }
     const bool scroll_repaint_only=argc==2&&std::string_view(argv[1])=="--scroll-repaint";
     const bool scroll_motion_only=argc==2&&std::string_view(argv[1])=="--scroll-motion";
+    const bool compiler_scroll_only=argc==2&&std::string_view(argv[1])=="--compiler-scroll";
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
@@ -4088,7 +4164,7 @@ int main(int argc,char* argv[]) {
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -4101,6 +4177,7 @@ int main(int argc,char* argv[]) {
         if(navigation_geometry_only){completed_compilers_keep_navigation_after_active_content();return 0;}
         if(scroll_repaint_only){simulated_code_and_choice_cards();Fixture fixture;fixture.viewport_layout();fixture.scroll_repaint();return 0;}
         if(scroll_motion_only){pure_scroll_motion_keeps_native_document(false);pure_scroll_motion_keeps_native_document(true);return 0;}
+        if(compiler_scroll_only){compiler_pointer_scroll_ownership();return 0;}
         if(compiler_height_only){native_compiler_short_sources_keep_a_usable_height();return 0;}
         if(narration_repaint_only){narration_checkpoints_do_not_reformat_or_reflow_the_page();return 0;}
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}

@@ -197,14 +197,57 @@ internal object WindowsNarrationSpeechRules {
         "\\bobjetivo(?:\\s+de\\s+(?:esta\\s+)?actividad)?\\s+es|" +
         "\\b(?:debe\\s+)?(?:mostrar|muestra|imprimir|imprime)|\\bresultado\\s+(?:esperado\\s+)?es)\\s*$")
 
+    private val outputListCue = Regex(
+        "(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:muestra(?:n)?|mostrar(?:á|án)?|imprime(?:n)?|imprimir(?:á|án)?|" +
+        "salida|consola|pantalla|prompt|aviso)(?![\\p{L}\\p{M}\\p{N}_])")
+    private val promptTailCue = Regex(
+        "(?iu)^[ \\t]*(?:puede[ \\t]+|sirve[ \\t]+para[ \\t]+)?(?:avisar|avisa|indicar|indica|pedir|pide|solicitar|solicita)\\b")
+    private val explicitSourceCue = Regex(
+        "(?iu)(?:\\b(?:signo|símbolo|simbolo|operador|sentencia|instrucción|instruccion)|" +
+        "\\betiqueta[ \\t]+(?:C\\+\\+|de[ \\t]+(?:sentencia|código|codigo)))" +
+        "(?:[ \\t]+(?:llamad[oa]|denominad[oa]))?[ \\t]*$")
+    private val sourceLabelTail = Regex(
+        "(?iu)^[ \\t]*(?:pertenece|corresponde)[ \\t]+(?:al|a[ \\t]+(?:el|un))[ \\t]+c[oó]digo\\b")
+    private val exitCodePhrase = Regex("(?iu)\\bc[oó]digos?[ \\t]+de[ \\t]+salida\\b")
+
+    /** One local prose sentence, with inline samples hidden from cue detection.
+     * Its bounds are independent of display tint. A cue inside another sample
+     * (for example a C++ name or an output word) must not classify this one. */
+    private fun outputSentence(text: String, opening: Int, closing: Int): Pair<String,String> {
+        val samples = Regex("`[^`]*`")
+        // Mask complete samples BEFORE clipping. Otherwise the 384-unit left
+        // edge can bisect a long earlier sample and expose its trailing word
+        // (such as "consola") as a false prose cue for the next sample.
+        fun masked(source: String) = samples.replace(source) { " ".repeat(it.value.length) }
+        val before = masked(text.substring(0, opening))
+        val after = masked(text.substring(closing))
+        val begin = maxOf(before.indexOfLast { it in ".!?;\r\n" } + 1, opening - 384, 0)
+        val boundary = after.indexOfFirst { it in ".!?;\r\n" }.let { if (it < 0) after.length else it }
+        return before.substring(begin) to after.substring(0, minOf(boundary, 256))
+    }
+
     fun isDisplayedOutputValue(text: String, opening: Int, value: String): Boolean {
         if (!value.any(Char::isLetter) || ':' !in value || "::" in value || "://" in value ||
                 value.any { it in "\\\"'`{}[]();#<>=?" }) return false
-        return outputValueCue.containsMatchIn(text.substring((opening - 160).coerceAtLeast(0), opening))
+        // The normalizer calls this only for a complete single-backtick span.
+        // Keep data such as 7:3 and genuine source labels on the code path;
+        // a local output/prompt sentence can additionally own a list of labels.
+        val closing = opening + value.length + 2
+        if (closing > text.length) return false
+        val (before, after) = outputSentence(text, opening, closing)
+        val prefix = text.substring((opening - 160).coerceAtLeast(0), opening)
+        if (explicitSourceCue.containsMatchIn(prefix) || sourceLabelTail.containsMatchIn(after)) return false
+        if (outputValueCue.containsMatchIn(prefix)) return true
+        // An output label/string is not a C++ statement label. Conversely, the
+        // ordinary name "exit code" must not manufacture an output-data cue.
+        return outputListCue.containsMatchIn(exitCodePhrase.replace(before, " ")) || promptTailCue.containsMatchIn(after)
     }
 
     private val namedLetter = Regex("(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:letra|carácter|caracter)[ \\t]+$")
     private val coordinatedNounPhrase = Regex("(?iu)[ \\t]+(?:el|la|los|las|un|una|unos|unas)[ \\t]+(?=\\p{L})")
+    private val namedLetterClitic = Regex(
+        "(?iu)[ \\t]+(?:lo|la|los|las)[ \\t]+(?:pued(?:o|es|e|en)|pod(?:emos|éis)|deb(?:o|es|e|emos|éis|en))" +
+        "[ \\t]+[\\p{L}\\p{M}]+(?:ar|er|ir)(?=[ \\t.,;:!?]|$)")
 
     /** A named ASCII letter is one technical token; its following colon is prose.
      * Quotes, code and formulas are handled first by the canonical normalizer. */
@@ -213,7 +256,10 @@ internal object WindowsNarrationSpeechRules {
         // In prose, "un carácter y el intento" coordinates two noun phrases;
         // its y is not that character's name. Do not cross punctuation/lines
         // or affect uppercase Y, "letra y es", "letra y:" or explicit code.
-        if (text[index] == 'y' && coordinatedNounPhrase.matchAt(text, index + 1) != null) return false
+        // A clitic plus modal/infinitive ("la letra y la puedes escribir")
+        // instead refers back to the named letter; la is not an article there.
+        if (text[index] == 'y' && coordinatedNounPhrase.matchAt(text, index + 1) != null &&
+                namedLetterClitic.matchAt(text, index + 1) == null) return false
         val next = text.getOrNull(index + 1)
         if (next != null && (next.isLetterOrDigit() || next == '_' ||
                 Character.getType(next) in setOf(Character.NON_SPACING_MARK.toInt(),

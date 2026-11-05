@@ -333,6 +333,7 @@ struct CodeGutter::Impl {
         if(message==WM_MOUSEWHEEL&&!(LOWORD(wp)&(MK_CONTROL|MK_SHIFT))){
             SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE};
             if(GetScrollInfo(window,SB_VERT,&range)&&range.nPage&&range.nMax-range.nMin+1>static_cast<int>(range.nPage)){
+                POINT wheel_before{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&wheel_before));
                 UINT lines=3;SystemParametersInfoW(SPI_GETWHEELSCROLLLINES,0,&lines,0);
                 self.wheel_remainder+=static_cast<short>(HIWORD(wp));
                 const int turns=self.wheel_remainder/WHEEL_DELTA;self.wheel_remainder%=WHEEL_DELTA;
@@ -341,6 +342,14 @@ struct CodeGutter::Impl {
                 // Native smooth-wheel animation can bypass our sibling gutter.
                 // Use its line/page scroll API, then publish the same viewport.
                 if(turns){InvalidateRect(window,nullptr,FALSE);if(self.band_window)InvalidateRect(self.band_window,nullptr,FALSE);self.publish_scroll();}
+                POINT wheel_after{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&wheel_after));
+                // RichEdit may publish one final pixel of scrollbar range
+                // although no further complete text line can move. Decide
+                // from the actual line/page scroll, rather than swallowing a
+                // notch forever at that native boundary.
+                if(turns&&lines&&wheel_before.y==wheel_after.y)
+                    return SendMessageW(GetParent(window),message,
+                        MAKEWPARAM(LOWORD(wp),static_cast<WORD>(turns*WHEEL_DELTA)),lp);
                 return 0;
             }
         }

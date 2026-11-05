@@ -120,10 +120,21 @@ fun main() {
         "Pulsa «Compilar, ejecutar y comprobar». El objetivo de esta actividad es `Llaves: 11`, con salto final opcional.",
         "La salida es `Llaves: 11`.",
         "El programa debe mostrar `Puntos: 3`.",
-        "La salida esperada es `Objetos: 8`.")) {
+        "La salida esperada es `Objetos: 8`.",
+        "Un prompt es un mensaje que indica qué dato espera un programa. Por ejemplo, `Cantidad: ` puede avisar de que se recibirá una cantidad. Es una salida producida por `std::cout`.",
+        "Guarda el estado inicial antes del aumento y muestra el nombre, `Inicio:` y `Ahora:` en tres líneas, con los mismos espacios practicados.",
+        "La consola presenta el mensaje `Cantidad: 7`.",
+        "El programa imprimirá los mensajes `Inicio: 7` y `Ahora: 12`.",
+        "Las instrucciones de salida muestran `Objetos: 8`.",
+        "La consola muestra la etiqueta `Inicio:`.",
+        "El prompt contiene la cadena `Cantidad: `.",
+        "La salida incluye la etiqueta `Inicio:` y la cadena `Llaves: 11`.")) {
         val output = SpanishTechnicalSpeech.prepare(source).text
-        verify("dos puntos" !in output && Regex("(?:Llaves|Puntos|Objetos), ").containsMatchIn(output),
+        verify("dos puntos" !in output && Regex("(?:Llaves|Puntos|Objetos|Cantidad|Inicio|Ahora),").containsMatchIn(output),
             "Output colon was named instead of paused: $source => $output")
+        val undecorated = SpanishTechnicalSpeech.prepare(source.replace("`", "")).text
+        verify("dos puntos" !in undecorated,
+            "An undecorated prose/output colon became a technical symbol: $source => $undecorated")
         val pieces = mutableListOf<Triple<Int,Int,String>>()
         val traced = SpanishTechnicalSpeech.prepareObserved(source) { first, last, value ->
             pieces += Triple(first,last,value)
@@ -131,22 +142,54 @@ fun main() {
         verify(outputCanonical(traced.text) == outputCanonical(output) &&
             outputCanonical(pieces.joinToString("") { it.third }) == outputCanonical(output),
             "Output colon changed observed speech: $source; $pieces")
-        val colon = source.indexOf(':')
-        verify(pieces.any { it.first == colon && it.second == colon + 1 && it.third == ", " } &&
-            pieces.all { it.first in 0..source.length && it.second in it.first..source.length },
+        val outputColons = Regex("`([^`]+)`").findAll(source).filter { "::" !in it.groupValues[1] }
+            .flatMap { span -> span.range.filter { source[it] == ':' }.asSequence() }.toList()
+        verify(outputColons.isNotEmpty() && outputColons.all { colon ->
+            pieces.any { it.first == colon && it.second == colon + 1 && it.third == ", " }
+        } && pieces.all { it.first in 0..source.length && it.second in it.first..source.length },
             "Output colon lost exact source ownership: $source; $pieces")
         val reading = SpanishTechnicalSpeech.prepareForReading(source) { _,_,_ -> }.text
         verify(reading == SpanishTechnicalSpeech.prepareForKokoro(source).text && "dos puntos" !in reading,
             "Foreground/background output-label speech diverged: $source")
     }
     for (source in listOf("El signo `:` separa los campos.", "La etiqueta `salida:` pertenece al código.",
-        "`std::cout << \"Llaves: 11\";`", "`condicion ? uno : dos`")) {
+        "`std::cout << \"Llaves: 11\";`", "`condicion ? uno : dos`",
+        "La salida es `7:3`.", "En la consola, el signo `:` separa los campos.",
+        "La cadena `\"Inicio: 7\"` conserva sus caracteres.",
+        "En el código de salida, la etiqueta `salida:` permite saltar allí.",
+        "La etiqueta C++ `salida:` precede a una sentencia.",
+        "La etiqueta de sentencia `salida:` precede a una instrucción.",
+        "`" + "x".repeat(500) + " consola ` y la etiqueta `salida:` precede a una sentencia.",
+        "La consola presenta un resultado. La palabra `Inicio:` pertenece a una gramática.")) {
         val spoken = SpanishTechnicalSpeech.prepare(source).text
         verify("dos puntos" in spoken, "A genuinely technical colon lost its name: $source => $spoken")
     }
     val namespaced = SpanishTechnicalSpeech.prepare("El objetivo es `std::cout << 11;`.").text
     verify("operador de resolución de ámbito" in namespaced,
         "Output context wrongly turned a real C++ expression into prose: $namespaced")
+
+    // Styling is irrelevant to the conjunction. Only a named/quoted source
+    // letter is a technical y; ordinary coordination keeps its source word.
+    for (source in listOf("Letras y palabras.", "El texto contiene letras y palabras.",
+        "Cada letra y las palabras permanecen.", "La letra y la palabra permanecen.",
+        "Cada carácter y el intento permanecen.")) {
+        val output = SpanishTechnicalSpeech.prepare(source).text
+        verify("i griega" !in output && "y" in output,
+            "An ordinary conjunction became a technical letter: $source => $output")
+        val pieces = mutableListOf<Triple<Int,Int,String>>()
+        val traced = SpanishTechnicalSpeech.prepareObserved(source) { first, last, value -> pieces += Triple(first,last,value) }
+        verify(outputCanonical(traced.text) == outputCanonical(output) &&
+            outputCanonical(pieces.joinToString("") { it.third }) == outputCanonical(output),
+            "Conjunctive y changed observed source ownership: $source")
+        verify(SpanishTechnicalSpeech.prepareForReading(source) { _,_,_ -> }.text == SpanishTechnicalSpeech.prepareForKokoro(source).text,
+            "Conjunctive y differs between immediate and anticipated speech: $source")
+    }
+    for (source in listOf("La letra y es una consonante.", "El carácter y: una letra.",
+        "La letra y la puedes escribir en minúscula.", "El carácter y lo debemos escribir de nuevo.",
+        "La variable `y` contiene 1.", "`int y = 1;` conserva la variable.")) {
+        verify("i griega" in SpanishTechnicalSpeech.prepare(source).text,
+            "A genuinely named C++ letter lost its technical reading: $source")
+    }
 
     // The user's original U2L3 feedback lacks delimiters/terminators at two
     // code/prose boundaries. The Windows parser must stop before Spanish words;

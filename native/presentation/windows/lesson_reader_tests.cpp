@@ -204,6 +204,7 @@ struct Fixture{
 #include "presentation/windows/u11_consult_reader_test.hpp"
 #include "presentation/windows/u11_assignment_reader_test.hpp"
 #include "presentation/windows/u11_literal_spacing_reader_test.hpp"
+#include "presentation/windows/u12_file_format_reader_test.hpp"
 void runtime_stderr_reader_objective(const std::shared_ptr<windows::NarrationWorker>& backend) {
     auto lesson=compiler_model(true);lesson.id="qa_native_reader_runtime_stderr";
     auto& expected=lesson.pages[0].blocks[1].output_check->cases[0];
@@ -2483,6 +2484,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     if(u11_assignment_revision_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
     const bool u11_literal_spacing_only=argc==5&&std::string_view(argv[1])=="--u11-literal-spacing-revision";
     if(u11_literal_spacing_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
+    const bool u12_file_format_only=argc==3&&std::string_view(argv[1])=="--u12-file-format-reader";
+    if(u12_file_format_only&&(std::string_view(argv[2]).size()!=1||argv[2][0]<'0'||argv[2][0]>'2'))return 2;
     const bool current_inline_only=(argc==2||argc==3)&&std::string_view(argv[1])=="--current-inline-feedback";
     std::optional<std::size_t> current_inline_case;
     if(current_inline_only&&argc==3){const std::string_view value=argv[2];
@@ -2498,7 +2501,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
     const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_literal_spacing_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_literal_spacing_only&&!u12_file_format_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -2521,6 +2524,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(u11_consult_revision_only){u11_consult_choice_reader_revision(backend);return 0;}
         if(u11_assignment_revision_only){u11_assignment_editorial_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
         if(u11_literal_spacing_only){u11_literal_spacing_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
+        if(u12_file_format_only){u12_file_format_reader(backend,static_cast<std::size_t>(argv[2][0]-'0'));return 0;}
         if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         // These independent flows have their own selectors. State migration

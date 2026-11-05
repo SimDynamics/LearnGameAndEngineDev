@@ -11,6 +11,7 @@ namespace lgaed::presentation {
 // Android sp at font scale 1 are logical pixels, not Windows points.
 // A role is applied before syntax/emphasis/math formatting, never over it.
 enum class RichTextRole { body, prompt, heading, lesson_title };
+enum class RichTextReferenceRole { automatic, output, string };
 // Authored, currently visible material only. Hidden answers/solutions never
 // supply presentation context; these views do not change narration or state.
 struct RichTextContext {
@@ -19,10 +20,12 @@ struct RichTextContext {
     // A visible exercise can present deliberately invalid technical samples.
     // This adds a backdrop only, without claiming validity or changing ink.
     bool technical_sample = false;
+    RichTextReferenceRole reference_role = RichTextReferenceRole::automatic;
 };
 // Public question and alternatives only; explanatory answer sentences are not
 // name samples. Never accepts or inspects a correct index or hidden feedback.
 [[nodiscard]] bool rich_text_naming_choice_samples(std::string_view question,std::span<const std::string> options);
+[[nodiscard]] RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,std::string_view sample);
 [[nodiscard]] constexpr LONG rich_text_height(RichTextRole role = RichTextRole::body) {
     return 15 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : 18);
 }

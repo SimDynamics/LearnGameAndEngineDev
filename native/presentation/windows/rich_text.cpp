@@ -1061,6 +1061,31 @@ bool rich_text_naming_choice_samples(std::string_view question,std::span<const s
     }
     return true;
 }
+RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,std::string_view sample) {
+    const auto prompt=wide(question),value=wide(sample);
+    if(value.empty())return RichTextReferenceRole::automatic;
+    const bool output=technical_prose::has(prompt,
+        LR"((?:qu[eé]|cu[aá]l(?:es)?)\s+(?:es\s+|son\s+|ser[ií]a\s+)?(?:la\s+)?salida|\bsalida(?:\s+de\s+texto)?\s+(?:produce|muestra)|\bmensaje\s+(?:produce|muestra))",true);
+    if(output){
+        // Alternatives that explain a cause are prose, rather than purported
+        // output. Punctuation, escapes and line breaks can all be data. A
+        // visible source statement or a causal explanation remains distinct;
+        // no solution or correct-index information is consulted.
+        auto sample_text=std::wstring_view(value);
+        while(!sample_text.empty()&&technical_prose::space(sample_text.front()))sample_text.remove_prefix(1);
+        const bool explanation=technical_prose::has(sample_text,
+            LR"(^(?:porque\b|debido\s+a\b|ya\s+que\b|el\s+programa\b|no\s+(?:muestra|produce|compila|hay|se\s+muestra)\b|se\s+|ninguna?\s+salida\b))",true);
+        const bool statement=technical_prose::has(sample_text,
+            LR"(^(?:#\s*(?:include|define)\b|(?:std::)?(?:cout|cerr|clog)\s*<<|return\b[^\n]*;\s*$|(?:const\s+)?(?:int|char|bool|float|double|std::string|auto)\s+[*&]*\s*[A-Za-z_][A-Za-z_0-9]*\s*(?:[=({]|;\s*$)))");
+        if(!explanation&&!statement)
+            return RichTextReferenceRole::output;
+    }
+    const auto end=value.front()==L'"'?technical_prose::closed_quote_end(value,0,value.size()):value.npos;
+    if(end==value.size()&&technical_prose::has(prompt,
+        LR"(\b(?:literal(?:\s+de\s+(?:cadena|texto))?|cadena(?:s)?|etiquetas?\s+de\s+texto|concaten\w*|std::string)\b)",true))
+        return RichTextReferenceRole::string;
+    return RichTextReferenceRole::automatic;
+}
 void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role,
     std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context) {
     std::string displayed;
@@ -1119,8 +1144,17 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     // Resolve prose/code boundaries before any lexical color pass. A classic
     // analyzer can otherwise expand an explicitly isolated operator into the
     // surrounding natural-language words once its backticks are hidden.
-    const auto roles=curricular?technical_prose::curricular_roles(
+    auto roles=curricular?technical_prose::curricular_roles(
         source,locale,semantic,wide(context.prose),wide(context.code),inline_fragments):technical_prose::CurricularRoles{};
+    if(curricular&&!source.empty()&&context.reference_role!=RichTextReferenceRole::automatic){
+        const technical_prose::Range whole{0,source.size()};
+        if(!technical_prose::overlaps(whole,semantic.protected_ranges)){
+            roles.code.push_back(whole);
+            if(context.reference_role==RichTextReferenceRole::output)roles.outputs.push_back(whole);
+            else {roles.strings.push_back(whole);technical_prose::curricular_role_detail::subtract(roles.neutral_numbers,std::span<const technical_prose::Range>(&whole,1));}
+            technical_prose::curricular_role_detail::merge(roles.code);
+        }
+    }
     if(!code)semantic.fragments=roles.code;
     const bool has_background=!reader_theme::palette().high_contrast;
     const auto backed=[&](std::size_t start,std::size_t end){return has_background&&std::ranges::any_of(semantic.fragments,[&](const auto& part){return part.first<=start&&part.second>=end;});};
@@ -1211,7 +1245,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 return start<part.second&&part.first<end;
             });
         };
-        if(intersects(cpp_statements)||intersects(quoted_literals))continue;
+        if(intersects(cpp_statements)||intersects(quoted_literals)||intersects(roles.outputs)||intersects(roles.strings))continue;
         bool standalone_inline=false,embedded_inline=false;
         for(const auto& [first,last]:inline_fragments)if(start<last&&first<end){
             if(first==start&&last==end)standalone_inline=true;
@@ -1259,6 +1293,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             format(edit,first,last,cpp_color(edit,CppInk::string));
         }};
         string_roles(explicit_strings);string_roles(quoted_literals);string_roles(contextual_strings);
+        string_roles(roles.strings);
         for(const auto& [first,last]:prose_language_names){
             format(edit,first,last,role==RichTextRole::body||reader_theme::palette().high_contrast
                 ?reader_theme::foreground(edit):RGB(255,255,255));
@@ -1276,6 +1311,11 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             if(first>=last||last>source.size()||technical_prose::overlaps({first,last},roles.citations))continue;
             format(edit,first,last,reader_theme::foreground(edit));
         }
+        // A result is displayed data, even when its spelling also occurs
+        // inside a C++ literal elsewhere. Its complete existing backdrop is
+        // retained; only the ink returns to the neutral mathematical tint.
+        for(const auto& [first,last]:roles.outputs)
+            if(first<last&&last<=source.size())format(edit,first,last,reader_theme::foreground(edit));
         // Background highlighting and reference ownership are independent of
         // typography. Never introduce underline lines or category-colored fills.
         references=roles.code;
