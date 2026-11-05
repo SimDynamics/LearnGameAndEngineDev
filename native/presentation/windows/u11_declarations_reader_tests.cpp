@@ -70,7 +70,7 @@ const ReaderSpec declarations{
 };
 const ReaderSpec assignments{
     "U11L20", "assignments-reader", "u11-assignment-compiler-reader", "u11_assignments_reader_qa",
-    "lesson_asignaciones_con_anticipacion_limitada.json", "79a337780ed44a749b46e2f9561070887f70614c473361f6c4d076aeb7e8ac0d",
+    "lesson_asignaciones_con_anticipacion_limitada.json", "3b550905c93559ecd2506b2f0c1b49039a375c210dd36e12f60964988cf8e8f4",
     "block_0005_0002", "block_0007_0001", "block_0008_0001", "block_0007_0002",
     5, 7, 8, 206, 12442, assignment_output, assignment_answer,
     "Valor: 6\nValor: 2\nError: Se esperaba ;\nValor: 2\nValor: 2\nAceptadas: 4\nRechazadas: 1\nTabla: a=2 b=2",
