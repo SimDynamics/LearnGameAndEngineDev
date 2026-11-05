@@ -3771,7 +3771,7 @@ struct LessonView {
             refresh_wrap_buttons();mark_dirty();reflow();break;}
         case ActionType::compiler_info:{
             const auto popup=CreatePopupMenu();if(!popup)throw std::runtime_error("Cannot create the compiler information menu");
-            AppendMenuW(popup,MF_STRING|MF_CHECKED,1,L"MSVC C++20 · x64");const auto style=prepare_native_menu(popup,window);RECT bounds{};GetWindowRect(find_item(control_id(action.block,36)),&bounds);
+            AppendMenuW(popup,MF_STRING|MF_CHECKED,1,L"MSVC C++23 · x64");const auto style=prepare_native_menu(popup,window);RECT bounds{};GetWindowRect(find_item(control_id(action.block,36)),&bounds);
             (void)TrackPopupMenuEx(popup,TPM_RETURNCMD|TPM_LEFTALIGN|TPM_TOPALIGN,bounds.left,bounds.bottom,window,nullptr);DestroyMenu(popup);break;}
         case ActionType::editor_menu: code_menu(action.block,false); break;
         case ActionType::console_menu: code_menu(action.block,true); break;

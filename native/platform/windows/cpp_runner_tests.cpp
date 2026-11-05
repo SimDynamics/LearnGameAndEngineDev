@@ -40,12 +40,31 @@ std::string program(std::string_view message) {
     return "#include <iostream>\n\nint main() {\n    std::cout << \"" +
         std::string(message) + "\";\n    return 0;\n}\n";
 }
+std::string cpp23_contract() {
+    return R"cpp(#include <expected>
+#include <iostream>
+#include <utility>
+static_assert(__cplusplus == 202302L, "The educational compiler must expose C++23, not 20 or latest");
+static_assert(_MSVC_LANG == 202302L, "The actual MSVC language mode must be C++23");
+constexpr int selected_phase(int value) {
+    if consteval { return value + 1; }
+    else { return value + 2; }
+}
+static_assert(selected_phase(40) == 41);
+enum class Answer : int { accepted = 42 };
+inline std::expected<int, int> checked_value(int value, bool accept) {
+    if (!accept) return std::unexpected(-9);
+    return selected_phase(value);
+}
+)cpp";
+}
 } // namespace
 
 int main(int argc, char** argv) {
     constexpr std::string_view diagnostic_test = "MSVC tool diagnostics preserve UTF-8 accents while program streams remain byte-exact";
     const bool diagnostic_only = argc == 2 && std::string_view(argv[1]) == "--diagnostic-utf8";
-    if (argc > 1 && !diagnostic_only) return 2;
+    const bool cpp23_only = argc == 2 && std::string_view(argv[1]) == "--cpp23";
+    if (argc > 1 && !diagnostic_only && !cpp23_only) return 2;
     const lgaed::LaunchOptions options{lgaed::ProfileId::Codex,
         L"cpp-runner-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
             std::to_wstring(GetTickCount64()), false};
@@ -67,6 +86,7 @@ int main(int argc, char** argv) {
     unsigned failed = 0;
     const auto test = [&](std::string_view name, const std::function<void()>& action) {
         if (diagnostic_only && name != diagnostic_test) return;
+        if (cpp23_only && !name.starts_with("C++23 ")) return;
         try {
             action();
             ++passed;
@@ -76,6 +96,54 @@ int main(int argc, char** argv) {
             std::cerr << "FAIL " << name << ": " << error.what() << '\n';
         }
     };
+
+    test("C++23 single-file compilation executes consteval/runtime branches and expected success/error", [&] {
+        const auto source = cpp23_contract() + R"cpp(int main() {
+    constexpr int compile_phase = selected_phase(40);
+    int input{};
+    if (!(std::cin >> input)) return 1;
+    const auto accepted = checked_value(input, true), rejected = checked_value(input, false);
+    if (!accepted || rejected || rejected.error() != -9) return 2;
+    std::cout << __cplusplus << ':' << _MSVC_LANG << ':' << compile_phase
+        << ':' << *accepted << ':' << rejected.error() << ':' << std::to_underlying(Answer::accepted);
+}
+)cpp";
+        const auto result = run_cpp(request(source, "40"));
+        successful(result);
+        require(result.execution.stdout_bytes == "202302:202302:41:42:-9:42" && result.execution.stderr_bytes.empty(),
+            "A nominal C++23 flag did not provide the exact standard, library or distinct runtime semantics");
+        require(read(result.run_directory / L"main.cpp") == source && read(result.run_directory / L"stdin.bin") == "40",
+            "The C++23 single-file run rewrote the student's source or input");
+    });
+
+    test("C++23 multi-file compilation uses the same exact language and library contract in both objects", [&] {
+        auto value = request("", "40");
+        value.project_files = {{"contract.hpp", cpp23_contract()},
+            {"calculation.cpp", "#include \"contract.hpp\"\nstd::expected<int,int> calculate(int value) { return checked_value(value, true); }\n"},
+            {"main.cpp", R"cpp(#include "contract.hpp"
+std::expected<int,int> calculate(int);
+int main() {
+    constexpr int compile_phase = selected_phase(40);
+    int input{};
+    if (!(std::cin >> input)) return 1;
+    const auto accepted = calculate(input), rejected = checked_value(input, false);
+    if (!accepted || rejected || rejected.error() != -9) return 2;
+    std::cout << __cplusplus << ':' << _MSVC_LANG << ':' << compile_phase
+        << ':' << *accepted << ':' << rejected.error() << ':' << std::to_underlying(Answer::accepted);
+}
+)cpp"}};
+        value.source_files = {"main.cpp", "calculation.cpp"};
+        const auto original = value.project_files;
+        const auto result = run_cpp(value);
+        successful(result);
+        require(result.execution.stdout_bytes == "202302:202302:41:42:-9:42" && result.execution.stderr_bytes.empty(),
+            "The multi-file path used a different standard or failed C++23 across separately compiled objects");
+        for (const auto& [name, text] : original)
+            require(read(result.run_directory / L"project" / std::filesystem::path(name)) == text,
+                "The C++23 multi-file run changed an authored project file");
+        require(value.project_files == original && read(result.run_directory / L"stdin.bin") == "40",
+            "The C++23 multi-file run changed the original request or input");
+    });
 
     test(diagnostic_test, [&] {
         const auto valid_utf8 = [](std::string_view bytes) {

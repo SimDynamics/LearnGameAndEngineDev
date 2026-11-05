@@ -209,6 +209,7 @@ class WorkerDependenciesTest(unittest.TestCase):
             self.assertEqual(command[0], "powershell.exe")
             self.assertIn(str(root / "scripts/windows/Resolve-NativeTools.ps1"), command[-1])
             self.assertEqual(tools["compiler"], expected["compiler"])
+            self.assertEqual(tools["cpp"], {"standard": 23, "msvcStandardOption": "/std:c++23preview"})
             self.assertEqual(tools["environment"]["PATH"], "fresh-helper-path")
         payload["tools"]["MSVCToolset"] = "0.0.0"
         with patch.object(build, "ROOT", root), \
@@ -218,6 +219,38 @@ class WorkerDependenciesTest(unittest.TestCase):
         source = inspect.getsource(build.launcher)
         self.assertNotIn("vcvars64", source)
         self.assertNotIn("vswhere", source)
+
+    def test_launcher_rejects_missing_or_ambiguous_cpp_mode_before_tool_selection(self):
+        root, _, tools = self.native_fixture()
+        versions = json.loads(tools["manifest"].read_text(encoding="utf-8"))
+        for profile in (None, [], {}, {"standard": 20, "msvcStandardOption": "/std:c++20"},
+                        {"standard": 23.0, "msvcStandardOption": "/std:c++23preview"},
+                        {"standard": 23, "msvcStandardOption": "/std:c++23"},
+                        {"standard": 23, "msvcStandardOption": "/std:c++latest"},
+                        {"standard": 23, "msvcStandardOption": "/std:c++23preview /Od"}):
+            with self.subTest(profile=profile):
+                invalid = dict(versions)
+                if profile is None:
+                    invalid.pop("cpp", None)
+                else:
+                    invalid["cpp"] = profile
+                tools["manifest"].write_text(json.dumps(invalid), encoding="utf-8")
+                with patch.object(build, "ROOT", root), \
+                     patch.object(build.subprocess, "check_output", side_effect=AssertionError("invalid mode must fail before tool selection")):
+                    with self.assertRaisesRegex(RuntimeError, "manifest C\\+\\+23 profile"):
+                        build.launcher_native_tools()
+
+    def test_launcher_fingerprint_separates_cpp_modes_without_changing_source_or_manifest(self):
+        _, _, tools = self.native_fixture()
+        home = self.complete_jdk()
+        source = tools["manifest"].parents[1] / "native/narration/worker_launcher.cpp"
+        first = build.launcher_fingerprint(source, home, tools)
+        for profile in ({"standard": 20, "msvcStandardOption": "/std:c++23preview"},
+                        {"standard": 23, "msvcStandardOption": "/std:c++latest"}):
+            with self.subTest(profile=profile):
+                changed = {**tools, "cpp": profile}
+                self.assertNotEqual(first, build.launcher_fingerprint(source, home, changed))
+        self.assertEqual(first, build.launcher_fingerprint(source, home, tools))
 
     def native_setup_output(self, tools, **overrides):
         values = {"PATH": "pinned-msvc-and-sdk-path", "VCToolsInstallDir": str(tools["compiler"].parents[3]),
@@ -265,6 +298,9 @@ class WorkerDependenciesTest(unittest.TestCase):
              patch.object(build, "launcher_native_environment", return_value={}), \
              patch.object(build.subprocess, "run", side_effect=fake_compile) as compiler:
             self.assertEqual(build.launcher(home / "bin/java.exe"), binary)
+            command = compiler.call_args.args[0]
+            self.assertEqual([argument for argument in command if argument.startswith("/std:")], ["/std:c++23preview"])
+            self.assertIn("/Zc:__cplusplus", command)
             first = (output / "launcher-build.sha256").read_text()
             build.launcher(home / "bin/java.exe")
             self.assertEqual(compiler.call_count, 1)

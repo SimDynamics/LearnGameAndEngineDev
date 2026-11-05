@@ -156,7 +156,7 @@ foreach ($command in $commands) {
         $item.LastWriteTimeUtc = $epoch
         ++$changedObjects
     }
-    # C++20 scanning has its own header edges. Recreate those too, rather than
+    # C++ module scanning has its own header edges. Recreate those too, rather than
     # retaining an empty scan graph after the ordinary object is rebuilt.
     $scan = $object + '.ddi'
     if (Test-Path -LiteralPath $scan -PathType Leaf) {

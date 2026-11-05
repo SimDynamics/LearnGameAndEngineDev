@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 
+static_assert(__cplusplus == 202302L && _MSVC_LANG == 202302L,
+    "The Windows JVM launcher must use the same exact C++23 profile as the application.");
+
 namespace {
 std::string utf8(const std::wstring& value) {
     if (value.empty()) return {};

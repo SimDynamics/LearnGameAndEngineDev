@@ -905,12 +905,24 @@ def host_sources() -> list[Path]:
     return sources
 
 
+def launcher_cpp_profile(versions: dict) -> dict:
+    """Select the exact C++23 mode verified for the pinned stable MSVC."""
+    profile = versions.get("cpp")
+    if (not isinstance(profile, dict) or type(profile.get("standard")) is not int or
+        profile["standard"] != 23 or profile.get("msvcStandardOption") != "/std:c++23preview"):
+        # The pinned compiler ignores /std:c++23 and c++latest enables a later
+        # draft. Neither is a substitute for the requested C++23 profile.
+        raise RuntimeError("Windows launcher requires the manifest C++23 profile /std:c++23preview")
+    return {"standard": profile["standard"], "msvcStandardOption": profile["msvcStandardOption"]}
+
+
 def launcher_native_tools() -> dict:
     """Use the same installation selector as CMake, including direct Python builds."""
     manifest = ROOT / "toolchains/windows.versions.json"
     versions = json.loads(manifest.read_text(encoding="utf-8"))
     if versions.get("schemaVersion") != 1:
         raise RuntimeError("Unsupported Windows toolchain manifest")
+    cpp = launcher_cpp_profile(versions)
     native = versions["visualStudio"]
     for key in ("msvcToolset", "windowsSdk"):
         if not re.fullmatch(r"\d+(?:\.\d+)+", native[key]):
@@ -941,7 +953,7 @@ def launcher_native_tools() -> dict:
     for path in (batch, compiler, rc):
         if not path.is_file():
             raise RuntimeError(f"Missing pinned Windows launcher tool: {path}")
-    return {"manifest": manifest, "versions": native, "batch": batch, "compiler": compiler,
+    return {"manifest": manifest, "versions": native, "cpp": cpp, "batch": batch, "compiler": compiler,
             "sdk_root": sdk_root, "rc": rc,
             "environment": {key.upper(): value for key, value in resolved["environment"].items()}}
 
@@ -980,7 +992,10 @@ def launcher_fingerprint(source: Path, home: Path, tools: dict) -> str:
     # servicing version and the actual rc.exe bytes must invalidate the wrapper.
     inputs = [source, tools["manifest"], tools["compiler"], tools["rc"],
               *[home / name for name in ("release", "include/jni.h", "include/win32/jni_md.h")]]
-    return hashlib.sha256((str(home) + "\n".join(str(path) + ":" + digest(path) for path in inputs)).encode()).hexdigest()
+    profile = tools["cpp"]
+    mode = (f"native-launcher-v2\ncpp-standard={profile['standard']}\n"
+            f"msvc-standard-option={profile['msvcStandardOption']}\n/Zc:__cplusplus\n")
+    return hashlib.sha256((mode + str(home) + "\n".join(str(path) + ":" + digest(path) for path in inputs)).encode()).hexdigest()
 
 
 def launcher(java: Path) -> Path:
@@ -994,7 +1009,7 @@ def launcher(java: Path) -> Path:
     stamp = OUT / "launcher-build.sha256"
     if not output.is_file() or not stamp.is_file() or stamp.read_text() != signature:
         environment = launcher_native_environment(tools)
-        command = [str(tools["compiler"]),"/nologo","/std:c++20","/EHsc","/W4","/utf-8","/MD",
+        command = [str(tools["compiler"]),"/nologo",tools["cpp"]["msvcStandardOption"],"/Zc:__cplusplus","/EHsc","/W4","/utf-8","/MD",
             f"/I{home / 'include'}",f"/I{home / 'include/win32'}",str(source),
             f"/Fo{OUT / 'worker_launcher.obj'}",f"/Fe{output}"]
         subprocess.run(command,env=environment,check=True,cwd=ROOT)

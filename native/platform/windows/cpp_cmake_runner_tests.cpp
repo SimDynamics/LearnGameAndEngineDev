@@ -2,6 +2,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
+#include "native_build_config.hpp"
 #include <windows.h>
 #include <fstream>
 #include <iostream>
@@ -10,6 +11,8 @@
 #include <future>
 #include <thread>
 #include <exception>
+#include <map>
+#include <string_view>
 
 namespace {
 void check(bool value,const std::string& reason){if(!value)throw std::runtime_error(reason);}
@@ -22,15 +25,25 @@ bool visible_tool_console(){bool visible=false;EnumWindows([](HWND window,LPARAM
 },reinterpret_cast<LPARAM>(&visible));return visible;}
 std::string read(const std::filesystem::path& path){std::ifstream file(path,std::ios::binary);check(static_cast<bool>(file),"Read the existing owned CMake fixture");return std::string((std::istreambuf_iterator<char>(file)),{});}
 struct OwnedQa {
-    std::filesystem::path root,parent;bool removed=false;
-    explicit OwnedQa(const std::filesystem::path& value):root(value),parent(std::filesystem::weakly_canonical(value.parent_path())){
+    std::filesystem::path root,owned;bool removed=false;
+    explicit OwnedQa(const std::filesystem::path& value):root(value){
         check(root.is_absolute()&&root.parent_path().filename()==L"qa"&&root.filename().wstring().starts_with(L"cmake-runner-"+std::to_wstring(GetCurrentProcessId())+L"-")&&!std::filesystem::exists(root),
             "CMake QA cleanup must own a new isolated profile");
+        lgaed::state::require_safe_path(root);
+        std::filesystem::create_directories(lgaed::state::native_io_path(root.parent_path()));
+        lgaed::state::require_safe_path(root.parent_path());
+        check(std::filesystem::create_directory(lgaed::state::native_io_path(root)),"CMake QA cleanup must create its own new profile");
+        // MSIX can redirect this new child while its pre-existing parent stays
+        // physical. Pin the exact created directory, not the parent's old view.
+        owned=std::filesystem::weakly_canonical(root);
+        check(owned.filename()==root.filename()&&owned.parent_path().filename()==L"qa","The created CMake QA profile changed its identity");
+        lgaed::state::require_safe_path(owned);
     }
     void finish(){
         if(removed)return;
         const auto resolved=std::filesystem::weakly_canonical(root);
-        check(resolved.parent_path()==parent&&resolved.filename()==root.filename(),"Refuse cleanup outside this exact isolated CMake QA profile");
+        check(resolved==owned,"Refuse cleanup outside this exact isolated CMake QA profile");
+        lgaed::state::require_safe_path(root);
         lgaed::state::require_safe_path(resolved);
         for(const auto& item:std::filesystem::recursive_directory_iterator(lgaed::state::native_io_path(resolved)))lgaed::state::require_safe_path(item.path());
         std::filesystem::remove_all(lgaed::state::native_io_path(resolved));removed=true;
@@ -38,9 +51,114 @@ struct OwnedQa {
     }
     ~OwnedQa() noexcept(false){if(!removed&&std::uncaught_exceptions()==0)finish();}
 };
+std::string utf8(std::wstring_view text){
+    const auto size=WideCharToMultiByte(CP_UTF8,WC_ERR_INVALID_CHARS,text.data(),static_cast<int>(text.size()),nullptr,0,nullptr,nullptr);
+    check(size>0,"Cannot encode a pinned historical toolchain path");std::string result(static_cast<std::size_t>(size),'\0');
+    check(WideCharToMultiByte(CP_UTF8,WC_ERR_INVALID_CHARS,text.data(),static_cast<int>(text.size()),result.data(),size,nullptr,nullptr)==size,
+        "Cannot encode the complete historical toolchain path");return result;
 }
-int main(){using namespace lgaed;using namespace windows;try{
+void write(const std::filesystem::path& path,std::string_view bytes){
+    std::filesystem::create_directories(path.parent_path());std::ofstream file(path,std::ios::binary);
+    check(static_cast<bool>(file)&&static_cast<bool>(file.write(bytes.data(),static_cast<std::streamsize>(bytes.size()))),"Cannot create an owned C++20 cache fixture");
+}
+using Files=std::map<std::filesystem::path,std::pair<std::string,std::filesystem::file_time_type>>;
+Files snapshot_files(const std::filesystem::path& root){Files result;
+    for(const auto& file:std::filesystem::recursive_directory_iterator(root))if(file.is_regular_file())
+        result.emplace(file.path().lexically_relative(root),std::pair{read(file.path()),file.last_write_time()});return result;
+}
+void cpp23_cmake_migration(const lgaed::WindowsEnvironment& environment){
+    using namespace lgaed;using namespace windows;
+    CppRunRequest request;request.projects_directory=environment.paths.projects/L"C++23 conservado";
+    request.request_id=23001;request.revision=23;request.project_key="cpp23/default-language/personal-draft";
+    request.stdin_utf8="40";
+    request.project_files={{"CMakeLists.txt","cmake_minimum_required(VERSION 3.20)\nproject(Cpp23Default LANGUAGES CXX)\nadd_executable(cpp23 main.cpp calculation.cpp)\n"},
+        {"contract.hpp",R"cpp(#include <expected>
+#include <iostream>
+#include <utility>
+static_assert(__cplusplus == 202302L, "CMake must expose C++23, not the historical20 or latest mode");
+static_assert(_MSVC_LANG == 202302L, "CMake must compile in the actual C++23 MSVC mode");
+constexpr int selected_phase(int value) {
+    if consteval { return value + 1; }
+    else { return value + 2; }
+}
+static_assert(selected_phase(40) == 41);
+enum class Answer : int { accepted = 42 };
+std::expected<int,int> calculate(int value, bool accept);
+)cpp"},
+        {"calculation.cpp",R"cpp(#include "contract.hpp"
+std::expected<int,int> calculate(int value, bool accept) {
+    if (!accept) return std::unexpected(-9);
+    return selected_phase(value);
+}
+)cpp"},
+        {"main.cpp",R"cpp(#include "contract.hpp"
+int main() {
+    constexpr int compile_phase = selected_phase(40);
+    int input{};
+    if (!(std::cin >> input)) return 1;
+    const auto accepted = calculate(input, true), rejected = calculate(input, false);
+    if (!accepted || rejected || rejected.error() != -9) return 2;
+    std::cout << __cplusplus << ':' << _MSVC_LANG << ':' << compile_phase
+        << ':' << *accepted << ':' << rejected.error() << ':' << std::to_underlying(Answer::accepted);
+}
+)cpp"}};
+    request.cmake=curriculum::CmakeConfig{"cpp23",{},"Debug"};
+    const auto original=request.project_files;
+    // Pin the exact pre-C++23 addressing algorithm. This is an explicit
+    // restored-cache fixture, not a claim that its C++23 draft ran under20.
+    const auto old_configuration=state::sha256(curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake,true)
+        +utf8(build::educational_vc_root)+utf8(build::educational_sdk_version)+utf8(build::educational_cmake)+utf8(build::educational_ninja));
+    const auto old_identity=state::sha256("cpp-cmake-workspace-v1/"+std::to_string(request.project_key.size())+":"+request.project_key+old_configuration);
+    const auto historical=request.projects_directory/std::filesystem::path("c"+old_identity.substr(0,32));
+    check(!std::filesystem::exists(historical),"The historical C++20 fixture must be new and private");
+    write(historical/L"identity.sha256",old_identity+'\n');
+    write(historical/L"CMakeCache.txt","CMAKE_CXX_STANDARD:UNINITIALIZED=20\n");
+    write(historical/L"build.ninja","# Preserved C++20 restored-cache fixture; never executed.\n");
+    write(historical/L"personal-notes.txt"," \t conservar el trabajo anterior\r\n");
+    for(const auto& [name,text]:request.project_files)write(historical/L"p"/std::filesystem::path(name),text);
+    const auto old_files=snapshot_files(historical);
+    CppRunRequest earlier;earlier.projects_directory=request.projects_directory;earlier.request_id=23000;earlier.revision=1;
+    earlier.source_utf8="#include <cstdio>\nint main(){std::printf(\"existing independent run\");}\n";
+    const auto prior_run=run_cpp(earlier);ran(prior_run);
+    check(prior_run.execution.stdout_bytes=="existing independent run","The independent prior run did not really execute");
+    const auto prior_run_files=snapshot_files(prior_run.run_directory);
+    state::StateStore store(environment.paths.root);auto data=store.load();
+    state::Draft draft;draft.source="// fuente personal sin modificar\r\nint main() { return 7; }\n";
+    draft.input=" \t entrada guardada\r\n";draft.indentation_json=state::make_indentation_metadata(draft.source,{});
+    draft.selection_start=3;draft.selection_end=11;state::put_draft(data,request.project_key,draft);
+    data.preferences["cpp23_private_migration"]["opaque"]=std::string(" conservar\t\r\n保存");store.save(data);
+    const auto preserved_data=data;
+    const auto pending=inspect_cpp_project(request);
+    check(pending.workspace!=historical&&!pending.configured&&!pending.built&&pending.configuration_fingerprint!=old_configuration,
+        "The C++23 profile reused the C++20 address or adopted a historical configured artifact");
+    const auto migrated=run_cpp(request);ran(migrated);
+    check(migrated.configuration.succeeded()&&migrated.execution.stdout_bytes=="202302:202302:41:42:-9:42"&&migrated.execution.stderr_bytes.empty(),
+        "CMake did not configure and execute the real default C++23 program with its exact library and language semantics");
+    const auto available=inspect_cpp_project(request);
+    check(available.workspace==pending.workspace&&available.configured&&available.built,
+        "The current C++23 workspace failed normal inspection/reopening");
+    const auto commands=read(available.workspace/L"compile_commands.json");
+    check(commands.find("std:c++23")!=std::string::npos&&commands.find("std:c++20")==std::string::npos&&commands.find("std:c++latest")==std::string::npos,
+        "The CMake rule graph selected historical20 or an open-ended latest compiler mode");
+    for(const auto& [name,text]:original)check(read(available.workspace/L"p"/std::filesystem::path(name))==text,
+        "C++23 configuration changed the authored project instead of supplying the default language profile");
+    const auto artifact_time=std::filesystem::last_write_time(migrated.artifact);
+    const auto first_run_files=snapshot_files(migrated.run_directory);
+    ++request.request_id;const auto reused=run_cpp(request);ran(reused);
+    check(reused.configuration.status==CppPhaseStatus::not_started&&reused.execution.stdout_bytes==migrated.execution.stdout_bytes
+        &&std::filesystem::last_write_time(reused.artifact)==artifact_time,
+        "Reopening an unchanged C++23 project reconfigured, relinked or executed another result");
+    state::StateStore reopened(environment.paths.root);
+    check(reopened.load()==preserved_data&&request.project_files==original&&snapshot_files(historical)==old_files
+        &&snapshot_files(prior_run.run_directory)==prior_run_files&&snapshot_files(migrated.run_directory)==first_run_files,
+        "Migrating C++20 cache identity changed a saved draft, prior cache/source, existing run or original project");
+    std::cout<<"PASS C++23 default CMake: exact language macros, real if-consteval/expected/to-underlying execution, separate restored-C++20 cache identity, unchanged prior cache/draft/runs and durable current reuse\n";
+}
+}
+int main(int argc,char** argv){using namespace lgaed;using namespace windows;try{
+    const bool cpp23_only=argc==2&&std::string_view(argv[1])=="--cpp23";check(argc==1||cpp23_only,"Unknown CMake runner test selector");
     const auto environment=resolve_windows_environment({ProfileId::Codex,L"cmake-runner-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});OwnedQa qa(environment.paths.root);initialize_profile_directories(environment.paths);
+    cpp23_cmake_migration(environment);if(cpp23_only){qa.finish();return 0;}
     CppRunRequest request;request.projects_directory=environment.paths.projects/L"Códigos & nombres";request.project_key="original/exercise/draft";request.request_id=1;request.revision=7;
     request.project_files={{"CMakeLists.txt",R"(cmake_minimum_required(VERSION 3.20)
 project(PersonalNative LANGUAGES CXX)

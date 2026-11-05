@@ -4,6 +4,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "Use a build preset; in-source builds would mix generated files with imported content.")
 endif()
 
+include(cmake/WindowsCxxStandard.cmake)
+set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WindowsCxxStandard.cmake")
 project(LearnGameAndEngineDev VERSION 0.1.0 LANGUAGES CXX RC)
 
 include(cmake/VerifyNativeToolchain.cmake)
@@ -13,10 +15,22 @@ lgaed_verify_native_dependencies()
 include(cmake/WindowsRuntimeTools.cmake)
 lgaed_select_windows_runtime_tools()
 
-# These settings apply to the host, not to future student compilation activities.
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_FLAGS "/Zc:__cplusplus")
+unset(LGAED_CPP23_MODE_VERIFIED CACHE)
+check_cxx_source_compiles([=[
+#include <expected>
+#include <utility>
+static_assert(__cplusplus == 202302L && _MSVC_LANG == 202302L);
+constexpr int language_probe() { if consteval { return 23; } else { return 0; } }
+static_assert(language_probe() == 23);
+int main() { std::expected<int,int> value = 23; return value.value() == 23 ? 0 : 1; }
+]=] LGAED_CPP23_MODE_VERIFIED)
+unset(CMAKE_REQUIRED_FLAGS)
+if(NOT LGAED_CPP23_MODE_VERIFIED)
+    message(FATAL_ERROR "The selected Windows compiler must provide the exact C++23 language profile and library.")
+endif()
+message(STATUS "Windows C++${CMAKE_CXX_STANDARD}: ${LGAED_CPP_STANDARD_OPTION}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 get_filename_component(_lgaed_checkout_name "${CMAKE_SOURCE_DIR}" NAME)
@@ -1008,6 +1022,11 @@ if(BUILD_TESTING)
         lgaed_editorial_matching_view_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_u11_names_checks DEPENDS LearnGameAndEngineDev
         lgaed_u11_names_integration_view_tests lgaed_u11_names_reader_tests lgaed_lesson_tests lgaed_state_tests)
+    add_custom_target(lgaed_cpp23_checks DEPENDS LearnGameAndEngineDev
+        lgaed_cpp_runner_tests lgaed_cpp_project_tests lgaed_cpp_cmake_runner_tests
+        lgaed_cpp_diagnostic_runner_tests lgaed_lesson_tests lgaed_lesson_view_tests
+        lgaed_smo_tests lgaed_smo_native_tests lgaed_smo_native_real_tests lgaed_smo_native_real_gpu_tests
+        lgaed_narration_worker_tests lgaed_math_narration_plan_tests)
     add_custom_target(lgaed_curricular_reader_checks DEPENDS LearnGameAndEngineDev
         lgaed_equality_count_reader_tests lgaed_editorial_return_tests lgaed_editorial_return_view_tests)
     add_custom_target(lgaed_editorial_return_checks DEPENDS
