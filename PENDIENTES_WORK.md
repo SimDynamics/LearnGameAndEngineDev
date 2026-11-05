@@ -2,7 +2,7 @@
 
 Uso interno de Work. Este archivo no contiene pedidos activos ni es un canal de encargos para Codex. Consultar `PENDIENTES_RECURSOS_CURRICULARES.md` para las capacidades pendientes y su aceptación. No crear `ACTUALIZACIONES_CODEX.md`.
 
-Continuidad curricular: «+1» significa continuar. Programación 1 ES, Work/main df5629ea, sin commits/publicaciones. Próximo punto: U11L21 p4, revisar modelo y continuar p4–p8. QA work-u11l14-expanded-20261103 cerrada normalmente allí, con tres aciertos L21 y trabajo L19/L20 conservado. L20 SHA 3b550905…: seis campos autorizados integrados, 25 aristas y foco Windows aprobado. L21 SHA d8d70f4e…: p1–p3 precisadas, tres guías, diez aristas; contratos y fuentes intactos. Validación y evidencias focales en el registro único y out/qa/u11-constantes/. Mantener escucha/color, importación/históricos y demás pendientes de Codex; no cerrar lección ni curso. Completar curso 1 y su proyecto antes de 2, implementándolo al enseñarlo. Releer íntegro el maestro Windows indicado en AGENTS.
+Continuidad curricular: «+1» significa continuar. Próximo punto: Programación 1, U11L22 p1, «Construir una sesión con nombres y estado», en Work/main; QA cerrada normalmente allí, sin respuestas, borrador ni recibo L22. U11L21 p4–p8 y su aceptación focal están guardadas; conservar los pendientes de escucha, color e importación y el ajuste de la regresión L20 de Codex en el registro único. Completar Programación 1 y su proyecto antes de continuar al curso 2. Sin commits ni publicaciones del principal. Releer íntegro el maestro vigente: E:\PersonalFiles\Projects\LearnGameAndEngineDev-Playground\Instrucciones_maestras_cursosWindows.txt.
 
 ## Base conservada
 
