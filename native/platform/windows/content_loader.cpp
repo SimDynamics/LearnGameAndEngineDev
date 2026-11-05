@@ -684,6 +684,38 @@ std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject&
     }
     return result;
 }
+std::optional<StateReadingRevision> session_literal_reading_revision(const JsonObject& metadata,const JsonArray& pages,
+        const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado";
+    constexpr std::string_view identity="block_0001_0004";
+    constexpr std::string_view before="7246b74a0c6b46f2c14b26ea813cfc85a0d691348aea8ada18c279d46ce19156";
+    constexpr std::string_view after="09a016cfe0637a8be64ccd67e0ec8f3bd57e8d63ca5e03c39ecbe760d7bacad1";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    // Ordinary puzzle prose remains editable. Only this complete published
+    // Spanish payload/prefix can supply an old feedback script to the reader.
+    if(layout.origin.size()<=1||layout.origin[1].blocks.size()<=4||layout.origin[1].blocks[4]!=identity
+        ||layout.current.size()<=1||layout.current[1].blocks.size()<=4||layout.current[1].blocks[4]!=identity
+        ||fingerprint(metadata.GetNamedObject(L"family"))!="21ba75fa9504523ce0c8fc5a32d9aea75e3822c1a7b900b3ba3cf02c85bb1780"
+        ||fingerprint(array(metadata,"origin"))!="8f63bbdd3f8d3dad5be813b865e141df59614dca6bc7dc7adb2df576cad77d10")return {};
+    const auto editorial=array(metadata,"editorial");
+    // Do not combine this old explanation with a later unrelated revision;
+    // the authenticated publication is the actual fourteen-edge predecessor.
+    if(editorial.Size()!=15)return {};
+    JsonArray prefix;for(unsigned index=0;index<14;++index)prefix.Append(editorial.GetAt(index));
+    JsonObject provenance;provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(owner)));
+    provenance.Insert(L"locale",JsonValue::CreateStringValue(L"es"));provenance.Insert(L"editorial",prefix);
+    if(fingerprint(provenance)!="c28edae1339c91de5a3fbac7c727c939f530b67bc9902a72fd065d94e62a93ee")return {};
+    const auto edge=editorial.GetObjectAt(14);
+    if(edge.Size()!=3||text(edge,"id")!=identity||text(edge,"beforeSha256")!=before||text(edge,"afterSha256")!=after)return {};
+    const auto active=array(pages.GetObjectAt(1),"blocks").GetObjectAt(4);
+    if(fingerprint(active)!=after)return {};
+    const auto previous=JsonObject::Parse(active.Stringify());
+    previous.Insert(L"explanation",JsonValue::CreateStringValue(
+        L"La creación completa guardó cero. El literal100 se rechaza y su candidato no sustituye ese estado."));
+    if(fingerprint(previous)!=before)return {};
+    StateReadingRevision result;result.editorial_prefix=14;result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
+    return result;
+}
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -1029,6 +1061,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         }
     }
     result.reading_revisions=assignment_reading_revisions(metadata,pages,result,lesson_id);
+    if(auto revision=session_literal_reading_revision(metadata,pages,result,lesson_id))
+        result.reading_revisions.push_back(std::move(*revision));
     return result;
 }
 TextComparison comparison(std::string_view mode, bool input = false) {

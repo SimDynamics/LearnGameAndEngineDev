@@ -15,6 +15,7 @@
 #include <richedit.h>
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -56,14 +57,15 @@ struct View{
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
     HWND host=nullptr,view=nullptr;
-    View(curriculum::Lesson model,std::size_t page,bool role_state=false):environment(resolve_windows_environment({ProfileId::Codex,
+    View(curriculum::Lesson model,std::size_t page,bool role_state=false,
+            std::function<void(state::StateData&)> initialize={},bool compiler_receipts=true):environment(resolve_windows_environment({ProfileId::Codex,
         L"technical-context-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})),lesson(std::move(model)){
         check(!std::filesystem::exists(environment.paths.root),"Technical-context QA requires a new isolated profile");
         initialize_profile_directories(environment.paths);state::StateStore store(environment.paths.root);(void)store.load();
         state::StateData initial;state::prepare_lesson_state(initial,lesson);state::save_current_page(initial,lesson,page);
         // Synthetic compiler receipts ONLY make the registered prose/choices
         // visible in this formatting test. They do not certify any execution.
-        for(const auto& source_page:lesson.pages)for(const auto& block:source_page.blocks)if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check){
+        if(compiler_receipts)for(const auto& source_page:lesson.pages)for(const auto& block:source_page.blocks)if(block.type==curriculum::BlockType::cpp_compiler&&block.output_check){
             windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
             for(const auto& goal:block.output_check->cases){curriculum::FreshExecution result{1,true,true,0,goal.standard_input,goal.outputs.front()};
                 result.executable=goal.executable;if(goal.standard_error==curriculum::StandardErrorExpectation::non_blank)result.standard_error="Synthetic prerequisite only";
@@ -73,7 +75,7 @@ struct View{
             // preference-only live API must never mutate lesson progress.
             auto history=narration::begin({},"color-storage-only","color-storage-only",{0,137,0,false},"opaque source","other-page");
             narration::write_history(initial,history);}
-        initial.preferences["native_windows"]["ui_language"]=std::string("es");store.save(initial);
+        initial.preferences["native_windows"]["ui_language"]=std::string("es");if(initialize)initialize(initial);store.save(initial);
         host=CreateWindowExW(WS_EX_NOACTIVATE,L"STATIC",L"Hidden actual curricular color QA",WS_OVERLAPPEDWINDOW,
             0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host,"Cannot create color QA host");open();
     }
@@ -575,6 +577,85 @@ void exact_editorial_view(const std::filesystem::path& before_path,const std::fi
     check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,"Native editorial QA rewrote immutable fixtures");
     std::cout<<"PASS exact editorial "<<identity<<": native partial/rejected/correct input, whole response/review/permutation and prerequisite/history preservation, current question/feedback, shade/source/selection and reopen; synthetic prerequisites, no compiler execution or listening claim\n";
 }
+void literal_spacing_editorial_view(const std::filesystem::path& before_path,const std::filesystem::path& after_path){
+    const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
+    check(state::sha256(before_bytes)=="35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f"
+        &&state::sha256(after_bytes)=="a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49",
+        "The literal-spacing view needs the two authenticated complete session fixtures");
+    const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
+    const auto at=curriculum::stable_block_position(before,"block_0001_0004"),next=curriculum::stable_block_position(after,"block_0001_0004");
+    check(at&&next&&*at==*next&&at->page==1&&at->block==4,"The exact literal-spacing owner moved");
+    const auto& old=before.pages[at->page].blocks[at->block];const auto& revised=after.pages[next->page].blocks[next->block];
+    check(old.id=="cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e01"
+        &&old.id==revised.id&&old.type==curriculum::BlockType::multiple_choice&&old.type==revised.type
+        &&old.question==revised.question&&old.options==revised.options&&old.correct_index==1&&old.correct_index==revised.correct_index
+        &&old.review_feedback==revised.review_feedback&&old.review_feedback_options==revised.review_feedback_options
+        &&old.code==revised.code&&old.answers==revised.answers
+        &&state::sha256(old.explanation)=="e2103b09c4b3c8793d2d70fca2451232cc0aa61a7825effc26e48715aa0beb51"
+        &&state::sha256(revised.explanation)=="1219b910c0c8284002699f2dda3e8e79ee650460373d0236b894cdba87814b8f",
+        "The spacing proposal changed its protected answer, guide, identity or exact text pair");
+    const curriculum::Block* compiler=nullptr;
+    for(const auto& page:before.pages)for(const auto& block:page.blocks)
+        if(block.type==curriculum::BlockType::cpp_compiler&&!compiler)compiler=&block;
+    check(compiler,"The independent session draft owner is missing");
+    const auto draft_key=curriculum::draft_key("programming",before,*compiler);
+    state::Draft draft;draft.source=compiler->initial_code+"\n// QA: conservar borrador independiente\n";
+    draft.input=" entrada\t\r\n";draft.indentation_json=state::make_indentation_metadata(draft.source,{});
+    draft.selection_start=3;draft.selection_end=11;
+    const auto equal_response=[](const auto& a,const auto& b){return a.has_value()==b.has_value()&&(!a||
+        (a->answer==b->answer&&a->correct==b->correct&&a->raw_json==b->raw_json&&a->selected==b->selected
+        &&a->order==b->order&&a->reviewed_answer_identity==b->reviewed_answer_identity&&a->historical_choice==b->historical_choice));};
+    for(unsigned phase=0;phase<4;++phase){
+        View fixture(before,at->page,false,[&](state::StateData& data){
+            state::put_draft(data,draft_key,draft);data.preferences["literal_spacing_opaque_qa"]["retained"]=std::string("\t conservar\r\n保存");
+            auto history=narration::begin({},"literal-storage-a","owner-a",{0,137,0,false},"opaque A","page-a");
+            history=narration::begin(std::move(history),"literal-storage-b","owner-b",{1,239,0,false},"opaque B","page-b");
+            history=narration::begin(std::move(history),"literal-storage-c","owner-c",{2,317,0,false},"opaque C","page-c");
+            narration::write_history(data,history);},false);
+        if(phase>0){SendMessageW(fixture.item(at->block,phase==3?22:20),BM_CLICK,0,0);pump();}
+        if(phase>1){SendMessageW(fixture.item(at->block,3),BM_CLICK,0,0);pump();}
+        check(flush_lesson_view(fixture.view),"Cannot save the actual literal-spacing state");
+        const auto saved=read_lesson_state(fixture.view);const auto response=state::get_response(saved,before,old);
+        check(phase==0?!response:response&&response->correct==(phase==3)&&state::response_reviewed(*response,old)==(phase==2),
+            "The spacing fixture did not produce an actual empty/draft/rejected/correct state");
+        const auto history=narration::read_history(saved);check(history.entries.size()==3,"The storage-only spacing fixture lost a bookmark");
+        const auto wrong_body=phase==2?edit_text(fixture.item(at->block,4)):std::string{};
+        fixture.lesson=after;fixture.reopen();
+        const auto verify=[&]{
+            check(flush_lesson_view(fixture.view),"Cannot save reopened literal-spacing QA");const auto data=read_lesson_state(fixture.view);
+            check(equal_response(response,state::get_response(data,after,revised))
+                &&data.preferences.at("learning_progress")==saved.preferences.at("learning_progress")
+                &&data.preferences.at("literal_spacing_opaque_qa")==saved.preferences.at("literal_spacing_opaque_qa")
+                &&narration::read_history(data)==history,"Spacing adoption changed a response, review, progress or stored bookmark");
+            const auto attempts=saved.preferences.find("attempt_reserve_seconds_test"),current=data.preferences.find("attempt_reserve_seconds_test");
+            check((attempts==saved.preferences.end())==(current==data.preferences.end())
+                &&(attempts==saved.preferences.end()||attempts->second==current->second),"Spacing adoption changed the actual attempt reserve");
+            const auto retained=state::get_draft(data,draft_key,compiler->initial_code);
+            check(retained.has_saved&&retained.source==draft.source&&retained.input==draft.input&&retained.indentation_json==draft.indentation_json
+                &&retained.selection_start==draft.selection_start&&retained.selection_end==draft.selection_end,
+                "Spacing adoption changed the independent compiler draft/caret");
+            for(const auto& page:after.pages)for(const auto& block:page.blocks)if(curriculum::has_compiler_objective(block))
+                check(windows::compiler_puzzle_case_count(data,after,block)==0,"Spacing QA fabricated compiler execution credit");
+            source_and_shading(fixture,fixture.item(at->block,0),revised.question);
+            if(response)check(SendMessageW(fixture.item(at->block,20+static_cast<int>(response->selected)*2),BM_GETCHECK,0,0)==BST_CHECKED,
+                "Spacing adoption changed the selected native option");
+            const auto target=fixture.item(at->block,4);const auto body=edit_text(target);
+            if(phase<2)check(body.empty(),"An unchecked spacing state revealed the explanation");
+            else if(phase==2)check(body==wrong_body&&body.find("literal100")==std::string::npos&&body.find(revised.explanation)==std::string::npos,
+                "Spacing adoption changed the rejected guide or disclosed success");
+            else{const auto expected=std::string("✓ Correcto\n\n")+revised.explanation;
+                check(body==expected&&body.find("literal 100")!=std::string::npos&&!IsWindowEnabled(fixture.item(at->block,3)),
+                    "The complete revised spacing explanation is missing or unlocked");
+                ordinary_span(target,L"El literal 100",L"literal");
+                const auto number=passage_offset(target,L"El literal 100",L"100");
+                for(std::size_t offset=0;offset<3;++offset)reference_background(target,number+offset);
+                source_and_shading(fixture,target,expected);}
+        };
+        verify();fixture.reopen();verify();
+    }
+    check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,"Literal-spacing UI QA rewrote its authenticated fixtures");
+    std::cout<<"PASS exact U11L22 literal spacing: four real native states, unchanged whole responses/guides/draft/attempts/three storage-only bookmarks, full revised explanation/source/shading and silent reopen; no receipts, compiler execution, PCM or human listening claimed\n";
+}
 void remainder_visual_profile(std::wstring_view token,bool inspect){
     check(is_valid_qa_instance(token)&&token.starts_with(L"visual-remainder-"),"Unsafe remainder visual QA token");
     const auto source=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json";
@@ -647,6 +728,7 @@ int main(int argc,char** argv){const auto ole=OleInitialize(nullptr);if(FAILED(o
             remainder_visual_profile(wide(argv[2]),std::string_view(argv[1])=="--inspect-remainder-visual");
         else if(argc==4&&std::string_view(argv[1])=="--duplication-revision")exact_editorial_view(argv[2],argv[3],true);
         else if(argc==4&&std::string_view(argv[1])=="--remainder-revision")exact_editorial_view(argv[2],argv[3],false);
+        else if(argc==4&&std::string_view(argv[1])=="--literal-spacing-revision")literal_spacing_editorial_view(argv[2],argv[3]);
         else if(argc==2&&std::string_view(argv[1])=="--preview-naming")preview(2,true);
         else if(argc==3&&std::string_view(argv[1])=="--preview"){
             const std::string_view page=argv[2];check(page=="4"||page=="6"||page=="7"||page=="9","Preview admits only the actual registered U2 pages 4, 6, 7 and 9");
