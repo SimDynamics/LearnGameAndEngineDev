@@ -1,0 +1,505 @@
+#include "core/lesson.hpp"
+#include "core/narration_state.hpp"
+#include "platform/windows/compiler_completion.hpp"
+#include "platform/windows/content_loader.hpp"
+#include "platform/windows/environment.hpp"
+#include "platform/windows/narration_worker.hpp"
+#include "platform/windows/state_store.hpp"
+#include "presentation/windows/lesson_reader.hpp"
+#include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/rich_text.hpp"
+#include "native_build_config.hpp"
+
+#include <commctrl.h>
+#include <ole2.h>
+#include <richedit.h>
+#include <algorithm>
+#include <cmath>
+#include <cwctype>
+#include <exception>
+#include <functional>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <set>
+#include <stdexcept>
+
+namespace {
+using namespace lgaed;
+using namespace lgaed::presentation;
+constexpr std::string_view expected_output =
+    "Caso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\n"
+    "Caso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\n"
+    "Caso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\n"
+    "Caso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\n"
+    "Caso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\n"
+    "Caso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\n"
+    "Caso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\n"
+    "Caso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\n";
+constexpr std::string_view prediction_answer =
+    "Error: Se esperaba un nombre\nError: Se esperaba =\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 2\nTabla: salto=2";
+static_assert(expected_output.size() == 650 && prediction_answer.size() == 109);
+
+void require(bool value, std::string_view message) {
+    if (!value) throw std::runtime_error(std::string(message));
+}
+void pump() {
+    MSG message{};
+    while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+        if (message.message != WM_QUIT) { TranslateMessage(&message); DispatchMessageW(&message); }
+}
+void wait(const std::function<bool()>& complete, std::string_view description, ULONGLONG timeout = 120000) {
+    const auto deadline = GetTickCount64() + timeout;
+    do {
+        pump(); if (complete()) return;
+        MsgWaitForMultipleObjects(0, nullptr, FALSE, 5, QS_ALLINPUT);
+    } while (GetTickCount64() < deadline);
+    throw std::runtime_error("Timeout: " + std::string(description));
+}
+HWND find(HWND parent, int identifier) {
+    struct Search { int identifier; HWND result = nullptr; } search{identifier};
+    EnumChildWindows(parent, [](HWND item, LPARAM raw) -> BOOL {
+        auto& value = *reinterpret_cast<Search*>(raw);
+        if (GetDlgCtrlID(item) == value.identifier) { value.result = item; return FALSE; }
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&search));
+    return search.result;
+}
+std::string bytes(const std::filesystem::path& path) {
+    const auto value = state::read_bytes(path); return {value.begin(), value.end()};
+}
+curriculum::StatePosition position(const curriculum::Lesson& lesson, std::string_view identity) {
+    const auto result = curriculum::stable_block_position(lesson, identity);
+    require(result.has_value(), "An audited U11L19 reader identity is missing"); return *result;
+}
+
+std::string printable(std::string_view value) {
+    std::string result = "\""; constexpr char hex[] = "0123456789abcdef";
+    const auto count = std::min<std::size_t>(value.size(), 180);
+    for (std::size_t index = 0; index < count; ++index) {
+        const auto byte = static_cast<unsigned char>(value[index]);
+        if (byte == '\n') result += "\\n";
+        else if (byte == '\r') result += "\\r";
+        else if (byte == '\t') result += "\\t";
+        else if (byte == '\\' || byte == '"') { result += '\\'; result += static_cast<char>(byte); }
+        else if (byte < 32 || byte >= 127) { result += "\\x"; result += hex[byte >> 4]; result += hex[byte & 15]; }
+        else result += static_cast<char>(byte);
+    }
+    if (count < value.size()) result += "...";
+    return result + '"';
+}
+void print_snapshot(std::string_view label, const LessonReaderSnapshot& value) {
+    std::cout << "REOPEN " << label << " key=" << printable(value.key) << " index=" << value.index
+        << " offset=" << value.offset << " heard=" << value.heard_through << " finished=" << value.finished
+        << " playing=" << value.playing << " allocated=" << value.allocated << " planned=" << value.planned
+        << " preparing=" << value.preparing << " waiting_gate=" << value.waiting_gate << " parts=" << value.segments.size() << '\n';
+    if (value.index < value.segments.size()) {
+        const auto& part = value.segments[value.index];
+        std::cout << "REOPEN " << label << " selected region=" << printable(part.region) << " block=" << part.block
+            << " range=" << part.start << ':' << part.end << " feedback=" << part.feedback << " correct=" << part.correct
+            << " available=" << part.available << " duration_ms=" << part.duration_ms << '\n';
+    }
+}
+void print_history(std::string_view label, const narration::History& value) {
+    std::cout << "REOPEN " << label << " history entries=" << value.entries.size()
+        << " active_key=" << printable(value.active_key) << " active_owner=" << printable(value.active_owner) << '\n';
+    for (std::size_t index = 0; index < std::min<std::size_t>(value.entries.size(), 4); ++index) {
+        const auto& entry = value.entries[index]; const auto& at = entry.position;
+        std::cout << "REOPEN " << label << " entry[" << index << "] key=" << printable(entry.key)
+            << " stable=" << printable(entry.stable) << " page=" << printable(entry.page) << " segment=" << at.segment
+            << " offset=" << at.milliseconds << " heard=" << at.heard_through << " finished=" << at.finished;
+        if (at.heard_prefix) std::cout << " prefix={fingerprint=" << printable(at.heard_prefix->fingerprint)
+            << ",microseconds=" << at.heard_prefix->microseconds << ",duration=" << at.heard_prefix->duration_microseconds << '}';
+        else std::cout << " prefix=none";
+        std::cout << '\n';
+    }
+    if (value.entries.size() > 4) std::cout << "REOPEN " << label << " remaining entries omitted\n";
+}
+void diagnose_reopen(const LessonReaderSnapshot& before, const LessonReaderSnapshot& after,
+        const narration::History& before_history, const narration::History& after_history) {
+    std::cout << "REOPEN equality key=" << (before.key == after.key) << " index=" << (before.index == after.index)
+        << " offset=" << (before.offset == after.offset) << " heard=" << (before.heard_through == after.heard_through)
+        << " finished=" << (before.finished == after.finished) << " playing=" << (before.playing == after.playing)
+        << " allocated=" << (before.allocated == after.allocated) << " history=" << (before_history == after_history) << '\n';
+    print_snapshot("before", before); print_snapshot("after", after);
+    std::cout << "REOPEN history equality active_key=" << (before_history.active_key == after_history.active_key)
+        << " active_owner=" << (before_history.active_owner == after_history.active_owner)
+        << " entry_count=" << (before_history.entries.size() == after_history.entries.size()) << '\n';
+    const auto common = std::min({before_history.entries.size(), after_history.entries.size(), std::size_t{4}});
+    for (std::size_t index = 0; index < common; ++index) {
+        const auto& old_entry = before_history.entries[index]; const auto& new_entry = after_history.entries[index];
+        if (old_entry == new_entry) continue;
+        std::cout << "REOPEN entry[" << index << "] equality key=" << (old_entry.key == new_entry.key)
+            << " stable=" << (old_entry.stable == new_entry.stable) << " page=" << (old_entry.page == new_entry.page)
+            << " segment=" << (old_entry.position.segment == new_entry.position.segment)
+            << " offset=" << (old_entry.position.milliseconds == new_entry.position.milliseconds)
+            << " heard=" << (old_entry.position.heard_through == new_entry.position.heard_through)
+            << " finished=" << (old_entry.position.finished == new_entry.position.finished)
+            << " prefix=" << (old_entry.position.heard_prefix == new_entry.position.heard_prefix) << '\n';
+    }
+    print_history("before", before_history); print_history("after", after_history);
+}
+
+struct Harness {
+    std::shared_ptr<windows::NarrationWorker> backend;
+    WindowsEnvironment environment;
+    curriculum::Lesson lesson;
+    std::filesystem::path asset;
+    std::vector<std::uint8_t> original_asset;
+    HWND host = nullptr, view = nullptr;
+    std::unique_ptr<LessonReader> reader;
+    state::Preferences unrelated;
+    struct Recording { std::string sha; std::filesystem::file_time_type modified; };
+    std::map<std::filesystem::path, Recording> recordings;
+
+    explicit Harness(std::shared_ptr<windows::NarrationWorker> worker) : backend(std::move(worker)) {
+        asset = std::filesystem::path(build::source_root) /
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_declaraciones_aceptadas_solo_al_completar.json";
+        original_asset = state::read_bytes(asset);
+        require(state::sha256(original_asset) == "fb5275cf607976cfe5d7e8aeb0ddf940b4253956f1ac2e1453ba499fee5f2c8c",
+            "The current U11L19 snapshot changed; review its exact reader scope before updating this pin");
+        lesson = windows::load_lesson(asset);
+        const auto token = L"declarations-reader-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64());
+        environment.options = {ProfileId::Codex, token, false};
+        environment.paths = make_profile_paths(std::filesystem::path(build::source_root) / "out/qa/u11-declarations-reader", ProfileId::Codex, token);
+        require(!std::filesystem::exists(environment.paths.root), "U11L19 reader requires a new isolated physical QA profile");
+        initialize_profile_directories(environment.paths);
+        state::StateStore store(environment.paths.root); auto initial = store.load();
+        require(initial.preferences.empty(), "The new declarations reader QA already contains student data");
+        state::prepare_lesson_state(initial, lesson);
+        // This focal fixture starts at the actual p5 UI address. It does not
+        // answer p1-p4, award their progress, or import any previous state.
+        state::save_current_page(initial, lesson, 4);
+        auto& preferences = initial.preferences["lesson_narration_settings"];
+        preferences["engine"] = std::string("KOKORO"); preferences["language"] = std::string("es");
+        preferences["kokoro_voice:es"] = std::string("ef_dora"); preferences["rate"] = 3.;
+        preferences["kokoro_advance_generation"] = true;
+        initial.preferences["native_windows"]["ui_language"] = std::string("es");
+        initial.preferences["u11_declarations_reader_qa"]["opaque"] = std::string(" \t conservar\r\n保存");
+        unrelated = initial.preferences.at("u11_declarations_reader_qa"); store.save(initial);
+        require(narration::read_history(initial).entries.empty(), "The fresh QA contains a fabricated listening history");
+        host = CreateWindowExW(WS_EX_CONTROLPARENT | WS_EX_NOACTIVATE, L"STATIC", L"Hidden current U11L19 reader QA",
+            WS_OVERLAPPEDWINDOW, 0, 0, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+        require(host != nullptr, "Cannot create hidden actual declarations reader host"); open(4);
+    }
+    ~Harness() {
+        if (std::uncaught_exceptions()) backend->shutdown();
+        close(); if (host) DestroyWindow(host);
+    }
+    HWND control(std::size_t block, int part) const {
+        const auto item = find(view, 1000 + static_cast<int>(block) * 100 + part);
+        require(item != nullptr, "An actual U11L19 reader control is missing"); return item;
+    }
+    LessonReaderSnapshot snapshot() const {
+        const auto value = reader->snapshot(); require(value.error.empty(), "Real U11L19 reader error: " + value.error); return value;
+    }
+    void ready(bool all = true) const {
+        wait([&] {
+            const auto value = snapshot();
+            return value.planned && !value.segments.empty() && value.index < value.segments.size()
+                && (all ? std::ranges::all_of(value.segments, [](const auto& part) { return part.available; }) : value.segments[value.index].available);
+        }, "actual U11L19 speech preparation and word alignment");
+    }
+    void open(std::size_t expected_page) {
+        require(!view && !reader, "Close the earlier declarations QA view before reopening");
+        LessonViewHooks hooks;
+        hooks.before_page_change = [&](HWND) { if (reader) reader->pause(); };
+        hooks.before_destroy = [&](HWND) { reader.reset(); };
+        hooks.content_changed = [&](HWND) { if (reader) reader->content_changed(); };
+        hooks.feedback_changed = [&](HWND, std::size_t block, bool correct) { if (reader) reader->feedback(block, correct); };
+        hooks.priority_work = [worker = backend](std::stop_token stop) -> std::shared_ptr<void> {
+            return std::make_shared<windows::NarrationPriorityLease>(worker->heavy_work_lease(stop));
+        };
+        view = create_lesson_view(host, environment, lesson, std::move(hooks));
+        require(view != nullptr, "Cannot create current native U11L19 lesson view");
+        MoveWindow(view, 0, 0, 1100, 850, TRUE); pump();
+        require(!IsWindowVisible(host) && lesson_page_state(view).index == expected_page, "The hidden QA opened another page or became visible");
+        reader = std::make_unique<LessonReader>(view, environment, backend, [] {}); ready(false);
+    }
+    void close() {
+        reader.reset(); if (view) { (void)flush_lesson_view(view); DestroyWindow(view); view = nullptr; }
+    }
+    state::StateData saved() const {
+        require(flush_lesson_view(view), "Cannot flush current isolated declarations state"); return read_lesson_state(view);
+    }
+    void navigate(std::size_t page) {
+        reader->pause(); require(navigate_lesson_view(view, page), "The actual U11L19 dependent page remains locked"); ready();
+    }
+    void edit(std::size_t block, int part, std::string_view value) {
+        const auto target = control(block, part); require(IsWindowEnabled(target), "The actual declarations QA editor is disabled");
+        CHARRANGE all{0, -1}; SendMessageW(target, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&all));
+        const auto text = wide(value); SendMessageW(target, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(text.c_str())); pump();
+        require(edit_text(target) == value, "RichEdit changed the supplied literal program or prediction");
+    }
+    void click(std::size_t block, int part) {
+        const auto target = control(block, part); require(IsWindowEnabled(target), "The actual declarations QA action is disabled");
+        SendMessageW(target, BM_CLICK, 0, 0); pump();
+    }
+    std::filesystem::path compile(std::size_t block, std::string_view source) {
+        const auto folder = environment.paths.projects / "cpp-runs"; std::set<std::filesystem::path> old;
+        if (std::filesystem::exists(folder)) for (const auto& entry : std::filesystem::directory_iterator(folder)) if (entry.is_directory()) old.insert(entry.path());
+        reader->pause(); click(block, 11);
+        wait([&] { return IsWindowEnabled(control(block, 11)); }, "the actual U11L19 educational compilation and execution");
+        reader->pause(); ready();
+        std::vector<std::filesystem::path> created;
+        for (const auto& entry : std::filesystem::directory_iterator(folder)) if (entry.is_directory() && !old.contains(entry.path())) created.push_back(entry.path());
+        require(created.size() == 1, "The declarations fixture did not run one fresh educational program");
+        const auto directory = created.front();
+        require(bytes(directory / "main.cpp") == source && bytes(directory / "stdin.bin").empty()
+            && bytes(directory / "execution-stderr.bin").empty() && edit_text(control(block, 34)) == "Ejecución terminada (código 0).",
+            "The actual declarations verdict did not follow its own successful educational run");
+        std::cout << "RUN " << utf8(directory.native()) << '\n'; return directory;
+    }
+    void verify_audio(const LessonReaderSegmentSnapshot& part, bool require_word_timings = true) {
+        require(part.available && !part.recording.empty(), "A declarations reader segment has no actual recording");
+        const auto data = state::read_bytes(part.recording);
+        const auto u16 = [&](std::size_t at) { return unsigned(data[at]) | (unsigned(data[at + 1]) << 8); };
+        const auto u32 = [&](std::size_t at) { return u16(at) | (u16(at + 2) << 16); };
+        const auto tag = [&](std::size_t at, std::string_view value) { return std::equal(value.begin(), value.end(), data.begin() + at); };
+        require(data.size() > 44 && tag(0, "RIFF") && tag(8, "WAVE") && tag(12, "fmt ") && tag(36, "data")
+            && u16(20) == 1 && u16(22) == 1 && u32(24) == 24000 && u16(34) == 16 && u32(40) == data.size() - 44
+            && (data.size() - 44) % 2 == 0 && std::ranges::any_of(data.begin() + 44, data.end(), [](auto sample) { return sample != 0; })
+            && std::abs(part.duration_ms - (data.size() - 44) / 48.) <= 1 && (!require_word_timings || !part.timings.empty()),
+            "The narration lacks actual non-silent mono 24 kHz PCM16 and source-bound word timings");
+        double previous = 0;
+        for (const auto& timing : part.timings) {
+            require(timing.start < timing.end && timing.end <= wide(part.source).size() && timing.start_ms >= previous
+                && std::isfinite(timing.start_ms) && std::isfinite(timing.end_ms) && timing.end_ms >= timing.start_ms
+                && timing.end_ms <= part.duration_ms + 1, "The actual timing does not address its displayed UTF-16 source");
+            previous = timing.start_ms;
+        }
+        recordings.try_emplace(part.recording, Recording{state::sha256(data), std::filesystem::last_write_time(part.recording)});
+    }
+    void privacy() const {
+        const auto page = lesson_page_state(view).index; const auto regions = lesson_reading_regions(view);
+        const auto planned = snapshot();
+        for (std::size_t index = 0; index < lesson.pages[page].blocks.size(); ++index) {
+            const auto& block = lesson.pages[page].blocks[index];
+            if (block.type != curriculum::BlockType::cpp_compiler && block.type != curriculum::BlockType::code && block.type != curriculum::BlockType::output_prediction) continue;
+            const auto source = find(view, 1000 + static_cast<int>(index) * 100 + (block.type == curriculum::BlockType::cpp_compiler ? 10 : 1));
+            const auto answer = block.type == curriculum::BlockType::output_prediction ? find(view, 1000 + static_cast<int>(index) * 100 + 2) : nullptr;
+            for (const auto& region : regions) require((!source || region.target != source) && (!answer || region.target != answer), "A program body or typed prediction entered declarations narration");
+            for (const auto& part : planned.segments) require((!source || part.target != source) && (!answer || part.target != answer), "An editor/reference/client body received reader audio or word shading");
+        }
+        const auto undisclosed = [](const auto& text) { return text.find(prediction_answer) == std::string::npos
+            && text.find("Error: Se esperaba un nombre") == std::string::npos && text.find("Tabla: salto=2") == std::string::npos; };
+        for (const auto& region : regions) require(undisclosed(region.source_text), "The literal expected prediction leaked into narration regions");
+        for (const auto& part : planned.segments) require(undisclosed(part.source), "The literal expected prediction leaked into reader audio");
+    }
+    void preserved() const {
+        const auto data = saved();
+        require(data.preferences.at("u11_declarations_reader_qa") == unrelated && state::read_bytes(asset) == original_asset && !IsWindowVisible(host),
+            "The focal reader changed unrelated preferences, curricular bytes or desktop visibility");
+        require(narration::read_history(data).entries.size() <= 3, "The focal reader exceeded the ordinary three page slots");
+        for (const auto& [path, recording] : recordings)
+            require(state::sha256(state::read_bytes(path)) == recording.sha && std::filesystem::last_write_time(path) == recording.modified,
+                "An already prepared compatible PCM recording was rewritten");
+    }
+    void reopen_paused(const LessonReaderSnapshot& before) {
+        require(!before.playing && !before.allocated && !before.finished,
+            "The focal reopen requires an explicitly stopped current reader");
+        const auto page = lesson_page_state(view).index;
+        close();
+        // Closing checkpoints the final prepared recording certificate, even
+        // when its freshly answered feedback has never played. Compare reopening
+        // against that durable checkpoint; the snapshot must still restore the
+        // exact pre-close position and zero listening credit independently.
+        const auto history = narration::read_history(state::StateStore(environment.paths.root).load());
+        open(page); ready(); const auto after = snapshot();
+        const auto restored_history = narration::read_history(saved());
+        const bool unchanged = after.key == before.key && after.index == before.index && after.offset == before.offset
+            && after.heard_through == before.heard_through && !after.playing && !after.allocated && !after.finished
+            && restored_history == history;
+        if (!unchanged) diagnose_reopen(before, after, history, restored_history);
+        require(unchanged,
+            "Focal reopening changed the actual pause, page slots or playback ownership");
+        preserved();
+    }
+};
+
+std::vector<std::size_t> feedback_parts(Harness& fixture, std::size_t block, const std::string& expected) {
+    const auto snapshot = fixture.snapshot(); const auto source = wide(expected); std::vector<bool> covered(source.size()); std::vector<std::size_t> result;
+    require(edit_text(fixture.control(block, 4)) == expected, "The current declarations feedback lost its complete authored wording");
+    for (std::size_t index = 0; index < snapshot.segments.size(); ++index) {
+        const auto& part = snapshot.segments[index]; if (!part.feedback || part.block != block) continue;
+        require(part.start < part.end && part.end <= source.size() && part.source == utf8(source.substr(part.start, part.end - part.start)),
+            "A declarations feedback segment differs from its displayed UTF-16 source interval");
+        for (auto at = part.start; at < part.end; ++at) covered[at] = true;
+        fixture.verify_audio(part); result.push_back(index);
+    }
+    for (std::size_t at = 0; at < source.size(); ++at) require(iswspace(source[at]) || covered[at], "The feedback plan omitted an authored non-whitespace character");
+    require(!result.empty(), "The current declarations feedback has no actual reader segments"); return result;
+}
+
+void prepared_prose(Harness& fixture, std::size_t block, const std::string& expected) {
+    const auto snapshot = fixture.snapshot(); const auto source = wide(expected); std::vector<bool> covered(source.size());
+    std::size_t count = 0;
+    for (const auto& part : snapshot.segments) {
+        if (part.feedback || part.block != block) continue;
+        require(part.start < part.end && part.end <= source.size()
+            && part.source == utf8(source.substr(part.start, part.end - part.start)),
+            "Prepared criterion audio differs from its exact original UTF-16 source interval");
+        for (auto at = part.start; at < part.end; ++at) covered[at] = true;
+        fixture.verify_audio(part); ++count;
+    }
+    for (std::size_t at = 0; at < source.size(); ++at)
+        require(iswspace(source[at]) || covered[at], "The prepared reader plan truncated a criterion before the questionless compiler");
+    require(count > 0, "A preceding criterion has no actual prepared narration");
+    std::cout << "PREPARED criterion block=" << block << " utf16=" << source.size() << " segments=" << count
+        << "; source and PCM/timings checked, not full paragraph playback\n";
+}
+
+void exercise(const std::shared_ptr<windows::NarrationWorker>& backend) {
+    Harness f(backend);
+    const auto compiler_at = position(f.lesson, "block_0004_0002"), prediction_at = position(f.lesson, "work_u11l19_nombre_y_igual");
+    const auto& compiler = f.lesson.pages[compiler_at.page].blocks[compiler_at.block];
+    const auto& prediction = f.lesson.pages[prediction_at.page].blocks[prediction_at.block];
+    const auto& reference = f.lesson.pages[7].blocks[1];
+    require(compiler_at.page == 4 && compiler_at.block == 4 && prediction_at.page == 5 && prediction_at.block == 1
+        && compiler.question.empty() && compiler.output_check && f.lesson.compiler_puzzles_required
+        && compiler.output_check->cases.size() == 1 && compiler.output_check->cases.front().outputs == std::vector<std::string>{std::string(expected_output)}
+        && prediction.answers == std::vector<std::string>{std::string(prediction_answer)} && !prediction.review_feedback.empty()
+        && !prediction.explanation.empty() && reference.type == curriculum::BlockType::code && !reference.code.empty(),
+        "The current declarations owners, no-question compiler or independent output oracles changed");
+    for (const auto& page : f.lesson.pages) for (const auto& block : page.blocks)
+        require(!state::get_response(f.saved(), f.lesson, block), "The fresh declarations QA contains a seeded response");
+    require(!windows::compiler_puzzle_completed(f.saved(), f.lesson, compiler), "The untouched real compiler already has a success receipt");
+    std::cout << "SCOPE fresh p5 UI address only; no earlier-page answers, compiler receipts, imports or listening history were seeded\n";
+    f.ready(); f.privacy();
+    const auto pending_regions = lesson_reading_regions(f.view);
+    require(std::ranges::any_of(pending_regions, [&](const auto& region) { return region.block_index == compiler_at.block
+        && region.required_compiler && region.is_exercise && !region.solved; }), "The actual questionless compiler has no pending reader boundary");
+    for (std::size_t index = 1; index < compiler_at.block; ++index) {
+        require(std::ranges::any_of(pending_regions, [&](const auto& region) { return region.block_index == index
+            && region.source_text == f.lesson.pages[compiler_at.page].blocks[index].text; }), "A criterion paragraph preceding the questionless compiler is absent from narration");
+        prepared_prose(f, index, f.lesson.pages[compiler_at.page].blocks[index].text);
+    }
+    require(!lesson_page_state(f.view).can_next && !navigate_lesson_view(f.view, prediction_at.page), "The untouched compiler allowed its dependent page");
+    std::cout << "PHASE actual questionless compiler boundary, forward seek and reader stop\n";
+    f.reader->restart(); f.reader->pause(); f.reader->seek_seconds(600);
+    auto pending = f.snapshot();
+    require(pending.segments[pending.index].block == compiler_at.block && !pending.finished && !pending.allocated && pending.heard_through == 0,
+        "Forward preview skipped the questionless compiler or invented listening");
+    f.reader->seek_seconds(-1); f.reader->toggle();
+    wait([&] { const auto value = f.snapshot(); return value.waiting_gate && !value.playing && !value.allocated
+        && value.segments[value.index].block == compiler_at.block; }, "the actual declarations compiler waits for its own check");
+    f.verify_audio(f.snapshot().segments[f.snapshot().index], false);
+    f.reader->seek_seconds(600);
+    require(f.snapshot().segments[f.snapshot().index].block == compiler_at.block && !f.snapshot().finished
+        && !navigate_lesson_view(f.view, prediction_at.page), "Seeking at the compiler boundary opened subsequent content");
+    std::cout << "PHASE actual empty-output program, Incorrecto and retry stop\n";
+    const auto initial = f.compile(compiler_at.block, compiler.initial_code);
+    require(bytes(initial / "execution-stdout.bin").empty() && !windows::compiler_puzzle_completed(f.saved(), f.lesson, compiler),
+        "The real initial program acquired false completion credit");
+    const auto incorrect_parts = feedback_parts(f, compiler_at.block, "✗ Incorrecto");
+    std::set<std::size_t> initial_observed;
+    f.reader->toggle();
+    wait([&] { const auto value = f.snapshot(); const auto& part = value.segments[value.index];
+        if (value.playing && part.feedback && part.block == compiler_at.block) initial_observed.insert(value.index);
+        return !value.playing && !value.allocated && !value.preparing && part.feedback && part.block == compiler_at.block
+            && value.index == incorrect_parts.back() && value.offset + 1 >= part.duration_ms
+            && std::ranges::all_of(incorrect_parts, [&](auto index) { return initial_observed.contains(index); });
+    }, "the complete real Incorrecto verdict and retry stop");
+    require(!f.snapshot().finished && !f.snapshot().segments[f.snapshot().index].correct && !lesson_page_state(f.view).can_next
+        && !navigate_lesson_view(f.view, prediction_at.page), "The rejected compiler bypassed its retry boundary");
+    f.reader->seek_seconds(600);
+    require(f.snapshot().segments[f.snapshot().index].feedback && f.snapshot().index <= incorrect_parts.back(), "A forward preview escaped the rejected compiler verdict");
+    std::cout << "PHASE actual eight-report program, paused Correcto and explicit continuation\n";
+    f.edit(compiler_at.block, 10, reference.code); const auto correct_run = f.compile(compiler_at.block, reference.code);
+    const auto output = bytes(correct_run / "execution-stdout.bin"); std::string windows_output;
+    for (const auto value : expected_output) { if (value == '\n') windows_output += '\r'; windows_output += value; }
+    require((output == expected_output || output == windows_output) && windows::compiler_puzzle_completed(f.saved(), f.lesson, compiler),
+        "The actual reference did not earn the complete eight-report objective");
+    const auto compiler_correct_parts = feedback_parts(f, compiler_at.block, "✓ Correcto");
+    const auto paused_correct = f.snapshot();
+    require(paused_correct.index == compiler_correct_parts.front() && paused_correct.offset == 0 && !paused_correct.playing
+        && !paused_correct.allocated && !paused_correct.finished, "Correcto ignored the manual pause or skipped its unheard verdict");
+    f.reader->toggle();
+    wait([&] { return f.snapshot().finished; }, "explicit playback completes the real compiler Correcto");
+    require(f.snapshot().heard_through > static_cast<std::int64_t>(compiler_correct_parts.back()), "The compiler verdict completed without actual playback credit");
+    f.preserved();
+    std::cout << "PHASE actual recovery question, rejected guide and retry stop\n";
+    f.navigate(prediction_at.page); f.privacy(); f.reader->restart(); f.reader->pause(); f.reader->seek_seconds(600);
+    pending = f.snapshot();
+    require(pending.segments[pending.index].block == prediction_at.block && !pending.finished && pending.heard_through == 0
+        && !lesson_page_state(f.view).can_next, "Forward preview skipped the new recovery or invented listening");
+    f.reader->toggle(); wait([&] { const auto value = f.snapshot(); return value.waiting_gate && !value.playing && !value.allocated
+        && value.segments[value.index].block == prediction_at.block; }, "the new recovery waits before its following reference");
+    const std::string wrong = "Error: Se esperaba =\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 2\nTabla: salto=2";
+    f.reader->pause(); f.edit(prediction_at.block, 2, wrong); f.click(prediction_at.block, 3); f.reader->pause(); f.ready();
+    const auto rejected = state::get_response(f.saved(), f.lesson, prediction);
+    require(rejected && !rejected->correct && rejected->answer == wrong, "The actual swapped diagnostics did not produce an ordinary rejected answer");
+    const auto wrong_parts = feedback_parts(f, prediction_at.block, "✗ Incorrecto\n\n" + prediction.review_feedback);
+    std::set<std::size_t> observed;
+    const auto observe = [&](const LessonReaderSnapshot& value) {
+        if (value.playing && value.segments[value.index].feedback && value.segments[value.index].block == prediction_at.block) observed.insert(value.index);
+    };
+    f.reader->toggle();
+    wait([&] { const auto value = f.snapshot(); observe(value);
+        require(!value.playing || value.segments[value.index].block <= prediction_at.block, "The rejected guide played a following reference");
+        return !value.playing && !value.allocated && !value.preparing && value.segments[value.index].feedback
+            && value.index == wrong_parts.back() && value.offset + 1 >= value.segments[value.index].duration_ms
+            && std::ranges::all_of(wrong_parts, [&](auto index) { return observed.contains(index); });
+    }, "the complete authored recovery guide and retry stop");
+    require(std::ranges::all_of(wrong_parts, [&](auto index) { return observed.contains(index); }) && !f.snapshot().finished
+        && !lesson_page_state(f.view).can_next, "The rejected recovery omitted guide playback or allowed advancement");
+    std::cout << "PHASE focal rejected recovery reopens silently with its complete guide\n";
+    f.reader->pause(); const auto rejected_pause = f.snapshot(); f.reopen_paused(rejected_pause); f.privacy();
+    const auto reopened_rejected = state::get_response(f.saved(), f.lesson, prediction);
+    require(reopened_rejected && !reopened_rejected->correct && reopened_rejected->answer == wrong
+        && reopened_rejected->raw_json == rejected->raw_json && edit_text(f.control(prediction_at.block, 2)) == wrong
+        && edit_text(f.control(prediction_at.block, 4)) == "✗ Incorrecto\n\n" + prediction.review_feedback
+        && !lesson_page_state(f.view).can_next, "Silent reopening changed the actual rejected answer, complete guide or retry gate");
+    f.reader->seek_seconds(600);
+    require(f.snapshot().segments[f.snapshot().index].feedback && f.snapshot().index <= wrong_parts.back(), "Seeking escaped the rejected recovery guide");
+    std::cout << "PHASE real recovery success, complete explanation and following reference caption\n";
+    f.reader->pause(); f.edit(prediction_at.block, 2, prediction_answer); f.click(prediction_at.block, 3); f.reader->pause(); f.ready();
+    const auto correct_parts = feedback_parts(f, prediction_at.block, "✓ Correcto\n\n" + prediction.explanation); observed.clear(); f.privacy();
+    const auto accepted = state::get_response(f.saved(), f.lesson, prediction);
+    require(accepted && accepted->correct && accepted->answer == prediction_answer && lesson_page_state(f.view).can_next,
+        "The actual corrected prediction did not complete its own page objective");
+    require(!f.snapshot().playing && !f.snapshot().allocated && f.snapshot().index == correct_parts.front() && f.snapshot().offset == 0,
+        "The new correct explanation ignored the manual pause");
+    std::cout << "PHASE focal accepted recovery reopens at its manually paused explanation\n";
+    const auto explanation_pause = f.snapshot(); f.reopen_paused(explanation_pause); f.privacy();
+    const auto reopened_accepted = state::get_response(f.saved(), f.lesson, prediction);
+    require(reopened_accepted && reopened_accepted->correct && reopened_accepted->answer == prediction_answer
+        && reopened_accepted->raw_json == accepted->raw_json && edit_text(f.control(prediction_at.block, 2)) == prediction_answer
+        && edit_text(f.control(prediction_at.block, 4)) == "✓ Correcto\n\n" + prediction.explanation,
+        "Silent reopening changed the accepted recovery or its complete unheard explanation");
+    f.reader->toggle();
+    wait([&] { const auto value = f.snapshot(); observe(value); return value.playing
+        && !value.segments[value.index].feedback && value.segments[value.index].block > prediction_at.block;
+    }, "the entire real explanation precedes the following reference caption");
+    f.reader->pause(); const auto after_explanation = f.snapshot();
+    require(std::ranges::all_of(correct_parts, [&](auto index) { return observed.contains(index); })
+        && after_explanation.heard_through > static_cast<std::int64_t>(correct_parts.back()), "The reader continued before every explanation part actually played");
+    const auto& caption = after_explanation.segments[after_explanation.index]; const auto following_regions = lesson_reading_regions(f.view);
+    require(caption.block == prediction_at.block + 1 && std::ranges::any_of(following_regions, [&](const auto& region) {
+        return region.target == caption.target && region.passive_label; }), "The complete explanation did not reach the actual passive reference caption");
+    f.verify_audio(caption, false); f.privacy(); f.preserved();
+    require(edit_text(f.control(prediction_at.block, 2)) == prediction_answer
+        && windows::compiler_puzzle_completed(f.saved(), f.lesson, compiler) && bytes(initial / "main.cpp") == compiler.initial_code
+        && bytes(correct_run / "main.cpp") == reference.code, "Reader continuation changed the actual answer, literal program or compiler achievement");
+    const auto final_state = f.saved();
+    for (const auto& page : f.lesson.pages) for (const auto& block : page.blocks)
+        if (block.stable_id != compiler.stable_id && block.stable_id != prediction.stable_id)
+            require(!state::get_response(final_state, f.lesson, block), "The focal reader fabricated a response or achievement for an untouched activity");
+    std::cout << "PASS current U11L19 reader: fresh p5 QA; three preceding criteria fully planned with prepared source-bound PCM/timings (not full paragraph playback); actual no-question required gate and seek; two real educational runs; Incorrecto retry stop; manual pause and explicit Correcto playback; actual recovery wait/rejected guide/full explanation playback before reference; silent rejected/accepted reopens; non-silent 24 kHz PCM, original asset and recordings retained. Earlier pages, imports, human listening and full curricular traversal are outside this focal regression.\n";
+}
+} // namespace
+
+int main() {
+    std::cout << std::unitbuf; std::cerr << std::unitbuf;
+    const auto apartment = OleInitialize(nullptr); if (FAILED(apartment)) return 2;
+    INITCOMMONCONTROLSEX common{sizeof(common), ICC_STANDARD_CLASSES}; InitCommonControlsEx(&common);
+    const auto rich = LoadLibraryW(L"Msftedit.dll"); int result = 0;
+    try {
+        require(rich != nullptr, "Cannot load native RichEdit"); reader_theme::prepare_fonts();
+        auto backend = std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root) / "out/narration/runtime.json");
+        struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker; ~Shutdown() { worker->shutdown(); } } cleanup{backend};
+        exercise(backend);
+    } catch (const std::exception& error) { std::cerr << "FAIL U11 declarations reader: " << error.what() << '\n'; result = 1; }
+    if (rich) FreeLibrary(rich); OleUninitialize(); return result;
+}
