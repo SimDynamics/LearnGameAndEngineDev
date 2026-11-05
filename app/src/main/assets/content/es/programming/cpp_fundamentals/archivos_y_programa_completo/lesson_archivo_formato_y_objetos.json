@@ -10,11 +10,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Un archivo conserva una secuencia de datos identificada por un nombre o una ruta. Un archivo de texto puede representar valores mediante caracteres: el número doce puede escribirse con los caracteres 1 y 2. Leer esos caracteres para obtener un int es una interpretación. El archivo no contiene una variable C++ con nombre, ámbito y tipo que reaparezca automáticamente al abrirlo."
+          "text": "Un archivo conserva datos que el programa puede localizar mediante un nombre o una ruta, es decir, una indicación de su ubicación. Un archivo de texto representa esos datos mediante caracteres: el número doce puede escribirse con los caracteres `'1'` y `'2'`. El programa puede interpretar esos caracteres para obtener un valor de tipo `int`. La representación almacenada y los objetos del programa son elementos distintos; abrir el archivo no hace reaparecer automáticamente las variables del programa que lo escribió (Stroustrup, 2024).\n\nPor ejemplo, el programa lector define sus propias variables y extrae hacia ellas los valores representados en el texto. Sus nombres y tipos se establecen en ese programa, no por el nombre del archivo.",
+          "emphasis": [
+            {
+              "text": "archivo de texto",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El formato fija cómo interpretar los datos: por ejemplo, dos enteros decimales en el orden turno y cajas, separados por espacio en blanco. El programa debe conocer y comprobar ese acuerdo. La extensión .txt es una convención de nombre; no garantiza que el contenido cumpla el formato ni que sea válido para nuestro dominio (Stroustrup, 2024, sección 9.3, pp. 254–255)."
+          "text": "El formato establece cómo están organizados los datos y cómo debe interpretarlos el programa (Stroustrup, 2024, sección 9.3, pp. 254–255). En nuestro ejemplo, cada parte que se interpreta como un dato es un campo: el primero representa el turno y el segundo la cantidad de cajas. El acuerdo exige dos enteros decimales, en ese orden y separados por espacio en blanco. El programa debe leerlos hacia los destinos correspondientes y comprobar los requisitos exigidos.\n\nLa extensión .txt forma parte del nombre del archivo. Ese nombre no demuestra que el contenido respete el formato ni que los valores sean válidos para el programa. Para comprobarlo hay que examinar e interpretar sus datos.",
+          "emphasis": [
+            {
+              "text": "formato",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "campo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -26,7 +43,12 @@
             "El nombre no demuestra el formato ni la validez del contenido."
           ],
           "correctIndex": 2,
-          "explanation": "El contenido se valida leyendo e interpretando según un formato definido."
+          "explanation": "El contenido se valida leyendo e interpretando según un formato definido.",
+          "reviewFeedback": [
+            "Distingue lo que indica el nombre de lo que sólo podrías comprobar leyendo los datos.",
+            "Separa la representación almacenada de los objetos que el programa utiliza al interpretar sus datos.",
+            "Relaciona el nombre, el acuerdo de formato y las comprobaciones del contenido; son datos distintos."
+          ]
         }
       ]
     },
@@ -38,7 +60,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya sabemos extraer datos desde una cadena con istringstream. Este ejemplo aísla la interpretación que después realizaremos desde un archivo. No abre un archivo: el texto conocido permite estudiar la regla sin mezclarla con apertura y cierre."
+          "text": "Ya sabemos extraer datos desde una cadena mediante `std::istringstream`. El ejemplo siguiente construye ese flujo a partir de un texto conocido y extrae dos enteros en decimal. El texto entre comillas es el contenido que leerá el flujo; las variables `turno` y `cajas` recibirán los valores obtenidos.\n\nEsta práctica permite estudiar la interpretación antes de añadir la apertura y el cierre de archivos. El programa usa la cadena escrita en su código y no abre ningún archivo. Sigue el orden de las extracciones y después el de los elementos que se muestran en la salida."
         },
         {
           "type": "output_prediction",
@@ -49,11 +71,22 @@
           "answers": [
             "7:3"
           ],
-          "explanation": "La lectura decimal produce los enteros 7 y 3. Los ceros iniciales del texto no forman parte de esos valores."
+          "explanation": "La lectura decimal produce los enteros 7 y 3. Los ceros iniciales del texto no forman parte de esos valores.",
+          "reviewFeedback": "Sigue cada extracción desde los caracteres de la cadena hasta su destino entero. Después revisa qué insertan las dos variables y el separador en la salida; no copies sin interpretar el texto de entrada."
         },
         {
           "type": "paragraph",
-          "text": "Si 0007 es sólo la presentación de un turno numérico, conservar 7 puede ser correcto. Si los cuatro caracteres son un identificador significativo, el tipo adecuado puede ser una cadena: 0007 y 7 no son entonces la misma representación admitida. Escoge según el requisito, sin suponer que todos los textos con dígitos deben convertirse a int."
+          "text": "El tipo adecuado depende de la información que debas conservar. Si el dato es un valor numérico, puede bastar con guardar el entero leído. Un `int` conserva ese valor, pero no cuántos ceros había al principio del texto que lo representaba.\n\nSi el dato es un código de cuatro caracteres, una cadena `std::string` permite conservarlos: `\"0007\"` y `\"7\"` son cadenas diferentes. Después de leer todavía debes comprobar la longitud y los caracteres exigidos. No conviertas un texto con dígitos a `int` sólo por su apariencia; decide según el requisito.",
+          "emphasis": [
+            {
+              "text": "valor numérico",
+              "style": "bold"
+            },
+            {
+              "text": "código de cuatro caracteres",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -65,7 +98,12 @@
             "Leerlo en double para que el tipo añada los ceros."
           ],
           "correctIndex": 1,
-          "explanation": "La cadena conserva los caracteres. Todavía hay que comprobar longitud y caracteres si el formato lo exige."
+          "explanation": "La cadena conserva los caracteres. Todavía hay que comprobar longitud y caracteres si el formato lo exige.",
+          "reviewFeedback": [
+            "Revisa qué información conserva un valor entero y si incluye cuántos caracteres se usaron para escribirlo.",
+            "Distingue conservar los caracteres de comprobar que cumplen la longitud y las reglas exigidas.",
+            "Distingue un valor numérico de la secuencia exacta de caracteres; cambiar a otro tipo numérico no añade información sobre cómo estaba escrito."
+          ]
         }
       ]
     },
@@ -84,7 +122,8 @@
           "answers": [
             "Formato invalido"
           ],
-          "explanation": "La extracción compuesta no completó ambos enteros; se toma la rama de fallo sin usar cajas como un dato válido."
+          "explanation": "La extracción compuesta no completó ambos enteros; se toma la rama de fallo sin usar cajas como un dato válido.",
+          "reviewFeedback": "Comprueba por separado si cada extracción obtiene el entero solicitado. Luego decide qué rama de la condición encadenada se ejecuta y localiza su instrucción de salida."
         },
         {
           "type": "multiple_choice",
@@ -96,17 +135,432 @@
             "Se interpretaría otro significado sin que el tipo int detecte el intercambio."
           ],
           "correctIndex": 2,
-          "explanation": "La biblioteca sigue el orden de las operaciones; los nombres no corrigen un acuerdo de formato equivocado."
+          "explanation": "La biblioteca sigue el orden de las operaciones; los nombres no corrigen un acuerdo de formato equivocado.",
+          "reviewFeedback": [
+            "Compara el orden de las extracciones con el destino escrito a la derecha de cada >>. Revisa si los nombres pueden cambiar ese recorrido.",
+            "Ambos destinos tienen el mismo tipo. Separa una incompatibilidad de tipos de una interpretación incorrecta de las posiciones.",
+            "Sigue qué parte del texto se asigna a cada destino y quién decide su significado."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Una lectura correcta no demuestra que un turno exista ni que una cantidad pertenezca al dominio. Distingue apertura, interpretación del formato, validación de valores y uso de esos valores. En la siguiente lección añadiremos la apertura real, conservando esta separación."
+          "text": "Abrir el archivo permite intentar acceder a sus datos; extraer los campos interpreta sus caracteres y obtiene valores; validar los valores comprueba si cumplen las reglas del programa. Por ejemplo, obtener un entero para el turno no demuestra que ese turno exista en el registro. Esa comprobación requiere información del programa, además del tipo `int`.\n\nEn los ejemplos de esta lección, la condición comprueba que se hayan extraído los dos enteros. Eso no acredita por sí solo todos los requisitos del formato, como que no queden otros campos, ni todas las reglas sobre los valores. Antes de utilizarlos, completa las comprobaciones que exija el problema. En la siguiente lección añadiremos la apertura real y mantendremos separadas estas etapas.",
+          "emphasis": [
+            {
+              "text": "Abrir el archivo",
+              "style": "bold"
+            },
+            {
+              "text": "extraer los campos",
+              "style": "bold"
+            },
+            {
+              "text": "validar los valores",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "En el editor de código los archivos del programa viven dentro de una ejecución aislada. No presupongas que sobreviven a la siguiente ejecución ni que aparecen como archivos personales accesibles desde el teléfono. Los ejemplos crearán sus propios datos de prueba dentro de esa ejecución."
+          "text": "En el editor de Windows, cada ejecución del programa empieza en una carpeta de trabajo nueva. Si el programa abre muestra.txt sin indicar otra ruta, ese nombre se busca dentro de esa carpeta. Los próximos ejemplos crearán sus archivos de prueba y los leerán durante la misma ejecución.\n\nLos archivos generados quedan en la carpeta de esa ejecución, pero una ejecución posterior empieza en otra carpeta y no los recibe automáticamente. Guardar el código del programa y conservar los datos que éste genera son acciones distintas."
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "592d105efb240c3a1f0a632e0e308bfe1fd81d9b03c5f03b7c5aa63344276a64"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "b20846279acf3450eaab756245a20a692b7e427c85dcce392e13e24e18c250a9"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "b3502ae0233ba45b2bdd7ca87518e1ec1e5da1eea696519bc4b9dda34174297e"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "3afa1a8ff2c20911b0327a7e1007bae4aed3d5c1e0588aff2a705956ea1396ec"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "73981d4abd48f6dd7f0ac7da3fbacd00bc02a9aafafffc4059f3059b3e636113"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "a213f67f859d956df132963fd5b1901f927b5b2be9b286c80bf46ee93e1eef64",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b3c33086f55f8b4f109e9328a58dacca7d69f07709b395e3a810fa33dd2b15ed"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "ee053dfdce6c9dd3391d490a5988413ef6c1717d8b06c3494adf80a4e43465e2"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5159b672a072357eab2c46226b02ea03177d0cf298b73814ba1359bfbb2ff380"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "9c26fddcf32b6b9168bf38cdd8bc52381988915977fbe6f9c1cdb47a190b8f65"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "7ed25c6b293eec9168a0df7e1b9b96e933727535b907146bacb18d9441cacadb"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "d65fe0f388497c2adaa3224716b58b3407d3336e43c1422e9fb67b17aa8f4635",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "592d105efb240c3a1f0a632e0e308bfe1fd81d9b03c5f03b7c5aa63344276a64"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b20846279acf3450eaab756245a20a692b7e427c85dcce392e13e24e18c250a9"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "b3502ae0233ba45b2bdd7ca87518e1ec1e5da1eea696519bc4b9dda34174297e"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "3afa1a8ff2c20911b0327a7e1007bae4aed3d5c1e0588aff2a705956ea1396ec"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "73981d4abd48f6dd7f0ac7da3fbacd00bc02a9aafafffc4059f3059b3e636113"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "28853d1cda3e7ac4d166cf5f461c1db051cd41c65bf9aecde16238f3c312b1bc",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "c416f9a47987ee2f906a5bfdd011ea155d033a0aed03e4fe6bafd33cf836f351"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b4a53482f048b6a1c6d7784a426dcfc75354f518da610f4e3d189ab21e8a1853"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "463e56830df7790791e0fff053dea37dd907b9293aee3b12d239f99d17cf1695"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "f57742e55c4cdf17abbcec6720d9acb973950ac5cef58aea31fbf4ad7a6ebb0d"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "f014cc8f29346d77d9684e65d4466d4e7b90659579b71d67d35da32a9566a46f"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8d0dc8329363ce306310e4ea4f5c9c0740a9aba7964b4f716da28a4f89dff09f",
+        "afterSha256": "04293f80c6cabf3431e22931772365ba9b689b06c75d483493184a7acb546f81"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e3c862b66b0a8f2855f4c6a9bbd0a4b20b685d41b679ef59ed025458db6517f5",
+        "afterSha256": "badcf8b78275dbcd8dbd96f6fa75fbcb1daf4adc73d5b51ef6721cda4eab142e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "7042cc0dbe69dfed209e0573af03b6613f8cb547428e82dd3639eea2ac5b8155",
+        "afterSha256": "7517445da59a8fb30c78fc165785a6d1fd7f796708d11f0037f00b2223aa4a7d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "54911888eb83bae8e7e7f70997e5b39ac69c0799b99908cf90e8b0ce594f6b01",
+        "afterSha256": "f466fad0b794e2e5729a90e156a6f6522bb4c2434d56b33a78b1b78532cbc9c3"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "4c1b1c6c18793588ca98cc5b3c04e5870fdfa9a0c49882b9732b349a4c410901",
+        "afterSha256": "d9e23b54ab2883769c05576852670924682f5ad9ea29586029128b5ea55754fd"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "9f3fd4e484729e939819ee783354cf5c47c06a029c702d82ac4598e3ecb49d83",
+        "afterSha256": "58afa87e40f5e96d486c16f5258f5051b65432ea958676715856f7c79b193e59"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "70c2b14c476091ec31d7218edbc44ff70eb835e1fbc54ac161ab9c56cb8dbddc",
+        "afterSha256": "5024fa0a7c6ce918f62262ae942c36e3c95f17eb6ef8ad6f6f4f19ad97714d76"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "180c96f332ede41232e7527837b7485f26a207ca574ba297b45a4556039f0986",
+        "afterSha256": "ed8bf318d1639b6266a41eb3fea5c9cdeff746ccff28f824ac8197223732a34b"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "593268b9638c765cb864aaa29761e1acdeb66c010b1ab9720134718f23b389e4",
+        "afterSha256": "a37721397d388c1380f6bca36e0190cf9eea9158725e85fda9db8d8835df7a4f"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "654fc833e6bdbf873ffdc12cc735d16d346689e7fb6e34e19f4ff4b1a2217a43",
+        "afterSha256": "e7a3e7922d3d2eea9676e3634aa8f288ec7ede2d0ed764a0e6ef206f9f70baa9"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "d885e9050d990ace78974160c7c2bd3e80dd3839dc0326b86ba2faabf28e01af",
+        "afterSha256": "994d0652ce0e9d79151806e4281038a11441e06450ba0d1fd4353da876d6e27e"
+      }
+    ]
+  }
 }
