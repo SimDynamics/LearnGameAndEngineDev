@@ -52,6 +52,16 @@ constexpr std::string_view assignment_output =
 constexpr std::string_view assignment_answer =
     "Valor: 6\nValor: 2\nError: Se esperaba ;\nValor: 6\nValor: 2\nAceptadas: 4\nRechazadas: 1\nTabla: a=6 b=2";
 static_assert(assignment_output.size() == 711 && assignment_answer.size() == 98);
+constexpr std::string_view constants_output =
+    "Caso 1\nValor: 4\nValor: 6\nValor: 9\nValor: 6\nError: Nombre constante\nValor: 100\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) base=9(V) copia=6(C)\n"
+    "Caso 2\nError: Se esperaba ;\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\n"
+    "Caso 3\nValor: 1\nError: Nombre constante\nValor: 1\nAceptadas: 2\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(C)\n"
+    "Caso 4\nError: Nombre ya definido\nValor: 1\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C)\n"
+    "Caso 5\nError: Resultado fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\n"
+    "Caso 6\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 1\nAceptadas: 7\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(V) c=3(V) d=4(V) e=5(V) f=6(V)\n";
+constexpr std::string_view constants_answer =
+    "Valor: 3\nValor: 4\nValor: 6\nValor: 4\nError: Nombre constante\nValor: 6\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) fija2=6(V) Fija=4(C)";
+static_assert(constants_output.size() == 809 && constants_answer.size() == 149);
 
 struct ReaderSpec {
     std::string_view label, token, folder, preference, filename, asset_sha;
@@ -75,6 +85,14 @@ const ReaderSpec assignments{
     5, 7, 8, 206, 12442, assignment_output, assignment_answer,
     "Valor: 6\nValor: 2\nError: Se esperaba ;\nValor: 2\nValor: 2\nAceptadas: 4\nRechazadas: 1\nTabla: a=2 b=2",
     {}, {}, true
+};
+const ReaderSpec constants{
+    "U11L21", "constants-reader", "u11-constants-compiler-reader", "u11_constants_reader_qa",
+    "lesson_constantes_del_lenguaje_y_nombres_predefinidos.json", "6bd8244e3e977ac00ffc8d294b7b43a84e9b2065970a07a403a963c6c5c8414b",
+    "block_0005_0002", "work_u11l21_nombres_completos", "block_0007_0001", "block_0006_0001",
+    5, 6, 7, 218, 12921, constants_output, constants_answer,
+    "Valor: 3\nValor: 4\nValor: 6\nValor: 4\nValor: 2\nValor: 6\nAceptadas: 6\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) fija2=6(V) Fija=2(C)",
+    {}, {}, false
 };
 
 std::string visible(std::string value) {
@@ -461,12 +479,12 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend, const Re
         && !navigate_lesson_view(f.view, prediction_at.page), "The rejected compiler bypassed its retry boundary");
     f.reader->seek_seconds(600);
     require(f.snapshot().segments[f.snapshot().index].feedback && f.snapshot().index <= incorrect_parts.back(), "A forward preview escaped the rejected compiler verdict");
-    std::cout << "PHASE actual eight-report program, paused Correcto and explicit continuation\n";
+    std::cout << "PHASE actual complete-objective program, paused Correcto and explicit continuation\n";
     f.edit(compiler_at.block, 10, reference.code); const auto correct_run = f.compile(compiler_at.block, reference.code);
     const auto output = bytes(correct_run / "execution-stdout.bin"); std::string windows_output;
     for (const auto value : spec.output) { if (value == '\n') windows_output += '\r'; windows_output += value; }
     require((output == spec.output || output == windows_output) && windows::compiler_puzzle_completed(f.saved(), f.lesson, compiler),
-        "The actual reference did not earn the complete eight-report objective");
+        "The actual reference did not earn its complete authored objective");
     const auto compiler_correct_parts = feedback_parts(f, compiler_at.block, "✓ Correcto");
     const auto paused_correct = f.snapshot();
     require(paused_correct.index == compiler_correct_parts.front() && paused_correct.offset == 0 && !paused_correct.playing
@@ -554,8 +572,8 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend, const Re
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc > 2 || (argc == 2 && std::string_view(argv[1]) != "--assignments")) return 2;
-    const auto& spec = argc == 2 ? assignments : declarations;
+    if (argc > 2 || (argc == 2 && std::string_view(argv[1]) != "--assignments" && std::string_view(argv[1]) != "--constants")) return 2;
+    const auto& spec = argc == 1 ? declarations : std::string_view(argv[1]) == "--assignments" ? assignments : constants;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto apartment = OleInitialize(nullptr); if (FAILED(apartment)) return 2;
     INITCOMMONCONTROLSEX common{sizeof(common), ICC_STANDARD_CLASSES}; InitCommonControlsEx(&common);
