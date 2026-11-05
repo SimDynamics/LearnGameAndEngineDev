@@ -2,7 +2,7 @@
 
 Uso interno de Work. Este archivo no contiene pedidos activos ni es un canal de encargos para Codex. Consultar `PENDIENTES_RECURSOS_CURRICULARES.md` para las capacidades pendientes y su aceptación. No crear `ACTUALIZACIONES_CODEX.md`.
 
-Continuidad curricular: «+1» significa continuar. Programación 1, Work/main. U11L22 p1–p3 revisadas; QA propia cerrada en p3 con reintento seleccionado y sin comprobar por agotamiento de intentos. Retomar esa comprobación cuando estén disponibles; después continuar p4, cuya integración editorial y flujo obligatorio de sus dos editores siguen pendientes. Conservar la cadena v2 de 14 aristas, contratos, avances y los pendientes de Codex en el registro único, incluida la errata protegida «literal100». No cerrar lección ni curso ni adelantar el proyecto. Sin commits ni publicaciones del principal. Releer íntegro E:\PersonalFiles\Projects\LearnGameAndEngineDev-Playground\Instrucciones_maestras_cursosWindows.txt.
+Continuidad curricular: «+1» significa continuar. Programación 1, Work/main. Próximo punto: U12L1 p1, «Distinguir archivo, formato y objetos», abierta sin responder y QA propia cerrada normalmente. U11L22 integra p4–p10, dos editores obligatorios, referencias posteriores y guías; el recorrido focal alcanza su final, sin acreditar dominio del estudiante ni cierre curricular completo. Conservar las 40 identidades, la cadena v2 de 24 aristas y todos los pendientes del registro único, incluida la errata protegida «literal100», escucha, color e importación histórica. No adelantar la implementación del proyecto prevista con su enseñanza. Sin commits ni publicaciones del principal. Releer íntegro E:\PersonalFiles\Projects\LearnGameAndEngineDev-Playground\Instrucciones_maestras_cursosWindows.txt.
 
 ## Base conservada
 

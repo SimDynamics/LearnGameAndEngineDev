@@ -117,6 +117,24 @@
           "text": "Construir desde el editor mínimo"
         },
         {
+          "type": "paragraph",
+          "text": "El editor contiene las directivas `#include`, el texto inicial y `main`. Completa el programa conectando los componentes ya estudiados: reconocimiento de tokens, lector con reserva de un token, gramática, tabla candidata, recuperación, historial y resumen. Puedes reutilizar tus componentes anteriores y decidir sus tipos, nombres e interfaces. La misma implementación debe procesar las quince sesiones indicadas, con lector, tabla, historial y contadores nuevos al comenzar cada una."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes construir y comprobar el programa por etapas: reconocimiento, consulta sin inserción, creación, asignación, protección y continuación tras un error. Compila y ejecuta conforme integres cada parte y corrige las diferencias que encuentres. El historial sólo debe ampliarse después de aceptar una operación completa, incluido su terminador.\n\nEstas comprobaciones parciales ayudan a localizar problemas; para satisfacer el objetivo final deben coincidir los informes de las quince sesiones. Reintenta este mismo objetivo con el programa completo cuando las hayas incorporado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva los contratos de las páginas anteriores: el lector sólo puede reservar un token a la vez, las consultas no insertan vínculos y la tabla aceptada sólo cambia después de comprobar `;`. Mantén el estado de cada sesión en sus objetos y variables locales, sin variables globales modificables. Calcula los informes a partir de las operaciones y del estado; no escribas una salida preparada para cada caso.\n\nUsa Compilar, ejecutar y comprobar con las quince sesiones. La comprobación compara sus informes y admite distintas implementaciones; al construir también debes conservar los contratos internos, que esa comparación por sí sola no demuestra.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    const std::string texto{\"crea base=6;fija copia=base%4;base=base+2;limite=0;base=3 9;copia+base;\"};\n    return 0;\n}\n",
           "outputCheck": {
@@ -129,18 +147,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "paragraph",
-          "text": "El editor aporta sólo includes, el texto inicial y main. Recupera ideas o módulos anteriores, decide tus tipos e interfaces y conecta reconocimiento, anticipación, gramática, candidato, recuperación, historial y resumen. No se entregan implementaciones nuevas ni condiciones de decisiones para rellenar."
-        },
-        {
-          "type": "paragraph",
-          "text": "Puedes integrar por etapas y reintentar este mismo objetivo: reconocimiento, consulta sin inserción, creación, asignación, protección y continuación tras error. La batería fija los informes que se comparan; el historial sólo se amplía después de aceptar una operación completa."
-        },
-        {
-          "type": "paragraph",
-          "text": "Criterios de corrección: todos los contratos y casos anteriores, reserva coherente con la interfaz de una unidad, ninguna variable global modificable, ausencia de salidas codificadas por caso, publicación sólo tras ; y resumen por consultas que no cambian los vínculos. Una solución distinta de la referencia es válida si demuestra esos resultados y estados."
         }
       ]
     },
@@ -160,7 +166,12 @@
           ],
           "correctIndex": 0,
           "explanation": "Conservar sólo el historial no conserva el estado del lenguaje. La tabla candidata y el compromiso posterior al terminador resuelven ambas responsabilidades.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e02"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e02",
+          "reviewFeedback": [
+            "Sigue por separado la tabla y el historial hasta el momento en que se comprueba el terminador. ¿Qué cambio ya se había hecho?",
+            "Distingue rechazar una operación de comenzar otra sesión. Revisa qué estado anterior debe conservarse.",
+            "Distingue los vínculos de la tabla de los resultados del historial y localiza cuál de esas colecciones cambió antes del fallo."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -172,7 +183,12 @@
             "Consultar un nombre ausente devuelve cero y asignar siempre puede crear otro."
           ],
           "correctIndex": 0,
-          "explanation": "Estas acciones tienen precondiciones y efectos diferentes. La tabla candidata no elimina esa distinción: sólo protege el estado hasta completar ;."
+          "explanation": "Estas acciones tienen precondiciones y efectos diferentes. La tabla candidata no elimina esa distinción: sólo protege el estado hasta completar ;.",
+          "reviewFeedback": [
+            "Revisa qué necesita encontrar cada operación antes de actuar y qué datos puede cambiar al completarse.",
+            "Compara introducir un nombre nuevo, sustituir un valor existente y obtener un valor sin cambiar la tabla.",
+            "Revisa qué debe ocurrir cuando falta el nombre y separa las condiciones de creación, asignación y consulta."
+          ]
         }
       ]
     },
@@ -184,7 +200,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia usa \"crea lote=5;fija sello=lote+1;lote=lote%3;unidad=4;lote=9 2;sello+lote;\". Acepta5,6,2 y8, rechaza dos operaciones y conserva lote=2(V), sello=6(C). El historial es 5 6 2 8, suma 21, un mutable y tres constantes. La tabla incluye los dos predefinidos antes de esos nombres."
+          "text": "Esta referencia procesa una sesión distinta de la batería anterior: `\"crea lote=5;fija sello=lote+1;lote=lote%3;unidad=4;lote=9 2;sello+lote;\"`. Se aceptan los resultados 5, 6, 2 y 8, en ese orden. Se rechaza asignar a `unidad` porque está protegida. En `lote=9 2;`, la candidata obtiene 9, pero encuentra el token `2` donde exige `;`; por eso se descarta y `lote` conserva su valor aceptado 2.\n\nLa tabla final mantiene los dos predefinidos y después lote=2(V) y sello=6(C). El historial es 5 6 2 8 y su suma es 21. Se cuentan cuatro aceptadas, dos rechazadas, un vínculo modificable y tres constantes. Contrasta esos resultados y las decisiones del programa con tu propia organización."
         },
         {
           "type": "code",
@@ -193,7 +209,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No sustituye una solución válida con otra organización. Sigue las fronteras: carácter a token, token a unidad, unidad a expresión, sentencia a candidato, ; a aceptación y tabla/historial a resumen. El candidato se descarta en los errores del lenguaje; los datos anteriores no dependen del último intento. En \"crea n=4;fantasma;n+2;\" se aceptan 4 y 6 y se rechaza sólo la consulta de fantasma: historial 4 6, suma 10 y tabla unidad=1(C) limite=100(C) n=4(V), con un mutable y dos constantes. El ; leído tras fantasma sigue siendo la frontera de su rechazo. Reservarlo antes de una consulta que puede fallar permite que la recuperación lo consuma sin descartar n+2;. Consultar no inserta un vínculo nuevo."
+          "text": "La referencia permite seguir acciones concretas: `leer_token` reconoce los tokens; las funciones de la gramática calculan la expresión; `leer_sentencia` propone una creación, una asignación o una consulta sobre la candidata. `leer_operacion` sólo sustituye la tabla aceptada después de comprobar `;`. El bucle de `main` añade entonces el resultado al historial y el resumen consulta los datos conservados. Una solución válida puede organizar esas responsabilidades de otra manera.\n\nCon `\"crea n=4;fantasma;n+2;\"`, se aceptan 4 y 6 y se rechaza sólo consultar `fantasma`. El historial es 4 6, su suma es 10 y la tabla queda como unidad=1(C) limite=100(C) n=4(V), con un vínculo modificable y dos constantes.\n\nEn la rama de nombre sin asignación, `leer_sentencia` reserva el token siguiente antes de consultar el nombre. Así, cuando falla la consulta de `fantasma`, su terminador `;` sigue en la reserva. La recuperación lo consume y deja disponible `n+2;`, en vez de descartar también esa operación. Consultar un nombre ausente no añade un vínculo."
         }
       ]
     },
@@ -212,11 +228,12 @@
             "Valor: 0\nValor: 2\nError: Nombre constante\nValor: 1\nValor: 3\nAceptadas: 4\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(V) k=2(C)\nHistorial: 0 2 1 3\nSuma: 6\nMutables: 1\nConstantes: 3"
           ],
           "explanation": "El cero se acepta y guarda. La asignación a k falla sin cambiarlo; x pasa de cero a uno y la expresión final vale tres.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e03"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e03",
+          "reviewFeedback": "Sigue las operaciones en orden. Decide si cada una se acepta antes de actualizar la tabla o el historial y conserva el estado anterior cuando se rechaza. Después calcula los recuentos a partir de la tabla actual y la suma a partir del historial."
         },
         {
           "type": "paragraph",
-          "text": "En el editor nuevo de esta página, amplía sólo el resumen con Ceros: N después de Constantes:. Cuenta vínculos cuyo valor aceptado actual sea cero, sin modificar tabla ni historial. El editor incluye la base del intérprete y cuatro sesiones: \"crea a=0;\", \"crea a=0;a=1;\", \"fija k=unidad;k=0;\" y \"crea a=0;fija b=0;a=2;\". Conserva todas las salidas anteriores y sus cabeceras Caso N. La consulta recorre la tabla mediante const referencia; no cuenta ceros históricos. Cada línea termina con salto. Usa Compilar, ejecutar y comprobar con el programa completo.",
+          "text": "En el editor nuevo de esta página, amplía sólo el resumen: después de Constantes: añade una línea Ceros: N en cada informe. N debe ser la cantidad de vínculos cuyo valor aceptado actual sea cero. Cuenta toda la tabla, tanto vínculos modificables como protegidos, incluidos los predefinidos. Conserva la tabla y el historial; el recuento no debe cambiar ninguno de ellos.\n\nEl editor incluye la base del intérprete y estas cuatro sesiones, en este orden:\n\n1. `\"crea a=0;\"`\n2. `\"crea a=0;a=1;\"`\n3. `\"fija k=unidad;k=0;\"`\n4. `\"crea a=0;fija b=0;a=2;\"`\n\nLos recuentos finales deben ser 1, 0, 0 y 1, respectivamente. En la segunda sesión, el historial conserva el cero de la creación aunque el valor actual de `a` ya sea distinto. En la tercera, rechazar la asignación a `k` conserva su valor protegido. Distingue esos hechos al decidir qué datos recorrer.\n\nConsulta los vínculos mediante referencias constantes `const Vinculo&`, como en los otros recuentos del resumen: cada acceso permite leer su registro sin modificarlo. Conserva todas las demás líneas y las cabeceras Caso N. Tras Ceros: deja un espacio antes del número; cada línea termina con un salto y no se añaden líneas vacías. Usa Compilar, ejecutar y comprobar con el programa completo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -253,7 +270,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La consulta se incorpora después de la tabla y se presenta al final del resumen del editor nuevo. Hay hasta ocho vínculos, de modo que el contador cabe en int. En el último caso queda un solo cero aunque el historial conserve dos ceros de creación; la consulta no añade ni actualiza asociaciones."
+          "text": "`contar_ceros` recibe la tabla por referencia constante y devuelve un entero. Definir la función no muestra ese número por sí solo. Si eliges esta organización, coloca su definición después de `Tabla_nombres` y antes de la función que la utilice; muestra el resultado después de Constantes: en cada sesión mediante `std::cout << \"Ceros: \" << contar_ceros(tabla) << \"\\n\";`.\n\nTambién puedes integrar el recorrido directamente en el resumen, como hace la referencia completa posterior; no exige llamar a `contar_ceros`. Hay hasta ocho vínculos, por lo que el recuento cabe en `int`. En la cuarta sesión queda un solo vínculo con valor cero aunque el historial conserve los dos ceros de las creaciones. La consulta no añade ni modifica vínculos ni valores del historial."
         },
         {
           "type": "note",
@@ -539,10 +556,10 @@
         "id": "page_0003",
         "blocks": [
           "block_0003_0000",
-          "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
-          "block_0003_0004"
+          "block_0003_0004",
+          "block_0003_0001"
         ]
       },
       {
@@ -1245,7 +1262,108 @@
         "id": "block_0002_0003",
         "beforeSha256": "2c92835beaf5188c0761e1c9aa14c03b2735adeb8e2058f3c719f3e556748362",
         "afterSha256": "eda110180dcfb36ea89110155f02451adc90fb5335ea74840186d4acc178f2b3"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2738a6f644854f35d7e8ce0c8ffaf0e7e3ab63f2494cc4a34bf047ec75dfb1ff",
+        "afterSha256": "23f04b8d06e057b9a09a62a8f6cdfddc181e83d6bfe4aab70b7fc9f718827ebf"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "e71ffd1ee0e2cbc5b58e365aa18c7769daebd9761305b6c4fe43fc258460e7d3",
+        "afterSha256": "4ca1466cf2f6b0159e442bde18d868c360d0c6576d09bead0acc19190fae7afc"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "921f98038a4dde1185c32ba75b9a11d761b378feade1789c4a36270b47fc49d2",
+        "afterSha256": "0f4f2f2801f36a28791fb915a2879999ea4e8c66f290442e0e5a3633ccbd882d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "bc661e3c38ac1574d66023fe77a292f4c457e9599a4739c031a13a1668d8bae0",
+        "afterSha256": "715e13783f80686def2983e68ff936305884c45e789e99d80fbe6285440fd329"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "24a07687180dd800f94887cec48b13d963d083ade6143fa5111b1e5a32cf43c4",
+        "afterSha256": "42e2986cd5cc5b760b9a09e5530a8e3863dedcbabb7d74c00e69214bd96d320a"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "da4d33a4e0f4c664b6fa0087e701282014b6484f41fcba67670433aabc001537",
+        "afterSha256": "0d3e972a0c268712ea815e7b8e0fbd70516da08fd71a47a0dd037152f61182b4"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "d603806f135e67449bbcb87b21f281ddb3ba39548c770981464423ce0e5e03db",
+        "afterSha256": "c579da6fa9524a722e2a1eb668531fca4e2053dd1c60262991321d1748526812"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "e3366ea6deadcff0d772dddc8f13050fe3d01ebb65fc12eaadfbcaf42be55854",
+        "afterSha256": "272ffc96fbf0bf98f73c385ec09d69d7046832f439fcb122704e846a256a9f07"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "533196badb3b9bfff518c9edd35f695767a9bef13156eadad0a6410c4a1c8a65",
+        "afterSha256": "3186769cf798d32fd386ec9590e4f52a347d59fb3b8e83b4bc1e84f77e85d9c4"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "56f99fdae8ffe183b8a7f8076e4e680c9906d994c85c777f1dc6b9e65768f62e",
+        "afterSha256": "3ae74cafc341c53f166f59ed019e947a85ac51d92ddd4414736a302b500c084c"
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0001",
+      "blocks": [
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    },
+    {
+      "activity": "block_0006_0003",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002",
+        "block_0007_0003",
+        "block_0009_0000",
+        "block_0009_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0001",
+      "requires": [
+        "block_0003_0001"
+      ]
+    },
+    {
+      "activity": "block_0004_0002",
+      "requires": [
+        "block_0003_0001"
+      ]
+    },
+    {
+      "activity": "block_0006_0001",
+      "requires": [
+        "block_0003_0001"
+      ]
+    },
+    {
+      "activity": "block_0006_0003",
+      "requires": [
+        "block_0003_0001"
+      ]
+    }
+  ]
 }
