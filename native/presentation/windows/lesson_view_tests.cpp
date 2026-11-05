@@ -684,7 +684,7 @@ void laboratory_interface_parity(){
         CHARRANGE initial_selection{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&initial_selection));require(initial_selection.cpMin==initial_cursor&&initial_selection.cpMax==initial_cursor,"A new laboratory draft did not start inside main after its predefined indentation");
         fixture.click(0,35);
         require(fixture.control(0,10)==editor&&fixture.text(0,10)==original&&!(GetWindowLongPtrW(editor,GWL_STYLE)&ES_AUTOHSCROLL),"The direct wrap icon recreated or changed the source instead of wrapping it");
-        {PopupCapture capture(fixture.view);fixture.click(0,36);capture.verified();require(capture.captions==std::vector<std::string>{"MSVC C++20 · x64"},"The laboratory compiler control advertised an unavailable backend");}
+        {PopupCapture capture(fixture.view);fixture.click(0,36);capture.verified();require(capture.captions==std::vector<std::string>{"MSVC C++23 · x64"},"The laboratory compiler control advertised an unavailable backend");}
         fixture.click(0,20);require(fixture.fullscreen(),"The standalone editor did not enter real fullscreen");SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);
         require(!fixture.fullscreen()&&fixture.text(0,10)==original,"Escape from laboratory fullscreen changed the draft or retained an exit overlay");
         CHARRANGE personal_selection{1,3};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&personal_selection));fixture.reopen();
@@ -1840,10 +1840,18 @@ void incomplete_puzzles_do_not_consume_attempts(){
         SendMessageW(f.view,WM_COMMAND,MAKEWPARAM(id(index,3),BN_CLICKED),0);pump(f.host);
         struct Notice {std::wstring expected;HWND window=nullptr;} notice{
             index==3?L"Completa todos los espacios primero.":index==6?L"Selecciona una respuesta.":L"Completa todos los campos de respuesta."};
-        EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{auto& target=*reinterpret_cast<Notice*>(raw);
+        EnumChildWindows(f.view,[](HWND candidate,LPARAM raw)->BOOL{auto& target=*reinterpret_cast<Notice*>(raw);
             if(window_text(candidate)==utf8(target.expected)){target.window=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&notice));
-        if(incomplete){require(notice.window&&(GetWindowLongPtrW(notice.window,GWL_EXSTYLE)&WS_EX_NOACTIVATE)&&GetFocus()==previous_focus,
-                "An incomplete answer omitted its original nonblocking notice or stole editor focus");DestroyWindow(notice.window);}
+        if(incomplete){
+            require(notice.window,"An incomplete answer omitted its internal nonblocking notice");
+            const auto style=GetWindowLongPtrW(notice.window,GWL_STYLE);
+            require((style&WS_CHILD)&&!(style&WS_POPUP)&&IsChild(f.view,notice.window),
+                "An incomplete answer opened a notice outside its lesson");
+            require(GetWindowLongPtrW(notice.window,GWL_EXSTYLE)&WS_EX_NOACTIVATE,
+                "An incomplete-answer notice can activate over the current editor");
+            require(GetFocus()==previous_focus,"An incomplete-answer notice stole editor focus");
+            DestroyWindow(notice.window);
+        }
         else require(!notice.window,"A valid literal whitespace answer incorrectly produced an incomplete-answer notice");
     };
     for(const auto index:{0u,1u,2u,3u,6u}){
