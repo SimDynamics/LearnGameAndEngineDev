@@ -1328,17 +1328,168 @@ void diagnostic_contracts_preserve_native_and_imported_state(const std::filesyst
     }
     std::cout<<"PASS five diagnostic contracts: prior opaque success stays unproved, exact draft/typed-data preservation, native reopen, Android import, corrupt receipts, atomic rollback pins and Reset; three-goal adoption is monotonic and order-independent\n";
 }
+void rejected_compiler_reviews_preserve_captured_attempts(const std::filesystem::path& base) {
+    using namespace lgaed;using namespace curriculum;using namespace windows;
+    // These FreshExecution values are deliberate unit-level evaluator inputs,
+    // not evidence of compiling, running or hearing a curricular program.
+    const auto lesson=parse_lesson_json(R"({"id":"qa_compiler_review","title":"QA","compilerPuzzlesRequired":true,"pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"original","initialStandardInput":"1","outputCheck":{"cases":[{"standardInput":"1","outputs":["2"]},{"standardInput":"2","outputs":["4"]}]}}]}]})");
+    const auto& block=lesson.pages[0].blocks[0];const std::string feedback="Incorrecto\nRevisa la muestra completa.";
+    CppRunRequest captured;captured.revision=7;captured.source_utf8="// synthetic unit source\n";captured.stdin_utf8="1";
+    FreshExecution wrong{7,true,true,0,"1","otro resultado"};
+    StateData data;data.preferences["review_qa"]["opaque"]=std::string(" \t conservar\r\n保存");
+    Draft draft;draft.source=captured.source_utf8;draft.input=captured.stdin_utf8;draft.selection_start=2;draft.selection_end=7;
+    const auto draft_id=draft_key("programming",lesson,block);put_draft(data,draft_id,draft);
+    put_response(data,"independent_review_qa",Response{"opaque response",false});const auto original=data;
+    require(record_compiler_puzzle_review(data,lesson,block,captured,wrong,feedback)
+        &&compiler_puzzle_review(data,lesson,block,captured)==feedback
+        &&!compiler_puzzle_completed(data,lesson,block)&&compiler_puzzle_case_count(data,lesson,block)==0,
+        "A reviewed evaluator rejection was lost or incorrectly granted a successful compiler case");
+    const auto reviewed=data;require(compiler_puzzle_review(data,lesson,block,captured)==feedback&&data==reviewed,
+        "Reading a matching rejected attempt rewrote its saved state");
+    const auto key="compiler-puzzle/v1/"+lesson.locale+'/'+lesson.id+'/'+exercise_key(lesson,block)+'/'
+        +sha256(reference_objective_frame(lesson,block))+'/';
+    for(const auto& [domain,values]:original.preferences)for(const auto& [name,value]:values)
+        require(find(data,domain,name)&&*find(data,domain,name)==value,"Recording compiler review changed draft, unrelated data or another answer");
+    for(const auto suffix:{"program","cases","completed","feedback"})require(!find(data,"native_windows",key+suffix),
+        "A rejected review wrote into the independent successful-case receipt fields");
+    auto same=captured;same.request_id=99;same.revision=15;same.projects_directory=base/"unused";
+    invalidate_compiler_puzzle_attempt(data,lesson,block,same);
+    require(data==reviewed&&compiler_puzzle_review(data,lesson,block,same)==feedback,
+        "Transient process/revision metadata invalidated an unchanged restored review");
+    StateStore store(base/"compiler-review");(void)store.load();store.save(data);const auto reopened=store.load();
+    require(reopened==data&&compiler_puzzle_review(reopened,lesson,block,captured)==feedback,
+        "A real state-store reopen lost the exact rejection or changed protected data");
+    ++groups;
+    for(const auto mode:{0,1,2,3,4}){
+        auto unavailable=wrong;
+        if(mode==0)unavailable.source_revision=6;
+        if(mode==1)unavailable.compilation_succeeded=false;
+        if(mode==2)unavailable.execution_succeeded=false;
+        if(mode==3)unavailable.exit_code=1;
+        if(mode==4)unavailable.standard_input="unregistered input";
+        auto attempt=reviewed;const auto before=attempt;
+        require(!record_compiler_puzzle_review(attempt,lesson,block,captured,unavailable,feedback)&&attempt==before,
+            "A stale, failed or unavailable execution replaced a reviewed rejection");
+    }
+    auto correct=wrong;correct.standard_output="2";
+    auto attempt=reviewed;const auto before_correct=attempt;
+    require(!record_compiler_puzzle_review(attempt,lesson,block,captured,correct,feedback)&&attempt==before_correct,
+        "A correct result was stored as a rejected review");
+    auto mismatched_capture=captured;mismatched_capture.stdin_utf8="2";
+    require(!record_compiler_puzzle_review(attempt,lesson,block,mismatched_capture,wrong,feedback)&&attempt==before_correct,
+        "An execution was attributed to a different captured stdin");
+    require(!record_compiler_puzzle_review(attempt,lesson,block,captured,wrong,"")&&attempt==before_correct,
+        "An empty feedback payload replaced a resumable reviewed attempt");
+    for(const auto suffix:{"program","input","target","rules","feedback","seal"})for(const auto damage:{0,1,2}){
+        auto corrupt=reviewed;auto& values=corrupt.preferences["native_windows"];
+        const auto entry=key+"review/"+suffix;
+        if(damage==0)values.erase(entry);
+        if(damage==1)values[entry]=std::string("tampered");
+        if(damage==2)values[entry]=std::int64_t{17};
+        const auto before=corrupt;
+        require(compiler_puzzle_review(corrupt,lesson,block,captured).empty()&&corrupt==before,
+            "A missing, mistyped or tampered review field restored feedback or mutated its stored evidence");
+    }
+    auto other_lesson=lesson;other_lesson.pages[0].blocks[0].output_check->cases[0].outputs={"new objective"};
+    const auto before_objective=reviewed;
+    require(compiler_puzzle_review(reviewed,other_lesson,other_lesson.pages[0].blocks[0],captured).empty()
+        &&reviewed==before_objective,"A changed compiler objective reused or rewrote an older rejection");
+    auto new_guide=lesson;
+    new_guide.pages[0].blocks[0].output_check->cases[0].review_feedback.push_back({{"otro resultado"},"Guía curricular actualizada."});
+    require(reference_objective_frame(new_guide,new_guide.pages[0].blocks[0])==reference_objective_frame(lesson,block)
+        &&compiler_puzzle_review(reviewed,new_guide,new_guide.pages[0].blocks[0],captured).empty()&&reviewed==before_objective,
+        "Updating only a pedagogical guide reused obsolete rejection or changed successful-receipt identity/data");
+    for(const auto source_changed:{false,true}){
+        auto changed=captured;
+        if(source_changed)changed.source_utf8+="// edited\n";else changed.stdin_utf8="2";
+        auto value=reviewed;require(compiler_puzzle_review(value,lesson,block,changed).empty(),
+            "A changed source or exact stdin restored another execution's review");
+        invalidate_compiler_puzzle_attempt(value,lesson,block,changed);
+        require(compiler_puzzle_review(value,lesson,block,captured).empty()
+            &&compiler_puzzle_case_count(value,lesson,block)==0,"Undo resurrected an invalidated reviewed rejection");
+        for(const auto suffix:{"program","input","target","rules","feedback","seal"})
+            require(!find(value,"native_windows",key+"review/"+suffix),"Invalidation retained a stale review field");
+    }
+    ++groups;
+    auto project=captured;
+    project.project_files={{"CMakeLists.txt","cmake_minimum_required(VERSION 3.30)\nproject(QA LANGUAGES CXX)\nadd_executable(alpha main.cpp)\n"},
+        {"main.cpp","int main(){return 0;}\n"}};
+    project.source_files={"main.cpp"};project.cmake=CmakeConfig{"alpha",{},"Debug"};
+    auto project_wrong=wrong;project_wrong.executable="alpha";StateData project_data=original;
+    require(record_compiler_puzzle_review(project_data,lesson,block,project,project_wrong,feedback),
+        "A matching synthetic project target could not retain its evaluated rejection");
+    const auto saved_project=project_data;
+    for(const auto mode:{0,1,2,3}){
+        auto changed=project;
+        if(mode==0)changed.cmake->target="beta";
+        if(mode==1)changed.cmake->options["QA_OPTION"]="ON";
+        if(mode==2)changed.cmake->build_type="Release";
+        if(mode==3)changed.project_files[1].second+="// changed header/source\n";
+        auto value=saved_project;
+        require(compiler_puzzle_review(value,lesson,block,changed).empty(),
+            "A changed target, project configuration or source reused another reviewed attempt");
+        invalidate_compiler_puzzle_attempt(value,lesson,block,changed);
+        require(compiler_puzzle_review(value,lesson,block,project).empty(),"Project Undo restored a retired rejection");
+    }
+    auto wrong_target=project_wrong;wrong_target.executable="beta";
+    const auto before_target=project_data;
+    require(!record_compiler_puzzle_review(project_data,lesson,block,project,wrong_target,feedback)&&project_data==before_target,
+        "An execution of another CMake target was recorded for the captured target");
+    auto no_target=wrong;no_target.executable.reset();auto single_data=original;
+    require(record_compiler_puzzle_review(single_data,lesson,block,captured,no_target,feedback),
+        "A valid single-file rejection incorrectly required a nonexistent executable target");
+    ++groups;
+    auto partial=original;
+    require(!record_compiler_puzzle_case(partial,lesson,block,captured,correct,"Correcto")
+        &&compiler_puzzle_case_count(partial,lesson,block)==1,"Synthetic partial-case setup did not retain exactly one success");
+    auto second=captured;second.stdin_utf8="2";auto wrong_second=wrong;wrong_second.standard_input="2";
+    const auto partial_before=partial;
+    require(record_compiler_puzzle_review(partial,lesson,block,second,wrong_second,feedback)
+        &&compiler_puzzle_case_count(partial,lesson,block)==1&&!compiler_puzzle_completed(partial,lesson,block),
+        "Reviewing a later rejected input destroyed or completed the independent partial success");
+    for(const auto& [name,value]:partial_before.preferences.at("native_windows"))
+        require(find(partial,"native_windows",name)&&*find(partial,"native_windows",name)==value,
+            "A rejected input rewrote an existing partial execution proof");
+    auto input_changed=partial;invalidate_compiler_puzzle_attempt(input_changed,lesson,block,captured);
+    require(compiler_puzzle_review(input_changed,lesson,block,second).empty()
+        &&compiler_puzzle_case_count(input_changed,lesson,block)==1,
+        "Changing stdin retained its rejected review or discarded the unchanged program's valid other case");
+    auto explicit_clear=partial;clear_compiler_puzzle_review(explicit_clear,lesson,block);
+    require(explicit_clear==partial_before,"Clearing only reviewed feedback rewrote a draft or partial receipt");
+    auto same_case=partial;
+    require(!record_compiler_puzzle_case(same_case,lesson,block,captured,correct,"Correcto")
+        &&compiler_puzzle_review(same_case,lesson,block,second).empty()&&compiler_puzzle_case_count(same_case,lesson,block)==1,
+        "A genuine correct partial case retained obsolete rejection or falsely completed the objective");
+    auto complete=wrong_second;complete.standard_output="4";
+    require(record_compiler_puzzle_case(partial,lesson,block,second,complete,"Correcto\nAmbos casos")
+        &&compiler_puzzle_review(partial,lesson,block,second).empty()&&compiler_puzzle_case_count(partial,lesson,block)==2
+        &&compiler_puzzle_completed(partial,lesson,block),"Completing both unit-level cases retained a rejected review or lost sealed success");
+    const auto sealed=partial;
+    require(!record_compiler_puzzle_review(partial,lesson,block,second,wrong_second,feedback)&&partial==sealed,
+        "A later rejection downgraded or modified a sealed completed objective");
+    auto edited=second;edited.source_utf8+="// later draft\n";invalidate_compiler_puzzle_attempt(partial,lesson,block,edited);
+    require(partial==sealed&&compiler_puzzle_feedback(partial,lesson,block)=="Correcto\nAmbos casos",
+        "Editing after success changed the independent captured achievement");
+    auto reset=reviewed;reset_compiler_puzzle(reset,lesson,block);
+    require(compiler_puzzle_review(reset,lesson,block,captured).empty()&&!compiler_puzzle_completed(reset,lesson,block)
+        &&compiler_puzzle_case_count(reset,lesson,block)==0,"Explicit Reset retained a rejected review or execution receipt");
+    auto reset_expected=original;reset_expected.preferences["native_windows"]={};
+    require(reset==reset_expected,"Reset of a reviewed attempt rewrote its draft, selection, input or unrelated response");
+    ++groups;
+    std::cout<<"PASS compiler review state: synthetic evaluator rejection only, exact source/stdin/project/target/objective binding, typed tamper refusal, state-store reopen, scoped invalidation/Reset and unchanged independent partial/sealed success; no compiler execution or audio claimed\n";
+}
 }
 int main(int argc, char** argv) {
     try {
-        require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"||std::string_view(argv[2])=="--u11-consult"))
+        require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"||std::string_view(argv[2])=="--u11-consult"||std::string_view(argv[2])=="--compiler-reviews"))
             ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names")),
-            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --remainder-editorial <before fixture> or --u11-names <before fixture>");
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture> or --u11-names <before fixture>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
         std::filesystem::create_directories(base);
         if(argc==3){if(std::string_view(argv[2])=="--u11-consult")reviewed_choice_revisions_preserve_responses(base,true);
+            else if(std::string_view(argv[2])=="--compiler-reviews")rejected_compiler_reviews_preserve_captured_attempts(base);
             else if(std::string_view(argv[2])=="--compiler-expansions")reviewed_compiler_expansions_preserve_execution_history(base);
             else second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
         if(argc==4){if(std::string_view(argv[2])=="--u11-names")u11_names_preserves_historical_and_added_prediction_state(base,argv[3]);
@@ -1354,6 +1505,7 @@ int main(int argc, char** argv) {
         remainder_editorial_preserves_native_and_imported_state(base,std::filesystem::path(LGAED_WORK_EXACT_EDITORIAL_DIR)/"remainder-before.json");
         u11_names_preserves_historical_and_added_prediction_state(base,LGAED_U11_NAMES_BEFORE_FILE);
         diagnostic_contracts_preserve_native_and_imported_state(base);
+        rejected_compiler_reviews_preserve_captured_attempts(base);
         StateData initial;
         initial.preferences["types"]["text"] = std::string(" \t\n\r\n    ");
         initial.preferences["types"]["français_élève"] = std::string("cœur, niño, std::cout, 𝑥");

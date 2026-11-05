@@ -17,6 +17,9 @@ struct LessonReaderSegmentSnapshot {
     std::size_t block = 0,start = 0,end = 0;
     double duration_ms = 0;
     bool available = false,feedback = false,correct = false;
+    // Contiguous playback of this exact recording, independent of a global
+    // boundary that can still be waiting for earlier feedback after a seek.
+    bool feedback_fully_played = false;
     std::vector<windows::NarrationTiming> timings;
     std::filesystem::path recording;
 };

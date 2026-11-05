@@ -962,10 +962,11 @@ LessonReaderSnapshot LessonReader::snapshot()const{
     value.offset=self.player.allocated()?static_cast<std::int64_t>(std::llround(self.player.position())):self.position.milliseconds;
     value.rate=self.rate;value.playback_rate=self.player.ready()?self.player.playback_rate():0;
     value.heard_through=self.position.heard_through;value.error=self.error;value.key=self.key;
-    for(const auto& part:self.parts){LessonReaderSegmentSnapshot segment;
+    for(std::size_t index=0;index<self.parts.size();++index){const auto& part=self.parts[index];LessonReaderSegmentSnapshot segment;
         segment.region=part.region.key;segment.source=part.sentence.text;segment.spoken=part.sentence.spoken;segment.target=part.region.target;
         segment.block=part.region.block_index;segment.start=part.sentence.start;segment.end=part.sentence.end;
         segment.feedback=part.region.feedback;segment.correct=part.region.correct;segment.available=part.audio.has_value();
+        segment.feedback_fully_played=part.region.feedback&&self.feedback_fully_heard(index);
         if(part.audio){segment.duration_ms=part.audio->duration_ms;segment.timings=part.audio->timings;segment.recording=part.audio->wav;}
         value.segments.push_back(std::move(segment));
     }

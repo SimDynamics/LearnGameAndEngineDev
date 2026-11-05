@@ -40,6 +40,33 @@ std::string complete_seal(const std::string& key,std::string_view program,const 
     for(const auto& item:proofs)frame+=token(item);
     return state::sha256(frame);
 }
+std::string review_target(const CppRunRequest& request) {
+    return request.cmake?request.cmake->target:std::string{};
+}
+std::string review_rules(const curriculum::Block& block) {
+    // Pedagogical guides can change without changing successful-case identity.
+    // A rejection must not resurrect an earlier version of that feedback.
+    const auto& check=*block.output_check;std::string frame="compiler-review-rules-v1/";
+    frame+=token(check.input_comparison==curriculum::TextComparison::tokens?"tokens":"exact")
+        +token(std::to_string(check.cases.size()));
+    for(const auto& item:check.cases){
+        frame+=token(item.standard_input)+token(item.executable.value_or(""))+token(item.explanation)
+            +token(item.standard_error==curriculum::StandardErrorExpectation::non_blank?"nonBlank":"ignored")
+            +token(std::to_string(item.outputs.size()));
+        for(const auto& output:item.outputs)frame+=token(output);
+        frame+=token(std::to_string(item.review_feedback.size()));
+        for(const auto& guide:item.review_feedback){
+            frame+=token(std::to_string(guide.outputs.size()));
+            for(const auto& output:guide.outputs)frame+=token(output);
+            frame+=token(guide.text);
+        }
+    }
+    return state::sha256(frame);
+}
+std::string review_seal(std::string_view key,std::string_view program,std::string_view input,
+                        std::string_view target,std::string_view rules,std::string_view feedback) {
+    return state::sha256("compiler-review-v1/"+token(key)+token(program)+token(input)+token(target)+token(rules)+token(feedback));
+}
 std::string diagnostic_proof(const std::string& key,std::string_view program,const curriculum::Block& block) {
     return state::sha256("compiler-diagnostic-v1/"+token(key)+token(program)+token(block.compile_check->diagnostic));
 }
@@ -88,6 +115,40 @@ bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Le
 }
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     return compiler_puzzle_completed(data,lesson,block)?state::string_value(data,"native_windows",base(lesson,block)+"feedback"):std::string{};
+}
+std::string compiler_puzzle_review(const state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& block,const CppRunRequest& current) {
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||compiler_puzzle_completed(data,lesson,block))return {};
+    const auto key=base(lesson,block)+"review/";
+    const auto text=[&](std::string_view suffix)->const std::string*{
+        const auto value=state::find(data,"native_windows",key+std::string(suffix));
+        return value?std::get_if<std::string>(value):nullptr;
+    };
+    const auto program=text("program"),input=text("input"),target=text("target"),rules=text("rules"),feedback=text("feedback"),seal=text("seal");
+    if(!program||!input||!target||!rules||!feedback||!seal||feedback->empty()
+        ||*program!=compiler_program_frame(current)||*input!=current.stdin_utf8||*target!=review_target(current)
+        ||*rules!=review_rules(block)||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
+    return *feedback;
+}
+bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& block,const CppRunRequest& captured,const curriculum::FreshExecution& execution,
+        std::string_view feedback) {
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()||compiler_puzzle_completed(data,lesson,block)
+        ||captured.stdin_utf8!=execution.standard_input
+        ||(captured.cmake&&execution.executable!=std::optional<std::string>{captured.cmake->target})
+        ||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::incorrect)return false;
+    const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
+    auto& values=data.preferences["native_windows"];
+    values[key+"program"]=program;values[key+"input"]=captured.stdin_utf8;values[key+"target"]=target;
+    values[key+"rules"]=rules;values[key+"feedback"]=std::string(feedback);
+    values[key+"seal"]=review_seal(key,program,captured.stdin_utf8,target,rules,feedback);
+    return true;
+}
+void clear_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!curriculum::has_compiler_objective(block))return;
+    const auto prefix=base(lesson,block)+"review/";
+    if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
+        std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix);});
 }
 std::size_t compiler_puzzle_case_count(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return 0;
@@ -144,8 +205,9 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
 }
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
-    if(compiler_puzzle_completed(data,lesson,block))return true;
+    if(compiler_puzzle_completed(data,lesson,block)){clear_compiler_puzzle_review(data,lesson,block);return true;}
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::correct)return false;
+    clear_compiler_puzzle_review(data,lesson,block);
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
     auto proofs=case_proofs(data,key);
     if(state::string_value(data,"native_windows",key+"program")!=program)proofs.clear();
@@ -163,12 +225,13 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
 }
 bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const CppRunResult& result,std::string_view feedback) {
-    if(compiler_puzzle_completed(data,lesson,block))return true;
+    if(compiler_puzzle_completed(data,lesson,block)){clear_compiler_puzzle_review(data,lesson,block);return true;}
     if(!block.compile_check||!captured.diagnostic||!expected_compile_diagnostic(captured,result))return false;
     const auto source=curriculum::prepare_compile_diagnostic_source(block,captured.source_utf8);
     if(!source||captured.diagnostic->control_source_utf8!=source->control_source||
         captured.diagnostic->expected_error_code!=source->expected_msvc_error||
         captured.diagnostic->first_line!=source->first_line||captured.diagnostic->last_line!=source->last_line)return false;
+    clear_compiler_puzzle_review(data,lesson,block);
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
     const std::vector<std::string> proofs{diagnostic_proof(key,program,block)};
     auto& values=data.preferences["native_windows"];
@@ -183,14 +246,18 @@ void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& less
 }
 void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
                                       const CppRunRequest& current) {
+    if(!curriculum::has_compiler_objective(block))return;
+    // A rejected attempt is specific to stdin and target as well as source.
+    // Partial success deliberately remains reusable across authored inputs.
+    if(compiler_puzzle_review(data,lesson,block,current).empty())clear_compiler_puzzle_review(data,lesson,block);
     if(curriculum::has_compiler_objective(block)&&!compiler_puzzle_completed(data,lesson,block)
         &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current)) {
         // Editing revokes only an incomplete attempt of this exact objective.
         // Older objectives remain historical data when an authored requirement
         // grows (for example, stdout plus a runtime stderr diagnostic).
-        const auto prefix=base(lesson,block);
+        const auto prefix=base(lesson,block),review_prefix=prefix+"review/";
         if(const auto domain=data.preferences.find("native_windows");domain!=data.preferences.end())
-            std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix);});
+            std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix)&&!item.first.starts_with(review_prefix);});
     }
 }
 } // namespace lgaed::windows

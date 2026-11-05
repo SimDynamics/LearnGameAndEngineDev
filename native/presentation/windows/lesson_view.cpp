@@ -2520,6 +2520,13 @@ struct LessonView {
             const auto body=restored.find_first_of("\r\n");
             auto text=verdict_text(true);if(body!=std::string::npos)text+=restored.substr(body);
             feedback(index,text,true,true);
+        } else if(block(index).type==BlockType::cpp_compiler){
+            const auto restored=windows::compiler_puzzle_review(data,lesson,block(index),program_snapshot(index));
+            if(!restored.empty()){
+                const auto body=restored.find_first_of("\r\n");
+                auto text=verdict_text(false);if(body!=std::string::npos)text+=restored.substr(body);
+                feedback(index,text,false,true);
+            }
         } else if (vm.response.correct) {
             const auto& current=block(index);
             const auto explanation=current.type==BlockType::multiple_choice
@@ -3445,7 +3452,8 @@ struct LessonView {
         }
     }
     void run(std::size_t index,windows::CppRunRequest::Action action=windows::CppRunRequest::Action::compile_run) {
-        cancel_run(); capture_draft(index); clear_reference_completion(index); mark_dirty(); flush();
+        cancel_run(); capture_draft(index); clear_reference_completion(index);
+        windows::clear_compiler_puzzle_review(data,lesson,block(index));mark_dirty(); flush();
         auto& vm = controls.at(index);
         vm.console_channels = {};
         auto request=program_snapshot(index);
@@ -3617,6 +3625,9 @@ struct LessonView {
                     "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr.");
                 else if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
                 const bool objective_completed=correct&&windows::record_compiler_puzzle_case(data,lesson,block(index),running_program,fresh,text);
+                if(!correct&&windows::record_compiler_puzzle_review(data,lesson,block(index),running_program,fresh,text)){
+                    mark_dirty();flush();
+                }
                 if(!correct||objective_completed){feedback(index,text,objective_completed,true);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
                 else if(vm.status)set_rich_text(vm.status,ui("Caso correcto. Casos comprobados: ","Case passed. Checked cases: ","Cas correct. Cas vérifiés : ")
                     +std::to_string(windows::compiler_puzzle_case_count(data,lesson,block(index)))+ui(" de "," of "," sur ")
