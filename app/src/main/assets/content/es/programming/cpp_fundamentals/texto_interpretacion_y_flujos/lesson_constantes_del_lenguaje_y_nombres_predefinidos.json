@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Las variables y las constantes del intérprete se guardan como vínculos. Cada vínculo añade bool modificable: true permite asignar y false lo impide. Esta regla se comprueba durante la ejecución del intérprete; no es la declaración const o constexpr del compilador C++. El cliente sólo opera mediante la interfaz de Tabla_nombres."
+          "text": "Hasta ahora, cada vínculo de `Tabla_nombres` reunía un nombre y un valor entero que `asignar` podía sustituir. Para ofrecer constantes en el lenguaje interpretado, añadimos a `Vinculo` el miembro `bool modificable`: `true` permite sustituir el valor y `false` lo impide. Así distinguimos los vínculos modificables de los protegidos y comprobamos esa regla al intentar una asignación (Stroustrup, 2024, ejercicio 3 del capítulo 6).\n\nLa marca no impide consultar el valor para hacer cálculos. Tampoco cambia el tipo C++ del miembro `valor`, que sigue siendo `int`: es `asignar` quien debe comprobar la protección antes de escribir. Esta constante del lenguaje que estamos creando no se obtiene añadiendo `const` o `constexpr` al miembro C++. El cliente utiliza la interfaz de `Tabla_nombres`, que aplica la regla."
         },
         {
           "type": "paragraph",
-          "text": "La sesión comienza con unidad=1 y limite=100, ambos constantes. Ocupan dos de las ocho entradas; quedan seis para creaciones del usuario. Conservamos enteros: limite permite nombrar el extremo100, aunque un literal100 se rechaza. Cada vínculo y cada parcial sigue en -100..100."
+          "text": "Un nombre predefinido está disponible desde el comienzo de la sesión (Stroustrup, 2024). Prepararemos `unidad` con el valor 1 y `limite` con el valor 100; ambos estarán protegidos. Como son dos vínculos de la misma tabla, ocupan dos de sus ocho plazas y dejan seis para las creaciones del usuario.\n\nEl analizador de tokens sigue admitiendo números escritos en la entrada sólo entre 0 y 99. Al leer `limite`, reconoce un nombre y consulta su valor 100; no intenta leer los caracteres de un literal `100`. Por eso puede obtener ese extremo mediante el nombre aunque rechace el número escrito directamente. Los valores almacenados y todos los resultados parciales siguen limitados al intervalo de −100 a 100."
         },
         {
           "type": "multiple_choice",
@@ -26,7 +26,12 @@
           ],
           "correctIndex": 2,
           "explanation": "Consultar una constante en una expresión es válido. Asignarla se rechaza y volver a crear un nombre existente también se rechaza.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e01"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e01",
+          "reviewFeedback": [
+            "Distingue consultar el valor de un vínculo de intentar sustituirlo. Revisa qué comprueba su marca de protección.",
+            "Comprueba si el nombre ya pertenece a la tabla y qué condición exige crear un vínculo nuevo.",
+            "Comprueba qué operación necesita escribir en el vínculo y cuál sólo utiliza su valor."
+          ]
         }
       ]
     },
@@ -38,11 +43,11 @@
         },
         {
           "type": "paragraph",
-          "text": "fija nombre = expresión crea un vínculo no modificable. crea mantiene la creación modificable. fija se reconoce como palabra reservada sólo cuando el nombre completo coincide; fija2 es un nombre y Fija también. La tabla rechaza crea y fija como nombres de vínculos. El lexer y token_valido incorporan la categoría nueva coherentemente."
+          "text": "Añadimos la forma `fija nombre = expresión;` para crear un vínculo protegido. La forma `crea nombre = expresión;` sigue creando un vínculo modificable. Las dos necesitan un nombre nuevo, una expresión inicial y el terminador `;`.\n\nEl analizador lee primero la palabra completa. Si coincide exactamente con `fija`, devuelve un token de la categoría `constante`; `fija2` y `Fija` siguen siendo nombres. `token_valido` admite la nueva categoría para poder reservar ese token cuando sea necesario. La tabla también rechaza `crea` y `fija` como nombres de vínculos, de modo que su interfaz conserva la misma restricción que la entrada."
         },
         {
           "type": "paragraph",
-          "text": "Una constante del usuario requiere inicializador y terminador, igual que una variable. Puede consultar nombres ya aceptados. Su valor queda guardado en ese momento: fija copia=base+1; no vuelve a calcularse automáticamente cuando base cambia."
+          "text": "Al interpretar `fija copia=base+1;`, se consulta el valor ya aceptado de `base`, se calcula la suma y se propone guardar ese entero como valor de `copia`, con `modificable` igual a `false`. La creación sólo se acepta después de comprobar también el terminador.\n\nLo guardado es el resultado de esa evaluación, no la fórmula `base+1`. Cambiar después el valor de `base` no recalcula `copia`. La protección afecta a una futura asignación a `copia`; permite seguir consultándola en expresiones."
         },
         {
           "type": "multiple_choice",
@@ -54,7 +59,12 @@
           ],
           "correctIndex": 0,
           "explanation": "Se guarda un int, no una fórmula ni una referencia al valor de base. La asignación posterior a base no recalcula copia.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e02"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e02",
+          "reviewFeedback": [
+            "Sigue el valor calculado al crear el vínculo y sepáralo de los cambios posteriores en otro vínculo.",
+            "Revisa los miembros de Vinculo: ¿se guarda el resultado entero o una fórmula que se vuelva a evaluar?",
+            "Comprueba si consultar un nombre ya aceptado exige modificar ese vínculo."
+          ]
         }
       ]
     },
@@ -66,7 +76,7 @@
         },
         {
           "type": "paragraph",
-          "text": "asignar sigue buscando mediante referencia, pero ahora comprueba modificable antes de escribir. Una constante ausente no existe: no hay un tipo especial de consulta que la cree. definir conserva unicidad y capacidad para ambos tipos de vínculo. La copia candidata incluye también la protección, no sólo nombre y valor."
+          "text": "`asignar` recibe el nombre de destino y el valor propuesto. Primero comprueba el dominio numérico y busca el vínculo mediante una referencia `Vinculo& dato`. Si lo encuentra, debe comprobar `dato.modificable` antes de ejecutar `dato.valor = valor;`. Cuando la marca es `false`, lanza una excepción con el mensaje `Nombre constante` y abandona la función sin llegar a esa escritura; el código que captura la excepción muestra después el diagnóstico.\n\nSi el nombre no existe, la búsqueda termina con `Nombre no definido`, como antes: asignar no crea un vínculo. `definir` mantiene la unicidad de los nombres y el máximo de ocho entradas para ambas clases de vínculo. La copia candidata conserva los tres miembros —nombre, valor y protección—; la tabla aceptada sólo se sustituye cuando termina correctamente toda la operación, incluido `;`."
         },
         {
           "type": "order_code",
@@ -86,11 +96,12 @@
             1
           ],
           "explanation": "Un vínculo protegido provoca un diagnóstico antes de la escritura. La misma regla se aplica a predefinidos y constantes del usuario.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e03"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e03",
+          "reviewFeedback": "Localiza la escritura del valor y la salida normal de la función. La comprobación de la protección debe impedir alcanzar esa escritura cuando la marca es falsa."
         },
         {
           "type": "paragraph",
-          "text": "El programa crea los dos predefinidos una sola vez, antes del bucle de lectura. Reiniciar la tabla en cada vuelta perdería las variables de operaciones anteriores. Predefinido significa disponible al comienzo; constante expresa una protección distinta. En este modelo ambos predefinidos están protegidos."
+          "text": "Los predefinidos se crean una sola vez, antes del bucle que interpreta las operaciones. En el modelo, `tabla.definir(\"unidad\", 1, false);` y `tabla.definir(\"limite\", 100, false);` preparan los dos vínculos protegidos. Estas llamadas son código C++ de preparación; sus argumentos no pasan por el analizador de números de la entrada.\n\nSi se creara otra tabla en cada vuelta del bucle, se perderían los vínculos aceptados en las vueltas anteriores. Predefinir indica cuándo queda disponible un nombre; protegerlo indica si se permite sustituir su valor. Son decisiones distintas: en este modelo elegimos que ambos predefinidos sean constantes."
         }
       ]
     },
@@ -232,5 +243,776 @@
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "09889f8044e3c6be51191962bc5f45dd5b53fd4063aeae643f522369b58288e3"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "2b3ff636cd2a77bf0d0f916db9739f37ea9168cca59022610af429d42e05e1bc"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "3598f64996b5584fc231510215cf6c2570ed72b1a1f77a4f6f57796bff564e83"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "67df5f10f3a1b8d61b5fd1aa36c5ae97525c15627df06dc6ab97cfdf85897933"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "b29229eae62c2356efa29f15be64fc523d6b388b23f9047d1098863df54e33db"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "c4ac26ca62ee9e9867cc492b1f4c0dbafd6b538772c15e5bab6e6a4c77cd0293"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "74128f11228d760c57ebd74260ab8fc874e994c5428ad22fb6b39257fcc9d9d8"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "b31af141cccd6da262f40c46a6d6f3aaf311d8ac6e8fba83a9bf51b65b4bcfdd"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "90c5b373e38f7721d135ca6fb4780744fb274ca3820dd0a7b0e4225d1d110ee0"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "2e38e2c985cd73d9bc122e7a0900eba72055cb7630c857e4713fc8cd1d2e9849"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "5244520e6aec9c0de7e2890793356f5133ee632c0a10ab4e4004c18ce25a84bc",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "09889f8044e3c6be51191962bc5f45dd5b53fd4063aeae643f522369b58288e3"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5f0291c86ea47572b6047f3f3c655e5849b40256068c2eb4a9884785ee7cdd90"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "521309cf3f5fcc9d91c1d43fd9f8f9036fbac7462564274c4c047b15cac09dfb"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "6d20aa1fcfc01cd43fd893053b3c8d77376294e79cbc87ec1ecc4f948aa5b26b"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "cde76492b1b7af43648661231a1a105b366992560887c3d72a041c71685d867c"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "6c5f662705ba99bdd8bf6aeef28fdc4b48867e87bb8f1ce750fd4d861a91553a"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "6d9c4beb9d582a09eaf79256250b70b3d334547d00ac6606631e5bada861eaca"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "ac7d8e89de56df62b9995a83849eadd92d8a69813d61c1d76a6bb195d4ba2bd4"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "ae6ecf4eca227eeb7780598abb36f40892c4d3703d7f206678b3155ec8e43f5e",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "09889f8044e3c6be51191962bc5f45dd5b53fd4063aeae643f522369b58288e3"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "2b3ff636cd2a77bf0d0f916db9739f37ea9168cca59022610af429d42e05e1bc"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "3598f64996b5584fc231510215cf6c2570ed72b1a1f77a4f6f57796bff564e83"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "67df5f10f3a1b8d61b5fd1aa36c5ae97525c15627df06dc6ab97cfdf85897933"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "b29229eae62c2356efa29f15be64fc523d6b388b23f9047d1098863df54e33db"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "c4ac26ca62ee9e9867cc492b1f4c0dbafd6b538772c15e5bab6e6a4c77cd0293"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "74128f11228d760c57ebd74260ab8fc874e994c5428ad22fb6b39257fcc9d9d8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "b31af141cccd6da262f40c46a6d6f3aaf311d8ac6e8fba83a9bf51b65b4bcfdd"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "90c5b373e38f7721d135ca6fb4780744fb274ca3820dd0a7b0e4225d1d110ee0"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "2e38e2c985cd73d9bc122e7a0900eba72055cb7630c857e4713fc8cd1d2e9849"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "1b29e9a936d59744525e937894c29f7eef05924a85216fbabd1dc61fe3a8da2f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "09889f8044e3c6be51191962bc5f45dd5b53fd4063aeae643f522369b58288e3"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "afaafa19cc00f734ee444e25af207a206d89e5cffa5d931b48b3fd5f791f9b5d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "9b2597364a51d8d85a603b1f1666ad32a190c4b77e8b1288b64f7fa82ed2342e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "10e464894fc14e03778aa5172c4a908dcb375fe019eec55e5764f016f5300c67"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "c5b2bbdaf0a45b4c0f391dabd1fa74adc69659f4b2f46da38d9ad9d3b470b983"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "84c57c35f4a34597fea490f599beea7db6f4683a2c0c62275831ab7277a4966b"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "6d9c4beb9d582a09eaf79256250b70b3d334547d00ac6606631e5bada861eaca"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "2a37a13a81bf77267416500096e6dbfde17a618086898c34f5d47d1c154cd03c"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "52e766e7f4f1bc237e7e98ea4acb12d29de36a508594a4718ca7efd33897e80c",
+        "afterSha256": "4bfd0d5560895f7c97ae5fcfd1f754a194a667e752118f64bc75c09ef2b276a9"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "aebf857dde97d820790987703a721a8619cbec74c519d8a83ab84b9ae8cbd912",
+        "afterSha256": "cb7039176543f8ad903bcfa0bc3a1fa6397a6505e98ccc7091d564719903260c"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "d151ebe68c5c09559c226565b06777e1459854e05dd85c132c89d2545cc2fe85",
+        "afterSha256": "51f2db8c8e62e09347b1ee0dce24989f1d8f6cb26a8676fe5c4f592fe9129adf"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "ce703876515b29f6824668409317f62dc2dc83761aa8b759f53b7a25329da6f6",
+        "afterSha256": "4d3c5c33539ac944a5bc12d2a979309e05c53b94e11055636f0d2340c77ba59c"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "2e83eab30ad4ec4b2cabc940f54b733b60e8c851f22adf076ca330de958c7adb",
+        "afterSha256": "652581dab6cb5934131e08b88486e1f499b2d2df5b6fd2237af595daebb6a66f"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "162a56a5fd39e1059b49648c91e345cb7d43a5c27af806a2e83ccaa078c295c0",
+        "afterSha256": "bdd26441435b3bf7c2d4fe2e89dc3f4bc9affd069acbc48b019b429ef1c6a0ec"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "da074b5439b81dab82806b61ee3a2c6583dfd1039faa96f8d7ff75117212d09b",
+        "afterSha256": "896cc6d1fa00eb8e4a0016a08d952669f1c5452dbeb85f1145cef6aadb23deb0"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "8fa6af69e878c9e9267350ea6ac9fb87b013dea03f080dfc336245714ff7f823",
+        "afterSha256": "a526c515f721d985a08be8cbdd7d1ead3c484833214850c58c5421fd2002a306"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "7a6a5757d15a60682ec661a9c9d54554e993b9bc3a249511a1547788e9041e4f",
+        "afterSha256": "cf10b8f14ea0de45f649455e299111125d20bc3f2af1ea775dc86ca3ec424841"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "896cc6d1fa00eb8e4a0016a08d952669f1c5452dbeb85f1145cef6aadb23deb0",
+        "afterSha256": "fbea26bfa4304567944e021491f0fe72ceb0baa03a4e98f0cbd40b5e87285d05"
+      }
+    ]
+  }
 }

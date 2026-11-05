@@ -124,7 +124,7 @@
         },
         {
           "type": "order_code",
-          "question": "Ordena la rama que NO encontró =. Supón primero es el nombre y siguiente es el token que vino después.",
+          "question": "Ordena la rama que no encontró `=`. Supón que `primero` es el token de nombre y `siguiente` es el token que vino después.",
           "fragments": [
             "return continuar_expresion(termino, lector, candidata, 0);",
             "const int inicial = candidata.consultar(primero.texto);",
@@ -137,7 +137,7 @@
             3,
             0
           ],
-          "explanation": "Sólo siguiente se reserva. La consulta da la primera unidad; después se completa el término antes de la expresión.",
+          "explanation": "Sólo se reserva `siguiente`, antes de una consulta que puede fallar. La consulta proporciona la primera unidad; después se completa el término y, con ese resultado, la expresión. Si falla la consulta, la recuperación todavía puede encontrar el terminador reservado.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e03",
           "reviewFeedback": "Sigue por separado el token anticipado y el entero de la consulta. La recuperación debe encontrar el terminador aun cuando esa consulta falle; después conserva la prioridad entre término y expresión."
         }
@@ -188,20 +188,20 @@
           "answers": [
             "Valor: 8\nValor: 4\nValor: 9\nValor: 18\nAceptadas: 4\nRechazadas: 0\nTabla: t=9"
           ],
-          "explanation": "La consulta empieza por t y completa el término: 8/3 es 2 y 2%2 es 0. La asignación usa el ocho anterior, guarda nueve y la última expresión consulta nueve.",
+          "explanation": "La creación acepta 8 para `t`. La expresión `t/3%2+4;` completa el término de izquierda a derecha: la división entera produce 2 y el resto siguiente es 0; la suma obtiene 4. La asignación consulta el 8 anterior, acepta 9 y la última expresión obtiene 18. La tabla conserva `t=9`.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e04",
           "reviewFeedback": "Evalúa por etapas la división entera, el resto y la suma. Distingue los valores impresos por las consultas del valor que la asignación conserva en la tabla."
         },
         {
           "type": "multiple_choice",
-          "question": "¿Por qué a=b=3; se rechaza aunque a y b existan?",
+          "question": "En nuestro lenguaje, ¿por qué se rechaza `a=b=3;` aunque `a` y `b` existan?",
           "options": [
             "Porque un nombre existente sólo puede aparecer como destino y no dentro de una expresión.",
             "Porque el lado derecho admite expresiones sin asignaciones y sobra =.",
             "Porque una asignación debe volver a declarar ambos nombres."
           ],
           "correctIndex": 1,
-          "explanation": "La gramática sólo permite asignación como sentencia superior. El = después de b impide aceptar el terminador y no publica el candidato.",
+          "explanation": "El lado derecho sólo admite las expresiones aritméticas ya construidas. Consulta `b`, pero el `=` siguiente impide reconocer `;`. Por eso no se publica la candidata y ambas asociaciones conservan su valor anterior.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e05",
           "reviewFeedback": [
             "Un nombre puede aportar su valor dentro de una expresión. Localiza el token que queda después de consultarlo.",
@@ -313,7 +313,7 @@
           "answers": [
             "Valor: 6\nValor: 2\nError: Se esperaba ;\nValor: 6\nValor: 2\nAceptadas: 4\nRechazadas: 1\nTabla: a=6 b=2"
           ],
-          "explanation": "El lado derecho obtiene el valor de b y después encuentra = en lugar de ;. Ningún cambio del candidato llega a la tabla aceptada. La recuperación llega al primer ;.",
+          "explanation": "El lado derecho consulta el valor 2 de `b`, pero después encuentra `=` donde se exige `;`. La propuesta de asignar ese valor a `a` no llega a la tabla aceptada. La recuperación consume lo que falta hasta ese primer `;`; las consultas posteriores siguen obteniendo 6 y 2.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e06",
           "reviewFeedback": "Localiza el token que queda tras consultar el lado derecho y decide si se alcanza la instrucción que reemplaza la tabla aceptada. Después sigue las dos consultas finales."
         },
@@ -1219,6 +1219,26 @@
         "id": "block_0003_0001",
         "beforeSha256": "fdd2dc515abd3a1aa097941f7c714a9c521239545738e1036e7c197656e774e1",
         "afterSha256": "631ced9dd2f4045b6e354a740366a7cd57d8fdbc39ff59050ee07b3a65833d39"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "75bd3371395fe205e1aa8cc4598f99dae109a053f43d7e9c3e095917ba050fe4",
+        "afterSha256": "41f3edd3b7a2b7f60cf647cc00946330aed26c4fae4ef7bdbec9c22cd0aec1f8"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1795562bd3f78ab353f8368134ca1a8f6aa122a8148199569402b6c3c88e2595",
+        "afterSha256": "db78773fab56744e367e444081e6649fd49d0c5843cbd175b81c0808f56c5d50"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "39cf702fee359eb05408354353e0281d5bb8693d9135cab1d5e501144b0d66ce",
+        "afterSha256": "972652323f29b8b9ce5df38aa2ae0c564f916c4f1516a31cc5537532dfd72764"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "9dcecb759eec49a264cb3e937c9338f46948e4cd498be62788c36931d7075490",
+        "afterSha256": "282ebd9f9802ff3b44de06a5bbdcfcea3be89388858ec52f8a0855d2f745ead6"
       }
     ]
   },
