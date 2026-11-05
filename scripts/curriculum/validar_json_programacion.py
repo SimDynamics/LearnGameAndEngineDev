@@ -1081,6 +1081,33 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
 WORK_EXACT_EDITORIAL_REVISIONS = {
+    # CPP_VALIDACION_EDITORIAL_U11L20: six reviewed text pairs, four original
+    # Spanish owners. Their programs, answers, guides and every other field
+    # still pass through the ordinary complete-block preservation guard.
+    ('texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json',
+     3, 4, 'order_code', 'question', 'cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e03'): (
+        'c3e58a2c6549739708e6a754e133b03bb22fd298e651a4ba45a55eb10cf02b8f',
+        '1d09b90cd8682b1e179b1692dadf126e35e14600ee1ebddbb531646f1dc4056f'),
+    ('texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json',
+     3, 4, 'order_code', 'explanation', 'cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e03'): (
+        '03931edf50a35510dfd8df81db571dfabc501b440b8eb23c9bb1dbd5f9b2e1f5',
+        'fd83fedfda451e39455543bad51ff91e4bb53736d7a3f06851f37c8fa7a2649d'),
+    ('texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json',
+     5, 2, 'output_prediction', 'explanation', 'cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e04'): (
+        'dadcca493b61ea6162e8c5e4218f9609d706005483615184b934eac0b921d418',
+        '86db2f2a49f75d55d128f7e5a6da3c2dd03ff854fac1ca19c57218e636c4537b'),
+    ('texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json',
+     5, 3, 'multiple_choice', 'question', 'cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e05'): (
+        '80975de58f94834c4bb996f315dfdc7b00e9c46f4e5858e5598cca1b09ace674',
+        '7569359594104ec14a3c77a57d7a5b2e2012cdefcc02b1243b16047dc2d7e499'),
+    ('texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json',
+     5, 3, 'multiple_choice', 'explanation', 'cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e05'): (
+        'f94ca0b92aa917edaaa626c0ed1b9ff2c45ec4eb9487e993221464dcf7e96979',
+        '298fa6db7b6c42436768017d04c5b7c1ba5eae0448fc54d6e4640a46b7f05a59'),
+    ('texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json',
+     8, 2, 'output_prediction', 'explanation', 'cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e06'): (
+        'ca5a1a0a51d4395638ad83c07b9434c22074c7cb148c0010823d3a07c0079225',
+        'f04c1e07e1c7deab38360970dd91b9f1aa0949debe7944bf85e7242bb10884e0'),
     ('objetos_y_estado/lesson_estado_asignacion_y_copia.json',
      6, 5, 'inline_fill_code', 'question', None): (
         '499b03798d78be94d5f25f003249520c62cd0584df04d26cc36dfe63ab85c260',

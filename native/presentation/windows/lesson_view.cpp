@@ -770,6 +770,29 @@ struct LessonView {
         if(import_open||!pane||!IsWindow(pane))return {};
         auto regions=reading_regions();std::vector<LessonReadingArchive> archives;
         const auto identity=page_state().narration_page_identity;
+        // These snapshots are complete prior editorial prefixes authenticated
+        // by the loader. Do not combine individual old fields into page scripts
+        // that never existed. Answers keep their ordinary current response slot.
+        for(const auto& revision:lesson.state_layout.reading_revisions){
+            LessonReadingArchive archived;archived.page_identity=identity;archived.regions=reading_regions();
+            for(const auto& [id,raw]:revision.previous_blocks){
+                const auto at=curriculum::stable_block_position(lesson,id);if(!at||at->page!=page)continue;
+                const auto previous=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(raw));
+                const auto old_question=winrt::to_string(previous.GetNamedString(L"question",L""));
+                const auto old_explanation=winrt::to_string(previous.GetNamedString(L"explanation",L""));
+                const auto question=find_item(control_id(at->block,0));
+                for(auto& region:archived.regions){
+                    if(region.block_index!=at->block)continue;
+                    auto source=region.source_text;
+                    if(!region.feedback&&region.target==question)source=old_question;
+                    else if(region.feedback&&region.correct&&region.solved)
+                        source="✓ "+verdict_text(true)+(old_explanation.empty()?"":"\n\n"+old_explanation);
+                    if(source==region.source_text)continue;
+                    archived.revised_regions.push_back(region.key);region.source_text=std::move(source);
+                }
+            }
+            if(!archived.revised_regions.empty())archives.push_back(std::move(archived));
+        }
         for(auto prior=lesson.state_layout.editorial_returns.rbegin();prior!=lesson.state_layout.editorial_returns.rend();++prior){
             const auto at=curriculum::stable_block_position(lesson,prior->id);
             if(!at||at->page!=page)continue;

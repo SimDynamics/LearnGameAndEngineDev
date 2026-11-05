@@ -169,6 +169,12 @@ struct StateRetirementHistory {
 // Authenticated presentation before one explicit editorial return. It is
 // archival reading provenance, never another active activity or state slot.
 struct StateEditorialReturn { std::string id, previous_raw_json; };
+// A closed text-only review reconstructed from an actual earlier editorial
+// prefix. It supplies reading provenance, never an activity or response slot.
+struct StateReadingRevision {
+    std::size_t editorial_prefix = 0;
+    std::map<std::string, std::string> previous_blocks;
+};
 struct StateLayout {
     int version = 0;
     std::string locale;
@@ -184,6 +190,7 @@ struct StateLayout {
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
     std::vector<StateEditorialReturn> editorial_returns;
+    std::vector<StateReadingRevision> reading_revisions;
     // Computed by the loader; ordinary state preparation does not reparse JSON.
     bool has_editorial_returns = false;
 };

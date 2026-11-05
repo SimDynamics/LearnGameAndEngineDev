@@ -597,6 +597,93 @@ private:
     }
 };
 Block read_block(const JsonObject& value,std::string_view original);
+std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject& metadata,const JsonArray& pages,
+        const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    // This is an annotation of an already validated map, not an additional
+    // authored format or a general permission to change exercise text.
+    if(fingerprint(metadata.GetNamedObject(L"family"))!="5b1700977fc6a022db478e6f8e203e0cf3f6b7c9f10ff591f5e5bff7da493ba8"
+        ||fingerprint(array(metadata,"origin"))!="fb98f229033bafa190fec6bc841a9abf90685944424c2232a46bd9f674887448")return {};
+    const auto editorial=array(metadata,"editorial");
+    if(editorial.Size()<=20)return {};
+    JsonArray published_prefix;for(unsigned i=0;i<20;++i)published_prefix.Append(editorial.GetAt(i));
+    JsonObject provenance;provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(owner)));
+    provenance.Insert(L"locale",JsonValue::CreateStringValue(L"es"));provenance.Insert(L"editorial",published_prefix);
+    if(fingerprint(provenance)!="38bf01987a09a1dcb850488033801b6f74a839b2c24c9eb41327807e80e72b5b")return {};
+    struct Field {std::string_view name,before,after;};
+    struct Review {std::string_view identity,before;std::size_t page,block;std::vector<Field> fields;};
+    static const std::vector<Review> reviews{
+        {"block_0002_0003","75bd3371395fe205e1aa8cc4598f99dae109a053f43d7e9c3e095917ba050fe4",2,3,{
+            {"question","Ordena la rama que NO encontró =. Supón primero es el nombre y siguiente es el token que vino después.",
+                "Ordena la rama que no encontró `=`. Supón que `primero` es el token de nombre y `siguiente` es el token que vino después."},
+            {"explanation","Sólo siguiente se reserva. La consulta da la primera unidad; después se completa el término antes de la expresión.",
+                "Sólo se reserva `siguiente`, antes de una consulta que puede fallar. La consulta proporciona la primera unidad; después se completa el término y, con ese resultado, la expresión. Si falla la consulta, la recuperación todavía puede encontrar el terminador reservado."}}},
+        {"block_0004_0001","1795562bd3f78ab353f8368134ca1a8f6aa122a8148199569402b6c3c88e2595",4,1,{
+            {"explanation","La consulta empieza por t y completa el término: 8/3 es 2 y 2%2 es 0. La asignación usa el ocho anterior, guarda nueve y la última expresión consulta nueve.",
+                "La creación acepta 8 para `t`. La expresión `t/3%2+4;` completa el término de izquierda a derecha: la división entera produce 2 y el resto siguiente es 0; la suma obtiene 4. La asignación consulta el 8 anterior, acepta 9 y la última expresión obtiene 18. La tabla conserva `t=9`."}}},
+        {"block_0004_0002","39cf702fee359eb05408354353e0281d5bb8693d9135cab1d5e501144b0d66ce",4,2,{
+            {"question","¿Por qué a=b=3; se rechaza aunque a y b existan?",
+                "En nuestro lenguaje, ¿por qué se rechaza `a=b=3;` aunque `a` y `b` existan?"},
+            {"explanation","La gramática sólo permite asignación como sentencia superior. El = después de b impide aceptar el terminador y no publica el candidato.",
+                "El lado derecho sólo admite las expresiones aritméticas ya construidas. Consulta `b`, pero el `=` siguiente impide reconocer `;`. Por eso no se publica la candidata y ambas asociaciones conservan su valor anterior."}}},
+        {"block_0007_0001","9dcecb759eec49a264cb3e937c9338f46948e4cd498be62788c36931d7075490",7,1,{
+            {"explanation","El lado derecho obtiene el valor de b y después encuentra = en lugar de ;. Ningún cambio del candidato llega a la tabla aceptada. La recuperación llega al primer ;.",
+                "El lado derecho consulta el valor 2 de `b`, pero después encuentra `=` donde se exige `;`. La propuesta de asignar ese valor a `a` no llega a la tabla aceptada. La recuperación consume lo que falta hasta ese primer `;`; las consultas posteriores siguen obteniendo 6 y 2."}}}
+    };
+    std::map<std::string,JsonObject> current,snapshot;
+    std::map<std::string,std::map<std::string,JsonObject>> variants;
+    for(const auto& review:reviews){
+        if(review.page>=layout.origin.size()||review.block>=layout.origin[review.page].blocks.size()
+            ||layout.origin[review.page].blocks[review.block]!=review.identity)return {};
+        JsonObject active=nullptr;
+        for(std::size_t p=0;p<layout.current.size();++p)for(std::size_t b=0;b<layout.current[p].blocks.size();++b)
+            if(layout.current[p].blocks[b]==review.identity)active=array(pages.GetObjectAt(static_cast<unsigned>(p)),"blocks").GetObjectAt(static_cast<unsigned>(b));
+        if(!active)return {};
+        const auto base=JsonObject::Parse(active.Stringify());
+        for(const auto& field:review.fields){
+            const auto value=text(active,field.name);if(value!=field.before&&value!=field.after)return {};
+            base.Insert(key(field.name),JsonValue::CreateStringValue(key(field.before)));
+        }
+        // Complete original payloads pin IDs, type, programs, answers, guides,
+        // and every field not explicitly reviewed, rather than only a contract.
+        if(fingerprint(base)!=review.before)return {};
+        const auto id=std::string(review.identity);auto& allowed=variants[id];
+        for(std::size_t mask=0;mask<(std::size_t{1}<<review.fields.size());++mask){
+            const auto version=JsonObject::Parse(base.Stringify());
+            for(std::size_t field=0;field<review.fields.size();++field)if(mask&(std::size_t{1}<<field))
+                version.Insert(key(review.fields[field].name),JsonValue::CreateStringValue(key(review.fields[field].after)));
+            allowed.emplace(fingerprint(version),version);
+        }
+        if(!allowed.contains(fingerprint(active)))return {};
+        current.emplace(id,active);snapshot.emplace(id,active);
+    }
+    std::vector<StateReadingRevision> result;
+    // Only the actual suffix can be reversed. A newer unrelated edit has no
+    // authenticated old payload here, so do not fabricate a cross-version
+    // page by walking through it. Extra edits before this suffix are harmless.
+    for(std::size_t count=editorial.Size();count>20;--count){
+        const auto edge=editorial.GetObjectAt(static_cast<unsigned>(count-1));const auto id=text(edge,"id");
+        const auto allowed=variants.find(id);if(allowed==variants.end())break;
+        const auto after=text(edge,"afterSha256"),before=text(edge,"beforeSha256");
+        if(fingerprint(snapshot.at(id))!=after)break;
+        const auto previous=allowed->second.find(before);if(previous==allowed->second.end())break;
+        const auto review=std::ranges::find(reviews,id,&Review::identity);if(review==reviews.end())break;
+        bool changed=false,forward=true;
+        for(const auto& field:review->fields){
+            const auto old=text(previous->second,field.name),now=text(snapshot.at(id),field.name);
+            if(old==now)continue;
+            changed=true;if(old!=field.before||now!=field.after)forward=false;
+        }
+        if(!changed||!forward)break;
+        snapshot.at(id)=previous->second;
+        StateReadingRevision archived;archived.editorial_prefix=count-1;
+        for(const auto& [identity,block]:snapshot)if(fingerprint(block)!=fingerprint(current.at(identity)))
+            archived.previous_blocks.emplace(identity,utf8(block.Stringify()));
+        result.push_back(std::move(archived));
+    }
+    return result;
+}
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -941,6 +1028,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             active=std::move(before);
         }
     }
+    result.reading_revisions=assignment_reading_revisions(metadata,pages,result,lesson_id);
     return result;
 }
 TextComparison comparison(std::string_view mode, bool input = false) {

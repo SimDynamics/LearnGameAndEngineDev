@@ -265,6 +265,29 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_exception_editorial COMMAND lgaed_technical_context_view_tests --remainder-revision
         "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json" "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-after.json")
     set_tests_properties(native.duplication_code_mention native.remainder_exception_editorial PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    set(LGAED_U11_ASSIGNMENT_EDITORIAL_DIR "${CMAKE_CURRENT_BINARY_DIR}/u11-assignment-editorials")
+    set(LGAED_U11_ASSIGNMENT_EDITORIAL_FIXTURES
+        "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-before.json"
+        "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-after.json"
+        "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/manifest.json")
+    add_custom_command(OUTPUT ${LGAED_U11_ASSIGNMENT_EDITORIAL_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_assignment_editorial_fixture_source.py"
+            --output-dir "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_assignment_editorial_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        COMMENT "Verifying immutable U11L20 editorial fixtures from local Git publications"
+        VERBATIM)
+    add_custom_target(lgaed_u11_assignment_editorial_fixtures DEPENDS ${LGAED_U11_ASSIGNMENT_EDITORIAL_FIXTURES})
+    add_executable(lgaed_u11_assignment_editorial_view_tests native/presentation/windows/u11_assignment_editorial_view_tests.cpp)
+    target_link_libraries(lgaed_u11_assignment_editorial_view_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_u11_assignment_editorial_view_tests lgaed_u11_assignment_editorial_fixtures)
+    add_test(NAME native.u11_assignment_editorial_view COMMAND lgaed_u11_assignment_editorial_view_tests
+        "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-before.json" "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-after.json")
+    set_tests_properties(native.u11_assignment_editorial_view PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    add_test(NAME native.u11_assignment_editorial_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_assignment_editorials.py)
+    set_tests_properties(native.u11_assignment_editorial_authoring PROPERTIES TIMEOUT 120)
     add_executable(lgaed_window_frame_tests native/presentation/windows/window_frame_tests.cpp)
     target_link_libraries(lgaed_window_frame_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.window_frame COMMAND lgaed_window_frame_tests)
@@ -560,6 +583,14 @@ if(BUILD_TESTING)
     add_executable(lgaed_lesson_reader_tests native/presentation/windows/lesson_reader_tests.cpp)
     target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
+    foreach(assignment_reader_phase RANGE 0 1)
+        add_test(NAME native.u11_assignment_editorial_reader_${assignment_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u11-assignment-revision
+                "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-before.json"
+                "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-after.json" ${assignment_reader_phase})
+        set_tests_properties(native.u11_assignment_editorial_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    endforeach()
     add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
     set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_executable(lgaed_current_reference_reader_tests native/presentation/windows/current_reference_reader_tests.cpp)
@@ -1028,6 +1059,8 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_u11_names_checks DEPENDS LearnGameAndEngineDev
         lgaed_u11_names_integration_view_tests lgaed_u11_names_reader_tests
         lgaed_u11_declarations_reader_tests lgaed_lesson_tests lgaed_state_tests)
+    add_custom_target(lgaed_u11_assignment_checks DEPENDS LearnGameAndEngineDev
+        lgaed_u11_assignment_editorial_view_tests lgaed_lesson_reader_tests lgaed_lesson_tests lgaed_state_tests)
     add_custom_target(lgaed_cpp23_checks DEPENDS LearnGameAndEngineDev
         lgaed_cpp_runner_tests lgaed_cpp_project_tests lgaed_cpp_cmake_runner_tests
         lgaed_cpp_diagnostic_runner_tests lgaed_lesson_tests lgaed_lesson_view_tests
