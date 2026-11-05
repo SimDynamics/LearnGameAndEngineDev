@@ -10,23 +10,44 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora una sentencia puede ser nombre = expresión. La asignación requiere un vínculo existente; no lo añade si estaba ausente. crea base=5; introduce base. base=base+2; calcula siete con el valor anterior y propone reemplazarlo. crea base=7; sigue siendo una redefinición rechazada."
+          "text": "La tabla ya distingue crear una asociación de consultar su valor. Ahora añadimos la asignación: una sentencia de la forma `nombre = expresión` que permite cambiar el valor de un nombre existente. La creación sigue anunciándose con `crea`; separar ambas formas ayuda a detectar que se ha escrito un nombre diferente por error (Stroustrup, 2024).\n\nPor ejemplo, `crea base=5;` introduce `base` con valor 5. La operación siguiente, `base=base+2;`, consulta ese valor anterior, calcula 7 y propone sustituir el valor de esa asociación. El cambio se prepara en la tabla candidata y sólo llega a la tabla aceptada al reconocer también `;`. No se crea otro registro para `base`. Escribir `crea base=7;`, en cambio, sigue intentando crear un nombre ya existente y se rechaza.",
+          "emphasis": [
+            {
+              "text": "asignación",
+              "style": "bold"
+            },
+            {
+              "text": "sólo llega a la tabla aceptada",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La asignación pertenece al nivel de sentencia, no al de expresión. Admitimos base=(base+3)*2;, pero rechazamos a=b=4;, (a=4)+2; y (a)=4;. El destino es un nombre sin paréntesis y el lado derecho es la expresión ya conocida. Todas las operaciones exigen ; y mantienen los mismos límites de nombres, tabla, profundidad, literales y parciales."
+          "text": "En nuestro lenguaje interpretado, la asignación es una forma de sentencia; no puede aparecer dentro de una expresión. Admitimos `base=(base+3)*2;`, cuyo lado derecho usa la expresión ya conocida. Rechazamos `a=b=4;` y `(a=4)+2;`, porque intentarían usar otra asignación dentro de ella. También rechazamos `(a)=4;`: el destino debe escribirse como un nombre sin paréntesis.\n\nEstas son decisiones de la gramática que estamos construyendo. Conservamos el terminador `;` y los límites anteriores de nombres, tamaño de tabla, profundidad, literales y resultados parciales. Una asignación a un nombre ausente produce un diagnóstico; no lo incorpora automáticamente a la tabla.",
+          "emphasis": [
+            {
+              "text": "En nuestro lenguaje interpretado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
-          "question": "Si existe base con valor cinco y otro no existe, ¿qué sentencia cambia correctamente base?",
+          "question": "Si existe `base` con valor 5 y `otro` no existe, ¿qué sentencia cambia correctamente `base`?",
           "options": [
             "crea base=base+1;",
             "otro=base+1;",
             "base=base+1;"
           ],
           "correctIndex": 2,
-          "explanation": "La asignación cambia un vínculo existente. crea rechaza el nombre duplicado y otro no se declara por una asignación.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e01"
+          "explanation": "La asignación `base=base+1;` usa el valor anterior y propone el nuevo valor para ese mismo vínculo. `crea` rechaza el nombre duplicado y asignar a `otro` no lo declara.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e01",
+          "reviewFeedback": [
+            "Comprueba si `base` ya pertenece a la tabla y qué significa volver a escribir `crea`.",
+            "Distingue cambiar un vínculo de crearlo: revisa si `otro` ya existe.",
+            "Sigue la consulta del lado derecho y comprueba cuál es el nombre que recibirá el nuevo valor."
+          ]
         }
       ]
     },
@@ -38,23 +59,40 @@
         },
         {
           "type": "paragraph",
-          "text": "Una operación que comienza por un nombre puede ser una asignación o una expresión: base=8; y base*2+1;. Para decidir, leer_sentencia obtiene el nombre y un token siguiente. Si ve =, analiza el lado derecho. Si no, ese segundo token pertenece al término o al final; lo reserva una sola vez."
+          "text": "Después de leer un nombre todavía no sabemos qué forma de sentencia comienza. `base=8;` modifica su valor, mientras que `base*2+1;` sólo lo consulta dentro de una expresión. La anticipación limitada consiste aquí en observar un token adicional para distinguir esas dos posibilidades.\n\n`leer_sentencia` guarda el primer token en `primero` y obtiene el siguiente en `siguiente`. Si éste es `=`, analiza la expresión del lado derecho. Si no lo es, ese token debe seguir disponible para continuar el análisis: puede ser `*`, `+`, el terminador `;` u otro elemento que las reglas deban diagnosticar.",
+          "emphasis": [
+            {
+              "text": "un token adicional",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Devolver primero ese segundo token y después el nombre ocuparía dos posiciones que nuestro lector no tiene. Copiar el nombre en una variable local no lo reserva en el lector. La solución conserva el valor inicial y continúa desde él: no añade una anticipación oculta ni pierde el siguiente token."
+          "text": "Nuestro lector sólo permite reservar un token. Intentar devolver primero `siguiente` y después `primero` sin consumir el reservado provoca `Buffer ocupado`. Que una variable local conserve el token de nombre no significa que ese token esté reservado dentro del lector.\n\nLa alternativa consiste en consultar el valor actual del nombre y usar ese entero como primera unidad de la expresión. Las reglas de continuación reciben el valor ya obtenido y procesan los operadores restantes. Así no es necesario devolver también el nombre ni ampliar la capacidad de reserva. El valor consultado puede haber cambiado por una asignación anterior: no tiene por qué ser el que se proporcionó al crear el vínculo.",
+          "emphasis": [
+            {
+              "text": "valor actual del nombre",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
-          "question": "Después de leer base y luego *, ¿qué conserva el contrato de reserva única?",
+          "question": "Después de leer `base` y luego `*`, ¿qué conserva el contrato de reserva única?",
           "options": [
             "Reservar * y continuar el término desde el valor ya consultado de base.",
             "Reservar * y base con dos llamadas seguidas a devolver.",
             "Descartar * porque la consulta ya obtuvo un número."
           ],
           "correctIndex": 0,
-          "explanation": "El valor del nombre funciona como primera unidad. El término aún debe leer *, mientras la reserva permanece de capacidad uno.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e02"
+          "explanation": "La consulta obtiene el valor actual de `base` como primera unidad. El término todavía debe procesar `*`; reservar ese único token permite continuar sin volver a introducir el nombre en el lector.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e02",
+          "reviewFeedback": [
+            "Relaciona la capacidad de reserva con el token que todavía debe procesar la regla multiplicativa.",
+            "Sigue las dos llamadas a `devolver`: ¿se consumió el primer token reservado antes de la segunda?",
+            "Consultar el nombre sólo aporta la primera unidad; revisa qué operación todavía representa `*`."
+          ]
         }
       ]
     },
@@ -66,11 +104,23 @@
         },
         {
           "type": "paragraph",
-          "text": "leer_termino obtiene una unidad y llama a continuar_termino con ese valor. continuar_termino reconoce los siguientes *, / y %. De manera equivalente, leer_expresion obtiene un término y llama a continuar_expresion, que reconoce + y -. Cuando la sentencia ya consultó su primer nombre, llama primero a continuar_termino y después a continuar_expresion."
+          "text": "`leer_termino` obtiene una unidad con `leer_unidad` y entrega ese entero a `continuar_termino`. El parámetro `izquierda` de esta última función representa el valor ya calculado a su izquierda; su bucle reconoce los operadores `*`, `/` y `%` que todavía faltan.\n\nDel mismo modo, `leer_expresion` obtiene primero un término y entrega su valor a `continuar_expresion`, cuyo bucle reconoce `+` y `-`. Cuando `leer_sentencia` ya ha consultado el primer nombre, usa su entero como primera unidad: completa el término con `continuar_termino` y después la expresión con `continuar_expresion`. No vuelve a leer ese nombre.",
+          "emphasis": [
+            {
+              "text": "valor ya calculado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "No se puede empezar directamente por continuar_expresion: con base*3+1; se perdería la multiplicación y * aparecería donde se exige ;. La división de responsabilidades no cambia prioridad ni asociación, sólo permite entrar con una primera unidad ya conocida. El token siguiente también puede ser ;. consultar puede diagnosticar un nombre ausente. Esta rama debe conservar ese terminador para la recuperación incluso cuando falle la consulta: si ; ya salió del origen y no está reservado, descartar_operacion avanzaría por la operación siguiente hasta otro ;. En crea paso=5;ausente;paso+1;, el descarte debe concluir sólo la operación fallida y permitir que paso+1; todavía produzca seis. Decide el orden de la reserva y la consulta a partir de esa garantía."
+          "text": "En `base*3+1;`, saltar directamente a `continuar_expresion` dejaría `*` sin procesar: esa función sólo continúa sumas y restas. El analizador lo encontraría después donde exige `;`. Completar antes el término conserva la prioridad y la asociación ya trabajadas.\n\nTambién hay que conservar el token anticipado cuando una consulta falla. En `crea paso=5;ausente;paso+1;`, el token posterior a `ausente` es `;`. Si ese terminador ya salió del flujo de caracteres y no quedó reservado, `descartar_operacion` buscaría otro `;` y consumiría también `paso+1;`. La recuperación debe concluir sólo la operación fallida para que la última expresión todavía produzca 6. Decide el orden de la reserva y de la consulta a partir de esa garantía.",
+          "emphasis": [
+            {
+              "text": "sólo la operación fallida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "order_code",
@@ -88,7 +138,8 @@
             0
           ],
           "explanation": "Sólo siguiente se reserva. La consulta da la primera unidad; después se completa el término antes de la expresión.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e03"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e03",
+          "reviewFeedback": "Sigue por separado el token anticipado y el entero de la consulta. La recuperación debe encontrar el terminador aun cuando esa consulta falle; después conserva la prioridad entre término y expresión."
         }
       ]
     },
@@ -100,7 +151,17 @@
         },
         {
           "type": "paragraph",
-          "text": "El lado derecho consulta la copia del estado anterior mediante const referencia; no publica modificaciones ni crea destinos provisionales. Una vez obtenido el valor, asignar comprueba existencia y dominio antes de modificar la copia. leer_operacion exige ; y sólo entonces publica la tabla."
+          "text": "El programa conserva el lector, las comprobaciones y la copia candidata de la lección anterior. La nueva función miembro `Tabla_nombres::asignar` recibe el nombre que debe existir y el valor que se propone guardar. Comprueba el dominio del valor, recorre los registros por referencia modificable y cambia `dato.valor` al encontrar el nombre. Si no lo encuentra, lanza una excepción con el mensaje `Nombre no definido`; no añade un registro.\n\nEl lado derecho se analiza mediante las funciones que reciben `const Tabla_nombres& tabla`: pueden consultar las asociaciones de la candidata sin modificarlas. Después, `candidata.asignar(primero.texto, valor)` propone el cambio en esa copia. `leer_operacion` exige todavía `;`; sólo entonces `tabla = candidata;` reemplaza el contenido aceptado. La rama sin `=` conserva el token siguiente antes de consultar el nombre, para que un fallo no pierda la frontera de recuperación.",
+          "emphasis": [
+            {
+              "text": "no añade un registro",
+              "style": "bold"
+            },
+            {
+              "text": "sólo entonces",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -109,7 +170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La sesión acepta 5,8 y17, y paso queda en ocho. La expresión final no modifica paso. Si la asignación falla en un operador, una unidad, un límite o el terminador, el paso anterior sigue disponible después de la recuperación."
+          "text": "La sesión acepta 5, 8 y 17. `crea paso=5;` registra el primer valor y `paso=paso+3;` lo cambia a 8. La expresión `paso*2+1;` produce 17 y conserva la asociación `paso=8`. Al terminar hay tres operaciones aceptadas y ninguna rechazada.\n\nSi una asignación falla al analizar un operador, una unidad, un resultado parcial o el terminador, la tabla aceptada mantiene el valor anterior. La recuperación permite continuar leyendo; no deshace los caracteres que ya se consumieron."
         }
       ]
     },
@@ -128,7 +189,8 @@
             "Valor: 8\nValor: 4\nValor: 9\nValor: 18\nAceptadas: 4\nRechazadas: 0\nTabla: t=9"
           ],
           "explanation": "La consulta empieza por t y completa el término: 8/3 es 2 y 2%2 es 0. La asignación usa el ocho anterior, guarda nueve y la última expresión consulta nueve.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e04"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e04",
+          "reviewFeedback": "Evalúa por etapas la división entera, el resto y la suma. Distingue los valores impresos por las consultas del valor que la asignación conserva en la tabla."
         },
         {
           "type": "multiple_choice",
@@ -140,19 +202,29 @@
           ],
           "correctIndex": 1,
           "explanation": "La gramática sólo permite asignación como sentencia superior. El = después de b impide aceptar el terminador y no publica el candidato.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e05"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e05",
+          "reviewFeedback": [
+            "Un nombre puede aportar su valor dentro de una expresión. Localiza el token que queda después de consultarlo.",
+            "Distingue las operaciones de la expresión aritmética de las formas de sentencia que permite nuestro lenguaje.",
+            "Comprueba si los dos nombres ya existen y si el problema está en crearlos o en terminar de reconocer el lado derecho."
+          ]
         },
         {
           "type": "multiple_choice",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__secuencia_asignacion_previa",
-          "question": "Con crea paso=5;ausente;paso+1;, la consulta de ausente falla después de anticipar ;. ¿Qué conservación permite obtener luego seis?",
+          "question": "Con `crea paso=5;ausente;paso+1;`, la consulta de `ausente` falla después de anticipar `;`. ¿Qué conservación permite obtener luego 6?",
           "options": [
             "Reservar ; antes de consultar el nombre y dejar que la recuperación lo consuma.",
             "Consultar primero y buscar otro ; en los caracteres al fallar.",
             "Crear ausente=0 para evitar el rechazo."
           ],
           "correctIndex": 0,
-          "explanation": "La frontera ya obtenida debe sobrevivir a la consulta que puede fallar. Reservarla mantiene disponible la operación siguiente sin insertar un vínculo inexistente."
+          "explanation": "El terminador ya obtenido debe seguir disponible cuando la consulta diagnostique el nombre ausente. Reservarlo antes de consultar permite concluir sólo esa operación y conservar `paso+1;` para la siguiente. No se inserta un vínculo para evitar el error.",
+          "reviewFeedback": [
+            "Sigue el token anticipado y la consulta que puede lanzar una excepción. ¿Qué debe seguir encontrando la recuperación?",
+            "Si `;` ya salió del flujo y no está reservado, comprueba qué otra operación alcanzaría la búsqueda del siguiente terminador.",
+            "Revisa si diagnosticar un nombre ausente autoriza a añadir una asociación provisional."
+          ]
         }
       ]
     },
@@ -164,10 +236,32 @@
         },
         {
           "type": "paragraph",
-          "text": "Integra el despacho de sentencias y la continuación desde un valor en el programa de declaraciones.\n\nParte de \"crea base=7;base=base+2;base*2+1;base=4 8;base;\".\n\nDebe aceptar 7,9,19 y9, rechazar la asignación incompleta y dejar base=9.\n\nEl editor no entrega los módulos; recupera su estructura y comprueba cada frontera.\n\nConstruye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=7;base=base+2;base*2+1;base=4 8;base;\", \"crea a=4;a=8/0;a;\", \"crea a=4;a=99+2;a;\", \"a=3;crea a=2;a;\", \"crea a=5;crea b=2;a=b=3;a;b;\", \"crea a=5;a=a+1\", \"crea a=6;a%4*3;\", \"crea paso=5;ausente;paso+1;\", en ese orden.\n\nCada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\nTodas las líneas terminan con salto, sin líneas vacías añadidas.\n\nLos rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Divisor cero, Nombre no definido, Resultado fuera de dominio, Se esperaba ;.\n\nLa comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\nUsa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.",
+          "text": "Integra en este editor la asignación y la continuación desde un valor consultado. Recupera del programa trabajado el lector, la tabla y las reglas; conserva sus comprobaciones. El inicial sólo guarda un texto de ejemplo: todavía no interpreta sus operaciones.\n\nComienza con `\"crea base=7;base=base+2;base*2+1;base=4 8;base;\"`. Debe aceptar 7, 9, 19 y 9, rechazar la asignación incompleta y conservar `base` con valor 9. Comprueba cada frontera de lectura y el momento en que se acepta el cambio.\n\nConstruye la batería mediante `probar(texto)`: cada llamada crea un lector, una tabla vacía y contadores en 0. Las asociaciones se conservan entre operaciones de esa llamada; la siguiente empieza con su propio estado. Desde `main`, ejecuta estas ocho sesiones, en este orden:\n1. `\"crea base=7;base=base+2;base*2+1;base=4 8;base;\"`\n2. `\"crea a=4;a=8/0;a;\"`\n3. `\"crea a=4;a=99+2;a;\"`\n4. `\"a=3;crea a=2;a;\"`\n5. `\"crea a=5;crea b=2;a=b=3;a;b;\"`\n6. `\"crea a=5;a=a+1\"`\n7. `\"crea a=6;a%4*3;\"`\n8. `\"crea paso=5;ausente;paso+1;\"`\n\nAntes de cada llamada imprime `Caso` y su número, separados por un espacio, empezando en 1. Cada operación aceptada imprime `Valor:` y su resultado; cada rechazada imprime `Error:` y su causa. Al terminar la sesión imprime `Aceptadas:`, `Rechazadas:` y `Tabla:`. Después de `Tabla:` coloca un espacio antes de cada vínculo, escrito como `nombre=valor` en orden de creación. Después de las otras etiquetas escribe un espacio antes del dato. Todas las líneas terminan con salto; no añadas líneas vacías.\n\nLas causas exactas de rechazo de estas sesiones son `Divisor cero`, `Nombre no definido`, `Resultado fuera de dominio` y `Se esperaba ;`. Usa esas etiquetas aunque elijas otros identificadores u otra organización interna para tu programa. Pulsa Compilar, ejecutar y comprobar con los ocho casos de la misma implementación: el botón contrasta el informe completo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            },
+            {
+              "text": "el momento en que se acepta el cambio",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Las variantes distinguen divisor cero, resultado fuera de dominio, destino ausente, asignación encadenada, terminador ausente, continuación multiplicativa y consulta ausente antes de una operación válida. En el caso 3, el lector admite los literales `99` y `2`; es su suma, 101, la que supera el dominio de resultados. En el caso 6, el final del texto llega antes de `;` y la propuesta no se acepta.\n\nCada rechazo debe conservar las asociaciones aceptadas. En el caso 8, el `;` anticipado tras `ausente` debe permitir recuperar sólo ese error y continuar con `paso+1;`. Estos ocho informes comprueban los comportamientos indicados; no cubren por sí solos todas las ramas posibles de tu implementación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de esta integración: distinguir creación, modificación y consulta; mantener la reserva de un solo token; completar el término antes de la expresión; consultar el valor anterior en el lado derecho y publicar el cambio sólo después de reconocer el terminador. Comprueba que cada rechazo conserve la tabla y que la recuperación no elimine la operación siguiente.\n\nConservar el estado de la tabla no significa devolver los caracteres consumidos. Contrasta ambas responsabilidades por separado: las asociaciones que muestra `Tabla:` y las operaciones que el cliente todavía puede leer.",
+          "emphasis": [
+            {
+              "text": "sólo después de reconocer el terminador",
+              "style": "bold"
+            },
+            {
+              "text": "no elimine la operación siguiente",
               "style": "bold"
             }
           ]
@@ -185,14 +279,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "paragraph",
-          "text": "Las variantes de la batería comprueban divisor cero, dominio, destino ausente, asignación encadenada, terminador ausente, continuación multiplicativa y consulta ausente antes de una operación válida. El rechazo no cambia la tabla aceptada; el ; reservado de ausente no debe provocar que se descarte paso+1;."
-        },
-        {
-          "type": "paragraph",
-          "text": "Criterios: distinguir creación, modificación y consulta; mantener reserva única; completar el término antes de la expresión; consultar el valor anterior en el lado derecho; publicar sólo después del terminador y conservar la tabla tras cada rechazo. No se promete devolver los caracteres consumidos."
         }
       ]
     },
@@ -209,7 +295,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia acepta 6,9,2 y9, con un rechazo. nivel queda en nueve. La rama de consulta usa primero continuar_termino; por eso nivel%4*2 calcula1*2. La tabla que tenía valor nueve no se reemplaza por el candidato de la asignación incompleta."
+          "text": "La referencia acepta 6, 9, 2 y 9, y rechaza una operación. La creación registra `nivel` con valor 6; la asignación siguiente lo cambia a 9. La consulta `nivel%4*2;` completa primero el término: el resto es 1 y la multiplicación produce 2, sin modificar la tabla.\n\nEn `nivel=2 7;`, la expresión proporciona 2, pero queda otro número donde `leer_operacion` exige `;`. La propuesta de la candidata no llega a reemplazar `nivel=9`. Después de recuperar ese rechazo, `nivel;` vuelve a consultar 9. La última página conserva la referencia completa de la batería del editor."
         }
       ]
     },
@@ -228,11 +314,12 @@
             "Valor: 6\nValor: 2\nError: Se esperaba ;\nValor: 6\nValor: 2\nAceptadas: 4\nRechazadas: 1\nTabla: a=6 b=2"
           ],
           "explanation": "El lado derecho obtiene el valor de b y después encuentra = en lugar de ;. Ningún cambio del candidato llega a la tabla aceptada. La recuperación llega al primer ;.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e06"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada__e06",
+          "reviewFeedback": "Localiza el token que queda tras consultar el lado derecho y decide si se alcanza la instrucción que reemplaza la tabla aceptada. Después sigue las dos consultas finales."
         },
         {
           "type": "note",
-          "text": "Declarar introduce una asociación nueva; asignar cambia el valor de una asociación existente. Esta diferencia debe formar parte del lenguaje y de la tabla, además de reconocerse en la entrada (Stroustrup, 2024, sección 6.8.4 y ejercicio 2 del capítulo 6). Aquí la asignación ocupa una sentencia completa: reconocer un nombre y un signo igual no autoriza a publicar el cambio antes de aceptar también su expresión y su frontera final."
+          "text": "Distinguir la introducción de un nombre de la modificación de su valor permite detectar redefiniciones y asignaciones a nombres ausentes. La ampliación de asignación propuesta para la calculadora recupera esa diferencia (Stroustrup, 2024, sección 6.8.4 y ejercicio 2 del capítulo 6).\n\nEn nuestro lenguaje, `crea` solicita añadir una asociación y una asignación solicita modificar una existente. Reconocer el nombre y `=` no completa la operación: todavía hay que aceptar la expresión del lado derecho y el terminador. La copia separa esa propuesta del estado aceptado; la recuperación del lector atiende al texto que falta por procesar."
         }
       ]
     },
@@ -247,6 +334,909 @@
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nombre invalido\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nombre ya definido\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Tabla llena\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint leer_expresion(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    if (profundidad > 8) throw std::runtime_error(\"Profundidad excedida\");\n    const Token token = lector.leer();\n    if (token.clase == numero) return token.valor;\n    if (token.clase == nombre) return tabla.consultar(token.texto);\n    if (token.clase == '+') return leer_unidad(lector, tabla, profundidad + 1);\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, tabla, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, tabla, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint continuar_termino(int izquierda, Lector_tokens& lector,\n        const Tabla_nombres& tabla, int profundidad) {\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*' || token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, tabla, profundidad);\n            if ((token.clase == '/' || token.clase == '%') && derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '*') izquierda = resultado_en_dominio(izquierda * derecha);\n            else if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_termino(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    return continuar_termino(leer_unidad(lector, tabla, profundidad), lector, tabla, profundidad);\n}\n\nint continuar_expresion(int izquierda, Lector_tokens& lector,\n        const Tabla_nombres& tabla, int profundidad) {\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+' || token.clase == '-') {\n            const int derecha = leer_termino(lector, tabla, profundidad);\n            if (token.clase == '+') izquierda = resultado_en_dominio(izquierda + derecha);\n            else izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    return continuar_expresion(leer_termino(lector, tabla, profundidad), lector, tabla, profundidad);\n}\n\nint leer_definicion(Lector_tokens& lector, Tabla_nombres& candidata) {\n    const Token destino = lector.leer();\n    if (destino.clase != nombre) {\n        lector.devolver(destino);\n        throw std::runtime_error(\"Se esperaba un nombre\");\n    }\n    const Token igual = lector.leer();\n    if (igual.clase != '=') {\n        lector.devolver(igual);\n        throw std::runtime_error(\"Se esperaba =\");\n    }\n    const int valor = leer_expresion(lector, candidata, 0);\n    candidata.definir(destino.texto, valor);\n    return valor;\n}\n\nint leer_sentencia(Lector_tokens& lector, Tabla_nombres& candidata) {\n    const Token primero = lector.leer();\n    if (primero.clase == declaracion) {\n        return leer_definicion(lector, candidata);\n    }\n    if (primero.clase == nombre) {\n        const Token siguiente = lector.leer();\n        if (siguiente.clase == '=') {\n            const int valor = leer_expresion(lector, candidata, 0);\n            candidata.asignar(primero.texto, valor);\n            return valor;\n        }\n        lector.devolver(siguiente);\n        const int inicial = candidata.consultar(primero.texto);\n        const int termino = continuar_termino(inicial, lector, candidata, 0);\n        return continuar_expresion(termino, lector, candidata, 0);\n    }\n    lector.devolver(primero);\n    return leer_expresion(lector, candidata, 0);\n}\n\nint leer_operacion(Lector_tokens& lector, Tabla_nombres& tabla) {\n    Tabla_nombres candidata = tabla;\n    const int valor = leer_sentencia(lector, candidata);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    tabla = candidata;\n    return valor;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    Tabla_nombres tabla;\n    int aceptadas = 0;\n    int rechazadas = 0;\n    while (true) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == final_texto) break;\n            lector.devolver(inicio);\n            const int valor = leer_operacion(lector, tabla);\n            ++aceptadas;\n            std::cout << \"Valor: \" << valor << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            if (!lector.descartar_operacion()) break;\n        }\n    }\n    std::cout << \"Aceptadas: \" << aceptadas << \"\\nRechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Tabla:\";\n    for (const Vinculo& dato : tabla.entradas()) {\n        std::cout << ' ' << dato.nombre << '=' << dato.valor;\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"crea base=7;base=base+2;base*2+1;base=4 8;base;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"crea a=4;a=8/0;a;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"crea a=4;a=99+2;a;\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"a=3;crea a=2;a;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"crea a=5;crea b=2;a=b=3;a;b;\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"crea a=5;a=a+1\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"crea a=6;a%4*3;\");\n    std::cout << \"Caso 8\\n\";\n    probar(\"crea paso=5;ausente;paso+1;\");\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "8a07f0e506dceda7460d8ac821633b9925cfb5630ded05ec95111e97c9f977d9"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "27fce6e4e2366c251613ae575fa778ca8bff61f419a7bd7a1b443955a6fc2700"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "3a1388e681c899597cadde98a04783ea2e5b391a475e947a3e9d4730376bc0c8"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "983f54b1f9f283d3f6164bb15129b87f03aeb88b30f8d43bc7bcdafbf757ed4d"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "9e4b7d4cb9a46e1f2e8f922eaa905cc9466430f7a9802927f2b822edf947b6dc"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "5dac7e18b27913437b20184e224e17e80285a5861f8469909e3e182d6bce9666"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "666cdc585a504f57585336b94d1b7fcb4861a72395a531c9ae93edee570eabe2"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "2afd4d309a2571e5ac47d1ad64d809edf3293edce7b2cdd6ead5fd06a0036f08"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1c7188e7b1d0d01994243c46a2110879323346918662008198333b58beaeb10d"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "a7957735667ce55463a00918e43331115659a5fd245fd06d3e4f7880aadb8840"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "bb06e63795ea043c86692d2e84c456c974c34da23cba0cee22a101895da89aba"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "30861c7052582881bd2247d0da14c2771aea87df4df377c9f044b9d38fe416bf",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "e715433d049222d6abe0686b343fcae404f377ec2b65bafac1fd23f2578fa7b4"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "e4de268f9df72655fb40172b21f3407e8d2c1d9e3bef8d6d60ea0a20b594ea17"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "3a1388e681c899597cadde98a04783ea2e5b391a475e947a3e9d4730376bc0c8"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "615f91daf8ef80ca4e5617b713bd477859a5dd10aa3700c8fe30540d7b00affd"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "b8253715d540c6d1de071da053bd42f60577735a854ce45be17cde14d7821795"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "3c3b3270ea465d0c082943fabf012291b5cab5c80fbd25d2c0a6b6906af822b1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "792ee23581290f2b98474b3f4ac61158a72c37118f6ab1e26a32009c815668bd"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "a709ac62fdf731fd575213a2874a1ef96932990732118d1f831e9af97f277996"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0dc842e2d6081a20be83d821b1c52a091d17b95e71b7b5e3e4214e0804885d33"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "f93abb87da7ecfecd260a65d3b422f8912a9b508c119da8d534e85d2de731422",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "8a07f0e506dceda7460d8ac821633b9925cfb5630ded05ec95111e97c9f977d9"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "27fce6e4e2366c251613ae575fa778ca8bff61f419a7bd7a1b443955a6fc2700"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "3a1388e681c899597cadde98a04783ea2e5b391a475e947a3e9d4730376bc0c8"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "983f54b1f9f283d3f6164bb15129b87f03aeb88b30f8d43bc7bcdafbf757ed4d"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "9e4b7d4cb9a46e1f2e8f922eaa905cc9466430f7a9802927f2b822edf947b6dc"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "5dac7e18b27913437b20184e224e17e80285a5861f8469909e3e182d6bce9666"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "666cdc585a504f57585336b94d1b7fcb4861a72395a531c9ae93edee570eabe2"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "2afd4d309a2571e5ac47d1ad64d809edf3293edce7b2cdd6ead5fd06a0036f08"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1c7188e7b1d0d01994243c46a2110879323346918662008198333b58beaeb10d"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "a7957735667ce55463a00918e43331115659a5fd245fd06d3e4f7880aadb8840"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "bb06e63795ea043c86692d2e84c456c974c34da23cba0cee22a101895da89aba"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "4714dd3469905dabd5877dcca9d060e06e18c75ae821abdf35ad0cd3da446313",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "6a24b0135c5cd064225613a7cb20d90a2a821dfc80cfd956a033d20069edbc3d"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "f60de36a82540c917ad422c4354472518eda66403acf3ed5a444a3257f168efd"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "3a1388e681c899597cadde98a04783ea2e5b391a475e947a3e9d4730376bc0c8"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "978c0fb7d5b54181aa32f1eaf4a1bd7440cff09f8664d28b055e4d49c9f3d638"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5d2e0993a62575fdc595d3a96b43a3f5e319eaccdc6ce284f9c9df85bcc07e21"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "3ea3c79d27e8c382bca9cd4c89d6ec981ab346fa8c09e7b6cb9fde0c5ec865e9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "792ee23581290f2b98474b3f4ac61158a72c37118f6ab1e26a32009c815668bd"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "46c4f3a93922f8ca052e720763c4ca5b0e2203b93acfe7cd9f5640bc91b1f6e6"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "e497d35d70e9009da9ee18119e54dd7a649f2908606f03fb76c725f2d40ef024"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "ff2604933aea324466dc1836da1a85832c2bd17343ec06535e5ce2a47ec518f3",
+        "afterSha256": "0e331e2be0dcbaa0808ce6001216e69cfe45e9b9115da1281843d745d522b5d7"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "8f1f3385feff02a3a4d93fa337e8c0fb153df56c1da3080410e2972e22b2404e",
+        "afterSha256": "76a3d89573def8f11169d52cd26974e6cbe2d554b3a7092ffaa889b8fca0de93"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9cab19400cb58141fd0b31aac7b7776b6fbbabc870d35a3b591637e312f4ef3b",
+        "afterSha256": "6969439e1d222875923e922b987147fdde15b4c42d67add013734a657dcc2d8b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "632ddeba11b7545da616f5bc73d4f94a918472ce9d6d7be38b2dccc583a1aa3d",
+        "afterSha256": "2d893ad14e1207734fcc8de6e85d440dd7d0efa0bb85058ad0e674fc84218563"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "131813837961084cd21418601927daac5a6244622d13bc853aa402abfd5b365e",
+        "afterSha256": "3f702cd47626507ccd5713fe23bd3bd92f5e922bfc927a2b0a773c2b1172bd17"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "723b7ecd7ce1416560a6a53800d42550b6511b90bf48fbaadfad6dd5b95bf2b2",
+        "afterSha256": "da3d5a7c6f0c25f3853122eb98db101cbdf8a9cd626477e1287680c6187b8861"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a52461aecb3a8e2006216056366081d85886d66c4685c6e85896fa7e55978407",
+        "afterSha256": "648417c2268de3b7f83e767b63b809d8d5549e19bb1529ae04b7a273ee98928c"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "672de455426dcdea4172f480d628b29fe213c74d4bc46e2de81ab334230dc150",
+        "afterSha256": "d76e7d7909f8508a6997217693521519bd1bbfc72e9bc085ca7a912c269065f7"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "5d6de412164f08944bc7fb9858bfed22d7f68ac901d16b9b0af59a0520482ee5",
+        "afterSha256": "75bd3371395fe205e1aa8cc4598f99dae109a053f43d7e9c3e095917ba050fe4"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "243274e7db15fdd246fa43a523b3f13447b7677769cc6b7c779a688caae05d56",
+        "afterSha256": "fdd2dc515abd3a1aa097941f7c714a9c521239545738e1036e7c197656e774e1"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f668f499e5ba64c35519fc2eb6959937e6562a77502f484f3aaef31a892ced06",
+        "afterSha256": "57b783dc057dbc452ba30125f04029c23b5882d1e915c22844d604901bbb3f19"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4f2c48ce5a1b53045a79ea2699bd5927cd9c71e76d80a6ab7ebdf2493e0248d6",
+        "afterSha256": "1795562bd3f78ab353f8368134ca1a8f6aa122a8148199569402b6c3c88e2595"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "928192c77b07a0d552db5535aa33f10c7d6c61d37e8a65147d71f43052e7fd20",
+        "afterSha256": "39cf702fee359eb05408354353e0281d5bb8693d9135cab1d5e501144b0d66ce"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "b4defb43d4456ba43a1fa5179b2a58ad73814a76d45e1e4a09a43c189e6f4c0b",
+        "afterSha256": "0bb9ffed3a7f4ea7af7c3507514403f7f735c231149abe29f4f347b87e9bfcb1"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "a1688e271a704709a8d0d44c718727d88d5eea377c7d7fef469ef3de5e3d8db6",
+        "afterSha256": "f5c3f3e47de2b6142db7aa981e369840ee3f30ee4b85fdfff9231b84cf0fe90b"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "f0adf115232510b37d472d576dc88da5365c116dcd0442ce33804b674d0ea93f",
+        "afterSha256": "be09d909813e9ab682c380e93d17de3f8d8699bb02cf2ec1ef104f53770249ae"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "933dade08349b80446ed7cad157f0265c082edac8f8cbba9c886788f5eeccdfd",
+        "afterSha256": "52fac420e4399a7bcd572db4e2d55a35b351206abf90ee40bc735d0bb388e2d2"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "d447ea7878c5bd50e84f5ad585dae1f02d86e07e56bf5a1b7e9a5d0986f35de8",
+        "afterSha256": "958d60e2d93dc007b256be0122c7f35a204f4d96ad00a37a0cf24d731c9e1d0a"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "a59477157f829feb902014316514471f238441f97a83530bcadea5b492882897",
+        "afterSha256": "9dcecb759eec49a264cb3e937c9338f46948e4cd498be62788c36931d7075490"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "769148e95bdae31d9b07c75727bd0c900dd7f7b1fea415aaf406d02b9ccf1458",
+        "afterSha256": "c848fbbdce26cc01a52aea30e0c7904d041cecd4d8706d554e9af8762bdae5f2"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0007_0000",
+        "block_0007_0002",
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0001",
+      "requires": [
+        "block_0005_0002"
       ]
     }
   ]
