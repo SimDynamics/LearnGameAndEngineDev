@@ -40,7 +40,7 @@
           "type": "multiple_choice",
           "question": "Una consulta de un nombre ausente devuelve cero y además lo añade a la tabla. ¿Qué problema introduce?",
           "options": [
-            "La consulta sigue siendo pura porque devuelve un valor neutro.",
+            "Conserva el estado de la tabla porque el valor devuelto es neutro.",
             "Confunde ausencia con un valor válido y modifica el estado al observarlo.",
             "Diagnostica ausencia y conserva el tamaño anterior."
           ],
@@ -1201,6 +1201,11 @@
         "id": "block_0006_0002",
         "beforeSha256": "9a02c97a015e9d29d28e230f65834629aa1716bd74f20633bdcb82d56d6883a6",
         "afterSha256": "bb600bc281eac9dc0fa98f1cf0eabfe09e4065c460a37fb96d88f1ff6104331d"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e",
+        "afterSha256": "701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4"
       }
     ],
     "orderRefinements": [
@@ -1221,6 +1226,28 @@
           ],
           "explanation": "La tabla candidata existe antes de modificarla. El reemplazo queda condicionado al éxito de la validación. Una validación fallida deja intacta tabla.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e06"
+        }
+      }
+    ],
+    "choiceRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "multiple_choice",
+          "question": "Una consulta de un nombre ausente devuelve cero y además lo añade a la tabla. ¿Qué problema introduce?",
+          "options": [
+            "La consulta sigue siendo pura porque devuelve un valor neutro.",
+            "Confunde ausencia con un valor válido y modifica el estado al observarlo.",
+            "Diagnostica ausencia y conserva el tamaño anterior."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cero es un valor legítimo. Consultar debe observar el estado; una ausencia se diagnostica y no inserta un vínculo.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e01",
+          "reviewFeedback": [
+            "Distingue el valor que devuelve una operación del cambio que realiza en la colección. Revisa si el nombre ausente estaba antes y si aparece después.",
+            "Comprueba por separado si el valor cero puede estar almacenado y si consultar debe añadir una asociación.",
+            "El enunciado describe una inserción. Compara esa acción con diagnosticar que el nombre no estaba registrado."
+          ]
         }
       }
     ]
