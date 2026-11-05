@@ -5,20 +5,28 @@ void u11_literal_spacing_reader(const std::shared_ptr<windows::NarrationWorker>&
         const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase){
     check(phase<2,"Invalid literal-spacing reader phase");
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
-    check(state::sha256(before_bytes)=="35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f"
-        &&state::sha256(after_bytes)=="a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49",
-        "Literal-spacing reader fixtures differ from the two authenticated complete documents");
+    const auto before_hash=state::sha256(before_bytes),after_hash=state::sha256(after_bytes);
+    const bool historical=before_hash=="35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f"
+        &&after_hash=="a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49";
+    const bool current=before_hash=="9012b0d2a268a5df7fde68a74922748262c7b1d08e21d6d21225743db76c2933"
+        &&after_hash=="9e248574ca08044e9d533f58cba482f033b7ea0e9fc091b9939bcce2c824b8ba";
+    check(historical||current,"Literal-spacing reader fixtures differ from either authenticated complete document pair");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
     const auto at=identity_position(before,"block_0001_0004"),current_at=identity_position(after,"block_0001_0004");
     const auto& old=before.pages[at.page].blocks[at.block];const auto& revised=after.pages[current_at.page].blocks[current_at.block];
-    const auto& compiler=before.pages[3].blocks[1];
+    const auto compiler_at=identity_position(before,"block_0003_0001"),revised_compiler_at=identity_position(after,"block_0003_0001");
+    const auto& compiler=before.pages[compiler_at.page].blocks[compiler_at.block];
     check(at==current_at&&at.page==1&&at.block==4&&old.type==curriculum::BlockType::multiple_choice
         &&old.id=="cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e01"
         &&old.id==revised.id&&old.correct_index==1&&old.options==revised.options&&old.correct_index==revised.correct_index
         &&old.question==revised.question&&old.review_feedback_options==revised.review_feedback_options
         &&old.explanation=="La creación completa guardó cero. El literal100 se rechaza y su candidato no sustituye ese estado."
         &&revised.explanation=="La creación completa guardó cero. El literal 100 se rechaza y su candidato no sustituye ese estado."
-        &&compiler.type==curriculum::BlockType::cpp_compiler,
+        &&compiler.type==curriculum::BlockType::cpp_compiler&&compiler_at==revised_compiler_at
+        &&compiler_at.page==3&&compiler_at.block==(current?4u:1u)
+        &&compiler.initial_code==after.pages[revised_compiler_at.page].blocks[revised_compiler_at.block].initial_code
+        &&curriculum::reference_objective_frame(before,compiler)==curriculum::reference_objective_frame(after,
+            after.pages[revised_compiler_at.page].blocks[revised_compiler_at.block]),
         "The focal literal-spacing identity, source pair or independent draft owner changed");
     const auto draft_key=curriculum::draft_key("programming",before,compiler);
     state::Draft draft;draft.source=compiler.initial_code+"\n// QA: conservar borrador independiente\n";draft.input=" entrada\t\r\n";
@@ -200,7 +208,7 @@ void u11_literal_spacing_reader(const std::shared_ptr<windows::NarrationWorker>&
         check(std::ranges::all_of(feedback,[&](auto index){return observed.contains(index);})
             &&f.snapshot().heard_through>static_cast<std::int64_t>(feedback.back()),"Session continuation skipped part of the corrected explanation");preserve();
     }
-    std::cout<<"PASS U11L22 literal-spacing reader phase "<<phase<<": real choice and three earned page bookmarks; "
+    std::cout<<"PASS "<<(current?"current":"historical")<<" U11L22 literal-spacing reader phase "<<phase<<": real choice and three earned page bookmarks; "
         <<(phase==0?"compatible question pause/certificate retained":"incompatible explanation revisited at zero, full corrected feedback played")
         <<"; distinct source word/numeral timings, non-silent PCM, silent reopen, unchanged draft/answers/other slots/WAVs. Equal prepared speech may legitimately reuse PCM. No program execution, import, full-page traversal or human listening claimed.\n";
 }

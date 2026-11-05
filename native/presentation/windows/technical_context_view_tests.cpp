@@ -579,9 +579,12 @@ void exact_editorial_view(const std::filesystem::path& before_path,const std::fi
 }
 void literal_spacing_editorial_view(const std::filesystem::path& before_path,const std::filesystem::path& after_path){
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
-    check(state::sha256(before_bytes)=="35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f"
-        &&state::sha256(after_bytes)=="a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49",
-        "The literal-spacing view needs the two authenticated complete session fixtures");
+    const auto before_hash=state::sha256(before_bytes),after_hash=state::sha256(after_bytes);
+    const bool historical=before_hash=="35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f"
+        &&after_hash=="a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49";
+    const bool current=before_hash=="9012b0d2a268a5df7fde68a74922748262c7b1d08e21d6d21225743db76c2933"
+        &&after_hash=="9e248574ca08044e9d533f58cba482f033b7ea0e9fc091b9939bcce2c824b8ba";
+    check(historical||current,"The literal-spacing view needs either authenticated complete session fixture pair");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
     const auto at=curriculum::stable_block_position(before,"block_0001_0004"),next=curriculum::stable_block_position(after,"block_0001_0004");
     check(at&&next&&*at==*next&&at->page==1&&at->block==4,"The exact literal-spacing owner moved");
@@ -594,10 +597,44 @@ void literal_spacing_editorial_view(const std::filesystem::path& before_path,con
         &&state::sha256(old.explanation)=="e2103b09c4b3c8793d2d70fca2451232cc0aa61a7825effc26e48715aa0beb51"
         &&state::sha256(revised.explanation)=="1219b910c0c8284002699f2dda3e8e79ee650460373d0236b894cdba87814b8f",
         "The spacing proposal changed its protected answer, guide, identity or exact text pair");
-    const curriculum::Block* compiler=nullptr;
-    for(const auto& page:before.pages)for(const auto& block:page.blocks)
-        if(block.type==curriculum::BlockType::cpp_compiler&&!compiler)compiler=&block;
-    check(compiler,"The independent session draft owner is missing");
+    const auto compiler_at=curriculum::stable_block_position(before,"block_0003_0001"),revised_compiler_at=curriculum::stable_block_position(after,"block_0003_0001");
+    check(compiler_at&&revised_compiler_at&&*compiler_at==*revised_compiler_at
+        &&compiler_at->page==3&&compiler_at->block==(current?4u:1u),"The independent session draft owner moved");
+    const auto* compiler=&before.pages[compiler_at->page].blocks[compiler_at->block];
+    check(compiler->type==curriculum::BlockType::cpp_compiler
+        &&compiler->initial_code==after.pages[revised_compiler_at->page].blocks[revised_compiler_at->block].initial_code
+        &&curriculum::reference_objective_frame(before,*compiler)==curriculum::reference_objective_frame(after,
+            after.pages[revised_compiler_at->page].blocks[revised_compiler_at->block]),
+        "The independent session compiler contract changed");
+    const auto same_layout=[](const auto& one,const auto& two){return std::ranges::equal(one,two,[](const auto& a,const auto& b){
+        return a.id==b.id&&a.blocks==b.blocks;});};
+    check(before.pages.size()==10&&after.pages.size()==before.pages.size(),"Spacing adoption changed the session page count");
+    std::size_t active_blocks=0,compilers=0;
+    for(std::size_t page=0;page<before.pages.size();++page){const auto& a=before.pages[page];const auto& b=after.pages[page];
+        check(a.stable_id==b.stable_id&&a.blocks.size()==b.blocks.size(),"Spacing adoption changed a page identity or block count");
+        for(std::size_t index=0;index<a.blocks.size();++index){const auto& block=a.blocks[index];const auto& replacement=b.blocks[index];
+            ++active_blocks;if(block.type==curriculum::BlockType::cpp_compiler)++compilers;
+            check(block.stable_id==replacement.stable_id&&block.type==replacement.type,"Spacing adoption changed a loaded block type or stable identity");
+            if(block.type==curriculum::BlockType::cpp_compiler)check(block.initial_code==replacement.initial_code
+                &&curriculum::reference_objective_frame(before,block)==curriculum::reference_objective_frame(after,replacement),
+                "Spacing adoption changed an independent compiler contract");}}
+    check(active_blocks==40&&compilers==2&&same_layout(before.state_layout.origin,after.state_layout.origin)
+        &&same_layout(before.state_layout.current,after.state_layout.current)
+        &&before.state_layout.lineage==after.state_layout.lineage&&before.state_layout.legacy_lineage==after.state_layout.legacy_lineage
+        &&before.state_layout.family.size()==3&&after.state_layout.family.size()==3
+        &&before.state_layout.additions.empty()&&after.state_layout.additions.empty()
+        &&before.state_layout.retired.empty()&&after.state_layout.retired.empty(),
+        "Spacing adoption changed the forty active identities, original layout, family or compiler owners");
+    for(const auto& [locale,family]:before.state_layout.family){const auto found=after.state_layout.family.find(locale);
+        check(found!=after.state_layout.family.end()&&family.sha256==found->second.sha256&&family.signatures==found->second.signatures
+            &&same_layout(family.origin,found->second.origin),"Spacing adoption changed a historical locale family");}
+    check(before.compiler_puzzles_required==current&&after.compiler_puzzles_required==current
+        &&before.reference_after.size()==(current?2u:0u)&&before.activity_after.size()==(current?4u:0u)
+        &&std::ranges::equal(before.reference_after,after.reference_after,[](const auto& a,const auto& b){return a.activity==b.activity&&a.blocks==b.blocks;})
+        &&std::ranges::equal(before.activity_after,after.activity_after,[](const auto& a,const auto& b){return a.activity==b.activity&&a.prerequisites==b.prerequisites;}),
+        "Spacing adoption changed the two compilers' required references or activity dependencies");
+    if(current)check(before.state_layout.current[3].blocks==std::vector<std::string>{"block_0003_0000","block_0003_0002",
+        "block_0003_0003","block_0003_0004","block_0003_0001"},"The current session lost its authored page-four order");
     const auto draft_key=curriculum::draft_key("programming",before,*compiler);
     state::Draft draft;draft.source=compiler->initial_code+"\n// QA: conservar borrador independiente\n";
     draft.input=" entrada\t\r\n";draft.indentation_json=state::make_indentation_metadata(draft.source,{});
@@ -634,8 +671,9 @@ void literal_spacing_editorial_view(const std::filesystem::path& before_path,con
             check(retained.has_saved&&retained.source==draft.source&&retained.input==draft.input&&retained.indentation_json==draft.indentation_json
                 &&retained.selection_start==draft.selection_start&&retained.selection_end==draft.selection_end,
                 "Spacing adoption changed the independent compiler draft/caret");
-            for(const auto& page:after.pages)for(const auto& block:page.blocks)if(curriculum::has_compiler_objective(block))
-                check(windows::compiler_puzzle_case_count(data,after,block)==0,"Spacing QA fabricated compiler execution credit");
+            for(const auto& page:after.pages)for(const auto& block:page.blocks){
+                if(curriculum::has_compiler_objective(block))check(windows::compiler_puzzle_case_count(data,after,block)==0,"Spacing QA fabricated compiler execution credit");
+                if(block.stable_id!=revised.stable_id)check(!state::get_response(data,after,block),"Spacing QA fabricated another curricular response");}
             source_and_shading(fixture,fixture.item(at->block,0),revised.question);
             if(response)check(SendMessageW(fixture.item(at->block,20+static_cast<int>(response->selected)*2),BM_GETCHECK,0,0)==BST_CHECKED,
                 "Spacing adoption changed the selected native option");
@@ -654,7 +692,7 @@ void literal_spacing_editorial_view(const std::filesystem::path& before_path,con
         verify();fixture.reopen();verify();
     }
     check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,"Literal-spacing UI QA rewrote its authenticated fixtures");
-    std::cout<<"PASS exact U11L22 literal spacing: four real native states, unchanged whole responses/guides/draft/attempts/three storage-only bookmarks, full revised explanation/source/shading and silent reopen; no receipts, compiler execution, PCM or human listening claimed\n";
+    std::cout<<"PASS "<<(current?"current":"historical")<<" exact U11L22 literal spacing: four real native states, unchanged whole responses/guides/draft/attempts/three storage-only bookmarks, full revised explanation/source/shading and silent reopen; no receipts, compiler execution, PCM or human listening claimed\n";
 }
 void remainder_visual_profile(std::wstring_view token,bool inspect){
     check(is_valid_qa_instance(token)&&token.starts_with(L"visual-remainder-"),"Unsafe remainder visual QA token");

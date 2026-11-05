@@ -301,11 +301,27 @@ if(BUILD_TESTING)
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
         COMMENT "Verifying the immutable U11L22 literal-spacing editorial pair from local Git"
         VERBATIM)
-    add_custom_target(lgaed_u11_session_editorial_fixtures DEPENDS ${LGAED_U11_SESSION_EDITORIAL_FIXTURES})
+    set(LGAED_U11_SESSION_CURRENT_EDITORIAL_FIXTURES
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-current-before.json"
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-current-after.json"
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/manifest-current.json")
+    add_custom_command(OUTPUT ${LGAED_U11_SESSION_CURRENT_EDITORIAL_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_session_editorial_fixture_source.py"
+            --output-dir "${LGAED_U11_SESSION_EDITORIAL_DIR}" --current
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_session_editorial_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        COMMENT "Verifying the current U11L22 literal-spacing pair without replacing historical fixtures"
+        VERBATIM)
+    add_custom_target(lgaed_u11_session_editorial_fixtures DEPENDS
+        ${LGAED_U11_SESSION_EDITORIAL_FIXTURES} ${LGAED_U11_SESSION_CURRENT_EDITORIAL_FIXTURES})
     add_dependencies(lgaed_technical_context_view_tests lgaed_u11_session_editorial_fixtures)
     add_test(NAME native.u11_session_literal_view COMMAND lgaed_technical_context_view_tests --literal-spacing-revision
         "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-before.json" "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-after.json")
     set_tests_properties(native.u11_session_literal_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_test(NAME native.u11_session_literal_current_view COMMAND lgaed_technical_context_view_tests --literal-spacing-revision
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-current-before.json" "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-current-after.json")
+    set_tests_properties(native.u11_session_literal_current_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_test(NAME native.u11_session_literal_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_session_editorials.py)
     set_tests_properties(native.u11_session_literal_authoring PROPERTIES TIMEOUT 120)
@@ -616,6 +632,11 @@ if(BUILD_TESTING)
                 "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-before.json"
                 "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-after.json" ${session_reader_phase})
         set_tests_properties(native.u11_session_literal_reader_${session_reader_phase} PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+        add_test(NAME native.u11_session_literal_current_reader_${session_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u11-literal-spacing-revision
+                "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-current-before.json"
+                "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-current-after.json" ${session_reader_phase})
+        set_tests_properties(native.u11_session_literal_current_reader_${session_reader_phase} PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     endforeach()
     foreach(assignment_reader_phase RANGE 0 1)
         add_test(NAME native.u11_assignment_editorial_reader_${assignment_reader_phase}
