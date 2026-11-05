@@ -288,6 +288,27 @@ if(BUILD_TESTING)
     add_test(NAME native.u11_assignment_editorial_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_assignment_editorials.py)
     set_tests_properties(native.u11_assignment_editorial_authoring PROPERTIES TIMEOUT 120)
+    set(LGAED_U11_SESSION_EDITORIAL_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u11-session-editorial")
+    set(LGAED_U11_SESSION_EDITORIAL_FIXTURES
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-before.json"
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-after.json"
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/manifest.json")
+    add_custom_command(OUTPUT ${LGAED_U11_SESSION_EDITORIAL_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_session_editorial_fixture_source.py"
+            --output-dir "${LGAED_U11_SESSION_EDITORIAL_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_session_editorial_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        COMMENT "Verifying the immutable U11L22 literal-spacing editorial pair from local Git"
+        VERBATIM)
+    add_custom_target(lgaed_u11_session_editorial_fixtures DEPENDS ${LGAED_U11_SESSION_EDITORIAL_FIXTURES})
+    add_dependencies(lgaed_technical_context_view_tests lgaed_u11_session_editorial_fixtures)
+    add_test(NAME native.u11_session_literal_view COMMAND lgaed_technical_context_view_tests --literal-spacing-revision
+        "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-before.json" "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-after.json")
+    set_tests_properties(native.u11_session_literal_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_test(NAME native.u11_session_literal_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_session_editorials.py)
+    set_tests_properties(native.u11_session_literal_authoring PROPERTIES TIMEOUT 120)
     add_executable(lgaed_window_frame_tests native/presentation/windows/window_frame_tests.cpp)
     target_link_libraries(lgaed_window_frame_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.window_frame COMMAND lgaed_window_frame_tests)
@@ -588,6 +609,14 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u11_session_editorial_fixtures)
+    foreach(session_reader_phase RANGE 0 1)
+        add_test(NAME native.u11_session_literal_reader_${session_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u11-literal-spacing-revision
+                "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-before.json"
+                "${LGAED_U11_SESSION_EDITORIAL_DIR}/session-after.json" ${session_reader_phase})
+        set_tests_properties(native.u11_session_literal_reader_${session_reader_phase} PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    endforeach()
     foreach(assignment_reader_phase RANGE 0 1)
         add_test(NAME native.u11_assignment_editorial_reader_${assignment_reader_phase}
             COMMAND lgaed_lesson_reader_tests --u11-assignment-revision
@@ -901,6 +930,7 @@ if(BUILD_TESTING)
     set_tests_properties(native.window_smoke PROPERTIES TIMEOUT 20)
     add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
     target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_lesson_tests lgaed_u11_session_editorial_fixtures)
     add_test(NAME native.lesson_contract COMMAND lgaed_lesson_tests)
     add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
@@ -1066,6 +1096,8 @@ if(BUILD_TESTING)
     add_custom_target(lgaed_u11_assignment_checks DEPENDS LearnGameAndEngineDev
         lgaed_u11_assignment_editorial_view_tests lgaed_lesson_reader_tests lgaed_u11_declarations_reader_tests
         lgaed_lesson_tests lgaed_state_tests)
+    add_custom_target(lgaed_u11_session_literal_checks DEPENDS LearnGameAndEngineDev
+        lgaed_technical_context_view_tests lgaed_lesson_reader_tests lgaed_lesson_tests)
     add_custom_target(lgaed_cpp23_checks DEPENDS LearnGameAndEngineDev
         lgaed_cpp_runner_tests lgaed_cpp_project_tests lgaed_cpp_cmake_runner_tests
         lgaed_cpp_diagnostic_runner_tests lgaed_lesson_tests lgaed_lesson_view_tests

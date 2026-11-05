@@ -1081,6 +1081,12 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
 WORK_EXACT_EDITORIAL_REVISIONS = {
+    # CPP_ESPACIO_LITERAL_U11L22: insert only the reviewed separating space;
+    # the selection's question, options, index and historical owner stay fixed.
+    ('texto_interpretacion_y_flujos/lesson_construir_una_sesion_con_nombres_y_estado.json',
+     2, 5, 'multiple_choice', 'explanation', 'cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e01'): (
+        'e2103b09c4b3c8793d2d70fca2451232cc0aa61a7825effc26e48715aa0beb51',
+        '1219b910c0c8284002699f2dda3e8e79ee650460373d0236b894cdba87814b8f'),
     # CPP_VALIDACION_EDITORIAL_U11L20: six reviewed text pairs, four original
     # Spanish owners. Their programs, answers, guides and every other field
     # still pass through the ordinary complete-block preservation guard.
