@@ -19,6 +19,7 @@ import stable_state_layout as layout
 
 ROOT = Path(__file__).resolve().parents[2]
 COMMIT = "63962a88e6a6bd425b688971a6789d873a4ac316"
+CURRENT_COMMIT = "1d357e701ce69bdfe8e8dab074aea24a8a3268bc"
 PREFIX = "app/src/main/assets/content/{locale}/programming/cpp_fundamentals/"
 LESSON = "texto_interpretacion_y_flujos/lesson_construir_una_sesion_con_nombres_y_estado.json"
 IDENTITY = "block_0001_0004"
@@ -33,31 +34,48 @@ SOURCE_HASHES = {
     "en": "81fed9759a9ae4b27492606ebb6f5817c28d02d65b958d8d0692166fcc4a71f6",
     "fr": "ef937cf84651d974e8b01a8dc93c52a83b7e49bc433bd6e834a9dd3f2ea7165b",
 }
+CURRENT_SOURCE_HASHES = {
+    "es": "9012b0d2a268a5df7fde68a74922748262c7b1d08e21d6d21225743db76c2933",
+    "en": "81fed9759a9ae4b27492606ebb6f5817c28d02d65b958d8d0692166fcc4a71f6",
+    "fr": "ef937cf84651d974e8b01a8dc93c52a83b7e49bc433bd6e834a9dd3f2ea7165b",
+}
 BLOCK_HASHES = ("7246b74a0c6b46f2c14b26ea813cfc85a0d691348aea8ada18c279d46ce19156",
                 "09a016cfe0637a8be64ccd67e0ec8f3bd57e8d63ca5e03c39ecbe760d7bacad1")
 AFTER_SHA256 = "a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49"
+CURRENT_AFTER_SHA256 = "9e248574ca08044e9d533f58cba482f033b7ea0e9fc091b9939bcce2c824b8ba"
 
 
-def verify_bytes(locale: str, payload: bytes) -> bytes:
-    if locale not in SOURCE_HASHES or hashlib.sha256(payload).hexdigest() != SOURCE_HASHES[locale]:
+def verify_bytes(locale: str, payload: bytes, *, current: bool = False) -> bytes:
+    hashes = CURRENT_SOURCE_HASHES if current else SOURCE_HASHES
+    if locale not in hashes or hashlib.sha256(payload).hexdigest() != hashes[locale]:
         raise ValueError("Session editorial fixture differs from its independently pinned Git bytes")
     return payload
 
 
-def historical_bytes(locale: str = "es") -> bytes:
+def _published_bytes(locale: str, *, current: bool) -> bytes:
     relative = PREFIX.format(locale=locale) + LESSON
+    commit = CURRENT_COMMIT if current else COMMIT
     environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
     return verify_bytes(locale, subprocess.check_output(
-        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{COMMIT}:{relative}"],
-        cwd=ROOT, env=environment, stderr=subprocess.PIPE))
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{commit}:{relative}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE), current=current)
+
+
+def historical_bytes(locale: str = "es") -> bytes:
+    return _published_bytes(locale, current=False)
+
+
+def current_bytes(locale: str = "es") -> bytes:
+    return _published_bytes(locale, current=True)
 
 
 def json_bytes(value: dict) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
-def candidate() -> tuple[dict, dict, dict[str, dict]]:
-    family = {locale: json.loads(historical_bytes(locale)) for locale in ("es", "en", "fr")}
+def candidate(*, current: bool = False) -> tuple[dict, dict, dict[str, dict]]:
+    source = current_bytes if current else historical_bytes
+    family = {locale: json.loads(source(locale)) for locale in ("es", "en", "fr")}
     before = family["es"]
     original = layout._blocks(before)[IDENTITY]
     if (layout.validate(before).get(HISTORICAL) != HISTORICAL
@@ -71,13 +89,14 @@ def candidate() -> tuple[dict, dict, dict[str, dict]]:
     layout._blocks(draft)[IDENTITY]["explanation"] = AFTER
     after = layout.prepare_v2(draft, "es", family, before)
     layout.check_localized_family([after, family["en"], family["fr"]], ["es", "en", "fr"])
-    if (hashlib.sha256(json_bytes(after)).hexdigest() != AFTER_SHA256
+    expected_hash = CURRENT_AFTER_SHA256 if current else AFTER_SHA256
+    if (hashlib.sha256(json_bytes(after)).hexdigest() != expected_hash
             or layout.fingerprint(layout._blocks(after)[IDENTITY]) != BLOCK_HASHES[1]):
         raise ValueError("Session editorial fixture differs from its pinned complete candidate")
     return before, after, family
 
 
-def export(output: Path) -> Path:
+def export(output: Path, *, current: bool = False) -> Path:
     """Authenticate the whole pair before writing only new QA files in out/build."""
     output = Path(os.path.abspath(output))
     for entry in (output, *output.parents):
@@ -95,17 +114,24 @@ def export(output: Path) -> Path:
             break
         if (parent / ".git").exists():
             raise ValueError("Session editorial QA output cannot write another checkout")
-    before, after, _ = candidate()
-    payloads = {"session-before.json": historical_bytes(), "session-after.json": json_bytes(after)}
+    before, after, _ = candidate(current=current)
+    source = current_bytes if current else historical_bytes
+    commit = CURRENT_COMMIT if current else COMMIT
+    hashes = CURRENT_SOURCE_HASHES if current else SOURCE_HASHES
+    after_hash = CURRENT_AFTER_SHA256 if current else AFTER_SHA256
+    before_name = "session-current-before.json" if current else "session-before.json"
+    after_name = "session-current-after.json" if current else "session-after.json"
+    manifest_name = "manifest-current.json" if current else "manifest.json"
+    payloads = {before_name: source(), after_name: json_bytes(after)}
     manifest = {
-        "commit": COMMIT, "coordinateBase": 0, "relative": PREFIX.format(locale="es") + LESSON,
+        "commit": commit, "coordinateBase": 0, "relative": PREFIX.format(locale="es") + LESSON,
         "stableId": IDENTITY, "historical": list(HISTORICAL), "type": "multiple_choice",
-        "activityId": ACTIVITY_ID, "field": "explanation", "sourceSha256": SOURCE_HASHES,
+        "activityId": ACTIVITY_ID, "field": "explanation", "sourceSha256": hashes,
         "textSha256": list(TEXT_HASHES),
-        "before": {"file": "session-before.json", "sha256": SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
-        "after": {"file": "session-after.json", "sha256": AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]},
+        "before": {"file": before_name, "sha256": hashes["es"], "blockSha256": BLOCK_HASHES[0]},
+        "after": {"file": after_name, "sha256": after_hash, "blockSha256": BLOCK_HASHES[1]},
     }
-    payloads["manifest.json"] = json_bytes(manifest)
+    payloads[manifest_name] = json_bytes(manifest)
     for name, payload in payloads.items():
         target = output / name
         if target.exists() or target.is_symlink():
@@ -119,12 +145,13 @@ def export(output: Path) -> Path:
         if not target.exists():
             with target.open("xb") as stream:
                 stream.write(payload)
-    return output / "manifest.json"
+    return output / manifest_name
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--current", action="store_true", help="Use the independently pinned current published session")
     arguments = parser.parse_args()
-    export(arguments.output_dir)
-    print(f"Verified the exact U11L22 spacing proposal from {COMMIT}.")
+    export(arguments.output_dir, current=arguments.current)
+    print(f"Verified the exact U11L22 spacing proposal from {CURRENT_COMMIT if arguments.current else COMMIT}.")

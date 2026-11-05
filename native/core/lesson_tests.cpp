@@ -485,7 +485,8 @@ void reviewed_choice_revisions_preserve_the_published_contract() {
     }
     std::cout<<"PASS exact choice revisions, including reviewed in-memory proposals: original snapshot/family/keys, full and catalog projection, reviewed first-edge provenance and later editorial text, negative source/ownership/map guards\n";
 }
-void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
+void reviewed_session_literal_pair(std::string_view before_filename,std::string_view after_filename,
+        std::string_view before_sha256,std::string_view after_sha256,std::size_t editorial_prefix) {
     using namespace winrt::Windows::Data::Json;
     using namespace lgaed;
     constexpr std::string_view identity="block_0001_0004";
@@ -495,11 +496,10 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
     const auto count=GetModuleFileNameW(nullptr,executable.data(),static_cast<DWORD>(executable.size()));
     check(count&&count<executable.size(),"Cannot resolve immutable session editorial fixtures");
     const auto directory=std::filesystem::path(std::wstring_view(executable.data(),count)).parent_path()/"test-fixtures/u11-session-editorial";
-    const auto before_bytes=state::read_bytes(directory/"session-before.json"),after_bytes=state::read_bytes(directory/"session-after.json");
-    check(state::sha256(before_bytes)=="35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f"
-        &&state::sha256(after_bytes)=="a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49",
+    const auto before_bytes=state::read_bytes(directory/before_filename),after_bytes=state::read_bytes(directory/after_filename);
+    check(state::sha256(before_bytes)==before_sha256&&state::sha256(after_bytes)==after_sha256,
         "The session literal fixtures differ from their independent Git/candidate bytes");
-    const auto before=windows::load_lesson(directory/"session-before.json"),after=windows::load_lesson(directory/"session-after.json");
+    const auto before=windows::load_lesson(directory/before_filename),after=windows::load_lesson(directory/after_filename);
     const auto old_metadata=windows::parse_lesson_progress_metadata(before.raw_json),metadata=windows::parse_lesson_progress_metadata(after.raw_json);
     const auto old_at=stable_block_position(before,identity),at=stable_block_position(after,identity);
     check(old_at&&at&&*old_at==*at&&at->page==1&&at->block==4,"The session literal clarification moved its original identity/address");
@@ -520,8 +520,8 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
         "The session literal review changed its original state/family or annotated unchanged historical prose");
     for(const auto* model:{&after,&metadata}) {
         const auto& revisions=model->state_layout.reading_revisions;
-        check(revisions.size()==1&&revisions[0].editorial_prefix==14&&revisions[0].previous_blocks.size()==1
-            &&revisions[0].previous_blocks.contains(std::string(identity)),"The session reader lacks its single authenticated fourteen-edge predecessor");
+        check(revisions.size()==1&&revisions[0].editorial_prefix==editorial_prefix&&revisions[0].previous_blocks.size()==1
+            &&revisions[0].previous_blocks.contains(std::string(identity)),"The session reader lacks its complete authenticated editorial predecessor");
         check(test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(revisions[0].previous_blocks.at(std::string(identity)))))==old_full,
             "Runtime or catalog reading provenance invented a previous session feedback payload");
     }
@@ -538,8 +538,15 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
             "A single-space feedback correction changed a previous correct/rejected answer or its reviewed state");
     }
     const auto document=JsonObject::Parse(winrt::to_hstring(after.raw_json));
+    const auto old_editorial=JsonObject::Parse(winrt::to_hstring(before.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    const auto editorial=document.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    check(old_editorial.Size()==editorial_prefix&&editorial.Size()==editorial_prefix+1,
+        "The session fixture lost its complete original editorial prefix");
+    for(unsigned index=0;index<old_editorial.Size();++index)
+        check(test::compile_check_test_fingerprint(old_editorial.GetObjectAt(index))==test::compile_check_test_fingerprint(editorial.GetObjectAt(index)),
+            "The session literal correction replaced an earlier editorial proof");
     const auto target=[](const JsonObject& root){return root.GetNamedArray(L"pages").GetObjectAt(1).GetNamedArray(L"blocks").GetObjectAt(4);};
-    const auto refresh=[&](const JsonObject& root){root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").GetObjectAt(14)
+    const auto refresh=[&](const JsonObject& root){root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").GetObjectAt(static_cast<unsigned>(editorial_prefix))
         .Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(test::compile_check_test_fingerprint(target(root)))));};
     const auto no_annotation=[](const JsonObject& root,std::string_view locale="es") {
         const auto raw=winrt::to_string(root.Stringify());
@@ -548,6 +555,33 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
         check(windows::parse_lesson_progress_metadata(raw,locale).state_layout.reading_revisions.empty(),
             "Catalog metadata attributed old session audio to another payload, owner or history");
     };
+    {
+        // A valid prose publication before this exact final correction belongs
+        // to its real predecessor. Keep it rather than pinning a second total
+        // edge count or combining old feedback with an invented older page.
+        const auto extended=JsonObject::Parse(document.Stringify());
+        const auto paragraph=extended.GetNamedArray(L"pages").GetObjectAt(0).GetNamedArray(L"blocks").GetObjectAt(1);
+        check(paragraph.GetNamedString(L"type")==L"paragraph","The extra session prefix lost its prose owner");
+        const auto original=test::compile_check_test_fingerprint(paragraph);
+        const auto revised=winrt::to_string(paragraph.GetNamedString(L"text"))+"\n\nOtra precisión editorial anterior a la corrección del literal.";
+        paragraph.Insert(L"text",JsonValue::CreateStringValue(winrt::to_hstring(revised)));
+        JsonObject proof;proof.Insert(L"id",JsonValue::CreateStringValue(L"block_0000_0001"));
+        proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(original)));
+        proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(test::compile_check_test_fingerprint(paragraph))));
+        JsonArray enlarged;
+        for(unsigned index=0;index<editorial_prefix;++index)enlarged.Append(editorial.GetAt(index));
+        enlarged.Append(proof);enlarged.Append(editorial.GetAt(static_cast<unsigned>(editorial_prefix)));
+        extended.GetNamedObject(L"stateLayout").Insert(L"editorial",enlarged);
+        const auto raw=winrt::to_string(extended.Stringify());
+        const auto runtime=windows::parse_lesson_json(raw),catalog=windows::parse_lesson_progress_metadata(raw);
+        for(const auto* model:{&runtime,&catalog}) {
+            const auto& revisions=model->state_layout.reading_revisions;
+            check(revisions.size()==1&&revisions[0].editorial_prefix==editorial_prefix+1
+                &&revisions[0].previous_blocks==after.state_layout.reading_revisions[0].previous_blocks
+                &&model->pages[0].blocks[1].text==revised,
+                "An additional valid preceding prose edge hid the exact session archive or lost its newer prefix");
+        }
+    }
     // Compatible generic editorial prose still loads; none of these coherent
     // variants may borrow the closed correction's old feedback/audio identity.
     for(const auto change:{"wording","guide","owner","family","prefix","position","locale","later"}) {
@@ -573,7 +607,7 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
         }
         no_annotation(altered,mode=="locale"?"en":"es");
     }
-    for(const auto change:{"identity","type","correct","option","proof","origin","injected"}) {
+    for(const auto change:{"identity","type","correct","option","proof","proof_before","proof_after","origin","injected"}) {
         const auto altered=JsonObject::Parse(document.Stringify());const auto block=target(altered),layout=altered.GetNamedObject(L"stateLayout");
         const auto mode=std::string_view(change);
         if(mode=="identity")block.Insert(L"id",JsonValue::CreateStringValue(L"another_activity"));
@@ -581,16 +615,27 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
         else if(mode=="correct")block.Insert(L"correctIndex",JsonValue::CreateNumberValue(0));
         else if(mode=="option")block.GetNamedArray(L"options").SetAt(0,JsonValue::CreateStringValue(L"Otra opción no autorizada"));
         else if(mode=="proof")layout.GetNamedArray(L"editorial").RemoveAtEnd();
+        else if(mode=="proof_before"||mode=="proof_after")layout.GetNamedArray(L"editorial").GetObjectAt(static_cast<unsigned>(editorial_prefix))
+            .Insert(mode=="proof_before"?L"beforeSha256":L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
         else if(mode=="origin")layout.GetNamedArray(L"origin").GetObjectAt(1).GetNamedArray(L"blocks").GetObjectAt(4).Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
         else layout.Insert(L"reading_revisions",JsonArray{});
-        if(mode!="proof"&&mode!="origin"&&mode!="injected")refresh(altered);
+        if(mode=="identity"||mode=="type"||mode=="correct"||mode=="option")refresh(altered);
         const auto raw=winrt::to_string(altered.Stringify());
         rejects([&]{(void)windows::parse_lesson_json(raw);},"An incompatible session contract or unproved correction passed the native loader");
         rejects([&]{(void)windows::parse_lesson_progress_metadata(raw);},"Catalog accepted an incompatible session contract or injected reading archive");
     }
-    check(state::read_bytes(directory/"session-before.json")==before_bytes&&state::read_bytes(directory/"session-after.json")==after_bytes,
+    check(state::read_bytes(directory/before_filename)==before_bytes&&state::read_bytes(directory/after_filename)==after_bytes,
         "The session literal loader checks rewrote their immutable source fixtures");
-    std::cout<<"PASS U11L22 literal spacing: exact immutable one-space pair, complete old feedback/prefix in runtime and catalog, original state/answers/guides, eight coherent generic variants without old-audio provenance, seven incompatible/injected contracts rejected; no execution or hearing claimed\n";
+    std::cout<<"PASS U11L22 literal spacing "<<editorial_prefix<<"->"<<editorial_prefix+1
+        <<": exact immutable pair, complete old feedback/prefix in runtime and catalog, valid additional preceding prose retained, original state/answers/guides, eight coherent generic variants without old-audio provenance, nine incompatible/injected contracts rejected; no execution or hearing claimed\n";
+}
+void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
+    reviewed_session_literal_pair("session-before.json","session-after.json",
+        "35c2ec10d50202f99fd957d77410f2fa987575f6b97c995d5354c1ed8be53d3f",
+        "a44d7467cdd2f4aa0aa12b6f428ba6b595b20a9019c8d5976ea6c7be69c96f49",14);
+    reviewed_session_literal_pair("session-current-before.json","session-current-after.json",
+        "9012b0d2a268a5df7fde68a74922748262c7b1d08e21d6d21225743db76c2933",
+        "9e248574ca08044e9d533f58cba482f033b7ea0e9fc091b9939bcce2c824b8ba",24);
 }
 void mathematical_puzzle_identity_remains_optional() {
     using namespace lgaed::windows;
