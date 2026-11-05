@@ -113,7 +113,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Para presentar la política usamos el operador condicional de C++: (condición ? texto_cierto : texto_falso). Primero evalúa la condición y después sólo la expresión de la rama elegida. En (dato.modificable ? \"(V)\" : \"(C)\"), true elige \"(V)\" y false elige \"(C)\"; los paréntesis agrupan esa elección como el texto que recibe <<. El operador selecciona la marca de salida: no cambia el vínculo ni decide si una asignación está permitida. Esa protección ya se comprueba por separado antes de escribir."
+          "text": "El modelo amplía las piezas que ya conoces: `Vinculo` guarda también `modificable`; el analizador reconoce `fija` como un token de la categoría `constante`; y `leer_definicion` recibe la marca que debe guardar. `leer_sentencia` le pasa `true` para `crea` y `false` para `fija`. La protección efectiva sigue en `asignar`, antes de modificar el valor.\n\nPara mostrar esa marca en la tabla final usamos el operador condicional de C++, con la forma `condicion ? texto_cierto : texto_falso`. Primero se evalúa la condición y después sólo una de las dos expresiones restantes: la primera si la condición es verdadera y la segunda si es falsa (Working Draft: Programming Languages — C++, s. f., sección [expr.cond]).\n\nEn `std::cout << (dato.modificable ? \"(V)\" : \"(C)\");`, `dato.modificable` decide qué literal se elige. Con `true` se muestra (V); con `false`, (C). Los paréntesis agrupan la elección como el valor que se envía a `std::cout` mediante `<<`. Esta instrucción presenta la marca; la comprobación que permite o rechaza una asignación se realiza por separado en `asignar`.",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "code",
@@ -122,7 +128,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Se aceptan 3,4,7,4 y100, y se rechaza el cambio de unidad. base queda en siete, copia en cuatro y los predefinidos conservan sus valores. La tabla final muestra (V) para modificable y (C) para constante. Esas marcas son presentación de la política almacenada, no sintaxis de la entrada."
+          "text": "Las cuatro primeras operaciones aceptan, en orden, los valores 3, 4, 7 y 4. Al crear `copia`, se guardó el resultado que tenía entonces `base+1`; cambiar después `base` a 7 no recalcula ese resultado. El intento `unidad=2;` se rechaza con el mensaje `Nombre constante`, y la última consulta obtiene 100 de `limite`.\n\nEl informe cuenta cinco operaciones aceptadas y una rechazada. La tabla conserva `base` con valor 7 y marca (V), `copia` con valor 4 y marca (C), y los dos predefinidos protegidos con sus valores iniciales. Las marcas del informe describen los vínculos; no forman parte de las operaciones escritas en la entrada."
         }
       ]
     },
@@ -141,7 +147,8 @@
             "Valor: -100\nError: Nombre constante\nValor: -1\nValor: 1\nAceptadas: 3\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) borde=-100(C)"
           ],
           "explanation": "La creación de borde llega al extremo inferior. La asignación no cambia su valor. -100%3 es -1, y unidad conserva uno.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e04"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e04",
+          "reviewFeedback": "Separa la creación, la asignación y las consultas. Sigue el valor que conserva el vínculo tras un rechazo y aplica la regla ya estudiada para el resto de una división entera negativa."
         },
         {
           "type": "multiple_choice",
@@ -153,7 +160,12 @@
           ],
           "correctIndex": 1,
           "explanation": "La capacidad cuenta todos los vínculos. La política de modificación no elimina una asociación del vector.",
-          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e05"
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e05",
+          "reviewFeedback": [
+            "Revisa si preparar un nombre al inicio autoriza después a sustituirlo para crear otro vínculo.",
+            "Cuenta todos los vínculos presentes y comprueba si una creación solicita otra plaza.",
+            "Distingue ocupar una entrada de permitir que se modifique su valor."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -165,7 +177,12 @@
             "Ninguno, porque todos los vínculos deben ser constantes."
           ],
           "correctIndex": 1,
-          "explanation": "Capacidad y mutabilidad son reglas diferentes. Dos plazas ya están presentes al inicio, y los seis vínculos nuevos pueden ser mutables o constantes dentro de la misma tabla."
+          "explanation": "Capacidad y mutabilidad son reglas diferentes. Dos plazas ya están presentes al inicio, y los seis vínculos nuevos pueden ser mutables o constantes dentro de la misma tabla.",
+          "reviewFeedback": [
+            "Incluye también los vínculos que se prepararon antes de leer las operaciones.",
+            "Resta del máximo las entradas que ya están presentes al comenzar la sesión.",
+            "La marca de protección y el número de plazas disponibles son reglas diferentes."
+          ]
         }
       ]
     },
@@ -177,7 +194,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Amplía la sesión con la categoría fija y la protección por vínculo.\n\nEl caso inicial es \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\".\n\nDebe aceptar 4,6,9,6 y100, rechazar el cambio de limite y conservar copia=6.\n\nNo entregues una protección sólo visual: asignar debe rechazar realmente la modificación.\n\nConstruye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\", \"fija x=5 2;x;\", \"fija x=unidad;x=x+1;x;\", \"crea unidad=3;unidad;\", \"crea a=limite+1;a;\", \"crea a=1;crea b=2;crea c=3;crea d=4;crea e=5;crea f=6;crea g=7;a;\", en ese orden.\n\nCada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\nTodas las líneas terminan con salto, sin líneas vacías añadidas.\n\nLos rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Nombre constante, Nombre no definido, Nombre ya definido, Resultado fuera de dominio, Se esperaba ;, Tabla llena.\n\nLa comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\nUsa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.\n\nCada vínculo añade su marca (V) si es modificable o (C) si es constante.\n\nCada tabla comienza con unidad=1(C) y limite=100(C), que cuentan dentro de las ocho plazas.",
+          "text": "Construye en el editor de esta página una batería de seis sesiones del intérprete. Integra el reconocimiento de `fija`, la marca de cada vínculo y la comprobación de protección antes de escribir. Cada sesión debe tener su propio lector, tabla y contadores, sin heredar los vínculos de la sesión anterior. Al comenzar cada tabla, prepara `unidad` con valor 1 y `limite` con valor 100, ambos protegidos y contados dentro de las ocho plazas.\n\nUna organización posible es una función `probar(texto)` que ejecute una sesión y presente su informe, llamada desde `main`. Puedes elegir otros nombres y otra organización que cumplan el mismo comportamiento. Usa estas seis cadenas como entradas preparadas de la misma implementación, en este orden:\n\n1. `\"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\"`\n2. `\"fija x=5 2;x;\"`\n3. `\"fija x=unidad;x=x+1;x;\"`\n4. `\"crea unidad=3;unidad;\"`\n5. `\"crea a=limite+1;a;\"`\n6. `\"crea a=1;crea b=2;crea c=3;crea d=4;crea e=5;crea f=6;crea g=7;a;\"`\n\nEn la primera sesión se aceptan los valores 4, 6, 9, 6 y 100; se rechaza modificar `limite` y `copia` conserva 6. Las otras sesiones deben permitir comprobar los rechazos y la conservación que indican sus operaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada informe empieza con Caso N, numerado desde 1 hasta 6. Después presenta Valor: seguido del resultado de cada operación aceptada y Error: seguido del mensaje de cada rechazo, en el orden en que ocurran. Cierra la sesión con Aceptadas:, Rechazadas: y Tabla:. Tras Valor:, Error:, Aceptadas: y Rechazadas: deja un espacio antes del dato. Tras Tabla: escribe los vínculos en orden de creación, cada uno precedido de un único espacio. Cada vínculo se presenta como nombre=valor seguido de (V) si es modificable o (C) si está protegido. Todas las líneas terminan con salto y no se añaden líneas vacías.\n\nLos mensajes de rechazo de esta batería son `Nombre constante`, `Nombre no definido`, `Nombre ya definido`, `Resultado fuera de dominio`, `Se esperaba ;` y `Tabla llena`. En la segunda sesión, la expresión inicial obtiene 5, pero el token 2 impide aceptar el terminador: la creación completa falla y no debe publicarse `x`. En la sexta, la consulta final de `a` permite comprobar que rechazar otra creación no borró el estado aceptado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de construcción: reconocer las palabras completas y los nombres reservados; copiar nombre, valor y protección en la candidata; preparar los predefinidos una sola vez por sesión; comprobar la protección antes de escribir; compartir las ocho plazas entre todos los vínculos; y aceptar cambios sólo después de reconocer `;`.\n\nUsa Compilar, ejecutar y comprobar cuando estén incluidas las seis sesiones en el mismo programa. Contrasta la consola y los informes para localizar cualquier diferencia y vuelve a ejecutar después de corregirla. La comprobación compara esos informes y admite diferentes implementaciones; por sí sola no demuestra que se hayan aplicado todos los criterios internos.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -198,14 +223,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "paragraph",
-          "text": "Las seis pruebas de la batería comprueban inicializador incompleto, constante protegida, duplicación de predefinido, dominio del resultado y capacidad compartida. La consulta final de a después de rechazar la séptima creación comprueba que el estado aceptado sigue disponible."
-        },
-        {
-          "type": "paragraph",
-          "text": "Criterios: palabras completas, nombres reservados, copia de la política completa, inicialización única de predefinidos, protección antes de escribir, capacidad compartida y aceptación sólo tras ;. La comprobación contrasta sus informes; revisar la implementación sigue siendo necesario para acreditar esos criterios."
         }
       ]
     },
@@ -213,7 +230,19 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior con otro estado"
+          "text": "Distinguir nombres completos y conservar su protección"
+        },
+        {
+          "type": "output_prediction",
+          "id": "work_u11l21_nombres_completos",
+          "question": "Predice toda la salida de esta sesión. Distingue la palabra reservada `fija` de los nombres `fija2` y `Fija` e incluye los contadores y la tabla final con sus marcas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char constante = 'c';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\" && texto != \"fija\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    if (palabra == \"fija\") return Token{constante, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == constante || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n    bool modificable;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    void definir(const std::string& nuevo, int valor, bool modificable) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nombre invalido\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nombre ya definido\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Tabla llena\");\n        datos_.push_back(Vinculo{nuevo, valor, modificable});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                if (!dato.modificable) throw std::runtime_error(\"Nombre constante\");\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint leer_expresion(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    if (profundidad > 8) throw std::runtime_error(\"Profundidad excedida\");\n    const Token token = lector.leer();\n    if (token.clase == numero) return token.valor;\n    if (token.clase == nombre) return tabla.consultar(token.texto);\n    if (token.clase == '+') return leer_unidad(lector, tabla, profundidad + 1);\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, tabla, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, tabla, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint continuar_termino(int izquierda, Lector_tokens& lector,\n        const Tabla_nombres& tabla, int profundidad) {\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*' || token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, tabla, profundidad);\n            if ((token.clase == '/' || token.clase == '%') && derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '*') izquierda = resultado_en_dominio(izquierda * derecha);\n            else if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_termino(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    return continuar_termino(leer_unidad(lector, tabla, profundidad), lector, tabla, profundidad);\n}\n\nint continuar_expresion(int izquierda, Lector_tokens& lector,\n        const Tabla_nombres& tabla, int profundidad) {\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+' || token.clase == '-') {\n            const int derecha = leer_termino(lector, tabla, profundidad);\n            if (token.clase == '+') izquierda = resultado_en_dominio(izquierda + derecha);\n            else izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    return continuar_expresion(leer_termino(lector, tabla, profundidad), lector, tabla, profundidad);\n}\n\nint leer_definicion(Lector_tokens& lector, Tabla_nombres& candidata, bool modificable) {\n    const Token destino = lector.leer();\n    if (destino.clase != nombre) {\n        lector.devolver(destino);\n        throw std::runtime_error(\"Se esperaba un nombre\");\n    }\n    const Token igual = lector.leer();\n    if (igual.clase != '=') {\n        lector.devolver(igual);\n        throw std::runtime_error(\"Se esperaba =\");\n    }\n    const int valor = leer_expresion(lector, candidata, 0);\n    candidata.definir(destino.texto, valor, modificable);\n    return valor;\n}\n\nint leer_sentencia(Lector_tokens& lector, Tabla_nombres& candidata) {\n    const Token primero = lector.leer();\n    if (primero.clase == declaracion) {\n        return leer_definicion(lector, candidata, true);\n    }\n    if (primero.clase == constante) {\n        return leer_definicion(lector, candidata, false);\n    }\n    if (primero.clase == nombre) {\n        const Token siguiente = lector.leer();\n        if (siguiente.clase == '=') {\n            const int valor = leer_expresion(lector, candidata, 0);\n            candidata.asignar(primero.texto, valor);\n            return valor;\n        }\n        lector.devolver(siguiente);\n        const int inicial = candidata.consultar(primero.texto);\n        const int termino = continuar_termino(inicial, lector, candidata, 0);\n        return continuar_expresion(termino, lector, candidata, 0);\n    }\n    lector.devolver(primero);\n    return leer_expresion(lector, candidata, 0);\n}\n\nint leer_operacion(Lector_tokens& lector, Tabla_nombres& tabla) {\n    Tabla_nombres candidata = tabla;\n    const int valor = leer_sentencia(lector, candidata);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    tabla = candidata;\n    return valor;\n}\n\nint main() {\n    const std::string texto{\"crea fija2=3;fija Fija=fija2+1;fija2=6;Fija;Fija=2;fija2;\"};\n    Lector_tokens lector{texto};\n    Tabla_nombres tabla;\n    tabla.definir(\"unidad\", 1, false);\n    tabla.definir(\"limite\", 100, false);\n    int aceptadas = 0;\n    int rechazadas = 0;\n    while (true) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == final_texto) break;\n            lector.devolver(inicio);\n            const int valor = leer_operacion(lector, tabla);\n            ++aceptadas;\n            std::cout << \"Valor: \" << valor << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            if (!lector.descartar_operacion()) break;\n        }\n    }\n    std::cout << \"Aceptadas: \" << aceptadas << \"\\nRechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Tabla:\";\n    for (const Vinculo& dato : tabla.entradas()) {\n        std::cout << ' ' << dato.nombre << '=' << dato.valor;\n        std::cout << (dato.modificable ? \"(V)\" : \"(C)\");\n    }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "Valor: 3\nValor: 4\nValor: 6\nValor: 4\nError: Nombre constante\nValor: 6\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) fija2=6(V) Fija=4(C)"
+          ],
+          "explanation": "Sólo la palabra completa `fija` es reservada; `fija2` y `Fija` son nombres distintos. La creación de `Fija` guarda 4, calculado con el valor 3 que tenía `fija2`. Cambiar `fija2` a 6 no recalcula `Fija`. El intento de asignar 2 a `Fija` se rechaza por su protección y las consultas conservan los valores aceptados. Se cuentan cinco operaciones aceptadas y una rechazada.",
+          "reviewFeedback": "Distingue las palabras completas antes de seguir cada vínculo. Una consulta usa el valor guardado y la marca decide si se permite sustituirlo; revisa también qué estado conserva una operación rechazada."
         },
         {
           "type": "code",
@@ -222,11 +251,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia deja tramo=8 y sello=5, acepta 2,5,8,5 y1 y rechaza una asignación a constante. Crear y consultar una constante no es lo mismo que asignarla. La siguiente construcción integrará estas reglas con el historial y un resumen del estado aceptado."
+          "text": "El programa de referencia usa otra sesión: crea `tramo` con valor 2, crea `sello` con el resultado 5 y cambia `tramo` a 8. Consultar `sello` todavía obtiene 5. Se rechaza `unidad=4;` y la consulta posterior de `unidad` conserva 1. Así se aceptan cinco operaciones y se rechaza una.\n\nLa tabla final deja `tramo` con 8 y marca (V), `sello` con 5 y marca (C), y los predefinidos protegidos sin cambios. La siguiente construcción reunirá estas reglas con el historial y un resumen del estado aceptado."
         },
         {
           "type": "note",
-          "text": "Un nombre predefinido puede incorporarse a la tabla antes de comenzar a interpretar. Que sea una constante requiere además distinguirlo de una variable y comprobar esa condición cuando se intenta asignar un valor (Stroustrup, 2024, secciones 6.8.3–6.8.4 y ejercicio 3 del capítulo 6). En este lenguaje se conservan los enteros, los límites y la notación ya definidos; predefinir no amplía por sí solo la gramática de expresiones."
+          "text": "Un nombre predefinido puede incorporarse a la tabla antes de comenzar a interpretar. Para ofrecer constantes en el lenguaje de la calculadora, se añade una marca a la representación de cada vínculo y se comprueba al intentar asignarle otro valor (Stroustrup, 2024, secciones 6.8.3–6.8.4 y ejercicio 3 del capítulo 6).\n\nEn nuestro lenguaje, consultar un predefinido utiliza las mismas reglas de expresión que consultar cualquier nombre aceptado. Su presencia inicial no amplía el intervalo de resultados ni las formas de escribir números: se conservan los límites que ya aplica el intérprete."
         }
       ]
     },
@@ -464,15 +493,16 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
-          "block_0005_0002",
           "block_0005_0003",
-          "block_0005_0004"
+          "block_0005_0004",
+          "block_0005_0002"
         ]
       },
       {
         "id": "page_0006",
         "blocks": [
           "block_0006_0000",
+          "work_u11l21_nombres_completos",
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003"
@@ -961,7 +991,17 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "work_u11l21_nombres_completos",
+        "sha256": "a473191f39bd1e209bad0f8a3fa7b42a9c32079ed29675400702f437a12b1f36",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1012,7 +1052,84 @@
         "id": "block_0002_0001",
         "beforeSha256": "896cc6d1fa00eb8e4a0016a08d952669f1c5452dbeb85f1145cef6aadb23deb0",
         "afterSha256": "fbea26bfa4304567944e021491f0fe72ceb0baa03a4e98f0cbd40b5e87285d05"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "33bd38c947377da1ed0f98d795676c058750d3f7b15c8a708e1a4a83e0351d07",
+        "afterSha256": "28a7170ad4e5ca1503f01aef7de76cfb44c6ae1267a6cd9bddd458c00b0013d2"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9b37949554fcb39e39b1d085f10b8671badcaf02cad4590fbfc39b997479c7e9",
+        "afterSha256": "319581218e67b0181cbb97bab7e22a4cb148af0eebecf4ba316c2a1d5c4098c5"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "5fc8052719a66a37c591bbb27849bbe66b02ef77b1acb7c73c3b7b8d7dba7b7b",
+        "afterSha256": "4d6068fec85b85ee54ed09eba423732df60e6a8f35bf1b8e6c9159e754744e21"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "730052ae5443b699bea4c913390c716fe56168d314680ea83fd777512b770753",
+        "afterSha256": "982e0dde426f8b9636c4aa3d5946cd763f3323fd77fb14e6447c58038c5d02a5"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "6d6299ae8c3e1bacef735ffc6a2ff8f316a853db256b774fe74e50830673b8bf",
+        "afterSha256": "d5fe06aa0e3fc0bbd8a600c54efdefe11a5bebf61d59ea1e493146e4956d3c73"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "ec1da1e4ab8fc6afbe539e41a6933385d21cfbcf0c5141035484c3c8eb810741",
+        "afterSha256": "c6c81086442afa502550bb06ff98e7b25303ffa85d5d865585db935bd2932455"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "6b4b5fda01b16f90576589a4078b992ac0decd104cc57ac58dbc2be228101773",
+        "afterSha256": "590b95539de317ec0e1ac201851b599f46d782e4453b175b2f8a81c978c91158"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "79d1aa206257b8dfdbab019177acba1d2ce2982451349f3d18f89d920210f4f0",
+        "afterSha256": "bfd4bd6f4dd5cd73eb3b09dfce9eb31eeabe61d69beed22354d300bbf0a0fa62"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "c214bbd2bd78a2f13c29e4dc53b483fcc3fc7a6545b294abbef0ba1f01991edd",
+        "afterSha256": "9b869207198b0b744826621b62b3c49f29175452442526c40894ae0e17706acc"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "be288786340e88d74df1e6bc4d0f97ab4309c93abb344b22d8eb2661393f86ce",
+        "afterSha256": "e6821b714de515322a931dded70a6d19745935de46e187dbc86e3ed3875ddfd8"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "d8387486458c13be2fb2d4d7a88d1366aeab1c117e8ff4713eb5fd5239cf5558",
+        "afterSha256": "a75606a4e57e68cfa791292a9263b6e851707603a6a3b43b0815e66fe4f7104c"
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "work_u11l21_nombres_completos",
+      "requires": [
+        "block_0005_0002"
+      ]
+    }
+  ]
 }
