@@ -146,7 +146,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye aquí la prueba con el archivo relativo datos_recarga.txt. Debe contener el texto 4 7, completarse su escritura y luego leerse hacia dos int. Si todas las etapas tienen éxito, muestra Total=11 calculado desde los valores leídos. Comprueba cada apertura, la escritura después de close y la extracción antes de usar sus destinos. En un fallo muestra el diagnóstico de su etapa y termina con return 1. Construye una sola batería mediante probar(a,b): cada llamada crea y cierra la muestra, vuelve a abrirla y calcula desde sus dos extracciones. main llama con (4,7) y (0,6), en ese orden, y termina con código 1 si una etapa falla. Cada total ocupa una línea con salto; no añadas títulos ni líneas vacías. Usa Compilar, ejecutar y comprobar con ambos casos del mismo programa.",
+          "text": "Construye en el editor un programa que escriba dos enteros en el archivo relativo datos_recarga.txt y después vuelva a leerlos para calcular su suma. Organiza los dos casos de prueba en una misma ejecución.\n\nDefine una función `int probar(int a, int b)` que realice el recorrido con los dos valores recibidos. Cada llamada abre un `std::ofstream`, escribe `a` y `b` separados por un espacio y llama a `close()`. Después de comprobar el estado de la escritura y el cierre, abre un `std::ifstream` sobre el mismo archivo y extrae sus dos enteros hacia variables. Calcula el total desde esas variables leídas.\n\nComprueba cada apertura antes de utilizar el flujo y ambas extracciones antes de sumar. Si falla una etapa, muestra un diagnóstico que la identifique y devuelve `1` desde `probar`. Si el recorrido tiene éxito, muestra su total y devuelve `0`.\n\nDesde `main`, llama primero a `probar(4, 7)` y después a `probar(0, 6)`. Si una llamada devuelve un código distinto de `0`, termina el programa con `return 1;` sin continuar al caso siguiente. Termina con `return 0;` si ambos casos tienen éxito.\n\nEn caso de éxito, muestra exactamente estas dos líneas:\n\nTotal=11\nTotal=6\n\nIncluye un salto de línea después de cada total, también del último, sin títulos ni líneas vacías. La primera llamada escribe el texto 4 7; la segunda sustituye esa muestra por el texto 0 6.\n\nPulsa Compilar, ejecutar y comprobar con ambos casos dentro del mismo programa. Compara la consola con las dos líneas solicitadas. Después podrás revisar el recorrido y los criterios con las referencias.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -164,7 +164,12 @@
             "Inicializar ambos destinos a cero para omitir la lectura."
           ],
           "correctIndex": 1,
-          "explanation": "La escritura, la conexión del lector y la interpretación de dos enteros son etapas distintas. Un destino inicializado no acredita haber obtenido sus datos."
+          "explanation": "La escritura, la conexión del lector y la interpretación de dos enteros son etapas distintas. Un destino inicializado no acredita haber obtenido sus datos.",
+          "reviewFeedback": [
+            "Distingue abrir el flujo de salida de escribir la muestra y de extraerla hacia las variables del lector.",
+            "Relaciona cada comprobación con la etapa que acaba de realizarse y con los datos que necesitas usar después.",
+            "Separa los valores iniciales de las variables del hecho de haber obtenido los datos del archivo."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -182,7 +187,7 @@
         },
         {
           "type": "note",
-          "text": "Esta prueba es reproducible porque cada ejecución vuelve a crear su propia muestra. No acredita importar archivos del usuario ni conservarlos entre ejecuciones. La referencia aparece después del intento."
+          "text": "Las dos llamadas pertenecen a una misma ejecución: la segunda vuelve a abrir el archivo de salida y sustituye la muestra de la primera. Cada ejecución del editor usa su propia carpeta y vuelve a producir los datos; los archivos de una ejecución no se trasladan automáticamente a otra. Tras completar la comprobación podrás consultar una referencia de una sola muestra y otra de la batería completa."
         }
       ]
     },
@@ -190,7 +195,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia y criterios posteriores al intento"
+          "text": "Revisar el recorrido de una sola muestra"
         },
         {
           "type": "code",
@@ -199,15 +204,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: el archivo recibe los dos valores previstos; el lector opera después del cierre comprobado; ambas extracciones se completan antes de sumar; la salida se calcula desde sus destinos. Con 4 7 se obtiene Total=11; con 0 6, Total=6. Otros nombres de variables u otra distribución en funciones son válidos si conservan estos comportamientos."
+          "text": "El programa anterior permite revisar el recorrido de una sola muestra: escribe el texto 4 7 y muestra Total=11 sin salto final. La referencia de la página siguiente reúne los dos casos dentro de `probar` y añade el salto después de cada total, como requiere la construcción.\n\nComprueba dónde se escriben los valores, dónde se cierra y se consulta el flujo de salida, y dónde se abre el lector. Ambas extracciones deben completarse antes de calcular desde sus destinos. Con la muestra 4 7 se obtiene Total=11; con la muestra 0 6 se obtiene Total=6. Otros nombres de variables u otra distribución en funciones son válidos si conservan ese recorrido y los dos casos del mismo programa."
         },
         {
           "type": "paragraph",
-          "text": "Si tu programa sólo muestra el total esperado, revisa de dónde salió: una constante puede coincidir sin haber usado el archivo. Si informa Formato invalido, observa qué texto escribiste y qué tipo intentaste extraer. Si falla una apertura o escritura, no atribuyas ese fallo al cálculo: su etapa es anterior. Las predicciones de esta lección suponen que el directorio admite la creación y que las operaciones de archivo se completan; el programa mantiene diagnósticos para los demás casos."
+          "text": "Una consola que coincida con el total esperado no demuestra por sí sola el recorrido por el archivo: una constante podría producir el mismo texto. Al revisar tu código, localiza las variables que reciben los enteros extraídos y comprueba que la suma utiliza sus valores.\n\nSi aparece Formato invalido, compara el texto que escribiste con los dos enteros que intentas extraer. Si falla una apertura o la escritura, revisa esa etapa antes del cálculo. Las predicciones de esta lección suponen que las operaciones de archivo se completan; el programa conserva sus diagnósticos para detectar los demás casos."
         },
         {
           "type": "note",
-          "text": "Abrir una muestra conecta el flujo con un archivo; extraer interpreta sus caracteres como valores. Son comprobaciones distintas: una apertura correcta no demuestra que el contenido permita obtener los dos enteros. El cierre del flujo completa su conexión y vacía el búfer de salida; por eso no usamos los destinos hasta comprobar las etapas que los producen (Stroustrup, 2024, secciones 9.3.1–9.4, pp. 255–261)."
+          "text": "Abrir una muestra conecta el flujo con un archivo; extraer interpreta sus caracteres como valores. Son comprobaciones distintas: una apertura correcta no demuestra que el contenido permita obtener los dos enteros. La llamada a `close()` intenta completar la escritura pendiente y cerrar el archivo; puede fallar, por lo que el programa comprueba después el estado del flujo de salida. Esa comprobación precede a la apertura del lector y a la extracción de los datos que se usarán en el cálculo (Stroustrup, 2024, secciones 9.3.1–9.4, pp. 255–261)."
         }
       ]
     },
@@ -822,7 +827,57 @@
         "id": "block_0002_0002",
         "beforeSha256": "e986378784fdd62db5fb33bd5afeb326042e7be1fcfa82d6174541b6f1aa5fcc",
         "afterSha256": "2ab93bb7e17a1adc7cd77ae9c65555b69117aa7fad9ccb8ba338e1aba53b8988"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "7014bfdcdf4b023d3cb7dd59ca4b6d564239bf75853ef03e7963a9f05f9b8b9b",
+        "afterSha256": "5d9c0289a29ea50c5b86001bf11c65b65236a579f6720e4a4d5a89366a43a95f"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0bf35957d69cd67081d7ec43e62b9454c7dfd12cb78301bdfc95444f92251801",
+        "afterSha256": "c18344ae949ab099c2f01225b3716bc5ac7db04d4191a56417575b8c73840712"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "ebe503cbbc9f1148d2d4226aa7c6e6825f2c085ead39211faa5bddc0b5822e58",
+        "afterSha256": "93e54c66093e005aa45a8db06d36566f96801170f04c24419b103558c4c341ff"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "6bc7d4f7723a4fb01fd2356bc3132660a85d60a8e14da8d06e50caded98c34d9",
+        "afterSha256": "98146aa25bd1714a2ea6f97c6ec4cfa36f19bd47e9571692023ca874c9a0842f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d8241bac4a27f1494c1dcdb43364dfe847a4ad337d21c3090fb672e8b3d397f2",
+        "afterSha256": "2fbcf7213e24f019ee0d60d4bf58b1c7e352bc5b9caff342d4b4014f614cec3f"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "aa08c573f5c35ee5bf69a1ea4128a5cf866fb9570b3092ddf0d9470488844b51",
+        "afterSha256": "d7b8aa58f067c65b02aa06848687b4a0f6041512d041128f00d149b05820ede3"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "770617f78acf9c17f319ccd4b2c1f8de766996ef1c10765f489bc3d329d3d407",
+        "afterSha256": "82250333b81c5154e2d3111399904de88bf8bfc7477b81f08499b249ca3e4735"
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0003",
+      "blocks": [
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001"
+      ]
+    }
+  ]
 }
