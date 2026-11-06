@@ -1,5 +1,6 @@
 #pragma once
 #include "platform/windows/narration_cpu_policy.hpp"
+#include "core/text_semantics.hpp"
 #include <filesystem>
 #include <cstdint>
 #include <functional>
@@ -75,7 +76,8 @@ public:
     // B42 and original reconstruct both historical displayed-output policies
     // for identity only; historical plans are never synthesized.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={},
-        std::string_view reading_context="auto",std::string_view math_mode="auto",NarrationOutputDataPolicy=NarrationOutputDataPolicy::current);
+        std::string_view reading_context="auto",std::string_view math_mode="auto",NarrationOutputDataPolicy=NarrationOutputDataPolicy::current,
+        const std::optional<curriculum::TextSemantics>& semantics={});
     // Preserve the old bool API exactly: true means pre-B42; false is current.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token,
         std::string_view reading_context,std::string_view math_mode,bool previous_output_data);

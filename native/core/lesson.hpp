@@ -1,4 +1,5 @@
 #pragma once
+#include "core/text_semantics.hpp"
 #include "core/cpp_project.hpp"
 
 #include <cstddef>
@@ -121,6 +122,7 @@ struct Block {
     std::string explanation, review_feedback, raw_json;
     std::string code_template, prompt, math_type;
     std::vector<Emphasis> emphasis;
+    std::map<std::string,TextSemantics> text_semantics;
     std::vector<std::string> options, answers, fragments;
     std::vector<std::string> choices;
     std::vector<std::string> review_feedback_options;
@@ -283,6 +285,7 @@ struct OutputEvaluation {
     bool stdout_correct = false;
     bool stderr_correct = false;
     bool exit_code_correct = true;
+    std::string feedback_path;
 };
 [[nodiscard]] OutputEvaluation evaluate_output_check(
     const OutputCheck&, const FreshExecution&, std::uint64_t current_revision);

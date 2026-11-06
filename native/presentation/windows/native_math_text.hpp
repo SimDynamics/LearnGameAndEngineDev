@@ -24,21 +24,21 @@ struct NativeMathFragment {
 // The source-to-native map is derived from actual resulting character positions.
 // The caller retains the original source for narration and never persists this
 // display-only projection as curriculum or as a student's answer.
-bool set_native_math_text(HWND,std::string_view original_source,std::string_view locale="es");
+bool set_native_math_text(HWND,std::string_view original_source,std::string_view locale="es",const curriculum::TextSemantics* semantics=nullptr);
 // Prose retains its ordinary font; only explicit \(...\) / \[...\]
 // mathematical spans are built up. No guessed mathematical ranges.
 bool set_native_math_inline_text(HWND,std::string_view original_source,
-    std::span<const curriculum::Emphasis> emphasis = {}, RichTextRole role = RichTextRole::body,std::string_view locale="es");
+    std::span<const curriculum::Emphasis> emphasis = {}, RichTextRole role = RichTextRole::body,std::string_view locale="es",const curriculum::TextSemantics* semantics=nullptr);
 // Ranges/normalization come from the original Android MathTextRenderer. This
 // platform adapter projects only those ranges, retaining their source owners.
 bool set_native_math_fragments(HWND,std::string_view original_source,std::span<const NativeMathFragment>,
-    RichTextRole role=RichTextRole::body,std::string_view locale="es");
+    RichTextRole role=RichTextRole::body,std::string_view locale="es",const curriculum::TextSemantics* semantics=nullptr);
 // Complete Android MathTextRenderer policy for lesson text as well as widgets.
 // The request is the existing canonical mathematics worker; no new detector is
 // implemented by the native presentation layer. Source emphasis remains owned
 // by the original text, including when an implicit formula changes its display.
 bool set_original_math_text(HWND,std::string_view original_source,std::string_view mode,
     const std::function<std::string(std::string_view)>& request,
-    std::span<const curriculum::Emphasis> emphasis={},RichTextRole role=RichTextRole::body,std::string_view locale="es");
+    std::span<const curriculum::Emphasis> emphasis={},RichTextRole role=RichTextRole::body,std::string_view locale="es",const curriculum::TextSemantics* semantics=nullptr);
 [[nodiscard]] std::optional<NativeMathTextMapping> native_math_text_mapping(HWND,std::string_view original_source);
 } // namespace lgaed::presentation

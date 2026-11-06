@@ -186,6 +186,38 @@ int main() try {
     const auto automatic=worker.plan(fraction,"es",{},"auto","auto");
     const auto text=worker.plan(fraction,"es",{},"auto","text");
     require(!same(automatic,text),"The native explicit mathematical mode was silently ignored");
+    {
+        using namespace lgaed::curriculum;
+        const std::string source="𐐀 letras y palabras: y";
+        const auto start=wide(source).find_last_of(L'y');
+        TextSemantics technical{source,{{start,start+1,"y",SemanticRole::cpp,SemanticReading::automatic}}};
+        const auto unmarked=worker.plan(source,"es",{},"cpp","auto");
+        const auto marked=worker.plan(source,"es",{},"cpp","auto",Policy::current,technical);
+        owners(source,marked);
+        require(spoken(marked).find("letras y palabras")!=std::string::npos&&spoken(marked).find("griega")!=std::string::npos,
+            "Native optional semantic ranges were lost or spread technical speech into adjacent prose");
+        auto natural=technical;natural.spans.front().role=SemanticRole::output;
+        const auto output=worker.plan(source,"es",{},"cpp","auto",Policy::current,natural);
+        owners(source,output);require(spoken(output).find("griega")==std::string::npos,
+            "Native explicit output prose retained an unrelated technical letter policy");
+        require(worker.identity("qa-semantic-owner","es","ef_dora",marked)!=worker.identity("qa-semantic-owner","es","ef_dora",output),
+            "Distinct semantic pronunciations acquired the same native page key");
+        auto same_speech=technical;same_speech.spans.front().reading=SemanticReading::technical;
+        const auto equivalent=worker.plan(source,"es",{},"cpp","auto",Policy::current,same_speech);
+        require(same(marked,equivalent)&&worker.identity("qa-semantic-owner","es","ef_dora",marked)==
+            worker.identity("qa-semantic-owner","es","ef_dora",equivalent),
+            "Equivalent authored intent changed actual speech, word owners or an audio identity");
+        require(same(unmarked,worker.plan(source,"es",{},"cpp","auto")),
+            "Native annotated planning contaminated the subsequent unmarked legacy request");
+        const auto rejected_descriptor=[&](const TextSemantics& value){bool caught=false;
+            try{(void)worker.plan(source,"es",{},"cpp","auto",Policy::current,value);}catch(const std::invalid_argument&){caught=true;}
+            require(caught,"Native IPC accepted a stale, malformed or split-surrogate semantic descriptor");};
+        auto stale=technical;stale.source+=' ';rejected_descriptor(stale);
+        stale=technical;stale.spans.front().text="another";rejected_descriptor(stale);
+        stale=technical;stale.spans.front().start=1;stale.spans.front().end=2;stale.spans.front().text="x";rejected_descriptor(stale);
+        for(const auto policy:{Policy::b42,Policy::original})owners(source,worker.plan(source,"es",{},"cpp","auto",policy));
+        ++groups;
+    }
     worker.shutdown();worker.shutdown();
     std::cout<<"PASS "<<groups<<" real native/JVM output-policy groups, UTF-16 owners, context/mode and identity serialization. "
         "No synthesis, playback, windows or saved listening credit.\n";

@@ -1422,7 +1422,9 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
 
 def validate_lesson_state_contract(document, where):
     # These optional Windows presentation relationships reuse the immutable
-    # layout map. This validator does not add them to the Android runtime.
+    # layout map. The same shared validator checks root textSemantics against
+    # exact supported public strings, without adding fields to raw math blocks
+    # or changing any historical answer/code signature or Android runtime.
     try:
         _state_layout.validate(document)
     except (ValueError, KeyError, TypeError) as error:

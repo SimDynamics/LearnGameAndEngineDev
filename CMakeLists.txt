@@ -90,7 +90,7 @@ endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS "smo_hlsl_compile=${LGAED_SHADER_COMPILE_JOBS}")
 message(STATUS "Optimized HLSL compiler jobs: ${LGAED_SHADER_COMPILE_JOBS}")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/cpp_project.cpp
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
@@ -221,6 +221,30 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)
+    target_link_libraries(lgaed_text_semantics_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.text_semantics COMMAND lgaed_text_semantics_tests)
+    add_executable(lgaed_text_semantics_loader_tests native/platform/windows/text_semantics_loader_tests.cpp)
+    target_link_libraries(lgaed_text_semantics_loader_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.text_semantics_loader COMMAND lgaed_text_semantics_loader_tests)
+    add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
+    target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
+    add_executable(lgaed_text_semantic_projection_tests native/presentation/windows/text_semantic_projection_tests.cpp)
+    target_link_libraries(lgaed_text_semantic_projection_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.text_semantic_projection COMMAND lgaed_text_semantic_projection_tests)
+    add_executable(lgaed_text_semantic_feedback_tests native/presentation/windows/text_semantic_feedback_tests.cpp)
+    target_link_libraries(lgaed_text_semantic_feedback_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.text_semantic_feedback COMMAND lgaed_text_semantic_feedback_tests)
+    add_executable(lgaed_narration_semantic_state_tests native/core/narration_semantic_state_tests.cpp)
+    target_link_libraries(lgaed_narration_semantic_state_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.narration_semantic_state COMMAND lgaed_narration_semantic_state_tests)
+    add_test(NAME native.text_semantics_plan COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_text_semantics.py)
+    add_test(NAME native.math_feedback_sources COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_math_feedback_sources.py)
+    add_test(NAME curriculum.text_semantics COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_text_semantics.py)
     # These focused contracts never create windows or access user input/audio.
     add_executable(lgaed_lesson_entry_policy_tests native/core/lesson_entry_policy_tests.cpp)
     target_link_libraries(lgaed_lesson_entry_policy_tests PRIVATE lgaed_host_options)

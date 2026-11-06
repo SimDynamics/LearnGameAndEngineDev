@@ -253,11 +253,24 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
         previous_output_data?NarrationOutputDataPolicy::original:NarrationOutputDataPolicy::current);
 }
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
-    std::string_view reading_context,std::string_view math_mode,NarrationOutputDataPolicy output_data_policy){
+    std::string_view reading_context,std::string_view math_mode,NarrationOutputDataPolicy output_data_policy,
+    const std::optional<curriculum::TextSemantics>& semantics){
     if(reading_context!="auto"&&reading_context!="cpp"&&reading_context!="cpp_previous_parentheses")throw std::invalid_argument("Invalid narration reading context");
     if(math_mode!="auto"&&math_mode!="text"&&math_mode!="inline"&&math_mode!="block")throw std::invalid_argument("Invalid narration mathematical mode");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);
     put(request,L"readingContext",reading_context);put(request,L"mathMode",math_mode);
+    if(semantics){
+        curriculum::validate_text_semantics(*semantics);
+        if(semantics->source!=text)throw std::invalid_argument("Narration semantics require their exact original source");
+        JsonObject field;JsonArray spans;
+        for(const auto& span:semantics->spans){
+            JsonObject item;item.Insert(L"start",JsonValue::CreateNumberValue(static_cast<double>(span.start)));
+            item.Insert(L"end",JsonValue::CreateNumberValue(static_cast<double>(span.end)));
+            put(item,L"text",span.text);put(item,L"role",curriculum::semantic_role_name(span.role));
+            put(item,L"reading",curriculum::semantic_reading_name(span.reading));spans.Append(item);
+        }
+        field.Insert(L"spans",spans);request.Insert(L"textSemantics",field);
+    }
     switch(output_data_policy){
     case NarrationOutputDataPolicy::current:break;
     case NarrationOutputDataPolicy::b42:put(request,L"outputDataPolicy","b42");break;

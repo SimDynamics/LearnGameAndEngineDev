@@ -755,19 +755,51 @@ struct MathPuzzleView::Impl {
     std::map<std::string,std::vector<Canvas*>> live_visuals;
     std::map<Canvas*,std::vector<std::pair<HWND,HWND>>> graph_fields;
     std::map<HWND,int> requested_heights;
+    std::map<std::string,curriculum::TextSemantics> text_semantics;
+    std::map<const void*,std::string> source_paths;
+    std::vector<winrt::com_ptr<::IUnknown>> source_objects;
+    static std::string pointer_token(std::string_view token){std::string result;for(const auto c:token)result+=c=='~'?"~0":c=='/'?"~1":std::string(1,c);return result;}
+    void index_source(const JsonObject& value,std::string path,bool synthetic_responses=false){
+        auto identity=value.as<::IUnknown>();source_paths[identity.get()]=path;source_objects.push_back(std::move(identity));
+        const auto descend=[&](const auto& self,const IJsonValue& child,std::string child_path)->void{
+            if(child.ValueType()==JsonValueType::Object)index_source(child.GetObject(),std::move(child_path));
+            else if(child.ValueType()==JsonValueType::Array){const auto values=child.GetArray();for(unsigned i=0;i<values.Size();++i)self(self,values.GetAt(i),child_path+'/'+std::to_string(i));}
+        };
+        for(const auto& entry:value){
+            const auto name=winrt::to_string(entry.Key());
+            if(synthetic_responses&&name=="responses"){const auto responses=entry.Value().GetArray();if(responses.Size())index_source(responses.GetObjectAt(0),"");}
+            else descend(descend,entry.Value(),path+'/'+pointer_token(name));
+        }
+    }
+    std::string source_path(const JsonObject& object)const{const auto identity=object.as<::IUnknown>();const auto found=source_paths.find(identity.get());
+        return found==source_paths.end()?std::string("<unowned>"):found->second;}
+    const curriculum::TextSemantics* semantics_at(std::string_view path)const{const auto found=text_semantics.find(std::string(path));return found==text_semantics.end()?nullptr:&found->second;}
+    const curriculum::TextSemantics* semantics_for(const JsonObject& object,const wchar_t* field)const{
+        return semantics_at(source_path(object)+'/'+pointer_token(utf8(field)));
+    }
+    const curriculum::TextSemantics* selected_semantics(const JsonObject& object,std::initializer_list<const wchar_t*> fields)const{
+        for(const auto field:fields){const auto value=object.TryLookup(field);if(value&&value.ValueType()==JsonValueType::String)return semantics_for(object,field);}return nullptr;
+    }
+    static std::optional<curriculum::TextSemantics> prefixed_semantics(std::string_view prefix,const curriculum::TextSemantics* original){
+        if(!original)return {};auto result=*original;const auto shift=wide(prefix).size();result.source=std::string(prefix)+result.source;
+        for(auto& span:result.spans){span.start+=shift;span.end+=shift;}curriculum::validate_text_semantics(result);return result;
+    }
     bool initializing = true,cards_enabled = true; int next_id = 100,current_width = 0,text_scale = 100;
     struct Drag { HWND window = nullptr; POINT start{}; ULONGLONG since = 0; bool moved = false; } drag;
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(host)),96); }
     std::string tr(std::string es,std::string en,std::string fr) const { return locale.starts_with("fr") ? fr : locale.starts_with("en") ? en : es; }
-    Impl(HWND owner,std::string raw,std::string lang,std::string saved,MathPuzzleCallbacks events)
-        : parent(owner),locale(std::move(lang)),callbacks(std::move(events)) {
+    Impl(HWND owner,std::string raw,std::string lang,std::string saved,MathPuzzleCallbacks events,
+        std::map<std::string,curriculum::TextSemantics> semantics)
+        : parent(owner),locale(std::move(lang)),callbacks(std::move(events)),text_semantics(std::move(semantics)) {
         windows::ensure_winrt_apartment(); block = JsonObject::Parse(winrt::to_hstring(raw));
         // MathPuzzleParser gives legacy standalone interactions the same stable
         // response ID. Normalize presentation only; never rewrite the lesson.
-        if(text(block,L"type")!="math_puzzle") {
+        const bool standalone=text(block,L"type")!="math_puzzle";
+        if(standalone) {
             auto response=JsonObject::Parse(block.Stringify());response.SetNamedValue(L"id",string_value("response"));
             JsonArray responses;responses.Append(response);block.SetNamedValue(L"responses",responses);
         }
+        index_source(block,"",standalone);
         if (!saved.empty()) { JsonObject restored; if (JsonObject::TryParse(winrt::to_hstring(saved),restored)) answers = restored.HasKey(L"answers") ? object(restored,L"answers") : restored; }
         rich = LoadLibraryW(L"Msftedit.dll"); if (!rich) throw std::runtime_error("RichEdit is unavailable");
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
@@ -781,13 +813,14 @@ struct MathPuzzleView::Impl {
         if (_wcsicmp(name,MSFTEDIT_CLASS)==0) SendMessageW(item,EM_SETZOOM,text_scale,100);
         return item;
     }
-    HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true,std::string_view math_mode="auto") {
+    HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true,std::string_view math_mode="auto",const curriculum::TextSemantics* semantics=nullptr) {
         const auto item = make(MSFTEDIT_CLASS,"",ES_MULTILINE | ES_READONLY);
         if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,RGB(235,239,245));
-        set_rich_text(item,value,{},false,role,locale); regions.push_back({key.empty() ? "text/" + std::to_string(regions.size()) : std::move(key),std::move(value),item});
+        set_rich_text(item,value,{},false,role,locale,{}, {},semantics); regions.push_back({key.empty() ? "text/" + std::to_string(regions.size()) : std::move(key),std::move(value),item});
         const auto& original = regions.back().source_text;
         label_formats[item]={std::string(math_mode),role};
-        if(math_mode=="inline"||math_mode=="block")set_native_math_text(item,original,locale);
+        if(semantics)(void)set_original_math_text(item,original,math_mode,callbacks.expression_request,{},role,locale,semantics);
+        else if(math_mode=="inline"||math_mode=="block")set_native_math_text(item,original,locale);
         else if(math_mode!="text"&&callbacks.expression_request){
             const auto fragment_key=std::pair{original,std::string(math_mode)};auto found=typeset_fragments.find(fragment_key);
             if(found==typeset_fragments.end()){JsonObject request;request.SetNamedValue(L"action",string_value("text_layout"));request.SetNamedValue(L"text",string_value(original));request.SetNamedValue(L"mode",string_value(math_mode));
@@ -805,7 +838,7 @@ struct MathPuzzleView::Impl {
         SetWindowSubclass(item,text_wheel_proc,14,passive?reinterpret_cast<DWORD_PTR>(&callbacks):0);
         return item;
     }
-    void add_text(std::string value,std::string key = {},RichTextRole role = RichTextRole::body) { if (!value.empty()) rows.push_back({{{label(std::move(value),std::move(key),role),0,true}},26}); }
+    void add_text(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,const curriculum::TextSemantics* semantics=nullptr) { if (!value.empty()) rows.push_back({{{label(std::move(value),std::move(key),role,true,"auto",semantics),0,true}},26}); }
     HWND button(std::string value,std::function<void()> action,DWORD style = BS_PUSHBUTTON) {
         const auto item = make(L"BUTTON",value,WS_TABSTOP | style); commands[GetDlgCtrlID(item)] = [this,action = std::move(action)](int notification) { if (!initializing&&notification == BN_CLICKED) action(); }; return item;
     }
@@ -961,19 +994,19 @@ struct MathPuzzleView::Impl {
         if (type == "text" || type == "math_formula") {
             const auto source = text(config,L"latex",text(config,L"text",text(config,L"formula",text(config,L"value"))));
             if(!source.empty()){const bool formula=type=="math_formula",inline_formula=formula&&text(config,L"display","block")=="inline";const auto first=rows.size();
-                const auto item=label(source,{},RichTextRole::body,true,formula?(inline_formula?"inline":"block"):text(config,L"mathMode","auto"));
+                const auto item=label(source,{},RichTextRole::body,true,formula?(inline_formula?"inline":"block"):text(config,L"mathMode","auto"),selected_semantics(config,{L"latex",L"text",L"formula",L"value"}));
                 if(inline_formula){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=240;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
                 rows.push_back({{{item,0,true,formula&&!inline_formula?0:6,formula&&!inline_formula?0:6}},0,0});if(formula&&!inline_formula)group_content(first,true,true,6,6);}
         }
         else if (type == "math_table") {
-            const auto first=rows.size();const auto add = [&](const JsonArray& values,bool header=false) { Row row;row.height=0;row.gap_after=2;for (const auto& value : values) {
+            const auto first=rows.size();const auto add = [&](const JsonArray& values,const std::string& path,bool header=false) { Row row;row.height=0;row.gap_after=2;unsigned column=0;for (const auto& value : values) {
                 const auto visible = value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value);
-                const auto item=label(visible,{},header?RichTextRole::prompt:RichTextRole::body);reader_theme::apply(item,header?reader_theme::Surface::card_header:reader_theme::Surface::card);if(header){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
+                const auto item=label(visible,{},header?RichTextRole::prompt:RichTextRole::body,true,"auto",semantics_at(path+'/'+std::to_string(column++)));reader_theme::apply(item,header?reader_theme::Surface::card_header:reader_theme::Surface::card);if(header){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
                 row.cells.push_back({item,0,true,6,6}); } if (!row.cells.empty()) rows.push_back(std::move(row)); };
-            const auto headers = array(config,L"headers"); if (headers.Size()) add(headers,true);
-            for (const auto& value : array(config,L"rows")) if (value.ValueType() == JsonValueType::Array) add(value.GetArray());
+            const auto headers = array(config,L"headers"); if (headers.Size()) add(headers,source_path(config)+"/headers",true);
+            const auto table_rows=array(config,L"rows");for(unsigned i=0;i<table_rows.Size();++i){const auto value=table_rows.GetAt(i);if(value.ValueType()==JsonValueType::Array)add(value.GetArray(),source_path(config)+"/rows/"+std::to_string(i));}
             if(rows.size()>first)group_content(first,true,true,1,1,2,70);
-        } else if (type == "rich_answer_option") { for (const auto& value : array(config,L"content")) {if(value.ValueType()==JsonValueType::Object)representation(value.GetObject());else add_text(value.ValueType()==JsonValueType::String?winrt::to_string(value.GetString()):stringify(value));} }
+        } else if (type == "rich_answer_option") {const auto content=array(config,L"content");for(unsigned i=0;i<content.Size();++i){const auto value=content.GetAt(i);if(value.ValueType()==JsonValueType::Object)representation(value.GetObject());else add_text(value.ValueType()==JsonValueType::String?winrt::to_string(value.GetString()):stringify(value),{},RichTextRole::body,semantics_at(source_path(config)+"/content/"+std::to_string(i)));} }
         else if(type=="geometry_2d_diagram"&&config.HasKey(L"points")){auto graph=JsonObject::Parse(config.Stringify());if(!graph.HasKey(L"mode"))graph.SetNamedValue(L"mode",string_value("polygon"));canvas(graph,"math_coordinate_graph");}
         else {canvas(config,type);
             if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="math_number_line"){
@@ -991,9 +1024,10 @@ struct MathPuzzleView::Impl {
     }
     void option_content(const JsonObject& option) {
         const auto content=array(option,L"content");
-        if(content.Size())for(const auto& value:content){if(value.ValueType()==JsonValueType::Object)representation(value.GetObject());else add_text(value.ValueType()==JsonValueType::String?winrt::to_string(value.GetString()):stringify(value));}
-        else add_text(visible_label(option).empty()?text(option,L"id"):visible_label(option));
-        add_text(text(option,L"explanation"));
+        if(content.Size())for(unsigned i=0;i<content.Size();++i){const auto value=content.GetAt(i);if(value.ValueType()==JsonValueType::Object)representation(value.GetObject());else add_text(value.ValueType()==JsonValueType::String?winrt::to_string(value.GetString()):stringify(value),{},RichTextRole::body,semantics_at(source_path(option)+"/content/"+std::to_string(i)));}
+        else {const auto visible=visible_label(option);add_text(visible.empty()?text(option,L"id"):visible,{},RichTextRole::body,
+            visible.empty()?nullptr:selected_semantics(option,{L"label",L"text",L"value"}));}
+        add_text(text(option,L"explanation"),{},RichTextRole::body,semantics_for(option,L"explanation"));
     }
     HWND rich_card(const JsonObject& item,const std::string& key,int padding_x,bool target=false){
         const auto first=rows.size();option_content(item);HWND unassigned=nullptr;
@@ -1122,9 +1156,10 @@ struct MathPuzzleView::Impl {
             else if(type=="math_ordering_drag")heading=tr("Arrastra una tarjeta directamente o toca las tarjetas en el orden deseado.","Drag a card directly or tap the cards in the desired order.","Faites glisser une carte ou touchez les cartes dans l’ordre souhaité.");
             else if(type=="math_matching_drag")heading=tr("Arrastra una ficha a su destino, o toca primero la ficha y después el destino. Toca un destino sin ficha seleccionada para vaciarlo.","Drag a tile to its target, or tap the tile and then the target. Tap a target with no tile selected to clear it.","Faites glisser une fiche vers sa destination, ou touchez la fiche puis la destination. Touchez une destination sans fiche sélectionnée pour la vider.");
         }
-        add_text(heading,id+"/label");
+        add_text(heading,id+"/label",RichTextRole::body,semantics_for(spec,L"label"));
         const bool text_unit=(type=="math_numeric_input"||type=="math_expression_input")&&!array(spec,L"fields").Size();
-        if(text_unit&&!text(spec,L"unit").empty())add_text(tr("Unidad: ","Unit: ","Unité : ")+text(spec,L"unit"),id+"/unit");
+        if(text_unit&&!text(spec,L"unit").empty()){const auto prefix=tr("Unidad: ","Unit: ","Unité : ");const auto semantics=prefixed_semantics(prefix,semantics_for(spec,L"unit"));
+            add_text(prefix+text(spec,L"unit"),id+"/unit",RichTextRole::body,semantics?&*semantics:nullptr);}
         if (type == "math_multiple_choice_single" || type == "math_multiple_choice_multi") {
             const bool multiple = type == "math_multiple_choice_multi"; auto current = response(id,"choice"); const auto selected = array(current,L"selected");
             for (const auto& value : array(spec,L"options")) {
@@ -1353,7 +1388,7 @@ struct MathPuzzleView::Impl {
                     {label(" y =",id + "/y/" + std::to_string(index)),40,true},{y,0}},48});
             }
         } else throw std::invalid_argument("Native math control is not yet implemented: " + type);
-        add_text(text(spec,L"instruction"),id + "/instruction-authored");
+        add_text(text(spec,L"instruction"),id + "/instruction-authored",RichTextRole::body,semantics_for(spec,L"instruction"));
     }
     void fields(const JsonObject& spec,const std::string& id) {
         auto current = response(id,"fields"),values = object(current,L"values"); current.SetNamedValue(L"values",values); answers.SetNamedValue(winrt::to_hstring(id),current);
@@ -1364,24 +1399,27 @@ struct MathPuzzleView::Impl {
             if(!used.insert(key).second)throw std::invalid_argument("A mathematical template repeats the same field");
             const auto config = definitions.at(key); const auto kind = text(config,L"type","numeric");
             const auto first=rows.size();const auto caption=text(config,L"label");
-            if(!inline_fields)add_text(caption,id+"/field/"+key);
+            if(!inline_fields)add_text(caption,id+"/field/"+key,RichTextRole::body,semantics_for(config,L"label"));
             auto keyboard_config=JsonObject::Parse(config.Stringify());for(const auto property:{L"keyboard",L"keyboardSymbols"})if(!keyboard_config.HasKey(property)&&spec.HasKey(property))keyboard_config.SetNamedValue(property,spec.GetNamedValue(property));
             const auto validator=object(object(object(spec,L"validator"),L"fields"),winrt::to_hstring(key).c_str());
             const bool structured=kind=="expression"&&text(config,L"inputMode","simple")=="structured";
-            const auto control=kind=="fixed"?label(text(config,L"text"),id+"/fixed/"+key):kind=="dropdown"?dropdown(id,key,array(config,L"options"),current)
+            const auto control=kind=="fixed"?label(text(config,L"text"),id+"/fixed/"+key,RichTextRole::body,true,"auto",semantics_for(config,L"text")):kind=="dropdown"?dropdown(id,key,array(config,L"options"),current)
                 :structured?expression_input(id,key,current,keyboard_config,validator)
                 :input(id,key,current,text(config,L"hint",inline_fields?caption:std::string{}),keyboard_config,validator,kind=="expression"?"ALGEBRA":"NUMERIC");
             if(accessibility&&!caption.empty())accessibility->SetHwndPropStr(control,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,PROPID_ACC_NAME,wide(caption).c_str());
             Row control_row;control_row.height=kind=="fixed"?0:48;control_row.gap_after=0;
             control_row.cells.push_back({control,inline_fields?(kind=="dropdown"?150:100):0,kind=="fixed",kind=="fixed"||structured||kind=="dropdown"?0:12,kind=="fixed"||structured||kind=="dropdown"?0:8});
             const auto unit=text(config,L"unit");int inline_width=kind=="dropdown"?150:100;
-            if(inline_fields&&!unit.empty()){const auto unit_label=label(unit,id+"/field/"+key+"/unit");const auto unit_width=std::max(1,MulDiv(intrinsic_text_width(unit_label),96,static_cast<int>(GetDpiForWindow(host))));control_row.cells.push_back({unit_label,unit_width,true});inline_width+=unit_width;}
-            rows.push_back(std::move(control_row));if(!inline_fields)add_text(unit,id+"/field/"+key+"/unit");
+            if(inline_fields&&!unit.empty()){const auto unit_label=label(unit,id+"/field/"+key+"/unit",RichTextRole::body,true,"auto",semantics_for(config,L"unit"));const auto unit_width=std::max(1,MulDiv(intrinsic_text_width(unit_label),96,static_cast<int>(GetDpiForWindow(host))));control_row.cells.push_back({unit_label,unit_width,true});inline_width+=unit_width;}
+            rows.push_back(std::move(control_row));if(!inline_fields)add_text(unit,id+"/field/"+key+"/unit",RichTextRole::body,semantics_for(config,L"unit"));
             const auto column=group_content(first,false,false,0,0,inline_fields?0:8);
             rows.pop_back();
             // Android preserves the semantic hole on its field column without
             // narrating the editable value, its hint or a selected dropdown.
-            if(inline_fields&&kind!="fixed"&&!caption.empty())regions.push_back({id+"/field/"+key,caption,column});
+            if(inline_fields&&kind!="fixed"&&!caption.empty()){
+                const auto* semantics=semantics_for(config,L"label");
+                regions.push_back({id+"/field/"+key,caption,column,semantics?std::optional(*semantics):std::nullopt});
+            }
             return {column,inline_fields?inline_width:0};
         };
         const auto segments = array(spec,L"segments"); const auto table = array(spec,L"rows");
@@ -1389,15 +1427,16 @@ struct MathPuzzleView::Impl {
             const auto first=rows.size();
             Row row; for (const auto& value : segments) { const auto segment = value.GetObject();
                 if (segment.HasKey(L"field")) row.cells.push_back(field(text(segment,L"field")));
-                else row.cells.push_back({label(text(segment,L"text")),0,true}); }
+                else row.cells.push_back({label(text(segment,L"text"),{},RichTextRole::body,true,"auto",semantics_for(segment,L"text")),0,true}); }
             if (!row.cells.empty()){rows.push_back(std::move(row));group_content(first,true,true,0,0,8);}
         } else if (text(spec,L"layout")=="table"&&table.Size()) {
             const auto first=rows.size();
-            const auto headers = array(spec,L"headers"); if (headers.Size()) { Row row; for (const auto& value : headers){const auto heading=label(winrt::to_string(value.GetString()),{},RichTextRole::prompt);CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(heading,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));row.cells.push_back({heading,150,true});} rows.push_back(std::move(row)); }
-            for (const auto& row_value : table) { Row row; for (const auto& value : row_value.GetArray())
+            const auto headers = array(spec,L"headers"); if (headers.Size()) { Row row;unsigned column=0;for (const auto& value : headers){const auto heading=label(winrt::to_string(value.GetString()),{},RichTextRole::prompt,true,"auto",semantics_at(source_path(spec)+"/headers/"+std::to_string(column++)));CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(heading,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));row.cells.push_back({heading,150,true});} rows.push_back(std::move(row)); }
+            unsigned row_index=0;for (const auto& row_value : table) { Row row;unsigned column=0;for (const auto& value : row_value.GetArray()){
+                const auto path=source_path(spec)+"/rows/"+std::to_string(row_index)+'/'+std::to_string(column++);
                 if (value.ValueType() == JsonValueType::Object){auto cell=field(text(value.GetObject(),L"field"));cell.width=150;row.cells.push_back(cell);}
-                else row.cells.push_back({label(value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value)),150,true});
-                if (!row.cells.empty()) rows.push_back(std::move(row)); }
+                else row.cells.push_back({label(value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value),{},RichTextRole::body,true,"auto",semantics_at(path)),150,true});}
+                if (!row.cells.empty()) rows.push_back(std::move(row));++row_index; }
             group_content(first,true,false,0,0,0);
         } else for (const auto& value : array(spec,L"fields")) rows.push_back({{field(text(value.GetObject(),L"id"))},0});
         // A partial inline/table template does not hide the remaining authored
@@ -1415,7 +1454,7 @@ struct MathPuzzleView::Impl {
         rows.push_back({{{spacer},{expand_button,48},{reset_button,48}},48});
         // Weight is selected BEFORE native math is built and aligned: TOM
         // may encode bold numerals with supplementary mathematical digits.
-        add_text(text(block,L"prompt",text(block,L"question")),"prompt",RichTextRole::prompt);
+        add_text(text(block,L"prompt",text(block,L"question")),"prompt",RichTextRole::prompt,selected_semantics(block,{L"prompt",L"question"}));
         for (const auto& value : array(block,L"representations")) representation(value.GetObject());
         for (const auto& value : array(block,L"tools")) representation(value.GetObject());
         for (const auto& value : array(block,L"responses")) response_controls(value.GetObject());
@@ -1708,8 +1747,9 @@ struct MathPuzzleView::Impl {
     }
 };
 
-MathPuzzleView::MathPuzzleView(HWND parent,std::string raw,std::string locale,std::string saved,MathPuzzleCallbacks callbacks)
-    : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks))) { impl_->initialize(); }
+MathPuzzleView::MathPuzzleView(HWND parent,std::string raw,std::string locale,std::string saved,MathPuzzleCallbacks callbacks,
+    std::map<std::string,curriculum::TextSemantics> semantics)
+    : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks),std::move(semantics))) { impl_->initialize(); }
 std::string math_field_keyboard_context(HWND field){const auto value=static_cast<const std::string*>(GetPropW(field,keyboard_context_property));return value?*value:std::string{};}
 bool apply_math_calculator_result(HWND field,std::string_view latex){
     if(!IsWindow(field)||!IsWindowEnabled(field)||math_field_keyboard_context(field).empty())return false;
@@ -1737,6 +1777,10 @@ std::vector<MathReadingRegion> MathPuzzleView::reading_regions() const {
     std::ranges::stable_sort(result,[](const auto& left,const auto& right) { RECT a{},b{}; GetWindowRect(left.target,&a); GetWindowRect(right.target,&b);
         return a.top != b.top ? a.top < b.top : a.left < b.left; });
     return result;
+}
+std::optional<curriculum::TextSemantics> MathPuzzleView::feedback_semantics(std::string_view full_text,
+        std::span<const MathFeedbackSource> sources)const{
+    return compose_semantic_fields(full_text,impl_->text_semantics,sources);
 }
 void MathPuzzleView::set_enabled(bool enabled) {
     impl_->cards_enabled = enabled;
@@ -1784,7 +1828,8 @@ void MathPuzzleView::set_expression_request(std::function<std::string(std::strin
     for(const auto& region:impl_->regions){const auto format=impl_->label_formats.find(region.target);if(format==impl_->label_formats.end()||!IsWindow(region.target))continue;
         CHARRANGE selection{};POINT scroll{};SendMessageW(region.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(region.target,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
         CHARFORMAT2W original{};original.cbSize=sizeof(original);SendMessageW(region.target,EM_SETSEL,0,1);SendMessageW(region.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&original));
-        (void)set_original_math_text(region.target,region.source_text,format->second.first,impl_->callbacks.expression_request,{},format->second.second,impl_->locale);
+        const auto semantics=rich_text_semantics(region.target);
+        (void)set_original_math_text(region.target,region.source_text,format->second.first,impl_->callbacks.expression_request,{},format->second.second,impl_->locale,semantics?&*semantics:nullptr);
         CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=original.yHeight;SendMessageW(region.target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
         PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;SendMessageW(region.target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
         SendMessageW(region.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(region.target,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));

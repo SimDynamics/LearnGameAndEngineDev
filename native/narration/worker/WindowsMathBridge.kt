@@ -446,8 +446,21 @@ internal object WindowsMathBridge {
             if (it is MathUiMessage) uiJson(it) else it
         }))
 
+    private data class FeedbackSource(val path: String, val start: Int, val end: Int)
+    private data class FeedbackPiece(val text: String, val sources: List<FeedbackSource> = emptyList()) {
+        operator fun plus(other: FeedbackPiece) = FeedbackPiece(text + other.text,
+            sources + other.sources.map { it.copy(start = it.start + text.length, end = it.end + text.length) })
+    }
+    private fun authoredFeedback(value: String, path: String) = FeedbackPiece(value,
+        if (value.isEmpty()) emptyList() else listOf(FeedbackSource(path,0,value.length)))
+    private fun feedbackJoin(parts: List<FeedbackPiece>, separator: String = "\n"): FeedbackPiece =
+        parts.foldIndexed(FeedbackPiece("")) { index, result, part ->
+            result + FeedbackPiece(if (index == 0) "" else separator) + part
+        }
+
     fun validate(request: JSONObject, originalRequest: String): JSONObject {
-        val spec = MathPuzzleParser.parse(block(request))
+        val original = block(request)
+        val spec = MathPuzzleParser.parse(original)
         val language = language(request)
         fun text(code: String, vararg values: Any) = originalStrings(language,code,*values)
         fun resolve(result: MathValidationResult): String = result.uiMessage?.let {
@@ -522,11 +535,103 @@ internal object WindowsMathBridge {
                 (listOf("✗ $heading")+visible).filter { it.isNotBlank() }.joinToString("\n")
             }
         }
+        // Provenance follows the exact public fields while composing the same
+        // existing feedback. It never searches all guides by matching a phrase,
+        // nor publishes sources of an absent or unselected option.
+        fun responsePath(index: Int) = if (original.optString("type") == "math_puzzle") "/responses/$index" else ""
+        fun labelPiece(response: MathResponseSpec, index: Int): FeedbackPiece {
+            val label = response.config.optString("label").trim().takeUnless { it.isBlank() || it == response.id }
+            return label?.let { authoredFeedback(it,responsePath(index) + "/label") }
+                ?: FeedbackPiece(text("math_ui_response",index + 1))
+        }
+        fun fieldPiece(response: MathResponseSpec, index: Int, result: MathValidationResult, message: String): FeedbackPiece {
+            val definitions = response.config.optJSONArray("fields")
+            var id = result.fieldId
+            if (id == null && definitions != null) for (fieldIndex in 0 until definitions.length()) {
+                val candidate = definitions.getJSONObject(fieldIndex).getString("id")
+                if (message.startsWith("$candidate: ")) { id = candidate; break }
+            }
+            if (id == null) return FeedbackPiece(message)
+            val at = definitions?.let { values -> (0 until values.length()).firstOrNull {
+                values.getJSONObject(it).getString("id") == id
+            } } ?: -1
+            val label = if (at >= 0) definitions!!.getJSONObject(at).optString("label").trim()
+                .takeUnless { it.isBlank() || it == id } else null
+            val prefix = label?.let { authoredFeedback(it,responsePath(index) + "/fields/$at/label") }
+                ?: FeedbackPiece(text("math_ui_field",if (at < 0) 1 else at + 1))
+            return prefix + FeedbackPiece(": " + message.removePrefix("$id: "))
+        }
+        fun reviewPieces(response: MathResponseSpec, index: Int, answer: MathAnswer): List<FeedbackPiece> {
+            val fallback = text("math_ui_review_selected_option")
+            if (!MathPuzzleFeedback.isChoice(response)) {
+                val values = (answer as? MathAnswer.Fields)?.values.orEmpty()
+                val fields = response.config.optJSONArray("fields")
+                return (0 until (fields?.length() ?: 0)).mapNotNull { at ->
+                    val field = fields!!.getJSONObject(at)
+                    if (field.optString("type") != "dropdown") return@mapNotNull null
+                    val options = field.optJSONArray("options")
+                    val selected = values[field.getString("id")]
+                    val optionIndex = options?.let { choices -> (0 until choices.length()).firstOrNull {
+                        choices.getJSONObject(it).getString("id") == selected
+                    } } ?: return@mapNotNull null
+                    val review = options!!.getJSONObject(optionIndex).optString("reviewFeedback").trim()
+                    val body = if (review.isBlank()) FeedbackPiece(fallback) else
+                        authoredFeedback(review,responsePath(index) + "/fields/$at/options/$optionIndex/reviewFeedback")
+                    val label = field.optString("label").trim().takeUnless { it.isBlank() || it == field.getString("id") }
+                    val prefix = label?.let { authoredFeedback(it,responsePath(index) + "/fields/$at/label") }
+                        ?: FeedbackPiece(text("math_ui_field",at + 1))
+                    if (prefix.text.isBlank()) body else prefix + FeedbackPiece(": ") + body
+                }.ifEmpty { listOf(FeedbackPiece(fallback)) }
+            }
+            val selected = (answer as? MathAnswer.Choice)?.selected.orEmpty()
+            val options = response.config.optJSONArray("options") ?: return listOf(FeedbackPiece(fallback))
+            return (0 until options.length()).mapNotNull { at ->
+                val option = options.getJSONObject(at)
+                if (option.getString("id") !in selected) null else {
+                    val review = option.optString("reviewFeedback").trim()
+                    if (review.isBlank()) FeedbackPiece(fallback) else
+                        authoredFeedback(review,responsePath(index) + "/options/$at/reviewFeedback")
+                }
+            }.distinctBy { it.text }.ifEmpty { listOf(FeedbackPiece(fallback)) }
+        }
+        val attributed = when {
+            !evaluable -> feedbackJoin(results.mapIndexedNotNull { index,(response,result) ->
+                if (result.evaluable) null else labelPiece(response,index) + FeedbackPiece(": ") + fieldPiece(response,index,result,resolve(result))
+            })
+            correct -> FeedbackPiece(text("math_ui_correct_heading")) + if (spec.correctFeedback.isNotBlank())
+                FeedbackPiece("\n") + authoredFeedback(spec.correctFeedback,"/feedback/correct") else FeedbackPiece("")
+            else -> {
+                val selected = spec.responses.any(MathPuzzleFeedback::hasSelection)
+                val details = results.mapIndexedNotNull { index,(response,result) ->
+                    fun process() = MathPuzzleFeedback.processMessage(result,text("math_ui_review_process")) { resolve(result) }
+                    val message = if (MathPuzzleFeedback.hasSelection(response)) {
+                        val reviews = answers[response.id]?.let { reviewPieces(response,index,it) }.orEmpty()
+                        val diagnostic = result.fieldId?.takeIf { !result.correct && !MathPuzzleFeedback.isDropdownField(response,it) }
+                            ?.let { fieldPiece(response,index,result,process()) }
+                        feedbackJoin(reviews + listOfNotNull(diagnostic))
+                    } else {
+                        if (result.correct) return@mapIndexedNotNull null
+                        fieldPiece(response,index,result,process())
+                    }
+                    message.takeIf { it.text.isNotBlank() }?.let { labelPiece(response,index) + FeedbackPiece(": ") + it }
+                }
+                val heading = if (selected || spec.incorrectFeedback.isBlank()) FeedbackPiece(text("math_ui_incorrect"))
+                    else authoredFeedback(spec.incorrectFeedback,"/feedback/incorrect")
+                val guidance = buildList {
+                    if (!selected && spec.incorrectFeedback.isNotBlank()) add(authoredFeedback(spec.incorrectFeedback,"/feedback/incorrect"))
+                    addAll(details.filter { it.text.isNotBlank() })
+                }.ifEmpty { listOf(FeedbackPiece(text("math_ui_review_process"))) }
+                val visible = if (details.isEmpty() && (selected || spec.incorrectFeedback.isBlank())) guidance else details
+                feedbackJoin((listOf(FeedbackPiece("✗ ") + heading) + visible).filter { it.text.isNotBlank() })
+            }
+        }
+        check(attributed.text == feedback) { "Mathematical feedback provenance diverged from its canonical presentation" }
         val originalBlock = if(request.has("blockJson")) request.getString("blockJson")
             else lgaed.narration.androidjson.JSONObject(originalRequest).getJSONObject("block").toString()
         val fingerprint = compatibleContentFingerprint(lgaed.narration.androidjson.JSONObject(originalBlock))
         return JSONObject().put("correct",correct).put("evaluable",evaluable).put("contentFingerprint",fingerprint)
             .put("feedback",feedback).put("feedbackKind",if (!evaluable) "error" else if (correct) "correct" else "incorrect")
+            .put("feedbackSources",JSONArray(attributed.sources.map { JSONObject().put("path",it.path).put("start",it.start).put("end",it.end) }))
             .put("results",JSONArray(results.map { (response,result) ->
                 JSONObject().put("id",response.id).put("correct",result.correct).put("evaluable",result.evaluable)
                     .put("message",resolve(result)).apply {

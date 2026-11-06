@@ -1,6 +1,7 @@
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/text_semantic_projection.hpp"
 
 #include <richedit.h>
 #include <richole.h>
@@ -196,7 +197,14 @@ struct DisplayTransaction {
         if (visible) SendMessageW(window,WM_SETREDRAW,TRUE,0); InvalidateRect(window,nullptr,TRUE);
     }
 };
-bool set_math_text(HWND window,std::string_view original,bool inline_only,std::span<const curriculum::Emphasis> emphasis = {},RichTextRole role = RichTextRole::body,std::span<const NativeMathFragment> fragments = {},std::string_view locale="es") {
+bool set_math_text(HWND window,std::string_view original,bool inline_only,std::span<const curriculum::Emphasis> emphasis = {},RichTextRole role = RichTextRole::body,std::span<const NativeMathFragment> fragments = {},std::string_view locale="es",const curriculum::TextSemantics* semantics=nullptr) {
+    std::vector<NativeMathFragment> authored_math;
+    if(semantics){
+        curriculum::validate_text_semantics(*semantics);if(semantics->source!=original)throw std::invalid_argument("Mathematical semantic source differs from the original field");
+        for(const auto& span:semantics->spans)if(span.role==curriculum::SemanticRole::math)authored_math.push_back({span.start,span.end,span.text,false});
+        if(authored_math.empty()){set_rich_text(window,original,emphasis,false,role,locale,{}, {},semantics);return false;}
+        fragments=authored_math;inline_only=true;
+    }
     InlineProjection converted=fragments.empty()?InlineProjection(original,inline_only):InlineProjection(original,fragments); auto& projection = converted.value;
     if (converted.spans.empty()) return false;
     if (projection.linear.size() > 4096) throw std::length_error("Native mathematical display is too large");
@@ -209,7 +217,15 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
     if (SendMessageW(window,EM_GETEDITSTYLEEX,0,0) & SES_EX_NOMATH)
         throw std::runtime_error("This RichEdit cannot enable native mathematical display");
     DisplayTransaction transaction(window);
-    set_rich_text(window,utf8(projection.linear),fragments.empty()?std::span<const curriculum::Emphasis>(displayed_emphasis):std::span<const curriculum::Emphasis>{},false,role,locale,converted.spans);
+    std::optional<curriculum::TextSemantics> linear_semantics;
+    if(semantics){
+        linear_semantics=curriculum::TextSemantics{utf8(projection.linear),{}};
+        for(const auto& run:semantic_display_runs(*semantics,projection.mapping,projection.linear.size())){
+            if(run.start>=run.end)continue;
+            linear_semantics->spans.push_back({run.start,run.end,utf8(std::wstring_view(projection.linear).substr(run.start,run.end-run.start)),run.role,run.reading});
+        }
+    }
+    set_rich_text(window,utf8(projection.linear),fragments.empty()?std::span<const curriculum::Emphasis>(displayed_emphasis):std::span<const curriculum::Emphasis>{},false,role,locale,converted.spans,{},linear_semantics?&*linear_semantics:nullptr);
     const auto reference_ranges=rich_text_reference_ranges(window);
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_MATH; style.dwEffects = CFE_MATH;
     style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(window); wcscpy_s(style.szFaceName,L"Cambria Math");
@@ -247,7 +263,7 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
     const auto linear_mapping = align(projection.linear,mapping.native_text); mapping.source_to_native.reserve(projection.mapping.size());
     for (const auto position : projection.mapping) mapping.source_to_native.push_back(linear_mapping.at(std::min(position,linear_mapping.size() - 1)));
     mapping.source_to_native.front() = 0; mapping.source_to_native.back() = mapping.native_text.size();
-    if(role!=RichTextRole::lesson_title){
+    if(!semantics&&role!=RichTextRole::lesson_title){
         // Math spans are protected from C++ recoloring. Their displayed digits
         // still belong to the curriculum's neutral number highlight, including
         // supplementary mathematical digits produced by TOM/author emphasis.
@@ -288,18 +304,20 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
         std::vector<std::size_t> identity(mapping.native_text.size()+1);std::iota(identity.begin(),identity.end(),0);
         map_rich_text_reference_ranges(window,merged,identity);
     }
+    if(semantics)apply_rich_text_semantics(window,*semantics,mapping.source_to_native,role);
     delete reinterpret_cast<NativeMathTextMapping*>(RemovePropW(window,mapping_property)); SetPropW(window,mapping_property,new NativeMathTextMapping(std::move(mapping)));
     SetWindowSubclass(window,mapping_proc,mapping_subclass,0);
     return built;
 }
 }
-bool set_native_math_text(HWND window,std::string_view original,std::string_view locale) { return set_math_text(window,original,false,{},RichTextRole::body,{},locale); }
-bool set_native_math_inline_text(HWND window,std::string_view original,std::span<const curriculum::Emphasis> emphasis,RichTextRole role,std::string_view locale) { return set_math_text(window,original,true,emphasis,role,{},locale); }
-bool set_native_math_fragments(HWND window,std::string_view original,std::span<const NativeMathFragment> fragments,RichTextRole role,std::string_view locale){if(fragments.empty())return false;return set_math_text(window,original,true,{},role,fragments,locale);}
-bool set_original_math_text(HWND window,std::string_view original,std::string_view mode,const std::function<std::string(std::string_view)>& request,std::span<const curriculum::Emphasis> emphasis,RichTextRole role,std::string_view locale){
+bool set_native_math_text(HWND window,std::string_view original,std::string_view locale,const curriculum::TextSemantics* semantics) { return set_math_text(window,original,false,{},RichTextRole::body,{},locale,semantics); }
+bool set_native_math_inline_text(HWND window,std::string_view original,std::span<const curriculum::Emphasis> emphasis,RichTextRole role,std::string_view locale,const curriculum::TextSemantics* semantics) { return set_math_text(window,original,true,emphasis,role,{},locale,semantics); }
+bool set_native_math_fragments(HWND window,std::string_view original,std::span<const NativeMathFragment> fragments,RichTextRole role,std::string_view locale,const curriculum::TextSemantics* semantics){if(fragments.empty()&&!semantics)return false;return set_math_text(window,original,true,{},role,fragments,locale,semantics);}
+bool set_original_math_text(HWND window,std::string_view original,std::string_view mode,const std::function<std::string(std::string_view)>& request,std::span<const curriculum::Emphasis> emphasis,RichTextRole role,std::string_view locale,const curriculum::TextSemantics* semantics){
     using namespace winrt::Windows::Data::Json;
     delete reinterpret_cast<NativeMathTextMapping*>(RemovePropW(window,mapping_property));
-    set_rich_text(window,original,emphasis,false,role,locale);
+    set_rich_text(window,original,emphasis,false,role,locale,{}, {},semantics);
+    if(semantics)return set_math_text(window,original,true,emphasis,role,{},locale,semantics);
     if(mode=="text"||mode=="off"||original.empty())return false;
     if(!request){if(mode=="inline"||mode=="block")return set_math_text(window,original,false,emphasis,role,{},locale);return set_native_math_inline_text(window,original,emphasis,role,locale);}
     JsonObject query;query.SetNamedValue(L"action",JsonValue::CreateStringValue(L"text_layout"));query.SetNamedValue(L"text",JsonValue::CreateStringValue(wide(original)));query.SetNamedValue(L"mode",JsonValue::CreateStringValue(wide(mode)));

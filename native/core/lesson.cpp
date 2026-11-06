@@ -556,6 +556,7 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         }
     }
     if (!selected) return {};
+    const auto selected_path="/outputCheck/cases/"+std::to_string(static_cast<std::size_t>(selected-check.cases.data()));
     if (selected->exit_code < 0 || selected->exit_code > 255 ||
         (selected->exit_code == 0 && execution.exit_code != 0)) return {};
     const bool stdout_correct = std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end();
@@ -563,12 +564,21 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         !trimmed(execution.standard_error).empty();
     const bool exit_code_correct = execution.exit_code == selected->exit_code;
     if (!exit_code_correct) return {OutputVerdict::incorrect, {}, stdout_correct, stderr_correct, false};
-    if (stdout_correct && stderr_correct)
-        return {OutputVerdict::correct, selected->explanation, true, true};
+    if (stdout_correct && stderr_correct) {
+        OutputEvaluation result{OutputVerdict::correct, selected->explanation, true, true};
+        if(!selected->explanation.empty())result.feedback_path=selected_path+"/explanation";
+        return result;
+    }
     if (stdout_correct)
         return {OutputVerdict::incorrect, "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
-    for (const auto& rule : selected->review_feedback)
-        if (std::ranges::find(rule.outputs, execution.standard_output) != rule.outputs.end()) return {OutputVerdict::incorrect, rule.text, false, stderr_correct};
+    for (std::size_t n=0;n<selected->review_feedback.size();++n) {
+        const auto& rule=selected->review_feedback[n];
+        if(std::ranges::find(rule.outputs,execution.standard_output)!=rule.outputs.end()) {
+            OutputEvaluation result{OutputVerdict::incorrect,rule.text,false,stderr_correct};
+            result.feedback_path=selected_path+"/reviewFeedback/"+std::to_string(n)+"/text";
+            return result;
+        }
+    }
     return {OutputVerdict::incorrect, {}, false, stderr_correct};
 }
 

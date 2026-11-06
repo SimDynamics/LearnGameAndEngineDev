@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <stdexcept>
 
 namespace lgaed::windows {
@@ -39,6 +40,54 @@ std::string complete_seal(const std::string& key,std::string_view program,const 
     auto frame="compiler-complete-v1/"+token(key)+token(program);
     for(const auto& item:proofs)frame+=token(item);
     return state::sha256(frame);
+}
+// Presentation-only provenance. Neither this sidecar nor its seal participates
+// in grade, execution proof, objective identity or historical completion.
+constexpr auto feedback_origin_suffix="feedback-origin/v1";
+const std::string* authored_feedback(const curriculum::Block& block,std::string_view path) {
+    if(path=="/compileCheck/explanation")return block.compile_check?&block.compile_check->explanation:nullptr;
+    constexpr std::string_view prefix="/outputCheck/cases/";
+    if(!block.output_check||!path.starts_with(prefix))return nullptr;path.remove_prefix(prefix.size());
+    const auto index=[&](std::size_t limit)->std::optional<std::size_t>{const auto slash=path.find('/');if(slash==path.npos)return {};
+        const auto number=path.substr(0,slash);if(number.empty()||(number.size()>1&&number.front()=='0'))return {};
+        std::size_t result=0;const auto parsed=std::from_chars(number.data(),number.data()+number.size(),result);
+        if(parsed.ec!=std::errc{}||parsed.ptr!=number.data()+number.size()||result>=limit)return {};
+        path.remove_prefix(slash);return result;};
+    const auto selected=index(block.output_check->cases.size());if(!selected)return nullptr;
+    const auto& item=block.output_check->cases[*selected];if(path=="/explanation")return &item.explanation;
+    constexpr std::string_view review="/reviewFeedback/";if(!path.starts_with(review))return nullptr;path.remove_prefix(review.size());
+    const auto guide=index(item.review_feedback.size());if(!guide||path!="/text")return nullptr;
+    return &item.review_feedback[*guide].text;
+}
+bool feedback_has_source(std::string_view feedback,std::string_view source) {
+    return !source.empty()&&(feedback==source||(feedback.size()>source.size()&&feedback.ends_with(source)&&
+        feedback[feedback.size()-source.size()-1]=='\n'));
+}
+const curriculum::TextSemantics* feedback_descriptor(const curriculum::Block& block,std::string_view path,std::string_view feedback) {
+    const auto source=authored_feedback(block,path);const auto field=block.text_semantics.find(std::string(path));
+    if(!source||field==block.text_semantics.end()||field->second.source!=*source||!feedback_has_source(feedback,*source))return nullptr;
+    try{curriculum::validate_text_semantics(field->second);}catch(const std::invalid_argument&){return nullptr;}
+    return &field->second;
+}
+std::string feedback_origin_seal(std::string_view key,std::string_view execution_seal,std::string_view feedback,
+        std::string_view path,std::string_view source_sha) {
+    return state::sha256("compiler-feedback-origin-v1/"+token(key)+token(execution_seal)+token(feedback)+token(path)+token(source_sha));
+}
+void record_feedback_origin(state::StateData& data,const std::string& key,const curriculum::Block& block,
+        std::string_view path,std::string_view feedback,std::string_view execution_seal) {
+    auto& values=data.preferences["native_windows"];values.erase(key+feedback_origin_suffix);
+    const auto descriptor=feedback_descriptor(block,path,feedback);if(!descriptor||execution_seal.empty())return;
+    const auto source_sha=state::sha256(descriptor->source);
+    values[key+feedback_origin_suffix]=std::vector<std::string>{std::string(path),source_sha,
+        feedback_origin_seal(key,execution_seal,feedback,path,source_sha)};
+}
+std::string restored_feedback_origin(const state::StateData& data,const std::string& key,const curriculum::Block& block,
+        std::string_view feedback,std::string_view execution_seal) {
+    const auto stored=state::find(data,"native_windows",key+feedback_origin_suffix);if(!stored)return {};
+    const auto fields=std::get_if<std::vector<std::string>>(stored);if(!fields||fields->size()!=3||execution_seal.empty())return {};
+    const auto descriptor=feedback_descriptor(block,(*fields)[0],feedback);
+    if(!descriptor||state::sha256(descriptor->source)!=(*fields)[1]||(*fields)[2]!=feedback_origin_seal(key,execution_seal,feedback,(*fields)[0],(*fields)[1]))return {};
+    return (*fields)[0];
 }
 std::string review_target(const CppRunRequest& request) {
     return request.cmake?request.cmake->target:std::string{};
@@ -154,21 +203,30 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
 }
 std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData& data,
         const curriculum::Lesson& lesson,const curriculum::Block& block,const CppRunRequest& current) {
-    if(auto review=compiler_puzzle_review(data,lesson,block,current);!review.empty())return CompilerFeedback{std::move(review),false};
-    if(auto earned=compiler_puzzle_feedback(data,lesson,block);!earned.empty())return CompilerFeedback{std::move(earned),true};
+    if(!curriculum::has_compiler_objective(block))return std::nullopt;
+    const auto key=base(lesson,block);
+    if(auto review=compiler_puzzle_review(data,lesson,block,current);!review.empty()){
+        auto path=restored_feedback_origin(data,key+"review/",block,review,state::string_value(data,"native_windows",key+"review/seal"));
+        return CompilerFeedback{std::move(review),false,std::move(path)};
+    }
+    if(auto earned=compiler_puzzle_feedback(data,lesson,block);!earned.empty()){
+        auto path=restored_feedback_origin(data,key,block,earned,state::string_value(data,"native_windows",key+"completed"));
+        return CompilerFeedback{std::move(earned),true,std::move(path)};
+    }
     return std::nullopt;
 }
 bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& captured,const curriculum::FreshExecution& execution,
         std::string_view feedback) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()
-        ||!matches_runtime_capture(captured,execution)
-        ||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::incorrect)return false;
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()||!matches_runtime_capture(captured,execution))return false;
+    const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
+    if(evaluation.verdict!=curriculum::OutputVerdict::incorrect)return false;
     const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
     auto& values=data.preferences["native_windows"];
     values[key+"program"]=program;values[key+"input"]=captured.stdin_utf8;values[key+"target"]=target;
     values[key+"rules"]=rules;values[key+"feedback"]=std::string(feedback);
     values[key+"seal"]=review_seal(key,program,captured.stdin_utf8,target,rules,feedback);
+    record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,std::get<std::string>(values.at(key+"seal")));
     return true;
 }
 void clear_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
@@ -232,11 +290,15 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
 }
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||!matches_runtime_capture(captured,execution)
-        ||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::correct)return false;
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||!matches_runtime_capture(captured,execution))return false;
+    const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
+    if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);
-    if(compiler_puzzle_completed(data,lesson,block))return true;
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
+    if(compiler_puzzle_completed(data,lesson,block)){
+        record_feedback_origin(data,key,block,evaluation.feedback_path,state::string_value(data,"native_windows",key+"feedback"),state::string_value(data,"native_windows",key+"completed"));
+        return true;
+    }
     auto proofs=case_proofs(data,key);
     if(state::string_value(data,"native_windows",key+"program")!=program)proofs.clear();
     proofs.resize(block.output_check->cases.size());
@@ -248,7 +310,8 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     }
     auto& values=data.preferences["native_windows"];values[key+"program"]=program;values[key+"cases"]=proofs;
     const bool complete=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();});
-    if(complete){values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);}
+    if(complete){values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);
+        record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,std::get<std::string>(values.at(key+"completed")));}
     return complete;
 }
 bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
@@ -256,12 +319,16 @@ bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Le
     if(!block.compile_check||!captured.diagnostic||!expected_compile_diagnostic(captured,result))return false;
     if(*captured.diagnostic!=prepare_cpp_diagnostic_request(block,captured))return false;
     clear_compiler_puzzle_review(data,lesson,block);
-    if(compiler_puzzle_completed(data,lesson,block))return true;
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
+    if(compiler_puzzle_completed(data,lesson,block)){
+        record_feedback_origin(data,key,block,"/compileCheck/explanation",state::string_value(data,"native_windows",key+"feedback"),state::string_value(data,"native_windows",key+"completed"));
+        return true;
+    }
     const std::vector<std::string> proofs{diagnostic_proof(key,program,block)};
     auto& values=data.preferences["native_windows"];
     values[key+"program"]=program;values[key+"cases"]=proofs;
     values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);
+    record_feedback_origin(data,key,block,"/compileCheck/explanation",feedback,std::get<std::string>(values.at(key+"completed")));
     return true;
 }
 void reset_compiler_puzzle(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {

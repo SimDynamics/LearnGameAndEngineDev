@@ -21,7 +21,7 @@ struct FeedbackPriority { std::size_t block=0,allowed_through=0; };
 
 inline bool same_script_region(const LessonReadingRegion& planned,const LessonReadingRegion& live) {
     return planned.key==live.key&&planned.source_text==live.source_text&&
-        planned.reading_context==live.reading_context&&planned.math_mode==live.math_mode;
+        planned.reading_context==live.reading_context&&planned.math_mode==live.math_mode&&planned.text_semantics==live.text_semantics;
 }
 // A plan may finish after live completion metadata changed without changing
 // its spoken script. Validate the complete mapping before copying anything;

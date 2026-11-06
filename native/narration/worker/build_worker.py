@@ -632,6 +632,14 @@ def windows_reading_source(name: str, code: str) -> str:
     implementation moves, rather than silently leaving one preparation path stale.
     """
     if name == "SpanishTechnicalSpeech":
+        code = exact(code, 'object SpanishTechnicalSpeech {', '''object SpanishTechnicalSpeech {
+    internal fun semanticCode(source: String, onPiece: (Int, Int, String) -> Unit): String {
+        val selected = ManualEnglishTerms.select("`" + source + "`", "cpp")
+            .map { it.copy(start = it.start - 1, endExclusive = it.endExclusive - 1) }.associateBy { it.start }
+        onPiece(0, 0, ManualEnglishSpeech.PREPARED.toString())
+        return ManualEnglishSpeech.PREPARED + readCode(source, 0, selected, onPiece)
+    }
+''')
         # Bound only implicit source detection. Explicit code, identifier speech
         # and onPiece source ownership continue through the canonical reader.
         declaration = '    private val declaration = Regex("(?:(?:const|unsigned|signed|long|short)\\\\s+)*(?:int|double|float|bool|char|auto|void|long|short)(?:\\\\s*[*&]+(?:\\\\s*[A-Za-z_][A-Za-z_0-9]*)?|\\\\s+[A-Za-z_][A-Za-z_0-9]*(?=\\\\s*[({=;]))")'
@@ -750,6 +758,19 @@ def windows_reading_source(name: str, code: str) -> str:
         code = exact(code, 'listOf("auto", "text", "inline", "block")',
                      'listOf("auto", "text", "inline", "block", "cpp", "cpp_previous_parentheses")')
     elif name == "LessonNarrationText":
+        code = exact(code, '        // Recognize quoted/embedded C++ before math can reinterpret its operators.', '''        val explicit = lgaed.narration.windows.WindowsTextSemantics.lookup(source)
+        if (explicit != null) {
+            val prepared = lgaed.narration.windows.WindowsTextSemantics.prepared(explicit, speechLanguage)
+            if (prepared.isNotBlank()) output.add(prepared)
+            return
+        }
+        // Recognize quoted/embedded C++ before math can reinterpret its operators.''')
+        code = exact(code, '}.joinToString(" ")', '}.let { lgaed.narration.windows.WindowsTextSemantics.compose(it, " ") }')
+        code = exact(code, '.filter(String::isNotBlank).joinToString(" ")',
+                     '.filter(String::isNotBlank).let { lgaed.narration.windows.WindowsTextSemantics.compose(it, " ") }')
+        code = exact(code, '.filter(String::isNotBlank).joinToString("; ")',
+                     '.filter(String::isNotBlank).let { lgaed.narration.windows.WindowsTextSemantics.compose(it, "; ") }')
+        code = exact(code, 'content.joinToString("; ")', 'lgaed.narration.windows.WindowsTextSemantics.compose(content, "; ")')
         # Windows anticipation owns original reading regions. Its caller uses
         # the same NarrationSegments sentence splitter as the visible reader;
         # a second 700-unit split would manufacture different recording keys.
@@ -913,6 +934,20 @@ def host_sources() -> list[Path]:
     projection = exact(projection,
         "else MathTextRenderer.formulaRanges(source)\n            .sortedBy { it.first }.map { ReadingTextRange(it.first, it.last + 1) }",
         "else emptyList()")
+    projection = exact(projection, 'internal object NarrationSourceProjection {', '''internal object NarrationSourceProjection {
+    fun semanticCode(source: String, language: NarrationLanguage): Projection {
+        if (language == NarrationLanguage.SPANISH) {
+            val initial = Projection(source, source.indices.map { ReadingTextRange(it, it + 1) })
+            return stage(initial) { observe -> SpanishTechnicalSpeech.semanticCode(source, observe) }
+                ?: error("Unverifiable semantic C++ source projection")
+        }
+        val value = forLanguage("`" + source + "`", "text", language)
+            ?: error("Unverifiable multilingual semantic C++ projection")
+        return Projection(value.text, value.owners.map {
+            ReadingTextRange((it.start - 1).coerceIn(0, source.length), (it.endExclusive - 1).coerceIn(0, source.length))
+        })
+    }
+''')
     sources.append(generated("NarrationSourceProjection.kt", projection))
 
     # Android's native verdict mark is presentation, not a spoken symbol. Reuse

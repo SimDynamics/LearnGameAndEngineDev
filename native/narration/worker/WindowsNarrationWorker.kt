@@ -144,7 +144,8 @@ private class Backend(private val resources: File, private val englishResources:
         // never an authored mathMode or a curriculum/background context.
         return if (mode == "auto" && context in setOf("cpp","cpp_previous_parentheses")) context else mode
     }
-    private fun planned(source: String, language: NarrationLanguage, mode: String): List<Pair<IntRange,Segment>> {
+    private fun planned(source: String, language: NarrationLanguage, mode: String,
+                        semantics: WindowsTextSemantics.Field? = null): List<Pair<IntRange,Segment>> {
         require(source.length in 1..32768 && '\u0000' !in source) { "Narration text must contain 1–32768 original UTF-16 characters" }
         require(mode in setOf("auto","text","inline","block","cpp","cpp_previous_parentheses")) { "Invalid mathematical reading mode" }
         // The Android feedback presentation omits only its leading native
@@ -152,10 +153,20 @@ private class Backend(private val resources: File, private val englishResources:
         // original visible text, including the mark with the first real word.
         val iconPrefix = IncorrectFeedbackNarration.verdictIconPrefix(source)
         val speechSource = IncorrectFeedbackNarration.visibleSpeech(source)
-        val projection = NarrationSourceProjection.forLanguage(speechSource,mode,language)
+        // Explicit ranges always own the untouched field. A native feedback
+        // icon is outside authored fields and must not shift its declaration.
+        require(semantics == null || semantics.source == source) { "Semantic source differs from the visible field" }
+        val speechSemantics = semantics?.let { field -> WindowsTextSemantics.Field(speechSource,
+            field.spans.filter { it.end > iconPrefix }.map { span ->
+                val start = (span.start - iconPrefix).coerceAtLeast(0);val end = span.end - iconPrefix
+                span.copy(start=start,end=end,text=speechSource.substring(start,end))
+            }) }
+        val projection = if (speechSemantics != null) WindowsTextSemantics.projection(speechSemantics,language)
+            else NarrationSourceProjection.forLanguage(speechSource,mode,language)
             ?: error("The existing frontend cannot safely project this text")
         val prepared = NarrationSegments.sentences(listOf(projection.text))
-        val mappings = NarrationWordMappings.forBlock(0,speechSource,prepared.withIndex().associate { it.index to it.value },language)
+        val mappings = if (semantics == null) NarrationWordMappings.forBlock(0,speechSource,prepared.withIndex().associate { it.index to it.value },language)
+            else emptyMap()
         fun original(range: ReadingTextRange) = ReadingTextRange(
             if (range.start == 0) 0 else range.start + iconPrefix, range.endExclusive + iconPrefix)
         var cursor = 0
@@ -165,7 +176,14 @@ private class Backend(private val resources: File, private val englishResources:
             check(start >= cursor) { "Sentence split no longer matches original normalization" }
             cursor = start + body.length
             val owner = original(NarrationSourceProjection.owner(projection.owners.subList(start,cursor)))
-            val mapping = mappings[index]?.let { value -> value.copy(displayed = value.displayed.map(::original)) }
+            val mapping = if (semantics == null) mappings[index]?.let { value -> value.copy(displayed = value.displayed.map(::original)) }
+                else {
+                    val prefix = if (sentence.startsWith(ManualEnglishSpeech.PREPARED)) 1 else 0
+                    val words = NarrationSpokenWords.technicalAtoms(sentence,language)
+                    NarrationWordMapping(0,words.map { ReadingTextRange(it.start,it.endExclusive) },words.map {
+                        original(NarrationSourceProjection.owner(projection.owners.subList(start + it.start - prefix,start + it.endExclusive - prefix)))
+                    })
+                }
             val first = mapping?.displayed?.minOfOrNull { it.start } ?: owner.start
             val last = mapping?.displayed?.maxOfOrNull { it.endExclusive } ?: owner.endExclusive
             require(first in 0 until source.length && last in first + 1..source.length) { "Sentence has no original visible owner" }
@@ -197,7 +215,10 @@ private class Backend(private val resources: File, private val englishResources:
             "Invalid output-data policy"
         }
         val items = WindowsNarrationSpeechRules.withOutputDataPolicy(policy) {
-            planned(request.getString("text"),language(request),readingMode(request))
+            val source = request.getString("text")
+            val explicit = if (request.has("textSemantics"))
+                WindowsTextSemantics.parse(source,request.getJSONObject("textSemantics")) else null
+            planned(source,language(request),readingMode(request),explicit)
         }
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->
             JSONObject().put("text",segment.source).put("preparedText",segment.prepared)
@@ -239,11 +260,16 @@ private class Backend(private val resources: File, private val englishResources:
                 }
             }
         }
-        val script = WindowsNarrationSpeechRules.withWholeReadingRegions {
-            LessonNarrationScript.page(lesson,request.getInt("page"),
-                lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
+        val texts = WindowsTextSemantics.withCurriculum(lesson) {
+            val script = WindowsNarrationSpeechRules.withWholeReadingRegions {
+                LessonNarrationScript.page(lesson,request.getInt("page"),
+                    lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
+            }
+            script.texts + WindowsTextSemantics.compilerGuides(lesson,request.getInt("page"),uiLanguage).flatMap { field ->
+                planned(field.source,lang,"auto",field).map { it.second.prepared }
+            }
         }
-        val segments = NarrationSegments.sentences(script.texts).map { prepared ->
+        val segments = NarrationSegments.sentences(texts).map { prepared ->
             // Background preparation uses the canonical already-normalized script.
             // It writes audio only. The visible reader retains its own exact
             // source projection and derives timings against that unchanged audio.
@@ -487,7 +513,7 @@ fun main(arguments: Array<String>) {
                 val id = request.get("id").toString(); require(id.length in 1..128)
                 val command = request.getString("command")
                 replyId = id; replyCommand = command
-                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy"))) {
+                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy") && !request.has("textSemantics"))) {
                     "Previous output-data policy is restricted to bookmark planning"
                 }
                 if (command == "cancel") {

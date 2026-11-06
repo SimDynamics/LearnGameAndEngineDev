@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/lesson.hpp"
+#include "core/text_semantics.hpp"
 
 #include <windows.h>
 #include <cstddef>
 #include <utility>
+#include <optional>
 #include <vector>
 
 namespace lgaed::presentation {
@@ -40,6 +42,11 @@ void set_edit_text(HWND edit, std::string_view text);
 // Native displayed UTF-16 ranges decorated as curricular references. This is
 // presentation metadata, not a font style, and is cleared when text is edited.
 [[nodiscard]] std::vector<std::pair<std::size_t,std::size_t>> rich_text_reference_ranges(HWND edit);
+[[nodiscard]] std::optional<curriculum::TextSemantics> rich_text_semantics(HWND edit);
+// Reapply authoritative semantic ink/background after a verified native text
+// transformation. Fonts, emphasis, text, selection and layout stay unchanged.
+void apply_rich_text_semantics(HWND edit,const curriculum::TextSemantics&,
+    std::span<const std::size_t> source_to_native,RichTextRole role=RichTextRole::body);
 // Republish reference ownership after a verified native text transformation.
 // The full monotone map uses native UTF-16 boundaries before/after conversion.
 // Updates presentation metadata only, never text, formatting or editing state.
@@ -66,5 +73,6 @@ void style_cpp(HWND edit);
 void set_rich_text(HWND edit, std::string_view text,
     std::span<const curriculum::Emphasis> emphasis = {}, bool code = false,
     RichTextRole role = RichTextRole::body, std::string_view locale = "es",
-    std::span<const std::pair<std::size_t,std::size_t>> mathematics = {}, RichTextContext context = {});
+    std::span<const std::pair<std::size_t,std::size_t>> mathematics = {}, RichTextContext context = {},
+    const curriculum::TextSemantics* semantics=nullptr);
 } // namespace lgaed::presentation

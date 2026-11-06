@@ -1,8 +1,12 @@
 #pragma once
 
+#include "core/text_semantics.hpp"
+#include "presentation/windows/text_semantic_projection.hpp"
 #include <windows.h>
 #include <functional>
 #include <memory>
+#include <map>
+#include <span>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -12,7 +16,11 @@ namespace lgaed::presentation {
 struct MathReadingRegion {
     std::string key, source_text;
     HWND target = nullptr;
+    // A spoken field caption may anchor to a native input column rather than
+    // a RichEdit. Its typed source still owns the author's reading intention.
+    std::optional<curriculum::TextSemantics> text_semantics;
 };
+using MathFeedbackSource=SemanticFieldOrigin;
 struct MathPuzzleCallbacks {
     std::function<void()> changed;
     std::function<void(std::string)> submit;
@@ -39,7 +47,8 @@ struct MathPuzzleCallbacks {
 class MathPuzzleView {
 public:
     MathPuzzleView(HWND parent,std::string original_block_json,std::string locale,
-        std::string saved_answers_json,MathPuzzleCallbacks callbacks = {});
+        std::string saved_answers_json,MathPuzzleCallbacks callbacks = {},
+        std::map<std::string,curriculum::TextSemantics> text_semantics = {});
     ~MathPuzzleView();
     MathPuzzleView(const MathPuzzleView&) = delete;
     MathPuzzleView& operator=(const MathPuzzleView&) = delete;
@@ -51,6 +60,8 @@ public:
     // Presentation/caret drafts are saved, but never become another answer.
     [[nodiscard]] std::string answer_identity_json() const;
     [[nodiscard]] std::vector<MathReadingRegion> reading_regions() const;
+    [[nodiscard]] std::optional<curriculum::TextSemantics> feedback_semantics(std::string_view full_text,
+        std::span<const MathFeedbackSource> sources) const;
     void set_enabled(bool);
     void set_text_scale(int percentage);
     // Hooks can be installed after the lesson window is created. Connect the

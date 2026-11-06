@@ -1498,6 +1498,202 @@ Block read_block(const JsonObject& value,std::string_view original) {
     }
     return result;
 }
+// Keep this concrete public-string inventory in sync with text_semantics.py.
+// No recursive walk through arbitrary JSON is allowed: validators, answers,
+// source programs, IDs and unsupported GDI/native labels are never targets.
+struct SemanticPublicFields {
+    std::map<std::string,std::string> fields;
+    static std::string strict_string(const winrt::hstring& value) {
+        for(std::size_t n=0;n<value.size();++n){const auto unit=static_cast<unsigned>(value[n]);
+            if(unit>=0xd800&&unit<=0xdbff){require(n+1<value.size()&&value[n+1]>=0xdc00&&value[n+1]<=0xdfff,
+                "Text semantic source contains an invalid Unicode scalar");++n;}
+            else require(unit<0xdc00||unit>0xdfff,"Text semantic source contains an invalid Unicode scalar");}
+        return utf8(value);
+    }
+    static JsonArray values(const JsonObject& object,std::string_view name) {
+        if(!object.HasKey(key(name)))return {};
+        const auto value=object.GetNamedValue(key(name));return value.ValueType()==JsonValueType::Array?value.GetArray():JsonArray{};
+    }
+    static JsonObject object(const JsonObject& parent,std::string_view name) {
+        if(!parent.HasKey(key(name)))return {};
+        const auto value=parent.GetNamedValue(key(name));return value.ValueType()==JsonValueType::Object?value.GetObject():JsonObject{};
+    }
+    static std::string kind(const JsonObject& source,std::string_view fallback={}) {
+        if(!source.HasKey(L"type")||source.GetNamedValue(L"type").ValueType()!=JsonValueType::String)return std::string(fallback);
+        return text(source,"type");
+    }
+    void string_field(const JsonObject& source,std::string_view name,const std::string& path) {
+        if(source.HasKey(key(name))&&source.GetNamedValue(key(name)).ValueType()==JsonValueType::String)
+            fields.emplace(path+'/'+std::string(name),strict_string(source.GetNamedString(key(name))));
+    }
+    void strings(const JsonArray& source,const std::string& path) {
+        for(unsigned n=0;n<source.Size();++n)if(source.GetAt(n).ValueType()==JsonValueType::String)
+            fields.emplace(path+'/'+std::to_string(n),strict_string(source.GetStringAt(n)));
+    }
+    void table(const JsonObject& source,const std::string& path) {
+        strings(values(source,"headers"),path+"/headers");const auto rows=values(source,"rows");
+        for(unsigned n=0;n<rows.Size();++n)if(rows.GetAt(n).ValueType()==JsonValueType::Array)strings(rows.GetArrayAt(n),path+"/rows/"+std::to_string(n));
+    }
+    void content(const JsonArray& source,const std::string& path,unsigned depth) {
+        require(depth<=32,"Semantic rich content is too deeply nested");
+        for(unsigned n=0;n<source.Size();++n){const auto value=source.GetAt(n);const auto location=path+'/'+std::to_string(n);
+            if(value.ValueType()==JsonValueType::String)fields.emplace(location,strict_string(value.GetString()));
+            else if(value.ValueType()==JsonValueType::Object)representation(value.GetObject(),location,depth+1);}
+    }
+    void representation(const JsonObject& source,const std::string& path,unsigned depth=0) {
+        const auto config=source.HasKey(L"config")?object(source,"config"):source;
+        const auto location=path+(source.HasKey(L"config")?"/config":"");const auto type=kind(source,"text");
+        if(type=="text"||type=="math_formula"){
+            for(const auto name:{"latex","text","formula","value"})if(config.HasKey(key(name))){string_field(config,name,location);break;}
+        }else if(type=="math_table")table(config,location);
+        else if(type=="rich_answer_option")content(values(config,"content"),location+"/content",depth);
+    }
+    void card(const JsonObject& source,const std::string& path,bool reviewed=false) {
+        const auto body=values(source,"content");
+        if(body.Size())content(body,path+"/content",0);
+        else for(const auto name:{"label","text","value"})if(source.HasKey(key(name))&&source.GetNamedValue(key(name)).ValueType()==JsonValueType::String){if(!text(source,name).empty())string_field(source,name,path);break;}
+        string_field(source,"explanation",path);
+        if(reviewed)string_field(source,"reviewFeedback",path);
+    }
+    void response(const JsonObject& source,const std::string& path) {
+        for(const auto name:{"label","instruction"})string_field(source,name,path);
+        const auto type=kind(source);const auto definitions=values(source,"fields");
+        if((type=="math_numeric_input"||type=="math_expression_input")&&!definitions.Size())string_field(source,"unit",path);
+        const auto cards=[&](std::string_view name){const auto entries=values(source,name);for(unsigned n=0;n<entries.Size();++n)
+            if(entries.GetAt(n).ValueType()==JsonValueType::Object)card(entries.GetObjectAt(n),path+'/'+std::string(name)+'/'+std::to_string(n),name=="options");};
+        if(type=="math_multiple_choice_single"||type=="math_multiple_choice_multi")cards("options");
+        else if(type=="math_matching_drag"){cards("sources");cards("targets");}
+        else if(type=="math_ordering_drag")cards("items");
+        const bool has_fields=type=="math_multi_input"||type=="math_structured_answer"||type=="math_equation_fill_blanks"||
+            ((type=="math_numeric_input"||type=="math_expression_input")&&definitions.Size());
+        if(!has_fields)return;
+        for(unsigned n=0;n<definitions.Size();++n)if(definitions.GetAt(n).ValueType()==JsonValueType::Object){
+            const auto entry=definitions.GetObjectAt(n);const auto location=path+"/fields/"+std::to_string(n);
+            for(const auto name:{"label","unit"})string_field(entry,name,location);
+            if(kind(entry,"numeric")=="fixed")string_field(entry,"text",location);
+            if(kind(entry)=="dropdown"){const auto choices=values(entry,"options");for(unsigned option=0;option<choices.Size();++option)
+                if(choices.GetAt(option).ValueType()==JsonValueType::Object)string_field(choices.GetObjectAt(option),"reviewFeedback",location+"/options/"+std::to_string(option));}
+        }
+        const auto segments=values(source,"segments");for(unsigned n=0;n<segments.Size();++n)if(segments.GetAt(n).ValueType()==JsonValueType::Object){
+            const auto segment=segments.GetObjectAt(n);if(!segment.HasKey(L"field"))string_field(segment,"text",path+"/segments/"+std::to_string(n));}
+        if(!source.HasKey(L"segments")&&source.HasKey(L"layout")&&source.GetNamedValue(L"layout").ValueType()==JsonValueType::String&&
+                text(source,"layout")=="table"&&values(source,"rows").Size())table(source,path);
+    }
+    explicit SemanticPublicFields(const JsonObject& source) {
+        const auto type=kind(source);
+        if(type=="heading"||type=="paragraph"||type=="note")string_field(source,"text","");
+        else if(type=="multiple_choice"||type=="fill_code"||type=="output_prediction"||type=="order_code"||type=="drag_fill_code"||type=="inline_fill_code"){
+            for(const auto name:{"question","explanation"})string_field(source,name,"");
+            if(type=="multiple_choice")strings(values(source,"options"),"/options");
+            string_field(source,"reviewFeedback","");strings(values(source,"reviewFeedback"),"/reviewFeedback");
+        }else if(type=="cpp_compiler"){
+            string_field(object(source,"compileCheck"),"explanation","/compileCheck");const auto cases=values(object(source,"outputCheck"),"cases");
+            for(unsigned n=0;n<cases.Size();++n)if(cases.GetAt(n).ValueType()==JsonValueType::Object){
+                const auto entry=cases.GetObjectAt(n);const auto path="/outputCheck/cases/"+std::to_string(n);string_field(entry,"explanation",path);
+                const auto reviews=values(entry,"reviewFeedback");for(unsigned r=0;r<reviews.Size();++r)if(reviews.GetAt(r).ValueType()==JsonValueType::Object)
+                    string_field(reviews.GetObjectAt(r),"text",path+"/reviewFeedback/"+std::to_string(r));
+            }
+        }else if(type.starts_with("math_")){
+            string_field(source,source.HasKey(L"prompt")?"prompt":"question","");const auto feedback=object(source,"feedback");
+            for(const auto name:{"correct","incorrect"})string_field(feedback,name,"/feedback");
+            for(const auto name:{"representations","tools"}){const auto entries=values(source,name);for(unsigned n=0;n<entries.Size();++n)
+                if(entries.GetAt(n).ValueType()==JsonValueType::Object)representation(entries.GetObjectAt(n),'/'+std::string(name)+'/'+std::to_string(n));}
+            if(type=="math_puzzle"){const auto entries=values(source,"responses");for(unsigned n=0;n<entries.Size();++n)
+                if(entries.GetAt(n).ValueType()==JsonValueType::Object)response(entries.GetObjectAt(n),"/responses/"+std::to_string(n));}
+            else response(source,"");
+        }
+    }
+    static std::string trimmed(const std::string& source){const auto wide=key(source);std::wstring_view value(wide.c_str(),wide.size());
+        while(!value.empty()&&narration_space(value.front()))value.remove_prefix(1);while(!value.empty()&&narration_space(value.back()))value.remove_suffix(1);return utf8(winrt::hstring(value));}
+    bool nonblank(const std::string& path)const {const auto at=fields.find(path);return at!=fields.end()&&!trimmed(at->second).empty();}
+    using Groups=std::vector<std::set<std::string>>;
+    void joined_group(Groups& groups,std::set<std::string> paths)const {
+        std::erase_if(paths,[&](const auto& path){return !nonblank(path);});if(paths.size()>1)groups.push_back(std::move(paths));
+    }
+    void strings_group(Groups& groups,const JsonArray& values,const std::string& path)const {
+        std::set<std::string> paths;for(unsigned n=0;n<values.Size();++n)paths.insert(path+'/'+std::to_string(n));joined_group(groups,std::move(paths));
+    }
+    void content_groups(Groups& groups,const JsonArray& values,const std::string& path,unsigned depth)const {
+        require(depth<=32,"Semantic rich content is too deeply nested");for(unsigned n=0;n<values.Size();++n)
+            if(values.GetAt(n).ValueType()==JsonValueType::Object)representation_groups(groups,values.GetObjectAt(n),path+'/'+std::to_string(n),depth+1);
+    }
+    void representation_groups(Groups& groups,const JsonObject& spec,const std::string& path,unsigned depth=0)const {
+        const auto config=spec.HasKey(L"config")?object(spec,"config"):spec;const auto location=path+(spec.HasKey(L"config")?"/config":"");
+        if(kind(spec)=="math_table"){
+            strings_group(groups,values(config,"headers"),location+"/headers");const auto rows=values(config,"rows");
+            for(unsigned n=0;n<rows.Size();++n)if(rows.GetAt(n).ValueType()==JsonValueType::Array)strings_group(groups,rows.GetArrayAt(n),location+"/rows/"+std::to_string(n));
+        }else if(kind(spec)=="rich_answer_option")content_groups(groups,values(config,"content"),location+"/content",depth);
+    }
+    Groups presentation_groups(const JsonObject& block)const {
+        Groups groups;if(!kind(block).starts_with("math_"))return groups;
+        for(const auto name:{"representations","tools"}){const auto entries=values(block,name);for(unsigned n=0;n<entries.Size();++n)
+            if(entries.GetAt(n).ValueType()==JsonValueType::Object)representation_groups(groups,entries.GetObjectAt(n),'/'+std::string(name)+'/'+std::to_string(n));}
+        const auto response=[&](const JsonObject& source,const std::string& path){
+            std::map<std::string,std::pair<unsigned,JsonObject>> definitions;const auto fields=values(source,"fields");
+            for(unsigned n=0;n<fields.Size();++n)if(fields.GetAt(n).ValueType()==JsonValueType::Object){const auto field=fields.GetObjectAt(n);definitions.insert_or_assign(optional_text(field,"id"),std::pair{n,field});}
+            const bool inline_fields=source.HasKey(L"segments");
+            const auto components=[&](const std::string& id){std::set<std::string> paths;const auto at=definitions.find(id);if(at==definitions.end())return paths;
+                const auto& [index,field]=at->second;const auto location=path+"/fields/"+std::to_string(index);
+                if(kind(field,"numeric")!="fixed"||!inline_fields)paths.insert(location+"/label");if(kind(field)=="fixed")paths.insert(location+"/text");paths.insert(location+"/unit");
+                std::erase_if(paths,[&](const auto& path){return !nonblank(path);});joined_group(groups,paths);return paths;};
+            for(const auto& [id,field]:definitions)(void)components(id);
+            if(inline_fields){std::set<std::string> paths;const auto segments=values(source,"segments");for(unsigned n=0;n<segments.Size();++n)if(segments.GetAt(n).ValueType()==JsonValueType::Object){
+                const auto segment=segments.GetObjectAt(n);if(segment.HasKey(L"field")){const auto origin=components(text(segment,"field"));paths.insert(origin.begin(),origin.end());}
+                else paths.insert(path+"/segments/"+std::to_string(n)+"/text");}joined_group(groups,std::move(paths));
+            }else if(source.HasKey(L"layout")&&source.GetNamedValue(L"layout").ValueType()==JsonValueType::String&&text(source,"layout")=="table")strings_group(groups,values(source,"headers"),path+"/headers");
+            for(const auto name:{"options","items","sources","targets"}){const auto entries=values(source,name);for(unsigned n=0;n<entries.Size();++n)
+                if(entries.GetAt(n).ValueType()==JsonValueType::Object)content_groups(groups,values(entries.GetObjectAt(n),"content"),path+'/'+std::string(name)+'/'+std::to_string(n)+"/content",0);}
+        };
+        if(kind(block)=="math_puzzle"){const auto responses=values(block,"responses");for(unsigned n=0;n<responses.Size();++n)
+            if(responses.GetAt(n).ValueType()==JsonValueType::Object)response(responses.GetObjectAt(n),"/responses/"+std::to_string(n));}
+        else response(block,"");return groups;
+    }
+    std::set<std::string> feedback_origins(const JsonObject& block) const {
+        if(!kind(block).starts_with("math_"))return {};
+        std::set<std::string> result;
+        for(const auto& [path,value]:fields)if((path=="/feedback/correct"||path=="/feedback/incorrect"||path.ends_with("/reviewFeedback"))&&!trimmed(value).empty())result.insert(path);
+        const auto labels=[&](const JsonObject& source,const std::string& path){
+            const auto add=[&](const JsonObject& object,const std::string& location){const auto found=fields.find(location+"/label");
+                const auto id=location.empty()&&kind(block)!="math_puzzle"?"response":optional_text(object,"id");
+                if(found!=fields.end()&&!trimmed(found->second).empty()&&trimmed(found->second)!=id)result.insert(location+"/label");};
+            add(source,path);const auto definitions=values(source,"fields");for(unsigned n=0;n<definitions.Size();++n)
+                if(definitions.GetAt(n).ValueType()==JsonValueType::Object)add(definitions.GetObjectAt(n),path+"/fields/"+std::to_string(n));};
+        if(kind(block)=="math_puzzle"){const auto responses=values(block,"responses");for(unsigned n=0;n<responses.Size();++n)
+            if(responses.GetAt(n).ValueType()==JsonValueType::Object)labels(responses.GetObjectAt(n),"/responses/"+std::to_string(n));}
+        else labels(block,"");return result;
+    }
+};
+void read_text_semantics(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"textSemantics"))return;
+    const OriginalJson original(lesson.raw_json);
+    require_integer_json_numbers(original.text(original.member(original.root(),"textSemantics")));
+    const auto metadata=root.GetNamedObject(L"textSemantics");allowed_keys(metadata,{"version","fields"},true);
+    require(integer(metadata.GetNamedValue(L"version"),1)==1,"Unknown textSemantics version");const auto fields=array(metadata,"fields");
+    require(fields.Size()<=100000,"Too many text semantic fields");if(!fields.Size())return;
+    require(lesson.state_layout.version==2,"Text semantics requires the existing stable stateLayout v2");
+    std::map<std::string,Block*> owners;for(auto& page:lesson.pages)for(auto& block:page.blocks)owners.emplace(block.stable_id,&block);
+    std::map<std::string,std::map<std::string,std::string>> public_fields;
+    for(const auto& value:fields){const auto field=value.GetObject();allowed_keys(field,{"block","path","sourceSha256","spans"},true);
+        const auto owner=text(field,"block"),path=text(field,"path");const auto at=owners.find(owner);require(at!=owners.end(),"Unknown text semantic owner");
+        auto inventory=public_fields.find(owner);if(inventory==public_fields.end())inventory=public_fields.emplace(owner,
+            SemanticPublicFields(JsonObject::Parse(key(at->second->raw_json))).fields).first;
+        const auto selected=inventory->second.find(path);require(selected!=inventory->second.end(),"Text semantic path is not a supported public string");
+        const auto digest=text(field,"sourceSha256");require(valid_hash(digest)&&digest==sha256(selected->second),"Text semantic source fingerprint is stale");
+        TextSemantics descriptor;descriptor.source=selected->second;const auto spans=array(field,"spans");require(spans.Size()<=100000,"Too many text semantic spans");
+        for(const auto& entry:spans){const auto span=entry.GetObject();allowed_keys(span,{"start","end","text","role","reading"});
+            SemanticSpan result;result.start=integer(span.GetNamedValue(L"start"),16*1024*1024);result.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
+            result.text=SemanticPublicFields::strict_string(span.GetNamedString(L"text"));result.role=parse_semantic_role(text(span,"role"));
+            if(span.HasKey(L"reading"))result.reading=parse_semantic_reading(text(span,"reading"));descriptor.spans.push_back(std::move(result));}
+        validate_text_semantics(descriptor);require(at->second->text_semantics.emplace(path,std::move(descriptor)).second,"Duplicate text semantic field");
+    }
+    for(const auto& [identity,inventory]:public_fields){const auto& block=*owners.at(identity);const auto raw=JsonObject::Parse(key(block.raw_json));
+        const auto group=SemanticPublicFields(raw).feedback_origins(raw);const bool annotated=std::ranges::any_of(group,[&](const auto& path){return block.text_semantics.contains(path);});
+        if(annotated)require(std::ranges::all_of(group,[&](const auto& path){return block.text_semantics.contains(path);}),
+            "Annotating mathematical feedback requires every possible authored feedback origin in that block");
+        for(const auto& joined:SemanticPublicFields(raw).presentation_groups(raw))if(std::ranges::any_of(joined,[&](const auto& path){return block.text_semantics.contains(path);}))
+            require(std::ranges::all_of(joined,[&](const auto& path){return block.text_semantics.contains(path);}),
+                "Annotating a joined mathematical passage requires all its authored source fields");}
+}
 void read_relationships(const JsonObject& root, Lesson& lesson) {
     if (root.HasKey(L"referenceAfter")) {
         const auto relationships = array(root,"referenceAfter");
@@ -1754,6 +1950,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
         return lesson;
@@ -1829,6 +2026,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
         return lesson;

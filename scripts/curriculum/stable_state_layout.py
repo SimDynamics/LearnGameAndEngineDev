@@ -16,6 +16,11 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
+from importlib import util as import_util
+
+_semantics_spec = import_util.spec_from_file_location("lgaed_text_semantics", Path(__file__).with_name("text_semantics.py"))
+text_semantics = import_util.module_from_spec(_semantics_spec)
+_semantics_spec.loader.exec_module(text_semantics)
 
 
 class LayoutError(ValueError):
@@ -28,6 +33,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
+TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
 
@@ -1546,6 +1552,10 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compile_checks(document)
     _validate_intentional_exit_goals(document)
     _validate_crt_output_variants(document)
+    try:
+        text_semantics.validate(document)
+    except (ValueError, KeyError, TypeError) as error:
+        raise LayoutError(f"Invalid explicit text semantics: {error}") from error
     return mapping
 
 
@@ -1553,7 +1563,7 @@ def _transition_metadata(document: dict) -> dict:
     # Only these validated root presentation extensions may change independently
     # of an immutable origin. All other lesson metadata remains protected.
     return {k: v for k, v in document.items()
-            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | FLOW_FIELDS}
+            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | FLOW_FIELDS | TEXT_PRESENTATION_FIELDS}
 
 
 def add_compile_check(document: dict, identity: str, explanation: str | None = None) -> dict:
@@ -2128,7 +2138,7 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
     documents = {path.relative_to(repository).as_posix(): load(path)
                  for path in sorted(content.rglob("lesson_*.json"))}
     for path, document in documents.items():
-        if (PRESENTATION_FIELDS | FLOW_FIELDS) & document.keys():
+        if (PRESENTATION_FIELDS | FLOW_FIELDS | TEXT_PRESENTATION_FIELDS) & document.keys():
             try:
                 validate(document)
             except (ValueError, KeyError, TypeError) as exc:

@@ -1,5 +1,6 @@
 #pragma once
 #include "core/lesson_state.hpp"
+#include "core/text_semantics.hpp"
 #include <optional>
 
 namespace lgaed::narration {
@@ -17,7 +18,19 @@ struct Position {
     std::optional<HeardPrefix> heard_prefix;
     bool operator==(const Position&)const=default;
 };
-struct Bookmark { std::string key,stable;Position position;std::string page;bool operator==(const Bookmark&)const=default; };
+struct SemanticRegionProof {
+    std::string owner,source,context,math_mode;
+    std::optional<curriculum::TextSemantics> semantics;
+    bool operator==(const SemanticRegionProof&)const=default;
+};
+struct SemanticPlanProof {
+    std::string policy="windows-semantic-v1";
+    std::vector<SemanticRegionProof> regions;
+    bool operator==(const SemanticPlanProof&)const=default;
+};
+struct Bookmark { std::string key,stable;Position position;std::string page;
+    std::optional<SemanticPlanProof> semantic_plan;
+    bool operator==(const Bookmark&)const=default; };
 struct History {
     std::vector<Bookmark> entries;
     std::string active_key,active_owner;

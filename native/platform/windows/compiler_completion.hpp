@@ -19,7 +19,7 @@ namespace lgaed::windows {
 // the exact current program, stdin, target and objective, never as console data.
 [[nodiscard]] std::string compiler_puzzle_review(const state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest& current);
-struct CompilerFeedback { std::string text; bool correct = false; };
+struct CompilerFeedback { std::string text; bool correct = false; std::string source_path; };
 // The matching latest rejection takes presentation precedence over historical
 // success. Reading this choice never alters or revokes a completion receipt.
 [[nodiscard]] std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData&,

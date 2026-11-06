@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/windows/environment.hpp"
+#include "core/text_semantics.hpp"
 #include <windows.h>
 #include <filesystem>
 #include <functional>
@@ -43,6 +44,7 @@ struct LessonReadingRegion {
     // Presentation context is explicit; it never rewrites the visible source.
     // An authored mathematical mode takes precedence over the technical domain.
     std::string reading_context = "auto", math_mode = "auto";
+    std::optional<curriculum::TextSemantics> text_semantics;
 };
 struct LessonReadingArchive {
     std::string page_identity;

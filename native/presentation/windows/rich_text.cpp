@@ -2,6 +2,7 @@
 #include "presentation/windows/editor_render_transaction.hpp"
 #include "presentation/windows/programming_technical_ranges.hpp"
 #include "presentation/windows/curricular_text_roles.hpp"
+#include "presentation/windows/text_semantic_projection.hpp"
 #include "presentation/windows/reader_theme.hpp"
 
 #include <richedit.h>
@@ -27,27 +28,29 @@ constexpr UINT_PTR reference_ranges_subclass_id=0x4c475246;
 struct ReferenceRanges {
     std::wstring text;
     std::vector<std::pair<std::size_t,std::size_t>> ranges;
+    std::optional<curriculum::TextSemantics> semantics;
     static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
         auto* self=reinterpret_cast<ReferenceRanges*>(raw);
         if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,reference_ranges_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
         // Read-only controls reject typing/paste/Undo without changing their
         // document. Their reference ownership must survive those attempts.
         // The getter also checks the complete current text for actual edits.
-        if(message==WM_SETTEXT||message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL){self->text.clear();self->ranges.clear();}
+        if(message==WM_SETTEXT||message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL){self->text.clear();self->ranges.clear();self->semantics.reset();}
         return DefSubclassProc(edit,message,wp,lp);
     }
 };
-void publish_references(HWND edit,std::wstring_view text,std::vector<std::pair<std::size_t,std::size_t>> ranges){
+void publish_references(HWND edit,std::wstring_view text,std::vector<std::pair<std::size_t,std::size_t>> ranges,
+        const curriculum::TextSemantics* semantics=nullptr){
     DWORD_PTR attached=0;
     ReferenceRanges* state=nullptr;
     if(GetWindowSubclass(edit,ReferenceRanges::proc,reference_ranges_subclass_id,&attached))state=reinterpret_cast<ReferenceRanges*>(attached);
-    else if(!ranges.empty()){
+    else if(!ranges.empty()||semantics){
         auto created=std::make_unique<ReferenceRanges>();
         if(!SetWindowSubclass(edit,ReferenceRanges::proc,reference_ranges_subclass_id,reinterpret_cast<DWORD_PTR>(created.get())))
             throw std::runtime_error("Cannot attach curricular reference metadata");
         state=created.release();
     }
-    if(state){state->text=text;state->ranges=std::move(ranges);}
+    if(state){state->text=text;state->ranges=std::move(ranges);if(semantics)state->semantics=*semantics;}
 }
 struct SemanticBackground {
     COLORREF color=0;
@@ -993,6 +996,42 @@ std::vector<std::pair<std::size_t,std::size_t>> rich_text_reference_ranges(HWND 
     if(state->ranges.empty()||state->text!=wide(edit_text(edit)))return {};
     return state->ranges;
 }
+std::optional<curriculum::TextSemantics> rich_text_semantics(HWND edit){
+    DWORD_PTR attached=0;
+    if(!IsWindow(edit)||!GetWindowSubclass(edit,ReferenceRanges::proc,reference_ranges_subclass_id,&attached))return {};
+    const auto* state=reinterpret_cast<const ReferenceRanges*>(attached);
+    if(!state->semantics||state->text!=wide(edit_text(edit)))return {};
+    curriculum::validate_text_semantics(*state->semantics);return state->semantics;
+}
+void apply_rich_text_semantics(HWND edit,const curriculum::TextSemantics& semantics,
+        std::span<const std::size_t> source_to_native,RichTextRole role){
+    if(!IsWindow(edit))throw std::invalid_argument("The semantic text control is unavailable");
+    const auto text=wide(edit_text(edit));const auto runs=semantic_display_runs(semantics,source_to_native,text.size());
+    const auto split=[&](std::size_t at){return at>0&&at<text.size()&&IS_HIGH_SURROGATE(text[at-1])&&IS_LOW_SURROGATE(text[at]);};
+    for(const auto& run:runs)if(split(run.start)||split(run.end))throw std::invalid_argument("Semantic display projection splits a Unicode character");
+    FormatTransaction transaction(edit);
+    if(!text.empty()){
+        select(edit,0,text.size());CHARFORMAT2W base{};base.cbSize=sizeof(base);base.dwMask=CFM_COLOR|CFM_BACKCOLOR;
+        base.dwEffects=CFE_AUTOBACKCOLOR;base.crTextColor=role==RichTextRole::body||reader_theme::palette(edit).high_contrast
+            ?reader_theme::foreground(edit):RGB(255,255,255);SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&base));
+    }
+    std::vector<technical_prose::Range> references;
+    const bool backdrop=!reader_theme::palette(edit).high_contrast;
+    const auto background=reader_theme::reference_background(edit);
+    for(const auto& run:runs){
+        if(run.start>=run.end)continue;
+        if(run.role==curriculum::SemanticRole::cpp)apply_cpp(edit,std::wstring_view(text).substr(run.start,run.end-run.start),run.start);
+        else if(run.role==curriculum::SemanticRole::string)format(edit,run.start,run.end,cpp_color(edit,CppInk::string));
+        else if(semantic_reference(run.role))format(edit,run.start,run.end,reader_theme::foreground(edit));
+        if(!semantic_reference(run.role))continue;
+        references.emplace_back(run.start,run.end);
+        if(backdrop){select(edit,run.start,run.end);CHARFORMAT2W style{};style.cbSize=sizeof(style);
+            style.dwMask=CFM_BACKCOLOR;style.crBackColor=background;SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));}
+    }
+    technical_prose::curricular_role_detail::merge(references);
+    publish_references(edit,text,std::move(references),&semantics);
+    semantic_background(edit,background,backdrop&&std::ranges::any_of(runs,[](const auto& run){return semantic_reference(run.role);}));
+}
 void map_rich_text_reference_ranges(HWND edit,
         std::span<const std::pair<std::size_t,std::size_t>> source_ranges,
         std::span<const std::size_t> source_to_native){
@@ -1100,7 +1139,9 @@ RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,
     return RichTextReferenceRole::automatic;
 }
 void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role,
-    std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context) {
+    std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context,
+    const curriculum::TextSemantics* semantics) {
+    if(semantics){curriculum::validate_text_semantics(*semantics);if(semantics->source!=text)throw std::invalid_argument("Semantic source does not match displayed source");}
     std::string displayed;
     std::vector<std::size_t> mapping(text.size() + 1);
     std::vector<std::pair<std::size_t,std::size_t>> fragments;
@@ -1128,6 +1169,25 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     FormatTransaction transaction(edit);
     default_format(edit, code, role);
     const auto source = wide(displayed);
+    if(semantics){
+        for(const auto& range:curriculum::emphasis_ranges(text,emphasis)){
+            const auto start=wide(std::string_view(displayed).substr(0,mapping[range.start])).size();
+            const auto end=wide(std::string_view(displayed).substr(0,mapping[range.end])).size();
+            select(edit,start,end);CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_BOLD|CFM_ITALIC;
+            style.dwEffects=(role!=RichTextRole::body||range.style=="bold"||range.style=="bold_italic"?CFE_BOLD:0)|
+                (range.style=="italic"||range.style=="bold_italic"?CFE_ITALIC:0);
+            SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
+        }
+        std::vector<std::size_t> display_units(displayed.size()+1);std::size_t units=0;
+        for(std::size_t byte=0;byte<displayed.size();){const auto lead=static_cast<unsigned char>(displayed[byte]);
+            const auto count=lead<0x80?1:lead<0xe0?2:lead<0xf0?3:4;
+            for(auto end=byte+count;byte<end;++byte)display_units[byte]=units;
+            units+=count==4?2:1;display_units[byte]=units;}
+        std::vector<std::size_t> unit_mapping(original_source.size()+1);
+        for(std::size_t unit=0;unit<unit_mapping.size();++unit){const auto byte=byte_boundaries[unit];
+            unit_mapping[unit]=byte==std::string_view::npos?unit_mapping[unit-1]:display_units[mapping[byte]];}
+        apply_rich_text_semantics(edit,*semantics,unit_mapping,role);return;
+    }
     // A language name in curriculum prose is emphasis, not C++ source ink.
     // Track only its displayed offsets, without changing lesson/narration text.
     std::vector<std::pair<std::size_t,std::size_t>> language_names;
