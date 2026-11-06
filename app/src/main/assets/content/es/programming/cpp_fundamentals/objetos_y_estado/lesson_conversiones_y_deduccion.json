@@ -469,13 +469,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de la práctica\n\n`total` y `partes` comienzan como enteros de valores quince y dos. La primera salida utiliza división entera; la segunda utiliza un operando convertido antes de dividir. Para esos datos deben aparecer, en líneas separadas, `Entero: 7` y `Decimal: 7.5`.\n\nAl cambiar únicamente `total` a catorce, las dos cantidades mostradas son siete. Los rótulos y las dos líneas se conservan. Convertir después un cociente ya calculado con enteros no cumple el resultado solicitado para quince: en ese caso se habría descartado la fracción antes de la conversión.\n\nLa comparación incluye los dos valores iniciales porque el caso catorce, por sí solo, puede ocultar una conversión realizada demasiado tarde.",
+          "text": "Criterios de la práctica\n\n`total` y `partes` comienzan como enteros de valores quince y dos. La primera salida utiliza división entera; la segunda utiliza un operando convertido antes de dividir. Para esos datos deben aparecer, en líneas separadas, `Entero: 7` y `Decimal: 7.5`.\n\nAl cambiar únicamente `total` a catorce, las dos cantidades mostradas son siete. Los rótulos y las dos líneas se conservan.\n\nPara comprender qué comprueban esas dos pruebas, sigue las dos posiciones posibles de la conversión. En `static_cast<double>(total) / partes` se convierte el valor de `total` antes de dividir. Con `total` igual a quince y `partes` igual a dos, la división utiliza ese valor ya convertido a `double` y produce siete y medio. La consola muestra `Decimal: 7.5` (Köppe et al., 2023).\n\nEn `static_cast<double>(total / partes)` se convierte el resultado de `total / partes`. Primero se calcula `15 / 2` como división de dos `int` y se obtiene siete. Después se convierte ese siete a `double`. El resultado sigue siendo siete y la consola muestra `Decimal: 7`. La conversión no puede recuperar la media unidad que se descartó al dividir los enteros (Köppe et al., 2023).\n\nCon `total` igual a catorce y `partes` igual a dos, ambas expresiones producen siete y muestran `Decimal: 7`. En la división entera `14 / 2` no hay una fracción que descartar. Por eso, comprobar sólo esta entrada no permite detectar si se dividieron primero los enteros y se convirtió después el resultado.\n\nLa prueba con quince sí distingue las dos expresiones: se necesita `Decimal: 7.5`, mientras que convertir el cociente entero ya calculado produce `Decimal: 7`. Se prueban quince y catorce para observar tanto esa diferencia de resultados como el caso en que ambos cálculos muestran el mismo siete.",
           "emphasis": [
             {
               "text": "Criterios de la práctica"
             },
             {
-              "text": "una conversión realizada demasiado tarde"
+              "text": "Primero se calcula"
             }
           ]
         },
@@ -1577,6 +1577,11 @@
         "id": "block_0008_0001",
         "beforeSha256": "4dbf1c81115fb59b9d868bf13c1e8282144bb4deb5987092a3352cc9db0a7763",
         "afterSha256": "496621ddc236a86a79cb572a908f435dc048ec6dcb16a7e0a51597cd9d4cb1c4"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "6e73b8eeebdb7f9698a79ea4413b97b1cee12725884ca80b18155c3d3672e4c4",
+        "afterSha256": "ec4ebbb00a33cbbbfd595d25061f83101c414125fb74f0a2f2b5e801dbce0ec9"
       }
     ]
   },
