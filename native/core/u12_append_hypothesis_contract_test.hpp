@@ -12,13 +12,14 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
     constexpr std::string_view old_question="Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. Predice el diagnóstico visible.";
     constexpr std::string_view new_question="Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible.";
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
-    check(stage<=2,"Unknown U12L3 hypothesis fixture stage");
-    const unsigned editorial_prefix=stage?11:6,after_count=stage==2?14:editorial_prefix+1;
+    check(stage<=3,"Unknown U12L3 hypothesis fixture stage");
+    const unsigned editorial_prefix=stage?11:6,after_count=stage==3?16:stage==2?14:editorial_prefix+1;
     check(state::sha256(before_bytes)==(stage
         ?"e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e"
         :"81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183")
-        &&state::sha256(after_bytes)==(stage==2
-        ?"d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526"
+        &&state::sha256(after_bytes)==(stage==3
+        ?"c74bb6b67eb7fa3f9d08b376324fd82f4a2ba6ef9e0e6e02d4c89d6b27e6de21"
+        :stage==2?"d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526"
         :stage==1?"9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b"
         :"d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc"),
         "The complete U12L3 hypothesis fixtures differ from their pinned Git/candidate bytes");
@@ -57,40 +58,55 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
             "The U12L3 question revision rewrote an earlier editorial proof");
     const auto restored=JsonObject::Parse(document.Stringify());
     target(restored).Insert(L"question",JsonValue::CreateStringValue(winrt::to_hstring(old_question)));
-    if(stage==2) {
-        // These two real, later p6 revisions do not enter the archived p3
+    if(stage>=2) {
+        // These real, later p6/p8 revisions do not enter the archived p3
         // script. Pin their complete payloads rather than granting arbitrary
         // edits or fabricating old prose on the question's own page.
-        constexpr std::string_view old_later[]{
-            "2605bd47eb587664152a36237fd8cd1ba76894dcc58c182ac8a74661eb68489d",
-            "5530152564fc0424d687b947084473adf203069edd6c1c9c9295f90a5138fae4"};
-        constexpr std::string_view new_later[]{
-            "8bcee01baa4355084dbab89902780b269b72901347981fe9a7e8d0fd77e85acf",
-            "8862987a96139ba33fd9ba1d1aa97dd2adf9378a38028beb15a738697512988d"};
-        const auto old_blocks=original.GetNamedArray(L"pages").GetObjectAt(5).GetNamedArray(L"blocks");
-        const auto blocks=document.GetNamedArray(L"pages").GetObjectAt(5).GetNamedArray(L"blocks");
-        const auto restored_blocks=restored.GetNamedArray(L"pages").GetObjectAt(5).GetNamedArray(L"blocks");
-        for(unsigned index=0;index<2;++index) {
-            const auto edge=editorial.GetObjectAt(12+index);
-            check(fingerprint(old_blocks.GetAt(index+1))==old_later[index]
-                &&fingerprint(blocks.GetAt(index+1))==new_later[index]
-                &&edge.Size()==3&&winrt::to_string(edge.GetNamedString(L"id"))==(index?"block_0005_0002":"block_0005_0001")
-                &&winrt::to_string(edge.GetNamedString(L"beforeSha256"))==old_later[index]
-                &&winrt::to_string(edge.GetNamedString(L"afterSha256"))==new_later[index],
-                "The later U12L3 fixture changed its exact p6 guide/instruction revision or ordered proof");
-            restored_blocks.SetAt(index+1,old_blocks.GetAt(index+1));
+        constexpr std::string_view old_later[2][2]{
+            {"2605bd47eb587664152a36237fd8cd1ba76894dcc58c182ac8a74661eb68489d",
+             "5530152564fc0424d687b947084473adf203069edd6c1c9c9295f90a5138fae4"},
+            {"d86a37ce31908280b2bfa0c2db787892ac6886b202584058d09aa6e06b720837",
+             "9f7b042b04d3a5da6d59c52df61493e74231bfb85a73cc4827cd92fae108b35a"}};
+        constexpr std::string_view new_later[2][2]{
+            {"8bcee01baa4355084dbab89902780b269b72901347981fe9a7e8d0fd77e85acf",
+             "8862987a96139ba33fd9ba1d1aa97dd2adf9378a38028beb15a738697512988d"},
+            {"0623f7b364b8a64e7d50375576b197278f75f016602f06ff5cc42658d349101b",
+             "2bfb96456242bb5f43977bcc21c8aaa4a9657394095c8b1a89b87fba3c7a6ac2"}};
+        for(unsigned repair=0;repair<(stage==3?2u:1u);++repair){
+            const unsigned p=5+2*repair;
+            const auto old_blocks=original.GetNamedArray(L"pages").GetObjectAt(p).GetNamedArray(L"blocks");
+            const auto blocks=document.GetNamedArray(L"pages").GetObjectAt(p).GetNamedArray(L"blocks");
+            const auto restored_blocks=restored.GetNamedArray(L"pages").GetObjectAt(p).GetNamedArray(L"blocks");
+            for(unsigned index=0;index<2;++index){
+                const auto edge=editorial.GetObjectAt(12+repair*2+index);
+                const auto expected="block_000"+std::to_string(p)+"_000"+std::to_string(index+1);
+                check(fingerprint(old_blocks.GetAt(index+1))==old_later[repair][index]
+                    &&fingerprint(blocks.GetAt(index+1))==new_later[repair][index]
+                    &&edge.Size()==3&&winrt::to_string(edge.GetNamedString(L"id"))==expected
+                    &&winrt::to_string(edge.GetNamedString(L"beforeSha256"))==old_later[repair][index]
+                    &&winrt::to_string(edge.GetNamedString(L"afterSha256"))==new_later[repair][index],
+                    "The later U12L3 fixture changed a complete repair guide/instruction or its ordered proof");
+                restored_blocks.SetAt(index+1,old_blocks.GetAt(index+1));
+            }
         }
         for(const auto field:{L"referenceAfter",L"activityAfter"}) {
             const auto dependencies=document.GetNamedArray(field),prior=original.GetNamedArray(field);
-            check(prior.Size()==1&&dependencies.Size()==2&&fingerprint(prior.GetAt(0))==fingerprint(dependencies.GetAt(0)),
+            check(prior.Size()==1&&dependencies.Size()==(stage==3&&field==std::wstring_view(L"referenceAfter")?3u:2u)
+                &&fingerprint(prior.GetAt(0))==fingerprint(dependencies.GetAt(0)),
                 "The U12L3 p6 preparation replaced the existing first-editor dependencies");
             const auto expected=JsonObject::Parse(field==std::wstring_view(L"referenceAfter")
                 ?LR"({"activity":"block_0005_0003","blocks":["block_0006_0000","block_0006_0001"]})"
                 :LR"({"activity":"block_0007_0001","requires":["block_0005_0003"]})");
             check(fingerprint(dependencies.GetAt(1))==fingerprint(expected),
                 "The later U12L3 fixture changed the independent repair editor's exact dependencies");
-            restored.GetNamedArray(field).RemoveAtEnd();
+            if(dependencies.Size()==3){
+                const auto separator=JsonObject::Parse(LR"({"activity":"block_0007_0003","blocks":["block_0008_0000","block_0008_0001"]})");
+                check(fingerprint(dependencies.GetAt(2))==fingerprint(separator),"The separator repair lost its exact reference gate");
+            }
+            while(restored.GetNamedArray(field).Size()>1)restored.GetNamedArray(field).RemoveAtEnd();
         }
+        if(stage==3){check(after.compiler_puzzles_required&&!before.compiler_puzzles_required,
+            "The final U12L3 fixture lost the authored requirement for all three editors");restored.Remove(L"compilerPuzzlesRequired");}
     }
     const auto restored_editorial=restored.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
     while(restored_editorial.Size()>editorial_prefix)restored_editorial.RemoveAtEnd();
@@ -106,7 +122,7 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
                 &&draft_key("programming",before,old)==draft_key("programming",after,now)
                 &&old.code==now.code&&old.initial_code==now.initial_code,
                 "The U12L3 clarification moved an independent state or editor owner");
-            if((p!=2||b!=1)&&!(stage==2&&p==5&&(b==1||b==2)))check(fingerprint(JsonObject::Parse(winrt::to_hstring(old.raw_json)))
+            if((p!=2||b!=1)&&!(stage>=2&&(p==5||(stage==3&&p==7))&&(b==1||b==2)))check(fingerprint(JsonObject::Parse(winrt::to_hstring(old.raw_json)))
                 ==fingerprint(JsonObject::Parse(winrt::to_hstring(now.raw_json))),
                 "The U12L3 clarification altered an independent complete block");
         }

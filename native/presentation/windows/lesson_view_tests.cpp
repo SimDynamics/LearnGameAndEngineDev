@@ -3964,6 +3964,7 @@ void compiler_pointer_scroll_ownership(){
 }
 #include "presentation/windows/u12_file_roundtrip_view_test.hpp"
 #include "presentation/windows/u12_file_append_view_test.hpp"
+#include "presentation/windows/u12_file_repairs_view_test.hpp"
 struct NarrationLayoutTrace {
     unsigned geometry=0,formatting=0,erases=0;
     std::vector<HWND> targets;
@@ -4157,6 +4158,7 @@ int main(int argc,char* argv[]) {
     const bool compiler_scroll_only=argc==2&&std::string_view(argv[1])=="--compiler-scroll";
     const bool u12_file_roundtrip_only=argc==2&&std::string_view(argv[1])=="--u12-file-roundtrip";
     const bool u12_file_append_only=argc==2&&std::string_view(argv[1])=="--u12-file-append";
+    const bool u12_file_repairs_only=argc==2&&std::string_view(argv[1])=="--u12-file-repairs";
     const bool caret_only=argc==2&&std::string_view(argv[1])=="--caret";
     const bool text_sequence_only=argc==2&&std::string_view(argv[1])=="--texto-secuencia";
     const bool restoration_only=argc==2&&std::string_view(argv[1])=="--texto-restauracion";
@@ -4172,7 +4174,7 @@ int main(int argc,char* argv[]) {
     const bool navigation_geometry_only=argc==2&&std::string_view(argv[1])=="--navigation-geometry";
     const bool inline_feedback_only=argc==2&&std::string_view(argv[1])=="--inline-feedback";
     const bool lesson_menu_only=argc==2&&std::string_view(argv[1])=="--lesson-menu";
-    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
+    if(argc>1&&!scroll_repaint_only&&!scroll_motion_only&&!compiler_scroll_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!caret_only&&!text_sequence_only&&!restoration_only&&!compiler_puzzles_only&&!u11_editorial_only&&!stderr_objective_only&&!dependent_puzzles_only&&!current_dependent_puzzles_only&&!editor_overflow_only&&!answer_overflow_only&&!narration_repaint_only&&!compiler_height_only&&!navigation_geometry_only&&!inline_feedback_only&&!lesson_menu_only)return 2;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto ole=OleInitialize(nullptr);if(FAILED(ole))return 2;
     struct OleScope{~OleScope(){OleUninitialize();}} apartment;
@@ -4188,6 +4190,7 @@ int main(int argc,char* argv[]) {
         if(compiler_scroll_only){compiler_pointer_scroll_ownership();return 0;}
         if(u12_file_roundtrip_only){current_u12_file_roundtrip_view();return 0;}
         if(u12_file_append_only){current_u12_file_append_view();return 0;}
+        if(u12_file_repairs_only){current_u12_file_repairs_view();return 0;}
         if(compiler_height_only){native_compiler_short_sources_keep_a_usable_height();return 0;}
         if(narration_repaint_only){narration_checkpoints_do_not_reformat_or_reflow_the_page();return 0;}
         if(answer_overflow_only){native_answer_overflow_bars();return 0;}

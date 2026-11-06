@@ -334,7 +334,9 @@ if(BUILD_TESTING)
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-before.json"
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-after.json"
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-before.json"
-        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-after.json")
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-after.json"
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-before.json"
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-after.json")
     add_custom_command(OUTPUT ${LGAED_U12_APPEND_HYPOTHESIS_FIXTURES}
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_append_hypothesis_fixture_source.py"
             --output-dir "${LGAED_U12_APPEND_HYPOTHESIS_DIR}"
@@ -665,11 +667,18 @@ if(BUILD_TESTING)
                 "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-after.json"
                 "${hypothesis_reader_phase}")
         set_tests_properties(native.u12_append_hypothesis_suffix_reader_${hypothesis_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+        add_test(NAME native.u12_append_hypothesis_final_reader_${hypothesis_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u12-append-hypothesis-final
+                "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-after.json"
+                "${hypothesis_reader_phase}")
+        set_tests_properties(native.u12_append_hypothesis_final_reader_${hypothesis_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     endforeach()
     add_test(NAME native.u12_file_roundtrip_reader COMMAND lgaed_lesson_reader_tests --u12-file-roundtrip-reader)
     set_tests_properties(native.u12_file_roundtrip_reader PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.u12_file_append_reader COMMAND lgaed_lesson_reader_tests --u12-file-append-reader)
     set_tests_properties(native.u12_file_append_reader PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
+    add_test(NAME native.u12_file_repairs_reader COMMAND lgaed_lesson_reader_tests --u12-file-repairs-reader)
+    set_tests_properties(native.u12_file_repairs_reader PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
     foreach(file_format_page RANGE 0 2)
         add_test(NAME native.u12_file_format_reader_${file_format_page}
             COMMAND lgaed_lesson_reader_tests --u12-file-format-reader ${file_format_page})
@@ -1011,6 +1020,9 @@ if(BUILD_TESTING)
     add_test(NAME native.u12_append_hypothesis_suffix_contract COMMAND lgaed_lesson_tests --u12-append-hypothesis-suffix
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/suffix-after.json")
     set_tests_properties(native.u12_append_hypothesis_suffix_contract PROPERTIES TIMEOUT 60)
+    add_test(NAME native.u12_append_hypothesis_final_contract COMMAND lgaed_lesson_tests --u12-append-hypothesis-final
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/final-after.json")
+    set_tests_properties(native.u12_append_hypothesis_final_contract PROPERTIES TIMEOUT 60)
     add_test(NAME native.lesson_contract COMMAND lgaed_lesson_tests)
     add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
@@ -1103,6 +1115,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.u12_file_roundtrip_view PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
     add_test(NAME native.u12_file_append_view COMMAND lgaed_lesson_view_tests --u12-file-append)
     set_tests_properties(native.u12_file_append_view PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    add_test(NAME native.u12_file_repairs_view COMMAND lgaed_lesson_view_tests --u12-file-repairs)
+    set_tests_properties(native.u12_file_repairs_view PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_test(NAME native.lesson_caret COMMAND lgaed_lesson_view_tests --caret)
     set_tests_properties(native.lesson_caret PROPERTIES TIMEOUT 180)
     add_test(NAME native.lesson_scroll_render COMMAND lgaed_lesson_view_tests --scroll-repaint)

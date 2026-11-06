@@ -7,7 +7,7 @@ void current_u12_file_append_reader(const std::shared_ptr<windows::NarrationWork
         "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json";
     const auto asset_bytes = state::read_bytes(asset);
     std::string normalized(reinterpret_cast<const char*>(asset_bytes.data()), asset_bytes.size()); std::erase(normalized, '\r');
-    check(state::sha256(normalized) == "d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526",
+    check(state::sha256(normalized) == "c74bb6b67eb7fa3f9d08b376324fd82f4a2ba6ef9e0e6e02d4c89d6b27e6de21",
         "The focal U12L3 reader asset differs from its audited current LF document");
     const auto lesson = windows::load_lesson(asset);
     constexpr std::size_t page = 3, choice = 2, compiler = 3, note = 4;
@@ -18,11 +18,13 @@ void current_u12_file_append_reader(const std::shared_ptr<windows::NarrationWork
     const std::string guide = "Distingue una apertura que conserva el texto anterior de otra que lo reemplaza.";
     const std::string explanation = "app conserva lo anterior y añade al final. El espacio escrito separa 4 de 5, de modo que el lector puede obtener tres enteros.";
     check(lesson.id == "cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos"
-        && lesson.pages.size() == 9 && !lesson.compiler_puzzles_required
-        && lesson.reference_after.size() == 2 && lesson.reference_after.front().activity == "block_0003_0003"
+        && lesson.pages.size() == 9 && lesson.compiler_puzzles_required
+        && lesson.reference_after.size() == 3 && lesson.reference_after.front().activity == "block_0003_0003"
         && lesson.reference_after.front().blocks == std::vector<std::string>{"block_0003_0004", "block_0004_0000", "block_0004_0001", "block_0004_0002"}
         && lesson.reference_after[1].activity == "block_0005_0003"
         && lesson.reference_after[1].blocks == std::vector<std::string>{"block_0006_0000", "block_0006_0001"}
+        && lesson.reference_after[2].activity == "block_0007_0003"
+        && lesson.reference_after[2].blocks == std::vector<std::string>{"block_0008_0000", "block_0008_0001"}
         && lesson.activity_after.size() == 2 && lesson.activity_after.front().activity == "block_0004_0003"
         && lesson.activity_after.front().prerequisites == std::vector<std::string>{"block_0003_0003"}
         && lesson.activity_after[1].activity == "block_0007_0001"
