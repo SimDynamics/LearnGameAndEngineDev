@@ -725,25 +725,46 @@ std::optional<StateReadingRevision> append_hypothesis_reading_revision(const Jso
     constexpr std::string_view before="3f3f15e209f0d54ce342167a2e007062ebf83bb1784531d40873a75dafd765ef";
     constexpr std::string_view after="b80a16cd7af0d46d6628a11784747299e7607317f58f87b48a41019f923157b2";
     if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
-    // This closed annotation reconstructs only the immediate predecessor of
-    // the reviewed hypothesis. It grants no general exercise-editing format.
+    // This closed annotation restores only the reviewed question's page.
+    // Later edits on other pages cannot change that historical spoken script.
+    // It grants no general exercise-editing or cross-page archive format.
     if(layout.origin.size()<=2||layout.origin[2].blocks.size()<=1||layout.origin[2].blocks[1]!=identity
-        ||layout.current.size()<=2||layout.current[2].blocks.size()<=1||layout.current[2].blocks[1]!=identity
+        ||layout.current.size()<=2||layout.current[2].blocks!=layout.origin[2].blocks
         ||fingerprint(metadata.GetNamedObject(L"family"))!="a50cf6bf3544c70d3df1b5f9e152f35d51214cf4d6999d02fb4d8b568a0e044a"
         ||fingerprint(array(metadata,"origin"))!="70274d28ca19d9c4e9c5f2d1632b135aeb5b86e4c4431dfcbd023d68c87a0ef7")return {};
     const auto editorial=array(metadata,"editorial");
     if(editorial.Size()<7)return {};
     JsonArray prefix;for(unsigned index=0;index<6;++index)prefix.Append(editorial.GetAt(index));
     if(fingerprint(prefix)!="2bbd1afca905bbafa53a49d7197e1f328bdd2f2107e305583156a3182702387c")return {};
-    const auto edge=editorial.GetObjectAt(editorial.Size()-1);
-    if(edge.Size()!=3||text(edge,"id")!=identity||text(edge,"beforeSha256")!=before||text(edge,"afterSha256")!=after)return {};
+    std::optional<unsigned> revision_index;
+    for(unsigned index=6;index<editorial.Size();++index){
+        const auto edge=editorial.GetObjectAt(index);
+        if(text(edge,"id")!=identity)continue;
+        if(revision_index||edge.Size()!=3||text(edge,"beforeSha256")!=before||text(edge,"afterSha256")!=after)return {};
+        revision_index=index;
+    }
+    if(!revision_index||(*revision_index!=6&&*revision_index!=11))return {};
+    JsonArray reviewed_prefix;
+    for(unsigned index=0;index<*revision_index;++index)reviewed_prefix.Append(editorial.GetAt(index));
+    const auto prefix_hash=fingerprint(reviewed_prefix);
+    if(!((*revision_index==6&&prefix_hash=="2bbd1afca905bbafa53a49d7197e1f328bdd2f2107e305583156a3182702387c")
+        ||(*revision_index==11&&prefix_hash=="6ea8b50922d76302cd12241f8a57cc189a0e90532a6f71490e12857b361b0713")))return {};
+    std::set<std::string> other_page_blocks;
+    for(std::size_t page=0;page<layout.current.size();++page)if(page!=2)
+        other_page_blocks.insert(layout.current[page].blocks.begin(),layout.current[page].blocks.end());
+    for(unsigned index=*revision_index+1;index<editorial.Size();++index){
+        const auto changed=text(editorial.GetObjectAt(index),"id");
+        // Without that block's complete old payload, a later edit on p3
+        // cannot be mixed into the old question's actual page narration.
+        if(!other_page_blocks.contains(changed))return {};
+    }
     const auto active=array(pages.GetObjectAt(2),"blocks").GetObjectAt(1);
     if(fingerprint(active)!=after)return {};
     const auto previous=JsonObject::Parse(active.Stringify());
     previous.Insert(L"question",JsonValue::CreateStringValue(
         L"Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. Predice el diagnóstico visible."));
     if(fingerprint(previous)!=before)return {};
-    StateReadingRevision result;result.editorial_prefix=editorial.Size()-1;
+    StateReadingRevision result;result.editorial_prefix=*revision_index;
     result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }

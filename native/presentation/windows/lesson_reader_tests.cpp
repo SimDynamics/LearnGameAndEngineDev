@@ -2491,7 +2491,9 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool u12_file_roundtrip_only=argc==2&&std::string_view(argv[1])=="--u12-file-roundtrip-reader";
     const bool u12_file_append_only=argc==2&&std::string_view(argv[1])=="--u12-file-append-reader";
     const bool u12_append_hypothesis_current=argc==5&&std::string_view(argv[1])=="--u12-append-hypothesis-current";
-    const bool u12_append_hypothesis_only=argc==5&&(std::string_view(argv[1])=="--u12-append-hypothesis"||u12_append_hypothesis_current);
+    const bool u12_append_hypothesis_suffix=argc==5&&std::string_view(argv[1])=="--u12-append-hypothesis-suffix";
+    const unsigned u12_append_hypothesis_stage=u12_append_hypothesis_suffix?2:u12_append_hypothesis_current?1:0;
+    const bool u12_append_hypothesis_only=argc==5&&(std::string_view(argv[1])=="--u12-append-hypothesis"||u12_append_hypothesis_current||u12_append_hypothesis_suffix);
     if(u12_append_hypothesis_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
     if(u12_file_format_only&&(std::string_view(argv[2]).size()!=1||argv[2][0]<'0'||argv[2][0]>'2'))return 2;
     const bool current_inline_only=(argc==2||argc==3)&&std::string_view(argv[1])=="--current-inline-feedback";
@@ -2535,7 +2537,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(u12_file_format_only){u12_file_format_reader(backend,static_cast<std::size_t>(argv[2][0]-'0'));return 0;}
         if(u12_file_roundtrip_only){current_u12_file_roundtrip_reader(backend);return 0;}
         if(u12_file_append_only){current_u12_file_append_reader(backend);return 0;}
-        if(u12_append_hypothesis_only){u12_append_hypothesis_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u12_append_hypothesis_current);return 0;}
+        if(u12_append_hypothesis_only){u12_append_hypothesis_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u12_append_hypothesis_stage);return 0;}
         if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}
         // These independent flows have their own selectors. State migration

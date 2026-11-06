@@ -45,6 +45,12 @@ CURRENT_AFTER_SHA256 = "9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557
 CURRENT_AFTER_SOURCE_HASHES = dict(SOURCE_HASHES, es=CURRENT_AFTER_SHA256)
 CURRENT_EDITORIAL_PREFIX_SHA256 = "6ea8b50922d76302cd12241f8a57cc189a0e90532a6f71490e12857b361b0713"
 CURRENT_EDITORIAL_SHA256 = "ec7393ec6101f1c12e30320218d163975231b416c5b87f045f145f370e84b1d4"
+SUFFIX_BEFORE_COMMIT = CURRENT_BEFORE_COMMIT
+SUFFIX_AFTER_COMMIT = "b2208f7da1d985216867a7ff4d4275bc3bc0ca8b"
+SUFFIX_SOURCE_HASHES = dict(CURRENT_SOURCE_HASHES)
+SUFFIX_AFTER_SHA256 = "d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526"
+SUFFIX_AFTER_SOURCE_HASHES = dict(SOURCE_HASHES, es=SUFFIX_AFTER_SHA256)
+SUFFIX_EDITORIAL_SHA256 = "881930065caeaf0e0ddc512d966a1cde30574b7a1e64eb7aabec2169702b68f4"
 
 
 def json_bytes(value: dict) -> bytes:
@@ -131,6 +137,51 @@ def current_candidate() -> tuple[dict, dict, dict[str, dict]]:
     return before, after, family
 
 
+def verify_suffix_bytes(locale: str, payload: bytes, *, after: bool = False) -> bytes:
+    hashes = SUFFIX_AFTER_SOURCE_HASHES if after else SUFFIX_SOURCE_HASHES
+    if locale not in hashes or hashlib.sha256(payload).hexdigest() != hashes[locale]:
+        raise ValueError("U12L3 compatible-suffix fixture differs from its independently pinned Git bytes")
+    return payload
+
+
+def suffix_bytes(locale: str = "es", *, after: bool = False) -> bytes:
+    relative = PREFIX.format(locale=locale) + LESSON
+    commit = SUFFIX_AFTER_COMMIT if after else SUFFIX_BEFORE_COMMIT
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    return verify_suffix_bytes(locale, subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{commit}:{relative}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE), after=after)
+
+
+def suffix_candidate() -> tuple[dict, dict, dict[str, dict]]:
+    """Return raw publications 11->14, keeping the two later p6 edits intact.
+
+    This pair is not a fabricated question-only predecessor of the full later
+    document. Its source is the actual eleven-edge publication; its destination
+    includes the exact question edge followed by two real subsequent p6 edges.
+    """
+    before, question_after, family = current_candidate()
+    if json.loads(suffix_bytes()) != before:
+        raise ValueError("U12L3 compatible-suffix source differs from its actual published predecessor")
+    payload = suffix_bytes(after=True)
+    after = json.loads(payload)
+    metadata = after["stateLayout"]
+    if (json_bytes(after) != payload or hashlib.sha256(payload).hexdigest() != SUFFIX_AFTER_SHA256
+            or len(layout._blocks(after)) != 33 or len(metadata["editorial"]) != 14
+            or metadata["editorial"][:12] != question_after["stateLayout"]["editorial"]
+            or layout.fingerprint(metadata["editorial"]) != SUFFIX_EDITORIAL_SHA256
+            or layout.fingerprint(metadata["family"]) != FAMILY_SHA256
+            or layout.fingerprint(metadata["origin"]) != ORIGIN_SHA256
+            or layout.fingerprint(metadata["current"]) != CURRENT_SHA256
+            or tuple(layout.fingerprint(layout._blocks(value)[IDENTITY]) for value in (before, after)) != BLOCK_HASHES):
+        raise ValueError("U12L3 suffix fixture lost its complete publication, exact hypothesis or actual provenance")
+    if [edge["id"] for edge in metadata["editorial"][12:]] != ["block_0005_0001", "block_0005_0002"]:
+        raise ValueError("U12L3 compatible suffix changed its two later p6 owners")
+    layout.validate_transition(before, after)
+    layout.check_localized_family([after, family["en"], family["fr"]], ["es", "en", "fr"])
+    return before, after, family
+
+
 def export(output: Path) -> Path:
     """Export authenticated QA copies under this checkout's out/build only."""
     output = Path(os.path.abspath(output))
@@ -151,6 +202,7 @@ def export(output: Path) -> Path:
             raise ValueError("U12L3 hypothesis QA output cannot write another checkout")
     before, after, _ = candidate()
     current_before, current_after, _ = current_candidate()
+    suffix_before, suffix_after, _ = suffix_candidate()
     payloads = {"before.json": historical_bytes(), "after.json": json_bytes(after)}
     manifest = {"commit": COMMIT, "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
                 "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
@@ -172,6 +224,20 @@ def export(output: Path) -> Path:
                         "before": {"file": "current-before.json", "sha256": CURRENT_SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
                         "after": {"file": "current-after.json", "sha256": CURRENT_AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
     payloads["current-manifest.json"] = json_bytes(current_manifest)
+    payloads["suffix-before.json"] = suffix_bytes()
+    payloads["suffix-after.json"] = json_bytes(suffix_after)
+    suffix_manifest = {"beforeCommit": SUFFIX_BEFORE_COMMIT, "afterCommit": SUFFIX_AFTER_COMMIT,
+                       "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
+                       "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
+                       "sourceSha256": SUFFIX_SOURCE_HASHES, "afterSourceSha256": SUFFIX_AFTER_SOURCE_HASHES,
+                       "textSha256": list(TEXT_HASHES), "familySha256": FAMILY_SHA256, "originSha256": ORIGIN_SHA256,
+                       "currentSha256": CURRENT_SHA256, "editorialPrefixSha256": CURRENT_EDITORIAL_PREFIX_SHA256,
+                       "editorialSha256": SUFFIX_EDITORIAL_SHA256, "editorialBefore": 11, "editorialAfter": 14,
+                       "questionEditorialAfter": 12, "laterEditorial": suffix_after["stateLayout"]["editorial"][12:],
+                       "referenceAfter": suffix_after["referenceAfter"], "activityAfter": suffix_after["activityAfter"],
+                       "before": {"file": "suffix-before.json", "sha256": SUFFIX_SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
+                       "after": {"file": "suffix-after.json", "sha256": SUFFIX_AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
+    payloads["suffix-manifest.json"] = json_bytes(suffix_manifest)
     # All input authentication and existing-target checks precede any write.
     # Identical exported evidence is a no-op; other bytes are never replaced.
     for name, payload in payloads.items():
@@ -195,4 +261,4 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", required=True, type=Path)
     arguments = parser.parse_args()
     export(arguments.output_dir)
-    print(f"Verified historical and published U12L3 hypothesis pairs from {COMMIT} and {CURRENT_BEFORE_COMMIT}->{CURRENT_AFTER_COMMIT}.")
+    print(f"Verified historical, published and compatible-suffix U12L3 hypothesis pairs through {SUFFIX_AFTER_COMMIT}.")

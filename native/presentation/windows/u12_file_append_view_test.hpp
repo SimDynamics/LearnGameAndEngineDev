@@ -7,7 +7,7 @@ void current_u12_file_append_view(){
         "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json";
     const auto original=state::read_bytes(asset);
     std::string normalized(reinterpret_cast<const char*>(original.data()),original.size());std::erase(normalized,'\r');
-    require(state::sha256(normalized)=="9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b",
+    require(state::sha256(normalized)=="d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526",
         "The current U12L3 append asset differs from its independently audited LF source");
     const auto lesson=windows::load_lesson(asset);
     constexpr std::size_t page=3,compiler=3,choice=2,note=4,reference_page=4;
@@ -21,7 +21,7 @@ void current_u12_file_append_view(){
     const std::vector<std::string> references{"block_0003_0004","block_0004_0000","block_0004_0001","block_0004_0002"};
     const curriculum::StatePosition owner{page,compiler};
     require(lesson.id=="cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos"
-        &&lesson.pages.size()==9&&lesson.state_layout.signatures.size()==33&&metadata.GetNamedArray(L"editorial").Size()==12
+        &&lesson.pages.size()==9&&lesson.state_layout.signatures.size()==33&&metadata.GetNamedArray(L"editorial").Size()==14
         &&!lesson.compiler_puzzles_required&&goal.stable_id=="block_0003_0003"
         &&goal.type==BlockType::cpp_compiler&&curriculum::compiler_is_puzzle_prerequisite(lesson,goal)
         &&goal.initial_code.size()==130&&state::sha256(goal.initial_code)=="6cd72c317fbe6d076adfee4158cc8b63d811b9a0ebc1fe132617f6394b980729"
@@ -29,14 +29,18 @@ void current_u12_file_append_view(){
         &&goal.output_check->cases[0].outputs==std::vector<std::string>{"Total=12","Total=12\n"}
         &&question.stable_id=="block_0003_0002"&&question.correct_index==2
         &&reference.size()==1049&&state::sha256(reference)=="81fbfb2ed55859f13b7ff47300f6e896d2f90af6bdd2fa38db144db5f515a318"
-        &&lesson.reference_after.size()==1&&lesson.reference_after[0].activity==goal.stable_id
-        &&lesson.reference_after[0].blocks==references&&lesson.activity_after.size()==1
+        &&lesson.reference_after.size()==2&&lesson.reference_after[0].activity==goal.stable_id
+        &&lesson.reference_after[0].blocks==references&&lesson.activity_after.size()==2
         &&lesson.activity_after[0].activity==dependent.stable_id
         &&lesson.activity_after[0].prerequisites==std::vector<std::string>{goal.stable_id}
         &&dependent.stable_id=="block_0004_0003"&&dependent.type==BlockType::multiple_choice&&dependent.correct_index==0
         &&curriculum::activity_prerequisites(lesson,dependent)==std::vector<curriculum::StatePosition>{owner}
         &&mode_repair.stable_id=="block_0005_0003"&&separator_repair.stable_id=="block_0007_0003"
-        &&!curriculum::compiler_is_puzzle_prerequisite(lesson,mode_repair)
+        &&curriculum::compiler_is_puzzle_prerequisite(lesson,mode_repair)
+        &&lesson.reference_after[1].activity==mode_repair.stable_id
+        &&lesson.reference_after[1].blocks==std::vector<std::string>{"block_0006_0000","block_0006_0001"}
+        &&lesson.activity_after[1].activity=="block_0007_0001"
+        &&lesson.activity_after[1].prerequisites==std::vector<std::string>{mode_repair.stable_id}
         &&!curriculum::compiler_is_puzzle_prerequisite(lesson,separator_repair),
         "The current append construction, exact output or selective reference/puzzle gates changed");
     for(const auto& identity:references){const auto at=curriculum::stable_block_position(lesson,identity);
