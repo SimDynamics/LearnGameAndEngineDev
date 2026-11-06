@@ -2,7 +2,9 @@
 
 import copy
 from functools import lru_cache
+import hashlib
 import json
+import subprocess
 import unittest
 
 import stable_state_layout as state_layout
@@ -15,12 +17,24 @@ L13_EXPLANATION = (
     "La segunda extracción falla. Los valores candidatos no se publican: se conservan 9 y 4, "
     "se muestra Entrada invalida|9:4 y el programa termina con código 1. Esto no restaura "
     "los caracteres consumidos ni el estado del flujo.")
+L13_BEFORE_COMMIT = "585cef9ff64dcc1bfbe37457ac6a59074650f978"
+L13_BEFORE_SHA256 = {
+    "es": "09e6e7922ca9504bb0f485189d154c66d666e1e4c0c91fb0b7c4783fc0089488",
+    "en": "48371d8596fa7bde34be7572a5e56a0b7206bb8947ddcfcebc0949eba1476f4c",
+    "fr": "39cedacd43e7f7ddeb1d6139ebe359d6974521c0adcdeac2ba6a5ce6d14bcd25",
+}
 
 
 @lru_cache(maxsize=1)
 def l13_family():
-    return {locale: json.loads((contract.ROOT / L13_RELATIVE.replace("/es/", f"/{locale}/")).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")}
+    family = {}
+    for locale, expected in L13_BEFORE_SHA256.items():
+        relative = L13_RELATIVE.replace("/es/", f"/{locale}/")
+        raw = subprocess.check_output(["git", "show", f"{L13_BEFORE_COMMIT}:{relative}"], cwd=contract.ROOT)
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise AssertionError(f"The immutable {locale} pre-adoption L13 Git blob differs from its pin")
+        family[locale] = json.loads(raw)
+    return family
 
 
 def l13_proposal():
@@ -153,6 +167,24 @@ class OutputExitCodeContractTest(unittest.TestCase):
         self.assertFalse(contract.preserves_previous_compiler(L13_RELATIVE, 5, 2, current, old, after))
         with self.assertRaises(state_layout.LayoutError):
             state_layout.validate_transition(after, before)
+
+    def test_integrated_l13_uses_its_authored_goal_while_adoption_keeps_the_git_baseline(self):
+        path = contract.ROOT / L13_RELATIVE
+        preserved = path.read_bytes()
+        integrated = json.loads(preserved)
+        identity = state_layout.INTENTIONAL_EXIT_GOAL["identity"]
+        historical = state_layout._blocks(l13_family()["es"])[identity]
+        current = state_layout._blocks(integrated)[identity]
+        self.assertNotIn("outputCheck", historical)
+        self.assertEqual(historical["initialCode"], current["initialCode"])
+        self.assertEqual(1, len(current["outputCheck"]["cases"]))
+        case = current["outputCheck"]["cases"][0]
+        self.assertEqual("", case["standardInput"])
+        self.assertEqual(["Entrada invalida|9:4"], case["outputs"])
+        self.assertEqual(1, case["exitCode"])
+        self.assertTrue(case["explanation"].strip())
+        state_layout.validate(integrated)
+        self.assertEqual(preserved, path.read_bytes())
 
     def test_real_l13_alias_is_closed_to_its_original_source_owner_and_exact_new_contract(self):
         before, good = l13_proposal()

@@ -199,6 +199,39 @@ def reviewed_intentional_exit_goal(block: dict) -> bool:
     return True
 
 
+CRT_OUTPUT_REVISION = {
+    "lesson": "cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia",
+    "identity": "block_0005_0004",
+    "before": "b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35",
+    "after": "53648380e15d1148a779de47c0f94dc08f63e2319f79bdc08e72d25a6992ed31",
+}
+
+
+def reviewed_crt_output_variant(block: dict) -> bool:
+    return block.get("type") == "cpp_compiler" and fingerprint(block) == CRT_OUTPUT_REVISION["after"]
+
+
+def historical_crt_output_payload(block: dict) -> dict:
+    """Project one reviewed extra Windows spelling onto its complete old block.
+
+    Every authored byte is pinned, including the three deliberate CR controls.
+    This neither normalizes an output nor permits arbitrary new alternatives.
+    """
+    if not reviewed_crt_output_variant(block):
+        return block
+    result = deepcopy(block)
+    cases = result["outputCheck"]["cases"]
+    require(len(cases) == 1 and cases[0]["standardInput"] == "" and len(cases[0]["outputs"]) == 2,
+            "The reviewed CRT variant requires its original single empty-input case")
+    original, variant = cases[0]["outputs"]
+    require(len(original.encode("utf-8")) == 802 and original.count("\n") == 42 and original.count("\r") == 3
+            and variant == original.replace("\n", "\r\n") and len(variant.encode("utf-8")) == 844,
+            "The reviewed CRT variant must expand LF only and retain every original control")
+    cases[0]["outputs"] = [original]
+    require(fingerprint(result) == CRT_OUTPUT_REVISION["before"], "The CRT variant lost its exact complete original block")
+    return result
+
+
 # CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5, CPP_PRECISION_EXCEPCIONES_U11L14
 # and CPP_PRECISION_OPCION_CONSULTA_U11L18: eight individually reviewed
 # Spanish options. A protected digest covers every response/code field, not
@@ -450,7 +483,7 @@ def historical_compiler_reference_payload(block: dict) -> dict:
 
 
 def _compiler_payload(block: dict) -> dict:
-    payload = deepcopy(block)
+    payload = deepcopy(historical_crt_output_payload(block))
     if validate_compile_check_contract(payload) is not None:
         payload.pop("compileCheck")
     if reviewed_intentional_exit_goal(payload):
@@ -690,6 +723,9 @@ def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
         if reviewed_intentional_exit_goal(block):
             require(reviewed_intentional_exit_goal(after[identity]),
                     "A published intentional-exit objective cannot be removed or replaced")
+        if reviewed_crt_output_variant(block):
+            require(reviewed_crt_output_variant(after[identity]),
+                    "A published reviewed CRT output spelling cannot be silently removed or replaced")
         old_config, config = block.get("outputCheck"), after[identity].get("outputCheck")
         if type(old_config) is not dict or type(config) is not dict:
             continue  # Full response fingerprints protect removal/type changes.
@@ -1399,6 +1435,34 @@ def _validate_intentional_exit_goals(document: dict) -> None:
                             "A historical intentional-exit objective must retain its current archived or active goal")
 
 
+def _validate_crt_output_variants(document: dict) -> None:
+    meta = document.get("stateLayout", {})
+    available = (_all_blocks(document) if type(meta) is dict and "current" in meta else
+                 {f"block_{p:04d}_{b:04d}": block for p, page in enumerate(_pages(document))
+                  for b, block in enumerate(page.get("blocks", []))})
+
+    def owner(identity: str, block: dict) -> None:
+        if not reviewed_crt_output_variant(block):
+            return
+        historical_crt_output_payload(block)
+        require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es"
+                and document.get("id") == CRT_OUTPUT_REVISION["lesson"] and identity == CRT_OUTPUT_REVISION["identity"],
+                "The reviewed CRT output spelling belongs to its exact Spanish v2 editor")
+        require(any(proof["id"] == identity and proof["beforeSha256"] == CRT_OUTPUT_REVISION["before"]
+                    and proof["afterSha256"] == CRT_OUTPUT_REVISION["after"] for proof in meta["editorial"]),
+                "The reviewed CRT output spelling requires its exact original-to-reviewed editorial edge")
+
+    for identity, block in available.items():
+        owner(identity, block)
+    for snapshot in meta.get("retirementHistory", []) if type(meta) is dict else []:
+        for page, record in zip(snapshot["pages"], snapshot["current"]):
+            for identity, block in zip(record["blocks"], page.get("blocks", [])):
+                owner(identity, block)
+                if reviewed_crt_output_variant(block):
+                    require(reviewed_crt_output_variant(available[identity]),
+                            "A historical reviewed CRT spelling must retain its current archived or active contract")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
@@ -1408,6 +1472,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_retirement_history(document)
     _validate_compile_checks(document)
     _validate_intentional_exit_goals(document)
+    _validate_crt_output_variants(document)
     return mapping
 
 

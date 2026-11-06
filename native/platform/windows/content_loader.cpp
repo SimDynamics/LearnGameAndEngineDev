@@ -254,6 +254,23 @@ bool reviewed_intentional_exit_goal(const JsonObject& block) {
     require(std::ranges::any_of(wording,[](wchar_t c){return !narration_space(c);}),"The reviewed intentional-exit goal requires an explanation");
     return true;
 }
+constexpr std::string_view crt_output_lesson="cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia";
+constexpr std::string_view crt_output_identity="block_0005_0004";
+constexpr std::string_view crt_output_before="b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35";
+constexpr std::string_view crt_output_after="53648380e15d1148a779de47c0f94dc08f63e2319f79bdc08e72d25a6992ed31";
+std::optional<std::string> reviewed_crt_output_original(const JsonObject& block) {
+    if(text(block,"type")!="cpp_compiler"||fingerprint(block)!=crt_output_after)return {};
+    const auto cases=array(block.GetNamedObject(L"outputCheck"),"cases");
+    require(cases.Size()==1,"The reviewed CRT spelling needs its original single case");
+    const auto item=cases.GetObjectAt(0);const auto outputs=strings(array(item,"outputs"),true);
+    require(text(item,"standardInput").empty()&&outputs.size()==2,"The reviewed CRT spelling needs its original empty input and two outputs");
+    const auto& original=outputs.front();std::string expanded;
+    for(const char character:original){if(character=='\n')expanded+='\r';expanded+=character;}
+    require(original.size()==802&&std::ranges::count(original,'\n')==42&&std::ranges::count(original,'\r')==3
+        &&outputs.back()==expanded&&expanded.size()==844,
+        "The reviewed CRT spelling must expand LF only and retain every original control");
+    return original;
+}
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
     const auto type = text(value, "type");
@@ -262,6 +279,10 @@ std::string state_fingerprint(const JsonObject& original) {
         value.Remove(L"compileCheck");
     }
     if(reviewed_intentional_exit_goal(value))value.Remove(L"outputCheck");
+    if(reviewed_crt_output_original(value)) {
+        value.GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetObjectAt(0).GetNamedArray(L"outputs").RemoveAtEnd();
+        require(fingerprint(value)==crt_output_before,"The reviewed CRT spelling lost its exact complete original block");
+    }
     if (type == "heading" || type == "paragraph" || type == "note") {
         value.Remove(L"text"); if (value.HasKey(L"emphasis")) value.Remove(L"emphasis");
     } else if (type == "multiple_choice" || type == "fill_code" || type == "output_prediction" || type == "order_code" ||
@@ -397,6 +418,7 @@ void reject_unmapped_compiler_revisions(const JsonArray& pages) {
     for(const auto& page:pages)for(const auto& item:array(page.GetObject(),"blocks")) {
         const auto block=item.GetObject();require(!reviewed_intentional_exit_goal(block),
             "The reviewed intentional-exit goal needs its original Spanish v2 identity and proof");
+        require(!reviewed_crt_output_original(block),"The reviewed CRT spelling needs its exact Spanish v2 owner and editorial proof");
         require(text(block,"type")!="cpp_compiler"||!reviewed_compiler_payload(state_fingerprint(block)),
             "A reviewed compiler expansion needs its published v2 snapshot and proof");
         require(text(block,"type")!="code"||!reviewed_compiler_reference_payload(state_fingerprint(block)),
@@ -1106,6 +1128,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "Editorial return archive changed the current owner's protected contract");
                 if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
                     "A published intentional-exit objective cannot be removed by an editorial return");
+                if(reviewed_crt_output_original(previous))require(reviewed_crt_output_original(active->second).has_value(),
+                    "A published reviewed CRT spelling cannot be removed by an editorial return");
                 const auto previous_raw=utf8(previous.Stringify());
                 (void)read_block(previous,previous_raw);
                 result.editorial_returns.push_back({id,previous_raw});
@@ -1496,6 +1520,21 @@ void resolve_addresses(Lesson& lesson) {
         }
         require(original_edge,"The intentional-exit goal requires its exact complete original/editorial provenance");
     };
+    const auto crt_output_owner=[&](Block& block) {
+        if(block.type!=BlockType::cpp_compiler||block.raw_json.empty())return;
+        const auto original=reviewed_crt_output_original(JsonObject::Parse(key(block.raw_json)));
+        if(!original)return;
+        require(layout.version==2&&lesson.locale=="es"&&lesson.id==crt_output_lesson&&block.stable_id==crt_output_identity,
+            "The reviewed CRT spelling belongs to its exact Spanish v2 editor");
+        const auto metadata=JsonObject::Parse(key(layout.raw_json));bool exact_edge=false;
+        for(const auto& value:array(metadata,"editorial")) {
+            const auto proof=value.GetObject();
+            exact_edge=exact_edge||(text(proof,"id")==block.stable_id&&text(proof,"beforeSha256")==crt_output_before
+                &&text(proof,"afterSha256")==crt_output_after);
+        }
+        require(exact_edge,"The reviewed CRT spelling requires its exact original-to-reviewed editorial edge");
+        block.crt_output_original=*original;
+    };
     std::map<std::string, StateAddress> addresses;
     std::map<std::string,const OrderRefinement*> refinements;
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
@@ -1555,12 +1594,14 @@ void resolve_addresses(Lesson& lesson) {
                     "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
             }
             intentional_exit_owner(block);
+            crt_output_owner(block);
         }
     }
     for (const auto& retired : layout.retired) {
         auto block = read_block(JsonObject::Parse(winrt::to_hstring(retired.raw_json)),retired.raw_json);
         block.stable_id = retired.id; block.address = addresses.at(retired.id);
         intentional_exit_owner(block);
+        crt_output_owner(block);
         if(block.compile_check) {
             const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
             require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
@@ -1580,6 +1621,15 @@ void resolve_addresses(Lesson& lesson) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
                 auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
                 intentional_exit_owner(block);
+                crt_output_owner(block);
+                if(block.crt_output_original) {
+                    const auto active=stable_block_position(lesson,block.stable_id);
+                    const auto archived_editor=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
+                    const auto* current=active?&lesson.pages[active->page].blocks[active->block]:
+                        archived_editor!=lesson.retired_blocks.end()?&*archived_editor:nullptr;
+                    require(current&&current->crt_output_original==block.crt_output_original,
+                        "A historical reviewed CRT spelling must retain its current archived or active contract");
+                }
                 if(reviewed_intentional_exit_goal(source)) {
                     const auto active=stable_block_position(lesson,block.stable_id);
                     const auto archived=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
@@ -1690,13 +1740,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
-        // The catalog keeps its historical read-only progress projection, but
-        // dependency sources need their real objectives even in lessons that
-        // have not enabled mandatory compiler puzzles globally.
-        std::set<std::string> goal_owners;
-        for (const auto& relation : lesson.reference_after) goal_owners.insert(relation.activity);
-        for (const auto& relation : lesson.activity_after)
-            goal_owners.insert(relation.prerequisites.begin(),relation.prerequisites.end());
+        // Every explicit curricular compiler objective participates in linear
+        // progress, independently of the historical lesson-wide opt-in flag.
         const OriginalJson original(source);
         const auto original_pages = original.elements(original.member(original.root(),"pages"));
         require(original_pages.size() == pages.Size(),"Original JSON page ownership mismatch");
@@ -1709,9 +1754,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                 const auto block = blocks.GetAt(b).GetObject();
                 const auto raw = original.text(original_blocks[b]);
                 if (text(block,"type") == "cpp_compiler") {
-                    const auto identity = lesson.state_layout.version ? lesson.state_layout.current[p].blocks[b] :
-                        "block_" + std::to_string(p) + '_' + std::to_string(b);
-                    if(block.HasKey(L"compileCheck")||((lesson.compiler_puzzles_required||!lesson.state_layout.retirement_history.empty()||goal_owners.contains(identity))&&block.HasKey(L"outputCheck"))) {
+                    if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
                         page.blocks.push_back(read_block(block,raw));

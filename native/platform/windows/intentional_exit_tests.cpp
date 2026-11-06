@@ -67,12 +67,22 @@ int main() try {
         original.initial_code.find("return 1;")!=std::string::npos,
         "The real U12L13 input-failure source changed");
 
-    // This exploratory editor has no authored goal. Give only the QA clone a
-    // process objective; never rewrite the lesson or claim curricular credit.
+    // Exercise the active authored objective once Work has integrated it. A
+    // pre-adoption checkout can still run the platform contrast on a QA clone;
+    // neither path modifies the curriculum or replaces its authored criterion.
     auto objective=original;
-    OutputCase item;item.outputs={"Entrada invalida|9:4"};item.exit_code=1;
-    item.explanation="QA: invalid input leaves both destination values intact.";
-    objective.output_check=OutputCheck{TextComparison::exact,{item}};
+    if(original.output_check) {
+        require(original.output_check->input_comparison==TextComparison::exact&&original.output_check->cases.size()==1,
+            "The active U12L13 intentional-exit objective changed its exact single-input contract");
+        const auto& item=original.output_check->cases.front();
+        require(item.standard_input.empty()&&item.outputs==std::vector<std::string>{"Entrada invalida|9:4"}
+            &&item.exit_code==1&&!item.explanation.empty(),
+            "The active U12L13 goal lost its authored output, process result or explanation");
+    } else {
+        OutputCase item;item.outputs={"Entrada invalida|9:4"};item.exit_code=1;
+        item.explanation="QA: invalid input leaves both destination values intact.";
+        objective.output_check=OutputCheck{TextComparison::exact,{item}};
+    }
     auto legacy=objective;legacy.output_check->cases.front().exit_code=0;
 
     std::uint64_t sequence=0;unsigned passed=0,failed=0;
@@ -293,14 +303,16 @@ int main() try {
         require(final_reopen.load()==achievement,"A subsequent successful recheck did not survive reopening");
     });
 
-    test("the original U12L13 curriculum and exploratory editor remain unchanged",[&]{
+    test("the active U12L13 curriculum and intentional-exit criterion remain unchanged",[&]{
         require(read(file)==asset&&state::sha256(read(file))==asset_hash,
             "Intentional-exit QA changed the curricular asset");
         const auto reloaded=load_lesson(file);
         const auto& block=reloaded.pages[position->page].blocks[position->block];
         require(block.stable_id==original.stable_id&&block.initial_code==original.initial_code&&
             block.output_check.has_value()==original.output_check.has_value(),
-            "The in-memory process goal escaped into the exploratory editor");
+            "The platform test changed the active editor or its goal availability");
+        if(original.output_check)require(reference_objective_frame(reloaded,block)==reference_objective_frame(lesson,original),
+            "The platform test replaced or rewrote the active authored process objective");
     });
     std::cout<<"Headless intentional exits: "<<passed<<" passed, "<<failed<<" failed.\n";
     return failed?1:0;

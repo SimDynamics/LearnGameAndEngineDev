@@ -7,6 +7,7 @@
 
 #include <array>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 
 namespace {
@@ -17,7 +18,10 @@ void require(bool value,std::string_view reason) { if(!value)throw std::runtime_
 const auto unit=std::filesystem::path(build::source_root)/
     "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo";
 curriculum::Block block(std::string_view file,std::size_t page,std::size_t index) {
-    const auto lesson=windows::load_lesson(unit/std::string(file));
+    static std::map<std::string,curriculum::Lesson,std::less<>> assets;
+    auto found=assets.find(file);
+    if(found==assets.end())found=assets.emplace(std::string(file),windows::load_lesson(unit/std::string(file))).first;
+    const auto& lesson=found->second;
     require(page&&page<=lesson.pages.size(),"Current output-role page disappeared");
     require(index<lesson.pages[page-1].blocks.size(),"Current output-role block disappeared");
     return lesson.pages[page-1].blocks[index];
@@ -255,11 +259,117 @@ void current_matching_labels() {
     const std::array<std::string_view,3> extractions={"Salida: `1:1|[6;2]|`","Salida: `0:0|[2;1]|resto`","Salida: `1:0|[6;2]|RESTO`"};
     matching_public_labels("lesson_extraer_un_tipo_sin_cambiarlo_en_fallo.json",7,3,inputs,extractions);
 }
+void repeated_output(std::string_view file,std::size_t page,std::size_t index,std::wstring_view sample,std::size_t count) {
+    const auto rendered=public_text(block(file,page,index).text);std::size_t from=0,seen=0;
+    while(true) {
+        const auto at=rendered.text.find(sample,from);if(at==rendered.text.npos)break;
+        contains(rendered.roles.outputs,{at,at+sample.size()},std::string(file)+": an exact local report occurrence lost neutral ownership");
+        from=at+sample.size();++seen;
+    }
+    require(seen==count,"An exact current report occurrence count changed");
+}
+void current_loading_and_character_prose() {
+    constexpr auto line="lesson_leer_y_validar_una_linea_completa.json";
+    repeated_output(line,5,2,L"1:3:2:1",1);repeated_output(line,5,2,L"0:8:9:9",3);
+    constexpr auto partial="lesson_aceptar_registros_y_detectar_duplicados.json";
+    repeated_output(partial,4,2,L"Guardados=2;Descartados=2",1);repeated_output(partial,4,2,L"3:2:1",1);repeated_output(partial,4,2,L"8:0:0",2);
+    repeated_output(partial,5,2,L"Guardados=2;Descartados=2",1);repeated_output(partial,5,2,L"3:2:1",1);repeated_output(partial,5,2,L"8:0:0",1);
+    constexpr auto complete="lesson_actualizar_todo_o_conservar_el_estado_anterior.json";
+    repeated_output(complete,3,2,L"Aceptado",2);repeated_output(complete,3,2,L"Rechazado",1);
+    auto rendered=public_text(block(complete,3,2).text);
+    contains(rendered.roles.code,locate(rendered.text,L"probar(texto)"),"A report-introduction cue recolored the separate C++ call");
+    absent(rendered.roles.outputs,locate(rendered.text,L"probar(texto)"),"A C++ call was mistaken for a produced report");
+    constexpr auto presence="lesson_representar_presencia_y_cambiar_la_organizacion.json";
+    repeated_output(presence,4,2,L"1:0:0",2);repeated_output(presence,4,2,L"0:9:9",1);
+    repeated_output(presence,7,2,L"2:3:1",1);repeated_output(presence,7,2,L"7:0:0",1);
+    constexpr auto characters="lesson_clasificar_caracteres_y_normalizar_una_copia.json";
+    for(const auto sample:{L"Caso N",L"Original:<texto>",L"Minusculas:<copia>",L"Mayusculas:<copia>",
+            L"Letras:L;Digitos:D;Blancos:B;Otros:O",L"Entrada conservada:V",L"Unidades:N",L"Texto rechazado"})
+        repeated_output(characters,6,3,sample,1);
+    for(const auto sample:{L"Original:<CaJa 2.>",L"Minusculas:<caja 2.>",L"Mayusculas:<CAJA 2.>",
+            L"Letras:4;Digitos:1;Blancos:1;Otros:1",L"Entrada conservada:1"})
+        repeated_output(characters,7,2,sample,1);
+    repeated_output(characters,7,4,L"<>",1);
+    rendered=public_text(block(characters,6,3).text);
+    const auto controls=locate(rendered.text,LR"(" \t\n\r\f\v")");
+    contains(rendered.roles.strings,controls,"The exact C++ control-character input lost string ownership");
+    absent(rendered.roles.outputs,controls,"Escaped input controls were mistaken for characters already printed");
+    for(const auto source:{L"std::string(40, 'a')",L"std::string(41, 'a')",L"std::string(1, static_cast<char>(-1))"}) {
+        contains(rendered.roles.code,locate(rendered.text,source),"A separate C++ input construction lost technical ownership");
+        absent(rendered.roles.outputs,locate(rendered.text,source),"A separate source constructor became an output sample");
+    }
+    rendered=public_text(block(characters,5,6).question);
+    contains(rendered.roles.strings,locate(rendered.text,L"\"aZ09_\""),"The current locale-C character sample lost its exact string role");
+    require(rendered.roles.outputs.empty(),"A quoted input used for character classification became produced output");
+    const auto negative=public_text("Muestra, en ese orden, `int flags:1`, `std::cout << 1;` y `return 0;`. Un ejemplo presenta `std::string`. El informe empieza por `probar(texto)`. Para \"una frase\" en la narración, usa una cita normal. Después presenta `\"Original:\"` como literal.");
+    require(negative.roles.outputs.empty(),"A structured-output list rule swallowed C++ or ordinary prose");
+    contains(negative.roles.strings,locate(negative.text,L"\"Original:\""),"A quoted source literal after 'presenta' lost priority over output syntax");
+    absent(negative.roles.strings,locate(negative.text,L"\"una frase\""),"An ordinary quotation inherited a technical input role");
+}
+void multiline_public_options(std::string_view file,std::size_t page,std::size_t index,std::span<const std::string_view> expected) {
+    using namespace winrt::Windows::Data::Json;
+    const auto current=block(file,page,index);const auto raw=JsonObject::Parse(winrt::to_hstring(current.raw_json));
+    std::size_t found=0;
+    for(const auto& response_value:raw.GetNamedArray(L"responses")) {
+        const auto response=response_value.GetObject();
+        if(response.GetNamedString(L"type")!=L"math_multiple_choice_single")continue;
+        ++found;const auto options=response.GetNamedArray(L"options");require(options.Size()==expected.size(),"A current line-loading public option count changed");
+        for(std::uint32_t n=0;n<options.Size();++n) {
+            const auto content=options.GetObjectAt(n).GetNamedArray(L"content").GetObjectAt(0);
+            const auto authored=winrt::to_string(content.GetNamedString(L"text"));
+            require(authored==expected[n]&&content.GetNamedString(L"mathMode")==L"text","A current multiline output option changed its exact public content");
+            const auto rendered=public_text(authored);const auto first=rendered.text.find(L'\n');
+            require(first!=rendered.text.npos,"A multiline output label lost its data-line boundary");
+            contains(rendered.roles.outputs,{first+1,rendered.text.size()},"A current output distractor lost a row, separator or complete neutral ownership");
+        }
+    }
+    require(found==1,"A line-loading puzzle no longer has its one public output selection");
+}
+void stateful_matching_public_content(std::string_view file,std::size_t page,std::size_t index,
+        std::span<const std::string_view> sources,std::span<const std::string_view> targets) {
+    using namespace winrt::Windows::Data::Json;
+    const auto current=block(file,page,index);const auto raw=JsonObject::Parse(winrt::to_hstring(current.raw_json));
+    const auto response=raw.GetNamedArray(L"responses").GetObjectAt(0);
+    require(response.GetNamedString(L"type")==L"math_matching_drag","A current reload/lookup matching changed interaction");
+    for(const auto side:{0,1}) {
+        const auto expected=side?targets:sources;const auto cards=response.GetNamedArray(side?L"targets":L"sources");
+        require(cards.Size()==expected.size(),"A current reload/lookup matching changed public card count");
+        for(std::uint32_t n=0;n<cards.Size();++n) {
+            const auto content=cards.GetObjectAt(n).GetNamedArray(L"content").GetObjectAt(0);
+            const auto authored=winrt::to_string(content.GetNamedString(L"text"));
+            require(authored==expected[n]&&content.GetNamedString(L"mathMode")==L"text","A current reload/lookup card changed exact public content");
+            const auto rendered=public_text(authored);require(rendered.marked.size()==1,"A reload/lookup card changed its explicit sample structure");
+            const auto sample=rendered.marked.front();
+            if(side)contains(rendered.roles.outputs,sample,"A stateful matching output lost exact neutral ownership");
+            else {
+                contains(rendered.roles.code,sample,"A stateful matching input/call lost its technical role");
+                absent(rendered.roles.outputs,sample,"A source string or function call became a stateful matching result");
+                if(rendered.text[sample.first]==L'"')contains(rendered.roles.strings,sample,"A stateful matching input lost quoted string ownership");
+            }
+        }
+    }
+}
+void current_loading_cards() {
+    const std::array<std::string_view,3> lines={
+        "Salida:\n`0:1:3:2:1`\n`0:0:8:9:9`\n`1:0:8:9:9`",
+        "Salida:\n`0:1:3:2:1`\n`0:0:3:2:1`\n`1:1:9:10:10`",
+        "Salida:\n`0:1:3:2:1`\n`0:0:8:9:9`\n`1:1:9:10:10`"};
+    multiline_public_options("lesson_leer_y_validar_una_linea_completa.json",5,6,lines);
+    const std::array<std::string_view,3> admitted={"Salida:\n`0:0:0`\n`3:2:1`\n`8:0:0`","Salida:\n`3:2:1`\n`8:0:0`\n`0:0:0`","Salida:\n`3:4:0`\n`8:0:0`\n`0:0:0`"};
+    multiline_public_options("lesson_aceptar_registros_y_detectar_duplicados.json",3,4,admitted);
+    const std::array<std::string_view,4> reloads={"Primera llamada: `\"2 [0;0]\\n3 [1;1]\\n02 [5;0]\\n8 [9;9]\"`", "Segunda llamada: `\"9 [0;0]\\n2 [4;1]\"`", "Tercera llamada: `\"mal\\n1 [1;1]\"`", "Cuarta llamada: `\"\"`"};
+    const std::array<std::string_view,4> reload_reports={"Salida: `Aceptado`","Salida: `Rechazado|9:0:0|2:4:1`","Salida: `Rechazado|8:1:2|1:0:0|9:4:1`","Salida: `Aceptado|9:0:0|2:4:1`"};
+    stateful_matching_public_content("lesson_actualizar_todo_o_conservar_el_estado_anterior.json",5,3,reloads,reload_reports);
+    const std::array<std::string_view,4> queries={"Primera consulta: `consultar(tabla, 2, resultado)`","Segunda consulta: `consultar(tabla, 3, resultado)`","Tercera consulta: `consultar(tabla, 7, resultado)`","Cuarta consulta: `consultar(tabla, -1, resultado)`"};
+    const std::array<std::string_view,4> query_reports={"Salida: `0:3:1`","Salida: `1:0:0`","Salida: `0:0:0`","Salida: `1:3:1`"};
+    stateful_matching_public_content("lesson_representar_presencia_y_cambiar_la_organizacion.json",5,2,queries,query_reports);
+}
 }
 int main() {
     try {
         current_choices();current_paragraphs();contextual_boundaries();current_record_prose();current_matching_labels();
-        std::cout<<"PASS 12 formatted alternatives, nine inline rows, current record prose and ten matching cards, with source/string/prose/citation/math boundaries; headless roles only\n";
+        current_loading_and_character_prose();current_loading_cards();
+        std::cout<<"PASS current U12 formatted alternatives, inline rows, loading/character prose, matching cards and multiline distractors, with source/string/prose/citation/math boundaries; headless roles only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

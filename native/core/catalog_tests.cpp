@@ -157,13 +157,30 @@ void required_compile_diagnostics_remain_pending_in_catalog_progress() {
         const auto metadata=windows::parse_lesson_progress_metadata(lesson.raw_json);
         check(catalog_lesson_page_progress(data,metadata,pending).completed==before.completed,
             "Catalog metadata dropped the pending compile diagnostic requirement");
-        auto optional=lesson;optional.compiler_puzzles_required=false;
-        check(catalog_lesson_page_progress(data,optional,pending).completed==verified.completed,
-            "An optional diagnostic changed historical catalog counting without mandatory mode");
+        auto legacy_flag=lesson;legacy_flag.compiler_puzzles_required=false;
+        check(catalog_lesson_page_progress(data,legacy_flag,pending).completed==before.completed,
+            "A legacy missing flag made an unanswered curricular diagnostic optional");
         check(data==retained&&!windows::compiler_puzzle_completed(data,lesson,diagnostic),
             "Inspecting catalog progress changed student data or manufactured diagnostic proof");
     }
     std::cout<<"PASS five required compile diagnostics in catalog: opaque flags/read coverage stay pending, completion callback and metadata preserve groups, no native proof invented\n";
+}
+void a_missing_compiler_evaluator_never_completes_a_curricular_page() {
+    using namespace lgaed;using namespace curriculum;
+    Lesson lesson;lesson.id="catalog_missing_evaluator";
+    Block editor;editor.type=BlockType::cpp_compiler;editor.stable_id="editor";
+    lesson.pages={Page{"page",{editor}}};
+    state::StateData data;
+    state::set_saved_page(data,lesson.id,0);
+    data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=true;
+    state::put_response(data,lesson,editor,state::Response{"opaque historical answer",true});
+    const auto retained=data;
+    bool asked=false;
+    const auto progress=catalog_lesson_page_progress(data,lesson,[&](const Block& block){
+        asked=true;return windows::compiler_puzzle_completed(data,lesson,block);
+    });
+    check(asked&&progress.total==1&&progress.completed==0&&data==retained,
+        "An editor without a checker borrowed a visited page, old answer or completion flag");
 }
 void stable_progress_groups_survive_splits_reordering_and_new_activities() {
     using namespace lgaed;
@@ -296,6 +313,7 @@ int main() {
     using namespace curriculum;
     try {
         page_progress_matches_android_without_crediting_unanswered_puzzles();
+        a_missing_compiler_evaluator_never_completes_a_curricular_page();
         dependent_puzzles_keep_historical_progress_without_granting_execution_proofs();
         compiler_puzzles_keep_captured_success_until_explicit_reset();
         required_compile_diagnostics_remain_pending_in_catalog_progress();

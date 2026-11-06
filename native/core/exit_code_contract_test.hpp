@@ -121,10 +121,7 @@ void intentional_exit_code_contract() {
     // The fixture owns the unchanged historical source plus one exact new goal.
     {
         using namespace winrt::Windows::Data::Json;
-        const auto path=std::filesystem::path(lgaed::build::source_root)/
-            "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/"
-            "lesson_compartir_flujos_sin_acoplar_el_calculo.json";
-        const auto before=lgaed::windows::load_lesson(path);
+        const auto before=lgaed::test::load_pre_intentional_exit_lesson();
         const auto adopted=lgaed::test::with_intentional_exit(before);
         const auto position=stable_block_position(adopted,lgaed::test::intentional_exit_editor_id);
         check(position.has_value(),"Intentional-exit adoption lost the real stable editor");

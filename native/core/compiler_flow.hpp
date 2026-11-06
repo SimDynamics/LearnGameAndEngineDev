@@ -8,6 +8,13 @@
 namespace lgaed::curriculum {
 using CompilerCompletionSnapshot = std::map<std::string,bool>;
 
+// Every curricular editor is a required activity. A missing evaluator is a
+// technical prerequisite still pending, never permission to skip the editor.
+// Standalone laboratories are excluded by their presentation controller.
+inline bool compiler_requires_completion(const Block& block) {
+    return block.type==BlockType::cpp_compiler;
+}
+
 // Dependencies are validated in display order. Evaluate each compiler once:
 // a downstream historical achievement never grants its missing prerequisites.
 // The caller authenticates its platform receipts without inventing UI state.
@@ -39,15 +46,14 @@ inline bool compiler_activity_available(const Lesson& lesson,const Block& activi
     return true;
 }
 
-// Global same-page barriers and explicit referenceAfter owners are distinct.
-// The predicate retains the platform's established global-barrier policy;
-// reference owners additionally require their complete dependency chain.
+// Every preceding curricular editor is a same-page barrier; an old authoring
+// flag cannot make it optional. Explicit owners also require their whole chain.
 template<class Completed>
 bool compiler_reference_available(const Lesson& lesson,std::size_t page,const Block& reference,
         const CompilerCompletionSnapshot& proofs,Completed&& completed) {
-    if(lesson.compiler_puzzles_required)for(const auto& prior:lesson.pages.at(page).blocks) {
+    for(const auto& prior:lesson.pages.at(page).blocks) {
         if(&prior==&reference)break;
-        if(has_compiler_objective(prior)&&!std::invoke(completed,prior))return false;
+        if(compiler_requires_completion(prior)&&!std::invoke(completed,prior))return false;
     }
     const auto dependency=reference_activity(lesson,reference);
     if(!dependency)return true;

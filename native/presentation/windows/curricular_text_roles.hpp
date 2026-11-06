@@ -104,7 +104,11 @@ inline bool described_data_cue(std::wstring_view prefix) {
     return has(prefix,LR"(\b(?:(?:el\s+)?(?:archivo|muestra)\s+contiene(?:\s+[uú]nicamente)?|(?:el\s+)?contenido\s+(?:ser[aá]|es)|(?:la\s+)?cadena\s+(?:compuesta|resultante|obtenida)\s+(?:ser[aá]|es)|se\s+presentan?\s+como)\s*$)",true);
 }
 inline bool record_report_sample(std::wstring_view value) {
-    return has(value,LR"(^(?:[A-Za-z_][A-Za-z_0-9]*[ \t]+)?\[[+-]?[0-9]+[ \t]*;[ \t]*[+-]?[0-9]+\]$)");
+    if(value.find(L"::")!=value.npos||has(value,LR"(^(?:const|volatile|int|char|bool|float|double|auto|return|struct)\b)"))return false;
+    return value==L"<>"||has(value,LR"(^(?:[A-Za-z_][A-Za-z_0-9]*[ \t]+)?\[[+-]?[0-9]+[ \t]*;[ \t]*[+-]?[0-9]+\]$)")||
+        has(value,LR"(^[A-Za-z_0-9+-]+(?:[ \t]+[A-Za-z_0-9]+)*:[A-Za-z_0-9+-]+(?::[A-Za-z_0-9+-]+)*(?:;[A-Za-z_][A-Za-z_0-9]*:[A-Za-z_0-9+-]+)*$)")||
+        has(value,LR"(^[A-Za-z_][A-Za-z_0-9]*:<[^<>\r\n]*>$)")||
+        has(value,LR"(^[A-Z][a-z_]+(?:[ \t]+[A-Za-z_][A-Za-z_0-9]*)*$)");
 }
 inline bool string_cue(std::wstring_view prefix) {
     return has(prefix,LR"((?:\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:\s+de\s+(?:texto|caracteres))?|etiqueta(?:\s+de\s+texto)?|std::string)\s+(?:(?:exact[oa]|contiene|aporta|conserva|es|con|como)\s+)?|\b(?:operador|lector)\s+(?:recibe|lee)\s+)$)",true);
@@ -184,13 +188,13 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
     for(const auto range:ordered){
         if(range.first>=range.second||range.second>text.size())continue;
         const auto prefix=tail(text,range.first,192),fragment=text.substr(range.first,range.second-range.first);
-        const bool report=record_report_sample(fragment);
+        const bool report=record_report_sample(fragment)||composed_data_sample(fragment);
         const bool continued_report=report&&previous_marked_output_end&&*previous_marked_output_end<=range.first&&
             has(text.substr(*previous_marked_output_end,range.first-*previous_marked_output_end),
-                LR"(^[ \t]*(?:,[ \t]*(?:(?:[0-9]+|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece)\s+l[ií]neas?\s+)?|y[ \t]+)$)",true);
+                LR"(^[ \t]*(?:,[ \t]*(?:despu[eé]s[ \t]+)?(?:(?:[0-9]+|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece)\s+l[ií]neas?\s+)?|(?:y|o)[ \t]+(?:despu[eé]s[ \t]+)?)$)",true);
         const bool output=output_cue(prefix)||(!source_literal_sample(fragment)&&
             (described_data_cue(prefix)||continued_report||
-                (report&&has(prefix,LR"(\bmuestra\s*,\s*en\s+orden\s*,\s*$)",true))||
+                (report&&has(prefix,LR"(\b(?:muestra\s*,\s*en\s+(?:ese\s+)?orden\s*,|presenta|muestran|informe\s+empieza\s+(?:con|por)|informe\s+terminado\s+en)\s*$)",true))||
                 (has(prefix,LR"(\b(?:el\s+)?texto\s*$)",true)&&has(text.substr(range.second),LR"(^\s+se\s+imprime\b)",true))));
         if(source_literal_sample(fragment))add(roles.strings,range.first,range.second);
         else if(output){add(roles.outputs,range.first,range.second);
@@ -237,6 +241,7 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
         if(contained({at,end},roles.strings)){at=end-1;continue;}
         if(output_cue(prefix))add(roles.outputs,at,end);
         else if(string_cue(prefix)||has(sentence,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:s)?|etiquetas?\s+de\s+texto|concaten\w*|std::string)\b)",true)||
+            (has(prefix,LR"(\bpara\s*$)",true)&&has(text.substr(end),LR"(^\s+en\s+el\s+locale\s+C\b)",true))||
             (has(sentence,LR"(^\s*En\s*$)",true)&&has(prefix,LR"(\bliteral\s+de\s+texto\b)",true)))
             add(roles.strings,at,end);
         at=end-1;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/lesson.hpp"
+#include "core/compiler_flow.hpp"
 #include "presentation/windows/lesson_view.hpp"
 
 #include <algorithm>
@@ -11,10 +12,10 @@
 #include <span>
 
 namespace lgaed::presentation::reading_gate {
-// Narration stops at every authored compiler objective. Whether the whole
-// lesson requires compiler completion for navigation is a separate policy.
+// Narration shares the mandatory curricular-editor policy with navigation.
+// An editor whose evaluator is still missing cannot release the next passage.
 inline bool compiler_objective(const curriculum::Block& block) {
-    return curriculum::has_compiler_objective(block);
+    return curriculum::compiler_requires_completion(block);
 }
 struct FeedbackPriority { std::size_t block=0,allowed_through=0; };
 
@@ -41,9 +42,9 @@ bool reconcile(Parts& parts,std::span<const LessonReadingRegion> live,Projection
 }
 
 // Returns a position only when the current bookmark has crossed a pending
-// compiler group (or declared that group finished). No history is rewritten.
+// exercise group (or declared that group finished). No history is rewritten.
 template<std::ranges::random_access_range Parts,class Projection=std::identity>
-std::optional<std::size_t> compiler_rewind_target(const Parts& parts,std::size_t current,bool finished,Projection region={}) {
+std::optional<std::size_t> exercise_rewind_target(const Parts& parts,std::size_t current,bool finished,Projection region={}) {
     const auto count=std::ranges::size(parts);
     for(std::size_t first=0;first<count;) {
         auto last=first;
@@ -51,12 +52,19 @@ std::optional<std::size_t> compiler_rewind_target(const Parts& parts,std::size_t
         bool pending=false;
         for(auto n=first;n<=last;++n) {
             const auto& item=std::invoke(region,parts[n]);
-            pending=pending||(item.required_compiler&&!item.solved);
+            pending=pending||(item.is_exercise&&!item.solved);
         }
         if(pending&&(current>last||(finished&&current>=first)))return first;
         first=last+1;
     }
     return {};
+}
+
+// Existing clients retain their API; the mandatory policy now covers every
+// puzzle, including ordinary and mathematical activities on the same page.
+template<std::ranges::random_access_range Parts,class Projection=std::identity>
+std::optional<std::size_t> compiler_rewind_target(const Parts& parts,std::size_t current,bool finished,Projection region={}) {
+    return exercise_rewind_target(parts,current,finished,region);
 }
 
 template<std::ranges::random_access_range Parts,class Projection=std::identity>
@@ -70,16 +78,22 @@ bool prefix_admitted(const Parts& parts,std::size_t destination,std::int64_t hea
     }
     const bool within_feedback=feedback_start&&destination<count&&std::invoke(region,parts[destination]).feedback&&
         std::invoke(region,parts[destination]).block_index==priority->block;
-    for(std::size_t n=0;n<destination&&n<count;++n) {
-        const auto& item=std::invoke(region,parts[n]);
-        if(!item.is_exercise)continue;
-        // A fresh answer owns its feedback, not completion of another compiler.
-        // It may enter that feedback but cannot leave it across a pending run.
-        if(feedback_start&&n<*feedback_start&&(!item.required_compiler||within_feedback))continue;
-        if(n+1<count&&std::invoke(region,parts[n+1]).block_index==item.block_index)continue;
-        if(!item.solved)return false;
-        const auto permitted=feedback_start?static_cast<std::int64_t>(priority->allowed_through):heard_through;
-        if(item.feedback&&item.correct&&permitted<=static_cast<std::int64_t>(n)&&!(feedback_start&&manual_forward))return false;
+    for(std::size_t first=0;first<destination&&first<count;) {
+        auto last=first;
+        while(last+1<count&&std::invoke(region,parts[last+1]).block_index==std::invoke(region,parts[first]).block_index)++last;
+        // Segments inside one puzzle do not form additional independent gates.
+        if(last>=destination)break;
+        // A fresh answer may enter only its own feedback across earlier gates;
+        // that exception gives no permission to leave across those same gates.
+        if(!(within_feedback&&last<*feedback_start))for(auto n=first;n<=last;++n){
+            const auto& item=std::invoke(region,parts[n]);
+            if(item.is_exercise&&!item.solved)return false;
+            const bool own_feedback=feedback_start&&item.block_index==priority->block;
+            const auto permitted=own_feedback?static_cast<std::int64_t>(priority->allowed_through):heard_through;
+            if(item.is_exercise&&item.feedback&&item.correct&&permitted<=static_cast<std::int64_t>(n)&&
+                    !(own_feedback&&manual_forward))return false;
+        }
+        first=last+1;
     }
     return true;
 }

@@ -369,7 +369,7 @@ struct LessonReader::Impl {
                 signature.clear();changed();return;
             }
             regions=next_regions;
-            if((parts.empty()||!parts[current()].region.feedback)&&constrain_required_compiler_bookmark()){
+            if((parts.empty()||!parts[current()].region.feedback)&&constrain_required_exercise_bookmark()){
                 paint_progress();update_buttons();
             }
             return;
@@ -635,7 +635,7 @@ struct LessonReader::Impl {
                     if(found->region.correct&&found->region.solved)answer_priority=AnswerPriority{*feedback_target,static_cast<std::size_t>(position.segment)};
                     else if(answer_priority&&answer_priority->block==*feedback_target)answer_priority.reset();
                 }feedback_target.reset();}
-            if(!fresh_feedback_selected)constrain_required_compiler_bookmark();
+            if(!fresh_feedback_selected)constrain_required_exercise_bookmark();
             previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));
             // A fresh answer invalidates previous hearing even when the reader
             // stays paused and the learner closes before pressing Play.
@@ -705,12 +705,12 @@ struct LessonReader::Impl {
         }
         restored_bookmark=false;resume_needs_replay=false;
     }
-    bool constrain_required_compiler_bookmark(){
-        if(const auto first=reading_gate::compiler_rewind_target(parts,current(),position.finished,
+    bool constrain_required_exercise_bookmark(){
+        if(const auto first=reading_gate::exercise_rewind_target(parts,current(),position.finished,
                 [](const auto& part)->const auto&{return part.region;})){
                 // A new prerequisite can leave the exact same spoken script
                 // and recording key. Its old finished/late bookmark is still
-                // historical data, never permission to skip the pending run.
+                // historical data, never permission to skip a pending puzzle.
                 // Adjust only this in-memory position; opening the lesson must
                 // not rewrite the student's three saved page slots.
                 release_player();
@@ -747,8 +747,8 @@ struct LessonReader::Impl {
     }
     void play_current(){if(!wanted||!has_plan||finished||parts.empty()||player.allocated()||preparation_suspended)return;
         // A fresh answer may jump to its own feedback. Seeking back from that
-        // feedback must not start prose located past another pending program.
-        if(!parts[current()].region.feedback&&constrain_required_compiler_bookmark()){
+        // feedback must not start prose located past another pending puzzle.
+        if(!parts[current()].region.feedback&&constrain_required_exercise_bookmark()){
             paint_progress();update_buttons();return;
         }
         auto at=current();prioritize(at);if(!parts[at].audio)return;
@@ -835,7 +835,7 @@ struct LessonReader::Impl {
         // Explicit preview cancels legacy recovery. A zero certificate records
         // known identity, never a prefix inferred from the new visual offset.
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
-        if(!parts[current()].region.feedback)constrain_required_compiler_bookmark();
+        if(!parts[current()].region.feedback)constrain_required_exercise_bookmark();
         if(owner.empty())acquire();save();paint_progress();play_current();update_buttons();}
     void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();position={};
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();

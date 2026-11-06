@@ -138,6 +138,10 @@ struct Block {
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
     std::optional<CompileCheck> compile_check;
+    // Derived only from the reviewed U12L20 CRT-equivalent output expansion.
+    // Both byte alternatives are evaluated; the original logical objective
+    // retains its identity and previously earned execution receipts.
+    std::optional<std::string> crt_output_original;
     std::optional<std::string> standard_input;
     CppProjectFiles project_files;
     std::vector<std::string> source_files;

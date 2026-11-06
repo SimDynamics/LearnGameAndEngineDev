@@ -14,8 +14,10 @@ constexpr auto projection=[](auto& part)->auto& { return part.region; };
 std::vector<LessonReadingRegion> current_page() {
     const auto path=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_conversiones_y_deduccion.json";
-    const auto lesson=windows::load_lesson(path);
-    require(!lesson.compiler_puzzles_required,"The regression no longer exercises an absent global compiler flag");
+    auto lesson=windows::load_lesson(path);
+    // Keep the original regression meaningful after editorial activation of
+    // the flag: the mandatory policy must also hold for the old missing flag.
+    lesson.compiler_puzzles_required=false;
     const auto& page=lesson.pages.at(6);
     require(page.blocks.at(2).stable_id=="block_0006_0002"&&page.blocks.at(6).stable_id=="block_0006_0006",
         "The two current compiler objective owners changed");
@@ -54,7 +56,7 @@ void current_objectives() {
     require(!reading_gate::compiler_rewind_target(regions,6,true),"A fully verified page was rewound");
 
     curriculum::Block optional;optional.type=curriculum::BlockType::cpp_compiler;
-    require(!reading_gate::compiler_objective(optional),"An editor without an authored objective became a narration gate");
+    require(reading_gate::compiler_objective(optional),"An editor without its evaluator became an optional curricular activity");
     optional.type=curriculum::BlockType::paragraph;
     require(!reading_gate::compiler_objective(optional),"Ordinary prose became a compiler objective");
 }
@@ -128,11 +130,63 @@ void preview_from_later_feedback() {
     require(reading_gate::compiler_rewind_target(planned,3,false,projection)==2,
         "A preview kept a previously valid receipt after current metadata invalidated it");
 }
+void ordinary_and_mixed_requirements() {
+    const auto passage=[](std::size_t block,bool exercise,bool solved,bool compiler=false){
+        LessonReadingRegion region;region.key="mixed/"+std::to_string(block);
+        region.source_text="Pasaje conservado.";region.block_index=block;
+        region.is_exercise=exercise;region.solved=solved;region.required_compiler=compiler;return region;
+    };
+    std::vector<LessonReadingRegion> regions{
+        passage(0,false,true),passage(1,true,false),passage(1,false,true),
+        passage(2,false,true),passage(3,true,false,true),
+        passage(4,true,true),passage(4,true,true),passage(5,false,true)};
+    regions[2].key+="/continuation";
+    regions[5].feedback=regions[6].feedback=true;
+    regions[5].correct=regions[6].correct=true;regions[6].key+="/feedback-continuation";
+    const reading_gate::FeedbackPriority priority{4,5};
+
+    require(!reading_gate::exercise_rewind_target(regions,0,false),"An earlier introduction was rewound by a future ordinary puzzle");
+    require(!reading_gate::exercise_rewind_target(regions,2,false),"An ordinary puzzle could not narrate its own split group");
+    require(reading_gate::exercise_rewind_target(regions,3,false)==1,"A late ordinary bookmark entered following prose");
+    require(reading_gate::exercise_rewind_target(regions,2,true)==1,"A finished bookmark inside an ordinary group was accepted");
+    require(reading_gate::exercise_rewind_target(regions,7,true)==1,"A finished mixed page skipped its earliest ordinary puzzle");
+    require(!reading_gate::prefix_admitted(regions,3,0)&&!reading_gate::prefix_admitted(regions,3,0,{},true),
+        "The group's non-exercise tail or manual advance hid its pending ordinary requirement");
+    for(const auto target:{5u,6u})require(reading_gate::prefix_admitted(regions,target,0,priority),
+        "A fresh later answer lost admission inside its own multi-segment feedback");
+    for(const auto target:{7u,8u})for(const bool manual:{false,true})
+        require(!reading_gate::prefix_admitted(regions,target,0,priority,manual),
+            "Leaving fresh feedback bypassed a preceding pending ordinary puzzle");
+
+    regions[1].solved=true;
+    require(reading_gate::exercise_rewind_target(regions,7,false)==4,"A completed ordinary puzzle credited a later compiler");
+    require(!reading_gate::exercise_rewind_target(regions,3,false),"An unrelated later compiler blocked earlier prose");
+    require(!reading_gate::prefix_admitted(regions,7,0,priority,true),"A fresh feedback priority bypassed the remaining compiler");
+    regions[4].solved=true;
+    require(!reading_gate::exercise_rewind_target(regions,7,true),"A fully solved mixed page was rewound");
+    require(!reading_gate::prefix_admitted(regions,7,0,priority),"Unheard current correct feedback was skipped");
+    require(reading_gate::prefix_admitted(regions,7,0,priority,true),"Manual advance inside the active feedback regressed");
+    require(reading_gate::prefix_admitted(regions,8,7),"A solved and heard mixed prefix did not release later prose");
+
+    // The current answer's permission does not manufacture hearing of another
+    // earlier correct feedback, even though both puzzles are already solved.
+    regions[1].feedback=true;regions[1].correct=true;
+    require(reading_gate::prefix_admitted(regions,5,0,priority),"A later verdict could not interrupt earlier unheard feedback");
+    require(!reading_gate::prefix_admitted(regions,7,0,priority,true),"Manual current-feedback advance credited older unheard feedback");
+    require(reading_gate::prefix_admitted(regions,7,2,priority,true),"Actually heard earlier feedback remained blocked");
+
+    std::vector<Part> planned;for(const auto& region:regions)planned.push_back({region});
+    regions[1].solved=false;
+    require(reading_gate::reconcile(planned,regions,projection),"Ordinary completion metadata could not reconcile without changing speech");
+    require(reading_gate::exercise_rewind_target(planned,7,false,projection)==1&&
+        !reading_gate::prefix_admitted(planned,7,8,priority,true,projection),
+        "A late asynchronous plan reinstated solved metadata for an ordinary puzzle");
+}
 }
 int main() {
     try {
-        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();
-        std::cout<<"PASS current U2L6 compiler objectives, late/finished bookmarks, grouped feedback, and asynchronous same-script invalidation; pure gates only\n";
+        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();
+        std::cout<<"PASS current U2L6 objectives, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

@@ -20,6 +20,7 @@
 #include "presentation/windows/order_code_view.hpp"
 #include "core/learning_flow.hpp"
 #include "core/compiler_flow.hpp"
+#include "core/lesson_entry_policy.hpp"
 #include "core/catalog.hpp"
 #include "core/view_preferences.hpp"
 #include "core/attempts.hpp"
@@ -361,13 +362,16 @@ struct LessonView {
     std::optional<std::size_t> checking_math;
     struct RestoredMath {
         std::string key,raw,reply,answer_identity,content_fingerprint;
-        std::uint64_t generation=0;
+        std::uint64_t generation=0,restore_generation=0,entry_generation=0;
         bool valid=false,compatible=false;
     };
     std::jthread restore_worker;
     std::mutex restore_mutex;
     std::vector<RestoredMath> restored_math;
     std::set<std::string> verified_math;
+    std::set<std::string> rejected_math;
+    std::uint64_t restore_generation=0;
+    curriculum::DeferredLessonEntry deferred_entry;
     // Stable exercise keys survive page/view recreation. Only a real answer
     // change, explicit check or reset can invalidate its pending restoration.
     std::map<std::string,std::uint64_t> math_answer_generations;
@@ -391,7 +395,7 @@ struct LessonView {
         curriculum::validate_activity_relationships(lesson);
         state::validate_lesson_state(data, lesson,route);
         state::prepare_lesson_state(data, lesson);
-        page = resolve_entry_page(state::current_page(data, lesson));
+        begin_entry(state::current_page(data, lesson));
         if (no_student_state) {
             // Initial UI bookkeeping is not a student edit. Closing an untouched
             // first page must not make an otherwise empty profile unimportable.
@@ -758,7 +762,7 @@ struct LessonView {
     std::vector<LessonReadingRegion> reading_regions(int script_version=0) const {
         const bool legacy_programming=script_version==1;
         std::vector<LessonReadingRegion> result;
-        if (import_open || !pane) return result;
+        if (import_open || deferred_entry.waiting() || !pane) return result;
         if (const auto heading = find_item(lesson_heading_id); heading)
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + "/title",
                 lesson.title,heading,std::numeric_limits<std::size_t>::max(),false,false,false,true});
@@ -771,7 +775,7 @@ struct LessonView {
             // Narration must wait for every authored compiler objective. The
             // lesson-wide navigation flag and activity dependencies do not
             // decide whether an individual checked program is still pending.
-            const bool compiler_gate=reading_gate::compiler_objective(current);
+            const bool compiler_gate=!laboratory()&&reading_gate::compiler_objective(current);
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
                 is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback||compiler_gate,
@@ -821,7 +825,7 @@ struct LessonView {
     }
 
     std::vector<LessonReadingArchive> editorial_reading_archives() const {
-        if(import_open||!pane||!IsWindow(pane))return {};
+        if(import_open||deferred_entry.waiting()||!pane||!IsWindow(pane))return {};
         auto regions=reading_regions();std::vector<LessonReadingArchive> archives;
         const auto identity=page_state().narration_page_identity;
         // These snapshots are complete prior editorial prefixes authenticated
@@ -956,7 +960,7 @@ struct LessonView {
     }
 
     std::vector<LessonReadingArchive> retired_reading_archives() const {
-        if(import_open||!pane||!IsWindow(pane))return {};
+        if(import_open||deferred_entry.waiting()||!pane||!IsWindow(pane))return {};
         std::vector<LessonReadingArchive> archives;
         for(const auto& saved:lesson.state_layout.retirement_history){
             auto historical=lesson;historical.pages=saved.pages;historical.state_layout.current=saved.current;
@@ -1089,25 +1093,49 @@ struct LessonView {
         return found != proofs.end() && found->second;
     }
     static bool compiler_completion_required(const curriculum::Lesson& model,const curriculum::Block& activity) {
-        return curriculum::has_compiler_objective(activity)
-            &&(model.compiler_puzzles_required||curriculum::compiler_is_puzzle_prerequisite(model,activity));
+        return model.id!="native_cpp_laboratory"&&curriculum::compiler_requires_completion(activity);
     }
-    std::size_t resolve_entry_page(std::size_t requested) const {
-        auto resolved=std::min(requested,lesson.pages.size()-1);
+    std::string unavailable_compiler_status() const {
+        return ui("La comprobación de esta actividad aún no está disponible. El avance queda pendiente.",
+            "Checking this activity is not available yet. Progress remains pending.",
+            "La vérification de cette activité n’est pas encore disponible. La progression reste en attente.");
+    }
+    curriculum::LessonEntryDecision entry_decision(std::size_t requested) const {
+        using Completion=curriculum::EntryCompletion;
+        std::vector<curriculum::EntryRequirement> requirements;
         const auto proofs=completion_snapshot();
-        for(;;){auto prerequisite_page=resolved;
-            for(std::size_t prior=0;prior<=resolved;++prior)for(const auto& current:lesson.pages[prior].blocks){
-                if(prior<resolved&&compiler_completion_required(lesson,current)
-                    &&!windows::compiler_puzzle_completed(data,lesson,current))prerequisite_page=std::min(prerequisite_page,prior);
-                if(!exercise(current.type)&&!curriculum::compiler_is_puzzle_prerequisite(lesson,current))continue;
-                for(const auto& position:curriculum::activity_prerequisites(lesson,current)){
-                    const auto found=proofs.find(lesson.pages[position.page].blocks[position.block].stable_id);
-                    if(found==proofs.end()||!found->second)prerequisite_page=std::min(prerequisite_page,position.page);
+        for(std::size_t prior=0;prior<lesson.pages.size();++prior)for(const auto& current:lesson.pages[prior].blocks){
+            if(compiler_completion_required(lesson,current)){
+                const auto found=proofs.find(current.stable_id);
+                requirements.push_back({prior,found!=proofs.end()&&found->second?Completion::complete:Completion::incomplete});
+            }else if(exercise(current.type)){
+                const auto response=state::get_response(data,lesson,current);
+                auto completion=response&&response->correct?Completion::complete:Completion::incomplete;
+                if(completion==Completion::complete&&current.type==BlockType::math_puzzle){
+                    const auto identity=curriculum::exercise_key(lesson,current);
+                    try{
+                        if(rejected_math.contains(identity)||saved_math_answer_identity(response->raw_json).empty()||
+                                saved_math_fingerprint(response->raw_json).empty())completion=Completion::incomplete;
+                        else if(!verified_math.contains(identity))completion=Completion::pending_math;
+                    }catch(...){completion=Completion::incomplete;}
                 }
+                requirements.push_back({prior,completion});
             }
-            if(prerequisite_page==resolved)return resolved;
-            resolved=prerequisite_page;
         }
+        return curriculum::lesson_entry_decision(requested,lesson.pages.size(),requirements);
+    }
+    void begin_entry(std::size_t requested) {
+        deferred_entry.cancel();const auto decision=entry_decision(requested);page=decision.page;
+        if(decision.pending_math)deferred_entry.defer(requested);
+    }
+    bool finish_entry(std::uint64_t generation) {
+        const auto requested=deferred_entry.requested(generation);
+        if(!requested)return false;
+        const auto decision=entry_decision(*requested);
+        if(decision.pending_math)return false;
+        deferred_entry.cancel();page=decision.page;
+        if(!import_open)render_page();
+        return true;
     }
     bool reference_available(const curriculum::Block& reference) const {
         return curriculum::compiler_reference_available(lesson,page,reference,completion_snapshot(),[&](const auto& prior){
@@ -1867,6 +1895,7 @@ struct LessonView {
     }
     void mark_dirty() { dirty = true; SetTimer(window, save_timer, 300, nullptr); }
     void remember_scroll() {
+        if(deferred_entry.waiting())return;
         const auto lesson_scroll=fullscreen_block?fullscreen_lesson_scroll.value_or(scroll):scroll;
         data.preferences["native_windows"][scroll_key()] = static_cast<std::int64_t>(MulDiv(lesson_scroll, 96, static_cast<int>(GetDpiForWindow(window))));
     }
@@ -1926,12 +1955,14 @@ struct LessonView {
         style_cpp(vm.source);apply_wrap(vm.source);refresh_project_actions(index);mark_dirty();reflow();
     }
     void capture_page() {
+        if(deferred_entry.waiting())return;
         for (std::size_t i = 0; i < controls.size(); ++i) if (controls[i].source_editor) capture_draft(i);
         remember_scroll();
         state::save_current_page(data, lesson, page);
     }
     void flush() {
         KillTimer(window, save_timer);
+        if(deferred_entry.waiting())return;
         if (!dirty) return;
         capture_page();
         // Historical groups retain ownership; opted-in compiler objectives use
@@ -1951,7 +1982,7 @@ struct LessonView {
         store.save(data); dirty = false;
     }
     void flush_selection() {
-        if (import_open) return;
+        if (import_open || deferred_entry.waiting()) return;
         const auto before = data;
         capture_page();
         dirty = dirty || before != data;
@@ -2079,7 +2110,7 @@ struct LessonView {
         }
         checking_math.reset();std::lock_guard lock(math_mutex);math_result.reset();
     }
-    void cancel_restore(){if(restore_worker.joinable()){restore_worker.request_stop();restore_worker.join();}}
+    void cancel_restore(){++restore_generation;if(restore_worker.joinable()){restore_worker.request_stop();restore_worker.join();}}
     void verify_saved_math(){
         if(!hooks.validate_math)return;
         cancel_restore();std::vector<RestoredMath> pending;
@@ -2088,13 +2119,16 @@ struct LessonView {
             const auto identity=curriculum::exercise_key(lesson,b);const auto saved=state::get_response(data,identity);
             if(saved&&((saved->correct&&!verified_math.contains(identity))||state::response_reviewed(*saved,b))){
                 RestoredMath request;request.key=identity;request.raw=saved->raw_json;
-                request.answer_identity=saved_math_answer_identity(request.raw);
-                request.content_fingerprint=saved_math_fingerprint(request.raw);
+                try{
+                    request.answer_identity=saved_math_answer_identity(request.raw);
+                    request.content_fingerprint=saved_math_fingerprint(request.raw);
+                }catch(...){rejected_math.insert(identity);continue;}
                 request.generation=math_answer_generations[identity];
+                request.restore_generation=restore_generation;request.entry_generation=deferred_entry.generation();
                 pending.push_back(std::move(request));originals.push_back(b.raw_json);
             }
         }
-        if(pending.empty())return;
+        if(pending.empty()){(void)finish_entry(deferred_entry.generation());return;}
         auto evaluate=hooks.validate_math;const auto locale=lesson.locale;
         restore_worker=std::jthread([this,pending=std::move(pending),originals=std::move(originals),evaluate,locale](std::stop_token stop)mutable{
             using namespace winrt::Windows::Data::Json;
@@ -2118,12 +2152,16 @@ struct LessonView {
     void finish_restore(){
         using namespace winrt::Windows::Data::Json;
         std::vector<RestoredMath> restored;{std::lock_guard lock(restore_mutex);restored.swap(restored_math);}
+        bool accepted=false;std::optional<std::uint64_t> entry_generation;
         for(const auto& result:restored){
+            if(result.restore_generation!=restore_generation)continue;
             const auto current=state::get_response(data,result.key);
             if(!current||math_answer_generations[result.key]!=result.generation||result.answer_identity.empty()||
                 saved_math_answer_identity(current->raw_json)!=result.answer_identity||
                 saved_math_fingerprint(current->raw_json)!=result.content_fingerprint)continue;
-            if(result.valid)verified_math.insert(result.key);
+            accepted=true;entry_generation=result.entry_generation;
+            if(result.valid){verified_math.insert(result.key);rejected_math.erase(result.key);}
+            else {verified_math.erase(result.key);rejected_math.insert(result.key);}
             for(std::size_t i=0;i<controls.size();++i)if(key(i)==result.key){
                 auto& vm=controls[i];if(!vm.math)continue;
                 // Keep the latest presentation draft and its review checksum;
@@ -2139,7 +2177,8 @@ struct LessonView {
                 sync_quiz_controls(i);
             }
         }
-        if(!restored.empty())mark_dirty();
+        if(entry_generation)(void)finish_entry(*entry_generation);
+        if(accepted&&!deferred_entry.waiting())mark_dirty();
         update_navigation();notify_content();
     }
     void capture_composition(std::size_t index){
@@ -2163,6 +2202,7 @@ struct LessonView {
         selected_puzzle=index;
         if(checking_math==index)cancel_math();
         verified_math.erase(key(index));
+        rejected_math.erase(key(index));deferred_entry.cancel();
         if(controls[index].math)++math_answer_generations[key(index)];
         auto& vm=controls[index];++vm.revision;capture_composition(index);
         if(vm.order_view)vm.order_started=true;
@@ -2225,6 +2265,7 @@ struct LessonView {
         const auto text=winrt::to_string(reply.GetNamedString(L"feedback",L""));
         if(!reply.GetNamedBoolean(L"evaluable",false)){feedback(index,text,false);return;}
         vm.response.correct=reply.GetNamedBoolean(L"correct",false);
+        rejected_math.erase(key(index));deferred_entry.cancel();
         record_attempt(index,vm.response.correct);
         if(vm.response.correct)verified_math.insert(key(index));else verified_math.erase(key(index));
         auto saved=JsonObject::Parse(winrt::to_hstring(vm.response.raw_json));
@@ -2310,6 +2351,7 @@ struct LessonView {
         updating = previous_update; update_navigation(); reflow(); notify_content();
     }
     bool can_advance(std::size_t index) const {
+        if(deferred_entry.waiting())return false;
         const auto& candidate = lesson.pages.at(index);
         const auto proofs = completion_snapshot();
         for (const auto& item : candidate.blocks) {
@@ -2324,11 +2366,9 @@ struct LessonView {
         return true;
     }
     bool can_enter(std::size_t index) const {
-        if(resolve_entry_page(index)!=index)return false;
-        for(std::size_t prior=0;prior<index;++prior)
-            if(std::ranges::any_of(lesson.pages[prior].blocks,[&](const auto& activity){
-                return compiler_completion_required(lesson,activity)&&!windows::compiler_puzzle_completed(data,lesson,activity);
-            }))return false;
+        if(deferred_entry.waiting())return false;
+        const auto entry=entry_decision(index);
+        if(entry.page!=index||entry.pending_math)return false;
         const auto proofs = completion_snapshot();
         return std::ranges::all_of(lesson.pages.at(index).blocks,[&](const auto& item) {
             // A same-page prerequisite must remain reachable so the student
@@ -2344,6 +2384,7 @@ struct LessonView {
         });
     }
     void update_navigation() {
+        if(reader)EnableWindow(reader,!deferred_entry.waiting());
         if (page_status && title) {
             auto label = hooks.lesson_label.empty() || hooks.lesson_label == "Lección"
                 ? ui("Lección","Lesson","Leçon") : hooks.lesson_label;
@@ -2374,6 +2415,7 @@ struct LessonView {
         }
     }
     bool can_visit(std::size_t value) const {
+        if(deferred_entry.waiting())return false;
         if (value >= lesson.pages.size()) return false;
         if (value <= page) return true;
         for (std::size_t required = page; required <= value; ++required)
@@ -2383,7 +2425,7 @@ struct LessonView {
         return true;
     }
     LessonPageState page_state() const {
-        LessonPageState result{page,lesson.pages.size(),page > 0,page + 1 < lesson.pages.size() && can_visit(page + 1),
+        LessonPageState result{page,lesson.pages.size(),!deferred_entry.waiting()&&page > 0,page + 1 < lesson.pages.size() && can_visit(page + 1),
             lesson.id,lesson.pages.at(page).stable_id,lesson.locale};
         result.narration_language=lesson.pages.at(page).narration_language.value_or(lesson.narration_language.value_or(""));
         result.lesson_title=lesson.title;
@@ -2408,7 +2450,7 @@ struct LessonView {
         return result;
     }
     bool invoke_option(LessonOptionAction action){
-        if(import_open)return false;
+        if(import_open||deferred_entry.waiting())return false;
         switch(action){
         case LessonOptionAction::import_android_state:import_state();return import_open;
         case LessonOptionAction::page_top:scroll_to(0);return true;
@@ -2723,6 +2765,7 @@ struct LessonView {
             rows.push_back({{vm.console}, {0}, 72, true,0,240});rows.back().horizontal_inset=16;rows.back().padding_after=0;
             reader_theme::set_text_color(vm.console,RGB(121,226,157));
             create_feedback(index);refresh_project_actions(index);
+            if(!laboratory()&&!curriculum::has_compiler_objective(current)&&vm.status)set_rich_text(vm.status,unavailable_compiler_status());
             if(current.compiler_revision){
                 const auto history=rich(compiler_history_text(index),control_id(index,40));
                 rows.push_back({{history},{0},0,true});
@@ -2814,6 +2857,11 @@ struct LessonView {
         for (const auto& row : rows) for (auto item : row.cells) destroy_control(item);
         rows.clear(); actions.clear();simulated_card_surfaces.clear();math_card_surfaces.clear();
         for(const auto& [origin,host]:overflow_panes)DestroyWindow(host);overflow_panes.clear();overflow_view_origins.clear();
+        if(deferred_entry.waiting()){
+            text_row(ui("Verificando las respuestas guardadas antes de continuar…",
+                "Verifying saved answers before continuing…","Vérification des réponses enregistrées avant de continuer…"),lesson_heading_id);
+            scroll=0;updating=false;update_fonts();update_navigation();reflow();notify_content();return;
+        }
         controls.resize(lesson.pages.at(page).blocks.size());
         if(page==0){
             text_row(laboratory()?laboratory_title():lesson.title,lesson_heading_id,false,{},RichTextRole::lesson_title);
@@ -3319,14 +3367,16 @@ struct LessonView {
         mark_dirty();flush();PostMessageW(window,finish_lesson_message,0,0);return true;
     }
     bool change_page(std::size_t value) {
+        if(deferred_entry.waiting())return false;
         if (value == page) return true;
         if(value==lesson.pages.size()&&page+1==value&&hooks.lesson_completed){
             const auto separator=lesson.id.find("__");const auto course=separator==std::string::npos?std::string{}:lesson.id.substr(0,separator);
             return curriculum::learning_flow(data,course).swipe_finish&&finish_lesson();
         }
-        if(value>page){const auto prerequisite=resolve_entry_page(value);
+        if(value>page){const auto entry=entry_decision(value);if(entry.pending_math)return false;const auto prerequisite=entry.page;
             if(prerequisite!=value){if(prerequisite!=page&&can_visit(prerequisite))(void)change_page(prerequisite);return false;}}
         if (!can_visit(value)) return false;
+        deferred_entry.cancel();
         // A selector jump cannot bypass a declared prerequisite, even when
         // old progress or an imported bookmark already reaches a later page.
         if (hooks.before_page_change) hooks.before_page_change(window);
@@ -3342,6 +3392,7 @@ struct LessonView {
             // Explicit reset affects only this quiz; compiler drafts and jobs stay intact.
             updating = true; vm.response = {};
             verified_math.erase(key(index));
+            rejected_math.erase(key(index));deferred_entry.cancel();
             if (vm.answer_editor) vm.answer_editor->reset(windows::EditorDocument{});
             if(vm.fill)vm.fill->reset();
             if(vm.math){
@@ -3632,6 +3683,8 @@ struct LessonView {
                 if(correct){refresh_compiler_history(index);mark_dirty();flush();refresh_references();}
             }
         }
+        if(!laboratory()&&!curriculum::has_compiler_objective(block(index))&&vm.status)
+            set_rich_text(vm.status,unavailable_compiler_status());
         reflow();
     }
     HWND import_text(int id, std::string_view text, bool scrollable = true) {
@@ -3731,8 +3784,9 @@ struct LessonView {
         try {
             state::validate_lesson_state(import_preview->data, lesson,route);
             state::commit_android_import(*import_preview, environment.paths.root);
+            cancel_restore();deferred_entry.cancel();verified_math.clear();rejected_math.clear();math_answer_generations.clear();
             data = store.load(); state::prepare_lesson_state(data, lesson);
-            page = resolve_entry_page(state::current_page(data, lesson)); dirty = false; import_done = true;
+            begin_entry(state::current_page(data, lesson)); dirty = false; import_done = true;
             import_preview.reset();
             SendMessageW(import_path, EM_SETREADONLY, TRUE, 0);
             for (auto item : {import_browse, import_review, import_commit}) EnableWindow(item, FALSE);
@@ -3753,7 +3807,7 @@ struct LessonView {
             DestroyWindow(*item); *item = nullptr;
         }
         EnableWindow(menu,TRUE);
-        if (import_done) { scroll = 0; render_page(); }
+        if (import_done) { scroll = 0; render_page();verify_saved_math(); }
         else update_navigation();
         ShowWindow(pane, SW_SHOW); SetFocus(menu);
         if (reader_bar && IsWindow(reader_bar)) ShowWindow(reader_bar,SW_SHOWNOACTIVATE);
@@ -4028,8 +4082,11 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case enter_key_message:return lparam&&view->enter_key(*reinterpret_cast<const MSG*>(lparam));
         case header_action_message: {
             std::function<void(HWND)> action;
-            if (wparam == back_id) action = view->hooks.back_to_catalog;
-            else if (wparam == reader_id) action = view->hooks.reader_requested;
+            if (wparam == back_id){
+                if(view->deferred_entry.waiting())view->deferred_entry.invalidate();
+                action = view->hooks.back_to_catalog;
+            }
+            else if (wparam == reader_id&&!view->deferred_entry.waiting()) action = view->hooks.reader_requested;
             else if (wparam == language_id) action = view->hooks.language_requested;
             else if (wparam == attempts_id&&!view->attempt_state.premium) action = view->hooks.attempts_requested;
             else if (wparam == settings_id) action = view->hooks.settings_requested;
