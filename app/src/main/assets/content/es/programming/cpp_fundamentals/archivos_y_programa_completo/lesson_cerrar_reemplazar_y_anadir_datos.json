@@ -301,15 +301,26 @@
             "5: app siempre reemplaza."
           ],
           "correctIndex": 1,
-          "explanation": "Las inserciones concatenan caracteres; app decide dónde escribir, sin añadir separadores. Sólo se obtienen dos enteros."
+          "explanation": "Las inserciones concatenan caracteres; app decide dónde escribir, sin añadir separadores. Sólo se obtienen dos enteros.",
+          "reviewFeedback": [
+            "Localiza qué carácter sigue inmediatamente al último carácter ya escrito. El modo de apertura no añade caracteres que no se hayan escrito.",
+            "Distingue los caracteres del archivo de los valores que resultan al leerlos como enteros.",
+            "Compara qué hace std::ios::app con el modo de apertura predeterminado; después sigue la segunda escritura."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Repara únicamente los caracteres de la segunda escritura para separar el tercero de los enteros anteriores. El programa inicial compila, muestra Lectura incompleta y termina con código 1. La acción conserva ese diagnóstico sin calificar una ejecución fallida. El objetivo de reparación termina correctamente, calcula Total=12 desde tres datos leídos y puede comprobarse con Compilar, ejecutar y comprobar. Conserva las comprobaciones de todas las etapas.",
+          "text": "En este editor, conserva ambas aperturas y repara únicamente la cadena de la segunda escritura. La primera escritura debe seguir preparando el texto 3 4 en cada ejecución; la segunda apertura debe conservar su modo de adición.\n\nPrimero ejecuta el programa inicial con Compilar, ejecutar y comprobar. Si las aperturas, escrituras y cierres tienen éxito, la consola muestra Lectura incompleta y el programa termina con código 1. Ese diagnóstico permite observar el fallo; todavía no completa el objetivo de reparación. Si obtienes otro diagnóstico, identifica la etapa que señala antes de continuar.\n\nModifica los caracteres de la segunda cadena para que el archivo permita extraer tres enteros separados, en este orden: 3, 4 y 5. Conserva los cierres, las comprobaciones de apertura, escritura y extracción, y el cálculo de la suma a partir de los valores leídos. No cambies el modo de apertura para corregir un problema de separación entre los datos.\n\nEl programa reparado debe mostrar exactamente Total=12 en la consola, sin títulos ni líneas vacías, y terminar con código 0. Se admite ese texto sin salto final o con un único salto de línea al final. Vuelve a usar Compilar, ejecutar y comprobar después de tu modificación.\n\nAl completar el objetivo podrás consultar la referencia posterior. Compara los caracteres de la segunda cadena y comprueba que ambas aperturas conservan su función. El veredicto comprueba la salida solicitada; revisa además que el programa conserve las tres extracciones comprobadas y calcule desde esos datos.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold",
+              "occurrence": 2
             }
           ]
         },
@@ -1089,6 +1100,16 @@
         "id": "block_0005_0002",
         "beforeSha256": "5530152564fc0424d687b947084473adf203069edd6c1c9c9295f90a5138fae4",
         "afterSha256": "8862987a96139ba33fd9ba1d1aa97dd2adf9378a38028beb15a738697512988d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "d86a37ce31908280b2bfa0c2db787892ac6886b202584058d09aa6e06b720837",
+        "afterSha256": "0623f7b364b8a64e7d50375576b197278f75f016602f06ff5cc42658d349101b"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "9f7b042b04d3a5da6d59c52df61493e74231bfb85a73cc4827cd92fae108b35a",
+        "afterSha256": "2bfb96456242bb5f43977bcc21c8aaa4a9657394095c8b1a89b87fba3c7a6ac2"
       }
     ]
   },
@@ -1108,6 +1129,13 @@
         "block_0006_0000",
         "block_0006_0001"
       ]
+    },
+    {
+      "activity": "block_0007_0003",
+      "blocks": [
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
     }
   ],
   "activityAfter": [
@@ -1123,5 +1151,6 @@
         "block_0005_0003"
       ]
     }
-  ]
+  ],
+  "compilerPuzzlesRequired": true
 }
