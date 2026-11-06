@@ -17,6 +17,7 @@ class U12ComposedOutputFixturesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.before, cls.after, cls.family = fixture.candidate()
+        cls.current_before, cls.current, cls.current_family = fixture.current_candidate()
         cls.qa = fixture.ROOT / "out" / "qa" / "u12-composed-output-python"
         cls.qa.mkdir(parents=True, exist_ok=True)
 
@@ -196,6 +197,158 @@ class U12ComposedOutputFixturesTest(unittest.TestCase):
                 return  # Native Windows may not grant symlink creation.
             with self.assertRaises(ValueError): fixture.export(link / "fixtures")
             self.assertEqual([], list(real.iterdir()))
+
+    def test_current_pair_keeps_real_old_pages_and_authenticates_the_seven_later_revisions(self):
+        before, current = self.current_before, self.current
+        self.assertEqual(self.before, before); self.assertEqual(self.family, self.current_family)
+        self.assertEqual("57c0044a7484f1e6726383e9f880137cf43f6aa9", fixture.CURRENT_AFTER_COMMIT)
+        self.assertEqual("ef77e1f7d47ab04a43690723c0bf18a97d52bb8ab7323c0df48f34997b807d87",
+                         hashlib.sha256(fixture.historical_current_bytes()).hexdigest())
+        self.assertEqual(fixture.CURRENT_PAGES_SHA256, layout.fingerprint(current["pages"]))
+        self.assertEqual(fixture.CURRENT_EDITORIAL_SHA256, layout.fingerprint(current["stateLayout"]["editorial"]))
+        self.assertEqual(self.after["pages"][:2], current["pages"][:2])
+        self.assertEqual(self.after["stateLayout"]["editorial"], current["stateLayout"]["editorial"][:8])
+        self.assertEqual(15, len(current["stateLayout"]["editorial"]))
+        old, new = layout._blocks(self.after), layout._blocks(current)
+        self.assertEqual(set(fixture.CURRENT_SUFFIX), {key for key in old if old[key] != new[key]})
+        for index, (identity, (page, block, old_sha, new_sha)) in enumerate(fixture.CURRENT_SUFFIX.items()):
+            self.assertGreaterEqual(page, 2)
+            self.assertEqual((old_sha, new_sha), tuple(layout.fingerprint(values[identity]) for values in (old, new)))
+            self.assertEqual({"id": identity, "beforeSha256": old_sha, "afterSha256": new_sha},
+                             current["stateLayout"]["editorial"][8 + index])
+            self.assertEqual(new[identity], current["pages"][page]["blocks"][block])
+        restored = deepcopy(current)
+        for identity, (page, block, _, _) in fixture.CURRENT_SUFFIX.items():
+            restored["pages"][page]["blocks"][block] = deepcopy(old[identity])
+        del restored["stateLayout"]["editorial"][8:]
+        for field in ("compilerPuzzlesRequired", "referenceAfter", "activityAfter"): del restored[field]
+        self.assertEqual(self.after, restored)
+
+    def test_current_preserves_all_25_response_contracts_seven_sources_and_authored_gates(self):
+        before, current = self.current_before, self.current
+        original, active = layout._blocks(layout.prepare(before)), layout._blocks(current)
+        self.assertEqual(25, len(active)); self.assertEqual(original.keys(), active.keys())
+        for identity in original:
+            self.assertEqual(layout.state_fingerprint(original[identity]), layout.state_fingerprint(active[identity]), identity)
+            for field in ("code", "initialCode", "answers", "options", "correctIndex", "outputCheck", "explanation"):
+                self.assertEqual(original[identity].get(field), active[identity].get(field), (identity, field))
+        self.assertEqual(7, sum(field in block for block in original.values() for field in ("code", "initialCode")))
+        for field in self.after["stateLayout"]:
+            if field != "editorial": self.assertEqual(self.after["stateLayout"][field], current["stateLayout"][field], field)
+        self.assertTrue(current["compilerPuzzlesRequired"])
+        self.assertEqual([{"activity": "block_0002_0003", "blocks": [f"block_0003_{index:04d}" for index in range(6)]}], current["referenceAfter"])
+        self.assertEqual([{"activity": "block_0004_0001", "requires": ["block_0002_0003"]}], current["activityAfter"])
+        draft = deepcopy(current); del draft["stateLayout"]
+        self.assertEqual(current, layout.prepare_v2(draft, "es", self.current_family, before))
+        layout.validate_transition(before, current); layout.validate_transition(self.after, current)
+        layout.check_localized_family([current, self.current_family["en"], self.current_family["fr"]], ["es", "en", "fr"])
+
+    def test_coherent_new_prose_relocations_and_other_family_cannot_borrow_the_current_pair(self):
+        # These are coherent alternative documents, not merely corrupt hashes.
+        # Native/publishing validity does not authenticate them as this source.
+        for page, block in ((0, 1), (0, 0), (1, 2), (2, 1)):
+            draft = deepcopy(self.current); draft["pages"][page]["blocks"][block]["text"] += " Otra prosa compatible."
+            changed = layout.prepare_v2(draft, "es", self.current_family, self.current)
+            layout.validate_transition(self.current, changed)
+            with self.subTest(prose=(page, block)), self.assertRaises(ValueError):
+                fixture.verify_current_pair(self.current_before, changed, self.current_family)
+        moved = deepcopy(self.current)
+        blocks = moved["pages"][0]["blocks"]; blocks[1], blocks[3] = blocks[3], blocks[1]
+        identities = moved["stateLayout"]["current"][0]["blocks"]; identities[1], identities[3] = identities[3], identities[1]
+        layout.validate_transition(self.current, moved)
+        with self.assertRaises(ValueError): fixture.verify_current_pair(self.current_before, moved, self.current_family)
+        other_family = deepcopy(self.current_family); other_family["en"]["title"] += " other publication"
+        draft = deepcopy(self.current); del draft["stateLayout"]
+        other = layout.prepare_v2(draft, "es", other_family, self.current_before)
+        layout.check_localized_family([other, other_family["en"], other_family["fr"]], ["es", "en", "fr"])
+        with self.assertRaises(ValueError): fixture.verify_current_pair(self.current_before, other, other_family)
+
+    def test_current_bytes_provenance_and_family_sources_are_closed(self):
+        for locale in ("es", "en", "fr"):
+            raw = fixture.historical_current_bytes(locale)
+            self.assertEqual(fixture.CURRENT_SOURCE_HASHES[locale], hashlib.sha256(raw).hexdigest())
+            self.assertNotIn(b"\r", raw)
+            with self.assertRaises(ValueError): fixture.verify_current_bytes(locale, raw + b"\n")
+            if locale != "es": self.assertEqual(fixture.historical_bytes(locale), raw)
+        with self.assertRaises(ValueError): fixture.historical_current_bytes("de")
+        with patch.object(fixture.subprocess, "check_output", return_value=b"{}"), self.assertRaises(ValueError): fixture.current_candidate()
+        for mode in ("missing_suffix", "suffix_order", "old_edge", "new_edge", "source", "answer", "family"):
+            changed = deepcopy(self.current)
+            if mode == "missing_suffix": changed["stateLayout"]["editorial"].pop()
+            elif mode == "suffix_order": changed["stateLayout"]["editorial"][8:10] = changed["stateLayout"]["editorial"][8:10][::-1]
+            elif mode == "old_edge": changed["stateLayout"]["editorial"][0]["beforeSha256"] = "0" * 64
+            elif mode == "new_edge": changed["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+            elif mode == "source": changed["pages"][2]["blocks"][3]["initialCode"] += "// other source\n"
+            elif mode == "answer": changed["pages"][4]["blocks"][1]["answers"] = ["Error escritura"]
+            else: changed["stateLayout"]["family"]["fr"]["sha256"] = "0" * 64
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                fixture.verify_current_pair(self.current_before, changed, self.current_family)
+        changed_family = deepcopy(self.current_family); changed_family["fr"]["title"] += " altered"
+        with self.assertRaises(ValueError): fixture.verify_current_pair(self.current_before, self.current, changed_family)
+
+    def test_current_export_is_separate_idempotent_and_keeps_the_original_manifest_byte_exact(self):
+        active = [fixture.ROOT / (fixture.PREFIX.format(locale=locale) + fixture.LESSON) for locale in ("es", "en", "fr")]
+        originals = {path: path.read_bytes() for path in active}
+        with tempfile.TemporaryDirectory(prefix="current-export-", dir=self.qa) as temporary:
+            root = Path(temporary); old_dir = root / "adoption"; new_dir = root / "current"
+            old_manifest = fixture.export(old_dir)
+            self.assertEqual("9def30f523bdb8be88b1f73a7e854cf53e5bc2d3cbd35d4b63c153949d9c5ad9", hashlib.sha256(old_manifest.read_bytes()).hexdigest())
+            old_snapshot = {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in old_dir.iterdir()}
+            manifest = fixture.export_current(new_dir)
+            new_snapshot = {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in new_dir.iterdir()}
+            self.assertEqual({"before.json", "after.json", "manifest.json"}, new_snapshot.keys())
+            self.assertEqual(fixture.historical_bytes(), new_snapshot["before.json"][0])
+            self.assertEqual(fixture.historical_current_bytes(), new_snapshot["after.json"][0])
+            details = json.loads(manifest.read_bytes())
+            self.assertEqual(fixture.CURRENT_AFTER_COMMIT, details["afterCommit"])
+            self.assertEqual((0, 15, 25, 7), tuple(details[key] for key in ("editorialBefore", "editorialAfter", "identities", "sources")))
+            self.assertEqual([0, 1], details["reconstructedPages"])
+            self.assertEqual(self.current["stateLayout"]["editorial"][8:], details["laterEditorial"])
+            self.assertEqual(set(fixture.PARAGRAPHS) | set(fixture.GUIDES), details["previousBlocks"].keys())
+            fixture.export_current(new_dir)
+            self.assertEqual(new_snapshot, {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in new_dir.iterdir()})
+            for exporter, target in ((fixture.export_current, old_dir), (fixture.export, new_dir)):
+                with self.assertRaises(FileExistsError): exporter(target)
+            self.assertEqual(old_snapshot, {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in old_dir.iterdir()})
+            self.assertEqual(new_snapshot, {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in new_dir.iterdir()})
+            cli = subprocess.run([sys.executable, "-B", str(Path(fixture.__file__)), "--current-output-dir", str(new_dir)],
+                                 cwd=fixture.ROOT, capture_output=True, text=True)
+            self.assertEqual(0, cli.returncode, cli.stderr)
+            absent = root / "mutually-exclusive"
+            cli = subprocess.run([sys.executable, "-B", str(Path(fixture.__file__)), "--output-dir", str(absent),
+                                  "--current-output-dir", str(absent)], cwd=fixture.ROOT, capture_output=True, text=True)
+            self.assertEqual(2, cli.returncode); self.assertFalse(absent.exists())
+        self.assertEqual(originals, {path: path.read_bytes() for path in active})
+
+    def test_current_export_conflicts_bad_inputs_links_and_foreign_roots_are_portable(self):
+        with tempfile.TemporaryDirectory(prefix="current-negative-", dir=self.qa) as temporary:
+            root = Path(temporary)
+            for name in ("before.json", "after.json", "manifest.json"):
+                target = root / name.replace(".", "-"); target.mkdir(); (target / name).write_bytes(b"keep original")
+                with self.subTest(name=name), self.assertRaises(FileExistsError): fixture.export_current(target)
+                self.assertEqual({name: b"keep original"}, {path.name: path.read_bytes() for path in target.iterdir()})
+            target = root / "bad-input"
+            with patch.object(fixture, "historical_current_bytes", return_value=b"{}"), self.assertRaises((ValueError, KeyError)):
+                fixture.export_current(target)
+            self.assertFalse(target.exists())
+            names = ("LearnGameAndEngineDev-Codex", "LearnGameAndEngineDev-Work")
+            for index, name in enumerate(names):
+                parent = root / str(index); parent.mkdir()
+                owner = parent / name; owner.mkdir(); (owner / ".git").write_text("QA owner", encoding="utf-8")
+                other = parent / names[1-index]; other.mkdir(); (other / ".git").write_text("QA foreign", encoding="utf-8")
+                with patch.object(fixture, "ROOT", owner), patch.object(fixture, "current_candidate") as authenticate, self.assertRaises(ValueError):
+                    fixture.export_current(other / "out" / "qa" / "fixtures")
+                authenticate.assert_not_called(); self.assertFalse((other / "out").exists())
+            nested = root / "nested"; nested.mkdir(); (nested / ".git").write_text("QA nested", encoding="utf-8")
+            with self.assertRaises(ValueError): fixture.export_current(nested / "out")
+            self.assertFalse((nested / "out").exists())
+            real = root / "real"; real.mkdir(); link = root / "link"
+            try: link.symlink_to(real, target_is_directory=True)
+            except OSError: return
+            with self.assertRaises(ValueError): fixture.export_current(link / "fixtures")
+            self.assertEqual([], list(real.iterdir()))
+        for output in (fixture.ROOT, fixture.ROOT / "out", fixture.ROOT / "build", fixture.ROOT / "scripts" / "curriculum"):
+            with self.subTest(output=output), self.assertRaises(ValueError): fixture.export_current(output)
 
 
 if __name__ == "__main__":

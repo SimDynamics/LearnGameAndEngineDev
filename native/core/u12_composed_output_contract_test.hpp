@@ -3,12 +3,13 @@
 // Included in lesson_tests.cpp's anonymous namespace. State payloads below
 // are synthetic unit data; they do not represent curricular work or hearing.
 void u12_composed_output_contract(const std::filesystem::path& before_path,
-        const std::filesystem::path& after_path) {
+        const std::filesystem::path& after_path,bool current_stage=false) {
     using namespace lgaed;
     using namespace winrt::Windows::Data::Json;
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
     check(state::sha256(before_bytes)=="be285a02171b33a68b30900a7739ffd8b8c5ce5ccee98b6f78ec73f41ad797be"
-        &&state::sha256(after_bytes)=="eb160976072ae3bb891ea5fab0bb1336a7d24bb0a83282756634d5189814a6f3",
+        &&state::sha256(after_bytes)==(current_stage?"ef77e1f7d47ab04a43690723c0bf18a97d52bb8ab7323c0df48f34997b807d87"
+            :"eb160976072ae3bb891ea5fab0bb1336a7d24bb0a83282756634d5189814a6f3"),
         "The U12L4 fixtures differ from the complete pinned unmapped/v2 publications");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
     const auto prior=windows::parse_lesson_progress_metadata(before.raw_json),metadata=windows::parse_lesson_progress_metadata(after.raw_json);
@@ -19,16 +20,18 @@ void u12_composed_output_contract(const std::filesystem::path& before_path,
     check(before.id=="cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla"&&before.id==after.id
         &&before.locale=="es"&&after.locale=="es"&&old_root.Size()==3&&!old_root.HasKey(L"stateLayout")
         &&before.state_layout.version==0&&prior.state_layout.version==0&&after.state_layout.version==2
-        &&metadata.state_layout.version==2&&root.Size()==4&&before.pages.size()==5&&after.pages.size()==5
+        &&metadata.state_layout.version==2&&root.Size()==(current_stage?7u:4u)&&before.pages.size()==5&&after.pages.size()==5
         &&before.state_layout.reading_revisions.empty()&&prior.state_layout.reading_revisions.empty(),
         "The authentic U12L4 pair lost its unmapped predecessor, first v2 adoption or language/owner");
-    check(layout.GetNamedArray(L"additions").Size()==0&&layout.GetNamedArray(L"editorial").Size()==8
+    check(layout.GetNamedArray(L"additions").Size()==0&&layout.GetNamedArray(L"editorial").Size()==(current_stage?15u:8u)
         &&fingerprint(layout.GetNamedObject(L"family"))=="f9865100c59e76353575893fd342d00b0ce5eee3ef2c9605a4b9189db4fbd887"
         &&fingerprint(layout.GetNamedArray(L"origin"))=="6c5a4300e032dfde02180cfb468cbb2b418931fbc65fb8f771561aa30b2dbee3"
         &&fingerprint(layout.GetNamedArray(L"current"))=="430aa6b167fac29d684c9c45734b6c611ce06be9bbd16a303c598d1c562a6e92"
-        &&fingerprint(layout.GetNamedArray(L"editorial"))=="1ad25edf3618c1f51a1e21504b52bbc65f27d70b7deba6ef5344d126912c345b"
+        &&fingerprint(layout.GetNamedArray(L"editorial"))==(current_stage?"317364cd08c3847423c5a3d3a6b8b017e1882f91be895b738361aef13a68a956"
+            :"1ad25edf3618c1f51a1e21504b52bbc65f27d70b7deba6ef5344d126912c345b")
         &&fingerprint(old_root.GetNamedArray(L"pages"))=="ffeb1349bb0fcd7d1bc9e7002c344ce68e3fcf4a8162464e9b908606521010a8"
-        &&fingerprint(root.GetNamedArray(L"pages"))=="b3ee4c125cf8fbc0242a4a0cbb24f34dc03677d84ad6485c7c319c8fbd878852",
+        &&fingerprint(root.GetNamedArray(L"pages"))==(current_stage?"5c2c07a09c4679edb36ce6c246d0dcb265f00ab856f583ee52a4ad5e1c2ef14b"
+            :"b3ee4c125cf8fbc0242a4a0cbb24f34dc03677d84ad6485c7c319c8fbd878852"),
         "The U12L4 adoption lost its full five-page payload, family, maps or exact ordered eight proofs");
     struct Change{const char* id;unsigned page,index;bool prose;const char* previous;const char* current;};
     const std::array<Change,8> changes{{
@@ -40,6 +43,17 @@ void u12_composed_output_contract(const std::filesystem::path& before_path,
         {"block_0001_0003",1,3,false,"faf6393e200b49d4b9a31be600ebabd33fe4f7b224ff6bfbc6479a7027382480","4d21f3591bfa76c81c6fa7fdc48ffb455745414abdad0fc9cf1cb768b9d7bf0f"},
         {"block_0001_0004",1,4,false,"5259a7687faffd5b6daf28dd2db9a4f73c387bc13c9f78b97affee8c1987b622","7fed11b6ada96a990c364b94264c5152690187a2b59106156cfe225daa2c31b3"},
         {"block_0001_0005",1,5,false,"2b80ca083b2d0eb1b2a5b9492a15ae5ae2095f880cbcb65f36276a6069705109","8216c1ca7b4af782b539a6e72edf5b36ccd0d3fcf98103a21da4453398dbaf22"}
+    }};
+    // These later published paragraphs remain current. Their old payloads
+    // authenticate this fixture only; they never enter the positional archive.
+    const std::array<Change,7> suffix{{
+        {"block_0002_0001",2,1,true,"5683b9e6da30e5658b28bbbbbc4cfa602b652c8cb562d846f32c20ab336b2fe5","8aad687163b7361a3fdbab5bebb06aa3b0e57af18d50765a8938368805660e15"},
+        {"block_0002_0002",2,2,true,"f3456920a23b18612356d5296cfcf87adb6e561f03ab7a7273a7ac441c59e6f6","555990b854070163a6d96061ca9fa690a0a2cd8a1c9e47b478eb0dd80b112cbe"},
+        {"block_0002_0004",2,4,true,"b19392377d5785801d0bbd9fe19e2c2ef50978ebf3fbbb5a510fcbdf1636bc08","139186b1b82089ff714c591ffc9c4ed37bea650945b460e7ff5e8dc0d45f9b42"},
+        {"block_0003_0000",3,0,true,"188c6c1eb53fc0be219b19b818186ea265781a702fc61f0d857218b0ceda24c3","087adcf253a4fe3b8c6a7ec07f9ff09d5328f159d5862f6e93533e40224e558d"},
+        {"block_0003_0002",3,2,true,"f277c8b2a5771dfce3e39f4aec72e1901985325daa8b26e70323bd66bcdb2ab7","0c246776640f64ba0d425dc54691b9ce686e2d4bdf9726c48b881b1c14993610"},
+        {"block_0003_0003",3,3,true,"9a5f1fe62ddc28a6d0149f303e7259032bdad3930f7142b1a0c09e1dfa49f402","678f48ca832205258f8e20b607727d87300dffa7e708c9ff6dae5ed7a823246e"},
+        {"block_0003_0004",3,4,true,"4c7882e27fbce78d45d53fd67b0e9f7eb25a26693e4ad2709ba1bb2bc6be75da","3582a8ce527b0e5a588794b19fce3238e5d7560740da2c930c3247a4ed4b55c8"}
     }};
     const auto restored=JsonObject::Parse(root.Stringify());restored.Remove(L"stateLayout");
     for(unsigned i=0;i<changes.size();++i){const auto& item=changes[i];const auto old=block(old_root,item.page,item.index),now=block(root,item.page,item.index);
@@ -56,6 +70,35 @@ void u12_composed_output_contract(const std::filesystem::path& before_path,
         }
         check(fingerprint(old_fields)==fingerprint(new_fields),"The U12L4 first adoption changed an exercise contract beyond its new guide");
         restored.GetNamedArray(L"pages").GetObjectAt(item.page).GetNamedArray(L"blocks").SetAt(item.index,old);
+    }
+    if(current_stage){
+        for(unsigned i=0;i<suffix.size();++i){const auto& item=suffix[i];const auto old=block(old_root,item.page,item.index),now=block(root,item.page,item.index);
+            const auto proof=layout.GetNamedArray(L"editorial").GetObjectAt(8+i);
+            check(fingerprint(old)==item.previous&&fingerprint(now)==item.current&&proof.Size()==3
+                &&winrt::to_string(proof.GetNamedString(L"id"))==item.id
+                &&winrt::to_string(proof.GetNamedString(L"beforeSha256"))==item.previous
+                &&winrt::to_string(proof.GetNamedString(L"afterSha256"))==item.current,
+                "The current U12L4 publication lost one of its seven complete later blocks or ordered editorial proofs");
+            const auto prior_fields=JsonObject::Parse(old.Stringify()),current_fields=JsonObject::Parse(now.Stringify());
+            prior_fields.Remove(L"text");current_fields.Remove(L"text");
+            if(i<2){if(prior_fields.HasKey(L"emphasis"))prior_fields.Remove(L"emphasis");if(current_fields.HasKey(L"emphasis"))current_fields.Remove(L"emphasis");}
+            check(fingerprint(prior_fields)==fingerprint(current_fields),"A later U12L4 prose clarification changed a non-prose payload");
+            restored.GetNamedArray(L"pages").GetObjectAt(item.page).GetNamedArray(L"blocks").SetAt(item.index,old);
+        }
+        const auto references=JsonArray::Parse(LR"([{"activity":"block_0002_0003","blocks":["block_0003_0000","block_0003_0001","block_0003_0002","block_0003_0003","block_0003_0004","block_0003_0005"]}])");
+        const auto activities=JsonArray::Parse(LR"([{"activity":"block_0004_0001","requires":["block_0002_0003"]}])");
+        check(root.GetNamedBoolean(L"compilerPuzzlesRequired")&&after.compiler_puzzles_required&&metadata.compiler_puzzles_required
+            &&fingerprint(root.GetNamedArray(L"referenceAfter"))==fingerprint(references)
+            &&fingerprint(root.GetNamedArray(L"activityAfter"))==fingerprint(activities)
+            &&after.reference_after.size()==1&&after.activity_after.size()==1
+            &&metadata.reference_after.size()==1&&metadata.activity_after.size()==1,
+            "The current U12L4 publication lost the real compiler gate, six-block reference boundary or dependent prediction");
+        for(const auto* model:{&after,&metadata})check(model->reference_after[0].activity=="block_0002_0003"
+            &&model->reference_after[0].blocks==std::vector<std::string>{"block_0003_0000","block_0003_0001","block_0003_0002","block_0003_0003","block_0003_0004","block_0003_0005"}
+            &&model->activity_after[0].activity=="block_0004_0001"
+            &&model->activity_after[0].prerequisites==std::vector<std::string>{"block_0002_0003"},
+            "Runtime/catalog changed a current U12L4 reference/prerequisite identity");
+        for(const auto field:{L"compilerPuzzlesRequired",L"referenceAfter",L"activityAfter"})restored.Remove(field);
     }
     check(fingerprint(restored)==fingerprint(old_root),"The U12L4 adoption changed fields outside its eight authentic editorial blocks");
     const std::array<std::size_t,5> shape{5,6,5,6,3};std::size_t identities=0,sources=0,activities=0;
@@ -82,7 +125,16 @@ void u12_composed_output_contract(const std::filesystem::path& before_path,
                 "The U12L4 archive lost the complete authentic old paragraph or unreviewed exercise");
             historical.GetNamedArray(L"pages").GetObjectAt(item.page).GetNamedArray(L"blocks").SetAt(item.index,JsonObject::Parse(winrt::to_hstring(found->second)));
         }
-        check(fingerprint(historical)==fingerprint(old_root),"The U12L4 prior reading snapshot fabricated or omitted an independent old page/block");
+        if(current_stage){
+            JsonArray old_pages,archived_pages;
+            for(unsigned p=0;p<2;++p){old_pages.Append(old_root.GetNamedArray(L"pages").GetAt(p));archived_pages.Append(historical.GetNamedArray(L"pages").GetAt(p));}
+            check(fingerprint(old_pages)=="fcc6108499fd8f21209a035a8676be437251dc5ab2c7c849b18f57f20f2bd966"
+                &&fingerprint(archived_pages)==fingerprint(old_pages),"The current U12L4 positional archive did not reconstruct its authentic first two old pages");
+            for(unsigned p=2;p<5;++p)check(fingerprint(historical.GetNamedArray(L"pages").GetAt(p))==fingerprint(root.GetNamedArray(L"pages").GetAt(p)),
+                "The current U12L4 positional archive fabricated an old script for an unrelated later page");
+            for(const auto& [id,raw]:revisions[0].previous_blocks){(void)raw;const auto at=stable_block_position(*model,id);
+                check(at&&at->page<2,"A later U12L4 clarification borrowed the first two pages' positional archive");}
+        }else check(fingerprint(historical)==fingerprint(old_root),"The U12L4 prior reading snapshot fabricated or omitted an independent old page/block");
     }
     check(after.state_layout.reading_revisions[0].previous_blocks==metadata.state_layout.reading_revisions[0].previous_blocks,
         "Runtime/catalog disagree on U12L4's authenticated old script");
@@ -148,6 +200,24 @@ void u12_composed_output_contract(const std::filesystem::path& before_path,
             edge.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(fingerprint(item))));map.GetNamedArray(L"editorial").Append(edge);}
         no_archive(altered,change=="locale"?"en":"es");
     }
+    if(current_stage)for(const auto mode:{"suffix_text","suffix_emphasis","suffix_order","unreviewed_p5"}){
+        const auto altered=JsonObject::Parse(root.Stringify()),map=altered.GetNamedObject(L"stateLayout");const auto change=std::string_view(mode);
+        if(change=="suffix_text"||change=="suffix_emphasis"){
+            const auto content=block(altered,2,1);
+            if(change=="suffix_text")content.Insert(L"text",JsonValue::CreateStringValue(L"Otra aclaración coherente de la revisión posterior."));
+            else content.Remove(L"emphasis");
+            map.GetNamedArray(L"editorial").GetObjectAt(8).Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(fingerprint(content))));
+        }else if(change=="suffix_order"){
+            const auto edges=map.GetNamedArray(L"editorial");const auto previous=edges.GetAt(13);edges.SetAt(13,edges.GetAt(14));edges.SetAt(14,previous);
+        }else{
+            const auto content=block(altered,4,2);const auto previous=fingerprint(content);
+            content.Insert(L"text",JsonValue::CreateStringValue(L"Otra prosa coherente de p5 sin procedencia histórica revisada."));
+            JsonObject edge;edge.Insert(L"id",JsonValue::CreateStringValue(L"block_0004_0002"));
+            edge.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(previous)));
+            edge.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(fingerprint(content))));map.GetNamedArray(L"editorial").Append(edge);
+        }
+        no_archive(altered);
+    }
     for(const auto mode:{"identity","type","answer","source","correct","option","after_proof","origin_signature","unknown_current","injected","positional_injected"}){
         const auto altered=JsonObject::Parse(root.Stringify()),map=altered.GetNamedObject(L"stateLayout");const auto change=std::string_view(mode);
         if(change=="identity")block(altered,1,1).Insert(L"id",JsonValue::CreateStringValue(L"another_prediction_owner"));
@@ -168,5 +238,6 @@ void u12_composed_output_contract(const std::filesystem::path& before_path,
         rejects([&]{(void)windows::parse_lesson_progress_metadata(raw);},"An incompatible/injected U12L4 contract passed catalog metadata");
     }
     check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,"U12L4 contract verification rewrote its immutable fixture inputs");
-    std::cout<<"PASS U12L4 first-v2 contract: exact unmapped/current five-page pair, 25 identities/seven sources/eight editorial changes, eight complete positional old blocks in runtime/catalog, response and independent draft preservation across correct/error/unfinished unit states, coherent variants without borrowed history and incompatible payload rejection; no UI, execution or listening claim\n";
+    std::cout<<"PASS U12L4 "<<(current_stage?"v0-to-published15":"first-v2")<<" contract: exact complete publications, 25 identities/seven sources/"
+        <<(current_stage?"fifteen":"eight")<<" editorial changes, eight complete positional p1/p2 old blocks in runtime/catalog with later pages left current, response and independent draft preservation across correct/error/unfinished unit states, coherent variants without borrowed history and incompatible payload rejection; no UI, execution or listening claim\n";
 }
