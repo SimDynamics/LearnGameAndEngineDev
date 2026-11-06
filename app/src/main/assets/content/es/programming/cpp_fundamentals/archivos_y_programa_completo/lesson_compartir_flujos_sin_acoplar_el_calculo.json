@@ -270,7 +270,7 @@
         },
         {
           "type": "note",
-          "text": "La referencia aparece en la página siguiente, después del intento. Contrasta también qué hace cada función: el cotejo de las tres líneas no demuestra por sí solo que hayas leído, calculado y escrito mediante los parámetros requeridos. Imprimir el texto como constantes no cumple esos criterios."
+          "text": "La página siguiente presenta una implementación de referencia. Contrasta también qué hace cada función: el cotejo de las tres líneas no demuestra por sí solo que hayas leído, calculado y escrito mediante los parámetros requeridos. Imprimir el texto como constantes no cumple esos criterios."
         }
       ]
     },
@@ -326,7 +326,19 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 x\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 x\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Entrada invalida|9:4"
+                ],
+                "exitCode": 1,
+                "explanation": "La lectura no obtiene los dos enteros. El programa conserva los destinos en nueve y cuatro, informa Entrada invalida|9:4 y termina con el código uno."
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -1238,6 +1250,16 @@
         "id": "block_0001_0001",
         "beforeSha256": "310bbe34dc18b0af48ddb2955723f672c0095091111aa07bf25ea84fc97589c4",
         "afterSha256": "b17bcdd06eca7565d690b0192861421cd9c6ddc406dda455f242c7a850cda9e5"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "be7902be57ccb3336d77b5b4840d0f38bf67f160bed77ab1b244d78ec048a0ea",
+        "afterSha256": "dcd41871f55cc5495289ad6f06250549d2da800bb420bec9d955d237cf46d67a"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c",
+        "afterSha256": "409e9eef8d8c00485a4893b17478d8db9ecf90dedcee137e16ce077f470d0c1d"
       }
     ]
   },
