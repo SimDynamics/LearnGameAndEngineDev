@@ -106,7 +106,7 @@
         {
           "type": "output_prediction",
           "id": "segunda_apertura_reemplaza",
-          "question": "Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. Predice el diagnóstico visible.",
+          "question": "Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible.",
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
           "answers": [
@@ -1063,6 +1063,11 @@
         "id": "block_0004_0003",
         "beforeSha256": "e08a4d797289247c9e83aaf7202d236531af633b5c0d9627949ce376023aef40",
         "afterSha256": "2ccc84b4492f8ce47b14a19da0c89a3cf0a109567839ce2a47642b85503ef721"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3f3f15e209f0d54ce342167a2e007062ebf83bb1784531d40873a75dafd765ef",
+        "afterSha256": "b80a16cd7af0d46d6628a11784747299e7607317f58f87b48a41019f923157b2"
       }
     ]
   },
