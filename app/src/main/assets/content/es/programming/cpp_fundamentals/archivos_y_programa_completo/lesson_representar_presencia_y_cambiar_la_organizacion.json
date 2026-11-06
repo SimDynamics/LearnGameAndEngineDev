@@ -10,11 +10,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Un archivo guarda registros en cierto orden. El programa puede conservarlos en un vector de registros, útil para recorrer su orden de admisión, o reorganizarlos para consultar directamente un ID. Interpretar caracteres y elegir una representación en memoria son decisiones relacionadas, pero no tienen que usar la misma estructura."
+          "text": "Una colección puede conservar los registros admitidos en un `std::vector<Registro>`, manteniendo su orden de entrada. También puede organizar los datos para consultar un identificador sin buscarlo entre todos los registros. La representación en memoria se elige según esas operaciones y puede diferir del orden o de la forma del texto recibido (Stroustrup, 2024).\n\nConstruiremos una tabla para nuestro dominio pequeño de identificadores. Cambiar la organización debe conservar qué recuento corresponde a cada identificador; estudiar el orden de recorrido permitirá reconocer qué información conserva cada opción.",
+          "emphasis": [
+            {
+              "text": "qué recuento corresponde a cada identificador",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Para el dominio pequeño ID 0..9 podemos reservar diez celdas. La posición indica el ID; cada Celda conserva un bool presente y un Recuento. Tener una celda reservada no significa haber recibido un registro. Un Recuento {0,0} también puede pertenecer a un registro presente y válido."
+          "text": "Como los identificadores están entre `0` y `9`, construiremos diez celdas. La posición de cada celda indica su identificador: la posición siete corresponde al identificador siete. El tipo `Celda` reúne un miembro `bool presente` y un miembro `Recuento recuento`.\n\nLa marca `presente` indica si se recibió un registro para esa posición. Crear la celda no significa que el registro esté presente. Sus cantidades pueden ser cero tanto en la inicialización de una celda ausente como en un registro presente y válido. La presencia se guarda por separado de esos valores.",
+          "emphasis": [
+            {
+              "text": "La presencia se guarda por separado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -26,7 +38,12 @@
             "Usando rechazados==0 para descartar ambos casos."
           ],
           "correctIndex": 0,
-          "explanation": "Los ceros son valores permitidos. Necesitamos representar por separado si el registro existe."
+          "explanation": "Los ceros son valores permitidos. Necesitamos representar por separado si el registro existe.",
+          "reviewFeedback": [
+            "Identifica qué miembro indica que la posición recibió un registro y cuáles guardan sus cantidades.",
+            "El dominio permite esa cantidad. Usarla como ausencia confundiría dos estados válidos diferentes.",
+            "Una cantidad cero puede pertenecer a un registro presente. Consulta la marca que representa esa presencia."
+          ]
         }
       ]
     },
@@ -45,11 +62,22 @@
           "answers": [
             "0:1:0"
           ],
-          "explanation": "La celda 3 sigue ausente. La celda 7 está presente y su cantidad aceptados es cero. Reservar diez celdas no crea diez registros presentes."
+          "explanation": "La celda 3 sigue ausente. La celda 7 está presente y su cantidad aceptados es cero. Reservar diez celdas no crea diez registros presentes.",
+          "reviewFeedback": "Distingue la creación de las diez celdas de la asignación que marca una de ellas como presente. Sigue por separado la marca y las cantidades; no deduzcas presencia a partir de una cantidad cero."
         },
         {
           "type": "paragraph",
-          "text": "La construcción con paréntesis solicita diez copias de Celda{false,{0,0}}. Son valores independientes: cambiar la celda 7 no cambia las demás. Consultamos con at() y usamos aquí posiciones conocidas válidas. En funciones que reciban un ID será necesario comprobarlo antes del acceso."
+          "text": "La construcción con paréntesis solicita diez elementos inicializados con `Celda{false, {0, 0}}`. En este tipo, cada celda contiene su propia marca y sus propias cantidades: cambiar la celda siete no cambia las otras. No se crean diez registros presentes; se crean las posiciones que podrán representarlos.\n\n`at()` permite acceder al elemento de una posición y comprueba si está dentro del tamaño del vector; una posición fuera de rango provoca una excepción. El ejemplo usa posiciones conocidas válidas. Nuestras funciones comprobarán el dominio del identificador antes de acceder, para comunicar un rechazo mediante `false` conforme a su contrato (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "su propia marca y sus propias cantidades",
+              "style": "bold"
+            },
+            {
+              "text": "antes de acceder",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -61,7 +89,12 @@
             "Sólo 2, porque el segundo registro reemplaza siempre al primero."
           ],
           "correctIndex": 1,
-          "explanation": "La tabla conserva la asociación entre ID y recuento, pero no el orden de llegada."
+          "explanation": "La tabla conserva la asociación entre ID y recuento, pero no el orden de llegada.",
+          "reviewFeedback": [
+            "La tabla asocia cada posición con un identificador. Recorre las posiciones en el orden indicado, no en el de las inserciones.",
+            "Localiza qué información conserva la posición de la celda y qué orden establece el recorrido.",
+            "Insertar un identificador diferente actúa sobre otra posición. No reemplaza por ese motivo el registro anterior."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -73,7 +106,12 @@
             "Sí, siempre que la nueva cantidad sea distinta de cero."
           ],
           "correctIndex": 1,
-          "explanation": "El bool de presencia decide si ese ID ya está ocupado. Cero es una cantidad válida y no habilita reemplazar un registro repetido."
+          "explanation": "El bool de presencia decide si ese ID ya está ocupado. Cero es una cantidad válida y no habilita reemplazar un registro repetido.",
+          "reviewFeedback": [
+            "La celda ya tiene una marca de presencia. Revisa si las cantidades cero permiten ignorarla.",
+            "La comprobación de repetición se realiza sobre presente antes de asignar el nuevo recuento.",
+            "Que las cantidades nuevas sean diferentes no autoriza a sustituir un identificador que ya está presente."
+          ]
         }
       ]
     },
@@ -85,15 +123,35 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa insertar: recibe una tabla por referencia y un Registro por referencia const. Devuelve false sin cambiarla si no tiene diez celdas, el ID está fuera de 0..9, las cantidades están fuera de 0..10 o la celda ya está presente. Ante true deja esa celda presente con el recuento recibido; las demás no cambian."
+          "text": "Implementa `bool insertar(std::vector<Celda>& tabla, const Registro& registro)`. La tabla se recibe por referencia modificable para poder cambiar una celda; el registro se consulta por referencia constante.\n\nDevuelve `false` sin cambiar la tabla si no tiene diez celdas, el identificador está fuera de `0` a `9`, una cantidad queda fuera de `0` a `10` o la celda ya está presente. Si se acepta, deja esa celda presente con el recuento recibido y devuelve `true`. Las otras celdas deben conservarse.",
+          "emphasis": [
+            {
+              "text": "sin cambiar la tabla",
+              "style": "bold"
+            },
+            {
+              "text": "Las otras celdas deben conservarse",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Implementa consultar: recibe tabla por referencia const, ID por valor y Recuento destino por referencia. Devuelve false y conserva destino si la tabla no tiene diez celdas, el ID está fuera del dominio o la celda está ausente. Ante true copia el recuento de esa celda al destino. Las tablas de esta práctica se crean ausentes y después se modifican sólo mediante insertar."
+          "text": "Implementa `bool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino)`. La tabla se consulta mediante una referencia constante; `id` indica la posición que se quiere consultar y el último parámetro es el objeto del llamador que recibirá las cantidades.\n\nDevuelve `false` y conserva ese destino si la tabla no tiene diez celdas, el identificador está fuera del dominio o la celda está ausente. Devuelve `true` y copia el recuento cuando la celda está presente. En estas prácticas, el Recuento destino de cada consulta es un objeto independiente de las celdas de la tabla. Las tablas de los ejercicios de construcción se crean ausentes y después se modifican sólo mediante `insertar`; `consultar` trabaja sobre tablas preparadas de esa forma.",
+          "emphasis": [
+            {
+              "text": "conserva ese destino",
+              "style": "bold"
+            },
+            {
+              "text": "un objeto independiente",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería. Con tabla ausente de diez celdas, inserta {7,{0,0}}, {7,{1,1}} y {10,{1,1}} y muestra los tres bool separados por dos puntos. Consulta ID 7 y después ID 3, reiniciando el destino en {9,9}; cada consulta muestra bool:aceptados:rechazados. En otra tabla ausente inserta {0,{1,2}} y {9,{10,10}}; intenta además ID -1, ID 10 y cantidades {-1,0} y {0,11} en ID 4. Muestra Fronteras: seguido de esos seis bool separados por dos puntos. Consulta -1 y 10 con destino {9,9}, una línea bool:aceptados:rechazados por consulta. Finalmente crea una tabla de nueve celdas, intenta insertar ID 0 y consultar ID 0 con destino {9,9}, y muestra Tamano:insertado:consultado:aceptados:rechazados. Cada línea termina con salto. Resuelve el puzzle previo y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "text": "Construye una sola batería. Empieza con una tabla de diez celdas ausentes e inserta, en orden, `{7, {0, 0}}`, `{7, {1, 1}}` y `{10, {1, 1}}`. Muestra sus tres resultados booleanos separados por dos puntos. Consulta después los identificadores siete y tres, reiniciando el destino en `{9, 9}` antes de cada consulta; cada informe muestra `bool:aceptados:rechazados`.\n\nEn otra tabla de diez celdas ausentes, intenta insertar en este orden: `{0, {1, 2}}`, `{9, {10, 10}}`, `{-1, {1, 1}}`, `{10, {1, 1}}`, `{4, {-1, 0}}` y `{4, {0, 11}}`. Muestra el literal `\"Fronteras:\"` seguido de esos seis resultados, separados por dos puntos. Consulta después los identificadores menos uno y diez, con destino `{9, 9}` reiniciado antes de cada llamada; muestra un informe por consulta.\n\nPor último crea una tabla de nueve celdas ausentes. Intenta insertar `{0, {1, 1}}` y consultar el identificador cero con destino `{9, 9}`. Muestra `Tamano:insertado:consultado:aceptados:rechazados`, sustituyendo los marcadores por los valores obtenidos. Cada línea de la batería termina con salto. Resuelve el puzzle previo y pulsa Compilar, ejecutar y comprobar con todo el programa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -117,7 +175,7 @@
         },
         {
           "type": "note",
-          "text": "El tipo Celda es un struct público: las funciones expresan nuestros contratos, pero no impiden que otro código los eluda modificando sus campos. La protección mediante una interfaz privada ya estudiada sería otra decisión de diseño. Consulta la referencia después del intento."
+          "text": "`Celda` es un `struct` con miembros públicos: estas funciones expresan nuestros contratos, pero otro código podría modificar directamente sus campos y eludirlos. Una interfaz privada, ya estudiada, permitiría controlar esas modificaciones de otra forma. Al completar el objetivo estarán disponibles una referencia inicial de tres informes y la batería completa de inserción y consulta."
         }
       ]
     },
@@ -125,7 +183,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior y fronteras de acceso"
+          "text": "Referencia posterior: operaciones iniciales"
         },
         {
           "type": "code",
@@ -134,11 +192,169 @@
         },
         {
           "type": "paragraph",
-          "text": "Las tres líneas esperadas son 1:0:0, 1:0:0 y 0:9:9. El intento repetido conserva la cantidad cero guardada; el ID 10 se rechaza antes de at(). La consulta de una celda ausente no asigna ceros al destino: conserva el valor que tenía."
+          "text": "Esta referencia es parcial: muestra `1:0:0`, `1:0:0` y `0:9:9`, con salto entre informes y sin salto final. La repetición conserva las cantidades cero guardadas; el identificador diez se rechaza antes del acceso. La consulta ausente mantiene el destino en su valor anterior.\n\nLa batería completa de la página siguiente añade las fronteras y el tamaño incorrecto, y termina todos sus informes con salto. Esa es la referencia que cubre el objetivo completo del primer editor.",
+          "emphasis": [
+            {
+              "text": "referencia es parcial",
+              "style": "bold"
+            },
+            {
+              "text": "objetivo completo del primer editor",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La batería comprueba antes de indexar tamaño, ID y cantidades. Las inserciones repetidas no reemplazan los ceros presentes; las consultas fallidas conservan el destino. No se provoca un acceso inválido para averiguar si el ID era permitido."
+          "text": "En `insertar`, la referencia `Celda& celda` se vincula al elemento de la tabla después de validar tamaño, identificador y cantidades. Asignar a esa referencia cambia la celda de la tabla. En `consultar`, la referencia local constante permite consultar esa celda, y el recuento sólo se copia al destino si está presente.\n\nUna tabla de nueve celdas no cumple el contrato aunque su posición cero sea accesible. Rechazar ese tamaño es una comprobación del modelo, además de comprobar que el identificador sea válido. No se provoca una excepción para averiguar si los datos cumplían el acuerdo.",
+          "emphasis": [
+            {
+              "text": "después de validar",
+              "style": "bold"
+            },
+            {
+              "text": "una comprobación del modelo",
+              "style": "bold"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: batería completa de inserción y consulta"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nint main() {\n    std::vector<Celda> tabla(10, Celda{false, {0, 0}});\n    bool primero = insertar(tabla, Registro{7, {0, 0}});\n    bool repetido = insertar(tabla, Registro{7, {1, 1}});\n    bool fuera = insertar(tabla, Registro{10, {1, 1}});\n    std::cout << primero << ':' << repetido << ':' << fuera << '\\n';\n    Recuento resultado{9, 9};\n    bool encontrado = consultar(tabla, 7, resultado);\n    std::cout << encontrado << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << '\\n';\n    resultado = Recuento{9, 9};\n    bool ausente = consultar(tabla, 3, resultado);\n    std::cout << ausente << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << \"\\n\";\n    std::vector<Celda> limites(10, Celda{false, {0, 0}});\n    const bool minimo = insertar(limites, {0, {1, 2}});\n    const bool maximo = insertar(limites, {9, {10, 10}});\n    const bool negativo = insertar(limites, {-1, {1, 1}});\n    const bool diez = insertar(limites, {10, {1, 1}});\n    const bool bajo = insertar(limites, {4, {-1, 0}});\n    const bool alto = insertar(limites, {4, {0, 11}});\n    std::cout << \"Fronteras:\" << minimo << ':' << maximo << ':' << negativo << ':' << diez << ':' << bajo << ':' << alto << \"\\n\";\n    resultado = {9, 9};\n    bool valido = consultar(limites, -1, resultado);\n    std::cout << valido << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    resultado = {9, 9};\n    valido = consultar(limites, 10, resultado);\n    std::cout << valido << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    std::vector<Celda> corta(9, Celda{false, {0, 0}});\n    const bool insertado = insertar(corta, {0, {1, 1}});\n    resultado = {9, 9};\n    const bool consultado = consultar(corta, 0, resultado);\n    std::cout << \"Tamano:\" << insertado << ':' << consultado << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__representar_presencia_y_cambiar_la_organizacion__conservar_resultado_entre_consultas",
+          "prompt": "Usa las funciones correctas de inserción y consulta de la referencia. Primero se ejecuta la preparación mostrada; sus inserciones no imprimen. Después se realizan las cuatro consultas en el orden indicado, sobre la misma tabla y el mismo resultado, sin reiniciar ese resultado entre llamadas. Relaciona cada consulta con el informe que muestra su bool devuelto y las dos cantidades de resultado como bool:aceptados:rechazados. resultado es un objeto independiente de las celdas.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "`std::vector<Celda> tabla(10, Celda{false, {0, 0}});`\n`insertar(tabla, Registro{2, {3, 1}});`\n`insertar(tabla, Registro{7, {0, 0}});`\n`insertar(tabla, Registro{7, {1, 1}});`\n`Recuento resultado{9, 9};`",
+              "mathMode": "text"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "informes",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "consulta_dos",
+                  "label": "Primera consulta: `consultar(tabla, 2, resultado)`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Primera consulta: `consultar(tabla, 2, resultado)`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "consulta_tres",
+                  "label": "Segunda consulta: `consultar(tabla, 3, resultado)`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Segunda consulta: `consultar(tabla, 3, resultado)`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "consulta_siete",
+                  "label": "Tercera consulta: `consultar(tabla, 7, resultado)`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Tercera consulta: `consultar(tabla, 7, resultado)`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "consulta_negativa",
+                  "label": "Cuarta consulta: `consultar(tabla, -1, resultado)`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Cuarta consulta: `consultar(tabla, -1, resultado)`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "ausente_conserva_anterior",
+                  "label": "Salida: `0:3:1`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `0:3:1`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "presente_con_ceros",
+                  "label": "Salida: `1:0:0`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `1:0:0`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "identificador_rechazado",
+                  "label": "Salida: `0:0:0`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `0:0:0`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "presente_con_valores",
+                  "label": "Salida: `1:3:1`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `1:3:1`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "consulta_dos": "presente_con_valores",
+                  "consulta_tres": "ausente_conserva_anterior",
+                  "consulta_siete": "presente_con_ceros",
+                  "consulta_negativa": "identificador_rechazado"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera consulta copia las cantidades del registro presente. La segunda no encuentra un registro y conserva esas cantidades en resultado. El duplicado inicial del identificador siete fue rechazado, por lo que su celda sigue presente con cantidades cero; la tercera consulta las copia correctamente. La última rechaza el identificador negativo y conserva los ceros que dejó la consulta anterior. El bool permite distinguir esos ceros obtenidos de un registro presente de unos valores conservados tras una consulta fallida.",
+            "incorrect": "Sigue una sola variable resultado. Solo una consulta aceptada le asigna el recuento de la celda; una consulta fallida mantiene el último valor, aunque no sea el inicial. Comprueba la marca presente, el rechazo del duplicado y el dominio antes del acceso."
+          }
         }
       ]
     },
@@ -150,12 +366,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye convertir: recibe vector<Registro> por referencia const y vector<Celda> destino por referencia. Debe preparar diez celdas nuevas, insertar todos los registros con las funciones anteriores y asignar al destino sólo si todos pueden insertarse. Un registro inválido o repetido devuelve false y conserva toda la tabla previa."
+          "text": "Construye `bool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino)`. La colección de entrada se consulta por referencia constante y el destino se recibe por referencia modificable.\n\nPrepara diez celdas candidatas ausentes e inserta en ellas todos los registros mediante la función anterior. Sólo si todas las inserciones se aceptan sustituye el destino completo. Un registro inválido o repetido devuelve `false` conservando toda la tabla previa.\n\nEl destino anterior puede estar vacío o tener otro tamaño: la exigencia de diez celdas se aplica a la tabla candidata que usa `insertar`. Una conversión aceptada reemplaza el destino por diez celdas; una rechazada conserva incluso el tamaño que tenía antes.",
+          "emphasis": [
+            {
+              "text": "conservando toda la tabla previa",
+              "style": "bold"
+            },
+            {
+              "text": "conserva incluso el tamaño",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye otra batería para la conversión completa: comienza con destino vacío y convierte {{7,{0,0}},{2,{3,1}}}; muestra Conversion:bool y luego cada registro presente recorriendo ID 0..9 como ID:aceptados:rechazados. Sobre el mismo destino intenta convertir {{4,{1,1}},{4,{2,2}}}; debe conservar lo anterior. Intenta después {{1,{11,0}}}; también conserva la tabla. Por último convierte una colección vacía: acepta diez celdas ausentes. Usa esa misma presentación después de las cuatro llamadas, cada línea con salto. Las consultas no cambian la tabla. Usa Compilar, ejecutar y comprobar con la batería completa.",
+          "text": "Construye una batería independiente para `convertir`. Empieza con un destino vacío y convierte `{{7, {0, 0}}, {2, {3, 1}}}`. Muestra `Conversion:` seguido del resultado booleano y un salto; después recorre los identificadores de cero a nueve y presenta sólo los registros presentes como `ID:aceptados:rechazados`, cada uno con salto. Utiliza un Recuento independiente como destino de las consultas.\n\nSin reiniciar la tabla, intenta convertir `{{4, {1, 1}}, {4, {2, 2}}}` y después `{{1, {11, 0}}}`. Ambos rechazos deben conservar la tabla de la primera llamada. Por último convierte una colección vacía: se acepta y deja diez celdas ausentes.\n\nUsa la misma presentación después de las cuatro llamadas, incluida la línea `Conversion:1` de la última, que no tiene registros presentes que mostrar. Las consultas de estas pruebas conservan la tabla. Pulsa Compilar, ejecutar y comprobar con toda la batería.",
           "emphasis": [
+            {
+              "text": "Sin reiniciar la tabla",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -178,7 +408,7 @@
         },
         {
           "type": "note",
-          "text": "La referencia de esta ampliación está en la página siguiente. Decide el momento de actualización del destino; no vacíes la tabla previa antes de saber si la conversión completa es válida."
+          "text": "No vacíes la tabla anterior antes de saber si todos los registros pueden convertirse. Al completar el objetivo estarán disponibles una referencia de la conversión inicial y otra con la batería de cuatro llamadas."
         }
       ]
     },
@@ -186,7 +416,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia de conversión y elección de estructura"
+          "text": "Referencia posterior: conversión inicial"
         },
         {
           "type": "code",
@@ -195,19 +425,47 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera conversión cambia el recorrido a orden de ID y muestra 2:3:1 antes de 7:0:0. El duplicado y el dato inválido devuelven false y conservan ambos registros. La colección vacía devuelve true y reemplaza la tabla por diez celdas ausentes; no imprime registros."
+          "text": "Esta referencia muestra solamente la primera conversión: presenta `2:3:1` y después `7:0:0`, cada uno con salto. No imprime las cabeceras `Conversion:` ni ejecuta las otras tres llamadas, por lo que no cubre el objetivo completo del segundo editor.\n\nLa batería completa de la página siguiente muestra además el rechazo del duplicado y del dato inválido conservando ambos registros. La colección vacía se acepta y reemplaza la tabla por diez celdas ausentes; después de esa cabecera ya no se imprimen registros.",
+          "emphasis": [
+            {
+              "text": "solamente la primera conversión",
+              "style": "bold"
+            },
+            {
+              "text": "objetivo completo del segundo editor",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Esta tabla ofrece una celda directa por ID y reserva las diez posiciones, aunque sólo haya un registro. El vector de registros guarda sólo los admitidos y conserva su orden. La elección depende de las consultas y de la densidad del dominio. No extendemos esta tabla automáticamente a cualquier rango enorme ni afirmamos que el formato del archivo obligue a usarla."
+          "text": "La tabla crea las diez posiciones aunque sólo haya un registro presente y permite ir directamente a la celda del identificador. El vector de registros mantiene elementos para los registros admitidos y conserva su orden de entrada. Elegimos según las operaciones necesarias y cuántos identificadores posibles tienen datos.\n\nPor ejemplo, puede haber uno de diez identificadores presente o nueve de diez. La tabla tiene diez celdas en ambos casos. Es una organización útil para este dominio pequeño; no implica que debamos crear una celda para cada valor de cualquier dominio enorme ni que el formato del archivo obligue a usarla.",
+          "emphasis": [
+            {
+              "text": "cuántos identificadores posibles tienen datos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios de la ampliación: transformar la organización sin cambiar la asociación ID–Recuento, representar ausentes de forma explícita y proteger el destino hasta completar la conversión. Un informe que necesite el orden original debe conservarlo o usar la colección correspondiente; no puede reconstruirlo sólo con la tabla por ID."
+          "text": "La conversión conserva qué recuento pertenece a cada identificador, representa la ausencia de forma explícita y protege el destino hasta completar la validación. Sin embargo, recorrer la tabla por posiciones crecientes cambia el orden de presentación.\n\nSi un informe necesita el orden original, debe conservarlo mediante la colección correspondiente u otra información adecuada. La tabla por identificador, por sí sola, no permite reconstruir qué registro llegó primero.",
+          "emphasis": [
+            {
+              "text": "qué registro llegó primero",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "La representación en memoria se elige según las consultas que debe permitir, y puede diferir de la forma de los datos recibidos. Si una posición puede carecer de dato, la ausencia necesita una representación que no se confunda con un valor válido (Stroustrup, 2024, sección 9.9.1, pp. 270–271). Aquí la marca de presencia permite conservar recuentos cero; organizar por ID facilita consultar, pero no reconstruye por sí solo el orden de llegada."
+          "text": "Elegir una organización en memoria depende de cómo se consultarán los datos. Cuando una posición puede no tener dato, la representación de esa ausencia debe distinguirse de los valores válidos (Stroustrup, 2024, sección 9.9.1, pp. 270–271).\n\nEn nuestro diseño, la marca de presencia permite guardar recuentos cero sin confundirlos con posiciones ausentes. Organizar por identificador permite consultar su celda, pero esa decisión no conserva por sí sola el orden de llegada.",
+          "emphasis": [
+            {
+              "text": "la marca de presencia",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -215,26 +473,933 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior de la batería completa"
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nint main() {\n    std::vector<Celda> tabla(10, Celda{false, {0, 0}});\n    bool primero = insertar(tabla, Registro{7, {0, 0}});\n    bool repetido = insertar(tabla, Registro{7, {1, 1}});\n    bool fuera = insertar(tabla, Registro{10, {1, 1}});\n    std::cout << primero << ':' << repetido << ':' << fuera << '\\n';\n    Recuento resultado{9, 9};\n    bool encontrado = consultar(tabla, 7, resultado);\n    std::cout << encontrado << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << '\\n';\n    resultado = Recuento{9, 9};\n    bool ausente = consultar(tabla, 3, resultado);\n    std::cout << ausente << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << \"\\n\";\n    std::vector<Celda> limites(10, Celda{false, {0, 0}});\n    const bool minimo = insertar(limites, {0, {1, 2}});\n    const bool maximo = insertar(limites, {9, {10, 10}});\n    const bool negativo = insertar(limites, {-1, {1, 1}});\n    const bool diez = insertar(limites, {10, {1, 1}});\n    const bool bajo = insertar(limites, {4, {-1, 0}});\n    const bool alto = insertar(limites, {4, {0, 11}});\n    std::cout << \"Fronteras:\" << minimo << ':' << maximo << ':' << negativo << ':' << diez << ':' << bajo << ':' << alto << \"\\n\";\n    resultado = {9, 9};\n    bool valido = consultar(limites, -1, resultado);\n    std::cout << valido << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    resultado = {9, 9};\n    valido = consultar(limites, 10, resultado);\n    std::cout << valido << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    std::vector<Celda> corta(9, Celda{false, {0, 0}});\n    const bool insertado = insertar(corta, {0, {1, 1}});\n    resultado = {9, 9};\n    const bool consultado = consultar(corta, 0, resultado);\n    std::cout << \"Tamano:\" << insertado << ':' << consultado << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    return 0;\n}\n"
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Referencia posterior de la batería completa"
+          "text": "Referencia posterior: batería completa de conversión"
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    std::vector<Celda> candidatos(10, Celda{false, {0, 0}});\n    for (const Registro& registro : registros) {\n        if (!insertar(candidatos, registro)) {\n            return false;\n        }\n    }\n    destino = candidatos;\n    return true;\n}\n\nvoid probar(const std::vector<Registro>& registros, std::vector<Celda>& tabla) {\n    const bool convertido = convertir(registros, tabla);\n    std::cout << \"Conversion:\" << convertido << \"\\n\";\n    for (int id = 0; id < 10; ++id) {\n        Recuento recuento{0, 0};\n        if (consultar(tabla, id, recuento))\n            std::cout << id << ':' << recuento.aceptados << ':' << recuento.rechazados << \"\\n\";\n    }\n}\n\nint main() {\n    std::vector<Celda> tabla;\n    probar({{7, {0, 0}}, {2, {3, 1}}}, tabla);\n    probar({{4, {1, 1}}, {4, {2, 2}}}, tabla);\n    probar({{1, {11, 0}}}, tabla);\n    probar({}, tabla);\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "a675d507192524ff00de5f9d3f59150242dda32fe2778c78b3cded42cafbb0ff"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "03bb913a6acdb74e5a0c9fd32a31fe360d13daf525033bc6b53767002ce49038"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "2509f663a43eca4adbd56513fc902dff009366121cb75a2604f5930dfb9a87bc"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "5c68437a03bf5e77cfe861cc731fff5a02ba7c2c7e0bd67b25484090a41779d1"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "421dd9ac2bbcd32a42b809ad6c0327dc2350418e1bc272509f8c2191de4bc0af"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "522f0c37171940197d1c634038ede155c65c100b6adb36c697a7dbb96dfb91f5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "20a6bf366099f738b7ca275190e6976b598300a085df9865e39ba3cfa0182781"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "a687bb5786cb2392275ddada626fe1a5bd7090153fb80f6bb6ef201e89b8d347"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "bfd2d191c902839957f25b5bbcec16abc174f0d8fa8fe1bcccd3b97b3c45f11a"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "b616229390f34b0d078a11c40a3def1de958d24ef58f59da6606724c47ec23e3"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "conservar_resultado_entre_consultas"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "7e66a84a830a6165a70885d05da75e1fe05948be9cb0fd5c72bbdbe052d16048",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "5fb9e804adb5c79c5e81a16ca6c608aa39d7ee6b1d9ad506f812d3a335fb351d"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "03bb913a6acdb74e5a0c9fd32a31fe360d13daf525033bc6b53767002ce49038"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "da3c90a72c02b67f6d4fc01e433cd4c56885d8ca6fac1fb0ba554d1c80aafcec"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "e7cfe8357e44c331641b115a3e57a399d2121c50e1b0459fa69367e135992a5e"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "522f0c37171940197d1c634038ede155c65c100b6adb36c697a7dbb96dfb91f5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "343b37408147ac3f42ec2e3e59a1f9aabea5c0daa074c318cdb7d19ac66f7a77"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "f26b03279ab0287236645902a9725a97140d77cd2a7530a94e0fe92465cbb37b"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "daaf83f856d6ff67e1cd2dcf31ceef3a8ccc6e27d2aef0b64ec54b8e97784c48",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "a675d507192524ff00de5f9d3f59150242dda32fe2778c78b3cded42cafbb0ff"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "03bb913a6acdb74e5a0c9fd32a31fe360d13daf525033bc6b53767002ce49038"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "2509f663a43eca4adbd56513fc902dff009366121cb75a2604f5930dfb9a87bc"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5c68437a03bf5e77cfe861cc731fff5a02ba7c2c7e0bd67b25484090a41779d1"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "421dd9ac2bbcd32a42b809ad6c0327dc2350418e1bc272509f8c2191de4bc0af"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "522f0c37171940197d1c634038ede155c65c100b6adb36c697a7dbb96dfb91f5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "20a6bf366099f738b7ca275190e6976b598300a085df9865e39ba3cfa0182781"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "a687bb5786cb2392275ddada626fe1a5bd7090153fb80f6bb6ef201e89b8d347"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "bfd2d191c902839957f25b5bbcec16abc174f0d8fa8fe1bcccd3b97b3c45f11a"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "b616229390f34b0d078a11c40a3def1de958d24ef58f59da6606724c47ec23e3"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "f23fd6517e283e7b44f51d2c35f5316f3bfa4cd6f78f47c68faa5037f3e05a0a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "08e15605e9c74122b64acaf3ba56a247687c3cc7b56427f998aa7fc614581be2"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "03bb913a6acdb74e5a0c9fd32a31fe360d13daf525033bc6b53767002ce49038"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "f9487aefd0676b6eabeb933d3a07b2c4769513837e8a84a8bb227a4177d16dca"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "344baacc8a42ed0f10fc6f80dd237cc597fcf0ef9e8e29c4dce660478abfd674"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "522f0c37171940197d1c634038ede155c65c100b6adb36c697a7dbb96dfb91f5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "318d1642e742cb1dec83842644c172cb4e0e6f0d12b8b62769423cac7b59864a"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1059f665f0274197f1f302a5bc83186825f9bde2026ec11f8973cf5a796603ea"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "conservar_resultado_entre_consultas",
+        "sha256": "a4248465a5098a5d55d4995d79f9b7cf9c76c8fd75ee71563a3a30f328c3ddd0",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0f6f451e00b13507b5769942881d3053fca7b7a4bcdbed763455615695a6bc44",
+        "afterSha256": "9b0b1ca2f467b5cfc6ddc32f1a6931f7e845e1c97642e105b303324ed7a766f1"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "81a26318b53114456055b79ec26f1d371b00a3a5d05ecd44c76e7ee80c72d854",
+        "afterSha256": "5426d691ef00ab095671eee95cbe148fa8fe071c276dd7fceefd25372f411cf6"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9e1490fa56bdd95f521f31893d520b06a985ea31093f2de3157c4a6a8134d6a4",
+        "afterSha256": "baacb2d876b3fc26a562a1ef585ff45d378fdafd61def589823e31e1cba733db"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a32400f826ab1513dc984d9cae13c7b784636249d2dfb430ea637da858fce864",
+        "afterSha256": "17ead8a29e91d2673c277f7436d4927ac9d77d43b1c04c47d4b6d2aae5ba0a2f"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "9d92a4a112c931c7d788001b9adc4ab8b9d2a2f161bb3af673b2c5634662a863",
+        "afterSha256": "c9623476cebf3c5ac2049890e7bf31d5058bb01210b9e8295f967e2a8ac9ddcc"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "6c9a130ce62c9920458b4f1c4491383ae62be47cee156215834817522de1db99",
+        "afterSha256": "3c45f886010fab743687c6a8125f1d1b595b7dabfa53f127fc235f4cee1597a5"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "44fc7e9a41abe50b798ed58446dd023eb66ade01542f95d1fd12583eddb99e41",
+        "afterSha256": "0263beedffeb19416ed02fd137e8d31c4556e8054dbd984bb8a646c3cfbb001d"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b17de494226960acc52ee3f45d7fee4e31bf0f3a9c38db20232387e3ea7c9dc9",
+        "afterSha256": "4faa0421544858a196d34e9a4c6357f80df145e1ff22f79cb38d351d6c8606d7"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "abe9b6951985ed754ae68a9263bd932a91d02e9b622e5298e66df5e87e8187df",
+        "afterSha256": "45ef953f9e3bf26bd49cde64a13eeaa6e85dda65a4e928fa5d55b0d35e457854"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "bf59c57df4fbaf2979e288a53279b41fe5b1ede70dfc1fe2b1842050facc4654",
+        "afterSha256": "5b2962d4c1856f41c0ddf81043eed4ec3bd673f58257794cbd68717b3f9a7277"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "907324de5e51796cf147bdcc877962b3c90584ccee1696558aa9f009e283efdb",
+        "afterSha256": "8ae0b6bd3b8f6fd11c65a45ad2e1345db84a01b70b25ca20bad0dc9a05e82b87"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "7ef1ac9d2c37ca9a8ba9e2f3cfadf4327ec6300843df409e72253c3d704762c8",
+        "afterSha256": "fc08cb1d87f5a66e3d55a15d164af4669ae77c210bd751c976682a4de7cec991"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "35f81f32e09e344b85439417f0445b12412f15b32caa1470f6497feefbe00b73",
+        "afterSha256": "80802ca8d1f6eeac9a37924bd176f1b41bec85c5d673c61f2c1f50caefe0b3a3"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ac1d27b0a73d8cb72c512a4e5e640429fcbcc2b2197a6445a621a38b69a45e51",
+        "afterSha256": "c47611189f0f2d9998e3f807c0e52850e82f951510f0064dad400dc19068621a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "6f8cd3656bc01d69acf5a2773e0c236696d51b54a4653db3d9da85143ed1dde2",
+        "afterSha256": "559234d1eabb722fe3be3234eeabe8098f1e028aa4c5ae1aef2ab18eda588b58"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "95ca7dac971208d6a39d07886e8c998c530ef0b8e14e11b7736d671b8e93cc7f",
+        "afterSha256": "1ea1340b36e1f870684eb229acbb3dc28f99707141ae5baca2526826e7038cfa"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "b92046e1b346543204a2863bd3613b3f7025bca1cfd26b72d1b065e16b31bdf8",
+        "afterSha256": "61e102f93fd0b0dba2b04d7c2da4d310fd5b61a89b4c848e59159c03432df5f1"
+      },
+      {
+        "id": "block_0005_0000",
+        "beforeSha256": "cd31237ed2fd78d781eedf8664933054969404d217131a04ff93bc0dcaf4fed8",
+        "afterSha256": "2109ee8d6f15a13d3e0d4e432c7c815890918fb528553700005f817a74170d74"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "8a6f125ab4257d1d22e6451a9db6a9fb2c05f4c36503fcc1e483e0b4d46b3529",
+        "afterSha256": "581be006ad3c4421de447be11eca8ce84569877c5d4cff1691ff4f4430641f9d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "dc689793642856f41d01f7c351bed46a87f00ae31eda781312e08dfada08127c",
+        "afterSha256": "9b45046c17e73577783322069e45e91d3287ad7b1c9a1986114e32d2683c5c4e"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "c29c034e577bc156bbd8531ee29354ec31b8340d853aba60a8b1c76cd7567fad",
+        "afterSha256": "51333826492b0362815af6252bc351a0217f4157d70aba604b1a49160a262d31"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "d0b95f3004f5918d6b4f131b31b86a3207cac4ab15204fa790b03b9d36f01e51",
+        "afterSha256": "0efbdf9677d8ec9df465fbd31d363bb31c1ee91c78e0065a2d35c2c9ad092dc0"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "5bdcef20b48f1693ea03f049774a19295857c2975eb9239e022a8715601e4dd0",
+        "afterSha256": "536a69bd8697f847785d0cb9226581f36fa94f45a171ba3ccf006ff5108aab9a"
+      },
+      {
+        "id": "block_0007_0000",
+        "beforeSha256": "5bdcef20b48f1693ea03f049774a19295857c2975eb9239e022a8715601e4dd0",
+        "afterSha256": "f04a0f8fe24e1ba8fbfa2927d6b7ec651d9ebef6e5b074feca7616e4c1c0b9e4"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0004",
+      "blocks": [
+        "block_0002_0005",
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0006_0000",
+        "block_0006_0001"
+      ]
+    },
+    {
+      "activity": "block_0004_0003",
+      "blocks": [
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004",
+        "block_0005_0005",
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "conservar_resultado_entre_consultas",
+      "requires": [
+        "block_0002_0004"
+      ]
+    },
+    {
+      "activity": "block_0004_0003",
+      "requires": [
+        "block_0002_0004"
       ]
     }
   ]

@@ -10,11 +10,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Descartar una línea puede ser apropiado para un informe que permite datos parciales. Para sustituir una configuración completa puede ser inaceptable: conservar sólo algunos registros cambia el significado de la carga. Elegimos ahora otra política: todos los registros deben ser válidos y tener ID únicos; si algo falla, conserva exactamente la colección anterior."
+          "text": "La política anterior permite elaborar un resultado con las líneas admitidas y contar los descartes. Ahora elegimos otro propósito: reemplazar la colección sólo si todas las líneas suministradas contienen registros válidos y sus identificadores son únicos. Una línea inválida o repetida rechaza toda la carga; no se conserva un prefijo de los registros nuevos.\n\nLa colección anterior debe permanecer exactamente igual en cada camino que devuelve `false`, incluidos sus registros, sus campos y su orden. No se mezclan registros nuevos con los anteriores.",
+          "emphasis": [
+            {
+              "text": "todas las líneas suministradas",
+              "style": "bold"
+            },
+            {
+              "text": "exactamente igual",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El formato y los dominios no cambian. El cargador rechaza líneas vacías, inválidas o duplicadas. Una muestra vacía sí es una colección completa vacía y reemplaza la anterior. El contrato devuelve bool; false protege el destino, pero no promete reiniciar el origen ni consumir los datos que siguen al primer rechazo. En los programas usamos (completo ? \"Aceptado\" : \"Rechazado\") para elegir el texto del informe. La forma condición ? valor_si_es_cierta : valor_si_es_falsa es el operador condicional: comprueba la condición y evalúa sólo el valor de la alternativa elegida. Aquí ambos valores son textos y los paréntesis mantienen esa elección unida antes de insertarla en cout. Un if/else que imprimiera cada texto en su rama produciría el mismo informe; esta expresión no cambia el bool ya obtenido ni la política de carga."
+          "text": "El formato y los dominios de `Registro` no cambian. Se rechazan las líneas vacías, inválidas o duplicadas. En cambio, una muestra sin líneas representa una colección completa vacía: si se acepta, reemplaza la anterior por esa colección vacía. El resultado `bool` informa de la decisión de carga; un rechazo no promete retroceder el origen ni consumir lo que queda después del primer problema.\n\nComo prerrequisito, el llamador proporciona un flujo nuevo o recién abierto, en buen estado, situado al principio y con su configuración predeterminada de excepciones. No reutilizamos para otra carga el flujo que ya terminó con indicadores de final o de fallo.\n\nEn los informes usaremos `completo ? \"Aceptado\" : \"Rechazado\"`. Es el operador condicional `?:`: evalúa la condición `completo` y sólo la expresión de la alternativa elegida. Aquí elige uno de los dos textos. Los paréntesis que rodean esa expresión en el programa mantienen la elección unida antes de insertarla en `std::cout`; un `if/else` que imprimiera el texto correspondiente daría el mismo informe. La expresión no cambia el resultado booleano de la carga (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "flujo nuevo o recién abierto",
+              "style": "bold"
+            },
+            {
+              "text": "operador condicional",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -26,7 +46,12 @@
             "Aplicar los primeros registros y continuar con los ajustes anteriores."
           ],
           "correctIndex": 1,
-          "explanation": "La política debe expresar el propósito. Mezclar partes nuevas y antiguas no equivale a aceptar el conjunto completo."
+          "explanation": "La política debe expresar el propósito. Mezclar partes nuevas y antiguas no equivale a aceptar el conjunto completo.",
+          "reviewFeedback": [
+            "Admitir únicamente las partes válidas define otra política. Comprueba si el propósito permite omitir registros rechazados.",
+            "Relaciona la decisión de aceptación con todo el contenido suministrado y evita mezclar partes de colecciones distintas.",
+            "Conservar un prefijo nuevo junto con datos anteriores no es aplicar una muestra completa validada."
+          ]
         }
       ]
     },
@@ -38,7 +63,13 @@
         },
         {
           "type": "paragraph",
-          "text": "En un vector, clear() elimina todos sus elementos; es una operación distinta de clear() en un flujo, que borra sus indicadores de estado. El siguiente código es un contraejemplo intencional: vacía y modifica el destino mientras lee. No satisface nuestra nueva garantía. Predice su conducta para localizar exactamente qué se pierde y qué queda añadido antes del rechazo."
+          "text": "En un `std::vector`, `clear()` elimina todos sus elementos. Es una operación distinta de `clear()` en un flujo, que restablece sus indicadores de estado (Köppe et al., 2023).\n\nEl código siguiente es un contraejemplo intencional. Llama a `destino.clear()` y después inserta registros directamente en ese mismo destino mientras lee. Debes predecir qué se pierde y qué queda añadido cuando aparece el primer rechazo; no satisface la garantía que queremos construir.",
+          "emphasis": [
+            {
+              "text": "contraejemplo intencional",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -49,11 +80,22 @@
           "answers": [
             "Rechazado|1:2:0"
           ],
-          "explanation": "clear() elimina el registro previo 9. Se inserta ID 1 y después se rechaza su duplicado. Devolver false no deshace la eliminación ni la primera inserción."
+          "explanation": "clear() elimina el registro previo 9. Se inserta ID 1 y después se rechaza su duplicado. Devolver false no deshace la eliminación ni la primera inserción.",
+          "reviewFeedback": "Sigue las operaciones del cuerpo antes del retorno false: primero qué elimina clear, luego qué línea se inserta y en cuál se detecta la repetición. Mostrar Rechazado no ejecuta ninguna restauración."
         },
         {
           "type": "paragraph",
-          "text": "No basta con comprobar el resultado al final de main: el destino ya cambió dentro de la función. Tampoco basta con reiniciar cada Registro local; eso evita mezclar sus campos, pero no protege la colección que se modifica directamente."
+          "text": "Devolver `false` comunica un resultado; no deshace las operaciones ejecutadas antes. En el contraejemplo, la colección del llamador se modifica dentro de la función antes de que `main` conozca ese resultado.\n\nCrear un `Registro` local nuevo en cada vuelta protege los campos que se leen en esa vuelta, pero no protege una colección que se está vaciando o ampliando directamente. Necesitamos preparar por separado todo el estado que sólo queremos reemplazar después de aceptar.",
+          "emphasis": [
+            {
+              "text": "no deshace las operaciones ejecutadas antes",
+              "style": "bold"
+            },
+            {
+              "text": "todo el estado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -65,7 +107,12 @@
             "Un clear() del destino antes de empezar cada línea."
           ],
           "correctIndex": 0,
-          "explanation": "La garantía debe abarcar el estado que queremos conservar, no sólo la lectura de una parte."
+          "explanation": "La garantía debe abarcar el estado que queremos conservar, no sólo la lectura de una parte.",
+          "reviewFeedback": [
+            "Identifica qué estado debe quedar intacto si aparece un problema después de varias líneas válidas.",
+            "Imprimir un cambio sólo lo informa; no evita modificar el objeto del llamador ni permite deshacerlo.",
+            "Vaciar el destino elimina los registros que se prometió conservar ante un rechazo."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -77,7 +124,12 @@
             "Se devuelve false porque EOF siempre es error."
           ],
           "correctIndex": 1,
-          "explanation": "El contrato admite vacío como un resultado completo. Conservar el destino corresponde al rechazo, no a una carga vacía aceptada."
+          "explanation": "El contrato admite vacío como un resultado completo. Conservar el destino corresponde al rechazo, no a una carga vacía aceptada.",
+          "reviewFeedback": [
+            "La conservación del destino corresponde al rechazo. Comprueba qué contenido completo representa la muestra vacía aceptada.",
+            "Una muestra vacía es un resultado permitido, no una orden de omitir la actualización.",
+            "EOF puede señalar que terminó correctamente una muestra sin líneas. La política admite esa colección vacía."
+          ]
         }
       ]
     },
@@ -89,14 +141,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa cargar_sin_descartes con std::istream& y std::vector<Registro>&. Decide dónde construir la colección nueva y en qué momento asignarla al destino. Usa leer_linea y contiene_id dados; rechaza inmediatamente una línea inválida o repetida. Sólo devuelve true después de comprobar final limpio y aplicar toda la colección candidata."
+          "text": "Implementa `bool cargar_sin_descartes(std::istream& origen, std::vector<Registro>& destino)`. El primer parámetro es el flujo prestado que se va a leer; el segundo es la colección del llamador que sólo se reemplazará al aceptar. Utiliza un origen con las condiciones iniciales indicadas al comienzo de la lección.\n\nPrepara una colección candidata independiente. Para cada línea obtenida, usa `leer_linea` y `contiene_id`, proporcionados en el inicial. Rechaza inmediatamente si la línea es inválida o si el identificador ya está entre los candidatos. Después del bucle comprueba cómo terminó la lectura. Solo una carga completa aceptada sustituye todo `destino` y devuelve `true`; los retornos `false` conservan la colección previa.",
+          "emphasis": [
+            {
+              "text": "colección candidata independiente",
+              "style": "bold"
+            },
+            {
+              "text": "Solo una carga completa aceptada",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería mediante probar(texto), con istringstream nuevo y destino inicial {{9,{1,1}}} en cada llamada. main usa \"1 [2;0]\\n1 [3;1]\\n2 [0;0]\", \"1 [2;0]\\n4 [3;1]\\n2 [0;0]\", \"\", \"1 [2;0]\\n4 [3;1]\\n2 [0;\", \"1 [2;0]\\n\\n2 [0;0]\", \"1 [2;11]\", \"2 [0;0]\\n4 [3;1]\\n1 [2;0]\", en ese orden. Cada llamada presenta Aceptado o Rechazado y después cada registro del destino como |ID:aceptados:rechazados; termina su informe con salto. El texto vacío reemplaza la colección por una vacía válida. Resuelve primero el puzzle de la página anterior y usa Compilar, ejecutar y comprobar con todos los casos, sin cambiar la implementación entre versiones.",
+          "text": "Construye una sola batería mediante `probar(texto)`. Cada llamada crea un `std::istringstream` nuevo y un destino inicial `{{9, {1, 1}}}`. Desde `main`, utiliza estas siete cadenas, en este orden:\n`\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"`\n`\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"`\n`\"\"`\n`\"1 [2;0]\\n4 [3;1]\\n2 [0;\"`\n`\"1 [2;0]\\n\\n2 [0;0]\"`\n`\"1 [2;11]\"`\n`\"2 [0;0]\\n4 [3;1]\\n1 [2;0]\"`\n\nCada informe empieza por `Aceptado` o `Rechazado`, según el valor devuelto. Después presenta todos los registros del destino como `|ID:aceptados:rechazados`. Termina cada informe con un salto, sin títulos ni líneas vacías adicionales. Al aceptar el texto vacío, sólo se imprime `Aceptado` y el salto, porque el destino queda vacío.\n\nResuelve primero el puzzle de la página anterior y pulsa Compilar, ejecutar y comprobar con las siete llamadas, usando la misma función en todos los casos.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            },
+            {
+              "text": "las siete llamadas",
               "style": "bold"
             }
           ]
@@ -117,7 +183,7 @@
         },
         {
           "type": "note",
-          "text": "El contraejemplo se proporciona para diagnosticarlo, no como referencia correcta. Comprueba el estado previo completo tras cada resultado false; consulta la solución después del intento."
+          "text": "El contraejemplo permite diagnosticar la modificación prematura; no es una referencia correcta. En tu versión comprueba todo el destino previo tras cada resultado false. Al completar el objetivo estarán disponibles una referencia de un caso y la batería completa de siete."
         }
       ]
     },
@@ -125,7 +191,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior: preparar y aplicar"
+          "text": "Referencia posterior: estudiar un rechazo"
         },
         {
           "type": "code",
@@ -134,15 +200,33 @@
         },
         {
           "type": "paragraph",
-          "text": "El caso repetido produce Rechazado|9:1:1. La colección candidata puede haber recibido ID 1, pero nunca se asignó al destino. Al salir de su ámbito se destruye; el registro previo sigue siendo el único resultado visible. El origen sí avanzó: no hicimos una devolución de caracteres."
+          "text": "Esta referencia muestra un solo caso: la repetición produce `Rechazado|9:1:1`, sin salto final. Permite estudiar la conservación del destino, pero no cubre por sí sola la batería de siete casos del editor.\n\nLa colección candidata recibió el primer registro nuevo, pero nunca se asignó al destino porque la línea siguiente lo repite. Al terminar la función, esa colección local se destruye y el destino anterior permanece intacto. El origen sí avanzó hasta el rechazo: conservar el resultado no devuelve sus caracteres.",
+          "emphasis": [
+            {
+              "text": "no cubre por sí sola la batería de siete casos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Cuando la segunda línea usa ID 4 en lugar del ID 1 repetido, la carga completa reemplaza la colección anterior y conserva el orden 1,4,2. El texto vacío también reemplaza el destino, pero por una colección vacía. Vacío aceptado y lectura rechazada son resultados diferentes."
+          "text": "Si la segunda línea usa el identificador cuatro en lugar de repetir el primero, la muestra válida completa reemplaza la colección anterior y conserva el orden de entrada: uno, cuatro y dos. Es una sustitución de la colección; los identificadores del destino anterior no se utilizan para decidir si los registros nuevos están repetidos.\n\nEl texto vacío también reemplaza el destino, pero por una colección vacía. Aceptar ese resultado y rechazar una carga son decisiones diferentes.",
+          "emphasis": [
+            {
+              "text": "los identificadores del destino anterior",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios: no alterar el destino ante false, no almacenar un registro inválido ni repetido, respetar orden y dominios, aceptar la última línea completa sin salto final, comprobar la finalización del flujo y reemplazar toda la colección sólo ante true. La garantía corresponde a los resultados bool de este cargador; no describe aquí todos los posibles fallos de recursos de cualquier programa."
+          "text": "Criterios: conservar todos los registros y campos del destino al devolver `false`; rechazar líneas inválidas o repetidas; respetar orden y dominios; admitir la última línea completa sin salto final; comprobar la finalización del origen; y reemplazar toda la colección sólo al devolver `true`.\n\nLa garantía se refiere a esos retornos de este cargador. La función no captura excepciones ni las convierte automáticamente en `false`. Además, el llamador debe consultar el valor devuelto: que el origen aún no tenga `failbit` no demuestra que se haya aceptado la colección.",
+          "emphasis": [
+            {
+              "text": "consultar el valor devuelto",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -162,23 +246,175 @@
             "Aceptar y reemplazar el destino por una colección vacía."
           ],
           "correctIndex": 2,
-          "explanation": "La muestra vacía está permitida. true aplica todo su contenido, aunque ese contenido no tenga registros."
+          "explanation": "La muestra vacía está permitida. true aplica todo su contenido, aunque ese contenido no tenga registros.",
+          "reviewFeedback": [
+            "La política permite una muestra vacía. Distingue ese resultado de una lectura rechazada.",
+            "Al aceptar, se reemplaza la colección anterior por todo el contenido nuevo, aunque no haya registros.",
+            "Relaciona la aceptación de la muestra vacía con la asignación final de la colección candidata."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El registro truncado, la línea vacía intermedia y la cantidad 11 se rechazan conservando {9,{1,1}}. Reordenar todas las líneas válidas cambia únicamente el orden de la colección nueva. El primer rechazo puede impedir examinar líneas posteriores."
+          "text": "El registro truncado, la línea vacía intermedia y la cantidad fuera del dominio se rechazan conservando el destino inicial de la prueba. Reordenar las líneas de una muestra válida cambia el orden de la colección nueva, porque se mantiene el orden en que se admiten sus registros.\n\nAl rechazar, la función puede terminar antes de examinar líneas posteriores. La práctica de recargas conserva una misma colección entre llamadas para comprobar que cada rechazo protege el estado que esa colección tiene en ese momento.",
+          "emphasis": [
+            {
+              "text": "en ese momento",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__actualizar_todo_o_conservar_el_estado_anterior__seguir_estado_actual_entre_recargas",
+          "prompt": "Usa cargar_sin_descartes de la referencia anterior. Se conserva una única variable destino durante las cuatro llamadas, ejecutadas en el orden indicado. Cada llamada crea un istringstream nuevo, con la cadena señalada y la configuración predeterminada; no se reinicia destino entre llamadas. Después de cada carga se muestra Aceptado o Rechazado según su resultado, seguido de todos los registros actuales como |ID:aceptados:rechazados. Relaciona cada llamada con ese informe, sin mezclar el estado anterior a la llamada con el que queda al terminar.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "Destino inicial, antes de la primera llamada:\n`std::vector<Registro> destino{{8, {1, 2}}, {1, {0, 0}}, {9, {4, 1}}};`\n\nEn cada llamada se crea su origen y se utiliza la misma colección:\n`std::istringstream origen{texto};`\n`bool completo = cargar_sin_descartes(origen, destino);`",
+              "mathMode": "text"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "informes",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "primera",
+                  "label": "Primera llamada",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Primera llamada: `\"2 [0;0]\\n3 [1;1]\\n02 [5;0]\\n8 [9;9]\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "segunda",
+                  "label": "Segunda llamada",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Segunda llamada: `\"9 [0;0]\\n2 [4;1]\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "tercera",
+                  "label": "Tercera llamada",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Tercera llamada: `\"mal\\n1 [1;1]\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "cuarta",
+                  "label": "Cuarta llamada",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Cuarta llamada: `\"\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "vacio_aceptado",
+                  "label": "Salida: `Aceptado`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `Aceptado`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "rechazo_estado_actual",
+                  "label": "Salida: `Rechazado|9:0:0|2:4:1`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `Rechazado|9:0:0|2:4:1`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "rechazo_estado_inicial",
+                  "label": "Salida: `Rechazado|8:1:2|1:0:0|9:4:1`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `Rechazado|8:1:2|1:0:0|9:4:1`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "coleccion_nueva",
+                  "label": "Salida: `Aceptado|9:0:0|2:4:1`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `Aceptado|9:0:0|2:4:1`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "primera": "rechazo_estado_inicial",
+                  "segunda": "coleccion_nueva",
+                  "tercera": "rechazo_estado_actual",
+                  "cuarta": "vacio_aceptado"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera carga rechaza el identificador repetido: dos y cero dos representan el mismo valor. La colección inicial completa permanece intacta. La segunda muestra es válida y reemplaza todos los registros anteriores; puede utilizar el identificador nueve aunque existiera en el destino anterior, porque la unicidad se comprueba dentro de la muestra nueva. La tercera carga rechaza su primera línea y conserva la colección de la segunda llamada. La última acepta el texto vacío y reemplaza esa colección por una vacía. Conservar ante un rechazo significa conservar el estado actual, no restaurar siempre la colección inicial de toda la secuencia.",
+            "incorrect": "Sigue una sola colección a lo largo de las llamadas. Tras una aceptación, el nuevo contenido es el estado que deberá conservar un rechazo posterior. Compara identificadores numéricos sólo entre los registros de la muestra nueva. Recuerda que aceptar el texto vacío sí actualiza el destino."
+          }
         },
         {
           "type": "paragraph",
-          "text": "La política completa permite deducir un límite: hay diez ID posibles, y no se admite ninguno repetido. Sólo pueden aceptarse diez líneas válidas. Si se intenta una undécima, debe ser inválida o repetir un ID y la carga se rechaza. El cargador parcial sí necesitaba contar líneas, porque continúa tras cada descarte; éste termina en el primer rechazo. Esta deducción limita registros admitidos, no la cantidad de caracteres de una línea."
+          "text": "Esta política permite deducir una frontera sin añadir el contador de veinte líneas de la lección anterior. Hay diez identificadores posibles, de `0` a `9`, y cada uno sólo se admite una vez. Una carga aceptada puede contener como máximo diez líneas válidas. Si se obtiene una undécima, debe ser inválida o repetir un identificador y provoca el rechazo.\n\nEl cargador anterior continuaba tras los descartes y necesitaba su límite de líneas; éste termina en el primer rechazo. La deducción limita cuántos registros pueden admitirse, no la cantidad de caracteres de una línea.",
+          "emphasis": [
+            {
+              "text": "como máximo diez líneas válidas",
+              "style": "bold"
+            },
+            {
+              "text": "no la cantidad de caracteres",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La integración con un ifstream tiene un editor independiente posterior. El llamador crea la muestra, comprueba las aperturas y completa la escritura; el cargador sólo recibe el flujo prestado y decide si toda la colección puede publicarse."
+          "text": "Después integraremos el mismo cargador con un archivo en un editor independiente. El llamador crea la muestra, comprueba las aperturas, completa la escritura y cierra el archivo de salida antes de abrirlo para leer. El cargador recibe el flujo prestado y decide si puede sustituir la colección; no se encarga de abrir ni escribir esa muestra."
         },
         {
           "type": "note",
-          "text": "La validación puede separarse en lectura, comprobación de formato y decisión sobre los valores; mezclar esas responsabilidades dificulta reconocer el primer fallo (Stroustrup, 2024, secciones 9.5.1–9.5.2, pp. 262–265). En este cargador, esa separación permite construir una colección candidata y publicar todo sólo después del final limpio. El rechazo protege el destino, aunque el origen ya haya avanzado."
+          "text": "Separar la lectura, la comprobación del formato y la decisión sobre los valores ayuda a identificar dónde se produjo un fallo (Stroustrup, 2024, secciones 9.5.1–9.5.2, pp. 262–265).\n\nEn el cargador que hemos diseñado, esa separación permite preparar una colección candidata y sustituir el destino sólo después de aceptar toda la lectura. Un retorno false conserva el destino actual, aunque el origen ya haya avanzado. Las recargas siguientes deben utilizar un origen nuevo que cumpla los prerrequisitos de esta lección.",
+          "emphasis": [
+            {
+              "text": "destino actual",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -203,7 +439,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El cargador ya construido se proporciona como apoyo en este editor. Construye main para crear carga_completa_lgp.txt con las líneas 1 [2;0], 4 [3;1] y 2 [0;0], sin LF al final de la última. Comprueba apertura y escritura tras close; abre un ifstream y carga sobre destino previo {{9,{1,1}}}. Presenta el informe de aceptación y los registros con el formato de la batería anterior y un salto final. Una etapa de archivo fallida o una carga rechazada termina con código 1 y conserva su diagnóstico. Usa Compilar, ejecutar y comprobar para contrastar el caso válido completo.",
+          "text": "El inicial proporciona el cargador ya construido. Completa `main` para crear la muestra relativa `carga_completa_lgp.txt` con `\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"`: hay saltos entre los registros y ninguno después del último. Comprueba la apertura de salida, escribe, cierra con `close()` y comprueba su estado. Después abre y comprueba un `std::ifstream` nuevo.\n\nCarga sobre el destino previo `{{9, {1, 1}}}`. La salida debe ser `Aceptado|1:2:0|4:3:1|2:0:0`, seguida de un salto final. Si falla una etapa de archivo o se rechaza la carga, conserva el diagnóstico y termina con código `1`. Pulsa Compilar, ejecutar y comprobar para contrastar este caso válido de archivo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -238,6 +474,865 @@
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_sin_descartes(std::istream& origen, std::vector<Registro>& destino) {\n    std::vector<Registro> candidatos;\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            return false;\n        }\n        candidatos.push_back(registro);\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    return true;\n}\n\nint main() {\n    std::ofstream salida{\"carga_completa_lgp.txt\"};\n    if (!salida) { std::cout << \"Fallo de apertura de salida\"; return 1; }\n    salida << \"1 [2;0]\\n4 [3;1]\\n2 [0;0]\";\n    salida.close();\n    if (!salida) { std::cout << \"Fallo de escritura\"; return 1; }\n    std::ifstream origen{\"carga_completa_lgp.txt\"};\n    if (!origen) { std::cout << \"Fallo de apertura de entrada\"; return 1; }\n    std::vector<Registro> destino{{9, {1, 1}}};\n    const bool completo = cargar_sin_descartes(origen, destino);\n    std::cout << (completo ? \"Aceptado\" : \"Rechazado\");\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':' << registro.recuento.aceptados << ':' << registro.recuento.rechazados;\n    }\n    std::cout << \"\\n\";\n    return completo ? 0 : 1;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "430d0f06666e193fc3c5433501e78ed492fd4c8dc8fa50d56488cdba2973dccc"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "2323338e2d2993339aebbb6c1c9b7f489134ad9adfb8be93aeddcd36828abdc5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "5d9851514f8b14055f1e000e538d59d40bcecd291ee4947998a6930d487440b1"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "4d442b0fc50ed5b4a38a9a8ca35774bd50d64a3ba53b8369ef8836f832d7952a"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "12cfb202f6f3935165fbf220619ef9c4ef9d93904c7e1c3110f311fb21185d52"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "ac35fb017247ec4bfb8e3747c68c02a36989b1dede665a1a7e992c467c993444"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "98debcd19252810b430a1efad61cfe564fab44ebde5e534d41db4b0b6691b6b1"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "7470fc7a11f6235bdca0af62dc7c011869df4a4177f990697fd8ebfa8a14ff13"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "f14e842f335d256f452d53279f1a47c20e482d9e4ba95e1bcbb0a4841fc346b3"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "5013c61daf4802393adeed241966918c001b51ad0df8f91abf50f0af87ab5479"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "seguir_estado_actual_entre_recargas",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "12c01b657c12d71ee6d0964dc8271e107dc9aa7d4ba305788dbe334de83fb83c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "95aa2d39ea2b8b39e724bfba14718c7185b4d0ecb4a5d6de43989e80774252ba"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "fdadf0f2f03666fea6bf92b627f806b340bb042939ea732b0de8b8503ea8a5b4"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "dd4cb2952bc38f4ca603566a1457793c8fe08a7d9f4d67e2570c5fa0b9d424dd"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "d3b0cd05d19eb7c090e4fd4b2690a91fad0d3d896723132b6615c47d5c620a3d"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "7d96277eb6b0be7a2be129f78e2f2eff3cd09f362f3857fc18175c45e188a5d8"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "46c2be2c2e7696b3cc73decd15062b7141bb225d8629204c7542a194be8516f0"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "7929504c80cc3f586bd5b2ed6a2f04b27f02ec65bbc1c73d996b79562d1bdc3a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "430d0f06666e193fc3c5433501e78ed492fd4c8dc8fa50d56488cdba2973dccc"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "2323338e2d2993339aebbb6c1c9b7f489134ad9adfb8be93aeddcd36828abdc5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5d9851514f8b14055f1e000e538d59d40bcecd291ee4947998a6930d487440b1"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "4d442b0fc50ed5b4a38a9a8ca35774bd50d64a3ba53b8369ef8836f832d7952a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "12cfb202f6f3935165fbf220619ef9c4ef9d93904c7e1c3110f311fb21185d52"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "ac35fb017247ec4bfb8e3747c68c02a36989b1dede665a1a7e992c467c993444"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "98debcd19252810b430a1efad61cfe564fab44ebde5e534d41db4b0b6691b6b1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "7470fc7a11f6235bdca0af62dc7c011869df4a4177f990697fd8ebfa8a14ff13"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "f14e842f335d256f452d53279f1a47c20e482d9e4ba95e1bcbb0a4841fc346b3"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "5013c61daf4802393adeed241966918c001b51ad0df8f91abf50f0af87ab5479"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "2220ad7850edf986d86bd1041316804b90004292a45dbc0206b5ccd555e21a81",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "40f0c0fd7e5b4fa5ec97c50f272317bf8bcbc0782eff9743a787039c6a4d4685"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "217ed328a35faee5925a18af4c2eea9b0693445cde4c86c038b273f5295ea446"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "d1fb3130bebd69111d1e73fb396c77c1f4d6b2b9fe2d74e71f90289f11a2db6d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "37e69d9e7e42dec504519c22299c09c843e51e3d7500d2f06afd672394577a6c"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "73ff07cbfa92b93b76c80e731978a0fb86325ee456c6ea8cb69a9926648314fb"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "c7c8a7ca6061ccea7e5d54f9074470b9ba201873cbe24704fdb49854bdbb32bb"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "seguir_estado_actual_entre_recargas",
+        "sha256": "018cb88f838544b84218728cdd5117988e906341bde5190012597d95c2568269",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "111f3664b309e8401288cbb8b00065c58d47cc558615e2c7daa8dda6cecbeb65",
+        "afterSha256": "bfb657eb3f293e4822b0cc09cad41a885853007527ed4ffbe1bb86f05cb7661f"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "5144cef2bd7cc6d97875569485721e78dc9bd96d3590ce3245f9d69dbf3fa8d1",
+        "afterSha256": "ff1c1d9a4e647ef6a7369f508f468b2aae2f854ac131c788ee0f91bbda806226"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5ebd721a6b37588bb37087699b70c93fd2e262caa2d091eeb3ef8dfd7433e2ee",
+        "afterSha256": "042af56549e5874cefd7473d53c1e65a2a98cc6d7004541924c18c690974b852"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f826ab9f14c015e58ec45ba458c3580a01b79c9c47f854ad091bce5e82914a6f",
+        "afterSha256": "e8331a34642dcee212ff7637254d41dfc72ab8274f608876206ea46df922185d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "5abee210f6127e98e9ab544db2e04a441f7fdee0d388a895c587e45d0bc5f88a",
+        "afterSha256": "f9feb39eafdd78fd4285d995d351adad158892a7aa050c9cb19c7d9e25d01021"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "f81dd8b8a3a2011897c425958492dca41703f294648e5da175f9b2db0feb1750",
+        "afterSha256": "5020f4fd43d0913cfb45aa574549e628964f9a01bce75441a7b6e6ec028a58d3"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "f74286363e6b58cc16f346c38d9c2b9838c67311925de92045590b300e8f54a2",
+        "afterSha256": "c42578addf5d83c8c8c1d886ec9ae3b95bb3eb9abafbe054de73d14f939ab500"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "3ea93fca076d218605eb821c581e20668909bf192e8dd43e5c652898f9427026",
+        "afterSha256": "572512b7a56665787ecb97a2d2804c9e6c167e9cb2524df348a7ed461675bd90"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "2bc4e47eddc0844a252138bae1d7e385710a1919fec7b06a7f1df13bfd2d3673",
+        "afterSha256": "162f0a95f5135ad3fac833a332844c88a717f2ef1cfc9859553a6d72a6dd9e7e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "033cccaae6eced73a51c439eee997f803e7b965e8977db0964c937aa5fda8af4",
+        "afterSha256": "53ed7b1dfbcb2cb6d60a8082bf8602d4ff0aebcce5fb9197629786bacff68cec"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "9aadf7ef1f7f9d5e744ea89f1222a25213022fdd6c2479b9ab84dfccd7871970",
+        "afterSha256": "c0b6aae88174085aefb7e93d186a352be3ba455ab5d517c1c6b0754ac32ebbd8"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "55ba52f141b0fec141d07330e2c41cb3949330e5c1dfac66e957bbf0daf4c8f0",
+        "afterSha256": "e54dadc95b7dfeac9b4934d9d46f6033a40a9bb0a12565e7b9131236d7955a39"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a31f322e43f108ac27c9c098946be4cd85d1a21aa7b39940d85443fd18360d75",
+        "afterSha256": "7ef0362a0a095ffd91428275c61ef328e02b9c23f9f4b5328fb962780ead5b98"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "0cdb59ab2199c4d01376ac1ae0d5c611a7306f48d6ed55cdbed230ed1e22c0bf",
+        "afterSha256": "1ca0fd7c29d315b6df2e7114a367d094f249ff0896c2884f9dc3bf46e1d0a09f"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "09103377b08e6c40b9babd91724b2764cdf5334bf9321c189d93a777cb9bafa8",
+        "afterSha256": "d3145a7a0257fba3122a1d5350ecce191f131dc69694fa40af6186a9537b494a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "9e37f82ec3b7b00e52c0b4e21da5438a963796378e6f556cbceac8eac63bc662",
+        "afterSha256": "089ad8764e02f0a1b528922ba2252dba3fe65e19a7a1a353704f4ff2b1514283"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "47a82184a536f672de33d28e1ede3007a48d3e42763bd7578baeddb93b1ceb6c",
+        "afterSha256": "3d50f7afbe2f034ba4e2dde2eb921b2f216e7d229daa8969004c0e37b33c3d79"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "346b4e311ef83a44c920537c0e82e9d1839735a8da5a67d384467970383764c6",
+        "afterSha256": "6557d40f1bb92be8037404103ea9bb662fa0ba32fdc58c2bbc16153937636ed5"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "034b635f5770f483fa01af29f9287412fe77f92762eba9a842601e59d8806872",
+        "afterSha256": "6b2f673bec70f5fa486fe42054d1beaa0487f15b04e9fec5ce0db58ff4d051f6"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "9a5911829607311829ca300bdf565793ef95c28ce4f15ce617093c2a9b8dca3e",
+        "afterSha256": "af4e21f03ffd030a1ef1c5261964cbcffd9ab10e87bd1e919073134e2e247c22"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "0099bd22787801438770ed03b38df8be148a39e5fd47d771e63767d162f29f1a",
+        "afterSha256": "1ed4757e4249eee6bc3e6684278e8870a0c1044b52ea7b9b09243ef889324343"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0003",
+      "blocks": [
+        "block_0002_0004",
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0004_0000",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0004_0005",
+        "block_0005_0000",
+        "block_0005_0001"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0001",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "seguir_estado_actual_entre_recargas",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "requires": [
+        "block_0002_0003"
       ]
     }
   ]

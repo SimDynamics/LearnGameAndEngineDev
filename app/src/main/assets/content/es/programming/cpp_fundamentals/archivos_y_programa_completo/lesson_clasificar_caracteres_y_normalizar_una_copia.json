@@ -10,11 +10,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya clasificaste caracteres con condiciones propias y conservaste los separadores mediante get. <cctype> ofrece funciones de clasificación: std::isalpha pregunta si una unidad representa una letra; std::isdigit, un dígito decimal; std::isspace, un blanco. La pregunta elegida sigue dependiendo del problema. No convierten por sí solas una secuencia en tokens ni validan un formato completo."
+          "text": "Cada elemento de un `std::string` tiene tipo `char`. Aquí llamaremos unidad al elemento que recorremos y analizamos. En las muestras ASCII de esta lección, cada una de esas unidades representa un carácter del dominio elegido.\n\nYa clasificaste caracteres mediante condiciones propias y usaste `get` para conservar los separadores. La cabecera `<cctype>` proporciona preguntas de biblioteca: `std::isalpha` reconoce letras, `std::isdigit` reconoce dígitos decimales y `std::isspace` reconoce blancos. Sus resultados clasifican una unidad; por sí solos no separan el texto en tokens ni comprueban un formato completo (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "una unidad",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Esta lección usa texto ASCII y el locale C inicial del programa, que aquí no se cambia. Un locale reúne convenciones de clasificación y conversión, entre otras. Bajo estas condiciones, las letras básicas son A..Z y a..z; los dígitos son 0..9. El límite permite razonar sobre las salidas sin prometer un análisis general de Unicode o de todas las lenguas."
+          "text": "ASCII asigna códigos a un conjunto de caracteres que incluye letras básicas, dígitos, signos y caracteres de control. Esta lección trabaja con sus valores de cero a ciento veintisiete y conserva la configuración regional de C inicial del programa. Esa configuración establece convenciones para clasificar y convertir caracteres, entre otras operaciones; aquí no se cambia (ISO/IEC JTC 1/SC 22/WG 14, 2023).\n\nBajo estas condiciones, las letras son las mayúsculas de A a Z y las minúsculas de a a z; los dígitos van del cero al nueve. Esta acotación permite comprobar las salidas sin suponer que cualquier texto de cualquier lengua se procesa del mismo modo.",
+          "emphasis": [
+            {
+              "text": "la configuración regional de C",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -23,7 +35,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La comparación guiada produce 1:0:0. Los clasificadores devuelven int: cero significa falso y un valor distinto de cero significa verdadero; no se exige que ese valor sea literalmente 1. Guardar resultado != 0 en bool expresa la pregunta y hace estable esta salida."
+          "text": "El ejemplo muestra `1:0:0`. Los clasificadores devuelven un `int`: cero significa que la condición es falsa y un resultado distinto de cero significa que es verdadera. No prometen devolver exactamente el entero uno. Comparar el resultado con cero y guardarlo en `bool` expresa la pregunta; los valores booleanos de estos programas se muestran como cero o uno (ISO/IEC JTC 1/SC 22/WG 14, 2023).",
+          "emphasis": [
+            {
+              "text": "No prometen devolver exactamente el entero uno",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -33,7 +51,8 @@
           "answers": [
             "0:1:0"
           ],
-          "explanation": "Cinco es un dígito; no es una letra ni un blanco. Se imprimen bool, no los enteros internos de los clasificadores."
+          "explanation": "Cinco es un dígito; no es una letra ni un blanco. Se imprimen bool, no los enteros internos de los clasificadores.",
+          "reviewFeedback": "Aplica las tres preguntas al mismo carácter y conserva el orden letra, dígito y blanco. Los valores mostrados son los bool obtenidos al comparar cada resultado con cero."
         },
         {
           "type": "multiple_choice",
@@ -44,7 +63,12 @@
             "std::isalpha(unidad) == unidad, porque devuelve el código original cuando reconoce una letra."
           ],
           "correctIndex": 1,
-          "explanation": "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete. El resultado comunica una categoría, no devuelve el código del carácter analizado."
+          "explanation": "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete. El resultado comunica una categoría, no devuelve el código del carácter analizado.",
+          "reviewFeedback": [
+            "El contrato no fija qué entero distinto de cero representa verdadero. No añadas una igualdad que la biblioteca no promete.",
+            "Separa el entero devuelto por el clasificador del bool que expresa si reconoció la categoría.",
+            "Un clasificador comunica si una unidad pertenece a una categoría; no promete devolver su código original."
+          ]
         }
       ]
     },
@@ -56,11 +80,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Las funciones de <cctype> reciben int, pero su dominio está restringido: el valor debe ser representable como unsigned char o ser la marca EOF. unsigned char es un tipo entero sin signo que sirve aquí para representar la unidad de carácter. No necesitamos fijar su ancho. Los códigos ASCII de estas muestras, de 0 a 127, caben también en int."
+          "text": "Las funciones de `<cctype>` reciben un `int`, pero sólo admiten ciertos valores: uno representable como `unsigned char` o la marca entera `EOF`. `unsigned char` es un tipo entero sin signo que usamos para representar la unidad de carácter antes de llamar a la biblioteca. Los códigos ASCII de las muestras, de `0` a `127`, también caben en `int` (ISO/IEC JTC 1/SC 22/WG 14, 2023).",
+          "emphasis": [
+            {
+              "text": "sólo admiten ciertos valores",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "char puede ser un tipo con signo. En otras entradas, promover directamente cierto char a int podría producir un negativo distinto de EOF: ese argumento incumple el contrato y causa comportamiento indefinido. static_cast<unsigned char>(caracter) obtiene primero el valor de la unidad sin signo; luego se pasa a la función. Convertir sólo a int no corrige un valor negativo. Aplicamos esta preparación incluso cuando el carácter básico del ejemplo ya era positivo."
+          "text": "El tipo `char` puede tener signo. Una unidad de otra entrada, al convertirse directamente a `int`, podría dar un negativo que no fuera la marca permitida; llamar con él a estas funciones incumple su dominio y provoca comportamiento indefinido. La conversión `static_cast<unsigned char>(caracter)` prepara primero el valor sin signo; después ese valor llega como argumento a la función. Convertir solamente a `int` no elimina un valor negativo (ISO/IEC JTC 1/SC 22/WG 14, 2023).\n\nAplicamos esa preparación también a las letras y dígitos básicos de las muestras. Preparar el argumento no modifica el carácter original ni decide todavía qué categoría tiene.",
+          "emphasis": [
+            {
+              "text": "Preparar el argumento",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "fill_code",
@@ -71,11 +107,18 @@
             "unsigned char",
             "char unsigned"
           ],
-          "explanation": "La preparación ocurre antes de que el argumento llegue al clasificador. No cambia el texto ni decide qué categoría representa."
+          "explanation": "La preparación ocurre antes de que el argumento llegue al clasificador. No cambia el texto ni decide qué categoría representa.",
+          "reviewFeedback": "La conversión que falta debe obtener el valor de la unidad sin signo antes de que se utilice como argumento. Conservar un negativo mediante una conversión a int no cumple ese propósito."
         },
         {
           "type": "note",
-          "text": "EOF es una marca entera de la interfaz de C, declarada por <cstdio>; no es un carácter del string ni la bandera entrada.eof(). No se inventa suponiendo que siempre vale -1. Si una interfaz entrega esa marca como int, se conserva como marca y se comprueba antes de convertir el dato a char; el cast de una unidad char no es un procedimiento para conservar EOF."
+          "text": "`EOF` es una marca entera definida por `<cstdio>`. No es un elemento del `string` ni el indicador que consulta `entrada.eof()`, y no debe inventarse suponiendo que siempre vale menos uno. Si una interfaz entrega esa marca como `int`, se comprueba antes de convertirla en `char`; convertir un `char` a `unsigned char` prepara una unidad almacenada, no conserva por sí solo una marca de fin recibida como entero.\n\nEn la predicción siguiente aparece `std::tolower`: es una función que permite pasar una letra básica mayúscula a minúscula. Cuando recibe `EOF`, conserva esa marca. Más adelante aplicaremos esta conversión a los caracteres del texto (ISO/IEC JTC 1/SC 22/WG 14, 2023).",
+          "emphasis": [
+            {
+              "text": "una marca entera",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -85,7 +128,8 @@
           "answers": [
             "0:1"
           ],
-          "explanation": "La marca no es un dígito. La conversión de caja no la transforma en una letra ni la pierde."
+          "explanation": "La marca no es un dígito. La conversión de caja no la transforma en una letra ni la pierde.",
+          "reviewFeedback": "EOF se mantiene como una marca int permitida en estas llamadas. Decide si la marca representa un dígito y si la conversión de minúsculas la conserva; no la conviertas antes en char."
         },
         {
           "type": "multiple_choice",
@@ -96,7 +140,12 @@
             "Usar unsigned char hace que todo carácter sea una letra válida."
           ],
           "correctIndex": 0,
-          "explanation": "El dominio de la llamada y la categoría de su argumento son cuestiones distintas."
+          "explanation": "El dominio de la llamada y la categoría de su argumento son cuestiones distintas.",
+          "reviewFeedback": [
+            "Distingue preparar un argumento del clasificador de interpretar una secuencia de unidades como un texto más amplio.",
+            "Cambiar el tipo de destino a int no elimina por sí solo un valor negativo que ya tenga el char.",
+            "La pertenencia a una categoría se consulta después; elegir una representación sin signo no obliga a que la respuesta sea letra."
+          ]
         }
       ]
     },
@@ -108,11 +157,17 @@
         },
         {
           "type": "paragraph",
-          "text": "En el locale C, isspace reconoce espacio, tabulador horizontal (\\t), salto de línea (\\n), retorno de carro (\\r), avance de página (\\f) y tabulador vertical (\\v). La categoría reúne varios caracteres; no significa sólo el espacio que vemos entre palabras."
+          "text": "En la configuración regional de C, `std::isspace` reconoce seis blancos: espacio, tabulador horizontal (`\\t`), salto de línea (`\\n`), retorno de carro (`\\r`), avance de página (`\\f`) y tabulador vertical (`\\v`). Es una categoría más amplia que el espacio visible entre palabras (ISO/IEC JTC 1/SC 22/WG 14, 2023).",
+          "emphasis": [
+            {
+              "text": "seis blancos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Nuestro intérprete anterior acordó tres separadores: espacio, tabulador horizontal y salto de línea. Esa política permanece intacta. Sustituirla sin más por isspace admitiría entradas nuevas. Una categoría de biblioteca puede ser útil para un informe y demasiado amplia para una gramática concreta."
+          "text": "El intérprete que construimos antes acordó tres separadores: espacio, tabulador horizontal y salto de línea. Ese acuerdo sigue siendo el de aquel lector. Sustituir sin más su condición por `std::isspace` haría que aceptara otros separadores. Una categoría de biblioteca puede servir para un informe sin coincidir con la lista permitida por un formato."
         },
         {
           "type": "output_prediction",
@@ -122,7 +177,8 @@
           "answers": [
             "1:0"
           ],
-          "explanation": "El retorno de carro pertenece a la categoría de blancos, pero no a la lista de tres separadores acordada."
+          "explanation": "El retorno de carro pertenece a la categoría de blancos, pero no a la lista de tres separadores acordada.",
+          "reviewFeedback": "Compara el carácter con la lista explícita de tres separadores y, por separado, con los seis blancos de la biblioteca en la configuración de C."
         },
         {
           "type": "multiple_choice",
@@ -133,7 +189,12 @@
             "Usar isspace para el informe y conservar la condición explícita de tres separadores para el lector."
           ],
           "correctIndex": 2,
-          "explanation": "El mismo texto puede analizarse con políticas diferentes. Cambiar el lector requiere cambiar sus requisitos y pruebas."
+          "explanation": "El mismo texto puede analizarse con políticas diferentes. Cambiar el lector requiere cambiar sus requisitos y pruebas.",
+          "reviewFeedback": [
+            "Una función de biblioteca tiene su propia categoría. Sustituir la condición de un lector puede ampliar las entradas que admite.",
+            "Eliminar separadores antes de validar puede ocultar qué texto se recibió y no demuestra que cumpliera el formato.",
+            "Relaciona cada operación con sus requisitos: contar una categoría en un informe y admitir separadores en un lector son decisiones distintas."
+          ]
         },
         {
           "type": "output_prediction",
@@ -143,11 +204,12 @@
           "answers": [
             "1:1:1:1"
           ],
-          "explanation": "La letra, el dígito, el tabulador vertical y el guion bajo van a categorías distintas. Guion bajo no es una letra para isalpha. Hay cuatro caracteres y cuatro incrementos en total."
+          "explanation": "La letra, el dígito, el tabulador vertical y el guion bajo van a categorías distintas. Guion bajo no es una letra para isalpha. Hay cuatro caracteres y cuatro incrementos en total.",
+          "reviewFeedback": "Recorre las cuatro unidades y sigue la cadena if/else if/else. Incrementa un único contador por unidad; recuerda que el tabulador vertical es blanco y que el guion bajo no es una letra básica."
         },
         {
           "type": "paragraph",
-          "text": "El tamaño de estas muestras es pequeño y conocido. if/else if/else asigna una categoría a cada carácter. Para un informe más amplio, decide cuáles categorías son excluyentes y cuáles se superponen antes de sumar; no sumes resultados int internos del clasificador como si fueran cantidades."
+          "text": "Las muestras son pequeñas y su longitud está controlada. La cadena `if/else if/else` incrementa un solo contador por unidad: letras, dígitos, blancos u otros. Se cuenta la unidad reconocida, no el valor entero interno que devuelve el clasificador.\n\nSi un informe utiliza otras preguntas de clasificación, debe decidir si sus categorías se excluyen o se superponen antes de sumarlas. Elegir la categoría y decidir cómo contarla son partes del diseño del informe."
         }
       ]
     },
@@ -159,7 +221,13 @@
         },
         {
           "type": "paragraph",
-          "text": "std::tolower y std::toupper también reciben int y retornan int. En nuestro dominio básico con locale C, cambian respectivamente mayúscula a minúscula y minúscula a mayúscula; dígitos, blancos y signos se conservan. Cuando el resultado corresponde a estos caracteres básicos, puede convertirse a char para guardarlo. No trasladamos esa garantía a una conversión general de textos multibyte."
+          "text": "Pasar entre mayúsculas y minúsculas también se llama conversión de caja. `std::tolower` y `std::toupper` reciben `int` y devuelven `int`. En nuestro dominio ASCII y con la configuración regional de C, convierten respectivamente una mayúscula en minúscula y una minúscula en mayúscula; los dígitos, blancos y signos conservan su valor. Un resultado de esos caracteres representables puede convertirse a `char` para guardarlo (ISO/IEC JTC 1/SC 22/WG 14, 2023).",
+          "emphasis": [
+            {
+              "text": "conversión de caja",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -168,7 +236,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La comparación guiada produce R:r:R:#. original sigue siendo R: una llamada que devuelve un valor no reasigna ese objeto. Cada conversión expresa dos pasos distintos: preparar el argumento para la biblioteca y guardar el resultado representable como carácter de este dominio."
+          "text": "El ejemplo muestra `R:r:R:#`. La variable `original` sigue conteniendo la mayúscula: obtener el valor devuelto por una función no le asigna automáticamente ese resultado al objeto de entrada.\n\nLas dos conversiones de tipo cumplen funciones distintas: antes de la llamada, `unsigned char` prepara el argumento; después, `char` permite guardar el resultado que sabemos representable en este dominio. La marca `EOF` no se utiliza aquí como si fuera una letra."
         },
         {
           "type": "output_prediction",
@@ -178,7 +246,8 @@
           "answers": [
             "K:8:k"
           ],
-          "explanation": "La copia del carácter convertido es K; ocho no cambia; el objeto letra conserva k."
+          "explanation": "La copia del carácter convertido es K; ocho no cambia; el objeto letra conserva k.",
+          "reviewFeedback": "Separa el valor devuelto de la variable que se usó como argumento. La letra tiene una conversión de caja; un dígito conserva su valor y las llamadas no reasignan por sí solas letra."
         },
         {
           "type": "multiple_choice",
@@ -189,7 +258,12 @@
             "Porque hay que mantener separados el dominio del argumento, posibles marcas y la representación del resultado."
           ],
           "correctIndex": 2,
-          "explanation": "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca. Convertir previamente a char no valida un int arbitrario ni garantiza conservar EOF."
+          "explanation": "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca. Convertir previamente a char no valida un int arbitrario ni garantiza conservar EOF.",
+          "reviewFeedback": [
+            "Convertir un int arbitrario a char no demuestra que perteneciera al dominio permitido ni conserva todos sus valores.",
+            "Una marca recibida como int debe distinguirse antes de reducirla a una unidad char.",
+            "Identifica qué se valida antes de la llamada y qué resultado del dominio básico puede guardarse después como char."
+          ]
         }
       ]
     },
@@ -201,7 +275,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Podemos copiar un string y cambiar los caracteres de la copia mediante referencias. La función de biblioteca no recorre el string por nosotros. La copia nos permite mantener el texto recibido para presentarlo, diagnosticarlo o compararlo según otra política. Normalizar aquí significa elegir una caja para las letras básicas, sin quitar espacios ni signos."
+          "text": "Normalizar significa aquí elegir una misma caja para las letras básicas de una copia, sin eliminar unidades del texto. Primero copiamos el `string`; después un recorrido por referencias modificables permite asignar a los caracteres de esa copia. La función de biblioteca devuelve el valor convertido de la unidad recibida; no recorre por sí sola todo el texto.\n\nConservar el original permite mostrar lo recibido, diagnosticar diferencias o aplicar otra comparación. La elección de una copia convertida depende de los requisitos de la operación, no de que toda entrada necesite ser corregida (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "sin eliminar unidades del texto",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -210,7 +290,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La comparación guiada produce LaGo-4:lago-4. La referencia del recorrido enlaza un carácter de copia. Si recorrieras el texto original por referencia modificable, cambiarías el origen. Pasar un string por referencia const a una función y devolver otro string permite expresar ese permiso de lectura y ese resultado."
+          "text": "El ejemplo muestra `LaGo-4:lago-4`. Cada referencia del recorrido se vincula a un carácter de `copia`, por lo que la asignación modifica ese elemento de la copia. El objeto `recibido` permanece intacto. Una función que recibe `const std::string&` y devuelve otro `std::string` permite expresar ese permiso de lectura y el resultado independiente (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "el resultado independiente",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -221,11 +307,16 @@
             "Suponer que obtener minúsculas elimina signos y vuelve válido cualquier nombre."
           ],
           "correctIndex": 1,
-          "explanation": "La normalización sólo se aplica cuando el requisito la permite. Una comparación exacta puede rechazar una variante de caja deliberadamente."
+          "explanation": "La normalización sólo se aplica cuando el requisito la permite. Una comparación exacta puede rechazar una variante de caja deliberadamente.",
+          "reviewFeedback": [
+            "Comprueba si las dos interfaces permiten modificar la caja. Una comparación exacta tiene requisitos distintos.",
+            "Elige la comparación de cada interfaz según su contrato y conserva el texto recibido.",
+            "Cambiar la caja no elimina signos ni demuestra que el texto sea un nombre permitido."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Esta conversión no se incorpora al intérprete ni a los lectores ya construidos. También sería incorrecto afirmar que un string UTF-8 se transforma por completo recorriendo char uno a uno: una letra puede ocupar varias unidades y las reglas lingüísticas pueden ser más complejas. La conversión a unsigned char protege el argumento, pero no descodifica Unicode."
+          "text": "La conversión de esta lección no cambia automáticamente el intérprete ni los lectores anteriores. Normalizar una copia sólo es válido cuando la política de comparación lo permite.\n\nUTF-8 es una codificación de Unicode, un estándar que permite representar caracteres de muchos sistemas de escritura. Un carácter de un texto UTF-8 puede necesitar varias unidades `char`, y sus reglas de mayúsculas y minúsculas pueden requerir un tratamiento más amplio. Recorrer esas unidades una a una con estas funciones no realiza ese análisis general. La conversión a `unsigned char` prepara el dominio del argumento; no descodifica el texto."
         },
         {
           "type": "multiple_choice",
@@ -237,7 +328,12 @@
             "Cinco letras, porque la conversión de caja convierte todos los caracteres."
           ],
           "correctIndex": 0,
-          "explanation": "La normalización cambia la caja de las letras básicas, sin eliminar signos ni convertir dígitos. El guion bajo sigue en otros y se conserva en ambas copias."
+          "explanation": "La normalización cambia la caja de las letras básicas, sin eliminar signos ni convertir dígitos. El guion bajo sigue en otros y se conserva en ambas copias.",
+          "reviewFeedback": [
+            "Cuenta las categorías por separado y cambia sólo las letras de cada copia, sin modificar el original.",
+            "El guion bajo no es una letra para esta pregunta y no se elimina al cambiar mayúsculas por minúsculas.",
+            "Los dígitos y el signo conservan su categoría y su valor aunque recorras el string con una función de conversión."
+          ]
         }
       ]
     },
@@ -249,16 +345,36 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye texto_admitido(const string&): acepta hasta 40 unidades ASCII, cuyos valores sin signo están entre 0 y 127; rechaza lo demás antes de clasificar o convertir. El string vacío es válido. Este control corresponde a nuestro dominio de trabajo, no a un validador de Unicode."
-        },
-        {
-          "type": "paragraph",
-          "text": "Define Resumen_caracteres con cuatro contadores int: letras, digitos, blancos y otros. resumir recibe texto admitido por referencia const y devuelve los recuentos según isalpha, isdigit e isspace del locale C, con categorías exclusivas. Define copiar_en_minusculas y copiar_en_mayusculas: reciben texto admitido por referencia const, conservan todas sus unidades y devuelven una copia convertida. Las tres funciones trabajan sin imprimir."
-        },
-        {
-          "type": "paragraph",
-          "text": "main conserva una copia previa de la entrada, valida todo y sólo después llama a las funciones.\n\nUsa \"NoDo 7!\" inicialmente.\n\nMuestra Original:<texto>, Minusculas:<copia>, Mayusculas:<copia>, Letras:L;Digitos:D;Blancos:B;Otros:O y Entrada conservada:V, cada informe en su línea.\n\nV es el bool de comparar entrada con la copia previa.\n\nPara un rechazo muestra únicamente Texto rechazado.\n\nConstruye una sola batería mediante probar(const std::string& entrada), con copia previa, validación y resultados locales en cada llamada. main usa \"NoDo 7!\", \"\", \"aZ09_\", cuarenta letras a, cuarenta y una letras a, la cadena de seis caracteres \" \\t\\n\\r\\f\\v\" y una cadena de una unidad construida como std::string(1, static_cast<char>(-1)), en ese orden.\n\nLas escrituras con barra representan caracteres de control reales.\n\nAnte cada prueba presenta Caso N, numerado desde 1.\n\nLas válidas conservan los cinco informes originales y añaden Unidades:N con la longitud; cada informe termina con salto, sin líneas vacías añadidas.\n\nLos rechazos sólo muestran Texto rechazado después de su cabecera.\n\nEl último argumento, convertido a unsigned char, supera 127 y debe rechazarse antes de llamar a <cctype>.\n\nUsa Compilar, ejecutar y comprobar para toda la batería.",
+          "text": "Construye `bool texto_admitido(const std::string& texto)`. Acepta hasta cuarenta unidades ASCII, con valores sin signo de `0` a `127`, y rechaza las demás entradas antes de clasificarlas o convertirlas. El `string` vacío es válido. Este control establece el dominio de nuestras funciones; no comprueba si una entrada representa un texto Unicode válido.",
           "emphasis": [
+            {
+              "text": "antes de clasificarlas o convertirlas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Define `Resumen_caracteres` con cuatro miembros `int`: `letras`, `digitos`, `blancos` y `otros`. Implementa `Resumen_caracteres resumir(const std::string& texto)` para contar las unidades admitidas mediante `std::isalpha`, `std::isdigit` y `std::isspace`, con las categorías exclusivas del ejemplo.\n\nImplementa también `std::string copiar_en_minusculas(const std::string& texto)` y `std::string copiar_en_mayusculas(const std::string& texto)`. Devuelven sus respectivas copias, conservando todas las unidades y su orden. La validación, el resumen y las funciones de copia no imprimen. Las funciones de resumen y copia tienen como precondición que todo el texto ya haya sido admitido.",
+          "emphasis": [
+            {
+              "text": "no imprimen",
+              "style": "bold"
+            },
+            {
+              "text": "todo el texto ya haya sido admitido",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye una sola batería mediante `probar(const std::string& entrada)`. Cada llamada conserva una copia previa de la entrada, valida todo el texto y sólo después llama a las funciones de resumen y copia. Desde `main` se invoca con estos siete casos, en orden:\n`\"NoDo 7!\"`\n`\"\"`\n`\"aZ09_\"`\n`std::string(40, 'a')`\n`std::string(41, 'a')`\n`\" \\t\\n\\r\\f\\v\"`\n`std::string(1, static_cast<char>(-1))`\n\nAntes de cada prueba muestra `Caso N`, numerando desde uno. Para una entrada admitida, presenta `Original:<texto>`, `Minusculas:<copia>`, `Mayusculas:<copia>`, `Letras:L;Digitos:D;Blancos:B;Otros:O`, `Entrada conservada:V` y `Unidades:N`. Los marcadores se sustituyen por los textos o valores correspondientes; V es el resultado booleano de comparar la entrada con su copia previa y la última N es su longitud.\n\nCada informe termina con un salto y no se añaden separadores entre los casos. Las secuencias de escape representan los caracteres de control reales: se conservan también dentro de las copias mostradas, aunque alteren la distribución visible. Un rechazo sólo muestra `Texto rechazado` con su salto después de la cabecera del caso.\n\nEl último caso contiene una unidad que supera el dominio ASCII al convertirla a `unsigned char`; se rechaza antes de llamar a `<cctype>`. Pulsa Compilar, ejecutar y comprobar con la batería completa.",
+          "emphasis": [
+            {
+              "text": "Las secuencias de escape representan los caracteres de control reales",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -281,11 +397,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La batería comprueba vacío, letras ya convertidas, dígitos, signos, límites de cuarenta y cuarenta y una unidades, seis clases de blanco y una unidad fuera de ASCII. Los controles pueden mover el cursor al presentar sus copias: la comprobación conserva literalmente esas unidades y observa también Unidades y los recuentos. Cada contador y su suma no exceden 40 en los textos admitidos."
+          "text": "La batería distingue vacío, letras ya convertidas, dígitos, signos, cuarenta y cuarenta y una unidades, los seis blancos y una unidad fuera de ASCII. Esa última unidad está almacenada en un `string`; no se interpreta como la marca entera de fin de una interfaz.\n\nLos controles pueden mover el cursor o crear saltos al mostrar las copias. Se conservan sus unidades literales, junto con la longitud y los recuentos. Cada contador y la suma de todos ellos quedan entre cero y cuarenta para los textos admitidos."
         },
         {
           "type": "note",
-          "text": "La referencia está después del intento. No se entregan las funciones ni la validación dentro del editor; no escribas un informe fijo que sólo imite la primera muestra. Todas las entradas son strings preparados dentro de esta ejecución."
+          "text": "Las entradas son cadenas preparadas dentro del programa. La referencia posterior de funciones utiliza otro texto para contrastar la conservación; la referencia de la batería completa ejecuta los siete casos. Construye las funciones y el informe a partir de los requisitos, sin sustituirlos por una salida fija para la primera muestra."
         }
       ]
     },
@@ -293,7 +409,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior y criterios de conservación"
+          "text": "Referencia posterior: funciones con otro texto"
         },
         {
           "type": "code",
@@ -302,15 +418,40 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia utiliza otros datos: Original:<CaJa 2.>, Minusculas:<caja 2.>, Mayusculas:<CAJA 2.>, Letras:4;Digitos:1;Blancos:1;Otros:1 y Entrada conservada:1. Para la muestra del intento, las tres primeras líneas muestran NoDo 7!, nodo 7! y NODO 7!, respectivamente, entre los delimitadores acordados; los recuentos también son 4,1,1,1."
+          "text": "Esta referencia es parcial: usa `\"CaJa 2.\"` y muestra `Original:<CaJa 2.>`, `Minusculas:<caja 2.>`, `Mayusculas:<CAJA 2.>`, `Letras:4;Digitos:1;Blancos:1;Otros:1` y `Entrada conservada:1`. El último informe no tiene salto final.\n\nSirve para estudiar las funciones con otro dato; no contiene cabeceras `Caso`, informes `Unidades` ni las siete llamadas del objetivo. La referencia de la batería completa de la página siguiente sí los incluye.",
+          "emphasis": [
+            {
+              "text": "referencia es parcial",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validar antes del cálculo; convertir a unsigned char antes de cada llamada; usar cero/no cero como condición, no exigir 1; contar cada unidad una vez; conservar entrada, espacios, signos, longitud y orden; devolver dos copias distintas según su política; imprimir sólo en main. Las funciones de cálculo tienen la precondición texto admitido. Otra organización que cumpla estos contratos es válida."
+          "text": "Criterios: validar todo el texto antes del cálculo; preparar cada argumento como `unsigned char`; interpretar los resultados de clasificación como cero o no cero; contar cada unidad una vez; conservar el original, los espacios, signos, longitud y orden; y devolver las dos copias según su política.\n\nLas funciones de validación, resumen y copia no imprimen. El llamador presenta los informes: en la batería completa lo hace `probar`, invocada desde `main`. Otra organización que conserve estos contratos también es válida.",
+          "emphasis": [
+            {
+              "text": "El llamador presenta los informes",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Con vacío, las tres representaciones son <> y los cuatro contadores son cero; la entrada permanece igual. Con aZ09_, las copias son az09_ y AZ09_, y los contadores son 2,2,0,1. Cuarenta letras producen cuarenta letras contadas; cuarenta y una provocan sólo Texto rechazado. Los seis blancos no se eliminan ni se convierten en letras."
+          "text": "Con el texto vacío, las tres representaciones muestran `<>`, los contadores son cero y la entrada permanece igual. Con `\"aZ09_\"` se obtienen las copias `az09_` y `AZ09_`: dos letras, dos dígitos y un carácter de otros.\n\nCuarenta letras se admiten y se cuentan; cuarenta y una provocan el rechazo. Los seis blancos se conservan en las copias y se cuentan como blancos, sin transformarlos en letras."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: batería completa de clasificación y copias"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& entrada) {\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\\n\";\n        return;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo)\n              << \"\\nUnidades:\" << entrada.size() << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\"; probar(\"NoDo 7!\");\n    std::cout << \"Caso 2\\n\"; probar(\"\");\n    std::cout << \"Caso 3\\n\"; probar(\"aZ09_\");\n    std::cout << \"Caso 4\\n\"; probar(std::string(40, 'a'));\n    std::cout << \"Caso 5\\n\"; probar(std::string(41, 'a'));\n    std::cout << \"Caso 6\\n\"; probar(\" \\t\\n\\r\\f\\v\");\n    std::cout << \"Caso 7\\n\"; probar(std::string(1, static_cast<char>(-1)));\n    return 0;\n}\n"
         }
       ]
     },
@@ -329,7 +470,12 @@
             "Que el informe usa otra categoría; no cambia el contrato del intérprete."
           ],
           "correctIndex": 2,
-          "explanation": "Reconocer una categoría y admitirla en una posición de una gramática son decisiones distintas."
+          "explanation": "Reconocer una categoría y admitirla en una posición de una gramática son decisiones distintas.",
+          "reviewFeedback": [
+            "El informe no cambia los requisitos del intérprete. Compara la categoría de biblioteca con los separadores que el lector acordó admitir.",
+            "Tener una unidad blanca no demuestra que el resto del texto tenga la estructura solicitada.",
+            "Distingue lo que reconoce el clasificador de lo que permite la gramática del lector."
+          ]
         },
         {
           "type": "output_prediction",
@@ -339,11 +485,12 @@
           "answers": [
             "0:1:1"
           ],
-          "explanation": "La igualdad exacta del texto original es falsa; la copia satisface la política de caja; el original se conserva."
+          "explanation": "La igualdad exacta del texto original es falsa; la copia satisface la política de caja; el original se conserva.",
+          "reviewFeedback": "Evalúa cada igualdad con el texto que realmente contiene ese objeto. La copia normalizada puede satisfacer una comparación que no satisface el original, y obtenerla no cambia recibido."
         },
         {
           "type": "paragraph",
-          "text": "La recuperación de las funciones de copia continúa en un editor independiente posterior, con letras ya convertidas, dígitos y signos. get conserva blancos; una extracción formateada de char puede omitirlos antes de que la biblioteca los clasifique. El clasificador no recupera caracteres que la operación de lectura ya descartó."
+          "text": "La construcción independiente de la copia continúa en el siguiente editor. Se recupera la misma función con letras ya convertidas, dígitos y signos.\n\nConservar el texto también depende de cómo se obtuvo: `get` puede entregar los blancos que una extracción formateada de `char` omite con su configuración habitual. El clasificador no puede recuperar las unidades que la lectura ya descartó."
         },
         {
           "type": "multiple_choice",
@@ -355,30 +502,16 @@
             "Todos los nombres que contienen letras pasan la validación después de tolower."
           ],
           "correctIndex": 0,
-          "explanation": "La normalización sólo cambia caja. La política de nombres debe comprobar por separado si quedan signos no admitidos; convertir no elimina ni valida esos caracteres."
+          "explanation": "La normalización sólo cambia caja. La política de nombres debe comprobar por separado si quedan signos no admitidos; convertir no elimina ni valida esos caracteres.",
+          "reviewFeedback": [
+            "Sigue el efecto de la conversión sobre las letras y sobre el signo final, y comprueba después el conjunto de etiquetas permitidas.",
+            "La conversión no elimina el signo de exclamación. Revisa si la cadena completa coincide con alguna etiqueta permitida.",
+            "Contener letras no equivale a cumplir el contrato de las etiquetas. La comparación completa es una comprobación separada."
+          ]
         },
         {
           "type": "note",
-          "text": "Leer un carácter y clasificarlo son acciones distintas: get conserva los blancos que una extracción formateada de char puede omitir. Convertir cada letra de una copia permite conservar el texto recibido y elegir una comparación que ignore caja (Stroustrup, 2024, sección 9.10.4, pp. 279–281). El dominio de los argumentos de <cctype> exige un valor representable como unsigned char o EOF; preparar un char como unsigned char evita pasar un negativo ajeno a esa marca. Esta condición de seguridad no descodifica Unicode ni amplía la política de separadores del intérprete (Working Draft: Programming Languages — C++, s. f., sección [cctype.syn]; ISO/IEC JTC 1/SC 22/WG 14, 2023, secciones 7.4, 7.4.1, 7.4.2 y 7.11.1.1).",
-          "emphasis": [
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Referencia posterior de clasificación y copias"
-        },
-        {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& entrada) {\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\\n\";\n        return;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo)\n              << \"\\nUnidades:\" << entrada.size() << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\"; probar(\"NoDo 7!\");\n    std::cout << \"Caso 2\\n\"; probar(\"\");\n    std::cout << \"Caso 3\\n\"; probar(\"aZ09_\");\n    std::cout << \"Caso 4\\n\"; probar(std::string(40, 'a'));\n    std::cout << \"Caso 5\\n\"; probar(std::string(41, 'a'));\n    std::cout << \"Caso 6\\n\"; probar(\" \\t\\n\\r\\f\\v\");\n    std::cout << \"Caso 7\\n\"; probar(std::string(1, static_cast<char>(-1)));\n    return 0;\n}\n"
+          "text": "Leer una unidad y clasificarla son operaciones diferentes. Elegir una lectura que conserve los blancos y convertir las letras de una copia permite mantener el texto recibido para compararlo según la política elegida (Stroustrup, 2024, sección 9.10.4, pp. 279–281).\n\nLas funciones de `<cctype>` conservan el requisito de recibir un valor representable como `unsigned char` o `EOF`. Preparar un `char` como unidad sin signo evita un negativo indebido, pero no descodifica Unicode ni cambia la lista de separadores de nuestro intérprete (ISO/IEC JTC 1/SC 22/WG 14, 2023; Köppe et al., 2023)."
         }
       ]
     },
@@ -390,7 +523,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye copiar_en_minusculas(const std::string&) desde este editor. El llamador garantiza hasta cuarenta caracteres ASCII y el locale C inicial; la función devuelve otra string, conserva longitud, orden, dígitos y signos y no imprime. Prepara una sola batería con \"ABC9_\", \"abc9_\" y \"--7\". Presenta sus copias en tres líneas y después el primer argumento original en una cuarta, todas con salto final. Usa Compilar, ejecutar y comprobar; no vuelvas al editor de clasificación.",
+          "text": "Reconstruye `std::string copiar_en_minusculas(const std::string& texto)` en este editor independiente. El llamador garantiza texto ASCII de hasta cuarenta unidades y la configuración regional de C inicial. Devuelve una copia que conserve longitud, orden, dígitos y signos; no imprimas desde la función.\n\nConstruye una sola batería con `\"ABC9_\"`, `\"abc9_\"` y `\"--7\"`. Presenta las tres copias, una por línea, y después el primer argumento original en una cuarta línea. Todas terminan con salto. Pulsa Compilar, ejecutar y comprobar con esta construcción, sin volver al editor anterior.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -425,6 +558,1452 @@
           "language": "cpp",
           "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& entrada) {\n    std::string copia = entrada;\n    for (char& c : copia)\n        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));\n    return copia;\n}\n\nint main() {\n    const std::string a{\"ABC9_\"};\n    const std::string b{\"abc9_\"};\n    const std::string c{\"--7\"};\n    std::cout << copiar_en_minusculas(a) << \"\\n\" << copiar_en_minusculas(b) << \"\\n\"\n              << copiar_en_minusculas(c) << \"\\n\" << a << \"\\n\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "bddb54a0d012989b8215834a259567c5cb4bfd2a3b9b26e004fe474b41bc406b"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "fcde9623957202a9859c8290abf6e63b5311fcd32d274052173058e484cf522c"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "14606534342df37a8d6fc3f57c29fbffa4994cb5e73a2b1555380952613345fd"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "9907d31d695c4e66c76c10c75c78be689e3471cfa5877b241611be5bff1dfa1e"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "5a9bce8dee89e9b4e490fcb6756f51e643b852c224be4566a10401bfa7c25dd6"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "91a383e63c8859cd401bba666d0c8e6cea4de96fd0207883f4d24da6e761dcfa"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "c549b0121be26a432407b2ee70730feccfbd2cf44727bd24514ce1e334914982"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "93614536da8a3d5062984b68b9b387c252289ee8aa567e95528475de5639d359"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "526d15cee21da8a3e17cd0419a2d8de6e3d5773a1d1b214ed11a1d5764c04aad"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "0b1608ab87b800cdc78269b1e150afd7ecd7b4d0f955b7daa36ed069c0d098d8"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "69e17941005142b6b3a43d6078532686dfefe753f652baeb8a3c290d8003230b"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "f0088d96ea77813e8e6d964ab8f5174763e6f770ac755c967f47453940c8589b"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "450b61559a4993ab6f47b27f602476673207dd1f8331fea4adf045297e26254a"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "b860db844eed923e9b8aba7fb7ad7c89610fa30696f320ae188e521dcc81363f"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "5be937224c56c5b7a43d4d0942d17f35ac73a7810b7485de48967d2de20c60f8"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "f2cd9d4a8acf2c87c96be7eee2537ef29f2a631db7b946b202696fe35841dd1c"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "0a4513525bb18809dcfadfb86a43de91071aac82436b1eabef5d4f834f734910"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "09f74e71a65785ffbccdf7d8a270d301190b88fbbc586256f1f995bad7d7cf97"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "89c438ad893383fb79b3b2fd774d34e3c5329fe31086d63a886d80ef39c33720"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "717d3d4399d02c8220fbabdfeacbfdcde46900ae95f971391b46f0f4a7ddc22f"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "d33532cf27b2415ea796da3ec14ca23b9f24d111196e6db1a60baa116d182b44"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "2f67dc44cbd9cc1d629cdf01368256faf62bb26afa4f33d6e4abd3cbe7443560"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "9e6953dfdae2dccac7fc1ccdbe9176a7822982cdb1f009f891caf3f781c6c9a1",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "bddb54a0d012989b8215834a259567c5cb4bfd2a3b9b26e004fe474b41bc406b"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "fcde9623957202a9859c8290abf6e63b5311fcd32d274052173058e484cf522c"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "3d144f5d9ae90f9d0ed3630549daf48c34c859f0ec153205822044bc4a0eab46"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "9907d31d695c4e66c76c10c75c78be689e3471cfa5877b241611be5bff1dfa1e"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "5a9bce8dee89e9b4e490fcb6756f51e643b852c224be4566a10401bfa7c25dd6"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "01455b605ec388b533d9ed50d19a8dcf5b99beb67a7fa656d01e41eb9a4b4137"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "c549b0121be26a432407b2ee70730feccfbd2cf44727bd24514ce1e334914982"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "fc126a8049daee66745a129a438a6450876704b4530a885af2040e63549f781c"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "526d15cee21da8a3e17cd0419a2d8de6e3d5773a1d1b214ed11a1d5764c04aad"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "0b1608ab87b800cdc78269b1e150afd7ecd7b4d0f955b7daa36ed069c0d098d8"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "69e17941005142b6b3a43d6078532686dfefe753f652baeb8a3c290d8003230b"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "93f823c44dc4508fcef0503f12c36423e16e74c82b2f20e9b878121b0b0422f4"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "9952fdaf169b4dd6f73841c11827499c2e16fb3b9329f3a1222820b900f1ce61"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "ac7b7b3fcae5673dd3dfa8e489d6d9b24f01585d95f5e1ee1c9f0294bcfff1d9"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "ff2ad27b3a0ea9102992df51f2761d1275a0565900ce5da4ab778ac802bf4b67"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "13d4cdff5ec2507d9a3dacb8325a7b31ea2e4babee372a5d225e13b0c1950d69"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "4f8d7832e2bd933de0dff7aaf92d307d5ca72eaf5f8e1923a56b1c691940dd04"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "740a435c2f2a4ef39602c9960ad93242d6385c8631bfcee5d9623668d38db814"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "a07eaf52e7a31707fa761e8b546e56cc8da97b736f6e9e31d4800db0b2054d2f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "bddb54a0d012989b8215834a259567c5cb4bfd2a3b9b26e004fe474b41bc406b"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "fcde9623957202a9859c8290abf6e63b5311fcd32d274052173058e484cf522c"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "14606534342df37a8d6fc3f57c29fbffa4994cb5e73a2b1555380952613345fd"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "9907d31d695c4e66c76c10c75c78be689e3471cfa5877b241611be5bff1dfa1e"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "5a9bce8dee89e9b4e490fcb6756f51e643b852c224be4566a10401bfa7c25dd6"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "91a383e63c8859cd401bba666d0c8e6cea4de96fd0207883f4d24da6e761dcfa"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "c549b0121be26a432407b2ee70730feccfbd2cf44727bd24514ce1e334914982"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "93614536da8a3d5062984b68b9b387c252289ee8aa567e95528475de5639d359"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "526d15cee21da8a3e17cd0419a2d8de6e3d5773a1d1b214ed11a1d5764c04aad"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "0b1608ab87b800cdc78269b1e150afd7ecd7b4d0f955b7daa36ed069c0d098d8"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "69e17941005142b6b3a43d6078532686dfefe753f652baeb8a3c290d8003230b"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "f0088d96ea77813e8e6d964ab8f5174763e6f770ac755c967f47453940c8589b"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "450b61559a4993ab6f47b27f602476673207dd1f8331fea4adf045297e26254a"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "b860db844eed923e9b8aba7fb7ad7c89610fa30696f320ae188e521dcc81363f"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "5be937224c56c5b7a43d4d0942d17f35ac73a7810b7485de48967d2de20c60f8"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "f2cd9d4a8acf2c87c96be7eee2537ef29f2a631db7b946b202696fe35841dd1c"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "0a4513525bb18809dcfadfb86a43de91071aac82436b1eabef5d4f834f734910"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "09f74e71a65785ffbccdf7d8a270d301190b88fbbc586256f1f995bad7d7cf97"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "89c438ad893383fb79b3b2fd774d34e3c5329fe31086d63a886d80ef39c33720"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "717d3d4399d02c8220fbabdfeacbfdcde46900ae95f971391b46f0f4a7ddc22f"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "d33532cf27b2415ea796da3ec14ca23b9f24d111196e6db1a60baa116d182b44"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "2f67dc44cbd9cc1d629cdf01368256faf62bb26afa4f33d6e4abd3cbe7443560"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "adcd594c7c2065e84896f451d02ebca2d895f70e4abb6fb5d5c3dfc91b9a1dba",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "bddb54a0d012989b8215834a259567c5cb4bfd2a3b9b26e004fe474b41bc406b"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "fcde9623957202a9859c8290abf6e63b5311fcd32d274052173058e484cf522c"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "55cb51bf9cebccb48e7352c00d6df59329f68644c9d45a09e849583cb64fabb4"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "9907d31d695c4e66c76c10c75c78be689e3471cfa5877b241611be5bff1dfa1e"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "5a9bce8dee89e9b4e490fcb6756f51e643b852c224be4566a10401bfa7c25dd6"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "18b3a3ffcc9121511698bf992670e9efcb77ba0bdb7e5386e00d1581e2af7596"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "c549b0121be26a432407b2ee70730feccfbd2cf44727bd24514ce1e334914982"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "fef9fdbdd5917ac0044d25b2e50f57ffd579bbbf601fcf8b8902489d6c2f252f"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "526d15cee21da8a3e17cd0419a2d8de6e3d5773a1d1b214ed11a1d5764c04aad"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "0b1608ab87b800cdc78269b1e150afd7ecd7b4d0f955b7daa36ed069c0d098d8"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "69e17941005142b6b3a43d6078532686dfefe753f652baeb8a3c290d8003230b"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "e60043dbefb3e37099f3cb4440cfd90029850699aee2a9fcf51b318bd0daac88"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "626b6ac222c196ad33a496e607d5543233a549d4f49c0387b62ed8a6080ce680"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "86598a7f2e3148863663936d780310427279c2400b3c9aae7a22b0a3d2d08200"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "6038f45e3db07f976f0b101b583318cf42d59da26108dc071268fb62f1f2a400"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "9a424c498f269f97b21e44c2b19925d78efab69b890f052ac1f11439509bf714"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "34590ad5af852028fcd46c7b197b65354a0279c4320cb82ec91f2e8f572fa3ce"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "740a435c2f2a4ef39602c9960ad93242d6385c8631bfcee5d9623668d38db814"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "1e129ec7722287b55724e51aef5e7af1f076336b347c3bfef216806adb64c4a0",
+        "afterSha256": "03157dd671717cafcc4aa54a47137de88fb53b1002d2764cb7e401d328ab901b"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "973438dfd93509b764a2909df2da003d6649cd74dbc75ae497ed37d501f52f31",
+        "afterSha256": "84b8fa0134fa69528a65a02fc7be07a287d899820819778d7e2ff50b72761439"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "ff3d3e8c648ff24a7dbd9705c48e2d90b04cd2e3b77b63b50930d4b01d957eaf",
+        "afterSha256": "748872dc64541930d1d207b8e9a4875ab7981e32082a48884173ad3c6a462387"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "5864eb7a3d17183a6132d2c0a1be3d9b91520a0f4b2baa753bff6d9fdf3eff6b",
+        "afterSha256": "ae3643b8fce2b79b481317659b23b6a142d0e8a917314f14efb1789260b7d3d2"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "f30dc1247fc113c33409a4124af54acc06789592921eb5f5426da51c57af80aa",
+        "afterSha256": "2c91512d3f2aaff2b561191f000341c3497eaaf6d359e3e61fd4c3e4786d34e3"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "b634ccc6c16f791957dd1444a20742d25839ae6b04237b51b956c095c355ccf5",
+        "afterSha256": "24630e80cd3e59a543b0f52fdef2de3ec0da22e429e4cfb020a3e8af7720744b"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "d641811ad145082263c5fffaf96cad97a29e3ec035819702870ff52e2d34a295",
+        "afterSha256": "46d450c9bbda4207a74a276b3a8c6f4e3f399f542f062dbfbf5e992bf4e7878e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "34b8fe115260aef34ebfe730d8fa3a0330198b522a92cf8169ff95a6b38a24b2",
+        "afterSha256": "52100d082b03cc25873bf17600f6ac423c921ecc039a9ac6fcf1327b18631026"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "c9949b53bbb9fe8f5fc924c2aca6dd962ba7264c8b12e905af0b37f0c008bcc9",
+        "afterSha256": "69fd397b992986f69432149436afda8ad2ab0701ba0fbe7ce933f42bfed559f1"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "336180c4ffe547a01bccc23e48d095936bd3d505f9f626a8700ff3ff5e6bbcbe",
+        "afterSha256": "d0ebcb71a6e1c07050b71d7e298f677bac7d320d45d0356662001f73bc2e3f78"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "69d249ae00b38f7bcb7f0e5f7a233fa7e6b3cc972d4c08bfb27179ed7674ed1c",
+        "afterSha256": "5d238fbe112c35700bf57583a7d6fec519a78f1a20cb73bfca95886c5d54b541"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "bf0bb68cef10485fb84bcca88a83e3978dd95dde3bbe01795435f61c97ff8c4f",
+        "afterSha256": "88b37ca708ce43bcc296f10923eb8f2577ea8551b0a8ced62e8c2820b5070fef"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "d6eeb577aadf19abe5a33816eebf318173297107c8412ac3c4c2fed41245a765",
+        "afterSha256": "b103259ea550804429abaefa4f0cdf82bbdd8b88023d2442472423be9aaadb29"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "4c386c35db1b73d886b1ad76ab236e2be2b9d22a658d46149830c5a5debb8411",
+        "afterSha256": "19a06b6481b83448c7204c6e189c728694c98573022d14e040cf312f3ef489a6"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "8d176d6113a3b161ef96531216cf87850d53fbd545fbc184b28b98a6bb36dcf3",
+        "afterSha256": "7d7dc5016a9b3b719cf9718814d72e9e0979ede4e9f6aae7bae28d38080b3614"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "0a25844559975c5f4ccafeeecff36811bc152815d4adbb1f9bc552c8deb57601",
+        "afterSha256": "c425a0ff102074fc765e9ea8b822410632d0968048bc99a54d2a52b7d6b42eaf"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "91ab273b9a7506cb041e1a34c292db8400db2b30968c896f6eb96bb7691b8d27",
+        "afterSha256": "1efbff11e856f5642ddb10fdb8e1f10875fa8d95cb78eecd725a31046bd4ac28"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "18da8007edca08b9237ea2d9c47891bd48df9f888d7dce9399411eabc5d85171",
+        "afterSha256": "374fb912c1751d63d66ff169847eee1c1c5312d9aac0cefdea789999d6c2d64e"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "8ea12040685765a3c2922d75231bb70d22b98bdfd6c262d6d298543120fc2b3c",
+        "afterSha256": "e9f67e4965500d9795d98d9e5739ddd6dba7f069d67eb9fb724abab6c12cd54b"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "4b844f58099b662d191514487b131edd95d8888d47279e3bf80f69285e771098",
+        "afterSha256": "c9842f2c81c8a3d81e607db03c6a8b84d606e22ded377971f457bb0e6d9a4233"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "0fe820ed6b0e797b58e02fb14b8d14c13ea15ae12bddd1d571f24d4ba3189ff8",
+        "afterSha256": "7c4543a20cb05071ff3f34d0723ad28d1d4dedb18b23cd037aaaa31125e46483"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "93a82cc506496af1c63c64990781d995399bbcdd7936c3f9eeaca2e60cd93d65",
+        "afterSha256": "7fed88b159672448c09cd8fe0ec03fceaba28d5843f2661b979d44c2daacb404"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "4202e7142f094645a99d3532c5785031510f93bc4e26d20912764d8169348f36",
+        "afterSha256": "ea23355c791e681ac79a8b5ba77d918ee522a2f6cde7d63f7d2e1d4a6d9dfaf0"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "79aaa94597eb7898628f36fb70f04a1f01b969cc609cfcc06142df0500e40250",
+        "afterSha256": "e6b2fa558270706def18a1d4559a9f8494e7599183f622fa503fa7a537c74510"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "6e0962f41ace9c242ab29962bb29179835e04f96a2ca2f9523451ffdc84344e4",
+        "afterSha256": "d3767d5fb1e8eb53367398638b3bad0a2770154db1834cbb32e1f922a02ff725"
+      },
+      {
+        "id": "block_0008_0000",
+        "beforeSha256": "7cdfc500101430cdcc4a511ddaa404df9ea75f304dc9e2e62aac822f0b8c8853",
+        "afterSha256": "6a2b2735056a7bb3947dcdb9aa3ab7ff826c977f1369bc42e3b56b3711161d04"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "28a8aa1e53e756d80bbecdb56fc1f830c8a33bf7e5f62088948c56a4f94285ff",
+        "afterSha256": "ed0944d06659fc22abe78b94078166f4c52cf4c3b517796bb7e3e37cd63a7baf"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "e23b0413d139379df714b0edcad38da5a5f7329f3fcf004ae061f13add0f92e7",
+        "afterSha256": "7610077e644c6b7b7fba87d4e86ab81e1e813b36fe3bb6074f7932daffb76234"
+      },
+      {
+        "id": "block_0000_0006",
+        "beforeSha256": "e80203c450499295f11bbcbae3b1b3573f86db8d3af5c4cac686fd96e6a21b4a",
+        "afterSha256": "5a0f43a041bd98335ef4cf860bcf5e26ae87aa7af316ff6330f11f90561ca176"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "f643c78f66386e89e2684a288453fa7def6902b32ba592e4b995202b10833ccc",
+        "afterSha256": "a959b7a5c5d594e6ee765b9a4b342ee77fa8a6ede0e9b36eacd2382eea50b55c"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "24630e80cd3e59a543b0f52fdef2de3ec0da22e429e4cfb020a3e8af7720744b",
+        "afterSha256": "00ea9833f55dd02dd39ca755af1452a5176923ce1b18f869c5ecdf811c88b477"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "6cf50250caa4b3f71a3bd6fb94a51e5748a721ac0843616d79b6cd97c52b9375",
+        "afterSha256": "4f345e6d61f9b58f960267b1290fc24377ff6d304d856c8aa6f8650715da2e94"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "642c2943751e1a6b18394ad5c6dd95cac632b43f185b0484a6e25b3723346397",
+        "afterSha256": "71a0598c4b0f387972b3e6c8b75a032b53aef6f476719bd7ab2ebf3c8152294e"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "75f2190d95d1bb1b3b8263887bf14a99ad601b677ec31b67c4c1cbe96501ddea",
+        "afterSha256": "07b874e8dc737a29e34d79c39584489cd28e774307145acf6431d87d57755589"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "8183fa8334d358f6123bc06c3eb6ef4f8af2480fd11bc4ceae6e844a994ed19a",
+        "afterSha256": "fd0fcffb22066db24584ac74ab01d91df54a684922e0cb70d8263d35a30e4a1e"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "62c925e6cbb2ef124ebb5fd43b1135828972340d792893673e2a313f800dcb9c",
+        "afterSha256": "73b9ec40ea7c8a484dd356602f5f0de7e9799f53f9a39acd7dcdfc1c1d1b8f97"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "da8df995e361d28d6b7927304dad2ab9533069b38423f25130dd87dfc402ca4d",
+        "afterSha256": "5cd38bea04aeaf608e7dc7776f2b0a95229d99097414de824f3251ac69a858be"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "b2462e6700bbb3fa9402d54b2d3e509c7ccb099a546ef9019cf9bb19746f417e",
+        "afterSha256": "51f4f9136d3437cd3ea4df0db0881d0c82123e6a48884fdcced53b307df6ef44"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "30c558d9fe8b1424f7fda8c720d3fff06a4d0c199253dabc790c65cf767a41c2",
+        "afterSha256": "d956bbfe239df6c0bdbf5927349297c038f84275fd577f35137a3fa99da4b8f8"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "518498bd79ad970c1e56d16696e4286f14d7045e6a30026fe6b34b8b9f372b45",
+        "afterSha256": "06b78a5da0f9921ea002d638d6ad8a3b186610a688df96e24e3743d358362b20"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "876d22a7da61bc5e291e44f92e46ab33471b420a50d9f21bfbffecb545cd01cf",
+        "afterSha256": "c071f94e2054e1a67a3f4db5e91fe5a50db5f702da946684facb3950058141cd"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "8b7a13e62280bf72f555f628bceece00105f9499b4bd675a60e2508cc5ee24b8",
+        "afterSha256": "5b2b48428cf28dd612fc30c5232759e9f1a6ba74e34ba0caabc101ead0be2fd8"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "3bd1894bd856d955faeb9c5400bc8a1309b7ed6698b67b1c014a8ceab6cb15a3",
+        "afterSha256": "36703721a0b7461154d1d07fc3e2602a8f3f2da1f2e4e8ee0670d29f68562785"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "88b37ca708ce43bcc296f10923eb8f2577ea8551b0a8ced62e8c2820b5070fef",
+        "afterSha256": "3b19ce472f37d29e1b36f22db40abea63f9e4e3f836cfa420619c35e64422e26"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "3b19ce472f37d29e1b36f22db40abea63f9e4e3f836cfa420619c35e64422e26",
+        "afterSha256": "6c210a2fe305b938a2b0ed006eeb6d87fcb20b676a6ea5d40405822df9cd4f1b"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0009_0002",
+      "blocks": [
+        "block_0010_0000",
+        "block_0010_0001"
       ]
     }
   ]

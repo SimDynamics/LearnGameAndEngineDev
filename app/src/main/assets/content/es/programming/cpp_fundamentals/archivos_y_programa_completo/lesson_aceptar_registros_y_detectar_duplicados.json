@@ -10,11 +10,31 @@
         },
         {
           "type": "paragraph",
-          "text": "leer_linea valida un registro aislado. Una colección introduce otra condición: cada ID sólo puede aparecer una vez. Dos líneas pueden ser válidas por separado y entrar en conflicto juntas. Decidimos conservar la primera aparición válida de cada ID y descartar las siguientes; nunca sumamos ni reemplazamos sus cantidades por accidente."
+          "text": "La función `leer_linea` comprueba un registro aislado. Ahora reuniremos registros en un `std::vector<Registro>` y añadiremos una regla de la colección: cada identificador sólo puede estar guardado una vez. Dos líneas válidas por separado pueden incumplir esa regla al reunirse.\n\nPara este cargador elegimos conservar la primera aparición válida de cada identificador y descartar las siguientes. Se comparan los valores enteros de `id`, no los textos que los representaban. Una repetición no suma cantidades ni reemplaza el recuento que ya se admitió.",
+          "emphasis": [
+            {
+              "text": "primera aparición válida",
+              "style": "bold"
+            },
+            {
+              "text": "valores enteros",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Para este cargador acordamos una política parcial: descartar líneas vacías, mal formadas, fuera del dominio o repetidas y contar cada una una sola vez. Conservar los registros admitidos en orden de aparición. Admitir un archivo vacío como colección vacía. Las cantidades cero son datos presentes y válidos, no una señal de ausencia."
+          "text": "Nuestra política parcial admite un subconjunto de las líneas: descarta las vacías, las mal formadas, las que incumplen el dominio y las repetidas. Cada línea descartada cuenta una sola vez, aunque incumpla más de una condición. Los registros admitidos conservan su orden de aparición.\n\nParcial se refiere a admitir datos válidos dentro de una muestra que también puede contener líneas rechazadas. Los resultados sólo se entregan cuando se completa la lectura permitida; un fallo del origen o superar el límite de líneas conserva ambos resultados anteriores. Un archivo vacío se acepta como colección vacía. Las cantidades cero son datos presentes y válidos, no una señal de ausencia.",
+          "emphasis": [
+            {
+              "text": "Cada línea descartada cuenta una sola vez",
+              "style": "bold"
+            },
+            {
+              "text": "Los resultados sólo se entregan cuando se completa la lectura permitida",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -26,7 +46,12 @@
             "Reemplazar el recuento anterior para conservar sólo un ID."
           ],
           "correctIndex": 1,
-          "explanation": "El ID es un valor entero, no la cadena de caracteres que lo representó. Conservamos la primera aparición admitida."
+          "explanation": "El ID es un valor entero, no la cadena de caracteres que lo representó. Conservamos la primera aparición admitida.",
+          "reviewFeedback": [
+            "El lector obtiene un identificador entero. Compara ese valor con los que ya están guardados, no la escritura de las líneas.",
+            "Localiza cuál fue la primera aparición válida y qué ordena hacer la política con las siguientes.",
+            "Conservar el primer registro no es lo mismo que conservar siempre el identificador con las cantidades de la última línea."
+          ]
         }
       ]
     },
@@ -43,7 +68,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es 1:0. La búsqueda consulta por referencia const; no modifica ni copia toda la colección. Si un registro con ID 7 tiene ambos contadores en cero, sigue ocupando ese ID. Esta búsqueda lineal expresa directamente nuestra regla para una colección pequeña."
+          "text": "El ejemplo muestra `1:0`: el identificador dos está en la colección y el cinco no está. `contiene_id` recibe una referencia constante a la colección y utiliza otra referencia constante para consultar cada registro; el cuerpo no modifica esos registros ni copia toda la colección.\n\nLa búsqueda lineal recorre los registros uno a uno hasta encontrar el identificador o llegar al final. Si un registro con identificador siete tiene ambas cantidades en cero, sigue siendo un registro presente con ese identificador. La búsqueda pregunta por `registro.id`, no por sus cantidades.",
+          "emphasis": [
+            {
+              "text": "recorre los registros uno a uno",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -55,7 +86,12 @@
             "Admitirla, porque sólo los registros válidos guardados reservan un ID."
           ],
           "correctIndex": 2,
-          "explanation": "La línea inválida nunca entró en candidatos. No genera un registro ni reserva su identidad."
+          "explanation": "La línea inválida nunca entró en candidatos. No genera un registro ni reserva su identidad.",
+          "reviewFeedback": [
+            "El cargador sólo comprueba duplicados entre los candidatos admitidos. Decide si una línea mal formada llegó a insertarse.",
+            "Una línea rechazada no forma parte de la colección. No hay un registro inválido guardado que deba reemplazarse.",
+            "Distingue encontrar un texto que menciona el identificador de guardar un registro válido con ese valor."
+          ]
         }
       ]
     },
@@ -67,15 +103,156 @@
         },
         {
           "type": "paragraph",
-          "text": "Una línea incorrecta puede descartarse según la política. Una avería de lectura no prueba que hayamos examinado el archivo completo. Por ello acumulamos registros y contadores locales, y sólo actualizamos los resultados del llamador al terminar la lectura sin avería y en EOF. La actualización conjunta evita entregar un contador nuevo con una colección antigua."
+          "text": "Descartar una línea inválida forma parte de esta política. Un fallo del flujo de origen tiene otro significado: no permite confirmar que se examinó toda la muestra. Por eso la carga reúne una colección y un contador locales, y sólo sustituye los resultados del llamador después de comprobar el final de la lectura.\n\nLa colección anterior no es la base a la que se añaden registros: una carga aceptada la reemplaza por los registros de la nueva muestra, incluso si el resultado es vacío. Si la función devuelve `false`, conserva tanto la colección como el contador anteriores. Así ambos resultados corresponden siempre a la misma carga aceptada.",
+          "emphasis": [
+            {
+              "text": "una carga aceptada la reemplaza",
+              "style": "bold"
+            },
+            {
+              "text": "tanto la colección como el contador anteriores",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El contrato limita la muestra a 20 líneas. La línea 21 hace fallar toda la carga y conserva los resultados anteriores; el contador se mantiene entre 0 y 20. El límite se comprueba antes de incrementarlo. Los ID únicos 0..9 permiten como máximo diez registros guardados, aunque pueda haber más líneas descartadas."
+          "text": "El contrato permite procesar como máximo veinte líneas obtenidas por `getline`, incluidas las inválidas y las repetidas. El contador local de líneas se comprueba antes de incrementarlo. Si ya se procesaron veinte y se obtiene otra línea, la función devuelve `false` sin publicar sus resultados locales.\n\nEn una carga aceptada, el número de descartes queda entre cero y veinte. Los identificadores permitidos van de `0` a `9`, por lo que puede haber como máximo diez registros guardados; las cantidades de cada recuento se comprueban por separado.",
+          "emphasis": [
+            {
+              "text": "incluidas las inválidas y las repetidas",
+              "style": "bold"
+            },
+            {
+              "text": "sin publicar sus resultados locales",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "getline obtiene también una última línea sin salto final. Esa línea debe validarse. Al terminar el bucle comprobamos bad() y eof(); no tratamos cualquier fallo como final limpio. El llamador entrega aquí un flujo recién abierto o creado, para leer desde su principio."
+          "text": "El llamador debe proporcionar un flujo recién abierto o creado, preparado para leer desde el principio. `getline` entrega también una última línea con caracteres aunque no tenga salto final; esa línea pasa por la misma validación. Al terminar el bucle, `bad()` permite detectar `badbit`, y `eof()` permite distinguir que se alcanzó el final. El programa rechaza si hay `badbit` o si la lectura terminó sin indicar EOF. El intento de obtener otra línea cuando ya no quedan caracteres puede dejar activos `eofbit` y `failbit`: esa lectura no entra en el cuerpo del bucle ni añade un descarte (Köppe et al., 2023).\n\nConservar los resultados ante ese rechazo no devuelve al origen los caracteres ya consumidos. La función protege sus dos resultados, no promete reiniciar la lectura de la muestra.\n\nEn la práctica siguiente, cada línea está seguida por un salto de línea en el origen. `getline` consume ese delimitador y entrega el texto sin incluirlo.",
+          "emphasis": [
+            {
+              "text": "sus dos resultados",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__aceptar_registros_y_detectar_duplicados__aplicar_primera_valida_sin_reservar_rechazos",
+          "prompt": "Aplica la política descrita a las seis líneas, en el orden mostrado. Antes de cargar, la colección contiene sólo Registro{9,{1,1}} y el contador de descartes vale siete. El origen es nuevo, se obtiene cada línea con su salto final y la lectura termina sin fallos del origen. Completa los contadores de la carga aceptada y selecciona después las líneas de sus registros en el orden en que deben quedar. No incluyas la cabecera Guardados en esa selección.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "Líneas de entrada, en este orden:\n`\"3 [11;0]\"`\n`\"03 [2;1]\"`\n`\"3 [4;0]\"`\n`\"8 [0;0]\"`\n`\"8 [0;0] extra\"`\n`\"0 [0;0]\"`",
+              "mathMode": "text"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "contadores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "guardados",
+                  "type": "numeric",
+                  "label": "Registros guardados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "descartadas",
+                  "type": "numeric",
+                  "label": "Líneas descartadas",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Resultado",
+                "Valor"
+              ],
+              "rows": [
+                [
+                  "Registros guardados",
+                  {
+                    "field": "guardados"
+                  }
+                ],
+                [
+                  "Líneas descartadas",
+                  {
+                    "field": "descartadas"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "guardados": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "descartadas": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "registros",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "orden_numerico",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida:\n`0:0:0`\n`3:2:1`\n`8:0:0`",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "La política conserva el orden de aparición de los registros admitidos. No ordena la colección por el valor del identificador."
+                },
+                {
+                  "id": "primera_valida_en_orden",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida:\n`3:2:1`\n`8:0:0`\n`0:0:0`",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Comprueba qué aparición válida de cada identificador se admite primero y conserva ese orden."
+                },
+                {
+                  "id": "reemplazar_cantidades",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida:\n`3:4:0`\n`8:0:0`\n`0:0:0`",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Una repetición no sustituye las cantidades del registro que ya fue admitido."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "primera_valida_en_orden"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera línea se rechaza porque una cantidad sale del dominio; no reserva su identificador. La siguiente proporciona el primer registro válido con ese mismo identificador. Su repetición posterior se descarta sin cambiar las cantidades. El registro con cantidades cero se admite y la línea que añade extra cuenta sólo un descarte, aunque también mencione un identificador ya guardado. El identificador cero es válido y se guarda al final. Resultan tres registros y tres descartes. Al aceptar la carga, esos resultados sustituyen a la colección anterior y a su contador.",
+            "incorrect": "Separa validez de línea, repetición y orden. Sólo los registros admitidos reservan un identificador; una línea descartada incrementa el contador una vez. Una carga aceptada reemplaza los resultados anteriores. Conserva los ceros como datos y el orden de aparición, sin ordenar por identificador ni reemplazar cantidades."
+          }
         },
         {
           "type": "multiple_choice",
@@ -87,7 +264,12 @@
             "[6;1], porque las cantidades de un ID se acumulan."
           ],
           "correctIndex": 1,
-          "explanation": "Dos líneas válidas pueden entrar en conflicto juntas. Este contrato conserva el primer registro y no suma ni reemplaza sus cantidades."
+          "explanation": "Dos líneas válidas pueden entrar en conflicto juntas. Este contrato conserva el primer registro y no suma ni reemplaza sus cantidades.",
+          "reviewFeedback": [
+            "La política conserva la primera aparición válida. Revisa si autoriza actualizar sus cantidades cuando llega otro registro con el mismo identificador.",
+            "Separa las cantidades del registro admitido del contador de líneas descartadas.",
+            "La regla no ordena sumar los recuentos de las líneas que comparten identificador."
+          ]
         }
       ]
     },
@@ -99,14 +281,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Con las dependencias dadas, implementa contiene_id y cargar_lineas siguiendo la política. Usa candidatos locales y un contador local; devuelve false sin cambiar los dos resultados si hay avería o más de 20 líneas. Una carga completa devuelve true incluso si descartó líneas incorrectas. Una colección vacía es un resultado válido."
+          "text": "Con las dependencias del inicial, implementa `contiene_id` y esta función:\n`bool cargar_lineas(std::istream& origen, std::vector<Registro>& destino, int& descartadas)`\n\n`origen` es el flujo del que se obtienen las líneas; se recibe por referencia porque leer cambia su posición y su estado. `destino` es la colección que se reemplazará si la carga se acepta. `descartadas` es el contador del llamador, recibido por referencia para actualizarlo al aceptar. La función devuelve si pudo completar la carga de acuerdo con la política.\n\nUtiliza una colección candidata inicialmente vacía y contadores locales. Una línea válida sólo se inserta después de comprobar que su identificador no está guardado en esos candidatos. Devuelve `false` sin cambiar los dos resultados ante un fallo del origen o si se supera el límite de veinte líneas. Completar la carga devuelve `true` aunque algunas líneas se hayan descartado.",
+          "emphasis": [
+            {
+              "text": "una colección candidata inicialmente vacía",
+              "style": "bold"
+            },
+            {
+              "text": "después de comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Crea y cierra registros_lgp.txt con estas cuatro líneas: 3 [2;1], 3 [4;0], 8 [0;0] y 8 [0;0] extra. Comprueba apertura y escritura. Abre después un ifstream y carga. Muestra primero una línea Guardados=G;Descartados=D, sin punto y coma final. En las siguientes líneas muestra ID:aceptados:rechazados de cada registro admitido. Si no puedes completar la carga, muestra Carga incompleta y termina con código 1. Este editor comprueba esa carga inicial de archivo. Usa Compilar, ejecutar y comprobar; el informe termina en 8:0:0, con o sin un salto final. La batería de fronteras y conservación tiene después su propio editor.",
+          "text": "Crea la muestra relativa `registros_lgp.txt` con estas cuatro líneas, en orden: `\"3 [2;1]\"`, `\"3 [4;0]\"`, `\"8 [0;0]\"` y `\"8 [0;0] extra\"`. Escribe un salto después de cada una. Comprueba la apertura, cierra el archivo después de escribir y comprueba su estado. Abre después un `std::ifstream` para leer la muestra; comprueba esa apertura antes de llamar a `cargar_lineas`.\n\nEl informe empieza con `Guardados=2;Descartados=2`, sin punto y coma final. Después muestra `3:2:1` y `8:0:0`, cada registro en su propia línea. Son los dos registros admitidos en su orden de aparición. Si no se puede completar la carga, muestra `Carga incompleta` y termina con código `1`.\n\nPulsa Compilar, ejecutar y comprobar. Este editor comprueba esa carga de archivo; admite el informe terminado en `8:0:0` con o sin salto final. La batería de fronteras y conservación tiene otro editor posterior.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            },
+            {
+              "text": "otro editor posterior",
               "style": "bold"
             }
           ]
@@ -128,7 +324,7 @@
         },
         {
           "type": "note",
-          "text": "El editor incluye el lector de línea ya estudiado; la construcción nueva es la política de colección y su integración con el archivo. La función lectora se comprueba después con otra batería independiente, incluidos sus resultados false y la conservación de ambos destinos."
+          "text": "El inicial aporta el lector de línea ya estudiado. La construcción nueva es la política de colección y su integración con el archivo. Al completar este objetivo estarán disponibles su referencia y la práctica posterior. Otro editor comprobará después las seis fronteras, incluidos el resultado false esperado y la conservación de ambos destinos."
         }
       ]
     },
@@ -145,19 +341,43 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida esperada es Guardados=2;Descartados=2, después 3:2:1 y 8:0:0 en líneas separadas. Criterios: no insertar líneas inválidas, conservar la primera aparición válida, descartar cada línea incorrecta una sola vez, respetar orden, no confundir cero con ausencia y actualizar ambos resultados sólo al completar la carga."
+          "text": "La referencia cumple el objetivo de archivo: muestra `Guardados=2;Descartados=2`, después `3:2:1` y `8:0:0` en líneas separadas. La segunda aparición válida del primer identificador se descarta. La última línea también se descarta, porque incluye texto adicional.\n\nLos criterios son: no guardar líneas inválidas, conservar la primera aparición válida, contar cada descarte una vez, respetar el orden y reconocer que las cantidades cero son datos presentes. La colección y el contador sólo se actualizan al completar la carga permitida.",
+          "emphasis": [
+            {
+              "text": "contar cada descarte una vez",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Vacío, una línea vacía y veinte o veintiuna repeticiones separan las fronteras de la política. Con veinte líneas puede completarse la carga y contar diecinueve descartes; la línea veintiuna devuelve false y debe conservar colección y contador anteriores. La batería posterior hace visibles ambos destinos."
+          "text": "La batería posterior separa un texto vacío, una línea vacía y las fronteras de veinte y veintiuna líneas. Con veinte líneas válidas idénticas puede completarse la carga: se guarda el primer registro y se descartan las otras diecinueve. Al obtener otra línea se devuelve `false`, sin sustituir la colección ni el contador del llamador.\n\nEl texto vacío produce una colección vacía sin descartes; una línea vacía obtenida por `getline` produce un descarte. Son entradas diferentes y deben distinguirse.",
+          "emphasis": [
+            {
+              "text": "Son entradas diferentes",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Un registro completo sin salto final todavía puede admitirse. Si esa última línea se trunca se descarta una línea, sin reutilizar campos anteriores. La política tolera datos inválidos para este informe; no certifica que todo el archivo fuera correcto."
+          "text": "Un registro completo sin salto final todavía puede admitirse. Si la última línea no contiene todos sus campos o delimitadores, la lectura de esa línea puede haberse obtenido, pero `leer_linea` la rechaza y se cuenta un descarte. El candidato de una vuelta anterior no se reutiliza como si completara esos campos.\n\nEsta política tolera datos inválidos para elaborar su resultado. Una carga aceptada acredita que se terminó de leer la muestra permitida, no que cada una de sus líneas contuviera un registro válido.",
+          "emphasis": [
+            {
+              "text": "la lectura de esa línea puede haberse obtenido",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "Un bucle procesa únicamente lecturas completas y, cuando termina, necesita distinguir EOF de un fallo del origen. En una estructura de registros también se comprueban dominio y duplicados: obtener campos no decide por sí solo si el conjunto los admite (Stroustrup, 2024, secciones 9.8–9.9.2, pp. 267–274). Aquí cada línea descartada cuenta una vez y la primera aparición válida conserva su posición."
+          "text": "`getline` obtiene las líneas que el programa debe analizar. Haber obtenido una línea no demuestra que su registro sea válido: todavía hacen falta las comprobaciones de campos y dominio. El control de duplicados añade una condición de la colección a esas comprobaciones locales (Stroustrup, 2024).\n\nLa decisión de esta lección es propia del cargador: contar una vez cada línea descartada y conservar la primera aparición válida en su posición. Antes de sustituir los resultados también se comprueba cómo terminó el origen; descartar datos según la política no equivale a ignorar un fallo de lectura.",
+          "emphasis": [
+            {
+              "text": "Haber obtenido una línea no demuestra que su registro sea válido",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -176,7 +396,8 @@
           "answers": [
             "Guardados=2;Descartados=2\n1:2:0\n2:0:0"
           ],
-          "explanation": "El primer ID 1 se conserva; la segunda aparición se descarta. ID 2 con cantidades cero se admite. mal se descarta. Guardados cuenta registros, no unidades aceptadas."
+          "explanation": "El primer ID 1 se conserva; la segunda aparición se descarta. ID 2 con cantidades cero se admite. mal se descarta. Guardados cuenta registros, no unidades aceptadas.",
+          "reviewFeedback": "Recorre las líneas en orden. Antes de guardar una línea válida, compara su identificador con los ya admitidos. Conserva también los registros con cantidades cero y cuenta por separado las líneas descartadas."
         },
         {
           "type": "multiple_choice",
@@ -188,7 +409,12 @@
             "Una avería sólo borra el contador; los registros pueden publicarse."
           ],
           "correctIndex": 1,
-          "explanation": "La política permite descartar datos diagnosticados, pero no convierte una carga incompleta en un resultado completo. Colección y contador deben corresponder a la misma lectura aceptada."
+          "explanation": "La política permite descartar datos diagnosticados, pero no convierte una carga incompleta en un resultado completo. Colección y contador deben corresponder a la misma lectura aceptada.",
+          "reviewFeedback": [
+            "Descartar un dato según una regla conocida no confirma que el origen haya entregado toda la muestra.",
+            "Comprueba qué permite publicar los candidatos y qué significado tienen los errores del flujo de origen.",
+            "La colección y su contador describen la misma carga. Un rechazo de la carga conserva ambos resultados, no sólo uno."
+          ]
         }
       ]
     },
@@ -200,8 +426,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye la batería del mismo cargar_lineas usando istringstream para aislar su política. Cada prueba reinicia el destino en {{9,{1,1}}} y descartadas en 7. Prueba, en este orden: texto vacío; un LF; veinte líneas \"4 [0;2]\" terminadas en LF; veintiuna líneas iguales; \"4 [0;2]\" sin LF final; y \"4 [0;\" truncado. Presenta Carga:bool y después el informe Guardados=G;Descartados=D y los registros ID:aceptados:rechazados en orden. Cada línea termina con salto, sin títulos ni líneas vacías adicionales. Un false esperado en la prueba de veintiuna líneas no es una avería del proceso: debe conservar los dos resultados previos y la batería termina con código 0. Usa Compilar, ejecutar y comprobar con todos los casos.",
+          "text": "Construye una batería del mismo `cargar_lineas` usando `std::istringstream` para aislar su política de las operaciones de archivo. Cada llamada de prueba crea un origen nuevo, reinicia la colección en `{{9, {1, 1}}}` y pone el contador `descartadas` en `7`.\n\nPrueba, en este orden: el texto vacío; un salto de línea `\"\\n\"`; veinte líneas `\"4 [0;2]\"`, todas terminadas con salto; veintiuna líneas iguales; `\"4 [0;2]\"` sin salto final; y `\"4 [0;\"`, truncada.\n\nPara cada caso muestra una línea con `Carga:` y el resultado booleano, y después el informe de la colección y el contador obtenidos: `Guardados=G;Descartados=D`, seguido de los registros como `ID:aceptados:rechazados`. G es el número de registros y D el contador de descartes; esas letras son marcadores del formato, no texto que debas imprimir. Cada línea termina con salto, sin títulos ni líneas vacías adicionales.\n\nEn el caso de veintiuna líneas, el resultado `false` es el rechazo esperado del cargador: deben conservarse los dos resultados iniciales. La batería continúa con los casos siguientes y termina normalmente con código `0`. Pulsa Compilar, ejecutar y comprobar con las seis llamadas.",
           "emphasis": [
+            {
+              "text": "deben conservarse los dos resultados iniciales",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -235,6 +465,873 @@
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_lineas(std::istream& origen, std::vector<Registro>& destino,\n                   int& descartadas) {\n    const int max_lineas{20};\n    std::vector<Registro> candidatos;\n    int nuevas_descartadas{0};\n    int lineas{0};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        if (lineas == max_lineas) {\n            return false;\n        }\n        ++lineas;\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            ++nuevas_descartadas;\n        } else {\n            candidatos.push_back(registro);\n        }\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    descartadas = nuevas_descartadas;\n    return true;\n}\n\nvoid escribir_resultado(const std::vector<Registro>& registros,\n                        int descartadas) {\n    std::cout << \"Guardados=\" << registros.size()\n              << \";Descartados=\" << descartadas;\n    for (const Registro& registro : registros) {\n        std::cout << '\\n' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    int descartadas = 7;\n    const bool completa = cargar_lineas(origen, destino, descartadas);\n    std::cout << \"Carga:\" << completa << \"\\n\";\n    escribir_resultado(destino, descartadas);\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"\");\n    probar(\"\\n\");\n    std::string veinte;\n    for (int i = 0; i < 20; ++i) veinte += \"4 [0;2]\\n\";\n    probar(veinte);\n    probar(veinte + \"4 [0;2]\\n\");\n    probar(\"4 [0;2]\");\n    probar(\"4 [0;\");\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "c4f3e4f2583c80e12379154de995cddb1162732918dc1f6bd6c51a835f4bc757"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "944ac48bb1cb4a08ef70c81ebfdf395d133e12a2a872b18e4dca5b8b9221791b"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "fb0d3106b39f55ed0e029184ac7f592f8b98ca123024addc4d7fe4c41cc093fa"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "6a31f06e39fa21c6077bc98b4a44a7def7d26f99c34d58b95f2c26d6cf82b1c4"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "7528dbb4138d897650a88d70ccba3173057e15a99734753390ea9ed7f7915910"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "01af0c7a88484db79cc49479a73ebcd26e6948d5a1cfcc9f7a6c2eb816c75140"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "0824d03be7ea240c2a9186e8596b24ab5fcfd5cbfaf76e34e173dde310a1cc5b"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "66e243df4944006bb27ec6a36e406bb99de46562582711f5b0a49007181215bb"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "f64e8a67ed3dc2e48a937d11b6b8aa8aec09b47622cfc001ceb85fca046a8a2a"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "cb38f65e75173ad7822684ca1010593aefb0a939b9df609517a1559cae8d6d25"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "aplicar_primera_valida_sin_reservar_rechazos",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "cc88b2d2f41cfa20627f35a6aa4f068e4920a9ec35b439b07245b76196f61c0f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b2a01c5778f97e41ecaa45524b87ff88b4d66d6f110dea6194b7ebd676c2cb69"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "944ac48bb1cb4a08ef70c81ebfdf395d133e12a2a872b18e4dca5b8b9221791b"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "788869379f3318c638605d9a2897b59829c662c15aa99e3fe321a7cc8e70ae7a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "e62ffbc8a533aea3cca8708612ffdb38aab21ecc4b18ef6416777f91577a967e"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "6afa6310265ed4f756ab17e5f5cdf2177551a7926d77c6933918db29f6330fb5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "ad1173db889438b13bdb91b92043d30571629e8908f3051513141b4351c3c36d"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "68257690c494bb4ad21aa62804443dc105d672651407b2c765558548e6531b45",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "c4f3e4f2583c80e12379154de995cddb1162732918dc1f6bd6c51a835f4bc757"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "944ac48bb1cb4a08ef70c81ebfdf395d133e12a2a872b18e4dca5b8b9221791b"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "fb0d3106b39f55ed0e029184ac7f592f8b98ca123024addc4d7fe4c41cc093fa"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "6a31f06e39fa21c6077bc98b4a44a7def7d26f99c34d58b95f2c26d6cf82b1c4"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "7528dbb4138d897650a88d70ccba3173057e15a99734753390ea9ed7f7915910"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "01af0c7a88484db79cc49479a73ebcd26e6948d5a1cfcc9f7a6c2eb816c75140"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "0824d03be7ea240c2a9186e8596b24ab5fcfd5cbfaf76e34e173dde310a1cc5b"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "66e243df4944006bb27ec6a36e406bb99de46562582711f5b0a49007181215bb"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "f64e8a67ed3dc2e48a937d11b6b8aa8aec09b47622cfc001ceb85fca046a8a2a"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "cb38f65e75173ad7822684ca1010593aefb0a939b9df609517a1559cae8d6d25"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "2e6cd38733859e80cf30cdacd41ce2194a88be3cc89cd8b806a27bfe3c653436",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "012b2ad7f5d21e0d32f450786fffcd8f639f0c6b04fa17eb975f839426b1767e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "944ac48bb1cb4a08ef70c81ebfdf395d133e12a2a872b18e4dca5b8b9221791b"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "b56168ccb33b5c07c6916f24ec0a9f3b3d5d8e36bc5befdfc7433e8c120b0799"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f782e084b775e440a99de1448152e205400ba22bb5041216562a4470ca8cec7e"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "c64cbd909ca7ceb206f42a5217d132a14c7fdd2307fa5221c5206284a973d585"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "a57f3bc75f51bc9ebec5aeae33add38b0fd5a2890476f9e999c94cf61c716d05"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "aplicar_primera_valida_sin_reservar_rechazos",
+        "sha256": "ff0d3d8449806cf7e8bf657f3ee2cf4219093f279911d166acc7c8d63a354c97",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "7ca1e93e2c517b62bd42456390f28cf7d1b9f8c55271f62630931b28355255a6",
+        "afterSha256": "98b890c403a31706cb87341c6cc4fc2f2122cab0377263059b686437f43b5461"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "649a84de5b660259152e1875941b1f935ca887770ef91ccdf57bbc0320254060",
+        "afterSha256": "db113a686a89c4695e5ef0210342910041fdb4cf7b708c5beb97c9f6b140ccdd"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "db774781e952992aac56df4bfa37a46ebfff3c0de073e734ca5b01015417692c",
+        "afterSha256": "d2d1c65289e1085b799a96dbe047b1e0fc2ef196361069f52831c0c5ce872a36"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "73776e4f5a8e1a367bf3c1225b0a532196d37a80bb6022c36913228782f35983",
+        "afterSha256": "25d0400738a60188737c3d691703c16f15ccb53a48cf0b4ad321bcec730f12dc"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "52fecbe85366235bb830e646954894ceab16393e80b9fb4a561603437661badd",
+        "afterSha256": "8f7b0cb6e93c6708733a571319e36160555a3204739e06b412efd130c3ebda0b"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a7e499ce252e88dafecaef4075bed505ce1c65472d1010723fa43ca39cd6a4cc",
+        "afterSha256": "d1bb7a8a6e9b395b981b65d1c9a25073d445143757f96cf318766cb6a7e0fe6d"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ad3ee09a0e5467bdfb8c8b9292195f63ea75583887cb5d3f2b5d9fd654b155ca",
+        "afterSha256": "3ed0c9736a695911ca9eaa94b267f8c5615d1db0a62c2a00923bbb283766a554"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "ba5e96faac0b9dc589729a16e78a32f3543f08d7590ba39719edf5819dc09884",
+        "afterSha256": "0da44e9bb0f5d96f4c8d1f77ca77f764095e4c9b1ecb311b69ae8a7bbffb7c17"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "7632d23ca262a2986d183a3d4f192d043916631a3971c2942b4c25ec69d1c51d",
+        "afterSha256": "89341947a68dc99dcaef1fba9dc1ae25759a806a8371fa44b5a87b606a01f921"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0979758c3f0bfe477aeb9aec995b817d36ceea1db10e2f0d56221f8e85052914",
+        "afterSha256": "d957472a9fa28dcf41e6c896ade3ec0e2f460d4d19bc6e116e34f32b9fca0562"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "baeaf958985f8e5377ad56627b5486c3bdb1234eb7e0588c7a8c029145a7bcbd",
+        "afterSha256": "a923a649a4680791ecde95482ffca5b5676ae86d6a1f7d0d1dd8f17c67a65596"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "aec0fe59071b3f0014c9bcd2bf7e90100040af95ce8498a3bf2af6e8fb97abfb",
+        "afterSha256": "74061fef51cce1df6767aae41da29dcdc92b8615c106329d1e0ef6415cb3aeed"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "dd38e1634a688683f7975158d7239c9a8ad0a691dcf3415499331207f7450a5c",
+        "afterSha256": "da2472e9e6d1aee2b97f399a7bdf00bf8cb931e5d07870f44c19754a99dab7a9"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "defa55c6485aea82920230c35617fd8482d4efa4987c06b3e07bc303b6bc2c54",
+        "afterSha256": "83890bbbd87e0cd1dd5f9c546b0f8f1487f0bb4fcdf1655640208048bae6cfc4"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "9441dfd058dc5d5e04fa628cf84f045dd2b6ab18ecdde70aed70936a5ffadeb5",
+        "afterSha256": "34749508b7403d8acca449b1c1e466f73d6fddcd35fdc3c3fcb5ba7d07be021c"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "7915a58a8290b4b7b95bf225607c67b00b440a606502c332ed83d9e1a39093de",
+        "afterSha256": "cce479d8dd71564f874211c3b23ee6e1dcbaa43d8144596f3216a917af6c6b21"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "fa33a2e86064faffd4a6a92ebf660dbc19f7c52d26770c661e59059dfa1d5785",
+        "afterSha256": "902ecde3658ff58ea40432154ea00fc3775da9243f2cb45d0e94f06d6b517b6e"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "266b171fae650332021e107fa646695c2dde56291bfc20b96f9c6f669db44b63",
+        "afterSha256": "ebb11fdd7f1acfc8f81058c6e100175fa0357b598ff2d13cceb7b8717e2f3961"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "b2aeda620eb2f36446bb09fbff78d9954ecbf1fae1eb481a55278703618e0e1e",
+        "afterSha256": "15fa90b0284e8f4bee7a18d72fd728f69886a22ef252434a194c1e60b5e9b22e"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "0da44e9bb0f5d96f4c8d1f77ca77f764095e4c9b1ecb311b69ae8a7bbffb7c17",
+        "afterSha256": "cff46ee43292a6d0445daa040cfd689b7343e143bb76842edec7fd6a25c16d3d"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "cff46ee43292a6d0445daa040cfd689b7343e143bb76842edec7fd6a25c16d3d",
+        "afterSha256": "845d00eaf34bd7645733288c4088216322de0807b1320aff2b7b522f6ef43200"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "cce479d8dd71564f874211c3b23ee6e1dcbaa43d8144596f3216a917af6c6b21",
+        "afterSha256": "24661bf78cc203adc1db0358b44ad2939bf786783cbcf10e5e0133007ab4b000"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0003",
+      "blocks": [
+        "block_0003_0004",
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0004_0005"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0005_0001",
+      "requires": [
+        "block_0003_0003"
+      ]
+    },
+    {
+      "activity": "block_0005_0002",
+      "requires": [
+        "block_0003_0003"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "requires": [
+        "block_0003_0003"
       ]
     }
   ]
