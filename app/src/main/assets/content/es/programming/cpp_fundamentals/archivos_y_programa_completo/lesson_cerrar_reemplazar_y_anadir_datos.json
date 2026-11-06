@@ -136,7 +136,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea primero el archivo relativo serie_lgp.txt con el texto 3 4. Ciérralo y comprueba la escritura. Después ábrelo para añadir el texto espacio seguido de 5; vuelve a cerrar y comprobar. Lee tres int desde el archivo y calcula Total=12. Valida la extracción antes de sumar. Usa diagnósticos distintos para reconocer la etapa que falló y termina con código 1 cuando ocurra un fallo. Este editor construye sólo el programa que conserva ambos valores y añade el tercero correctamente. Usa Compilar, ejecutar y comprobar: el éxito produce exactamente Total=12, con o sin un salto final. Las reparaciones de modo de apertura y separador tienen editores propios después de la referencia.",
+          "text": "Construye en este editor un programa que prepare el archivo relativo serie_lgp.txt, añada un tercer entero y lea los tres valores para calcular su suma.\n\nPrimero abre el archivo para comenzar una muestra con el texto 3 4, descartando su contenido anterior si existía. Comprueba la apertura, escribe esos datos, llama a `close()` y comprueba el estado del flujo antes de continuar.\n\nDespués abre el mismo archivo con `std::ios::app` para conservar lo anterior y añadir al final el texto formado por un espacio seguido de 5. Comprueba esta apertura y, después de escribir y cerrar, comprueba también su resultado.\n\nAbre un lector del archivo y extrae tres valores de tipo `int` hacia variables. Comprueba las tres extracciones antes de sumar sus valores. Si falla una apertura, escritura, cierre o extracción, muestra un diagnóstico que identifique la etapa y termina con código `1`, sin continuar el cálculo.\n\nSi todas las etapas tienen éxito, la consola debe mostrar exactamente Total=12. Puedes terminar ese texto sin salto de línea o con un único salto final, sin títulos ni líneas vacías. Termina el programa con código `0` en ese caso. Elige los nombres de tus variables y cómo organizar el código; conserva el recorrido de los datos desde el archivo hasta la suma.\n\nUsa Compilar, ejecutar y comprobar y compara la consola con la salida solicitada. Este editor corresponde a la construcción completa; las reparaciones del modo de apertura y del separador tienen sus propios editores después de la referencia.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -154,7 +154,12 @@
             "3 4 5"
           ],
           "correctIndex": 2,
-          "explanation": "app conserva lo anterior y añade al final. El espacio escrito separa 4 de 5, de modo que el lector puede obtener tres enteros."
+          "explanation": "app conserva lo anterior y añade al final. El espacio escrito separa 4 de 5, de modo que el lector puede obtener tres enteros.",
+          "reviewFeedback": [
+            "Sigue si el espacio de la segunda cadena se conserva al añadir sus caracteres al texto anterior.",
+            "Distingue una apertura que conserva el texto anterior de otra que lo reemplaza.",
+            "Distingue las dos decisiones del ejemplo: conservar los caracteres anteriores y separar los nuevos."
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -173,7 +178,7 @@
         },
         {
           "type": "note",
-          "text": "Modifica únicamente archivos de muestra creados por tu programa dentro de su ejecución. La referencia siguiente contrasta el requisito; no presupone acceso a archivos personales ni conservación entre trabajos."
+          "text": "Trabaja con la muestra serie_lgp.txt creada por tu programa en esta ejecución. Tras completar la comprobación, contrasta tu implementación con la referencia. Revisa que el programa escriba la muestra, añada el nuevo dato y calcule desde los tres enteros extraídos: una consola coincidente no demuestra por sí sola ese recorrido."
         }
       ]
     },
@@ -190,7 +195,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: primer contenido 3 4, segunda escritura que añade espacio y 5, cierre comprobado antes de cada nueva etapa y tres extracciones válidas antes de sumar. El contenido resultante es 3 4 5 y el total 12. Si se omite app, queda el texto espacio seguido de 5: un solo entero. Si se omite el espacio, queda 3 45. Ambos cambios impiden obtener tres valores y deben mostrar Lectura incompleta, sin ejecutar la suma."
+          "text": "Esta referencia comienza escribiendo el texto 3 4. Después de comprobar su escritura y cierre, abre el mismo archivo con `std::ios::app` y añade la cadena `\" 5\"`, cuyo primer carácter es un espacio. El archivo queda con el texto 3 4 5. El lector obtiene tres enteros y el programa calcula Total=12 desde esos valores, sin salto final.\n\nEl modo de apertura y el separador resuelven requisitos distintos. Si se omite `std::ios::app` en la segunda apertura y ésta tiene éxito, el contenido anterior se descarta: después de escribir la misma cadena sólo queda un espacio seguido de 5, que permite extraer un entero. Si se conserva `std::ios::app` pero se escribe `\"5\"` sin el espacio, el texto queda unido como 3 45, que permite extraer dos enteros.\n\nEn ambos cambios, si se mantiene la comprobación de tres extracciones de esta referencia, el programa muestra Lectura incompleta y termina con código `1`, sin sumar los destinos. El modo no introduce separadores y un espacio nuevo no recupera caracteres descartados al abrir.\n\nAl comparar tu construcción, localiza la preparación de la muestra, las dos comprobaciones posteriores a `close()`, la apertura del lector y el cálculo desde los valores extraídos. Otros nombres o una distribución diferente en funciones son válidos si conservan esos comportamientos."
         },
         {
           "type": "multiple_choice",
@@ -202,7 +207,12 @@
             "Un espacio escrito antes de 5 recupera siempre el contenido reemplazado."
           ],
           "correctIndex": 0,
-          "explanation": "Conservar caracteres previos no garantiza que los nuevos queden separados. A la inversa, un separador no recupera caracteres que una apertura ya reemplazó."
+          "explanation": "Conservar caracteres previos no garantiza que los nuevos queden separados. A la inversa, un separador no recupera caracteres que una apertura ya reemplazó.",
+          "reviewFeedback": [
+            "Relaciona el efecto de abrir el archivo con los caracteres concretos que escribe la inserción posterior.",
+            "Localiza qué carácter de la instrucción de escritura introduce un separador y si se ha escrito un salto de línea.",
+            "Un separador afecta a la unión de los caracteres nuevos; revisa qué operación puede descartar los anteriores."
+          ]
         }
       ]
     },
@@ -1028,7 +1038,51 @@
         "id": "block_0001_0004",
         "beforeSha256": "ab6ecac9220d76bb4a93c36d7cac6249a1d41bd06a30ece8d81a26df6b7b8cbd",
         "afterSha256": "6f3932a8f75742c6f3b8a1b491c1d99c8b807576f2f16f535df1a9acc381b7e5"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "67ff4418edecda78575cbff624a0374ab715af6c055d1b6ca106f115159b682d",
+        "afterSha256": "1fcac47a1b25dde2da5bd87b20898bfb38ab84a130a1cf21df803f40c8367795"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2b2ecc580dbfb799b3eb9c4759e58bd64e7ec6cbe887adb9855d389d210d595f",
+        "afterSha256": "cc6ef6a8ed63185abf1d2f7b5def0e4efd13fa70bed590a4a374404e8fa53064"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "b134fb99f736882997191f33d82cd8a34cb65b8e29d30c15829d7c58ae738b17",
+        "afterSha256": "5e3743d14494e7819b5f56add3472b54723f934c64f7cb37dbda89d7d5eed869"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "405b3d4c9e5ad511ec6419667b191dceb2a28ff69a76013c1a6dfc102f7ea44e",
+        "afterSha256": "acd49b067fdb6e59348420b9c39a9eeb0b3fbac0a58ce1b499baa6077fc29c37"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "e08a4d797289247c9e83aaf7202d236531af633b5c0d9627949ce376023aef40",
+        "afterSha256": "2ccc84b4492f8ce47b14a19da0c89a3cf0a109567839ce2a47642b85503ef721"
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0003",
+      "blocks": [
+        "block_0003_0004",
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0003",
+      "requires": [
+        "block_0003_0003"
+      ]
+    }
+  ]
 }
