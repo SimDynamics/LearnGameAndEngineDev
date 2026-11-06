@@ -174,6 +174,9 @@ struct StateEditorialReturn { std::string id, previous_raw_json; };
 struct StateReadingRevision {
     std::size_t editorial_prefix = 0;
     std::map<std::string, std::string> previous_blocks;
+    // Only a closed, authenticated first adoption can bridge the original
+    // positional page identity. Ordinary editorial archives keep stable IDs.
+    bool positional_page_identity = false;
 };
 struct StateLayout {
     int version = 0;

@@ -638,6 +638,7 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
         "9e248574ca08044e9d533f58cba482f033b7ea0e9fc091b9939bcce2c824b8ba",24);
 }
 #include "core/u12_append_hypothesis_contract_test.hpp"
+#include "core/u12_composed_output_contract_test.hpp"
 void mathematical_puzzle_identity_remains_optional() {
     using namespace lgaed::windows;
     // Same valid, unnamed puzzle used by the reader's mathematical keyboard
@@ -1467,6 +1468,9 @@ void inline_feedback_optional_contract_tests() {
 }
 int main(int argc,char** argv) {
     try {
+        if(argc==4&&std::string_view(argv[1])=="--u12-composed-output"){
+            u12_composed_output_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
+        }
         if(argc==4&&std::string_view(argv[1])=="--u12-append-hypothesis"){
             u12_append_hypothesis_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
         }

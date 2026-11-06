@@ -1066,6 +1066,9 @@ RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,
     if(value.empty())return RichTextReferenceRole::automatic;
     const bool output=technical_prose::has(prompt,
         LR"((?:qu[eé]|cu[aá]l(?:es)?)\s+(?:es\s+|son\s+|ser[ií]a\s+)?(?:la\s+)?salida|\bsalida(?:\s+de\s+texto)?\s+(?:produce|muestra)|\bmensaje\s+(?:produce|muestra))",true);
+    const bool composed=technical_prose::has(prompt,
+        LR"(\bqu[eé]\s+debe\s+contener\s+(?:la\s+|una\s+)?(?:(?:primera|segunda|nueva|resultante)\s+)?cadena\b)",true);
+    if(composed&&technical_prose::curricular_role_detail::composed_data_sample(value))return RichTextReferenceRole::output;
     if(output){
         // Alternatives that explain a cause are prose, rather than purported
         // output. Punctuation, escapes and line breaks can all be data. A

@@ -768,6 +768,64 @@ std::optional<StateReadingRevision> append_hypothesis_reading_revision(const Jso
     result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }
+std::optional<StateReadingRevision> composed_output_reading_revision(const JsonObject& metadata,const JsonArray& pages,
+        const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    // This is the exact first adoption of the real 4741c42 publication. It
+    // supplies old narration only, never an editable history or a state slot.
+    // Pin all five pages as well: a later unreviewed heading/code change must
+    // not borrow an invented predecessor from these eight authentic blocks.
+    if(pages.Size()!=5||layout.signatures.size()!=25
+        ||fingerprint(metadata.GetNamedObject(L"family"))!="f9865100c59e76353575893fd342d00b0ce5eee3ef2c9605a4b9189db4fbd887"
+        ||fingerprint(array(metadata,"origin"))!="6c5a4300e032dfde02180cfb468cbb2b418931fbc65fb8f771561aa30b2dbee3"
+        ||fingerprint(array(metadata,"current"))!="430aa6b167fac29d684c9c45734b6c611ce06be9bbd16a303c598d1c562a6e92"
+        ||fingerprint(array(metadata,"editorial"))!="1ad25edf3618c1f51a1e21504b52bbc65f27d70b7deba6ef5344d126912c345b"
+        ||fingerprint(pages)!="b3ee4c125cf8fbc0242a4a0cbb24f34dc03677d84ad6485c7c319c8fbd878852")return {};
+    struct ReviewedBlock {unsigned page,block;const char* id;const char* before;const char* after;const wchar_t* prose;};
+    constexpr std::array<ReviewedBlock,8> reviewed{{
+        {0,1,"block_0000_0001","c02adc2d24a66e7b0dce4f5aa5692cb2f204850bb1552792ca1bd5e2087c6b19",
+            "b3d34bd31f3e0109c48641f6c3bd16dd75eddaeda0a9788611bd595e79d73f21",
+            L"std::ostringstream, declarado en <sstream>, recibe inserciones y conserva los caracteres producidos en memoria. Su operaci\u00f3n str() devuelve una cadena con ese contenido. A diferencia de cout, insertar en este flujo no env\u00eda el mensaje a la salida est\u00e1ndar. Puedes construir un texto, devolverlo y decidir despu\u00e9s si mostrarlo, guardarlo o usarlo como nombre de una muestra (Stroustrup, 2024, secci\u00f3n 9.11, pp. 283\u2013284)."},
+        {0,3,"block_0000_0003","53da4b1c7e1185a16256c4981ac6e5efc6ae5367e6786724929ebe9ef483b2fc",
+            "d90d01bec3b7c8fedd2054b4ce07e9b3694b28f3617a894ce5ab6e88935eac82",
+            L"El resultado visible es Cajas=4;Estado=listo, pero s\u00f3lo la \u00faltima instrucci\u00f3n lo muestra. Las inserciones anteriores forman los caracteres en texto. El nombre mensaje conserva una cadena, no un flujo abierto ni una instrucci\u00f3n que deba ejecutarse otra vez."},
+        {0,4,"block_0000_0004","7a041d7e9cfc4c7f5e8cc7000144fa9123dac81f9af54e4505a19640e2081e58",
+            "2834c29f0d3680bdf1fda9e6b573ba3e624ebd507e67d7083e6654d1ef4140fd",nullptr},
+        {1,1,"block_0001_0001","042cc93bd22860e2760dabc3b06baab868eae9c22a1e89c0d738f16b9f9b264b",
+            "79de873c83c4090d903b2ac91b67fe186b053b45ba2566b33ed51bb5e909f114",nullptr},
+        {1,2,"block_0001_0002","fa2bd564d660cb74e06163a7cbb9986c6fdfb9bb83a6743027e363f38b32b566",
+            "a3c73edce6e41ffa8f86f478a5667a53e2ed1801fb43430e89721228e35d5e9b",
+            L"str() consulta el contenido; no lo vac\u00eda ni imprime. Las siguientes inserciones contin\u00faan en el mismo flujo. No se debe confundir copiar el resultado string con copiar el objeto ostringstream: este \u00faltimo no admite la copia ordinaria que usamos con cadenas y registros."},
+        {1,3,"block_0001_0003","faf6393e200b49d4b9a31be600ebabd33fe4f7b224ff6bfbc6479a7027382480",
+            "4d21f3591bfa76c81c6fa7fdc48ffb455745414abdad0fc9cf1cb768b9d7bf0f",nullptr},
+        {1,4,"block_0001_0004","5259a7687faffd5b6daf28dd2db9a4f73c387bc13c9f78b97affee8c1987b622",
+            "7fed11b6ada96a990c364b94264c5152690187a2b59106156cfe225daa2c31b3",nullptr},
+        {1,5,"block_0001_0005","2b80ca083b2d0eb1b2a5b9492a15ae5ae2095f880cbcb65f36276a6069705109",
+            "8216c1ca7b4af782b539a6e72edf5b36ccd0d3fcf98103a21da4453398dbaf22",nullptr},
+    }};
+    const auto editorial=array(metadata,"editorial");
+    if(editorial.Size()!=reviewed.size())return {};
+    const auto reconstructed=JsonArray::Parse(pages.Stringify());
+    StateReadingRevision result;result.editorial_prefix=8;result.positional_page_identity=true;
+    for(unsigned index=0;index<reviewed.size();++index){
+        const auto& item=reviewed[index];const auto edge=editorial.GetObjectAt(index);
+        const auto active=array(pages.GetObjectAt(item.page),"blocks").GetObjectAt(item.block);
+        if(layout.origin[item.page].blocks[item.block]!=item.id||layout.current[item.page].blocks[item.block]!=item.id
+            ||edge.Size()!=3||text(edge,"id")!=item.id||text(edge,"beforeSha256")!=item.before
+            ||text(edge,"afterSha256")!=item.after||fingerprint(active)!=item.after)return {};
+        const auto previous=JsonObject::Parse(active.Stringify());
+        if(item.prose){
+            previous.Insert(L"text",JsonValue::CreateStringValue(item.prose));
+            previous.Remove(L"emphasis");
+        }else previous.Remove(L"reviewFeedback");
+        if(fingerprint(previous)!=item.before)return {};
+        array(reconstructed.GetObjectAt(item.page),"blocks").SetAt(item.block,previous);
+        result.previous_blocks.emplace(item.id,utf8(previous.Stringify()));
+    }
+    if(fingerprint(reconstructed)!="ffeb1349bb0fcd7d1bc9e7002c344ce68e3fcf4a8162464e9b908606521010a8")return {};
+    return result;
+}
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -1116,6 +1174,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     if(auto revision=session_literal_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=append_hypothesis_reading_revision(metadata,pages,result,lesson_id))
+        result.reading_revisions.push_back(std::move(*revision));
+    if(auto revision=composed_output_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
     return result;
 }
