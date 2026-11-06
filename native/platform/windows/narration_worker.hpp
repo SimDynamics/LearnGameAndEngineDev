@@ -69,8 +69,10 @@ public:
     void set_storage_budget(std::uint64_t bytes);
     // cpp_previous_parentheses reconstructs one historical C++ speech policy
     // solely for bookmark authentication. It is not a curricular mathMode.
+    // previous_output_data additionally reconstructs the preceding displayed
+    // output policy for identity only; historical plans are never synthesized.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={},
-        std::string_view reading_context="auto",std::string_view math_mode="auto");
+        std::string_view reading_context="auto",std::string_view math_mode="auto",bool previous_output_data=false);
     [[nodiscard]] std::string curriculum_plan(std::string_view raw_lesson,std::size_t page,
         std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={},
         std::string_view reading_context="auto");

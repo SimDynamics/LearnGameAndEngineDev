@@ -664,7 +664,35 @@ def windows_reading_source(name: str, code: str) -> str:
     }''', '''    private fun expressionEnd(text: String, index: Int): Int =
         WindowsNarrationSpeechRules.implicitExpressionEnd(text, index)''')
         # Display styling does not make an expected output label source code.
-        code = exact(code, '                    val code = text.substring(index + delimiter.length, end)', '                    val code = text.substring(index + delimiter.length, end)\n                    if (delimiter.length == 1 && WindowsNarrationSpeechRules.isDisplayedOutputValue(text, index, code)) {\n                        // Visible output is prose/data. Keep each original UTF-16\n                        // owner; only replace colon punctuation for a short pause.\n                        output.append(\' \')\n                        onPiece?.invoke(index, index + delimiter.length, " ")\n                        code.forEachIndexed { offset, character ->\n                            val spoken = if (character == \':\') ", " else character.toString()\n                            output.append(spoken)\n                            onPiece?.invoke(index + delimiter.length + offset, index + delimiter.length + offset + 1, spoken)\n                        }\n                        output.append(\' \')\n                        onPiece?.invoke(end, end + delimiter.length, " ")\n                        observedChildren = onPiece != null\n                        index = end + delimiter.length\n                        changed = true\n                        continue\n                    }')
+        code = exact(code, '                    val code = text.substring(index + delimiter.length, end)', '''                    val code = text.substring(index + delimiter.length, end)
+                    if (delimiter.length == 1 && WindowsNarrationSpeechRules.isDisplayedOutputRecord(text, index, code)) {
+                        output.append(' ')
+                        onPiece?.invoke(index, index + delimiter.length, " ")
+                        output.append(readCode(code, index + delimiter.length, selected, onPiece, numericExpression = true))
+                        output.append(' ')
+                        onPiece?.invoke(end, end + delimiter.length, " ")
+                        observedChildren = onPiece != null
+                        index = end + delimiter.length
+                        changed = true
+                        continue
+                    }
+                    if (delimiter.length == 1 && (WindowsNarrationSpeechRules.isDisplayedOutputValue(text, index, code) ||
+                            WindowsNarrationSpeechRules.isDisplayedOutputPhrase(text, index, code))) {
+                        // Visible labels retain their established pause and keys.
+                        output.append(' ')
+                        onPiece?.invoke(index, index + delimiter.length, " ")
+                        code.forEachIndexed { offset, character ->
+                            val spoken = if (character == ':') ", " else character.toString()
+                            output.append(spoken)
+                            onPiece?.invoke(index + delimiter.length + offset, index + delimiter.length + offset + 1, spoken)
+                        }
+                        output.append(' ')
+                        onPiece?.invoke(end, end + delimiter.length, " ")
+                        observedChildren = onPiece != null
+                        index = end + delimiter.length
+                        changed = true
+                        continue
+                    }''')
         # Recognize author/year citations before local technical detection.
         # The same production pass serves ordinary speech and word ownership.
         code = exact(code, "            val technicalEnd = codeEnd(text, index)", '            val citationEnd = WindowsNarrationSpeechRules.proseCitationEnd(text, index)\n            if (citationEnd != null) {\n                // Spoken punctuation only: a short opening pause, no bracket\n                // names. Keep the author\'s words/year and their source owners.\n                val content = text.substring(index + 1, citationEnd - 1)\n                output.append(", ").append(content)\n                if (onPiece != null) {\n                    onPiece(index, index + 1, ", ")\n                    onPiece(index + 1, citationEnd - 1, content)\n                    onPiece(citationEnd - 1, citationEnd, "")\n                    observedChildren = true\n                }\n                index = citationEnd\n                changed = true\n                continue\n            }\n            val technicalEnd = codeEnd(text, index)')
@@ -712,7 +740,8 @@ def windows_reading_source(name: str, code: str) -> str:
         numericExpression: Boolean = false
     ): String {''')
         code = exact(code, '            val name = when (char) {',
-            '            val name = when (char) {\n                \'=\' -> if (numericExpression) "igual a" else codeSymbols[char]')
+            '            val name = when (char) {\n                \'=\' -> if (numericExpression) "igual a" else codeSymbols[char]\n'
+            '                \':\' -> if (numericExpression && WindowsNarrationSpeechRules.isOutputLabelColon(source, index)) "," else codeSymbols[char]')
         code = exact(code, '            val symbol = when (text[index]) {',
             '            val symbol = when (text[index]) {\n'
             '                \'(\', \')\' -> if (mathMode == "cpp" &&\n'

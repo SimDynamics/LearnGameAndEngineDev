@@ -19,6 +19,7 @@
 #include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/order_code_view.hpp"
 #include "core/learning_flow.hpp"
+#include "core/compiler_flow.hpp"
 #include "core/catalog.hpp"
 #include "core/view_preferences.hpp"
 #include "core/attempts.hpp"
@@ -1069,36 +1070,16 @@ struct LessonView {
         objective += "/input/" + std::to_string(input.size()) + ':' + input;
         return state::sha256(objective);
     }
-    using CompletionSnapshot = std::map<std::string,bool>;
+    using CompletionSnapshot = curriculum::CompilerCompletionSnapshot;
     CompletionSnapshot completion_snapshot(const curriculum::Lesson& source) const {
-        // Validation guarantees that dependencies precede their targets.
-        // Evaluate each node once in that order; recursive DAG walks become
-        // exponential when several later editors share earlier prerequisites.
-        std::map<std::string,const std::vector<std::string>*> requirements;
-        for (const auto& relation : source.activity_after) requirements.emplace(relation.activity,&relation.prerequisites);
-        CompletionSnapshot result;
-        for (const auto& candidate : source.pages) for (const auto& current : candidate.blocks) {
-            if (current.type != BlockType::cpp_compiler) continue;
-            bool available = true;
-            if (const auto relation = requirements.find(current.stable_id); relation != requirements.end())
-                for (const auto& identity : *relation->second) {
-                    const auto found = result.find(identity);
-                    if (found == result.end() || !found->second) { available = false; break; }
-                }
+        return curriculum::compiler_completion_snapshot(source,[&](const auto& current){
             const auto receipt = state::string_value(data,"native_windows",reference_key(current));
-            result[current.stable_id] = available && curriculum::has_compiler_objective(current) &&
-                (windows::compiler_puzzle_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current)));
-        }
-        return result;
+            return windows::compiler_puzzle_completed(data,source,current)||(!receipt.empty()&&receipt==reference_seal(current));
+        });
     }
     CompletionSnapshot completion_snapshot() const { return completion_snapshot(lesson); }
     bool activity_available(const curriculum::Block& activity,const CompletionSnapshot& proofs) const {
-        for (const auto& position : curriculum::activity_prerequisites(lesson,activity)) {
-            const auto& prerequisite = lesson.pages[position.page].blocks[position.block];
-            const auto found = proofs.find(prerequisite.stable_id);
-            if (found == proofs.end() || !found->second) return false;
-        }
-        return true;
+        return curriculum::compiler_activity_available(lesson,activity,proofs);
     }
     bool activity_available(const curriculum::Block& activity) const {
         return activity_available(activity,completion_snapshot());
@@ -1129,12 +1110,9 @@ struct LessonView {
         }
     }
     bool reference_available(const curriculum::Block& reference) const {
-        if(lesson.compiler_puzzles_required)for(const auto& prior:lesson.pages.at(page).blocks){
-            if(&prior==&reference)break;
-            if(curriculum::has_compiler_objective(prior)&&!windows::compiler_puzzle_completed(data,lesson,prior))return false;
-        }
-        const auto dependency = curriculum::reference_activity(lesson,reference);
-        return !dependency || activity_completed(lesson.pages[dependency->page].blocks[dependency->block]);
+        return curriculum::compiler_reference_available(lesson,page,reference,completion_snapshot(),[&](const auto& prior){
+            return windows::compiler_puzzle_completed(data,lesson,prior);
+        });
     }
     static std::size_t row_block(const Row& row) {
         if (GetDlgCtrlID(row.cells.front()) < 1000) return std::numeric_limits<std::size_t>::max();

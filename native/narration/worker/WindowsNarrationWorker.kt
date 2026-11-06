@@ -176,7 +176,12 @@ private class Backend(private val resources: File, private val englishResources:
         }
     }
     fun plan(request: JSONObject): JSONObject {
-        val items = planned(request.getString("text"),language(request),readingMode(request))
+        require(!request.has("previousOutputDataPolicy") || request.opt("previousOutputDataPolicy") is Boolean) {
+            "Invalid previous output-data policy"
+        }
+        val items = WindowsNarrationSpeechRules.withPreviousOutputDataPolicy(request.optBoolean("previousOutputDataPolicy",false)) {
+            planned(request.getString("text"),language(request),readingMode(request))
+        }
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->
             JSONObject().put("text",segment.source).put("preparedText",segment.prepared)
                 .put("spokenText",ManualEnglishSpeech.strip(segment.prepared))
@@ -463,6 +468,9 @@ fun main(arguments: Array<String>) {
                 val id = request.get("id").toString(); require(id.length in 1..128)
                 val command = request.getString("command")
                 replyId = id; replyCommand = command
+                require(command == "plan" || !request.has("previousOutputDataPolicy")) {
+                    "Previous output-data policy is restricted to bookmark planning"
+                }
                 if (command == "cancel") {
                     val target = request.optString("targetId",id)
                     requests[target]?.let(::cancelRequest)
