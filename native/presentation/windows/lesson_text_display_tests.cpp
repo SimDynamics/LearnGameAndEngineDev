@@ -103,6 +103,28 @@ void string_prose(HWND host){
         set_rich_text(row,std::string("La salida es `")+output+"`.");colored(row,wide(output),base);(void)background_at(wide(output));
         set_rich_text(row,std::string("El literal \"")+output+"\" aporta esos caracteres.");colored(row,wide(output),green);(void)background_at(wide(output));
     }
+    const std::string composed="Las inserciones de la línea que empieza con `texto << \"Cajas=\"` forman el texto Cajas=4;Estado=listo dentro del flujo. Las cadenas aportan las etiquetas y el texto listo; la inserción del entero `4` aporta el dígito 4. Esa composición todavía se encuentra en memoria.\n\nLa definición `std::string mensaje = texto.str();` inicializa la variable `mensaje` con la cadena obtenida del flujo. La instrucción `std::cout << mensaje;` envía esa cadena a la salida estándar: se ve Cajas=4;Estado=listo, sin salto de línea final. Después, `return 0;` termina `main`.";
+    auto composed_display=composed;std::erase(composed_display,'`');
+    set_rich_text(row,composed);require(edit_text(row)==composed_display,"Composed-result roles changed the real L4 prose source");
+    colored(row,L"Cajas=4;Estado=listo dentro del flujo",base);colored(row,L"se ve Cajas=4;Estado=listo",base);
+    colored(row,L"\"Cajas=\"",green);
+    const auto number=wide(edit_text(row)).find(L"entero 4")+7;
+    require(ink(row,static_cast<LONG>(number))==RGB(224,151,109),"A distinct explicit C++ integer lost its literal category");
+    colored(row,L"dígito 4",base);(void)background_at(L"Cajas=4;Estado=listo");
+    const std::string composed_question="La función compone primero con 2 y 1 y después con 0 y 0, creando un flujo local en cada llamada. ¿Qué debe contener la segunda cadena?";
+    for(const auto sample:{"Validos=2;Rechazados=1Validos=0;Rechazados=0","Validos=0;Rechazados=0"}){
+        RichTextContext context;context.prose=composed_question;context.reference_role=rich_text_choice_reference_role(composed_question,sample);
+        require(context.reference_role==RichTextReferenceRole::output,"A public composed-chain candidate lost its data/result role");
+        set_rich_text(row,sample,{},false,RichTextRole::body,"es",{},context);colored(row,wide(sample),base);(void)background_at(wide(sample));
+    }
+    require(rich_text_choice_reference_role(composed_question,"Una cadena vacía, porque todos los valores son cero.")==RichTextReferenceRole::automatic,
+        "An explanatory option was promoted to a composed-result sample");
+    require(rich_text_choice_reference_role("¿Qué asignación actualiza los campos?","Validos=0;Rechazados=0")==RichTextReferenceRole::automatic,
+        "A source-assignment question inherited a data/result role from the sample spelling");
+    set_rich_text(row,"Las instrucciones `Cajas=4;Estado=listo;` actualizan variables. El literal \"Cajas=4;Estado=listo\" conserva caracteres.");
+    colored(row,L"\"Cajas=4;Estado=listo\"",green);
+    const auto code_number=wide(edit_text(row)).find(L"Cajas=4")+6;
+    require(ink(row,static_cast<LONG>(code_number))==RGB(224,151,109),"A real marked assignment was recolored as composed data");
     DestroyWindow(row);FreeLibrary(library);
     std::cout<<"PASS explicit string/output prose: real mixed U1 feedback, all output alternatives, quoted concatenation alternatives, independent output blocks and prompt labels; complete existing ink/backdrops, no source changes\n";
 }

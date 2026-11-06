@@ -50,6 +50,9 @@ struct LessonReadingArchive {
     // Exact region keys whose authenticated semantic revision needs new audio.
     // Unchanged earlier passages retain their own compatible pause.
     std::vector<std::string> revised_regions;
+    // Closed first-adoption provenance maps a positional pause into its own
+    // revised passage, rather than replaying every earlier editorial change.
+    bool positional_page_identity = false;
 };
 struct LessonViewHooks {
     std::string lesson_label = "Lección";

@@ -108,6 +108,16 @@ inline std::wstring_view data_sentence(std::wstring_view prefix) {
     }
     return prefix.substr(first);
 }
+inline bool composed_data_sample(std::wstring_view value) {
+    // A public result may contain repeated fields or missing separators. Its
+    // display role does not certify that the candidate has the right value.
+    // A source declaration/statement, quoted literal or ordinary sentence is
+    // not such a sample merely because it mentions an equals sign.
+    return has(value,LR"(^[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:;[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+)*$)");
+}
+inline bool composed_data_cue(std::wstring_view prefix) {
+    return has(prefix,LR"((?:\b(?:forma(?:n)?|compone(?:n)?|construye(?:n)?|obtiene(?:n)?|genera(?:n)?|produce(?:n)?)\s+(?:el\s+|un\s+)?(?:texto|cadena)|\bse\s+ve|\b(?:texto|cadena|string)\s+con\s+el\s+formato)\s*$)",true);
+}
 inline void data_references(CurricularRoles& roles,std::wstring_view text,std::span<const Range> marked,
         std::span<const Range> protected_ranges) {
     const auto add=[&](std::vector<Range>& result,std::size_t first,std::size_t last){
@@ -131,6 +141,15 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
                 (has(prefix,LR"(\bprompt\b)",true)&&has(data_sentence(prefix),LR"(\bpor\s+ejemplo\s*,?\s*$)",true))))
             add(roles.outputs,range.first,range.second);
     }
+    // An unquoted composed value is data when the local prose introduces its
+    // composition/result. Preserve every explicitly marked C++ occurrence,
+    // even if it has an identical spelling elsewhere in this same paragraph.
+    matches(text,LR"([A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:;[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+)*)",[&](const auto& match){
+        const auto first=static_cast<std::size_t>(match.position()),last=first+static_cast<std::size_t>(match.length());
+        if((first&&identifier(text[first-1]))||(last<text.size()&&identifier(text[last]))||overlaps({first,last},marked))return;
+        const auto prefix=tail(text,first,192);
+        if(composed_data_cue(prefix)||output_cue(prefix))add(roles.outputs,first,last);
+    });
     for(std::size_t at=0;at<text.size();++at){
         if(text[at]!=L'"'&&text[at]!=L'“'&&text[at]!=L'«')continue;
         auto end=text[at]==L'"'?closed_quote_end(text,at,text.size()):text.find(text[at]==L'“'?L'”':L'»',at+1);

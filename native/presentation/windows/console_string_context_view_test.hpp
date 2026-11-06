@@ -86,5 +86,71 @@ void current_console_string_references(){
         check(after&&before&&after->raw_json==before->raw_json&&state::read_bytes(lesson.source_path)==bytes,
             "Formatting/reopening changed the mixed-reference answer or lesson source");
     }
+    {
+        const auto lesson=load("archivos_y_programa_completo/lesson_componer_salida_sin_imprimirla.json");
+        const auto bytes=state::read_bytes(lesson.source_path);
+        const auto paragraph=curriculum::stable_block_position(lesson,"block_0000_0003");
+        const auto choice=curriculum::stable_block_position(lesson,"block_0001_0005");
+        check(paragraph&&choice&&paragraph->page==0&&paragraph->block==3&&choice->page==1&&choice->block==5,
+            "The actual U12L4 composed-result owners changed");
+        const auto& prose=lesson.pages[paragraph->page].blocks[paragraph->block];
+        const auto& goal=lesson.pages[choice->page].blocks[choice->block];
+        check(prose.type==curriculum::BlockType::paragraph&&goal.type==curriculum::BlockType::multiple_choice
+            &&goal.options==std::vector<std::string>{"Validos=2;Rechazados=1Validos=0;Rechazados=0","Validos=0;Rechazados=0",
+                "Una cadena vacía, porque todos los valores son cero."},"The current U12L4 data/prose alternatives changed");
+        // These two pages precede the required compiler. No prerequisite
+        // receipt, puzzle answer or listening position is fabricated here.
+        View first(lesson,paragraph->page,false,{},false);
+        const auto verify_prose=[&]{
+            const auto target=first.item(paragraph->block,0);
+            check(edit_text(target)==visible_prose(prose.text),"The current composed-result paragraph changed its complete source");
+            neutral(target,L"forman el texto Cajas=4;Estado=listo dentro",L"Cajas=4;Estado=listo");
+            neutral(target,L"se ve Cajas=4;Estado=listo, sin",L"Cajas=4;Estado=listo");
+            role_reference(first,target,L"texto << \"Cajas=\"",L"\"Cajas=\"");
+            role_reference(first,target,L"inserción del entero 4",L"4");
+            role_reference(first,target,L"aporta el dígito 4",L"4",true);
+            ordinary_span(target,L"Las cadenas aportan las etiquetas",L"Las cadenas aportan las etiquetas");
+            source_and_shading(first,target,prose.text,prose.emphasis);
+        };
+        for(const auto accent:{RGB(238,51,77),RGB(82,223,241)}){
+            reader_theme::set_accent(first.host,accent);
+            for(const int zoom:{75,100,150,200}){
+                SendMessageW(first.item(paragraph->block,0),EM_SETZOOM,zoom,100);verify_prose();
+            }
+        }
+        SendMessageW(first.item(paragraph->block,0),EM_SETZOOM,0,0);first.reopen();verify_prose();
+        View second(lesson,choice->page,false,{},false);
+        const auto verify_choice=[&]{
+            const auto question=second.item(choice->block,0);
+            check(edit_text(question)==visible_prose(goal.question),"A result role changed the actual question");
+            source_and_shading(second,question,goal.question,goal.emphasis);
+            for(std::size_t option=0;option<goal.options.size();++option){
+                const auto target=second.item(choice->block,21+static_cast<int>(option)*2);
+                const auto sample=wide(goal.options[option]);
+                check(edit_text(target)==goal.options[option],"A composed-chain alternative was rewritten");
+                if(option<2)neutral(target,sample,sample);else ordinary_span(target,sample,sample);
+                source_and_shading(second,target,goal.options[option]);
+            }
+        };
+        check(edit_text(second.item(choice->block,4)).empty(),"An untouched composed-data choice exposed feedback");
+        for(const int zoom:{75,100,150,200}){
+            for(std::size_t option=0;option<goal.options.size();++option)
+                SendMessageW(second.item(choice->block,21+static_cast<int>(option)*2),EM_SETZOOM,zoom,100);
+            verify_choice();
+        }
+        for(std::size_t option=0;option<goal.options.size();++option)if(option!=goal.correct_index){
+            choose(second,choice->block,option);verify_choice();
+            const auto response=state::get_response(read_lesson_state(second.view),lesson,goal);
+            check(response&&!response->correct&&response->selected==static_cast<std::int64_t>(option),
+                "Contextual result formatting granted success to an incorrect alternative");
+        }
+        choose(second,choice->block,*goal.correct_index);verify_choice();
+        const auto before=state::get_response(read_lesson_state(second.view),lesson,goal);
+        check(before&&before->correct,"The actual composed-data choice was not accepted through its control");
+        second.reopen();verify_choice();const auto after=state::get_response(read_lesson_state(second.view),lesson,goal);
+        check(after&&after->raw_json==before->raw_json&&after->correct&&after->selected==before->selected
+            &&state::read_bytes(lesson.source_path)==bytes,"A composed-result color/reopen changed the answer or asset");
+        std::cout<<"PASS actual U12L4 composed results: both paragraph occurrences and both data alternatives use native neutral ink/backdrop; distinct marked C++ integer/string and ordinary prose preserved; four zooms, two accents, pending gray, exact source/state/reopen, no compiler receipts/execution or hearing claimed\n";
+    }
     std::cout<<"PASS actual U1/U2 console and string references: all choices including wrong samples, mixed literal/output feedback, current ink/backdrop, pending gray/restoration, exact source/selection/state and silent reopen; compiler prerequisite receipts are synthetic formatting QA, no execution/listening claim\n";
 }

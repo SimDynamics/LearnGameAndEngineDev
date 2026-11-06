@@ -824,18 +824,35 @@ struct LessonView {
         // that never existed. Answers keep their ordinary current response slot.
         for(const auto& revision:lesson.state_layout.reading_revisions){
             LessonReadingArchive archived;archived.page_identity=identity;archived.regions=reading_regions();
+            archived.positional_page_identity=revision.positional_page_identity;
+            if(revision.positional_page_identity)archived.page_identity=route+'/'+lesson.id+'/'+std::to_string(page);
             for(const auto& [id,raw]:revision.previous_blocks){
                 const auto at=curriculum::stable_block_position(lesson,id);if(!at||at->page!=page)continue;
                 const auto previous=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(raw));
+                const auto old_text=winrt::to_string(previous.GetNamedString(L"text",L""));
                 const auto old_question=winrt::to_string(previous.GetNamedString(L"question",L""));
                 const auto old_explanation=winrt::to_string(previous.GetNamedString(L"explanation",L""));
+                auto original=block(at->block);original.question=old_question;original.explanation=old_explanation;
+                original.raw_json=raw;
+                // This closed positional adoption predates all five authored
+                // wrong-answer guides. Reconstruct the actual generic review,
+                // never combine current guides with an old page script.
+                if(revision.positional_page_identity){original.review_feedback.clear();original.review_feedback_options.clear();}
+                const auto response=state::get_response(data,lesson,original);
                 const auto question=find_item(control_id(at->block,0));
                 for(auto& region:archived.regions){
                     if(region.block_index!=at->block)continue;
                     auto source=region.source_text;
-                    if(!region.feedback&&region.target==question)source=old_question;
+                    if(!region.feedback&&region.target==question)source=
+                        original.type==BlockType::paragraph||original.type==BlockType::heading||original.type==BlockType::note?old_text:old_question;
                     else if(region.feedback&&region.correct&&region.solved)
                         source="✓ "+verdict_text(true)+(old_explanation.empty()?"":"\n\n"+old_explanation);
+                    else if(revision.positional_page_identity&&region.feedback&&response&&state::response_reviewed(*response,original)){
+                        auto review=original.type==BlockType::multiple_choice?state::choice_incorrect_feedback(*response,original)
+                            :curriculum::incorrect_feedback(original,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
+                        if(review.empty())review=default_review();
+                        source="✗ "+verdict_text(false)+"\n\n"+review;
+                    }
                     if(source==region.source_text)continue;
                     archived.revised_regions.push_back(region.key);region.source_text=std::move(source);
                 }
