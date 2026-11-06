@@ -916,7 +916,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este cliente no incluye `sobres.h`. Pulsa «Compilar y ejecutar». El objetivo es observar el fallo de compilación de las llamadas de `main.cpp`, antes del enlace. Las definiciones de otro archivo no hacen visibles sus declaraciones en el cliente."
+          "text": "Este cliente no incluye `sobres.h`. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el fallo de compilación de las llamadas de `main.cpp`, antes del enlace. Las definiciones de otro archivo no hacen visibles sus declaraciones en el cliente."
         },
         {
           "type": "cpp_compiler",
@@ -938,7 +938,11 @@
           "sourceFiles": [
             "sobres.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-envelopes-missing-header",
+            "explanation": "`main.cpp` no incluye `sobres.h` y no tiene declaraciones visibles de `descripcion_sobres` ni `sobres_necesarios`. Por eso no se pueden comprobar esas llamadas al compilar el cliente. Que sus definiciones estén en `sobres.cpp` no hace visibles sus nombres en `main.cpp`; no se alcanza el enlace ni la ejecución."
+          }
         }
       ]
     },
@@ -950,7 +954,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La cabecera de este proyecto ya no declara `sobres_necesarios`, aunque la implementación conserve su cuerpo. Pulsa «Compilar y ejecutar». El objetivo es observar que `main.cpp` no puede comprobar esa llamada durante su compilación; un cuerpo en otra fuente no sustituye la declaración visible."
+          "text": "La cabecera de este proyecto ya no declara `sobres_necesarios`, aunque la implementación conserve su cuerpo. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar que `main.cpp` no puede comprobar esa llamada durante su compilación; un cuerpo en otra fuente no sustituye la declaración visible."
         },
         {
           "type": "cpp_compiler",
@@ -972,7 +976,11 @@
           "sourceFiles": [
             "sobres.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-envelopes-missing-declaration",
+            "explanation": "`sobres.h` ya no declara `sobres_necesarios`. `main.cpp` incluye esa cabecera, pero sigue sin disponer de la declaración necesaria para comprobar su llamada. La definición que conserva `sobres.cpp` no sustituye esa declaración en el cliente: falla la compilación de `main.cpp` y el programa no se ejecuta."
+          }
         }
       ]
     },
@@ -984,7 +992,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva los archivos, pero sólo selecciona `main.cpp`. Pulsa «Compilar y ejecutar». Las declaraciones deben permitir compilar el cliente y el enlace debe fallar por las definiciones de la implementación que no se reunió. No hay stdout nuevo que comprobar."
+          "text": "Este proyecto conserva los archivos, pero sólo selecciona `main.cpp`. Pulsa «Compilar y comprobar diagnóstico». Las declaraciones deben permitir compilar el cliente y el enlace debe fallar por las definiciones de la implementación que no se reunió. No hay stdout nuevo que comprobar."
         },
         {
           "type": "cpp_compiler",
@@ -1005,7 +1013,11 @@
           ],
           "sourceFiles": [
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-envelopes-unselected-definitions",
+            "explanation": "La cabecera permite compilar las llamadas de `main.cpp`, pero sólo se seleccionó ese archivo como fuente. Las definiciones de `sobres_necesarios` y `descripcion_sobres` están en `sobres.cpp` y no se aportan al enlace. El enlazador detecta su ausencia; no se ejecuta el programa."
+          }
         }
       ]
     },
@@ -1017,7 +1029,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto coloca el cuerpo ordinario de `sobres_necesarios` en la cabecera y lo retira de la implementación. Ambos `.cpp` incluyen esa cabecera. Pulsa «Compilar y ejecutar»: cada fuente puede compilar, pero el enlace debe detectar las definiciones duplicadas. La guarda sigue actuando dentro de cada fuente."
+          "text": "Este proyecto coloca el cuerpo ordinario de `sobres_necesarios` en la cabecera y lo retira de la implementación. Ambos `.cpp` incluyen esa cabecera. Pulsa «Compilar y comprobar diagnóstico»: cada fuente puede compilar, pero el enlace debe detectar las definiciones duplicadas. La guarda sigue actuando dentro de cada fuente."
         },
         {
           "type": "cpp_compiler",
@@ -1039,7 +1051,11 @@
           "sourceFiles": [
             "sobres.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-envelopes-duplicate-definition",
+            "explanation": "`sobres.cpp` y `main.cpp` incluyen `sobres.h` y cada fuente incorpora el cuerpo ordinario de `sobres_necesarios`. La guarda impide repetir la inclusión dentro de cada fuente, pero no evita que ambas aporten una definición al enlace. El enlazador detecta esa duplicación y el programa no llega a ejecutarse."
+          }
         },
         {
           "type": "multiple_choice",
@@ -1136,7 +1152,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera llamada del cliente utiliza un nombre que no está declarado en `serie.h`. Pulsa «Compilar y ejecutar». El objetivo es observar un fallo durante la compilación de `main.cpp`, sin alcanzar el enlace ni ejecutar un resultado nuevo."
+          "text": "La primera llamada del cliente utiliza un nombre que no está declarado en `serie.h`. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar un fallo durante la compilación de `main.cpp`, sin alcanzar el enlace ni ejecutar un resultado nuevo."
         },
         {
           "type": "cpp_compiler",
@@ -1158,7 +1174,11 @@
           "sourceFiles": [
             "serie.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-series-unknown-call",
+            "explanation": "La primera llamada de `main.cpp` utiliza `estado_inexistente`, un nombre que no está declarado en `serie.h`. La declaración de `estado_serie` no declara ese otro nombre. La compilación del cliente se rechaza antes del enlace y de cualquier ejecución."
+          }
         }
       ]
     },
@@ -1170,7 +1190,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva `serie.cpp`, pero no lo selecciona como fuente. Pulsa «Compilar y ejecutar». El objetivo es observar la ausencia de sus definiciones durante el enlace después de compilar el cliente con declaraciones visibles."
+          "text": "Este proyecto conserva `serie.cpp`, pero no lo selecciona como fuente. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar la ausencia de sus definiciones durante el enlace después de compilar el cliente con declaraciones visibles."
         },
         {
           "type": "cpp_compiler",
@@ -1191,7 +1211,11 @@
           ],
           "sourceFiles": [
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-series-unselected-definitions",
+            "explanation": "`main.cpp` puede comprobar las llamadas mediante `serie.h`, pero `serie.cpp` no está entre las fuentes seleccionadas. Sus definiciones de `estado_serie` y `tareas_pendientes` no llegan al enlace. El enlazador detecta que faltan esas definiciones y el programa no se ejecuta."
+          }
         }
       ]
     },
@@ -1203,7 +1227,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto define `tareas_pendientes` como función ordinaria en la cabecera compartida y retira el cuerpo de `serie.cpp`. Pulsa «Compilar y ejecutar». El objetivo es observar un fallo de enlace por las definiciones que aportan ambas fuentes, aunque la cabecera conserve su guarda."
+          "text": "Este proyecto define `tareas_pendientes` como función ordinaria en la cabecera compartida y retira el cuerpo de `serie.cpp`. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar un fallo de enlace por las definiciones que aportan ambas fuentes, aunque la cabecera conserve su guarda."
         },
         {
           "type": "cpp_compiler",
@@ -1225,7 +1249,11 @@
           "sourceFiles": [
             "serie.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-series-duplicate-definition",
+            "explanation": "La cabecera define la función ordinaria `tareas_pendientes` y la incluyen `serie.cpp` y `main.cpp`. Cada fuente aporta así una definición al enlace, aunque su propia inclusión esté protegida por la guarda. El enlazador detecta la duplicación antes de que pueda ejecutarse el programa."
+          }
         }
       ]
     }
@@ -3564,6 +3592,76 @@
         "id": "capacidad_veinte_referencia_titulo",
         "beforeSha256": "7559903893c1e75d0178fa9f0e30618b66dbe6167f19b25bf493df0868bda172",
         "afterSha256": "ae0c00fd0df24bf74e3f497088771d7df7e1545d2d83bfe8b3332937416b80f8"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "ae23ef7cc266649cbad08efc8736916121dc404e132520a0c386ea73b23d7782",
+        "afterSha256": "e4b9709d55702aaa9a8d339b42a105042f94c9808b179db560a1907beb09525b"
+      },
+      {
+        "id": "block_0017_0002",
+        "beforeSha256": "1c69caf83414219854952076e951e9adb3f9b6168503f60113a2d858103ef650",
+        "afterSha256": "1e742f14fec627a7854df1f267bb96d774c080fd1163a0707681d14ed6658222"
+      },
+      {
+        "id": "block_0018_0002",
+        "beforeSha256": "b263e83bb0b912281964eb60261d33713e9cb6d5df046b375f5f008544c4a405",
+        "afterSha256": "6ebaa9786a29ff9c20e9d204f52785a3113552e4c0a59964d8cbb906cdcdcde4"
+      },
+      {
+        "id": "block_0019_0002",
+        "beforeSha256": "72ac435d8a7399bd39c91be5a72ae2034aeb9653a8a78ec45fa3f82e6ac9470e",
+        "afterSha256": "2df5d066e49e3ad11de914fd6bdd48dfe354aae70ae2f5f13e22032d81cc3ba8"
+      },
+      {
+        "id": "block_0021_0002",
+        "beforeSha256": "b84a7b928030171e03178f3300a1fd3dbbd86388ff998fcd8ddea9d247f9effe",
+        "afterSha256": "0ae1945bd7ceb52772a4b3ad03e22427c396a448ff5fa442a823547b1abd31c0"
+      },
+      {
+        "id": "block_0022_0002",
+        "beforeSha256": "157dc0f18f12db33cc3a7787009c408bb067ea833544df42ebdc76e2e2c00e34",
+        "afterSha256": "5efed4eb4bb3bddc6ad9cf76505143e017c05a1a3cc69d1ee31cefbcffc21ad1"
+      },
+      {
+        "id": "block_0023_0002",
+        "beforeSha256": "26416e82df9c1bd708b840b6d940c79db644f69bcd2acecc56f595f23cf48d20",
+        "afterSha256": "e0dca52441e4022ca3315654b06e3d1f8dbf93ae1ca5d3a8327d7a6d45939ec1"
+      },
+      {
+        "id": "block_0016_0001",
+        "beforeSha256": "284b373ec37e906e9779bdda91893003eef800cffedd2e5b8d13af82d356919d",
+        "afterSha256": "3411ba715b031ce8f9860c15b87f2f43d3fb067a6394f75d68b11964942ffc2a"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "2f052b237db6dbfd5e9804d8fb4f5d8594adb78ab6e5616a7e74346508fa26de",
+        "afterSha256": "eacacae19d707cfdac58a557a1a56b107ae8b519ac269475ee79f70d1fea2ace"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "8bcc4f940b1270818a1a0f50925caab5872c132b5114f6fcc474e6d7d3b3f645",
+        "afterSha256": "e776beb1d32d4df7a581e1dc5d4bc164f564d9188140e5fee86f567013b6de2e"
+      },
+      {
+        "id": "block_0019_0001",
+        "beforeSha256": "f30d3dfac3b00e80417a3cbe2bb0c9a9e66116f7fbee47eb7c656cf87c7adcde",
+        "afterSha256": "b07dfb861cfc8c3244fbe0a292828b762f3e31babfe3c7c405792c60f0c7d5df"
+      },
+      {
+        "id": "block_0021_0001",
+        "beforeSha256": "8264f31dc4ce8474c622f9eec9dc9127b7c1db60f8ab5e60177040bc962f33dc",
+        "afterSha256": "dd8b757d78b2a1496e1050a6d87d7381dc9d750b0354333e5c024e246b62c853"
+      },
+      {
+        "id": "block_0022_0001",
+        "beforeSha256": "53e2b2d1dff5b7fe209416e7d382d434cc10400d2fcccd7a597e0add61a5f24c",
+        "afterSha256": "ee3767d1faccaac031ee58ac30a5edc4babc5e25d68e054f9316fa18667dba9b"
+      },
+      {
+        "id": "block_0023_0001",
+        "beforeSha256": "2b809d1269afdacdbc0b8f0265214d73f75f964224388cd7e2b3946320c3d177",
+        "afterSha256": "c946521d5ecd9e767c74c239ab8b709de738d5fa9842ac83921dda837e14788f"
       }
     ]
   },

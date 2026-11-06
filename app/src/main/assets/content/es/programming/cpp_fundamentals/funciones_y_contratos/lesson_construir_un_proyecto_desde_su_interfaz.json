@@ -1020,7 +1020,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva `estado.cpp`, pero sólo selecciona `conteo.cpp` y `main.cpp`. Pulsa «Compilar y ejecutar». Las declaraciones deben permitir compilar esas fuentes y el enlace debe fallar por la definición de `descripcion_carga` ausente."
+          "text": "Este proyecto conserva `estado.cpp`, pero sólo selecciona `conteo.cpp` y `main.cpp`. Pulsa «Compilar y comprobar diagnóstico». Las declaraciones deben permitir compilar esas fuentes y el enlace debe fallar por la definición de `descripcion_carga` ausente."
         },
         {
           "type": "cpp_compiler",
@@ -1046,7 +1046,11 @@
           "sourceFiles": [
             "conteo.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-shelf-unselected-definition",
+            "explanation": "`conteo.cpp` y `main.cpp` compilan con las declaraciones de `estante.h`, pero `estado.cpp` no está seleccionado como fuente. Su definición de `descripcion_carga` no se aporta al enlace. El enlazador detecta esa ausencia; no se ejecutan las instrucciones que mostrarían Espacios y Carga."
+          }
         }
       ]
     },
@@ -1058,7 +1062,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto define `espacios_ocupados` con retorno `double` y conserva `int` en la cabecera incluida por `conteo.cpp`. Pulsa «Compilar y ejecutar». El objetivo es observar el fallo de compilación de esa fuente, anterior al enlace y a cualquier ejecución."
+          "text": "Este proyecto define `espacios_ocupados` con retorno `double` y conserva `int` en la cabecera incluida por `conteo.cpp`. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el fallo de compilación de esa fuente, anterior al enlace y a cualquier ejecución."
         },
         {
           "type": "cpp_compiler",
@@ -1085,7 +1089,11 @@
             "conteo.cpp",
             "estado.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-shelf-conflicting-return",
+            "explanation": "`estante.h` declara `espacios_ocupados` con retorno `int`, mientras que `conteo.cpp` incluye esa cabecera y define la misma función con retorno `double`. Cambiar sólo el retorno no crea otra función compatible. Se rechaza la compilación de `conteo.cpp` antes del enlace y de la ejecución."
+          }
         }
       ]
     }
@@ -2852,6 +2860,26 @@
         "id": "block_0010_0000",
         "beforeSha256": "49ad4ccfd837ab3c3a9bf469c991782ca810eb063403d9b7756818bcce75ac73",
         "afterSha256": "c3748511fc6a8bb27184c201557337b4a5e01a53d60e7f8c0ffa1394167af021"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "2c568ff3ab456b8111cb9a338fc9c0d6f9ccff45a1e1cd3f840cee872900f7e3",
+        "afterSha256": "4523e822af7dd5ebdf284e7447f3039f7c8f37de531fd3cca40fa7b78b98bcc1"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "5b1315f399da68b066291bf96a7f1ed8cfd1aadf3964b2d2ca55cd1f6bae50ec",
+        "afterSha256": "bab205933304b56d864e6477e6905ff28777e36ee249506c0306cb9bfdc5306a"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "b6c50b3e8c6f23d7d92b735b418eb263a2fa57a0f6c6781d676e8becdc90102c",
+        "afterSha256": "d2ed7e66568639f962056c31c08163ff6dad427d46a84844e5868a232d36ba68"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "b964bc7a989c368074a5312a10b78f4254d13fab2a545ac6dce0675444d47bbd",
+        "afterSha256": "e1b2652cbb51eb0b029c5741bf080d0f42af908b03d7879c7690732e61e12f15"
       }
     ],
     "orderRefinements": [

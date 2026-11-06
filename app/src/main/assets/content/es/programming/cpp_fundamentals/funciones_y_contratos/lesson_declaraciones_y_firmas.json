@@ -838,7 +838,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva los tres archivos, pero sólo selecciona `main.cpp` como fuente. Pulsa «Compilar y ejecutar». El objetivo es observar que el cliente reconoce la declaración y que el enlace no encuentra la definición de `diferencia`. No hay una nueva salida evaluable. Responde después el puzzle sobre la etapa y la causa."
+          "text": "Este proyecto conserva los tres archivos, pero sólo selecciona `main.cpp` como fuente. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar que el cliente reconoce la declaración y que el enlace no encuentra la definición de `diferencia`. El objetivo se acredita con el diagnóstico de enlace previsto; el programa no llega a ejecutarse. Responde después el puzzle sobre la etapa y la causa."
         },
         {
           "type": "cpp_compiler",
@@ -859,7 +859,11 @@
           ],
           "sourceFiles": [
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-difference-unselected-definition",
+            "explanation": "La declaración de `diferencia.h` permite compilar la llamada de `main.cpp`. Como `diferencia.cpp` no está entre las fuentes seleccionadas, su definición de `diferencia` no llega al enlace. El enlazador detecta esa ausencia y el programa no llega a ejecutarse."
+          }
         },
         {
           "type": "multiple_choice",
@@ -888,7 +892,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva `int` en la cabecera y define la misma función con resultado `double` en la implementación, que incluye esa cabecera. Pulsa «Compilar y ejecutar». El objetivo es observar el diagnóstico de compilación de `diferencia.cpp`, antes de cualquier ejecución; no se comprueba stdout."
+          "text": "Este proyecto conserva `int` en la cabecera y define la misma función con resultado `double` en la implementación, que incluye esa cabecera. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el diagnóstico de compilación de `diferencia.cpp`, antes de cualquier ejecución; no se comprueba stdout."
         },
         {
           "type": "cpp_compiler",
@@ -910,7 +914,11 @@
           "sourceFiles": [
             "diferencia.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-difference-conflicting-return",
+            "explanation": "`diferencia.cpp` incluye la cabecera que declara `diferencia` con retorno `int` y después la define con retorno `double`. No se puede definir esa misma función cambiando sólo su tipo de retorno. La compilación de `diferencia.cpp` se rechaza antes del enlace; el programa no se ejecuta."
+          }
         }
       ]
     },
@@ -968,7 +976,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto pide una cabecera que no está entre sus archivos. Pulsa «Compilar y ejecutar». El objetivo es observar el fallo de inclusión durante la compilación de `main.cpp`; todavía no se alcanza el enlace ni hay stdout nuevo que comprobar."
+          "text": "Este proyecto pide una cabecera que no está entre sus archivos. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el fallo de inclusión durante la compilación de `main.cpp`; todavía no se alcanza el enlace ni hay stdout nuevo que comprobar."
         },
         {
           "type": "cpp_compiler",
@@ -990,7 +998,11 @@
           "sourceFiles": [
             "diferencia.cpp",
             "main.cpp"
-          ]
+          ],
+          "compileCheck": {
+            "diagnostic": "u6-difference-missing-header",
+            "explanation": "`main.cpp` pide incluir `diferencia_ausente.h`, pero ese archivo no está en el proyecto. La compilación de `main.cpp` falla al buscar la cabecera. No se alcanza el enlace ni se ejecuta el programa."
+          }
         }
       ]
     }
@@ -3006,6 +3018,36 @@
         "id": "block_0007_0006",
         "beforeSha256": "f7c85eff1573597435a7c63b72038bc223fc9c2fa78a9d56f269882d0b954aae",
         "afterSha256": "bbb217b8e3c5986b97bdd0362117abcf5115fe6b6d2c7686b6359b3fe990a877"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "d17f1d73d7217ea45e1468f6ed0d1a5ef3565ecce33410a8022660baff950eba",
+        "afterSha256": "1f9214cd655d4c0eb17118a04b49606825590c3634c94b202861eed1aefc5450"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "e5b83315920efce2c1a6092721096ef596e2c58d7c96089ba01075bceb3986df",
+        "afterSha256": "44a7401ad5714b1b31c7d389e39ef99557c4513d27bbcc78222f9ec033012ca6"
+      },
+      {
+        "id": "block_0017_0002",
+        "beforeSha256": "3d0f8c6e8fc84ec145f1c9a6c79ec7d5fbe50d8a70294c9f6effc0b4d8eb755c",
+        "afterSha256": "b8d74a10bf948a6b9ae860f1ddd4e26e53ed5462963d8b1dac1e4dc25fdf5bb9"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "2187a495ec016c952a3a3b7639d022fa3a679ab710bfbfb631748ccb6bad9b5a",
+        "afterSha256": "eb226ab08ec4c2e6d2966cd44addc62bdeda55efad80cf3c33311dc13a1472b8"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "b1ad6cb7c16f35d8191272275fe35f606af7d02e0d0b0e4fedbf00e532ef82e7",
+        "afterSha256": "8464a40029c0910a7eb7e547ba5bc6a0cceba06515bf6268b6bba9d9114b09cd"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "a83c37fb21423d37b3843b9246e0889a587d4d6b76b117fdae2a76c7451b199c",
+        "afterSha256": "264f4524bbb518bbfc2fecd3f6844673586a2769155a789235b5b4f4440775d9"
       }
     ]
   },
