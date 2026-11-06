@@ -10,11 +10,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Un operator>> recibe std::istream& y una referencia modificable al objeto destino. Puede consumir texto, comprobarlo y decidir si obtuvo un valor válido. Devuelve el mismo flujo para que el llamador consulte su estado o encadene otra extracción. Si el formato o el dominio falla, nuestro contrato conservará el valor anterior del destino."
+          "text": "Definiremos una sobrecarga de `operator>>` para leer uno de nuestros tipos. El primer parámetro, `std::istream& origen`, permite extraer caracteres del flujo recibido. El segundo es una referencia modificable al objeto que recibirá el valor, por ejemplo `Cantidad& destino`. La función devuelve una referencia al mismo origen: así el llamador puede consultar su estado en una condición o encadenar otra extracción (Stroustrup, 2024).\n\nNuestro lector tendrá un contrato concreto: si no consigue reconocer todos los campos, los delimitadores y un valor dentro del dominio, conservará todos los campos del objeto destino. Es una garantía que diseñamos en esta función; no debemos suponer que cualquier operación de lectura la cumple. Conservar el objeto no exige conservar la posición ni los indicadores del flujo de entrada.",
+          "emphasis": [
+            {
+              "text": "contrato concreto",
+              "style": "bold"
+            },
+            {
+              "text": "conservará todos los campos del objeto destino",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Estudiaremos primero Cantidad: un campo unidades entre 0 y 5, escrito como (unidades). Después construirás el lector de Recuento con sus dos campos. En ambas pruebas usamos extracción formateada decimal y el salto de espacios habitual: ( 3 ) representa el mismo valor que (3). No estamos comprobando una ortografía única de los enteros."
+          "text": "Comenzaremos con `Cantidad`: su campo `unidades` debe estar entre `0` y `5` y se representa como `(unidades)`. Después construirás el lector de `Recuento`, con sus dos campos.\n\nEn estas pruebas, cada `std::istringstream` se crea nuevo y conserva la extracción decimal y la omisión habitual de espacios en blanco. La extracción formateada omite esos blancos antes de leer tanto un carácter como un entero; por eso `( 3 )` y `(3)` permiten obtener la misma cantidad. El lector comprueba los delimitadores y el valor obtenido, sin exigir una única escritura del entero (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "omite esos blancos antes de leer tanto un carácter como un entero",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -26,7 +42,12 @@
             "Puede haber consumido caracteres y conservar un estado de fallo."
           ],
           "correctIndex": 2,
-          "explanation": "Conservar el objeto no equivale a deshacer la entrada. La posición y el estado del origen tienen su propio comportamiento."
+          "explanation": "Conservar el objeto no equivale a deshacer la entrada. La posición y el estado del origen tienen su propio comportamiento.",
+          "reviewFeedback": [
+            "La asignación al objeto y el avance por los caracteres son operaciones distintas. Busca si el lector realiza alguna operación que retroceda el origen.",
+            "El objeto destino no es el flujo de entrada. Conservar sus campos no modifica por sí mismo los indicadores del flujo.",
+            "Distingue el objeto que se conserva de la posición y los indicadores del origen que se utilizó para intentar leerlo."
+          ]
         }
       ]
     },
@@ -38,7 +59,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera comprobación pide un carácter de apertura, un entero y un carácter de cierre. Si alguna extracción falla, retorna sin tocar el destino. Si se obtuvieron, comprueba los delimitadores y el dominio. Un formato reconocible puede contener una cantidad inválida; hace falta esa segunda comprobación."
+          "text": "Los candidatos son variables locales que guardan provisionalmente lo leído: `abre` y `cierra` reciben los delimitadores, y `unidades` recibe el entero. Son objetos distintos del campo `destino.unidades`. Extraer datos hacia ellos permite comprobarlos antes de modificar el objeto del llamador.\n\nLa primera condición intenta las tres extracciones encadenadas. Si alguna falla, el operador devuelve `origen` sin asignar al destino. Si las tres se obtuvieron, la segunda condición comprueba los caracteres y el intervalo. Solo después se ejecuta `destino = Cantidad{unidades};`. Obtener un entero no basta si el cierre es incorrecto o el valor queda fuera del dominio (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "variables locales",
+              "style": "bold"
+            },
+            {
+              "text": "antes de modificar el objeto del llamador",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -47,7 +78,17 @@
         },
         {
           "type": "paragraph",
-          "text": "setstate(std::ios::failbit) añade el indicador de fallo al estado que ya tenía el flujo. clear(std::ios::failbit) sustituiría el estado: podría borrar eofbit o badbit previos. Nuestro operador no borra indicadores para aparentar una lectura válida. Las pruebas mantienen la máscara de excepciones predeterminada; con una máscara que lo solicite, las operaciones de estado también pueden lanzar una excepción."
+          "text": "Si las extracciones obtuvieron sus valores pero estos incumplen el acuerdo, el programa debe señalar ese rechazo. `origen.setstate(std::ios::failbit)` añade `failbit` a los indicadores que ya tenía el flujo. En cambio, `origen.clear(std::ios::failbit)` sustituiría el estado y podría eliminar otros indicadores, como `eofbit` o `badbit`. Aquí usamos `setstate` para conservar esa información (Köppe et al., 2023).\n\nLa configuración de excepciones de un flujo determina qué indicadores pueden provocar una excepción. Estas pruebas conservan la configuración predeterminada: añadir `failbit` no lanza por ese indicador. El llamador consulta el estado de lectura en la condición o con `fail()`; no necesitamos cambiar esa configuración.",
+          "emphasis": [
+            {
+              "text": "añade",
+              "style": "bold"
+            },
+            {
+              "text": "sustituiría el estado",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -59,7 +100,12 @@
             "El lector debe alterar los campos antes de comprobar el dominio."
           ],
           "correctIndex": 0,
-          "explanation": "La referencia permite aplicar la asignación al objeto original, pero nuestro contrato la retrasa hasta la validación completa."
+          "explanation": "La referencia permite aplicar la asignación al objeto original, pero nuestro contrato la retrasa hasta la validación completa.",
+          "reviewFeedback": [
+            "Localiza la asignación que aplica el candidato después de validar. Esa operación debe alcanzar el objeto proporcionado por el llamador.",
+            "La referencia al objeto destino no crea una copia del flujo. Son dos parámetros con funciones diferentes.",
+            "Poder modificar el objeto no obliga a hacerlo antes de comprobar. Sigue la posición de la única asignación respecto de los dos controles."
+          ]
         }
       ]
     },
@@ -78,7 +124,8 @@
           "answers": [
             "1|4"
           ],
-          "explanation": "El operador añade failbit al detectar ]. Como no llega a asignar el candidato, cantidad sigue teniendo 4."
+          "explanation": "El operador añade failbit al detectar ]. Como no llega a asignar el candidato, cantidad sigue teniendo 4.",
+          "reviewFeedback": "Separa las variables locales del campo del objeto. Sigue primero qué extracciones obtienen datos y después qué condición rechaza el cierre. Comprueba si se alcanza la asignación al destino y qué indicador se añade."
         },
         {
           "type": "output_prediction",
@@ -89,11 +136,22 @@
           "answers": [
             "Leido:4|EOF=1;Fallo=1"
           ],
-          "explanation": "La extracción obtuvo 4 y señaló eofbit sin fallar. setstate añade failbit y conserva eofbit; después están activos ambos indicadores."
+          "explanation": "La extracción obtuvo 4 y señaló eofbit sin fallar. setstate añade failbit y conserva eofbit; después están activos ambos indicadores.",
+          "reviewFeedback": "Examina por separado la lectura del entero y la operación de estado posterior. Una extracción que obtuvo el entero puede haber encontrado el final sin activar failbit. Después aplica el efecto acumulativo de setstate."
         },
         {
           "type": "paragraph",
-          "text": "El estado del flujo aporta información, pero no sustituye la comprobación del registro. bool sobre un flujo comprueba que no haya failbit ni badbit. eofbit por sí solo no significa fallo de la extracción que ya terminó, y tampoco demuestra que un registro más complejo esté completo."
+          "text": "En una condición como `if (entrada >> cantidad)`, el operador devuelve `entrada` y se consulta ese flujo como condición. El resultado es verdadero cuando no están activos `failbit` ni `badbit`. `eofbit` por sí solo no lo hace falso: un entero puede haberse obtenido correctamente justo al llegar al final (Köppe et al., 2023).\n\nEse estado no sustituye el contrato del registro. Si todavía falta un cierre, hay que intentar obtenerlo; no se puede aceptar todo el objeto porque una extracción anterior obtuvo un entero.",
+          "emphasis": [
+            {
+              "text": "no están activos",
+              "style": "bold"
+            },
+            {
+              "text": "no sustituye el contrato del registro",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -112,7 +170,8 @@
           "answers": [
             "1:1|4"
           ],
-          "explanation": "El entero se obtiene, pero no puede extraerse el cierre. El origen termina con eofbit y failbit; el destino conserva 4."
+          "explanation": "El entero se obtiene, pero no puede extraerse el cierre. El origen termina con eofbit y failbit; el destino conserva 4.",
+          "reviewFeedback": "El registro necesita apertura, entero y cierre. Localiza la primera extracción que ya no encuentra el carácter requerido y sigue los indicadores del origen. Comprueba si el flujo de control alcanza la asignación al objeto."
         },
         {
           "type": "multiple_choice",
@@ -124,11 +183,22 @@
             "El dominio del objeto se ha comprobado automáticamente."
           ],
           "correctIndex": 1,
-          "explanation": "El final puede encontrarse antes de comenzar otro registro o dentro de uno incompleto. Hay que conservar el contexto de la lectura."
+          "explanation": "El final puede encontrarse antes de comenzar otro registro o dentro de uno incompleto. Hay que conservar el contexto de la lectura.",
+          "reviewFeedback": [
+            "Llegar al final no informa por sí solo de si faltaba todavía un delimitador o un campo obligatorio.",
+            "Relaciona el estado con la etapa en que se encontraba el lector, sin suponer que el registro estaba completo.",
+            "Los límites del dominio se comprueban en el lector del tipo; eof sólo informa de una condición de la entrada."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Para una secuencia completa, el programa deberá distinguir no haber comenzado otro registro de haberlo iniciado y encontrarlo truncado. Nuestro operador describe la lectura de un valor; no decide por sí mismo que todo un archivo terminó correctamente. La comprobación completa de líneas y secuencias será un paso posterior."
+          "text": "Para reconocer el final de una secuencia completa habrá que distinguir dos situaciones: no comenzar otro registro o empezar uno y quedarse sin una parte obligatoria. En el ejemplo de esta página ya se leyó la apertura y falta el cierre; el registro está incompleto.\n\nNuestro operador intenta obtener un valor. La decisión de que una línea o un archivo terminó correctamente corresponde a una comprobación más amplia, que estudiaremos después. `eof()` informa del estado encontrado, pero no indica por sí solo en qué etapa del registro se llegó al final.",
+          "emphasis": [
+            {
+              "text": "el registro está incompleto",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -147,11 +217,22 @@
           "answers": [
             "4|RESTO"
           ],
-          "explanation": "Se consumieron (, 3 y ] antes de detectar el cierre incorrecto. El objeto permanece en 4. Borrar el estado permite leer RESTO, sin devolver los caracteres ya consumidos."
+          "explanation": "Se consumieron (, 3 y ] antes de detectar el cierre incorrecto. El objeto permanece en 4. Borrar el estado permite leer RESTO, sin devolver los caracteres ya consumidos.",
+          "reviewFeedback": "Localiza qué caracteres se extrajeron antes de rechazar el cierre. La asignación al objeto no se alcanzó. clear modifica los indicadores; después getline empieza en la posición de entrada que quedó, no en el principio."
         },
         {
           "type": "paragraph",
-          "text": "Esta observación no convierte clear en una recuperación universal: no repara el origen, no retrocede ni borra texto. Una estrategia real debe decidir qué descartar o conservar y cómo diagnosticar el caso. Esta estrategia no garantiza devolver un prefijo arbitrario de caracteres."
+          "text": "En la cadena controlada del ejemplo se consumen la apertura, el entero y el cierre incorrecto antes del rechazo. `entrada.clear()` restablece los indicadores de estado para poder intentar la observación siguiente. No devuelve esos caracteres ni cambia por sí sola la posición de lectura (Köppe et al., 2023).\n\nPor eso `getline` encuentra el texto que quedó después del cierre. Esta observación sirve para separar el estado del origen del valor conservado en el destino. Una recuperación real necesita decidir qué parte de la entrada descartar, conservar o volver a solicitar; borrar un indicador no toma esas decisiones.",
+          "emphasis": [
+            {
+              "text": "estado del origen",
+              "style": "bold"
+            },
+            {
+              "text": "valor conservado en el destino",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "order_code",
@@ -181,7 +262,8 @@
             0,
             1
           ],
-          "explanation": "Las dos comprobaciones preceden a la única asignación al destino. Sus ramas de fallo retornan el mismo origen."
+          "explanation": "Las dos comprobaciones preceden a la única asignación al destino. Sus ramas de fallo retornan el mismo origen.",
+          "reviewFeedback": "Cada candidato debe existir antes de usarse en la extracción. Las dos comprobaciones se realizan antes de asignar al destino; sus ramas de fallo devuelven el origen. El retorno del camino aceptado queda después de la asignación."
         },
         {
           "type": "multiple_choice",
@@ -193,7 +275,12 @@
             "Aceptar todo el texto como parte del campo rechazados."
           ],
           "correctIndex": 0,
-          "explanation": "El cierre termina ese objeto; exigir que no quede texto pertenece a otro contrato de línea o archivo completo."
+          "explanation": "El cierre termina ese objeto; exigir que no quede texto pertenece a otro contrato de línea o archivo completo.",
+          "reviewFeedback": [
+            "Localiza el delimitador que termina un registro y distingue esa lectura de comprobar el fin de toda la cadena.",
+            "El contrato sólo pide obtener un registro. Busca qué operación ordenaría borrar el texto que sigue al cierre.",
+            "Los campos se extraen antes de comprobar el cierre. El texto posterior a ese delimitador no forma parte del entero ya leído."
+          ]
         }
       ]
     },
@@ -205,20 +292,50 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera Recuento, con aceptados y rechazados entre 0 y 10. Define recuento_valido(const Recuento&) y operator>> para el formato [aceptados;rechazados]. Usa candidatos locales para ambos enteros y los tres delimitadores. Si falla una extracción, un separador o el dominio, conserva todo el objeto destino. Si las extracciones terminaron pero el acuerdo es inválido, añade failbit sin borrar el estado previo. Retorna el mismo origen."
-        },
-        {
-          "type": "paragraph",
-          "text": "Construye una prueba que cree un istringstream nuevo y un destino Recuento{6, 2} en cada caso. Muestra OK seguido de la representación del destino si la lectura se acepta; si falla, muestra Fallo seguido del destino anterior. El escritor conocido se proporciona para centrar el trabajo en la entrada."
-        },
-        {
-          "type": "paragraph",
-          "text": "Prepara casos válidos [2;1], [0;0] y [10;10]. Después prueba vecinos fuera de cada dominio: [-1;2], [11;0], [0;-1] y [0;11]. Añade [2:1] y [2;1 sin cierre. Todos los rechazos deben mostrar Fallo [6;2], sin actualizar un solo campo. Cada prueba está en su propia línea de salida."
-        },
-        {
-          "type": "paragraph",
-          "text": "Prueba también [ 1 ; 3 ] y [2;1]resto. El primero admite los espacios habituales; el segundo obtiene un registro y deja resto pendiente. Este operador no exige el fin de toda la cadena después del cierre. No confundas aceptar el registro inicial con validar un archivo completo. La misma batería añade al final la cadena vacía y \"[3;4}\". Mantén exactamente el orden de los trece casos de esta página. Todas las líneas terminan con salto y no hay títulos ni líneas vacías. Usa Compilar, ejecutar y comprobar con el programa completo; cada llamada crea un origen y un Recuento{6,2} nuevos.",
+          "text": "Recupera el tipo `Recuento`: `aceptados` y `rechazados` deben estar entre `0` y `10`, incluidos los extremos. Define `bool recuento_valido(const Recuento&)` para comprobar ambos intervalos y una sobrecarga de `operator>>` para la representación `[aceptados;rechazados]`.\n\nExtrae los dos enteros y los tres delimitadores hacia variables locales. Si alguna extracción falla, conserva todo el objeto destino. Si las extracciones terminaron, comprueba los caracteres y el dominio; ante un rechazo, añade `failbit` sin borrar los demás indicadores. Solo un candidato que cumple todas las condiciones reemplaza el destino. Devuelve siempre una referencia al mismo origen.",
           "emphasis": [
+            {
+              "text": "conserva todo el objeto destino",
+              "style": "bold"
+            },
+            {
+              "text": "Solo un candidato que cumple todas las condiciones",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea una función de prueba que reciba una cadena. Cada llamada debe construir un `std::istringstream` nuevo con esa cadena y un destino nuevo `Recuento{6, 2}`. Si la lectura se acepta, muestra el literal `\"OK \"` seguido de la representación del destino; si falla, muestra `\"Fallo \"` seguido del objeto conservado. Ambos literales terminan con un espacio. Cada informe debe terminar con un salto de línea.\n\nEl escritor se proporciona en el inicial para centrar el trabajo en la lectura. El programa ejecutará toda la batería, incluidos los casos que deliberadamente provocan fallos de lectura.",
+          "emphasis": [
+            {
+              "text": "un destino nuevo",
+              "style": "bold"
+            },
+            {
+              "text": "un espacio",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Comienza con estas cadenas, en este orden: `\"[2;1]\"`, `\"[0;0]\"` y `\"[10;10]\"`. Después añade `\"[-1;2]\"`, `\"[11;0]\"`, `\"[0;-1]\"` y `\"[0;11]\"`, que quedan fuera de uno de los intervalos. Continúa con `\"[2:1]\"`, cuyo separador es incorrecto, y `\"[2;1\"`, que no tiene cierre.\n\nCada rechazo debe mostrar `Fallo [6;2]`: no se permite conservar un campo anterior y actualizar el otro. Las pruebas independientes permiten observar esta garantía desde el mismo valor inicial.",
+          "emphasis": [
+            {
+              "text": "no se permite conservar un campo anterior y actualizar el otro",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la secuencia con `\"[ 1 ; 3 ]\"`, `\"[2;1]resto\"`, la cadena vacía `\"\"` y `\"[3;4}\"`, en ese orden. La primera admite los espacios habituales. La segunda obtiene el registro inicial y deja `resto` pendiente: el contrato del operador no exige terminar toda la cadena tras el cierre. Las dos últimas deben rechazar la lectura conservando el destino.\n\nEl programa completo contiene así trece casos en el orden indicado. Produce una línea por caso, sin títulos ni líneas vacías, y termina normalmente con código `0` tras ejecutar la batería. Usa Compilar, ejecutar y comprobar con todas las llamadas. La comprobación automática coteja las trece líneas completas de consola; la referencia parcial de la página siguiente no cubre ese objetivo.",
+          "emphasis": [
+            {
+              "text": "trece casos",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -241,7 +358,7 @@
         },
         {
           "type": "note",
-          "text": "Las muestras son cadenas conocidas. No se necesita entrada interactiva. Consulta la referencia después de construir y contrastar tu versión."
+          "text": "Las muestras son cadenas conocidas incluidas en el programa; no se necesita entrada interactiva. Al completar el objetivo estarán disponibles una referencia parcial de once casos y otra con la batería completa de trece."
         }
       ]
     },
@@ -249,7 +366,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior y criterios de corrección"
+          "text": "Referencia posterior: once casos para estudiar el lector"
         },
         {
           "type": "code",
@@ -258,25 +375,133 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: ninguno de los destinos del objeto se modifica durante las extracciones; formato y dominio se comprueban antes de la única asignación; los fallos conservan Recuento{6, 2}; el retorno identifica el mismo origen y los indicadores de estado permanecen disponibles. Son válidos otros nombres o una descomposición en funciones que conserve esas condiciones."
+          "text": "Durante las extracciones de esta referencia, ninguno de los campos del objeto destino se modifica: los datos se guardan en variables locales. El formato y el dominio se comprueban antes de la única asignación al objeto. Los rechazos conservan `Recuento{6, 2}`, y el retorno identifica el mismo origen con sus indicadores disponibles. También son válidos otros nombres o una división en funciones que mantenga estas condiciones.",
+          "emphasis": [
+            {
+              "text": "ninguno de los campos del objeto destino",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__extraer_un_tipo_sin_cambiarlo_en_fallo__separar_objeto_indicadores_y_texto_restante",
+          "prompt": "Usa el operator>> y el operator<< de Recuento de la referencia anterior. Para cada cadena datos se ejecuta desde el principio la secuencia mostrada, con objetos nuevos y el formato predeterminado de cout. Relaciona cada entrada con su salida completa, sin salto final. Los indicadores fallo y fin se guardan antes de clear; la lectura posterior sólo permite observar el texto restante de estas cadenas controladas. El último separador aparece aunque no quede texto.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "`std::istringstream entrada{datos};`\n`Recuento destino{6, 2};`\n`entrada >> destino;`\n`const bool fallo = entrada.fail();`\n`const bool fin = entrada.eof();`\n`entrada.clear();`\n`std::string resto;`\n`std::getline(entrada, resto);`\n`std::cout << fallo << ':' << fin << '|' << destino << '|' << resto;`",
+              "mathMode": "text"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recorridos",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "registro_y_resto",
+                  "label": "`\"[2;1]resto\"`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "`\"[2;1]resto\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "dominio_rechazado",
+                  "label": "`\"[-1;2]RESTO\"`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "`\"[-1;2]RESTO\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "cierre_ausente",
+                  "label": "`\"[2;1\"`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "`\"[2;1\"`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "truncado",
+                  "label": "Salida: `1:1|[6;2]|`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `1:1|[6;2]|`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "aceptado",
+                  "label": "Salida: `0:0|[2;1]|resto`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `0:0|[2;1]|resto`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "fuera_de_dominio",
+                  "label": "Salida: `1:0|[6;2]|RESTO`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `1:0|[6;2]|RESTO`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "registro_y_resto": "aceptado",
+                  "dominio_rechazado": "fuera_de_dominio",
+                  "cierre_ausente": "truncado"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los indicadores impresos son los guardados antes de clear. El registro seguido de resto se acepta y cambia el destino, dejando ese sufijo pendiente. En la entrada fuera de dominio se consumen todos los caracteres del registro antes de rechazarlo: el destino queda intacto y RESTO continúa disponible. En la entrada truncada falta el cierre; el origen alcanza el final con fallo y el destino también queda intacto. Tras borrar los indicadores, la observación no encuentra más texto en ese último caso. Ninguna de esas observaciones devuelve los caracteres ya consumidos.",
+            "incorrect": "Separa tres preguntas: si el candidato se llegó a asignar, qué indicadores quedaron antes de clear y qué caracteres permanecieron sin leer. Las extracciones de campos pueden consumir texto antes de un rechazo. Respeta además las mayúsculas del sufijo y el separador final de la salida."
+          }
         },
         {
           "type": "paragraph",
-          "text": "Las salidas, en orden, son OK [2;1], OK [0;0], OK [10;10], seis líneas Fallo [6;2], OK [1;3] y OK [2;1]. La última acepta sólo el registro inicial: resto permanece pendiente. El programa de demostración termina con código 0 porque ejecutó sus pruebas; ese código no significa que todas las muestras fueran válidas."
+          "text": "Esta referencia es parcial: ejecuta once casos. Muestra, en orden, `OK [2;1]`, `OK [0;0]`, `OK [10;10]`, seis líneas `Fallo [6;2]`, `OK [1;3]` y `OK [2;1]`, con un salto al final de cada línea. La última acepta solamente el registro inicial; `resto` permanece pendiente.\n\nEl código de terminación `0` indica que la demostración ejecutó sus pruebas normalmente. Los informes permiten distinguir qué lecturas se aceptaron y cuáles fueron rechazadas; terminar normalmente no significa que todas las cadenas contuvieran un registro válido.",
+          "emphasis": [
+            {
+              "text": "referencia es parcial",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La cadena vacía y el cierre incorrecto [3;4} completan la batería con dos lecturas fallidas que conservan [6;2]. Una nueva extracción sobre un mismo origen que conserve failbit no realiza una recuperación. Cada prueba independiente evita confundir ese estado con el contrato del operador."
+          "text": "Para completar los trece casos faltan la cadena vacía y `\"[3;4}\"`. Ambos deben producir `Fallo [6;2]`, cada uno con su salto final. La referencia completa de la página siguiente ya incorpora esas dos pruebas.\n\nCada caso utiliza un origen y un destino nuevos. Si se intentara continuar sobre un mismo flujo que aún tiene `failbit`, la siguiente extracción no realizaría por sí sola una recuperación. Las pruebas independientes evitan mezclar ese estado previo con el comportamiento que se está comprobando."
         },
         {
           "type": "note",
-          "text": "Un operador de extracción debe comprobar campos y delimitadores antes de reemplazar el objeto recibido; conservar el destino después de un fallo simplifica el código que lo usa. Esa garantía no promete devolver todos los caracteres ya consumidos (Stroustrup, 2024, sección 9.7, pp. 266–267). Para señalar un formato incorrecto usamos setstate(failbit), que añade el indicador sin borrar otros que ya estuvieran activos (Working Draft: Programming Languages — C++, s. f., sección [iostate.flags]).",
-          "emphasis": [
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
-            }
-          ]
+          "text": "En nuestra estrategia, los campos y los delimitadores se comprueban antes de reemplazar el objeto recibido. Conservar el destino después de una lectura rechazada es una garantía de diseño que facilita el trabajo del llamador; no promete devolver los caracteres ya consumidos (Stroustrup, 2024, sección 9.7, pp. 266–267).\n\nPara comunicar un formato o un valor rechazado, usamos `setstate(std::ios::failbit)`: añade ese indicador y conserva los que estuvieran activos. El llamador sigue disponiendo del estado del origen, además del objeto que recibió como destino (Köppe et al., 2023)."
         }
       ]
     },
@@ -553,6 +778,7 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
+          "separar_objeto_indicadores_y_texto_restante",
           "block_0006_0003",
           "block_0006_0004",
           "block_0006_0005"
@@ -1113,12 +1339,152 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "separar_objeto_indicadores_y_texto_restante",
+        "sha256": "8a2c1e40ec275d203ec4aa856d299f1efb48217a727efdfb2fe8dce940574288",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0004_0003",
         "beforeSha256": "725710f82839914cd1322aec1aa932edd8ad9d4aac4bdb3010c5ed1373ab0b2f",
         "afterSha256": "100b37adabdccbaaa7c85e7d08133fd88138ef472211e0edf95018626707dc99"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "06e21351c64b698fb09dbce39c058f36d878406d4f80d3ab4a1424e09f06ed16",
+        "afterSha256": "6970f6a278471f42f44ea20d6c6d6ad3af821bdcc5000e8665b58d938e250c52"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f1d3b6360a84672cab66039e8961f30440a6838a0b85f274df6dab84bb3a0b27",
+        "afterSha256": "048dbeaaa6b7e3b169a3b9ac001dd368798410fa9150d37cd967151ce2965943"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3faa97de07e6163ac3461899dbf31008c2c19e8057f3dcbbc86887f6f1ea7f75",
+        "afterSha256": "3235fc272990d7e8b551dd57f13d5ee3c624387562658740432bac2803a49091"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "ae5029cceb556b2b5a6ffb8c437913df2969f610e43c2fc832782960ee87175f",
+        "afterSha256": "ccf04f84147bf26dd7668f498d6af44e78c9a79d82cee084434b73d6b6e2f784"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "8359dd60524e90c1d0b39596faa88563e3b2c4fbfd94783fcf563d20b50eb344",
+        "afterSha256": "a8844d90adcef7331b83e141582242863307102dea3a1125dc71e332af962ba2"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "37e513253e81910b512594e46ba24a3d02fb13f98d5c7d884ad1049f47d5ae95",
+        "afterSha256": "626dcfea72345bd4f6aee2978b0efaa70af62f1ec328937ac01f25a6d1f6f90f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "940e20e20fad3a241521b9a30db04ebd9f78deefeede69d5bfebd8193129700d",
+        "afterSha256": "04289a19ae58e9af728ff350d5cb85a7aa905d8e8b6a06ee3d65da6c3c8b1451"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "3e278cd161ec1a262f66c2142176c4ed088ae06f47c222d8a6a8a6437e1edfbe",
+        "afterSha256": "ce2d598d3b038b788b7b2da10f475f0c225404198a1bd7eee30eb9a5cd63a3a4"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5203de23e4d09244f4abb0ff0afe7e4273692586fddadef81ed47fae406f1db1",
+        "afterSha256": "945d93cada89fbfd9590c8b56ae8e49ae59851d08e663e2d114459a6a6396606"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "d5778f6333ffab94ea16ecda2907c59f084d0cf24a02a51e470fb64ad44d6e7e",
+        "afterSha256": "29d355b56aab3ad9e0badcc9d10f7e86e21c1213bb11b87b74c67158cfb5c123"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "aecdae9b7a670535ba942ceb63e119fb57613b8696400890e645b80fe287908e",
+        "afterSha256": "3dbb87b27a4b713697a455a659a0e71aa4d4b192ad9667e3412ae365be9916eb"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "d3caac6289bdc43a78903b7c434efd0094186d2cfd1c760840f08749132f7795",
+        "afterSha256": "b0e82256744ff92d40cb730b19bf4981eba9747c78bd93d515eacfd6aa976600"
+      },
+      {
+        "id": "block_0006_0000",
+        "beforeSha256": "5031b1a8136220f3f5b2a3d5c61f7e8b38114c6ec20dff75b420ae262602b6e5",
+        "afterSha256": "8a709eb928d1f7a9915000f9c9004293cb576dd9adf2fb0ce3dea5eef7e387ea"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "82f3eee8f3590ea8209327553c014614279c033499ca4312efd5db7c134a6c4b",
+        "afterSha256": "451e3102c5df31844bc9e9188981bb2353cb02e35181d593dc28207067f936a2"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "0e5e34d422088e828a731937de2121813012c8ef55f537803fe318b386e3508a",
+        "afterSha256": "5ad90a7954dbdab93781eb8a4fb568555b38e0c0cd1a3f0b6d44d4d632f125c2"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "7743149b922f7ba8c172086a84580e462c72a44e6d880407d44d090b65d2442e",
+        "afterSha256": "76af79158af501b0b0ae7c1684bb37ecfd4b425c1624353250307c43fdbdb12f"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "8105038c0ec5379b3222247ae158e364e825388f2060ca262c6ddd86e9963abf",
+        "afterSha256": "0a7d719959f2a975e23034290132294a8eb519d351c26e9eac8cb898a522a74e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "659252233187ac06c86dfed7faa9b15dc1dda7149c64b63dcaac98f3dbf7a07b",
+        "afterSha256": "31cf6b7a0f6793901f40c67fa8ecbc4f606eecddf51a6472d06c138480788fcf"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "0929bfd31b1d5a55f60f9da9ca62699c27b252280ff09ee25eef40b0b2b3f322",
+        "afterSha256": "b96780a923a8c0ab13e786c57c34ff28cd2c64e303e43b0597caddba2cb3c629"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "08cf3c04704d74c8587088a014a76b95d636386d6224045b91739bc1e6e5fb56",
+        "afterSha256": "0b45156e06546e12e98e243adbc60cf74a705d6acd7b5fbaf5765563c7ca747f"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "966dc16f27fd8080775fb47a0035e3b812ee0e202f6808c7a394c1d3aac0fb8c",
+        "afterSha256": "02e3ab7022ee37792c0820e182c62b9936ea5e1d54fc35cc58d802904de2be32"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "7f9d3b9a5d91acf5b83b0b6defc240575f855991ca6d123b4b306af1ae48aa48",
+        "afterSha256": "5e98398f729b707960dde2e5c2e2f667c2a49ac79c60e3e0ed8e08add865e3cc"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "597408e25837ab4387d1e7db1537163131ca7323cd73e4ece7d63e8591f265a1",
+        "afterSha256": "a0c7fe3755042719fba7d18419846720a263a5d94f6775f53a54b91b861a59cc"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "3ae37a005e611f0337aa7c3a340a100a383b6a998c60f8c51aecccc8fe86058b",
+        "afterSha256": "0c0f8a1ae4759b165f30fea02a6f78884c1f5d4a305713e74f96a7ef00173c01"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "100b37adabdccbaaa7c85e7d08133fd88138ef472211e0edf95018626707dc99",
+        "afterSha256": "1442dd4fd6ed42d37c085336db621e575efb941eade744e7dfd1d13ab288fc0f"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "5fd8500aa385aacf0f0427d2cfe4b7a981d3db8dda3d6b34eaea1b2a50162607",
+        "afterSha256": "a8fc3c584841bc0f1f1323e34449fada69959e3ab273cfde2d030a11a16b6919"
       }
     ],
     "orderRefinements": [
@@ -1146,5 +1512,30 @@
         }
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0005",
+      "blocks": [
+        "block_0005_0006",
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0006_0004",
+        "block_0006_0005",
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "separar_objeto_indicadores_y_texto_restante",
+      "requires": [
+        "block_0005_0005"
+      ]
+    }
+  ]
 }

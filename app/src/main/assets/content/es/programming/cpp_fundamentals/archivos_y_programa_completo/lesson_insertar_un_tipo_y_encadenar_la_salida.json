@@ -10,11 +10,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Usaremos Recuento: un registro con aceptados y rechazados, ambos entre 0 y 10. Su representación acordada será [aceptados;rechazados], en ese orden. Los corchetes y el punto y coma forman parte del texto; no son campos del objeto. Una representación útil para nuestras pruebas no tiene por qué ser el formato preferido de todos los programas."
+          "text": "Usaremos un tipo propio llamado `Recuento`. Cada objeto contiene dos campos enteros: `aceptados` y `rechazados`. Para este ejercicio, cada campo debe estar entre `0` y `10`, incluidos ambos extremos. Acordamos escribirlos como `[aceptados;rechazados]`, en ese orden. Por ejemplo, los campos con valores dos y uno se presentan como `[2;1]`. Los corchetes y el punto y coma son caracteres del texto producido; no son campos adicionales del objeto.\n\nEste acuerdo permite que dos partes del programa reconozcan la misma representación. Otra pantalla puede necesitar una presentación diferente de los mismos datos.",
+          "emphasis": [
+            {
+              "text": "dos campos enteros",
+              "style": "bold"
+            },
+            {
+              "text": "caracteres del texto producido",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El struct tiene miembros públicos: el compilador no impide construir valores fuera del dominio. recuento_valido permite comprobarlos. Aquí construiremos valores válidos y el escritor los recibirá con esa precondición. La próxima lección validará los campos obtenidos del texto antes de asignar un Recuento."
+          "text": "La definición de `struct Recuento` que encontrarás en el editor deja públicos ambos campos: se pueden proporcionar o modificar directamente. Por eso el tipo, por sí solo, permite valores fuera del intervalo acordado. En esta práctica, el escritor recibe un recuento que ya cumple el intervalo; esa es su precondición.\n\nLa función `recuento_valido`, mostrada en las referencias posteriores, comprueba los límites de ambos campos. Es una ayuda de comprobación: el operador de salida de esas referencias no la llama. Los casos de esta actividad ya son válidos. La lección siguiente estudiará cómo validar los campos leídos antes de cambiar un objeto.",
+          "emphasis": [
+            {
+              "text": "el escritor recibe un recuento que ya cumple el intervalo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -38,7 +54,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Para admitir destino << valor definimos una función llamada operator<<. Antes de construir el escritor de Recuento, observa un ejemplo menor: Cantidad contiene unidades entre 0 y 5 y se representa como (unidades). El primer parámetro del operador es std::ostream& y el segundo const Cantidad&. El flujo cambia al escribir; el valor sólo se consulta. El retorno std::ostream& entrega la referencia al mismo destino para continuar insertando."
+          "text": "Para permitir la expresión `destino << valor` con uno de nuestros tipos, definimos una función con el nombre especial `operator<<`. Es una sobrecarga del operador: proporciona una operación para esa combinación de tipos y conserva las inserciones ya disponibles para enteros, caracteres y cadenas (Stroustrup, 2024).\n\nComenzaremos con un tipo menor, `Cantidad`, cuyo campo `unidades` estará entre `0` y `5`. Lo representaremos como `(unidades)`. El primer operando de `destino << valor` corresponde al primer parámetro, `std::ostream& destino`: la referencia permite escribir sobre el flujo recibido. El segundo corresponde a `const Cantidad& valor`: consulta el objeto sin copiarlo ni modificar sus campos a través de ese parámetro.\n\nEl tipo de retorno `std::ostream&` es otra parte de la declaración: permite devolver una referencia al mismo flujo para continuar escribiendo en él. No es el tipo del dato que estamos presentando (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "sobrecarga del operador",
+              "style": "bold"
+            },
+            {
+              "text": "tipo de retorno",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -47,7 +73,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La función se define junto a nuestro tipo, fuera de namespace std. En este caso, cout << resumen llama a operator<<(cout, resumen). Dentro usamos las inserciones conocidas de caracteres y enteros. No hace falta acceder a una representación oculta ni convertir el registro en una cadena primero."
+          "text": "En este programa, la función se define después del `struct`, al mismo nivel que él y antes de `main`. No añadimos nuestra función dentro de `std`. Con los tipos de este ejemplo, `std::cout << resumen` llama a `operator<<(std::cout, resumen)`; los dos operandos se proporcionan como argumentos de la función (Köppe et al., 2023).\n\nDentro del operador, las inserciones de caracteres y del entero `valor.unidades` ya son conocidas. La expresión que sigue a `return` escribe esos elementos y devuelve una referencia a `destino`. El ejemplo muestra `(2)` sin salto final.\n\nEn `std::cout << resumen << \" fin\"`, primero se obtiene el resultado de `std::cout << resumen`; la inserción de `\" fin\"` utiliza ese mismo flujo. Se agrupa como `(std::cout << resumen) << \" fin\"`. Definir esta sobrecarga no cambia la agrupación del operador (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "ese mismo flujo",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -113,17 +145,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde el editor define operator<< para el Recuento dado. Debe consultar el registro sin modificarlo, escribir [aceptados;rechazados] en el destino prestado y retornar ese mismo destino. Los campos de las pruebas son válidos y los flujos mantienen sus ajustes decimales predeterminados."
-        },
-        {
-          "type": "paragraph",
-          "text": "En main crea Recuento{3, 2}. Insértalo en un ostringstream seguido de ;fin y, por separado, en el archivo relativo recuento_lgp.txt. Comprueba la apertura y la escritura después del cierre. main muestra Memoria=[3;2];fin|Guardado; el archivo debe contener únicamente [3;2]. El operador no usa cout por dentro ni añade ;fin. Construye una sola batería mediante probar(const Recuento&). Cada llamada compone en un ostringstream nuevo y crea su propia muestra relativa con el mismo nombre, sin reutilizar una conexión abierta. main prueba {3,2}, {0,0} y {10,10}, en ese orden, y termina con código 1 ante cualquier fallo. Cada informe Memoria=...|Guardado termina con salto. Usa Compilar, ejecutar y comprobar con las tres llamadas.",
+          "text": "Construye en el editor un `operator<<` para el tipo `Recuento` dado. Debe consultar el registro sin modificarlo, insertar en el destino recibido los dos campos entre corchetes y separados por punto y coma, y devolver una referencia a ese mismo destino. Los campos de las pruebas cumplen el intervalo acordado y los flujos comienzan con su base decimal predeterminada.",
           "emphasis": [
             {
-              "text": "Compilar, ejecutar y comprobar",
+              "text": "devolver una referencia a ese mismo destino",
               "style": "bold"
             }
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera primero un caso individual para distinguir qué escribe cada parte. Si `main` crea `Recuento{3, 2}` e inserta ese registro en un `std::ostringstream` seguido del literal `\";fin\"`, la cadena compuesta será `[3;2];fin`. Al mostrarla con las etiquetas del informe, la salida será `Memoria=[3;2];fin|Guardado`. Si envía solamente el registro al archivo, el contenido será `[3;2]`. La pregunta siguiente se refiere a ese caso individual en `main`.\n\nEl operador debe servir para los dos destinos. Dentro de él se utiliza el parámetro del flujo; el llamador elige el objeto concreto y decide qué texto añade antes o después."
         },
         {
           "type": "multiple_choice",
@@ -136,6 +168,24 @@
           ],
           "correctIndex": 1,
           "explanation": "La inserción del tipo termina en ]. El llamador encadena otro literal para la captura, mientras al archivo sólo envía el registro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora construye la batería completa en un solo programa. Define `int probar(const Recuento& resumen)`: cada llamada crea un `std::ostringstream` nuevo para componer el registro seguido de `\";fin\"`, abre la muestra relativa `recuento_lgp.txt`, inserta en ella solamente el registro, cierra el archivo y comprueba su estado. La función devuelve `0` si todo fue correcto y `1` si detectó un fallo.\n\nDesde `main`, llama a `probar` con `{3, 2}`, `{0, 0}` y `{10, 10}`, en ese orden. Si una llamada devuelve `1`, termina el programa con ese código. Cada llamada correcta muestra su informe y un salto de línea. Salida esperada:\n`Memoria=[3;2];fin|Guardado`\n`Memoria=[0;0];fin|Guardado`\n`Memoria=[10;10];fin|Guardado`\n\nLas tres llamadas abren el mismo nombre de archivo para escribir desde el principio. Cada una reemplaza el contenido anterior; al terminar correctamente la batería, la muestra contiene únicamente `[10;10]`, sin salto final. La ruta relativa pertenece al directorio de trabajo de esa ejecución. Pulsa Compilar, ejecutar y comprobar con las tres llamadas.",
+          "emphasis": [
+            {
+              "text": "batería completa",
+              "style": "bold"
+            },
+            {
+              "text": "Cada una reemplaza el contenido anterior",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -153,7 +203,7 @@
         },
         {
           "type": "note",
-          "text": "Crea solamente tu muestra relativa dentro de cada ejecución. La referencia aparece después del intento."
+          "text": "La comprobación automática coteja la salida completa de la batería. Al completar ese objetivo estarán disponibles dos referencias: un caso individual para estudiar la separación de responsabilidades y el programa completo con las tres llamadas. Comprueba también la apertura y el estado del archivo después de cerrarlo en tu programa."
         }
       ]
     },
@@ -161,7 +211,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior y criterios"
+          "text": "Referencia posterior: estudiar un caso individual"
         },
         {
           "type": "code",
@@ -170,11 +220,110 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: flujo por referencia modificable, registro por referencia constante, caracteres en el orden acordado y retorno del mismo flujo. Memoria y archivo usan el mismo operador; la elección de destino, su apertura y su cierre pertenecen al llamador. Con 0 y 0, la cadena visible es Memoria=[0;0];fin|Guardado y el archivo contiene [0;0]. Con 10 y 10, cambian ambos campos a 10."
+          "text": "Esta primera referencia trabaja solamente con `Recuento{3, 2}`. Su salida es `Memoria=[3;2];fin|Guardado`, sin salto final, y el archivo contiene `[3;2]`. Sirve para estudiar el operador y el uso de ambos destinos; para cumplir el objetivo del editor hay que construir la batería completa de la página siguiente.\n\nLos criterios del operador son: flujo por referencia modificable, registro por referencia constante, caracteres en el orden acordado y retorno del mismo flujo. La elección de destino, su apertura y su cierre pertenecen al llamador. El texto `Guardado` se imprime después de comprobar el estado del archivo tras `close`; el cotejo de consola evalúa ese informe.",
+          "emphasis": [
+            {
+              "text": "solamente con",
+              "style": "bold"
+            },
+            {
+              "text": "batería completa",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "También es válido insertar por etapas y terminar con return destino. Cambiar el nombre del parámetro no cambia el contrato. El operador conserva los ajustes de formato que recibe: estas pruebas usan decimal. No hemos definido una serialización independiente de toda configuración posible del flujo."
+          "text": "También es válido realizar las inserciones en instrucciones sucesivas y terminar con `return destino;`. Cambiar el nombre de un parámetro no cambia qué objeto se recibe ni qué debe devolverse.\n\nEste operador no selecciona ni restaura la base: al insertar los campos enteros utiliza la base que ya tenga el destino. Las pruebas del editor comienzan en decimal. El ancho de campo tiene otro comportamiento: con un flujo sin fallos, un `std::setw` pendiente se aplica a la primera inserción interna, la del carácter de apertura, y después se restablece el ancho a cero. No establece un ancho conjunto para toda la representación del registro (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "no selecciona ni restaura la base",
+              "style": "bold"
+            },
+            {
+              "text": "primera inserción interna",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__insertar_un_tipo_y_encadenar_la_salida__seguir_base_y_ancho_al_insertar_recuento",
+          "prompt": "Usa exactamente el operator<< de Recuento de la referencia anterior. Se dispone también de <iomanip>. Los flujos a y b se crean nuevos y las instrucciones se ejecutan en el orden mostrado. Relaciona cada flujo con el texto que se mostraría al insertar su cadena str(). En los resultados, conserva los espacios entre las barras verticales.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "`const Recuento resumen{10, 2};`\n`std::ostringstream a;`\n`a << std::hex << resumen << '|' << 10;`\n\n`std::ostringstream b;`\n`b << '|' << std::setw(4) << resumen << '|';`",
+              "mathMode": "text"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "contenidos",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "flujo_a",
+                  "label": "`a`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "`a`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "flujo_b",
+                  "label": "`b`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "`b`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "ancho_en_apertura",
+                  "label": "Salida: `|   [10;2]|`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `|   [10;2]|`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "base_hexadecimal",
+                  "label": "Salida: `[a;2]|a`",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `[a;2]|a`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "flujo_a": "base_hexadecimal",
+                  "flujo_b": "ancho_en_apertura"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El flujo a está en hexadecimal: el campo con valor diez se presenta como a y el entero añadido después del registro también se presenta como a. El operador no cambió la base. En b, el ancho cuatro se aplica al carácter [ que el operador inserta primero: aparecen tres espacios antes de él. Las inserciones posteriores continúan con ancho cero, de modo que el ancho no abarca todo el registro. El otro flujo sigue usando decimal.",
+            "incorrect": "Sigue la configuración de cada objeto por separado. Para a, comprueba qué base utilizan los campos y el entero que se inserta después del registro. Para b, entra en el cuerpo del operador y localiza la primera inserción que recibe el ancho pendiente; conserva sus espacios de relleno."
+          }
         },
         {
           "type": "multiple_choice",
@@ -190,7 +339,17 @@
         },
         {
           "type": "note",
-          "text": "El operador << recibe el flujo por referencia y devuelve ese mismo flujo. Así una cadena como destino << primero << segundo continúa sobre el resultado de la primera inserción; no exige que el destino sea cout ni copia el objeto flujo (Stroustrup, 2024, sección 9.6, p. 266). El parámetro const del dato permite consultar sus miembros sin modificarlos durante la presentación."
+          "text": "La referencia que devuelve el operador identifica el mismo flujo recibido. Por eso `destino << primero << segundo` continúa escribiendo sobre el resultado de la primera inserción; no exige que el destino sea `std::cout` ni copia el objeto flujo (Stroustrup, 2024, sección 9.6, p. 266).\n\nLa referencia constante del otro parámetro cumple una función diferente: consultar el registro sin cambiar sus campos durante la presentación. Devolver el flujo no repara un fallo del archivo; su estado se comprueba por separado.",
+          "emphasis": [
+            {
+              "text": "mismo flujo recibido",
+              "style": "bold"
+            },
+            {
+              "text": "función diferente",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -205,6 +364,743 @@
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint probar(const Recuento& resumen) {\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar({3, 2}) != 0) return 1;\n    if (probar({0, 0}) != 0) return 1;\n    if (probar({10, 10}) != 0) return 1;\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "be4445572244ed717baec5ce91d4285e697a28dd42e0ad4c58cc97a7a30d1107"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "84a72d42a4aae58e6d6473c0b3ca0c8e41fced4ae048dcf11a3d5303a0f2e52b"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "90b40182bb89c22e45e4b817d723be4a1073c700e4a4e931b541aa6acca0a699"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "02509a39e86bcd0a20698d81106f86e54519f6531d885d7ff47898ec90093983"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "68a548d7d1213d01049530fc03971f82a62a10972d9af14621b312d5ee53986a"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "87cd152a37e3fb19feeb50e921e57d44e23d4ec192d9af39217e2f9b10eec14f"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "06d56645182dc06a9f531f60dbe5d0c99aa1cd907cc9440c961530e55f073e03"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "09ea4a66bb870cf9654b8f5e05553982a2e58939161ff57d20675080aa52bef6"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "92f21e5db34eb99eebef121e155aeb164c81c780613173267fa45f34ac178e25"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "cd7786d9b6a712cf0d1af9868b9f7ade8aefc33eb1bb73e0707f0f0ba50c80da"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "3bbe65e1631cd146aa950bf9b2666533aa776d9e74b92e60cb595e0529e44e95"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "requisitos_bateria_de_recuentos",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "seguir_base_y_ancho_al_insertar_recuento",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "917028f6a155c7b36d86c658cc26eb667272b3e9ef945212fb775cc2cf4692f6",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "604d8f5de7a3ff9163a53199bfaa8dfd73a17343c6a503583e716357ec09ef55"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "84a72d42a4aae58e6d6473c0b3ca0c8e41fced4ae048dcf11a3d5303a0f2e52b"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "cde153e414a82676b759c236039cffc27580fb3a8658cb216d462e55158dd050"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "02509a39e86bcd0a20698d81106f86e54519f6531d885d7ff47898ec90093983"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "d3c5ec2658c94928cc2d5e280cf00428e9b7b3547cef628fe5b72cd042295831"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "0afc37ad6c8086375fc32304303a67757ab17ee57f61ab46a361169bc991c8ec"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "b32e0b7653421bed6cad6f991b0ab4e5aaa1fdd7a0462d664f627658d110a21b"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "179484d8f1ed597483ca54c9fe91d2ab078c4e610275f02bef7332e8f4f2fabe"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "f93e1b638bda6503c38ab5da91bac41c253088b84d3d25f25a2df3462d45e014"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "a9c61ecead166ce885b234b6d3a568bd238a86174f3db46e48df5c054454feed",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "be4445572244ed717baec5ce91d4285e697a28dd42e0ad4c58cc97a7a30d1107"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "84a72d42a4aae58e6d6473c0b3ca0c8e41fced4ae048dcf11a3d5303a0f2e52b"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "90b40182bb89c22e45e4b817d723be4a1073c700e4a4e931b541aa6acca0a699"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "02509a39e86bcd0a20698d81106f86e54519f6531d885d7ff47898ec90093983"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "68a548d7d1213d01049530fc03971f82a62a10972d9af14621b312d5ee53986a"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "87cd152a37e3fb19feeb50e921e57d44e23d4ec192d9af39217e2f9b10eec14f"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "06d56645182dc06a9f531f60dbe5d0c99aa1cd907cc9440c961530e55f073e03"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "09ea4a66bb870cf9654b8f5e05553982a2e58939161ff57d20675080aa52bef6"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "92f21e5db34eb99eebef121e155aeb164c81c780613173267fa45f34ac178e25"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "cd7786d9b6a712cf0d1af9868b9f7ade8aefc33eb1bb73e0707f0f0ba50c80da"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "3bbe65e1631cd146aa950bf9b2666533aa776d9e74b92e60cb595e0529e44e95"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "1aa279d980ed20ec04380bd159729da6bdf9b50eff204b3ced6182ff59802d70",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b891569f3a209b157b532f2f36a166a5cd5a6b3d1edc637f120562ef603efb20"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "84a72d42a4aae58e6d6473c0b3ca0c8e41fced4ae048dcf11a3d5303a0f2e52b"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "e40e01c050fb86b6f4948e22bfaf09d7b7495e95de6c2214b3e0ff134a48ced4"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "02509a39e86bcd0a20698d81106f86e54519f6531d885d7ff47898ec90093983"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "28152de740a0219d242e6cfe0b8024c67268a39e0c3a77ce5cf918d60165b6ec"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "6906b5ad74f7b93a490bc02959b53e71d4bda021a65b8572049fd699c360ff5a"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1f0eefd20f7e28b7c7a51557bb12743910c4cf294bff25571bb03257daa8f4b0"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "7ff5bee58d46f5635dd5a9a4a1b7b101a641a0d5eeb53ec262989f7361a97ce8"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "a6ccd881b9e696c6706193fbc7ac954aafc4fd2d2e5ff526ff696af6fd115675"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "requisitos_bateria_de_recuentos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "seguir_base_y_ancho_al_insertar_recuento",
+        "sha256": "89cfcd4569e409c65737e427a2abe5e604a5737aa4ad0b93f6db56776f9fcaaf",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "722e068a350c595f12767f21f71486f2cf71a30a8fb81e15e411e3562953d403",
+        "afterSha256": "7d81f88f021f371eb36120dad3c686379bdad7f489a9ccb37024496245fa44cd"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "bcde04ebcccb22555c3476e54555c1ab3a4b2e9ea62c1d950f6b0b7e29f35725",
+        "afterSha256": "f9bc68ce90245ea54ac39a3ee1f8a158ea67715fe0362f9bfd5524d5b8306abe"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "578c47cdfa68e74dd90f071a826677f91b43d106a4b94dc5c3b883fb2b25d671",
+        "afterSha256": "1598b8d34c9f45f1032f2de3c6dbc40b3e4bcb69955a7729e6d964f4c2238e79"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "cd8ca2fbe6f476d53c74a64d6246ce7506f74cc42290af593aabbb3b6ca162e8",
+        "afterSha256": "1f496e89d87d164449875b966f31962e85d0026695e0e0c90174e5d645a41b5c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0f08ccfd5eab8c52dd7e0ea3a3236b6043ef6c0466384053dab3c3c8292a6b69",
+        "afterSha256": "d7018070ce4b5c9b8e28be9d9b6ff36d9d93b0d012b8c8ed603e0e7465a61605"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "ed6dd81ea502295f3aa670765843e8d527c09ec6834b1f090a6b6799039f4f44",
+        "afterSha256": "2f2166dd5be14129ee2bfca26af9838c6422b57463207dc8ffc08db802a8a8c8"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "38bba3c5b250d387d7be3fefa7a4d560d0755acda6df4df130deb46bb023d0a3",
+        "afterSha256": "9f9ff4e4078686a8796267f212ba4709463cdd7c2b0c189dd7bcae984b7af0a6"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "f3a77c39946d6676cc34d7c0b0f43476a6bc6e74155980a42de1296d1a353066",
+        "afterSha256": "e1824e3b9bc51dc46c91842815929d2ab738853abb4ea2721083ab028c187934"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5bc0b9dfdc665fe9d233731cc09822d315302777489d1283d4e02a751a17546d",
+        "afterSha256": "6eea2f2aa2c0f66bcfef365bd151dda4517817bac62fc830aa54bbfe14dd142b"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "aaa67e2c6e1a10b13523a38cf415714fc173d92851540d34ececd72b803e0491",
+        "afterSha256": "4b205d5aeb1a04f615933b584a4601ddee258f1f6b89160769fd751f1e13f1bd"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "244de45a73468c2413ec5e036089d8cb889f08618c72e45f6aae34c9cddb0c4f",
+        "afterSha256": "5faa183bc07f81edcabf19f8dab678141a8049d85ddde0f16bf70a5ebcb1e713"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2f2166dd5be14129ee2bfca26af9838c6422b57463207dc8ffc08db802a8a8c8",
+        "afterSha256": "900a42ff9dae0590805b4616071c4b3e235ff4a965161c54d5b99c30da82e850"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "9f9ff4e4078686a8796267f212ba4709463cdd7c2b0c189dd7bcae984b7af0a6",
+        "afterSha256": "4bd2ae3302c09f685d36bb2096b842fcc774ce794d0a9351eba69f907bdc7838"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "4b205d5aeb1a04f615933b584a4601ddee258f1f6b89160769fd751f1e13f1bd",
+        "afterSha256": "abdbbec9dc69b827b657fb6d220065698ed3ee9da8e056485c7b19267cfb5496"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "5faa183bc07f81edcabf19f8dab678141a8049d85ddde0f16bf70a5ebcb1e713",
+        "afterSha256": "dec7d218af9bd509b31a2082f1ba3e149f88ad628474bfdd14badcd39f1ed9d7"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0004",
+      "blocks": [
+        "block_0003_0005",
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0005",
+        "block_0005_0000",
+        "block_0005_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "seguir_base_y_ancho_al_insertar_recuento",
+      "requires": [
+        "block_0003_0004"
+      ]
+    },
+    {
+      "activity": "block_0004_0004",
+      "requires": [
+        "block_0003_0004"
       ]
     }
   ]
