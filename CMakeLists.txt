@@ -327,6 +327,22 @@ if(BUILD_TESTING)
     add_test(NAME native.u11_session_literal_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_session_editorials.py)
     set_tests_properties(native.u11_session_literal_authoring PROPERTIES TIMEOUT 120)
+    set(LGAED_U12_APPEND_HYPOTHESIS_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u12-append-hypothesis")
+    set(LGAED_U12_APPEND_HYPOTHESIS_FIXTURES
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/before.json"
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json")
+    add_custom_command(OUTPUT ${LGAED_U12_APPEND_HYPOTHESIS_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_append_hypothesis_fixture_source.py"
+            --output-dir "${LGAED_U12_APPEND_HYPOTHESIS_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_append_hypothesis_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        COMMENT "Verifying the exact U12L3 question proposal without editing curriculum"
+        VERBATIM)
+    add_custom_target(lgaed_u12_append_hypothesis_fixtures DEPENDS ${LGAED_U12_APPEND_HYPOTHESIS_FIXTURES})
+    add_test(NAME native.u12_append_hypothesis_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u12_append_hypothesis.py)
+    set_tests_properties(native.u12_append_hypothesis_authoring PROPERTIES TIMEOUT 90)
     add_executable(lgaed_window_frame_tests native/presentation/windows/window_frame_tests.cpp)
     target_link_libraries(lgaed_window_frame_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.window_frame COMMAND lgaed_window_frame_tests)
@@ -628,6 +644,14 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_session_editorial_fixtures)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u12_append_hypothesis_fixtures)
+    foreach(hypothesis_reader_phase RANGE 0 1)
+        add_test(NAME native.u12_append_hypothesis_reader_${hypothesis_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u12-append-hypothesis
+                "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json"
+                "${hypothesis_reader_phase}")
+        set_tests_properties(native.u12_append_hypothesis_reader_${hypothesis_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    endforeach()
     add_test(NAME native.u12_file_roundtrip_reader COMMAND lgaed_lesson_reader_tests --u12-file-roundtrip-reader)
     set_tests_properties(native.u12_file_roundtrip_reader PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     foreach(file_format_page RANGE 0 2)
@@ -961,6 +985,10 @@ if(BUILD_TESTING)
     add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
     target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_lesson_tests lgaed_u11_session_editorial_fixtures)
+    add_dependencies(lgaed_lesson_tests lgaed_u12_append_hypothesis_fixtures)
+    add_test(NAME native.u12_append_hypothesis_contract COMMAND lgaed_lesson_tests --u12-append-hypothesis
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json")
+    set_tests_properties(native.u12_append_hypothesis_contract PROPERTIES TIMEOUT 60)
     add_test(NAME native.lesson_contract COMMAND lgaed_lesson_tests)
     add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)

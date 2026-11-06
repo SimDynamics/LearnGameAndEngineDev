@@ -637,6 +637,7 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
         "9012b0d2a268a5df7fde68a74922748262c7b1d08e21d6d21225743db76c2933",
         "9e248574ca08044e9d533f58cba482f033b7ea0e9fc091b9939bcce2c824b8ba",24);
 }
+#include "core/u12_append_hypothesis_contract_test.hpp"
 void mathematical_puzzle_identity_remains_optional() {
     using namespace lgaed::windows;
     // Same valid, unnamed puzzle used by the reader's mathematical keyboard
@@ -1464,8 +1465,12 @@ void inline_feedback_optional_contract_tests() {
     }
     std::cout<<"PASS optional inline feedback rejects only present Kotlin-blank fields before evaluation\n";
 }
-int main() {
+int main(int argc,char** argv) {
     try {
+        if(argc==4&&std::string_view(argv[1])=="--u12-append-hypothesis"){
+            u12_append_hypothesis_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
+        }
+        if(argc!=1)return 2;
         using lgaed::windows::parse_lesson_json;
         const auto root = std::filesystem::path(lgaed::build::source_root);
         inline_feedback_optional_contract_tests();

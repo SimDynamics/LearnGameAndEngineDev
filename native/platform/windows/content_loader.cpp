@@ -718,6 +718,35 @@ std::optional<StateReadingRevision> session_literal_reading_revision(const JsonO
     result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }
+std::optional<StateReadingRevision> append_hypothesis_reading_revision(const JsonObject& metadata,const JsonArray& pages,
+        const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos";
+    constexpr std::string_view identity="block_0002_0001";
+    constexpr std::string_view before="3f3f15e209f0d54ce342167a2e007062ebf83bb1784531d40873a75dafd765ef";
+    constexpr std::string_view after="b80a16cd7af0d46d6628a11784747299e7607317f58f87b48a41019f923157b2";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    // This closed annotation reconstructs only the immediate predecessor of
+    // the reviewed hypothesis. It grants no general exercise-editing format.
+    if(layout.origin.size()<=2||layout.origin[2].blocks.size()<=1||layout.origin[2].blocks[1]!=identity
+        ||layout.current.size()<=2||layout.current[2].blocks.size()<=1||layout.current[2].blocks[1]!=identity
+        ||fingerprint(metadata.GetNamedObject(L"family"))!="a50cf6bf3544c70d3df1b5f9e152f35d51214cf4d6999d02fb4d8b568a0e044a"
+        ||fingerprint(array(metadata,"origin"))!="70274d28ca19d9c4e9c5f2d1632b135aeb5b86e4c4431dfcbd023d68c87a0ef7")return {};
+    const auto editorial=array(metadata,"editorial");
+    if(editorial.Size()<7)return {};
+    JsonArray prefix;for(unsigned index=0;index<6;++index)prefix.Append(editorial.GetAt(index));
+    if(fingerprint(prefix)!="2bbd1afca905bbafa53a49d7197e1f328bdd2f2107e305583156a3182702387c")return {};
+    const auto edge=editorial.GetObjectAt(editorial.Size()-1);
+    if(edge.Size()!=3||text(edge,"id")!=identity||text(edge,"beforeSha256")!=before||text(edge,"afterSha256")!=after)return {};
+    const auto active=array(pages.GetObjectAt(2),"blocks").GetObjectAt(1);
+    if(fingerprint(active)!=after)return {};
+    const auto previous=JsonObject::Parse(active.Stringify());
+    previous.Insert(L"question",JsonValue::CreateStringValue(
+        L"Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. Predice el diagnóstico visible."));
+    if(fingerprint(previous)!=before)return {};
+    StateReadingRevision result;result.editorial_prefix=editorial.Size()-1;
+    result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
+    return result;
+}
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -1064,6 +1093,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     result.reading_revisions=assignment_reading_revisions(metadata,pages,result,lesson_id);
     if(auto revision=session_literal_reading_revision(metadata,pages,result,lesson_id))
+        result.reading_revisions.push_back(std::move(*revision));
+    if(auto revision=append_hypothesis_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
     return result;
 }
