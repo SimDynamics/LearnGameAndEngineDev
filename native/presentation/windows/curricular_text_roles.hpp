@@ -93,10 +93,21 @@ inline bool output_number(std::wstring_view text,Range number,std::span<const Ra
     return has(prefix,LR"((?:\b(?:antes|ahora|before|after|avant|après|resultado|result|résultat|salida|output|sortie)\s*:\s*|\b(?:la\s+)?(?:consola|console|salida|output|sortie|mensaje|message|resultado|result|résultat)\s+(?:muestra|imprime|es|son|contiene|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|produce|produces|produit)\s*)(?:[+−-]?[0-9]+(?:[.,][0-9]+)?[ \t,;]*(?:(?:y|and|et)[ \t]+)?)*$)",true);
 }
 inline bool output_cue(std::wstring_view prefix) {
-    return has(prefix,LR"((?:\b(?:la\s+)?(?:salida|consola|mensaje|resultado|output|console|sortie)\s+(?:(?:exact[oa]|final|esperad[oa])\s+)?(?:(?:debe|puede)\s+)?(?:ser|es|son|mostrar|muestra|imprime|contiene|produce|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|mostrar|imprimir|muestre|muestra|produce)\s+|\b(?:salida|output|sortie)(?:\s+exacta)?\s*[:=]\s*)$)",true);
+    return has(prefix,LR"((?:\b(?:la\s+)?(?:salida|consola|mensaje|resultado|output|console|sortie)\s+(?:(?:exact[oa]|final|esperad[oa])\s+)?(?:(?:debe|puede)\s+)?(?:ser|ser[aá]|es|son|mostrar|muestra|imprime|contiene|produce|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|(?:deben?\s+)?(?:mostrar|imprimir|producir)|muestre|muestra|produce)\s+|\b(?:salida|output|sortie)(?:\s+exacta)?\s*[:=]\s*)$)",true);
+}
+inline bool source_literal_sample(std::wstring_view value) {
+    return !value.empty()&&(value.front()==L'"'||value.front()==L'\'')&&closed_quote_end(value,0,value.size())==value.size();
+}
+inline bool described_data_cue(std::wstring_view prefix) {
+    // A composed value or a file's contents are characters, like console
+    // output. A quoted C++ literal keeps its separate string role below.
+    return has(prefix,LR"(\b(?:(?:el\s+)?(?:archivo|muestra)\s+contiene(?:\s+[uú]nicamente)?|(?:el\s+)?contenido\s+(?:ser[aá]|es)|(?:la\s+)?cadena\s+(?:compuesta|resultante|obtenida)\s+(?:ser[aá]|es)|se\s+presentan?\s+como)\s*$)",true);
+}
+inline bool record_report_sample(std::wstring_view value) {
+    return has(value,LR"(^(?:[A-Za-z_][A-Za-z_0-9]*[ \t]+)?\[[+-]?[0-9]+[ \t]*;[ \t]*[+-]?[0-9]+\]$)");
 }
 inline bool string_cue(std::wstring_view prefix) {
-    return has(prefix,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:\s+de\s+(?:texto|caracteres))?|etiqueta(?:\s+de\s+texto)?|std::string)\s+(?:(?:exact[oa]|contiene|aporta|conserva|es|con|como)\s+)?$)",true);
+    return has(prefix,LR"((?:\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:\s+de\s+(?:texto|caracteres))?|etiqueta(?:\s+de\s+texto)?|std::string)\s+(?:(?:exact[oa]|contiene|aporta|conserva|es|con|como)\s+)?|\b(?:operador|lector)\s+(?:recibe|lee)\s+)$)",true);
 }
 inline std::wstring_view data_sentence(std::wstring_view prefix) {
     std::size_t first=0;
@@ -133,6 +144,13 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
     const auto add=[&](std::vector<Range>& result,std::size_t first,std::size_t last){
         if(first<last&&last<=text.size()&&!overlaps({first,last},protected_ranges))result.emplace_back(first,last);
     };
+    std::vector<Range> quotations;
+    for(std::size_t at=0;at<text.size();++at){
+        if(text[at]!=L'"'&&text[at]!=L'“'&&text[at]!=L'«')continue;
+        auto end=text[at]==L'"'?closed_quote_end(text,at,text.size()):text.find(text[at]==L'“'?L'”':L'»',at+1);
+        if(end==text.npos)continue;if(text[at]!=L'"')++end;
+        quotations.emplace_back(at,end);at=end-1;
+    }
     // A displayed result block ends at its own blank line. A second result in
     // the same paragraph is independent; the prose between them is not data.
     matches(text,LR"((?:\bsalida[^\n:]{0,64}|\bconsola\s+debe\s+mostrar|\bmuestra\s+estas?\s+(?:(?:dos|tres|[0-9]+)\s+)?l[ií]neas)\s*:\s*\n[ \t]*\n)",[&](const auto& match){
@@ -151,10 +169,32 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
         auto last=text.find(L"\n\n",first);if(last==text.npos)last=text.size();
         add(roles.outputs,first,last);
     },true);
-    for(const auto range:marked){
+    // A named literal-output section can begin on the next line as well.
+    // Require the complete label/colon/newline, outside code, and retain the
+    // same blank-line boundary used by the existing two-newline form.
+    matches(text,LR"(\bsalida(?:\s+(?:exacta|esperada|completa|requerida))?[ \t]*:[ \t]*\r?\n)",[&](const auto& match){
+        const auto cue=static_cast<std::size_t>(match.position()),end=cue+static_cast<std::size_t>(match.length());
+        if(overlaps({cue,end},marked)||overlaps({cue,end},protected_ranges))return;
+        auto first=end;while(first<text.size()&&(text[first]==L'\n'||text[first]==L'\r'))++first;
+        auto last=text.find(L"\n\n",first);if(last==text.npos)last=text.size();
+        add(roles.outputs,first,last);
+    },true);
+    std::vector<Range> ordered(marked.begin(),marked.end());std::ranges::sort(ordered);
+    std::optional<std::size_t> previous_marked_output_end;
+    for(const auto range:ordered){
         if(range.first>=range.second||range.second>text.size())continue;
         const auto prefix=tail(text,range.first,192),fragment=text.substr(range.first,range.second-range.first);
-        if(output_cue(prefix))add(roles.outputs,range.first,range.second);
+        const bool report=record_report_sample(fragment);
+        const bool continued_report=report&&previous_marked_output_end&&*previous_marked_output_end<=range.first&&
+            has(text.substr(*previous_marked_output_end,range.first-*previous_marked_output_end),
+                LR"(^[ \t]*(?:,[ \t]*(?:(?:[0-9]+|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece)\s+l[ií]neas?\s+)?|y[ \t]+)$)",true);
+        const bool output=output_cue(prefix)||(!source_literal_sample(fragment)&&
+            (described_data_cue(prefix)||continued_report||
+                (report&&has(prefix,LR"(\bmuestra\s*,\s*en\s+orden\s*,\s*$)",true))||
+                (has(prefix,LR"(\b(?:el\s+)?texto\s*$)",true)&&has(text.substr(range.second),LR"(^\s+se\s+imprime\b)",true))));
+        if(source_literal_sample(fragment))add(roles.strings,range.first,range.second);
+        else if(output){add(roles.outputs,range.first,range.second);
+            if(!overlaps(range,protected_ranges))previous_marked_output_end=range.second;}
         else if(fragment.find(L"::")==fragment.npos&&fragment.find(L':')!=fragment.npos&&
             has(fragment,LR"(^[^:;{}=<>\n]+:[ \t]*$)")&&
             !has(data_sentence(prefix),LR"(\b(?:literal|variable|s[ií]mbolo|operador)\b|etiqueta\s+C\+\+)",true)&&
@@ -179,12 +219,22 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
             if(!overlaps({first,last},protected_ranges))previous_output_end=last;
         }
     });
+    // A two-field numeric record is a displayed character convention when
+    // prose explicitly describes writing it. Its semicolon is not a C++
+    // statement separator. Do not infer a role from a matching value elsewhere.
+    matches(text,LR"(\[[+-]?[0-9]+[ \t]*;[ \t]*[+-]?[0-9]+\])",[&](const auto& match){
+        const auto first=static_cast<std::size_t>(match.position()),last=first+static_cast<std::size_t>(match.length());
+        if(overlaps({first,last},marked)||overlaps({first,last},quotations))return;
+        const auto prefix=tail(text,first,192);
+        if(has(prefix,LR"(\b(?:escribir|escribe)\s*$)",true))add(roles.outputs,first,last);
+    });
     for(std::size_t at=0;at<text.size();++at){
         if(text[at]!=L'"'&&text[at]!=L'“'&&text[at]!=L'«')continue;
         auto end=text[at]==L'"'?closed_quote_end(text,at,text.size()):text.find(text[at]==L'“'?L'”':L'»',at+1);
         if(end==text.npos)continue;if(text[at]!=L'"')++end;
         const auto prefix=tail(text,at,192);
         const auto sentence=data_sentence(prefix);
+        if(contained({at,end},roles.strings)){at=end-1;continue;}
         if(output_cue(prefix))add(roles.outputs,at,end);
         else if(string_cue(prefix)||has(sentence,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:s)?|etiquetas?\s+de\s+texto|concaten\w*|std::string)\b)",true)||
             (has(sentence,LR"(^\s*En\s*$)",true)&&has(prefix,LR"(\bliteral\s+de\s+texto\b)",true)))

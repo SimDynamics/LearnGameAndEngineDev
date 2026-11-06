@@ -3,6 +3,14 @@ package com.learngraphicsprogramming.app.narration
 /** Windows reading refinements, applied by the generated host frontend only.
  * The displayed source, Android implementation and stored recordings stay intact. */
 internal object WindowsNarrationSpeechRules {
+    // Request-scoped reconstruction of the immediately preceding Windows
+    // output policy. Both source projection and word ownership use this scope.
+    private val previousOutputDataPolicy = ThreadLocal.withInitial { false }
+    fun <T> withPreviousOutputDataPolicy(previous: Boolean, action: () -> T): T {
+        val saved = previousOutputDataPolicy.get()
+        previousOutputDataPolicy.set(previous)
+        return try { action() } finally { previousOutputDataPolicy.set(saved) }
+    }
     private val implicitAssignment = Regex("[\\p{L}_][\\p{L}\\p{M}\\p{N}_]*[ \\t]*=(?!=)")
     private val implicitNumber = Regex("(?:0[xX][0-9a-fA-F]+|0[bB][01]+|(?:[0-9]+(?:'[0-9]+)*(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?)[uUlLfF]*")
     private val assignmentOperators = listOf("<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "=")
@@ -209,6 +217,11 @@ internal object WindowsNarrationSpeechRules {
     private val sourceLabelTail = Regex(
         "(?iu)^[ \\t]*(?:pertenece|corresponde)[ \\t]+(?:al|a[ \\t]+(?:el|un))[ \\t]+c[oó]digo\\b")
     private val exitCodePhrase = Regex("(?iu)\\bc[oó]digos?[ \\t]+de[ \\t]+salida\\b")
+    private val recordEquality = Regex("(?<![=<>!+*/%&|^:-])=(?!=)")
+    private val recordSourceStart = Regex("(?iu)^\\s*(?:const|unsigned|signed|int|double|float|bool|char|auto|void|return)\\b")
+    private val recordSourceCue = Regex("(?iu)\\b(?:variable|expresi[oó]n|declaraci[oó]n|comando|llamada)\\s*$")
+    private val recordSourceOperators = listOf("::", "://", "<<", ">>", "++", "--", "->")
+    private val outputPhrase = Regex("[\\p{L}\\p{M}]+(?:[ \\t]+[\\p{L}\\p{M}]+)+[.,!?]?")
 
     /** One local prose sentence, with inline samples hidden from cue detection.
      * Its bounds are independent of display tint. A cue inside another sample
@@ -241,6 +254,49 @@ internal object WindowsNarrationSpeechRules {
         // An output label/string is not a C++ statement label. Conversely, the
         // ordinary name "exit code" must not manufacture an output-data cue.
         return outputListCue.containsMatchIn(exitCodePhrase.replace(before, " ")) || promptTailCue.containsMatchIn(after)
+    }
+
+    /** Structured output may contain =, brackets and field separators without
+     * being an assignment. Retain its literal punctuation reader, including
+     * numeric colons, but pronounce = as data instead of a C++ operation.
+     * Ordinary labels keep isDisplayedOutputValue's existing pause/cache path. */
+    fun isDisplayedOutputRecord(text: String, opening: Int, value: String): Boolean {
+        if (previousOutputDataPolicy.get()) return false
+        if (!recordEquality.containsMatchIn(value) ||
+                value.trimEnd().endsWith(';') || value.any { it in "\\\"'`" } ||
+                recordSourceOperators.any(value::contains) || recordSourceStart.containsMatchIn(value)) return false
+        val closing = opening + value.length + 2
+        if (closing > text.length) return false
+        val (before, after) = outputSentence(text, opening, closing)
+        val prefix = text.substring((opening - 160).coerceAtLeast(0), opening)
+        if (explicitSourceCue.containsMatchIn(prefix) || sourceLabelTail.containsMatchIn(after) ||
+                recordSourceCue.containsMatchIn(prefix)) return false
+        return outputValueCue.containsMatchIn(exitCodePhrase.replace(prefix, " ")) ||
+            outputListCue.containsMatchIn(exitCodePhrase.replace(before, " ")) || promptTailCue.containsMatchIn(after)
+    }
+
+    fun isDisplayedOutputPhrase(text: String, opening: Int, value: String): Boolean {
+        if (previousOutputDataPolicy.get()) return false
+        if (!outputPhrase.matches(value)) return false
+        val closing = opening + value.length + 2
+        if (closing > text.length) return false
+        val (before, after) = outputSentence(text, opening, closing)
+        val prefix = text.substring((opening - 160).coerceAtLeast(0), opening)
+        if (explicitSourceCue.containsMatchIn(prefix) || recordSourceCue.containsMatchIn(prefix) ||
+                sourceLabelTail.containsMatchIn(after)) return false
+        return outputValueCue.containsMatchIn(exitCodePhrase.replace(prefix, " ")) ||
+            outputListCue.containsMatchIn(exitCodePhrase.replace(before, " ")) || promptTailCue.containsMatchIn(after)
+    }
+
+    // Labels pause before their value. Numeric field separators such as 0:0
+    // remain literal punctuation, even in the same displayed output record.
+    fun isOutputLabelColon(source: String, index: Int): Boolean {
+        if (previousOutputDataPolicy.get()) return false
+        if (source.getOrNull(index) != ':' || source.getOrNull(index - 1) == ':' || source.getOrNull(index + 1) == ':') return false
+        var first = index
+        while (first > 0 && (source[first - 1].isLetterOrDigit() || source[first - 1] == '_')) first--
+        return first < index && source.substring(first, index).any(Char::isLetter) &&
+            (first == 0 || source[first - 1].isWhitespace() || source[first - 1] in ";|([{«")
     }
 
     private val namedLetter = Regex("(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:letra|carácter|caracter)[ \\t]+$")

@@ -10,7 +10,9 @@ from __future__ import annotations
 import copy
 from fractions import Fraction
 import hashlib
+import itertools
 import json
+import subprocess
 import unittest
 
 from test_math_bridge import known_answer
@@ -72,6 +74,15 @@ CASES = (
                                        relleno_fija=1, longitud_cientifica=9, relleno_cientifica=0)}),
     ("compartir_flujos_sin_acoplar_el_calculo", (1, 5), "seguir_formato_del_destino_prestado", {
         "contenidos": matching(flujo_a="contenido_hexadecimal", flujo_b="contenido_decimal")}),
+)
+
+
+INSERTION_EXTRACTION_CASES = (
+    ("insertar_un_tipo_y_encadenar_la_salida", (4, 4), "seguir_base_y_ancho_al_insertar_recuento", {
+        "contenidos": matching(flujo_a="base_hexadecimal", flujo_b="ancho_en_apertura")}),
+    ("extraer_un_tipo_sin_cambiarlo_en_fallo", (6, 3), "separar_objeto_indicadores_y_texto_restante", {
+        "recorridos": matching(registro_y_resto="aceptado", dominio_rechazado="fuera_de_dominio",
+                               cierre_ausente="truncado")}),
 )
 
 
@@ -330,6 +341,158 @@ class ProgrammingFormattingMathBridgeTest(unittest.TestCase):
             with self.subTest(source=path.name):
                 self.assertEqual(hashlib.sha256(raw).digest(), hashlib.sha256(path.read_bytes()).digest())
                 self.assertEqual(modified, path.stat().st_mtime_ns)
+
+
+class ProgrammingInsertionExtractionMathBridgeTest(unittest.TestCase):
+    """Only U12L14/L15 additions; selectable without rerunning the earlier 14."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sources = {}
+        cls.lessons = {}
+        cls.cases = []
+        cls.fingerprints = {}
+        cls.previous_lessons = {}
+        # Published origin of the unchanged ordinary answers and stable slots,
+        # already present locally. This is provenance, not another active asset.
+        previous = "7e90cea77242b0a7c6228a45249e6f6eadcda041"
+        for name, (page, position), identity, answers in INSERTION_EXTRACTION_CASES:
+            path = UNIT / ("lesson_" + name + ".json")
+            raw = path.read_bytes()
+            lesson = json.loads(raw.decode("utf-8-sig"))
+            cls.sources[path] = (raw, path.stat().st_mtime_ns)
+            cls.lessons[path] = lesson
+            old = subprocess.check_output(["git", "show", previous + ":" + path.relative_to(ROOT).as_posix()], cwd=ROOT)
+            cls.previous_lessons[path] = json.loads(old.decode("utf-8-sig"))
+            block = lesson["pages"][page]["blocks"][position]
+            if (lesson["stateLayout"]["current"][page]["blocks"][position] != identity or
+                    block.get("id") != PREFIX + name + "__" + identity):
+                raise AssertionError(f"The insertion/extraction addition changed its stable identity: {path}")
+            cls.cases.append((path, block, answers))
+            canonical = json.dumps(block, ensure_ascii=False, separators=(",", ":")).replace("/", "\\/")
+            cls.fingerprints[block["id"]] = hashlib.sha256(canonical.encode()).hexdigest()
+        cls.before = copy.deepcopy(cls.lessons)
+        cls.worker = Worker()
+
+    tearDownClass = classmethod(ProgrammingFormattingMathBridgeTest.tearDownClass.__func__)
+    assert_correct = ProgrammingFormattingMathBridgeTest.assert_correct
+    assert_rejected = ProgrammingFormattingMathBridgeTest.assert_rejected
+
+    def evaluate(self, block, answers):
+        result = ProgrammingFormattingMathBridgeTest.evaluate(self, block, answers)
+        self.assertEqual(self.fingerprints[block["id"]], result["contentFingerprint"],
+                         "Attempt state changed the exact Android-compatible content identity")
+        return result
+
+    def test_01_new_additions_have_typed_empty_matching_controls_and_independent_answers(self):
+        self.assertEqual(2, len(self.cases))
+        for path, block, answers in self.cases:
+            with self.subTest(lesson=path.name):
+                self.assertEqual("math_puzzle", block["type"])
+                self.assertEqual(set(answers), {response["id"] for response in block["responses"]})
+                for response in block["responses"]:
+                    self.assertEqual("math_matching_drag", response["type"])
+                    self.assertEqual(answers[response["id"]], known_answer(response["validator"]))
+                    self.assertNotIn("initial", response)
+                    self.assertNotIn("pairs", response)
+                    self.assertEqual(set(answers[response["id"]]["pairs"]),
+                                     {source["id"] for source in response["sources"]})
+                    self.assertEqual(set(answers[response["id"]]["pairs"].values()),
+                                     {target["id"] for target in response["targets"]})
+                self.assertTrue(block["feedback"]["correct"].strip())
+                self.assertTrue(block["feedback"]["incorrect"].strip())
+
+    test_02_public_description_has_no_solution_or_preselected_answer = (
+        ProgrammingFormattingMathBridgeTest.test_02_public_description_has_no_solution_or_preselected_answer)
+    test_03_independent_answers_accept_and_empty_responses_never_succeed = (
+        ProgrammingFormattingMathBridgeTest.test_03_independent_answers_accept_and_empty_responses_never_succeed)
+    test_04_every_matching_tile_rejects_swaps_missing_and_duplicate_targets = (
+        ProgrammingFormattingMathBridgeTest.test_05_every_matching_tile_rejects_swaps_missing_and_duplicate_targets)
+
+    def test_05_all_matching_permutations_and_reordered_answer_maps_keep_their_verdict(self):
+        for path, block, answers in self.cases:
+            identity, answer = next(iter(answers.items()))
+            expected = answer["pairs"]
+            for targets in itertools.permutations(expected.values()):
+                attempt = {identity: matching(**dict(zip(expected, targets)))}
+                with self.subTest(lesson=path.name, pairs=attempt):
+                    if attempt == answers:
+                        self.assert_correct(block, attempt)
+                    else:
+                        result = self.assert_rejected(block, attempt, evaluable=True)
+                        self.assertIn(block["feedback"]["incorrect"], result["feedback"])
+            # Serialization order is not the meaning of a matching answer.
+            reordered = {identity: matching(**dict(reversed(list(expected.items()))))}
+            self.assert_correct(block, json.loads(json.dumps(reordered)))
+            unknown = {identity: matching(**expected, obsolete_source="obsolete_target")}
+            self.assert_rejected(block, unknown, evaluable=False)
+            for key in expected:
+                blank = copy.deepcopy(answers)
+                blank[identity]["pairs"][key] = ""
+                self.assert_rejected(block, blank, evaluable=False)
+
+    def test_06_output_cards_keep_all_spaces_capitalization_and_final_separators(self):
+        labels = (
+            {"base_hexadecimal": "Salida: `[a;2]|a`", "ancho_en_apertura": "Salida: `|   [10;2]|`"},
+            {"truncado": "Salida: `1:1|[6;2]|`", "aceptado": "Salida: `0:0|[2;1]|resto`",
+             "fuera_de_dominio": "Salida: `1:0|[6;2]|RESTO`"},
+        )
+        for (_, block, _), expected in zip(self.cases, labels):
+            response = block["responses"][0]
+            self.assertEqual(expected, {target["id"]: target["label"] for target in response["targets"]})
+            for target in response["targets"]:
+                self.assertEqual([{"type": "text", "text": expected[target["id"]], "mathMode": "text"}],
+                                 target["content"])
+            description = self.worker.ask("describe_math", block=block, language="es")
+            visible = description["responses"][0]["config"]["targets"]
+            self.assertEqual(expected, {target["id"]: target["label"] for target in visible})
+
+    def test_07_new_requirement_paragraph_is_preserved_without_becoming_an_answer(self):
+        path = self.cases[0][0]
+        lesson = self.lessons[path]
+        self.assertEqual("requisitos_bateria_de_recuentos", lesson["stateLayout"]["current"][3]["blocks"][4])
+        block = lesson["pages"][3]["blocks"][4]
+        self.assertEqual("paragraph", block["type"])
+        for absent in ("responses", "validator", "correctIndex", "answers"):
+            self.assertNotIn(absent, block)
+        for literal in ("`int probar(const Recuento& resumen)`", "`{3, 2}`", "`{0, 0}`", "`{10, 10}`",
+                        "`Memoria=[3;2];fin|Guardado`\n`Memoria=[0;0];fin|Guardado`\n`Memoria=[10;10];fin|Guardado`",
+                        "`[10;10]`, sin salto final"):
+            self.assertIn(literal, block["text"])
+
+    def test_08_nine_ordinary_guides_preserve_published_answer_contracts_and_storage_slots(self):
+        # These are native programming exercises, not math responses. Check
+        # their preservation here; native evaluator tests own their verdicts.
+        protected = {"type", "id", "question", "code", "initialCode", "language", "options", "answers",
+                     "correctIndex", "correctOrder", "fragments", "explanation"}
+        path = self.cases[1][0]
+        current, old = self.lessons[path], self.previous_lessons[path]
+        old_blocks = {identity: block for page, slots in zip(old["pages"], old["stateLayout"]["current"])
+                      for identity, block in zip(slots["blocks"], page["blocks"])}
+        guided = []
+        for page, slots in zip(current["pages"], current["stateLayout"]["current"]):
+            for identity, block in zip(slots["blocks"], page["blocks"]):
+                if "reviewFeedback" not in block:
+                    continue
+                guided.append(identity)
+                with self.subTest(identity=identity):
+                    self.assertIn(identity, old_blocks)
+                    self.assertEqual({key: value for key, value in old_blocks[identity].items() if key in protected},
+                                     {key: value for key, value in block.items() if key in protected})
+                    review = block["reviewFeedback"]
+                    if block["type"] == "multiple_choice":
+                        self.assertEqual(len(block["options"]), len(review))
+                        self.assertTrue(all(isinstance(text, str) and text.strip() for text in review))
+                    else:
+                        self.assertIsInstance(review, str)
+                        self.assertTrue(review.strip())
+        self.assertEqual(9, len(guided))
+        self.assertEqual(old["stateLayout"]["origin"], current["stateLayout"]["origin"])
+        self.assertEqual(old["stateLayout"]["family"], current["stateLayout"]["family"])
+        self.assertEqual(old["stateLayout"]["orderRefinements"], current["stateLayout"]["orderRefinements"])
+
+    test_09_curated_puzzle_text_and_data_remain_byte_exact = (
+        ProgrammingFormattingMathBridgeTest.test_08_curated_puzzle_text_and_data_remain_byte_exact)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 #include "core/narration_speed.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reading_gate_policy.hpp"
+#include "presentation/windows/narration_legacy_policy.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/ui_language.hpp"
@@ -327,15 +328,12 @@ struct LessonReader::Impl {
     }
     static std::string part_id(const Part& part){return (part.region.anchor.empty()?part.region.key:part.region.anchor)+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
     static bool same_previous_context_passage(const Part& before,const Part& after){
-        // Only the explicit C++ transition is historical here. Exact source
-        // ownership authenticates the passage, never its new recording offset.
-        return (before.region.reading_context=="auto"||before.region.reading_context=="cpp_previous_parentheses")&&after.region.reading_context=="cpp"
-            &&before.region.math_mode=="auto"&&after.region.math_mode=="auto"
-            &&(before.region.anchor.empty()?before.region.key:before.region.anchor)
-                ==(after.region.anchor.empty()?after.region.key:after.region.anchor)
-            &&before.region.source_text==after.region.source_text
-            &&before.sentence.start==after.sentence.start&&before.sentence.end==after.sentence.end
-            &&before.sentence.prepared!=after.sentence.prepared;
+        const auto passage=[](const Part& part) {
+            return narration_legacy::Passage{part.region.anchor.empty()?part.region.key:part.region.anchor,
+                part.region.source_text,part.region.reading_context,part.region.math_mode,part.sentence.prepared,
+                part.sentence.start,part.sentence.end};
+        };
+        return narration_legacy::same_previous_passage(passage(before),passage(after));
     }
     // This alias is limited to authenticated pre-return reading archives. A
     // complete region must have exactly the same visible text; only inline
@@ -426,22 +424,28 @@ struct LessonReader::Impl {
                             &&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.key==old_key;}))
                             plan.legacy.push_back({old_key,std::move(old),editorial_formatting,previous_context_policy,revised_regions,positional_page_identity});
                     };
-                    std::map<std::pair<std::string,std::string>,std::vector<windows::NarrationSegment>> previous_context_plans;
+                    std::map<std::string,std::vector<windows::NarrationSegment>> previous_context_plans;
                     const auto add_legacy=[&](const std::vector<Part>& old,const std::string& old_page,bool editorial_formatting=false,const std::vector<std::string>& revised_regions=std::vector<std::string>{},bool positional_page_identity=false){
                         register_legacy(old,old_page,editorial_formatting,false,revised_regions,positional_page_identity);
-                        if(std::ranges::none_of(old,[](const auto& part){return part.region.reading_context=="cpp"&&part.region.math_mode=="auto";}))return;
-                        // Reconstruct both known previous policies, including
-                        // authenticated title/editorial archives. The later
-                        // C++ policy already spoke numeric code expressions;
-                        // treating it as auto would lose that full script key.
-                        // Explicit math modes retain their current meaning.
-                        for(const auto context:{"cpp_previous_parentheses","auto"}){
+                        const bool cpp_context=std::ranges::any_of(old,[](const auto& part){return part.region.reading_context=="cpp"&&part.region.math_mode=="auto";});
+                        // Historical output policy is independent of C++ math
+                        // context, including explicit mathMode:text. Compose
+                        // it with both existing context migrations when needed.
+                        for(const bool previous_output:{false,true})for(const std::string_view context:{"","cpp_previous_parentheses","auto"}){
+                            if((!previous_output&&context.empty())||(!cpp_context&&!context.empty()))continue;
                             std::vector<Part> previous;
                             for(std::size_t i=0;i<old.size();){const auto& part=old[i];
-                                if(part.region.reading_context!="cpp"||part.region.math_mode!="auto"){previous.push_back(part);++i;continue;}
-                                auto origin=part.region;origin.reading_context=context;
-                                auto [cached,inserted]=previous_context_plans.try_emplace(std::make_pair(origin.reading_context,origin.source_text));
-                                if(inserted)cached->second=backend->plan(origin.source_text,lang,stop,origin.reading_context,origin.math_mode);
+                                const bool change_context=!context.empty()&&part.region.reading_context=="cpp"&&part.region.math_mode=="auto";
+                                // The new output refinements apply only inside
+                                // backticks. Unaffected regions retain their
+                                // exact historical segments without more RPCs.
+                                const bool change_output=previous_output&&part.region.source_text.find('`')!=std::string::npos;
+                                if(!change_context&&!change_output){previous.push_back(part);++i;continue;}
+                                auto origin=part.region;const std::string source_context=change_context?std::string(context):origin.reading_context;
+                                origin.reading_context=previous_output?std::string(narration_legacy::previous_output_prefix)+source_context:source_context;
+                                const auto cache_key=origin.reading_context+'\0'+origin.math_mode+'\0'+origin.source_text;
+                                auto [cached,inserted]=previous_context_plans.try_emplace(cache_key);
+                                if(inserted)cached->second=backend->plan(origin.source_text,lang,stop,source_context,origin.math_mode,previous_output);
                                 std::map<std::string,std::size_t> occurrences;
                                 for(auto sentence:cached->second){
                                     const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}

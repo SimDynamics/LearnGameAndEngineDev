@@ -248,11 +248,12 @@ std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_leas
     return NarrationPriorityLease([state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();});
 }
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
-    std::string_view reading_context,std::string_view math_mode){
+    std::string_view reading_context,std::string_view math_mode,bool previous_output_data){
     if(reading_context!="auto"&&reading_context!="cpp"&&reading_context!="cpp_previous_parentheses")throw std::invalid_argument("Invalid narration reading context");
     if(math_mode!="auto"&&math_mode!="text"&&math_mode!="inline"&&math_mode!="block")throw std::invalid_argument("Invalid narration mathematical mode");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);
     put(request,L"readingContext",reading_context);put(request,L"mathMode",math_mode);
+    if(previous_output_data)request.Insert(L"previousOutputDataPolicy",JsonValue::CreateBooleanValue(true));
     const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};
         segment.spoken=string(object,L"spokenText");
