@@ -167,6 +167,21 @@
                 "standardInput": "",
                 "outputs": [
                   "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n"
+                ],
+                "explanation": "La salida coincide con las tres líneas pedidas, en su orden y con un salto después de cada una. Comprueba también que tu función forma los campos desde sus parámetros, devuelve la cadena y deja la presentación a main; la coincidencia de la salida no certifica esa organización.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución terminó sin mostrar texto. Completa la composición y las tres llamadas, guarda sus resultados y envíalos a la salida desde main."
+                  },
+                  {
+                    "outputs": [
+                      "Validos=2;Rechazados=1\nValidos=0;Rechazados=0"
+                    ],
+                    "text": "Esta salida contiene sólo dos líneas y no tiene salto final. Revisa la tercera llamada y los saltos solicitados para la batería completa."
+                  }
                 ]
               }
             ]
@@ -217,7 +232,7 @@
         {
           "type": "output_prediction",
           "id": "destino_archivo_no_es_stdout",
-          "question": "Supón que se completan apertura y escritura. ¿Qué texto aparece en la salida estándar de este programa?",
+          "question": "Supón que la apertura, la escritura y el cierre tienen éxito. ¿Qué texto aparece en la salida estándar de este programa?",
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Validos=\" << 2 << \";Rechazados=\" << 1;\n    std::string mensaje = texto.str();\n    std::ofstream salida{\"resumen_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    salida << mensaje;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Guardado\";\n    return 0;\n}\n",
           "answers": [
@@ -858,6 +873,16 @@
         "id": "block_0003_0004",
         "beforeSha256": "4c7882e27fbce78d45d53fd67b0e9f7eb25a26693e4ad2709ba1bb2bc6be75da",
         "afterSha256": "3582a8ce527b0e5a588794b19fce3238e5d7560740da2c930c3247a4ed4b55c8"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "628f37fb8e1fb1f82180b90a6ff241b9e868482914e4ce9dd84149e453b8e00d",
+        "afterSha256": "2a22d63af34fb093c3feeef538fdb794fa6b57074fddcc601b473162937043b7"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "cf06a21a5f5a9b85cc94cf0d4e41cebc672813a7a82c30728832291dc25bcdb8",
+        "afterSha256": "4bddac581f21a70aa212ec0039f9ab2ab64badbcd315419e2e149a7ae7240166"
       }
     ]
   },
