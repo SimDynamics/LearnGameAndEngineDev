@@ -1081,6 +1081,13 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
 WORK_EXACT_EDITORIAL_REVISIONS = {
+    # CPP_HIPOTESIS_PREDICCION_U12L3: distinguish successful opening/writing/
+    # closing from the intentionally incomplete extraction. Only this exact
+    # Spanish question pair belongs to the original prediction and its ID.
+    ('archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json',
+     3, 2, 'output_prediction', 'question', 'segunda_apertura_reemplaza'): (
+        'cb81a97d61799530a8368b9b40e38e4beb06e9bdc02e882d9a60d03fd6703550',
+        '2ab938406719084321fba3a22945ebd942e2a231674cd3cac688b917a026bc4d'),
     # CPP_ESPACIO_LITERAL_U11L22: insert only the reviewed separating space;
     # the selection's question, options, index and historical owner stay fixed.
     ('texto_interpretacion_y_flujos/lesson_construir_una_sesion_con_nombres_y_estado.json',

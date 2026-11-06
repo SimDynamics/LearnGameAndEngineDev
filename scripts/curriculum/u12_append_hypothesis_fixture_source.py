@@ -1,0 +1,133 @@
+"""Authenticate the exact U12L3 hypothesis revision without editing curriculum."""
+from copy import deepcopy
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import stat
+import subprocess
+
+import stable_state_layout as layout
+
+
+ROOT = Path(__file__).resolve().parents[2]
+COMMIT = "93923a470b98e9bd6acaf95cf836dd014b5e4a29"
+LESSON = "archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json"
+PREFIX = "app/src/main/assets/content/{locale}/programming/cpp_fundamentals/"
+RELATIVE = PREFIX.format(locale="es") + LESSON
+IDENTITY = "block_0002_0001"
+ACTIVITY_ID = "segunda_apertura_reemplaza"
+HISTORICAL = (2, 1)
+BEFORE = ("Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. "
+          "Predice el diagnóstico visible.")
+AFTER = ("Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. "
+         "Predice el diagnóstico visible.")
+TEXT_HASHES = ("cb81a97d61799530a8368b9b40e38e4beb06e9bdc02e882d9a60d03fd6703550",
+               "2ab938406719084321fba3a22945ebd942e2a231674cd3cac688b917a026bc4d")
+SOURCE_HASHES = {"es": "81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183",
+                 "en": "e1ee5510ea9a7e2451103b298f29c695a23cf6d76cdd95cef245b376988501cd",
+                 "fr": "d1c22d2c6da13a48bd2310fd72235319d6a3de899bd129444e4853e2e0c426f8"}
+AFTER_SHA256 = "d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc"
+BLOCK_HASHES = ("3f3f15e209f0d54ce342167a2e007062ebf83bb1784531d40873a75dafd765ef",
+                "b80a16cd7af0d46d6628a11784747299e7607317f58f87b48a41019f923157b2")
+FAMILY_SHA256 = "a50cf6bf3544c70d3df1b5f9e152f35d51214cf4d6999d02fb4d8b568a0e044a"
+ORIGIN_SHA256 = "70274d28ca19d9c4e9c5f2d1632b135aeb5b86e4c4431dfcbd023d68c87a0ef7"
+EDITORIAL_PREFIX_SHA256 = "2bbd1afca905bbafa53a49d7197e1f328bdd2f2107e305583156a3182702387c"
+CURRENT_SHA256 = "553e987ff02d0c346013113e6544d8f615601e4672439fa7e1010fa6a4838e65"
+
+
+def json_bytes(value: dict) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+
+
+def verify_bytes(locale: str, payload: bytes) -> bytes:
+    if locale not in SOURCE_HASHES or hashlib.sha256(payload).hexdigest() != SOURCE_HASHES[locale]:
+        raise ValueError("U12L3 hypothesis fixture differs from its independently pinned Git bytes")
+    return payload
+
+
+def historical_bytes(locale: str = "es") -> bytes:
+    relative = PREFIX.format(locale=locale) + LESSON
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    return verify_bytes(locale, subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{COMMIT}:{relative}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE))
+
+
+def candidate() -> tuple[dict, dict, dict[str, dict]]:
+    family = {locale: json.loads(historical_bytes(locale)) for locale in ("es", "en", "fr")}
+    before = family["es"]
+    original = layout._blocks(before)[IDENTITY]
+    if (original.get("type"), original.get("id"), original.get("question")) != ("output_prediction", ACTIVITY_ID, BEFORE):
+        raise ValueError("U12L3 hypothesis fixture owner, type or question changed")
+    if tuple(hashlib.sha256(text.encode("utf-8")).hexdigest() for text in (BEFORE, AFTER)) != TEXT_HASHES:
+        raise ValueError("U12L3 hypothesis text constants changed")
+    metadata = before["stateLayout"]
+    if (len(layout._blocks(before)) != 33 or len(metadata["editorial"]) != 6
+            or layout.fingerprint(metadata["family"]) != FAMILY_SHA256
+            or layout.fingerprint(metadata["origin"]) != ORIGIN_SHA256
+            or layout.fingerprint(metadata["current"]) != CURRENT_SHA256
+            or layout.fingerprint(metadata["editorial"]) != EDITORIAL_PREFIX_SHA256):
+        raise ValueError("U12L3 hypothesis fixture lost its published family, addresses or provenance")
+    draft = deepcopy(before)
+    layout._blocks(draft)[IDENTITY]["question"] = AFTER
+    after = layout.prepare_v2(draft, "es", family, before)
+    if (tuple(layout.fingerprint(layout._blocks(value)[IDENTITY]) for value in (before, after)) != BLOCK_HASHES
+            or hashlib.sha256(json_bytes(after)).hexdigest() != AFTER_SHA256):
+        raise ValueError("U12L3 hypothesis candidate differs from its independently pinned complete document")
+    return before, after, family
+
+
+def export(output: Path) -> Path:
+    """Export authenticated QA copies under this checkout's out/build only."""
+    output = Path(os.path.abspath(output))
+    for entry in (output, *output.parents):
+        try:
+            attributes = entry.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(attributes.st_mode) or getattr(attributes, "st_file_attributes", 0) & 0x400:
+            raise ValueError("U12L3 hypothesis QA output cannot follow links or reparse points")
+    output = output.resolve()
+    if not any(output.is_relative_to(ROOT / allowed) and output != ROOT / allowed for allowed in ("out", "build")):
+        raise ValueError("U12L3 hypothesis fixtures must stay in this checkout's out/build QA directory")
+    for parent in (output, *output.parents):
+        if parent == ROOT:
+            break
+        if (parent / ".git").exists():
+            raise ValueError("U12L3 hypothesis QA output cannot write another checkout")
+    before, after, _ = candidate()
+    payloads = {"before.json": historical_bytes(), "after.json": json_bytes(after)}
+    manifest = {"commit": COMMIT, "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
+                "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
+                "sourceSha256": SOURCE_HASHES, "textSha256": list(TEXT_HASHES),
+                "familySha256": FAMILY_SHA256, "originSha256": ORIGIN_SHA256,
+                "editorialPrefixSha256": EDITORIAL_PREFIX_SHA256, "currentSha256": CURRENT_SHA256,
+                "before": {"file": "before.json", "sha256": SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
+                "after": {"file": "after.json", "sha256": AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
+    payloads["manifest.json"] = json_bytes(manifest)
+    # All input authentication and existing-target checks precede any write.
+    # Identical exported evidence is a no-op; other bytes are never replaced.
+    for name, payload in payloads.items():
+        target = output / name
+        if target.exists() or target.is_symlink():
+            attributes = target.lstat()
+            if (not stat.S_ISREG(attributes.st_mode) or getattr(attributes, "st_file_attributes", 0) & 0x400
+                    or target.read_bytes() != payload):
+                raise FileExistsError("Refusing to replace an existing U12L3 hypothesis QA document")
+    output.mkdir(parents=True, exist_ok=True)
+    for name, payload in payloads.items():
+        target = output / name
+        if not target.exists():
+            with target.open("xb") as stream:
+                stream.write(payload)
+    return output / "manifest.json"
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", required=True, type=Path)
+    arguments = parser.parse_args()
+    export(arguments.output_dir)
+    print(f"Verified exact U12L3 hypothesis fixture pair from {COMMIT}.")
