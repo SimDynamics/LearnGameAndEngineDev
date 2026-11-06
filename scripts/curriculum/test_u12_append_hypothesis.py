@@ -20,6 +20,7 @@ class U12AppendHypothesisTest(unittest.TestCase):
         cls.before, cls.after, cls.family = fixture.candidate()
         cls.current_before, cls.current_after, cls.current_family = fixture.current_candidate()
         cls.suffix_before, cls.suffix_after, cls.suffix_family = fixture.suffix_candidate()
+        cls.final_before, cls.final_after, cls.final_family = fixture.final_candidate()
 
     def blocks(self):
         return tuple(deepcopy(layout._blocks(document)[fixture.IDENTITY]) for document in (self.before, self.after))
@@ -246,6 +247,75 @@ class U12AppendHypothesisTest(unittest.TestCase):
                               fixture.json_bytes(bad) if after else original(locale)), self.assertRaises((ValueError, layout.LayoutError)):
                 fixture.suffix_candidate()
 
+    def test_final_pair_preserves_actual_sixteen_edge_history_programs_and_answers(self):
+        before, after = self.final_before, self.final_after
+        self.assertEqual(self.current_before, before)
+        self.assertEqual("18d34c2f94f25a0796534d53fe4fd21a79aa09ce", fixture.FINAL_BEFORE_COMMIT)
+        self.assertEqual("79890b03ab6de01c18ca6c3adebeb96bf4d766a8", fixture.FINAL_AFTER_COMMIT)
+        self.assertEqual(11, len(before["stateLayout"]["editorial"]))
+        self.assertEqual(16, len(after["stateLayout"]["editorial"]))
+        self.assertEqual(self.suffix_after["stateLayout"]["editorial"], after["stateLayout"]["editorial"][:14])
+        self.assertEqual(fixture.FINAL_EDITORIAL_SHA256, layout.fingerprint(after["stateLayout"]["editorial"]))
+        self.assertEqual([{"id": "block_0007_0001",
+                           "beforeSha256": "d86a37ce31908280b2bfa0c2db787892ac6886b202584058d09aa6e06b720837",
+                           "afterSha256": "0623f7b364b8a64e7d50375576b197278f75f016602f06ff5cc42658d349101b"},
+                          {"id": "block_0007_0002",
+                           "beforeSha256": "9f7b042b04d3a5da6d59c52df61493e74231bfb85a73cc4827cd92fae108b35a",
+                           "afterSha256": "2bfb96456242bb5f43977bcc21c8aaa4a9657394095c8b1a89b87fba3c7a6ac2"}],
+                         after["stateLayout"]["editorial"][14:])
+        for field in before["stateLayout"]:
+            if field != "editorial": self.assertEqual(before["stateLayout"][field], after["stateLayout"][field], field)
+        previous, current = layout._blocks(before), layout._blocks(after)
+        self.assertEqual(33, len(current))
+        self.assertEqual(previous.keys(), current.keys())
+        changed = {identity: {key for key in old.keys() | current[identity].keys() if old.get(key) != current[identity].get(key)}
+                   for identity, old in previous.items() if old != current[identity]}
+        self.assertEqual({fixture.IDENTITY: {"question"}, "block_0005_0001": {"reviewFeedback"},
+                          "block_0005_0002": {"text", "emphasis"}, "block_0007_0001": {"reviewFeedback"},
+                          "block_0007_0002": {"text", "emphasis"}}, changed)
+        for identity, old in previous.items():
+            self.assertEqual(layout.state_fingerprint(old), layout.state_fingerprint(current[identity]))
+            if old["type"] in {"code", "cpp_compiler"}: self.assertEqual(old, current[identity])
+            for field in ("answers", "correctIndex", "options", "explanation"):
+                self.assertEqual(old.get(field), current[identity].get(field))
+        self.assertTrue(self.preserved(previous[fixture.IDENTITY], current[fixture.IDENTITY]))
+        self.assertEqual(layout.validate(before), layout.validate(after))
+        self.assertEqual(layout.lineage(before), layout.lineage(after))
+        layout.validate_transition(before, after)
+        layout.check_localized_family([after, self.final_family["en"], self.final_family["fr"]], ["es", "en", "fr"])
+        self.assertIs(after["compilerPuzzlesRequired"], True)
+        self.assertEqual(self.suffix_after["referenceAfter"], after["referenceAfter"][:2])
+        self.assertEqual({"activity": "block_0007_0003", "blocks": ["block_0008_0000", "block_0008_0001"]},
+                         after["referenceAfter"][2])
+        self.assertEqual(3, len(after["referenceAfter"]))
+        self.assertEqual(self.suffix_after["activityAfter"], after["activityAfter"])
+        self.assertEqual(2, len(after["activityAfter"]))
+        payload = fixture.final_bytes(after=True)
+        self.assertEqual(fixture.json_bytes(after), payload)
+        self.assertEqual(fixture.FINAL_AFTER_SHA256, hashlib.sha256(payload).hexdigest())
+        self.assertNotIn(b"\r", payload)
+        self.assertEqual(fixture.FINAL_WINDOWS_SHA256, hashlib.sha256(payload.replace(b"\n", b"\r\n")).hexdigest())
+        for locale in ("es", "en", "fr"):
+            for after_flag, hashes in ((False, fixture.FINAL_SOURCE_HASHES), (True, fixture.FINAL_AFTER_SOURCE_HASHES)):
+                data = fixture.final_bytes(locale, after=after_flag)
+                self.assertEqual(hashes[locale], hashlib.sha256(data).hexdigest())
+                with self.assertRaises(ValueError): fixture.verify_final_bytes(locale, data + b"\n", after=after_flag)
+
+    def test_final_sources_reject_older_or_unreviewed_full_payloads(self):
+        original = fixture.final_bytes
+        for mode in ("old_suffix", "remove_proof", "source", "owner", "relationship"):
+            bad = deepcopy(self.final_after)
+            if mode == "old_suffix": bad = deepcopy(self.suffix_after)
+            elif mode == "remove_proof": bad["stateLayout"]["editorial"].pop()
+            elif mode == "source": bad["pages"][7]["blocks"][3]["initialCode"] += "// unrelated source\n"
+            elif mode == "owner": bad["stateLayout"]["editorial"][-1]["id"] = fixture.IDENTITY
+            else: bad["referenceAfter"][-1]["activity"] = "block_0003_0003"
+            with self.subTest(mode=mode), patch.object(fixture, "final_bytes", side_effect=lambda locale="es", *, after=False:
+                                                      fixture.json_bytes(bad) if after else original(locale)), self.assertRaises(ValueError):
+                fixture.final_candidate()
+        with patch.object(fixture, "final_bytes", return_value=b"{}"), self.assertRaises((ValueError, KeyError)):
+            fixture.final_candidate()
+
     def test_cli_export_is_idempotent_without_curricular_writes(self):
         paths = [fixture.ROOT / (fixture.PREFIX.format(locale=locale) + fixture.LESSON) for locale in ("es", "en", "fr")]
         original = {path: path.read_bytes() for path in paths}
@@ -259,7 +329,8 @@ class U12AppendHypothesisTest(unittest.TestCase):
             stamps = {path.name: path.stat().st_mtime_ns for path in output.iterdir()}
             self.assertEqual({"before.json", "after.json", "manifest.json", "current-before.json",
                               "current-after.json", "current-manifest.json", "suffix-before.json",
-                              "suffix-after.json", "suffix-manifest.json"}, exported.keys())
+                              "suffix-after.json", "suffix-manifest.json", "final-before.json",
+                              "final-after.json", "final-manifest.json"}, exported.keys())
             subprocess.run(command, cwd=fixture.ROOT, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.assertEqual(exported, {path.name: path.read_bytes() for path in output.iterdir()})
             self.assertEqual(stamps, {path.name: path.stat().st_mtime_ns for path in output.iterdir()})
@@ -269,10 +340,14 @@ class U12AppendHypothesisTest(unittest.TestCase):
             self.assertEqual(fixture.current_bytes(after=True), exported["current-after.json"])
             self.assertEqual(fixture.suffix_bytes(), exported["suffix-before.json"])
             self.assertEqual(fixture.suffix_bytes(after=True), exported["suffix-after.json"])
+            self.assertEqual(fixture.final_bytes(), exported["final-before.json"])
+            self.assertEqual(fixture.final_bytes(after=True), exported["final-after.json"])
             self.assertEqual("189c10513c55ad49486a9e8dcb4d2e5baf934a8fce3147f20e16b05f6bec7313",
                              hashlib.sha256(exported["manifest.json"]).hexdigest())
             self.assertEqual("cf99c513c1038af7c0059125b1f0cd49b2053e16385ac7b18994683bf9dc2808",
                              hashlib.sha256(exported["current-manifest.json"]).hexdigest())
+            self.assertEqual("a0afcd1cb66f0deee79baf290a19cac207f285f3bcc80cba6f03419887e4b3cc",
+                             hashlib.sha256(exported["suffix-manifest.json"]).hexdigest())
             manifest = json.loads(exported["manifest.json"])
             self.assertEqual(fixture.COMMIT, manifest["commit"])
             self.assertEqual(list(fixture.HISTORICAL), manifest["historical"])
@@ -301,6 +376,18 @@ class U12AppendHypothesisTest(unittest.TestCase):
             for side, expected in (("before", fixture.SUFFIX_SOURCE_HASHES["es"]), ("after", fixture.SUFFIX_AFTER_SHA256)):
                 self.assertEqual(expected, suffix_manifest[side]["sha256"])
                 self.assertEqual(expected, hashlib.sha256(exported[suffix_manifest[side]["file"]]).hexdigest())
+            final_manifest = json.loads(exported["final-manifest.json"])
+            self.assertEqual(fixture.FINAL_BEFORE_COMMIT, final_manifest["beforeCommit"])
+            self.assertEqual(fixture.FINAL_AFTER_COMMIT, final_manifest["afterCommit"])
+            self.assertEqual(11, final_manifest["editorialBefore"])
+            self.assertEqual(16, final_manifest["editorialAfter"])
+            self.assertEqual(12, final_manifest["questionEditorialAfter"])
+            self.assertEqual(self.final_after["stateLayout"]["editorial"][12:], final_manifest["laterEditorial"])
+            for field in ("compilerPuzzlesRequired", "referenceAfter", "activityAfter"):
+                self.assertEqual(self.final_after[field], final_manifest[field])
+            for side, expected in (("before", fixture.FINAL_SOURCE_HASHES["es"]), ("after", fixture.FINAL_AFTER_SHA256)):
+                self.assertEqual(expected, final_manifest[side]["sha256"])
+                self.assertEqual(expected, hashlib.sha256(exported[final_manifest[side]["file"]]).hexdigest())
         self.assertEqual(original, {path: path.read_bytes() for path in paths})
 
     def test_export_conflicts_and_disallowed_destinations_fail_before_writing(self):
@@ -327,6 +414,15 @@ class U12AppendHypothesisTest(unittest.TestCase):
             with patch.object(fixture, "suffix_bytes", return_value=b"{}"), self.assertRaises((ValueError, KeyError)):
                 fixture.export(missing_suffix)
             self.assertFalse(missing_suffix.exists())
+            missing_final = root / "bad-final-source"
+            with patch.object(fixture, "final_bytes", return_value=b"{}"), self.assertRaises((ValueError, KeyError)):
+                fixture.export(missing_final)
+            self.assertFalse(missing_final.exists())
+            final_conflict = root / "final-conflict"; final_conflict.mkdir()
+            (final_conflict / "final-after.json").write_bytes(b"retained final evidence")
+            with self.assertRaises(FileExistsError): fixture.export(final_conflict)
+            self.assertEqual({"final-after.json": b"retained final evidence"},
+                             {path.name: path.read_bytes() for path in final_conflict.iterdir()})
             late_conflict = root / "suffix-conflict"; late_conflict.mkdir()
             (late_conflict / "suffix-after.json").write_bytes(b"retained suffix evidence")
             with self.assertRaises(FileExistsError): fixture.export(late_conflict)

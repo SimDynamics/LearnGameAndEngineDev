@@ -51,6 +51,15 @@ SUFFIX_SOURCE_HASHES = dict(CURRENT_SOURCE_HASHES)
 SUFFIX_AFTER_SHA256 = "d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526"
 SUFFIX_AFTER_SOURCE_HASHES = dict(SOURCE_HASHES, es=SUFFIX_AFTER_SHA256)
 SUFFIX_EDITORIAL_SHA256 = "881930065caeaf0e0ddc512d966a1cde30574b7a1e64eb7aabec2169702b68f4"
+FINAL_BEFORE_COMMIT = CURRENT_BEFORE_COMMIT
+FINAL_AFTER_COMMIT = "79890b03ab6de01c18ca6c3adebeb96bf4d766a8"
+FINAL_SOURCE_HASHES = dict(CURRENT_SOURCE_HASHES)
+# Exports preserve the original LF Git bytes. The corresponding ordinary
+# Windows checkout has CRLF and its own separately identified physical hash.
+FINAL_AFTER_SHA256 = "c74bb6b67eb7fa3f9d08b376324fd82f4a2ba6ef9e0e6e02d4c89d6b27e6de21"
+FINAL_WINDOWS_SHA256 = "42ca5d273fde54b3e35ec672b6b1e3e35140c97e58a18409057a1a6a1c159bc4"
+FINAL_AFTER_SOURCE_HASHES = dict(SOURCE_HASHES, es=FINAL_AFTER_SHA256)
+FINAL_EDITORIAL_SHA256 = "3b5005b3e438c85736efcc50107f71993da4f831e7b9c0c81c0355609685cf85"
 
 
 def json_bytes(value: dict) -> bytes:
@@ -182,6 +191,46 @@ def suffix_candidate() -> tuple[dict, dict, dict[str, dict]]:
     return before, after, family
 
 
+def verify_final_bytes(locale: str, payload: bytes, *, after: bool = False) -> bytes:
+    hashes = FINAL_AFTER_SOURCE_HASHES if after else FINAL_SOURCE_HASHES
+    if locale not in hashes or hashlib.sha256(payload).hexdigest() != hashes[locale]:
+        raise ValueError("Current U12L3 final fixture differs from its independently pinned Git bytes")
+    return payload
+
+
+def final_bytes(locale: str = "es", *, after: bool = False) -> bytes:
+    relative = PREFIX.format(locale=locale) + LESSON
+    commit = FINAL_AFTER_COMMIT if after else FINAL_BEFORE_COMMIT
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    return verify_final_bytes(locale, subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{commit}:{relative}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE), after=after)
+
+
+def final_candidate() -> tuple[dict, dict, dict[str, dict]]:
+    """Return actual publications 11->16, including the completed p8 suffix."""
+    before, prior, family = suffix_candidate()
+    if json.loads(final_bytes()) != before:
+        raise ValueError("Final U12L3 source differs from its actual eleven-edge publication")
+    payload = final_bytes(after=True)
+    after = json.loads(payload)
+    metadata = after["stateLayout"]
+    if (json_bytes(after) != payload or hashlib.sha256(payload).hexdigest() != FINAL_AFTER_SHA256
+            or len(layout._blocks(after)) != 33 or len(metadata["editorial"]) != 16
+            or metadata["editorial"][:14] != prior["stateLayout"]["editorial"]
+            or layout.fingerprint(metadata["editorial"]) != FINAL_EDITORIAL_SHA256
+            or layout.fingerprint(metadata["family"]) != FAMILY_SHA256
+            or layout.fingerprint(metadata["origin"]) != ORIGIN_SHA256
+            or layout.fingerprint(metadata["current"]) != CURRENT_SHA256
+            or tuple(layout.fingerprint(layout._blocks(value)[IDENTITY]) for value in (before, after)) != BLOCK_HASHES):
+        raise ValueError("Final U12L3 fixture lost its complete publication, exact hypothesis or sixteen-edge provenance")
+    if [edge["id"] for edge in metadata["editorial"][14:]] != ["block_0007_0001", "block_0007_0002"]:
+        raise ValueError("Final U12L3 suffix changed its two actual later p8 owners")
+    layout.validate_transition(before, after)
+    layout.check_localized_family([after, family["en"], family["fr"]], ["es", "en", "fr"])
+    return before, after, family
+
+
 def export(output: Path) -> Path:
     """Export authenticated QA copies under this checkout's out/build only."""
     output = Path(os.path.abspath(output))
@@ -203,6 +252,7 @@ def export(output: Path) -> Path:
     before, after, _ = candidate()
     current_before, current_after, _ = current_candidate()
     suffix_before, suffix_after, _ = suffix_candidate()
+    final_before, final_after, _ = final_candidate()
     payloads = {"before.json": historical_bytes(), "after.json": json_bytes(after)}
     manifest = {"commit": COMMIT, "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
                 "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
@@ -238,6 +288,22 @@ def export(output: Path) -> Path:
                        "before": {"file": "suffix-before.json", "sha256": SUFFIX_SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
                        "after": {"file": "suffix-after.json", "sha256": SUFFIX_AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
     payloads["suffix-manifest.json"] = json_bytes(suffix_manifest)
+    payloads["final-before.json"] = final_bytes()
+    payloads["final-after.json"] = json_bytes(final_after)
+    final_manifest = {"beforeCommit": FINAL_BEFORE_COMMIT, "afterCommit": FINAL_AFTER_COMMIT,
+                      "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
+                      "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
+                      "sourceSha256": FINAL_SOURCE_HASHES, "afterSourceSha256": FINAL_AFTER_SOURCE_HASHES,
+                      "afterWindowsSha256": FINAL_WINDOWS_SHA256, "textSha256": list(TEXT_HASHES),
+                      "familySha256": FAMILY_SHA256, "originSha256": ORIGIN_SHA256, "currentSha256": CURRENT_SHA256,
+                      "editorialPrefixSha256": CURRENT_EDITORIAL_PREFIX_SHA256, "editorialSha256": FINAL_EDITORIAL_SHA256,
+                      "editorialBefore": 11, "editorialAfter": 16, "questionEditorialAfter": 12,
+                      "laterEditorial": final_after["stateLayout"]["editorial"][12:],
+                      "compilerPuzzlesRequired": final_after["compilerPuzzlesRequired"],
+                      "referenceAfter": final_after["referenceAfter"], "activityAfter": final_after["activityAfter"],
+                      "before": {"file": "final-before.json", "sha256": FINAL_SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
+                      "after": {"file": "final-after.json", "sha256": FINAL_AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
+    payloads["final-manifest.json"] = json_bytes(final_manifest)
     # All input authentication and existing-target checks precede any write.
     # Identical exported evidence is a no-op; other bytes are never replaced.
     for name, payload in payloads.items():
@@ -261,4 +327,4 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", required=True, type=Path)
     arguments = parser.parse_args()
     export(arguments.output_dir)
-    print(f"Verified historical, published and compatible-suffix U12L3 hypothesis pairs through {SUFFIX_AFTER_COMMIT}.")
+    print(f"Verified historical and current published U12L3 hypothesis fixture pairs through {FINAL_AFTER_COMMIT}.")

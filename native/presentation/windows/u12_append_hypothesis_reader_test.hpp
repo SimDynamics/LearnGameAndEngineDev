@@ -3,17 +3,18 @@
 // curriculum. Answers and pauses below are earned through real controls/audio.
 void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
         const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase,unsigned stage=0) {
-    check(phase<2&&stage<3,"Invalid U12 append-hypothesis reader phase or stage");
-    const bool current_stage=stage>0,suffix_stage=stage==2;
-    const auto stage_name=suffix_stage?"suffix":current_stage?"current":"historical";
+    check(phase<2&&stage<4,"Invalid U12 append-hypothesis reader phase or stage");
+    const bool current_stage=stage>0,suffix_stage=stage>=2,final_stage=stage==3;
+    const auto stage_name=final_stage?"final":suffix_stage?"suffix":current_stage?"current":"historical";
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
     const auto before_hash=current_stage?"e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e"
         :"81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183";
-    const auto after_hash=suffix_stage?"d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526"
+    const auto after_hash=final_stage?"c74bb6b67eb7fa3f9d08b376324fd82f4a2ba6ef9e0e6e02d4c89d6b27e6de21"
+        :suffix_stage?"d90b1ef97fe852fb6e4d6f55d841f04415cbc94a4c58459c83a5b83c5d6af526"
         :current_stage?"9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b"
         :"d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc";
     const std::size_t editorial_prefix=current_stage?11:6;
-    const std::size_t final_editorials=suffix_stage?14:editorial_prefix+1;
+    const std::size_t final_editorials=final_stage?16:suffix_stage?14:editorial_prefix+1;
     check(state::sha256(before_bytes)==before_hash&&state::sha256(after_bytes)==after_hash,
         "The U12 append-hypothesis reader fixtures differ from their authenticated complete documents");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
@@ -35,8 +36,8 @@ void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker
         &&after.state_layout.reading_revisions.front().previous_blocks.contains("block_0002_0001"),
         "The reviewed U12 hypothesis, independent draft owner or closed reading provenance changed");
     if(current_stage){
-        check(!before.compiler_puzzles_required&&!after.compiler_puzzles_required
-            &&before.reference_after.size()==1&&after.reference_after.size()==(suffix_stage?2u:1u)
+        check(!before.compiler_puzzles_required&&after.compiler_puzzles_required==final_stage
+            &&before.reference_after.size()==1&&after.reference_after.size()==(final_stage?3u:suffix_stage?2u:1u)
             &&before.reference_after.front().activity=="block_0003_0003"
             &&after.reference_after.front().activity==before.reference_after.front().activity
             &&before.reference_after.front().blocks==std::vector<std::string>{"block_0003_0004","block_0004_0000","block_0004_0001","block_0004_0002"}
@@ -64,6 +65,15 @@ void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker
         // The runtime archive may reconstruct this question only. Its map was
         // checked above to contain no p6 payload; the full immutable document
         // retains the two later edits. This focal p3 test does not visit p6.
+    }
+    if(final_stage){
+        check(after.reference_after[2].activity=="block_0007_0003"
+            &&after.reference_after[2].blocks==std::vector<std::string>{"block_0008_0000","block_0008_0001"}
+            &&after.pages.at(7).blocks.at(1).review_feedback_options==std::vector<std::string>{
+                "Localiza qué carácter sigue inmediatamente al último carácter ya escrito. El modo de apertura no añade caracteres que no se hayan escrito.",
+                "Distingue los caracteres del archivo de los valores que resultan al leerlos como enteros.",
+                "Compara qué hace std::ios::app con el modo de apertura predeterminado; después sigue la segunda escritura."},
+            "The final U12L3 hypothesis fixture lost the separator repair's authored guides or reference gate");
     }
     const auto draft_key=curriculum::draft_key("programming",before,compiler);
     state::Draft draft;draft.source=compiler.initial_code+"\n// QA: conservar borrador independiente\n";draft.input=" entrada\t\r\n";
