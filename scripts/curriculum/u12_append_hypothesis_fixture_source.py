@@ -35,6 +35,16 @@ FAMILY_SHA256 = "a50cf6bf3544c70d3df1b5f9e152f35d51214cf4d6999d02fb4d8b568a0e044
 ORIGIN_SHA256 = "70274d28ca19d9c4e9c5f2d1632b135aeb5b86e4c4431dfcbd023d68c87a0ef7"
 EDITORIAL_PREFIX_SHA256 = "2bbd1afca905bbafa53a49d7197e1f328bdd2f2107e305583156a3182702387c"
 CURRENT_SHA256 = "553e987ff02d0c346013113e6544d8f615601e4672439fa7e1010fa6a4838e65"
+# The same exact question pair was subsequently published after the first
+# editor/reference preparation. Keep that real 11->12 pair separate from the
+# earlier 6->7 candidate; neither fixture follows mutable HEAD or live assets.
+CURRENT_BEFORE_COMMIT = "18d34c2f94f25a0796534d53fe4fd21a79aa09ce"
+CURRENT_AFTER_COMMIT = "fe9dff99f7237163abd1c00a8aa5c4ddda4a1681"
+CURRENT_SOURCE_HASHES = dict(SOURCE_HASHES, es="e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e")
+CURRENT_AFTER_SHA256 = "9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b"
+CURRENT_AFTER_SOURCE_HASHES = dict(SOURCE_HASHES, es=CURRENT_AFTER_SHA256)
+CURRENT_EDITORIAL_PREFIX_SHA256 = "6ea8b50922d76302cd12241f8a57cc189a0e90532a6f71490e12857b361b0713"
+CURRENT_EDITORIAL_SHA256 = "ec7393ec6101f1c12e30320218d163975231b416c5b87f045f145f370e84b1d4"
 
 
 def json_bytes(value: dict) -> bytes:
@@ -79,6 +89,48 @@ def candidate() -> tuple[dict, dict, dict[str, dict]]:
     return before, after, family
 
 
+def verify_current_bytes(locale: str, payload: bytes, *, after: bool = False) -> bytes:
+    hashes = CURRENT_AFTER_SOURCE_HASHES if after else CURRENT_SOURCE_HASHES
+    if locale not in hashes or hashlib.sha256(payload).hexdigest() != hashes[locale]:
+        raise ValueError("Published U12L3 hypothesis fixture differs from its independently pinned Git bytes")
+    return payload
+
+
+def current_bytes(locale: str = "es", *, after: bool = False) -> bytes:
+    relative = PREFIX.format(locale=locale) + LESSON
+    commit = CURRENT_AFTER_COMMIT if after else CURRENT_BEFORE_COMMIT
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    return verify_current_bytes(locale, subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{commit}:{relative}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE), after=after)
+
+
+def current_candidate() -> tuple[dict, dict, dict[str, dict]]:
+    """Return the complete published 11->12 pair with its unchanged family."""
+    family = {locale: json.loads(current_bytes(locale)) for locale in ("es", "en", "fr")}
+    before = family["es"]
+    original = layout._blocks(before)[IDENTITY]
+    if (original.get("type"), original.get("id"), original.get("question")) != ("output_prediction", ACTIVITY_ID, BEFORE):
+        raise ValueError("Published U12L3 hypothesis fixture owner, type or question changed")
+    metadata = before["stateLayout"]
+    if (len(layout._blocks(before)) != 33 or len(metadata["editorial"]) != 11
+            or layout.fingerprint(metadata["family"]) != FAMILY_SHA256
+            or layout.fingerprint(metadata["origin"]) != ORIGIN_SHA256
+            or layout.fingerprint(metadata["current"]) != CURRENT_SHA256
+            or layout.fingerprint(metadata["editorial"]) != CURRENT_EDITORIAL_PREFIX_SHA256):
+        raise ValueError("Published U12L3 fixture lost its actual family, addresses or eleven-edge provenance")
+    draft = deepcopy(before)
+    layout._blocks(draft)[IDENTITY]["question"] = AFTER
+    after = layout.prepare_v2(draft, "es", family, before)
+    published_after = current_bytes(after=True)
+    if (json_bytes(after) != published_after
+            or hashlib.sha256(published_after).hexdigest() != CURRENT_AFTER_SHA256
+            or tuple(layout.fingerprint(layout._blocks(value)[IDENTITY]) for value in (before, after)) != BLOCK_HASHES
+            or layout.fingerprint(after["stateLayout"]["editorial"]) != CURRENT_EDITORIAL_SHA256):
+        raise ValueError("Published U12L3 candidate differs from its complete exact after publication")
+    return before, after, family
+
+
 def export(output: Path) -> Path:
     """Export authenticated QA copies under this checkout's out/build only."""
     output = Path(os.path.abspath(output))
@@ -98,6 +150,7 @@ def export(output: Path) -> Path:
         if (parent / ".git").exists():
             raise ValueError("U12L3 hypothesis QA output cannot write another checkout")
     before, after, _ = candidate()
+    current_before, current_after, _ = current_candidate()
     payloads = {"before.json": historical_bytes(), "after.json": json_bytes(after)}
     manifest = {"commit": COMMIT, "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
                 "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
@@ -107,6 +160,18 @@ def export(output: Path) -> Path:
                 "before": {"file": "before.json", "sha256": SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
                 "after": {"file": "after.json", "sha256": AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
     payloads["manifest.json"] = json_bytes(manifest)
+    payloads["current-before.json"] = current_bytes()
+    payloads["current-after.json"] = json_bytes(current_after)
+    current_manifest = {"beforeCommit": CURRENT_BEFORE_COMMIT, "afterCommit": CURRENT_AFTER_COMMIT,
+                        "relative": RELATIVE, "stableId": IDENTITY, "activityId": ACTIVITY_ID,
+                        "coordinateBase": 0, "historical": list(HISTORICAL), "field": "question",
+                        "sourceSha256": CURRENT_SOURCE_HASHES, "afterSourceSha256": CURRENT_AFTER_SOURCE_HASHES,
+                        "textSha256": list(TEXT_HASHES), "familySha256": FAMILY_SHA256, "originSha256": ORIGIN_SHA256,
+                        "currentSha256": CURRENT_SHA256, "editorialPrefixSha256": CURRENT_EDITORIAL_PREFIX_SHA256,
+                        "editorialSha256": CURRENT_EDITORIAL_SHA256, "editorialBefore": 11, "editorialAfter": 12,
+                        "before": {"file": "current-before.json", "sha256": CURRENT_SOURCE_HASHES["es"], "blockSha256": BLOCK_HASHES[0]},
+                        "after": {"file": "current-after.json", "sha256": CURRENT_AFTER_SHA256, "blockSha256": BLOCK_HASHES[1]}}
+    payloads["current-manifest.json"] = json_bytes(current_manifest)
     # All input authentication and existing-target checks precede any write.
     # Identical exported evidence is a no-op; other bytes are never replaced.
     for name, payload in payloads.items():
@@ -130,4 +195,4 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", required=True, type=Path)
     arguments = parser.parse_args()
     export(arguments.output_dir)
-    print(f"Verified exact U12L3 hypothesis fixture pair from {COMMIT}.")
+    print(f"Verified historical and published U12L3 hypothesis pairs from {COMMIT} and {CURRENT_BEFORE_COMMIT}->{CURRENT_AFTER_COMMIT}.")

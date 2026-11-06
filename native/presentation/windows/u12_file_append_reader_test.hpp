@@ -7,7 +7,7 @@ void current_u12_file_append_reader(const std::shared_ptr<windows::NarrationWork
         "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json";
     const auto asset_bytes = state::read_bytes(asset);
     std::string normalized(reinterpret_cast<const char*>(asset_bytes.data()), asset_bytes.size()); std::erase(normalized, '\r');
-    check(state::sha256(normalized) == "e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e",
+    check(state::sha256(normalized) == "9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b",
         "The focal U12L3 reader asset differs from its audited current LF document");
     const auto lesson = windows::load_lesson(asset);
     constexpr std::size_t page = 3, choice = 2, compiler = 3, note = 4;

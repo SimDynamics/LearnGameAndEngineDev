@@ -18,6 +18,7 @@ class U12AppendHypothesisTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.before, cls.after, cls.family = fixture.candidate()
+        cls.current_before, cls.current_after, cls.current_family = fixture.current_candidate()
 
     def blocks(self):
         return tuple(deepcopy(layout._blocks(document)[fixture.IDENTITY]) for document in (self.before, self.after))
@@ -106,15 +107,16 @@ class U12AppendHypothesisTest(unittest.TestCase):
                     self.assertTrue(contract.preserves_previous_exercise(fixture.RELATIVE, origin_p, origin_b, old, new))
 
     def test_false_or_missing_editorial_proof_is_refused(self):
-        for mode in ("remove", "before", "after", "owner", "origin"):
-            bad = deepcopy(self.after)
-            if mode == "remove": bad["stateLayout"]["editorial"].pop()
-            elif mode == "before": bad["stateLayout"]["editorial"][-1]["beforeSha256"] = "0" * 64
-            elif mode == "after": bad["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
-            elif mode == "owner": bad["stateLayout"]["editorial"][-1]["id"] = "block_0000_0000"
-            else: bad["stateLayout"]["origin"][0]["id"] = "otra_pagina"
-            with self.subTest(mode=mode), self.assertRaises(layout.LayoutError):
-                layout.validate_transition(self.before, bad)
+        for name, before, after in (("historical", self.before, self.after), ("published", self.current_before, self.current_after)):
+            for mode in ("remove", "before", "after", "owner", "origin"):
+                bad = deepcopy(after)
+                if mode == "remove": bad["stateLayout"]["editorial"].pop()
+                elif mode == "before": bad["stateLayout"]["editorial"][-1]["beforeSha256"] = "0" * 64
+                elif mode == "after": bad["stateLayout"]["editorial"][-1]["afterSha256"] = "0" * 64
+                elif mode == "owner": bad["stateLayout"]["editorial"][-1]["id"] = "block_0000_0000"
+                else: bad["stateLayout"]["origin"][0]["id"] = "otra_pagina"
+                with self.subTest(pair=name, mode=mode), self.assertRaises(layout.LayoutError):
+                    layout.validate_transition(before, bad)
 
     def test_all_git_bytes_and_full_candidate_are_independently_pinned(self):
         self.assertEqual("93923a470b98e9bd6acaf95cf836dd014b5e4a29", fixture.COMMIT)
@@ -125,6 +127,51 @@ class U12AppendHypothesisTest(unittest.TestCase):
         self.assertEqual(fixture.AFTER_SHA256, hashlib.sha256(fixture.json_bytes(self.after)).hexdigest())
         with patch.object(fixture.subprocess, "check_output", return_value=b"{}"), self.assertRaises(ValueError):
             fixture.candidate()
+
+    def test_current_pair_is_the_exact_published_eleven_to_twelve_edge_revision(self):
+        before, after = self.current_before, self.current_after
+        self.assertEqual("18d34c2f94f25a0796534d53fe4fd21a79aa09ce", fixture.CURRENT_BEFORE_COMMIT)
+        self.assertEqual("fe9dff99f7237163abd1c00a8aa5c4ddda4a1681", fixture.CURRENT_AFTER_COMMIT)
+        self.assertEqual(33, len(layout._blocks(before)))
+        self.assertEqual(11, len(before["stateLayout"]["editorial"]))
+        self.assertEqual(12, len(after["stateLayout"]["editorial"]))
+        self.assertEqual(fixture.CURRENT_EDITORIAL_PREFIX_SHA256, layout.fingerprint(before["stateLayout"]["editorial"]))
+        self.assertEqual(fixture.CURRENT_EDITORIAL_SHA256, layout.fingerprint(after["stateLayout"]["editorial"]))
+        self.assertEqual(before["stateLayout"]["editorial"], after["stateLayout"]["editorial"][:-1])
+        self.assertEqual(self.before["stateLayout"]["editorial"], before["stateLayout"]["editorial"][:6])
+        self.assertEqual({"id": fixture.IDENTITY, "beforeSha256": fixture.BLOCK_HASHES[0],
+                          "afterSha256": fixture.BLOCK_HASHES[1]}, after["stateLayout"]["editorial"][-1])
+        for field in before["stateLayout"]:
+            if field != "editorial": self.assertEqual(before["stateLayout"][field], after["stateLayout"][field], field)
+        self.assertEqual([{"activity": "block_0003_0003", "blocks": ["block_0003_0004", "block_0004_0000",
+                          "block_0004_0001", "block_0004_0002"]}], after["referenceAfter"])
+        self.assertEqual([{"activity": "block_0004_0003", "requires": ["block_0003_0003"]}], after["activityAfter"])
+        self.assertNotIn("compilerPuzzlesRequired", before)
+        self.assertNotIn("compilerPuzzlesRequired", after)
+        self.assertEqual(before["referenceAfter"], after["referenceAfter"])
+        self.assertEqual(before["activityAfter"], after["activityAfter"])
+        self.assertEqual(layout.validate(before), layout.validate(after))
+        self.assertEqual(layout.lineage(before), layout.lineage(after))
+        layout.validate_transition(before, after)
+        layout.check_localized_family([after, self.current_family["en"], self.current_family["fr"]], ["es", "en", "fr"])
+        old, new = (layout._blocks(value)[fixture.IDENTITY] for value in (before, after))
+        self.assertTrue(self.preserved(old, new))
+        self.assertEqual({"question"}, {key for key in old.keys() | new.keys() if old.get(key) != new.get(key)})
+        for field in ("id", "type", "code", "answers", "explanation", "language"):
+            self.assertEqual(old[field], new[field])
+        restored = deepcopy(after)
+        layout._blocks(restored)[fixture.IDENTITY]["question"] = fixture.BEFORE
+        restored["stateLayout"]["editorial"].pop()
+        self.assertEqual(before, restored)
+        for locale in ("es", "en", "fr"):
+            for after_flag, expected in ((False, fixture.CURRENT_SOURCE_HASHES), (True, fixture.CURRENT_AFTER_SOURCE_HASHES)):
+                payload = fixture.current_bytes(locale, after=after_flag)
+                self.assertEqual(expected[locale], hashlib.sha256(payload).hexdigest())
+                with self.assertRaises(ValueError): fixture.verify_current_bytes(locale, payload + b"\n", after=after_flag)
+        self.assertEqual(fixture.current_bytes(after=True), fixture.json_bytes(after))
+        self.assertEqual(fixture.CURRENT_AFTER_SHA256, hashlib.sha256(fixture.json_bytes(after)).hexdigest())
+        with patch.object(fixture.subprocess, "check_output", return_value=b"{}"), self.assertRaises(ValueError):
+            fixture.current_candidate()
 
     def test_cli_export_is_idempotent_without_curricular_writes(self):
         paths = [fixture.ROOT / (fixture.PREFIX.format(locale=locale) + fixture.LESSON) for locale in ("es", "en", "fr")]
@@ -137,12 +184,15 @@ class U12AppendHypothesisTest(unittest.TestCase):
             subprocess.run(command, cwd=fixture.ROOT, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             exported = {path.name: path.read_bytes() for path in output.iterdir()}
             stamps = {path.name: path.stat().st_mtime_ns for path in output.iterdir()}
-            self.assertEqual({"before.json", "after.json", "manifest.json"}, exported.keys())
+            self.assertEqual({"before.json", "after.json", "manifest.json", "current-before.json",
+                              "current-after.json", "current-manifest.json"}, exported.keys())
             subprocess.run(command, cwd=fixture.ROOT, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.assertEqual(exported, {path.name: path.read_bytes() for path in output.iterdir()})
             self.assertEqual(stamps, {path.name: path.stat().st_mtime_ns for path in output.iterdir()})
             self.assertEqual(fixture.historical_bytes(), exported["before.json"])
             self.assertEqual(fixture.json_bytes(self.after), exported["after.json"])
+            self.assertEqual(fixture.current_bytes(), exported["current-before.json"])
+            self.assertEqual(fixture.current_bytes(after=True), exported["current-after.json"])
             manifest = json.loads(exported["manifest.json"])
             self.assertEqual(fixture.COMMIT, manifest["commit"])
             self.assertEqual(list(fixture.HISTORICAL), manifest["historical"])
@@ -150,6 +200,15 @@ class U12AppendHypothesisTest(unittest.TestCase):
             for side, expected in (("before", fixture.SOURCE_HASHES["es"]), ("after", fixture.AFTER_SHA256)):
                 self.assertEqual(expected, manifest[side]["sha256"])
                 self.assertEqual(expected, hashlib.sha256(exported[manifest[side]["file"]]).hexdigest())
+            current_manifest = json.loads(exported["current-manifest.json"])
+            self.assertEqual(fixture.CURRENT_BEFORE_COMMIT, current_manifest["beforeCommit"])
+            self.assertEqual(fixture.CURRENT_AFTER_COMMIT, current_manifest["afterCommit"])
+            self.assertEqual(11, current_manifest["editorialBefore"])
+            self.assertEqual(12, current_manifest["editorialAfter"])
+            self.assertEqual(fixture.CURRENT_EDITORIAL_PREFIX_SHA256, current_manifest["editorialPrefixSha256"])
+            for side, expected in (("before", fixture.CURRENT_SOURCE_HASHES["es"]), ("after", fixture.CURRENT_AFTER_SHA256)):
+                self.assertEqual(expected, current_manifest[side]["sha256"])
+                self.assertEqual(expected, hashlib.sha256(exported[current_manifest[side]["file"]]).hexdigest())
         self.assertEqual(original, {path: path.read_bytes() for path in paths})
 
     def test_export_conflicts_and_disallowed_destinations_fail_before_writing(self):
@@ -168,13 +227,39 @@ class U12AppendHypothesisTest(unittest.TestCase):
             with patch.object(fixture, "historical_bytes", return_value=b"{}"), self.assertRaises((ValueError, KeyError)):
                 fixture.export(absent)
             self.assertFalse(absent.exists())
+            missing_current = root / "bad-current-source"
+            with patch.object(fixture, "current_bytes", return_value=b"{}"), self.assertRaises((ValueError, KeyError)):
+                fixture.export(missing_current)
+            self.assertFalse(missing_current.exists())
             other_checkout = root / "checkout"; other_checkout.mkdir(); (other_checkout / ".git").write_text("unrelated", encoding="utf-8")
             with self.assertRaises(ValueError): fixture.export(other_checkout / "qa")
             self.assertFalse((other_checkout / "qa").exists())
-        for output in (fixture.ROOT / "scripts" / "curriculum", fixture.ROOT.parent / "LearnGameAndEngineDev-Work" / "out" / "qa"):
+        for output in (fixture.ROOT / "scripts" / "curriculum",):
             with self.assertRaises(ValueError): fixture.export(output)
-        with tempfile.TemporaryDirectory(prefix="lgaed-u12-outside-") as temporary:
-            with self.assertRaises(ValueError): fixture.export(Path(temporary) / "qa")
+
+    def test_foreign_checkout_negative_is_portable_for_both_work_and_codex_names(self):
+        # Both simulated roots live only inside this checkout's own QA area.
+        # Never target the real sibling Work/Codex directories: when this test
+        # runs in Work, its own out/qa is an authorized destination, not foreign.
+        temporary_root = fixture.ROOT / "out" / "qa" / "u12-append-hypothesis-python"
+        temporary_root.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="portable-", dir=temporary_root) as temporary:
+            root = Path(temporary)
+            names = ("LearnGameAndEngineDev-Codex", "LearnGameAndEngineDev-Work")
+            for scenario, owner_name in enumerate(names):
+                parent = root / str(scenario); parent.mkdir()
+                owner = parent / owner_name; owner.mkdir()
+                other = parent / names[1-scenario]; other.mkdir()
+                (owner / ".git").write_text("test-owned root marker", encoding="utf-8")
+                (other / ".git").write_text("test-owned foreign marker", encoding="utf-8")
+                foreign_output = other / "out" / "qa" / "fixtures"
+                with self.subTest(owner=owner_name), patch.object(fixture, "ROOT", owner), \
+                        patch.object(fixture, "candidate") as authenticate, self.assertRaises(ValueError):
+                    fixture.export(foreign_output)
+                authenticate.assert_not_called()
+                self.assertFalse((other / "out").exists())
+                self.assertEqual("test-owned root marker", (owner / ".git").read_text(encoding="utf-8"))
+                self.assertEqual("test-owned foreign marker", (other / ".git").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

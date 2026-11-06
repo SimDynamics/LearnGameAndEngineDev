@@ -330,14 +330,16 @@ if(BUILD_TESTING)
     set(LGAED_U12_APPEND_HYPOTHESIS_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u12-append-hypothesis")
     set(LGAED_U12_APPEND_HYPOTHESIS_FIXTURES
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/before.json"
-        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json")
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json"
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-before.json"
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-after.json")
     add_custom_command(OUTPUT ${LGAED_U12_APPEND_HYPOTHESIS_FIXTURES}
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_append_hypothesis_fixture_source.py"
             --output-dir "${LGAED_U12_APPEND_HYPOTHESIS_DIR}"
         DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_append_hypothesis_fixture_source.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
-        COMMENT "Verifying the exact U12L3 question proposal without editing curriculum"
+        COMMENT "Verifying historical and integrated U12L3 question fixtures without editing curriculum"
         VERBATIM)
     add_custom_target(lgaed_u12_append_hypothesis_fixtures DEPENDS ${LGAED_U12_APPEND_HYPOTHESIS_FIXTURES})
     add_test(NAME native.u12_append_hypothesis_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
@@ -651,6 +653,11 @@ if(BUILD_TESTING)
                 "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json"
                 "${hypothesis_reader_phase}")
         set_tests_properties(native.u12_append_hypothesis_reader_${hypothesis_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+        add_test(NAME native.u12_append_hypothesis_current_reader_${hypothesis_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u12-append-hypothesis-current
+                "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-after.json"
+                "${hypothesis_reader_phase}")
+        set_tests_properties(native.u12_append_hypothesis_current_reader_${hypothesis_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     endforeach()
     add_test(NAME native.u12_file_roundtrip_reader COMMAND lgaed_lesson_reader_tests --u12-file-roundtrip-reader)
     set_tests_properties(native.u12_file_roundtrip_reader PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
@@ -991,6 +998,9 @@ if(BUILD_TESTING)
     add_test(NAME native.u12_append_hypothesis_contract COMMAND lgaed_lesson_tests --u12-append-hypothesis
         "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/after.json")
     set_tests_properties(native.u12_append_hypothesis_contract PROPERTIES TIMEOUT 60)
+    add_test(NAME native.u12_append_hypothesis_current_contract COMMAND lgaed_lesson_tests --u12-append-hypothesis-current
+        "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-before.json" "${LGAED_U12_APPEND_HYPOTHESIS_DIR}/current-after.json")
+    set_tests_properties(native.u12_append_hypothesis_current_contract PROPERTIES TIMEOUT 60)
     add_test(NAME native.lesson_contract COMMAND lgaed_lesson_tests)
     add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
