@@ -117,7 +117,7 @@ def reviewed_math_label(block: dict) -> dict | None:
     return next((spec for spec in MATH_LABEL_REVISIONS.values() if digest == spec["after"]), None)
 
 # CPP_ACREDITACION_DIAGNOSTICO_INTENCIONAL: a new Windows goal for exactly
-# these five published editors. Source, owner and historical storage stay fixed.
+# these published editors. Source, owner and historical storage stay fixed.
 _DIAGNOSTIC_PREFIX = "cpp_fundamentals__datos_propios_y_estado_valido__"
 COMPILE_DIAGNOSTICS = {
     (_DIAGNOSTIC_PREFIX + "consultas_const_y_objetos_constantes", "block_0006_0006"): {
@@ -141,6 +141,58 @@ COMPILE_DIAGNOSTICS = {
         "before": "b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed",
     },
 }
+_PROJECT_DIAGNOSTIC_PREFIX = "cpp_fundamentals__funciones_y_contratos__"
+PROJECT_COMPILE_DIAGNOSTICS = {
+    (_PROJECT_DIAGNOSTIC_PREFIX + "declaraciones_y_firmas", "block_0014_0002"): {
+        "diagnostic": "u6-difference-unselected-definition", "project": True,
+        "before": "d17f1d73d7217ea45e1468f6ed0d1a5ef3565ecce33410a8022660baff950eba",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "declaraciones_y_firmas", "block_0015_0002"): {
+        "diagnostic": "u6-difference-conflicting-return", "project": True,
+        "before": "e5b83315920efce2c1a6092721096ef596e2c58d7c96089ba01075bceb3986df",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "declaraciones_y_firmas", "block_0017_0002"): {
+        "diagnostic": "u6-difference-missing-header", "project": True,
+        "before": "3d0f8c6e8fc84ec145f1c9a6c79ec7d5fbe50d8a70294c9f6effc0b4d8eb755c",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0016_0002"): {
+        "diagnostic": "u6-envelopes-missing-header", "project": True,
+        "before": "ae23ef7cc266649cbad08efc8736916121dc404e132520a0c386ea73b23d7782",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0017_0002"): {
+        "diagnostic": "u6-envelopes-missing-declaration", "project": True,
+        "before": "1c69caf83414219854952076e951e9adb3f9b6168503f60113a2d858103ef650",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0018_0002"): {
+        "diagnostic": "u6-envelopes-unselected-definitions", "project": True,
+        "before": "b263e83bb0b912281964eb60261d33713e9cb6d5df046b375f5f008544c4a405",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0019_0002"): {
+        "diagnostic": "u6-envelopes-duplicate-definition", "project": True,
+        "before": "72ac435d8a7399bd39c91be5a72ae2034aeb9653a8a78ec45fa3f82e6ac9470e",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0021_0002"): {
+        "diagnostic": "u6-series-unknown-call", "project": True,
+        "before": "b84a7b928030171e03178f3300a1fd3dbbd86388ff998fcd8ddea9d247f9effe",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0022_0002"): {
+        "diagnostic": "u6-series-unselected-definitions", "project": True,
+        "before": "157dc0f18f12db33cc3a7787009c408bb067ea833544df42ebdc76e2e2c00e34",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "interfaces_cabeceras_y_programas_con_varios_archivos", "block_0023_0002"): {
+        "diagnostic": "u6-series-duplicate-definition", "project": True,
+        "before": "26416e82df9c1bd708b840b6d940c79db644f69bcd2acecc56f595f23cf48d20",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "construir_un_proyecto_desde_su_interfaz", "block_0013_0002"): {
+        "diagnostic": "u6-shelf-unselected-definition", "project": True,
+        "before": "2c568ff3ab456b8111cb9a338fc9c0d6f9ccff45a1e1cd3f840cee872900f7e3",
+    },
+    (_PROJECT_DIAGNOSTIC_PREFIX + "construir_un_proyecto_desde_su_interfaz", "block_0014_0002"): {
+        "diagnostic": "u6-shelf-conflicting-return", "project": True,
+        "before": "5b1315f399da68b066291bf96a7f1ed8cfd1aadf3964b2d2ca55cd1f6bae50ec",
+    },
+}
+COMPILE_DIAGNOSTICS.update(PROJECT_COMPILE_DIAGNOSTICS)
 
 
 def validate_compile_check_contract(block: dict) -> dict | None:
@@ -158,8 +210,14 @@ def validate_compile_check_contract(block: dict) -> dict | None:
     if "explanation" in config:
         require(type(config["explanation"]) is str and bool(config["explanation"].strip()),
                 "A compiler diagnostic explanation must be nonempty text")
-    require(not ({"outputCheck", "projectFiles", "sourceFiles", "cmake", "initialStandardInput"} & block.keys()),
-            "compileCheck has no output, project or standard-input contract")
+    require(not ({"outputCheck", "cmake", "initialStandardInput"} & block.keys()),
+            "compileCheck has no output, CMake or standard-input contract")
+    if spec.get("project", False):
+        require({"projectFiles", "sourceFiles"} <= block.keys(),
+                "A reviewed project diagnostic retains its complete files and source selection")
+    else:
+        require(not ({"projectFiles", "sourceFiles"} & block.keys()),
+                "A reviewed single-source diagnostic cannot gain project files or source selection")
     original = {key: value for key, value in block.items() if key != "compileCheck"}
     require(fingerprint(original) == spec["before"], "A reviewed diagnostic must retain its exact complete initial block")
     return spec
@@ -171,19 +229,30 @@ INTENTIONAL_EXIT_GOAL = {
     "before": "d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c",
     "output": "Entrada invalida|9:4",
 }
+INTENTIONAL_EXIT_GOALS = (
+    INTENTIONAL_EXIT_GOAL,
+    {
+        "lesson": "cpp_fundamentals__archivos_y_programa_completo__construir_un_programa_de_carga_y_guardado",
+        "identity": "block_0004_0017",
+        "before": "6f796c5c55683ac266ae3f83c54f935273c341c34da087161276c7e361524ae8",
+        "output": "Error al abrir salida",
+    },
+)
 
 
-def reviewed_intentional_exit_goal(block: dict) -> bool:
-    """Only this complete exploratory editor may gain its reviewed return-1 goal.
+def reviewed_intentional_exit_spec(block: dict) -> dict | None:
+    """Only a complete reviewed exploratory editor may gain its return-1 goal.
 
     The existing source/draft address stays intact; native completion proofs
     independently include stdout and the newly authored nonzero process result.
     """
     if block.get("type") != "cpp_compiler" or "outputCheck" not in block:
-        return False
+        return None
     original = {key: value for key, value in block.items() if key != "outputCheck"}
-    if fingerprint(original) != INTENTIONAL_EXIT_GOAL["before"]:
-        return False
+    before = fingerprint(original)
+    spec = next((item for item in INTENTIONAL_EXIT_GOALS if item["before"] == before), None)
+    if spec is None:
+        return None
     config = block["outputCheck"]
     require(type(config) is dict and set(config) == {"cases"},
             "The reviewed intentional-exit editor needs its exact output contract")
@@ -192,11 +261,15 @@ def reviewed_intentional_exit_goal(block: dict) -> bool:
             "The reviewed intentional-exit editor needs exactly one output case")
     case = cases[0]
     require(set(case) == {"standardInput", "outputs", "exitCode", "explanation"}
-            and case["standardInput"] == "" and case["outputs"] == [INTENTIONAL_EXIT_GOAL["output"]]
+            and case["standardInput"] == "" and case["outputs"] == [spec["output"]]
             and type(case["exitCode"]) is int and case["exitCode"] == 1
             and type(case["explanation"]) is str and bool(case["explanation"].strip()),
             "The reviewed editor requires exact stdout without a final newline, empty input, return 1 and an explanation")
-    return True
+    return spec
+
+
+def reviewed_intentional_exit_goal(block: dict) -> bool:
+    return reviewed_intentional_exit_spec(block) is not None
 
 
 CRT_OUTPUT_REVISION = {
@@ -720,8 +793,8 @@ def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
         if "compileCheck" in block:
             require(after[identity].get("compileCheck") == block["compileCheck"],
                     "A published compiler diagnostic objective cannot be removed or replaced")
-        if reviewed_intentional_exit_goal(block):
-            require(reviewed_intentional_exit_goal(after[identity]),
+        if (spec := reviewed_intentional_exit_spec(block)) is not None:
+            require(reviewed_intentional_exit_spec(after[identity]) == spec,
                     "A published intentional-exit objective cannot be removed or replaced")
         if reviewed_crt_output_variant(block):
             require(reviewed_crt_output_variant(after[identity]),
@@ -1414,14 +1487,14 @@ def _validate_intentional_exit_goals(document: dict) -> None:
                   for b, block in enumerate(page.get("blocks", []))})
 
     def owner(identity: str, block: dict) -> None:
-        if not reviewed_intentional_exit_goal(block):
+        spec = reviewed_intentional_exit_spec(block)
+        if spec is None:
             return
         require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es"
-                and document.get("id") == INTENTIONAL_EXIT_GOAL["lesson"]
-                and identity == INTENTIONAL_EXIT_GOAL["identity"],
+                and document.get("id") == spec["lesson"] and identity == spec["identity"],
                 "The reviewed intentional-exit goal belongs to its original Spanish v2 editor")
         proofs = [proof for proof in meta["editorial"] if proof["id"] == identity]
-        require(proofs and any(proof["beforeSha256"] == INTENTIONAL_EXIT_GOAL["before"] for proof in proofs),
+        require(proofs and any(proof["beforeSha256"] == spec["before"] for proof in proofs),
                 "The intentional-exit goal requires its exact complete original/editorial provenance")
 
     for identity, block in available.items():
@@ -1430,8 +1503,8 @@ def _validate_intentional_exit_goals(document: dict) -> None:
         for page, record in zip(snapshot["pages"], snapshot["current"]):
             for identity, block in zip(record["blocks"], page.get("blocks", [])):
                 owner(identity, block)
-                if reviewed_intentional_exit_goal(block):
-                    require(reviewed_intentional_exit_goal(available[identity]),
+                if (spec := reviewed_intentional_exit_spec(block)) is not None:
+                    require(reviewed_intentional_exit_spec(available[identity]) == spec,
                             "A historical intentional-exit objective must retain its current archived or active goal")
 
 

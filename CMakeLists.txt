@@ -228,7 +228,11 @@ if(BUILD_TESTING)
     set_tests_properties(native.lesson_entry_policy PROPERTIES TIMEOUT 30)
     set(LGAED_COMPILER_CONTRACT_FIXTURES
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/crt-b9e32b9/lesson_clasificar_caracteres_y_normalizar_una_copia.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-585cef9/lesson_compartir_flujos_sin_acoplar_el_calculo.json")
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-585cef9/lesson_compartir_flujos_sin_acoplar_el_calculo.json"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-l26-e8389c8/lesson_construir_un_programa_de_carga_y_guardado.json"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-diagnostics-e8389c8/lesson_declaraciones_y_firmas.json"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-diagnostics-e8389c8/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-diagnostics-e8389c8/lesson_construir_un_proyecto_desde_su_interfaz.json")
     add_custom_command(OUTPUT ${LGAED_COMPILER_CONTRACT_FIXTURES}
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_contract_fixture_source.py"
             --output-dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures"
@@ -238,6 +242,38 @@ if(BUILD_TESTING)
         COMMENT "Verifying immutable pre-adoption compiler contracts from local Git"
         VERBATIM)
     add_custom_target(lgaed_compiler_contract_fixtures DEPENDS ${LGAED_COMPILER_CONTRACT_FIXTURES})
+    add_executable(lgaed_u6_diagnostic_source_tests native/core/u6_diagnostic_source_tests.cpp)
+    target_link_libraries(lgaed_u6_diagnostic_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_u6_diagnostic_source_tests lgaed_compiler_contract_fixtures)
+    add_test(NAME native.u6_diagnostic_sources COMMAND lgaed_u6_diagnostic_source_tests)
+    set_tests_properties(native.u6_diagnostic_sources PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_u6_diagnostic_loader_tests native/core/u6_diagnostic_loader_tests.cpp)
+    target_link_libraries(lgaed_u6_diagnostic_loader_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_u6_diagnostic_loader_tests lgaed_compiler_contract_fixtures)
+    add_test(NAME native.u6_diagnostic_loader COMMAND lgaed_u6_diagnostic_loader_tests)
+    set_tests_properties(native.u6_diagnostic_loader PROPERTIES TIMEOUT 60)
+    add_test(NAME native.u6_diagnostic_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u6_project_diagnostic.py)
+    set_tests_properties(native.u6_diagnostic_authoring PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_u6_diagnostic_runner_tests native/platform/windows/u6_diagnostic_runner_tests.cpp)
+    target_link_libraries(lgaed_u6_diagnostic_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_u6_diagnostic_runner_tests lgaed_cpp_tool_host lgaed_compiler_contract_fixtures)
+    foreach(u6_diagnostic IN ITEMS
+        u6-difference-unselected-definition u6-difference-conflicting-return u6-difference-missing-header
+        u6-envelopes-missing-header u6-envelopes-missing-declaration u6-envelopes-unselected-definitions u6-envelopes-duplicate-definition
+        u6-series-unknown-call u6-series-unselected-definitions u6-series-duplicate-definition
+        u6-shelf-unselected-definition u6-shelf-conflicting-return)
+        add_test(NAME native.${u6_diagnostic} COMMAND lgaed_u6_diagnostic_runner_tests ${u6_diagnostic})
+        set_tests_properties(native.${u6_diagnostic} PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
+    endforeach()
+    add_executable(lgaed_u12l26_exit_tests native/platform/windows/u12l26_exit_tests.cpp)
+    target_link_libraries(lgaed_u12l26_exit_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_u12l26_exit_tests lgaed_cpp_tool_host lgaed_compiler_contract_fixtures)
+    add_test(NAME native.u12l26_intentional_exit COMMAND lgaed_u12l26_exit_tests)
+    set_tests_properties(native.u12l26_intentional_exit PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_test(NAME native.u12l26_exit_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u12l26_intentional_exit.py)
+    set_tests_properties(native.u12l26_exit_authoring PROPERTIES TIMEOUT 60)
     add_executable(lgaed_crt_output_variant_tests native/platform/windows/crt_output_variant_tests.cpp)
     target_link_libraries(lgaed_crt_output_variant_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_crt_output_variant_tests lgaed_cpp_tool_host lgaed_compiler_contract_fixtures)
@@ -250,7 +286,7 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_reading_gate_policy_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.reading_gate_policy COMMAND lgaed_reading_gate_policy_tests)
     add_executable(lgaed_narration_legacy_policy_tests native/presentation/windows/narration_legacy_policy_tests.cpp)
-    target_link_libraries(lgaed_narration_legacy_policy_tests PRIVATE lgaed_host_options)
+    target_link_libraries(lgaed_narration_legacy_policy_tests PRIVATE lgaed_core)
     add_test(NAME native.narration_legacy_policy COMMAND lgaed_narration_legacy_policy_tests)
     set_tests_properties(native.narration_legacy_policy PROPERTIES TIMEOUT 30)
     add_executable(lgaed_narration_policy_bridge_tests native/platform/windows/narration_policy_bridge_tests.cpp)
@@ -274,6 +310,9 @@ if(BUILD_TESTING)
     set_tests_properties(native.u12_compiler_batch PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_test(NAME native.u12_output_speech COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_u12_output_speech.py)
+    add_test(NAME native.output_data_policy_versions COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_output_data_policy_versions.py)
+    set_tests_properties(native.output_data_policy_versions PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME native.u12_insertion_extraction_math COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py
         -k ProgrammingInsertionExtractionMathBridgeTest)

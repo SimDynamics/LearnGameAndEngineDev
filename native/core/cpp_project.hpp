@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <map>
 #include <optional>
 #include <string>
@@ -14,6 +15,17 @@ struct CmakeConfig {
     bool operator==(const CmakeConfig&)const=default;
 };
 using CppProjectFiles=std::vector<std::pair<std::string,std::string>>;
+// A source-bound prepared project rejection. Values are derived by the core's
+// closed recipes, never accepted as arbitrary diagnostic metadata from JSON.
+struct CppProjectDiagnostic {
+    CppProjectFiles control_files;
+    std::vector<std::string> control_sources;
+    std::string expected_file;
+    std::vector<std::string> error_codes,symbols;
+    std::size_t first_line=0,last_line=0;
+    bool link=false;
+    bool operator==(const CppProjectDiagnostic&) const=default;
+};
 [[nodiscard]] bool is_cpp_source_file(std::string_view);
 // Portable paths plus Windows device/case/normalization safeguards. This
 // validates virtual paths; materialization also checks real reparse points.

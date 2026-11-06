@@ -3,13 +3,27 @@ package com.learngraphicsprogramming.app.narration
 /** Windows reading refinements, applied by the generated host frontend only.
  * The displayed source, Android implementation and stored recordings stay intact. */
 internal object WindowsNarrationSpeechRules {
-    // Request-scoped reconstruction of the immediately preceding Windows
-    // output policy. Both source projection and word ownership use this scope.
-    private val previousOutputDataPolicy = ThreadLocal.withInitial { false }
+    // Historical pronunciation is request scoped. B42 is the intermediate
+    // displayed-record policy; ORIGINAL precedes it. Neither archive may use
+    // refinements added to the current policy.
+    enum class OutputDataPolicy { CURRENT, B42, ORIGINAL }
+    private val outputDataPolicy = ThreadLocal.withInitial { OutputDataPolicy.CURRENT }
+    // Anticipation must apply the same single sentence split as the visible
+    // reader. Historical pack export retains the original extractor chunks.
+    private val wholeReadingRegions = ThreadLocal.withInitial { false }
+    fun keepWholeReadingRegions(): Boolean = wholeReadingRegions.get()
+    fun <T> withWholeReadingRegions(action: () -> T): T {
+        val saved = wholeReadingRegions.get()
+        wholeReadingRegions.set(true)
+        return try { action() } finally { wholeReadingRegions.set(saved) }
+    }
+    fun <T> withOutputDataPolicy(policy: OutputDataPolicy, action: () -> T): T {
+        val saved = outputDataPolicy.get()
+        outputDataPolicy.set(policy)
+        return try { action() } finally { outputDataPolicy.set(saved) }
+    }
     fun <T> withPreviousOutputDataPolicy(previous: Boolean, action: () -> T): T {
-        val saved = previousOutputDataPolicy.get()
-        previousOutputDataPolicy.set(previous)
-        return try { action() } finally { previousOutputDataPolicy.set(saved) }
+        return withOutputDataPolicy(if (previous) OutputDataPolicy.ORIGINAL else OutputDataPolicy.CURRENT, action)
     }
     private val implicitAssignment = Regex("[\\p{L}_][\\p{L}\\p{M}\\p{N}_]*[ \\t]*=(?!=)")
     private val implicitNumber = Regex("(?:0[xX][0-9a-fA-F]+|0[bB][01]+|(?:[0-9]+(?:'[0-9]+)*(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?)[uUlLfF]*")
@@ -222,6 +236,16 @@ internal object WindowsNarrationSpeechRules {
     private val recordSourceCue = Regex("(?iu)\\b(?:variable|expresi[oó]n|declaraci[oó]n|comando|llamada)\\s*$")
     private val recordSourceOperators = listOf("::", "://", "<<", ">>", "++", "--", "->")
     private val outputPhrase = Regex("[\\p{L}\\p{M}]+(?:[ \\t]+[\\p{L}\\p{M}]+)+[.,!?]?")
+    private val reportLabel = Regex("(?:^|[;|])(?:[\\p{L}_][\\p{L}\\p{M}\\p{N}_]{1,}(?:[ \\t]+[\\p{L}_][\\p{L}\\p{M}\\p{N}_]*)*):(?!:)")
+    private val currentOutputIntro = Regex(
+        "(?iu)(?:\\binforme[ \\t]+(?:empieza|comienza)[ \\t]+(?:con|por)|" +
+        "\\binforme[ \\t]+terminado[ \\t]+en|\\b(?:presenta|presentan|muestran)|" +
+        "\\bmuestra[ \\t]*,[ \\t]*en[ \\t]+(?:ese[ \\t]+)?orden[ \\t]*,|" +
+        "\\b(?:archivo|muestra)[ \\t]+contiene(?:[ \\t]+únicamente)?|" +
+        "\\bcontenido[ \\t]+(?:será|es)|\\bcadena[ \\t]+(?:compuesta|resultante|obtenida)[ \\t]+(?:será|es))[ \\t]*$")
+    private val currentOutputList = Regex(
+        "(?iu)(?<![\\p{L}\\p{M}\\p{N}_])(?:informe[ \\t]+(?:empieza|comienza)[ \\t]+(?:con|por)|" +
+        "presenta|presentan|muestran)(?![\\p{L}\\p{M}\\p{N}_])")
 
     /** One local prose sentence, with inline samples hidden from cue detection.
      * Its bounds are independent of display tint. A cue inside another sample
@@ -261,7 +285,22 @@ internal object WindowsNarrationSpeechRules {
      * numeric colons, but pronounce = as data instead of a C++ operation.
      * Ordinary labels keep isDisplayedOutputValue's existing pause/cache path. */
     fun isDisplayedOutputRecord(text: String, opening: Int, value: String): Boolean {
-        if (previousOutputDataPolicy.get()) return false
+        if (outputDataPolicy.get() == OutputDataPolicy.ORIGINAL) return false
+        if (b42DisplayedOutputRecord(text, opening, value)) return true
+        if (outputDataPolicy.get() != OutputDataPolicy.CURRENT) return false
+        // Keep already supported labels/phrases on their exact B42 path. In
+        // particular, a label followed by 11 must not acquire another number
+        // rendering merely because the current record grammar is broader.
+        if (isDisplayedOutputValue(text, opening, value) || b42DisplayedOutputPhrase(text, opening, value)) return false
+        if ((!recordEquality.containsMatchIn(value) && !reportLabel.containsMatchIn(value)) ||
+                value.trimEnd().endsWith(';') || value.any { it in "\\\"'`" } ||
+                recordSourceOperators.any(value::contains) || recordSourceStart.containsMatchIn(value)) return false
+        return currentOutputContext(text, opening, value)
+    }
+
+    // Frozen B42 grammar: changing this path would lose the recording keys of
+    // the intermediate version even when ORIGINAL still reconstructed safely.
+    private fun b42DisplayedOutputRecord(text: String, opening: Int, value: String): Boolean {
         if (!recordEquality.containsMatchIn(value) ||
                 value.trimEnd().endsWith(';') || value.any { it in "\\\"'`" } ||
                 recordSourceOperators.any(value::contains) || recordSourceStart.containsMatchIn(value)) return false
@@ -276,7 +315,13 @@ internal object WindowsNarrationSpeechRules {
     }
 
     fun isDisplayedOutputPhrase(text: String, opening: Int, value: String): Boolean {
-        if (previousOutputDataPolicy.get()) return false
+        if (outputDataPolicy.get() == OutputDataPolicy.ORIGINAL) return false
+        if (b42DisplayedOutputPhrase(text, opening, value)) return true
+        return outputDataPolicy.get() == OutputDataPolicy.CURRENT && outputPhrase.matches(value) &&
+            currentOutputContext(text, opening, value)
+    }
+
+    private fun b42DisplayedOutputPhrase(text: String, opening: Int, value: String): Boolean {
         if (!outputPhrase.matches(value)) return false
         val closing = opening + value.length + 2
         if (closing > text.length) return false
@@ -288,10 +333,25 @@ internal object WindowsNarrationSpeechRules {
             outputListCue.containsMatchIn(exitCodePhrase.replace(before, " ")) || promptTailCue.containsMatchIn(after)
     }
 
+    private fun currentOutputContext(text: String, opening: Int, value: String): Boolean {
+        val closing = opening + value.length + 2
+        if (closing > text.length) return false
+        val (before, after) = outputSentence(text, opening, closing)
+        // Masked sentence context prevents an output word inside an earlier
+        // C++ sample from classifying this sample. Scope ends at real prose
+        // punctuation, while punctuation inside samples remains owned data.
+        val prefix = text.substring((opening - 160).coerceAtLeast(0), opening)
+        if (explicitSourceCue.containsMatchIn(prefix) || recordSourceCue.containsMatchIn(prefix) ||
+                sourceLabelTail.containsMatchIn(after)) return false
+        val sentence = exitCodePhrase.replace(before, " ")
+        return currentOutputIntro.containsMatchIn(prefix) || currentOutputList.containsMatchIn(sentence) ||
+            outputValueCue.containsMatchIn(exitCodePhrase.replace(prefix, " ")) || outputListCue.containsMatchIn(sentence)
+    }
+
     // Labels pause before their value. Numeric field separators such as 0:0
     // remain literal punctuation, even in the same displayed output record.
     fun isOutputLabelColon(source: String, index: Int): Boolean {
-        if (previousOutputDataPolicy.get()) return false
+        if (outputDataPolicy.get() == OutputDataPolicy.ORIGINAL) return false
         if (source.getOrNull(index) != ':' || source.getOrNull(index - 1) == ':' || source.getOrNull(index + 1) == ':') return false
         var first = index
         while (first > 0 && (source[first - 1].isLetterOrDigit() || source[first - 1] == '_')) first--

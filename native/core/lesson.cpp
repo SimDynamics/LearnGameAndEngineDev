@@ -325,6 +325,10 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     token(activity.initial_code); token(activity.language);
     if (activity.compile_check) {
         token("compile-check-v1"); token(activity.compile_check->diagnostic);
+        if(!activity.project_files.empty()) {
+            token("compile-check-project-v1");
+            token(cpp_project_frame(activity.project_files,activity.source_files,activity.cmake));
+        }
         return result;
     }
     // Keep historical single-file identities byte-for-byte compatible. A

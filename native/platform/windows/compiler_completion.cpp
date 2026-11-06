@@ -254,10 +254,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
 bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const CppRunResult& result,std::string_view feedback) {
     if(!block.compile_check||!captured.diagnostic||!expected_compile_diagnostic(captured,result))return false;
-    const auto source=curriculum::prepare_compile_diagnostic_source(block,captured.source_utf8);
-    if(!source||captured.diagnostic->control_source_utf8!=source->control_source||
-        captured.diagnostic->expected_error_code!=source->expected_msvc_error||
-        captured.diagnostic->first_line!=source->first_line||captured.diagnostic->last_line!=source->last_line)return false;
+    if(*captured.diagnostic!=prepare_cpp_diagnostic_request(block,captured))return false;
     clear_compiler_puzzle_review(data,lesson,block);
     if(compiler_puzzle_completed(data,lesson,block))return true;
     const auto key=base(lesson,block),program=compiler_program_frame(captured);

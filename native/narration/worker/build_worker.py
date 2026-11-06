@@ -750,6 +750,12 @@ def windows_reading_source(name: str, code: str) -> str:
         code = exact(code, 'listOf("auto", "text", "inline", "block")',
                      'listOf("auto", "text", "inline", "block", "cpp", "cpp_previous_parentheses")')
     elif name == "LessonNarrationText":
+        # Windows anticipation owns original reading regions. Its caller uses
+        # the same NarrationSegments sentence splitter as the visible reader;
+        # a second 700-unit split would manufacture different recording keys.
+        # Historical pack export does not enter this request-local scope.
+        code = exact(code, 'return output.flatMap(::segments)',
+                     'return if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) output else output.flatMap(::segments)')
         code = exact(code, 'append(output, block.string("question"))',
                      'append(output, block.string("question"), block.mode())', count=2)
         code = exact(code, 'options(output, block.optJSONArray("options"))',

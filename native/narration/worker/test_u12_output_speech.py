@@ -67,8 +67,10 @@ class U12DisplayedOutputSpeechTest(unittest.TestCase):
                 if path.read_bytes() != raw or path.stat().st_mtime_ns != modified:
                     raise AssertionError(f"Speech planning changed an original curricular asset: {path}")
 
-    def plan(self, source, *, mode="auto", context="auto", voice="ef_dora", previous_policy=None):
+    def plan(self, source, *, mode="auto", context="auto", voice="ef_dora", previous_policy=None, output_policy=None):
         policy = {} if previous_policy is None else {"previousOutputDataPolicy": previous_policy}
+        if output_policy is not None:
+            policy["outputDataPolicy"] = output_policy
         parts = self.worker.ask("plan", text=source, language="es", voice=voice,
                                 mathMode=mode, readingContext=context, **policy)["segments"]
         self.assertTrue(parts, source)

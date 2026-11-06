@@ -197,9 +197,10 @@ void reject_unmapped_reviewed_math(const JsonArray& pages) {
 }
 struct ReviewedCompileCheck {
     std::string_view lesson, identity, diagnostic, source_sha256, payload_sha256;
+    bool project=false;
 };
-const std::array<ReviewedCompileCheck,5>& reviewed_compile_checks() {
-    static constexpr std::array<ReviewedCompileCheck,5> values{{
+const std::array<ReviewedCompileCheck,17>& reviewed_compile_checks() {
+    static constexpr std::array<ReviewedCompileCheck,17> values{{
         {"cpp_fundamentals__datos_propios_y_estado_valido__consultas_const_y_objetos_constantes","block_0006_0006","const-member-call",
             "1274ec3ea9af32c3e1bd1476e05fccff6ce78ca9eea984bc646a976d0d01d448","05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27"},
         {"cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado","block_0012_0008","explicit-copy-initialization",
@@ -209,7 +210,31 @@ const std::array<ReviewedCompileCheck,5>& reviewed_compile_checks() {
         {"cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado","block_0014_0011","explicit-assignment",
             "3fa4838a63863d92e57912b0f3101d423f523040155672447af08608c126bed5","3e8eb728eac0d493c864596ec2364fe6c69ff85ce01408dd0020cec36ad6b087"},
         {"cpp_fundamentals__datos_propios_y_estado_valido__argumentos_con_tipos_que_expresan_su_funcion","block_0006_0006","swapped-named-arguments",
-            "f84caa30d3a6dd9cdcc741adbadba33f4e139416608247ab650cbd6eff02cd53","b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed"}
+            "f84caa30d3a6dd9cdcc741adbadba33f4e139416608247ab650cbd6eff02cd53","b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed"},
+        {"cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas","block_0014_0002","u6-difference-unselected-definition",
+            "fe06539284d12f8621a06e997ef68e3696a3c79ea66b9bd62a60ea442bf12f34","d17f1d73d7217ea45e1468f6ed0d1a5ef3565ecce33410a8022660baff950eba",true},
+        {"cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas","block_0015_0002","u6-difference-conflicting-return",
+            "fe06539284d12f8621a06e997ef68e3696a3c79ea66b9bd62a60ea442bf12f34","e5b83315920efce2c1a6092721096ef596e2c58d7c96089ba01075bceb3986df",true},
+        {"cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas","block_0017_0002","u6-difference-missing-header",
+            "46aef238e19c467244140d20a5169315e0266b9e8412c3953ce2399e331c2e35","3d0f8c6e8fc84ec145f1c9a6c79ec7d5fbe50d8a70294c9f6effc0b4d8eb755c",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0016_0002","u6-envelopes-missing-header",
+            "0ed979b41f9fe2022c1202639331d46bb4a67fdef289d8bb7be131ed4c261857","ae23ef7cc266649cbad08efc8736916121dc404e132520a0c386ea73b23d7782",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0017_0002","u6-envelopes-missing-declaration",
+            "6a8d64c9ffaf614e1f13f6a723d88fa4737c6b45809838f0d93d15f261d91b0a","1c69caf83414219854952076e951e9adb3f9b6168503f60113a2d858103ef650",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0018_0002","u6-envelopes-unselected-definitions",
+            "6a8d64c9ffaf614e1f13f6a723d88fa4737c6b45809838f0d93d15f261d91b0a","b263e83bb0b912281964eb60261d33713e9cb6d5df046b375f5f008544c4a405",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0019_0002","u6-envelopes-duplicate-definition",
+            "6a8d64c9ffaf614e1f13f6a723d88fa4737c6b45809838f0d93d15f261d91b0a","72ac435d8a7399bd39c91be5a72ae2034aeb9653a8a78ec45fa3f82e6ac9470e",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0021_0002","u6-series-unknown-call",
+            "11b327722be0f31efe23e497b396443ce4134a689d28e676b9bfc160c310eefa","b84a7b928030171e03178f3300a1fd3dbbd86388ff998fcd8ddea9d247f9effe",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0022_0002","u6-series-unselected-definitions",
+            "983e8b50cbc94c3838497f74e4e9cca7740f49c1c9b0f396c9afbc0632ffbe05","157dc0f18f12db33cc3a7787009c408bb067ea833544df42ebdc76e2e2c00e34",true},
+        {"cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos","block_0023_0002","u6-series-duplicate-definition",
+            "983e8b50cbc94c3838497f74e4e9cca7740f49c1c9b0f396c9afbc0632ffbe05","26416e82df9c1bd708b840b6d940c79db644f69bcd2acecc56f595f23cf48d20",true},
+        {"cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz","block_0013_0002","u6-shelf-unselected-definition",
+            "b922498caa08e5092c39a8594628eca5e02b8931110113069fe53f140d072511","2c568ff3ab456b8111cb9a338fc9c0d6f9ccff45a1e1cd3f840cee872900f7e3",true},
+        {"cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz","block_0014_0002","u6-shelf-conflicting-return",
+            "b922498caa08e5092c39a8594628eca5e02b8931110113069fe53f140d072511","5b1315f399da68b066291bf96a7f1ed8cfd1aadf3964b2d2ca55cd1f6bae50ec",true}
     }};return values;
 }
 const ReviewedCompileCheck* reviewed_compile_check(std::string_view diagnostic) {
@@ -226,33 +251,46 @@ CompileCheck read_compile_check(const JsonObject& source) {
 }
 void validate_compile_check_payload(const JsonObject& source) {
     require(text(source,"type")=="cpp_compiler","A compilation diagnostic belongs to a compiler");
-    for(const auto field:{L"outputCheck",L"projectFiles",L"sourceFiles",L"cmake",L"initialStandardInput"})
-        require(!source.HasKey(field),"A reviewed compilation diagnostic requires its single source without a runtime objective or input");
+    for(const auto field:{L"outputCheck",L"cmake",L"initialStandardInput"})
+        require(!source.HasKey(field),"A reviewed compilation diagnostic has no runtime objective, CMake or input");
     const auto check=read_compile_check(source.GetNamedObject(L"compileCheck"));
     const auto spec=reviewed_compile_check(check.diagnostic);
+    if(spec->project)require(source.HasKey(L"projectFiles")&&source.HasKey(L"sourceFiles"),
+        "A reviewed project diagnostic retains its complete project and source selection");
+    else require(!source.HasKey(L"projectFiles")&&!source.HasKey(L"sourceFiles"),
+        "A reviewed single-source diagnostic cannot gain a project or source selection");
     const auto original=JsonObject::Parse(source.Stringify());original.Remove(L"compileCheck");
     require(sha256(text(original,"initialCode"))==spec->source_sha256&&fingerprint(original)==spec->payload_sha256,
         "A reviewed compilation diagnostic cannot alter its initial source or original block");
 }
-constexpr std::string_view intentional_exit_lesson="cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo";
-constexpr std::string_view intentional_exit_identity="block_0005_0002";
-constexpr std::string_view intentional_exit_before="d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c";
-bool reviewed_intentional_exit_goal(const JsonObject& block) {
-    if(text(block,"type")!="cpp_compiler"||!block.HasKey(L"outputCheck"))return false;
+struct ReviewedIntentionalExit {std::string_view lesson,identity,before,output;};
+constexpr std::array reviewed_intentional_exits{
+    ReviewedIntentionalExit{"cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo",
+        "block_0005_0002","d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c","Entrada invalida|9:4"},
+    ReviewedIntentionalExit{"cpp_fundamentals__archivos_y_programa_completo__construir_un_programa_de_carga_y_guardado",
+        "block_0004_0017","6f796c5c55683ac266ae3f83c54f935273c341c34da087161276c7e361524ae8","Error al abrir salida"}
+};
+const ReviewedIntentionalExit* reviewed_intentional_exit_spec(const JsonObject& block) {
+    if(text(block,"type")!="cpp_compiler"||!block.HasKey(L"outputCheck"))return nullptr;
     const auto original=JsonObject::Parse(block.Stringify());original.Remove(L"outputCheck");
-    if(fingerprint(original)!=intentional_exit_before)return false;
-    // This is one closed adoption of a previously exploratory editor, never a
+    const auto before=fingerprint(original);
+    const auto spec=std::ranges::find(reviewed_intentional_exits,before,&ReviewedIntentionalExit::before);
+    if(spec==reviewed_intentional_exits.end())return nullptr;
+    // These are closed adoptions of exact exploratory editors, never a
     // general exemption for adding/changing output contracts in old state maps.
     const auto config=block.GetNamedObject(L"outputCheck");allowed_keys(config,{"cases"},true);
     const auto cases=array(config,"cases");require(cases.Size()==1,"The reviewed intentional-exit editor requires exactly one output case");
     const auto item=cases.GetObjectAt(0);allowed_keys(item,{"standardInput","outputs","exitCode","explanation"},true);
     const auto outputs=strings(array(item,"outputs"),true);
-    require(text(item,"standardInput").empty()&&outputs==std::vector<std::string>{"Entrada invalida|9:4"}
+    require(text(item,"standardInput").empty()&&outputs==std::vector<std::string>{std::string(spec->output)}
         &&integer(item.GetNamedValue(L"exitCode"),255)==1,
         "The reviewed editor requires exact stdout without a final newline, empty input and return 1");
     const auto wording=key(text(item,"explanation"));
     require(std::ranges::any_of(wording,[](wchar_t c){return !narration_space(c);}),"The reviewed intentional-exit goal requires an explanation");
-    return true;
+    return &*spec;
+}
+bool reviewed_intentional_exit_goal(const JsonObject& block) {
+    return reviewed_intentional_exit_spec(block)!=nullptr;
 }
 constexpr std::string_view crt_output_lesson="cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia";
 constexpr std::string_view crt_output_identity="block_0005_0004";
@@ -1128,6 +1166,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "Editorial return archive changed the current owner's protected contract");
                 if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
                     "A published intentional-exit objective cannot be removed by an editorial return");
+                if(previous.HasKey(L"compileCheck"))require(active->second.HasKey(L"compileCheck")
+                    &&fingerprint(previous.GetNamedObject(L"compileCheck"))==fingerprint(active->second.GetNamedObject(L"compileCheck")),
+                    "A published compilation diagnostic cannot be removed or replaced by an editorial return");
                 if(reviewed_crt_output_original(previous))require(reviewed_crt_output_original(active->second).has_value(),
                     "A published reviewed CRT spelling cannot be removed by an editorial return");
                 const auto previous_raw=utf8(previous.Stringify());
@@ -1509,14 +1550,16 @@ void apply_reviewed_order_equivalences(const Lesson& lesson,Block& block) {
 void resolve_addresses(Lesson& lesson) {
     auto& layout = lesson.state_layout;
     const auto intentional_exit_owner=[&](const Block& block) {
-        if(block.type!=BlockType::cpp_compiler||block.raw_json.empty()||!reviewed_intentional_exit_goal(JsonObject::Parse(key(block.raw_json))))return;
-        require(layout.version==2&&lesson.locale=="es"&&lesson.id==intentional_exit_lesson&&block.stable_id==intentional_exit_identity,
+        if(block.type!=BlockType::cpp_compiler||block.raw_json.empty())return;
+        const auto spec=reviewed_intentional_exit_spec(JsonObject::Parse(key(block.raw_json)));
+        if(!spec)return;
+        require(layout.version==2&&lesson.locale=="es"&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
             "The reviewed intentional-exit goal belongs to its original Spanish v2 editor");
         const auto metadata=JsonObject::Parse(key(layout.raw_json));
         bool original_edge=false;
         for(const auto& value:array(metadata,"editorial")) {
             const auto proof=value.GetObject();
-            original_edge=original_edge||(text(proof,"id")==block.stable_id&&text(proof,"beforeSha256")==intentional_exit_before);
+            original_edge=original_edge||(text(proof,"id")==block.stable_id&&text(proof,"beforeSha256")==spec->before);
         }
         require(original_edge,"The intentional-exit goal requires its exact complete original/editorial provenance");
     };
@@ -1642,6 +1685,12 @@ void resolve_addresses(Lesson& lesson) {
                     const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
                     require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
                         "A historical compilation diagnostic belongs to its original Spanish v2 editor");
+                    const auto position=stable_block_position(lesson,block.stable_id);
+                    const auto archived=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
+                    const auto current=position?&lesson.pages[position->page].blocks[position->block]:
+                        archived!=lesson.retired_blocks.end()?&*archived:nullptr;
+                    require(current&&current->compile_check==block.compile_check,
+                        "A historical compilation diagnostic must retain its current archived or active objective");
                 }
                 // A reading snapshot made before the split retains grouped
                 // cards and their original response. Only an already-refined

@@ -77,6 +77,7 @@ struct CompileDiagnosticSource {
     std::string control_source, candidate_source;
     std::size_t first_line = 0, last_line = 0;
     std::string expected_msvc_error;
+    std::optional<CppProjectDiagnostic> project;
 };
 // One historical grouped ordering refined into independently movable lines.
 // The complete original block remains provenance, never another active puzzle.
@@ -221,6 +222,8 @@ struct Lesson {
 // Accepts only one reviewed statement inserted at a statement boundary in main.
 // The remaining C++ tokens must be the initial source; comments/spacing may vary.
 [[nodiscard]] std::optional<CompileDiagnosticSource> prepare_compile_diagnostic_source(const Block&, std::string_view candidate);
+[[nodiscard]] std::optional<CompileDiagnosticSource> prepare_project_compile_diagnostic_source(
+    const Block&,const CppProjectFiles& candidate_files,const std::vector<std::string>& candidate_sources);
 void validate_reference_relationships(const Lesson&);
 void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::optional<StatePosition> stable_block_position(const Lesson&, std::string_view stable_id);

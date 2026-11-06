@@ -249,11 +249,21 @@ std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_leas
 }
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
     std::string_view reading_context,std::string_view math_mode,bool previous_output_data){
+    return plan(text,language,stop,reading_context,math_mode,
+        previous_output_data?NarrationOutputDataPolicy::original:NarrationOutputDataPolicy::current);
+}
+std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
+    std::string_view reading_context,std::string_view math_mode,NarrationOutputDataPolicy output_data_policy){
     if(reading_context!="auto"&&reading_context!="cpp"&&reading_context!="cpp_previous_parentheses")throw std::invalid_argument("Invalid narration reading context");
     if(math_mode!="auto"&&math_mode!="text"&&math_mode!="inline"&&math_mode!="block")throw std::invalid_argument("Invalid narration mathematical mode");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);
     put(request,L"readingContext",reading_context);put(request,L"mathMode",math_mode);
-    if(previous_output_data)request.Insert(L"previousOutputDataPolicy",JsonValue::CreateBooleanValue(true));
+    switch(output_data_policy){
+    case NarrationOutputDataPolicy::current:break;
+    case NarrationOutputDataPolicy::b42:put(request,L"outputDataPolicy","b42");break;
+    case NarrationOutputDataPolicy::original:put(request,L"outputDataPolicy","original");break;
+    default:throw std::invalid_argument("Invalid narration output-data policy");
+    }
     const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};
         segment.spoken=string(object,L"spokenText");

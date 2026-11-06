@@ -431,7 +431,9 @@ struct LessonReader::Impl {
                         // Historical output policy is independent of C++ math
                         // context, including explicit mathMode:text. Compose
                         // it with both existing context migrations when needed.
-                        for(const bool previous_output:{false,true})for(const std::string_view context:{"","cpp_previous_parentheses","auto"}){
+                        using OutputPolicy=windows::NarrationOutputDataPolicy;
+                        for(const auto output_policy:{OutputPolicy::current,OutputPolicy::b42,OutputPolicy::original})for(const std::string_view context:{"","cpp_previous_parentheses","auto"}){
+                            const bool previous_output=output_policy!=OutputPolicy::current;
                             if((!previous_output&&context.empty())||(!cpp_context&&!context.empty()))continue;
                             std::vector<Part> previous;
                             for(std::size_t i=0;i<old.size();){const auto& part=old[i];
@@ -442,10 +444,11 @@ struct LessonReader::Impl {
                                 const bool change_output=previous_output&&part.region.source_text.find('`')!=std::string::npos;
                                 if(!change_context&&!change_output){previous.push_back(part);++i;continue;}
                                 auto origin=part.region;const std::string source_context=change_context?std::string(context):origin.reading_context;
-                                origin.reading_context=previous_output?std::string(narration_legacy::previous_output_prefix)+source_context:source_context;
+                                const auto output_prefix=output_policy==OutputPolicy::b42?narration_legacy::b42_output_prefix:narration_legacy::previous_output_prefix;
+                                origin.reading_context=previous_output?std::string(output_prefix)+source_context:source_context;
                                 const auto cache_key=origin.reading_context+'\0'+origin.math_mode+'\0'+origin.source_text;
                                 auto [cached,inserted]=previous_context_plans.try_emplace(cache_key);
-                                if(inserted)cached->second=backend->plan(origin.source_text,lang,stop,source_context,origin.math_mode,previous_output);
+                                if(inserted)cached->second=backend->plan(origin.source_text,lang,stop,source_context,origin.math_mode,output_policy);
                                 std::map<std::string,std::size_t> occurrences;
                                 for(auto sentence:cached->second){
                                     const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
@@ -592,8 +595,8 @@ struct LessonReader::Impl {
                 // Relabel the verified old entry in place. Its recency and the
                 // other two page slots are unchanged; no parallel history is kept.
                 mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);
-                    for(auto& entry:old.entries)if(entry.key==legacy.key){entry.key=key;entry.position=position;entry.page=resume_page_id;}
-                    if(old.active_key==legacy.key)old.active_key=key;narration::write_history(preferences,old);});break;
+                    if(narration_legacy::rekey_authenticated_bookmark(old,legacy.key,key,position,resume_page_id))
+                        narration::write_history(preferences,old);});break;
             }
             if(!previous_part.empty()){
                 // An edited answer removes its old feedback from the visible

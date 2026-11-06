@@ -591,14 +591,153 @@ void run_diagnostic(const CppRunRequest& request,CppRunResult& result,const std:
     evidence.expected_rejection=expected_compile_diagnostic(request,result);
 }
 
+bool unused_phase(const CppPhaseResult& phase) {
+    return phase==CppPhaseResult{};
+}
+std::string diagnostic_project_hash(const curriculum::CppProjectFiles& files,const std::vector<std::string>& sources) {
+    return state::sha256(curriculum::cpp_project_frame(files,sources,std::nullopt));
+}
+CppPhaseResult diagnostic_aggregate(const std::vector<CppDiagnosticEvidence::Unit>& units,const CppPhaseResult& link,
+        std::size_t limit) {
+    CppPhaseResult result;
+    for(const auto& unit:units)merge_phase(result,unit.phase,limit);
+    if(!unused_phase(link))merge_phase(result,link,limit);
+    return result;
+}
+void run_project_diagnostic(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& compiler,
+        const std::filesystem::path& compiler_input,std::stop_token stop) {
+    const auto& plan=*request.diagnostic->project;auto& evidence=*result.diagnostic;
+    evidence.source_sha256=diagnostic_project_hash(request.project_files,request.source_files);
+    evidence.control_sha256=diagnostic_project_hash(plan.control_files,plan.control_sources);
+    const auto started=std::chrono::steady_clock::now();
+    const auto remaining=[&]{return request.compile_timeout-std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started);};
+    const auto build_project=[&](const curriculum::CppProjectFiles& files,const std::vector<std::string>& sources,
+            const std::filesystem::path& folder,std::vector<CppDiagnosticEvidence::Unit>& units,CppPhaseResult& link) {
+        std::filesystem::create_directory(folder);const auto project=folder/L"project",objects=folder/L"objects";
+        materialize(files,project);std::filesystem::create_directory(objects);
+        std::vector<std::wstring> link_args{L"/nologo",L"/Fe:"+(folder/L"control.exe").wstring()};
+        for(std::size_t index=0;index<sources.size();++index) {
+            CppPhaseResult phase;const auto object=objects/(std::to_wstring(index)+L".obj");
+            if(remaining().count()<=0)phase.status=CppPhaseStatus::timed_out;
+            else phase=run_phase(compiler,{L"/nologo",L"/c",L"/EHsc",build::cpp_standard_option,L"/Zc:__cplusplus",L"/permissive-",
+                L"/utf-8",L"/W4",L"/diagnostics:column",L"/I"+project.wstring(),L"/Fo:"+object.wstring(),
+                (project/project_path(sources[index])).wstring()},folder,compiler_input,L"compile-"+std::to_wstring(index),
+                remaining(),request.output_limit_bytes,true,stop,true);
+            units.push_back({sources[index],std::move(phase)});
+            if(!units.back().phase.succeeded())return;
+            if(!std::filesystem::is_regular_file(object)||!std::filesystem::file_size(object))
+                throw std::runtime_error("A diagnostic translation unit did not produce its fresh object");
+            link_args.push_back(object.wstring());
+        }
+        if(!plan.link)return;
+        if(remaining().count()<=0){link.status=CppPhaseStatus::timed_out;return;}
+        link_args.insert(link_args.end(),{L"/link",L"/INCREMENTAL:NO",L"/MACHINE:X64",L"/SUBSYSTEM:CONSOLE",
+            L"/MANIFEST:EMBED",L"/MANIFESTUAC:level='asInvoker' uiAccess='false'"});
+        link=run_phase(compiler,link_args,folder,compiler_input,L"link",remaining(),request.output_limit_bytes,true,stop,true);
+        if(link.succeeded()&&!executable64(folder/L"control.exe"))
+            throw std::runtime_error("The diagnostic link control did not produce its fresh executable");
+    };
+    build_project(plan.control_files,plan.control_sources,result.run_directory/L"control",evidence.control_units,evidence.control_link);
+    evidence.control=diagnostic_aggregate(evidence.control_units,evidence.control_link,request.output_limit_bytes);
+    // Even an unrelated edit retains its own compiler/linker output. A failed
+    // control can never confer credit, and neither project is ever executed.
+    build_project(request.project_files,request.source_files,result.run_directory/L"candidate",evidence.candidate_units,evidence.candidate_link);
+    result.compilation=diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes);
+    evidence.errors=compilation_errors(result.compilation,result.run_directory/L"candidate");
+    evidence.expected_rejection=expected_compile_diagnostic(request,result);
+}
+bool expected_project_diagnostic(const CppRunRequest& request,const CppRunResult& result) {
+    if(!request.diagnostic->project||request.project_files.empty()||request.cmake||!request.stdin_utf8.empty())return false;
+    const auto& plan=*request.diagnostic->project;const auto& evidence=*result.diagnostic;
+    curriculum::validate_cpp_project(request.project_files,request.source_files);
+    curriculum::validate_cpp_project(plan.control_files,plan.control_sources);
+    if(!request.diagnostic->control_source_utf8.empty()||!request.diagnostic->expected_error_code.empty()||
+            request.diagnostic->first_line||request.diagnostic->last_line||plan.error_codes.empty()||
+            evidence.source_sha256!=diagnostic_project_hash(request.project_files,request.source_files)||
+            evidence.control_sha256!=diagnostic_project_hash(plan.control_files,plan.control_sources))return false;
+    const auto valid_units=[&](const auto& units,const auto& sources,bool control) {
+        if(units.empty()||units.size()>sources.size()||(control&&units.size()!=sources.size()))return false;
+        for(std::size_t n=0;n<units.size();++n){
+            if(units[n].source!=sources[n]||((control||n+1<units.size())&&!units[n].phase.succeeded()))return false;
+        }
+        return true;
+    };
+    if(!valid_units(evidence.control_units,plan.control_sources,true)||!valid_units(evidence.candidate_units,request.source_files,false)||
+            !evidence.control.succeeded()||evidence.control!=diagnostic_aggregate(evidence.control_units,evidence.control_link,request.output_limit_bytes)||
+            result.compilation!=diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes))return false;
+    const auto failed=[](const CppPhaseResult& phase){return phase.status==CppPhaseStatus::completed&&phase.exit_code&&*phase.exit_code&&*phase.exit_code<=255;};
+    if(!failed(result.compilation)||!compilation_errors(evidence.control,result.run_directory/L"control").empty())return false;
+    const auto errors=compilation_errors(result.compilation,result.run_directory/L"candidate");
+    if(errors.empty()||errors!=evidence.errors)return false;
+    const auto includes=[&](std::string_view code){return std::ranges::find(plan.error_codes,code)!=plan.error_codes.end();};
+    if(!std::ranges::all_of(errors,[&](const auto& error){return includes(error.code);}))return false;
+    for(const auto& code:plan.error_codes)if(!std::ranges::any_of(errors,[&](const auto& error){return error.code==code;}))return false;
+    if(!plan.link) {
+        if(plan.expected_file.empty()||!plan.first_line||plan.last_line<plan.first_line||!plan.symbols.empty()||
+                !unused_phase(evidence.control_link)||!unused_phase(evidence.candidate_link)||
+                evidence.candidate_units.back().source!=plan.expected_file||!failed(evidence.candidate_units.back().phase))return false;
+        const auto file=result.run_directory/L"candidate/project"/project_path(plan.expected_file);
+        return std::ranges::all_of(errors,[&](const auto& error){return error.code.starts_with('C')&&error.column&&
+            error.line>=plan.first_line&&error.line<=plan.last_line&&same_diagnostic_source(error.source,file);});
+    }
+    if(!plan.expected_file.empty()||plan.first_line||plan.last_line||plan.symbols.empty()||
+            !evidence.control_link.succeeded()||!failed(evidence.candidate_link)||
+            evidence.candidate_units.size()!=request.source_files.size()||
+            !std::ranges::all_of(evidence.candidate_units,[](const auto& unit){return unit.phase.succeeded();}))return false;
+    // Codes and global decorated names are invariant across MSVC UI languages.
+    // A summary (1120/1169) is never the primary reason for accreditation.
+    std::vector<bool> seen(plan.symbols.size(),false);std::size_t primary=0,summary=0;
+    auto stream=evidence.candidate_link.stdout_bytes+'\n'+evidence.candidate_link.stderr_bytes;
+    std::string_view rest=stream;
+    while(!rest.empty()) {
+        const auto end=rest.find('\n');const auto line=rest.substr(0,end);
+        const auto parsed=compilation_errors(line,result.run_directory/L"candidate");
+        if(!parsed.empty()) {
+            if(parsed.size()!=1)return false;const auto& code=parsed.front().code;
+            if(code=="LNK1120"||code=="LNK1169")++summary;
+            else {
+                if(code!="LNK2019"&&code!="LNK2005")return false;
+                bool attributed=false;
+                for(std::size_t n=0;n<plan.symbols.size();++n)if(line.find('?'+plan.symbols[n]+"@@")!=line.npos){seen[n]=true;attributed=true;}
+                if(!attributed)return false;++primary;
+            }
+        }
+        if(end==rest.npos)break;rest.remove_prefix(end+1);
+    }
+    return primary==plan.symbols.size()&&summary==1&&std::ranges::all_of(seen,[](bool value){return value;});
+}
+
 } // namespace
 
+CppDiagnosticRequest prepare_cpp_diagnostic_request(const curriculum::Block& block,const CppRunRequest& request) {
+    CppDiagnosticRequest check;
+    if(!block.project_files.empty()) {
+        if(const auto baseline=curriculum::prepare_project_compile_diagnostic_source(block,block.project_files,block.source_files)) {
+            check.project=baseline->project;
+            if(check.project){check.project->expected_file.clear();check.project->first_line=check.project->last_line=0;
+                check.project->error_codes.clear();check.project->symbols.clear();}
+        }
+        if(const auto actual=curriculum::prepare_project_compile_diagnostic_source(block,request.project_files,request.source_files))
+            check.project=actual->project;
+        return check;
+    }
+    check.control_source_utf8=block.initial_code;
+    if(const auto source=curriculum::prepare_compile_diagnostic_source(block,request.source_utf8)) {
+        check.control_source_utf8=source->control_source;check.expected_error_code=source->expected_msvc_error;
+        check.first_line=static_cast<std::uint32_t>(source->first_line);check.last_line=static_cast<std::uint32_t>(source->last_line);
+    }
+    return check;
+}
+
 bool expected_compile_diagnostic(const CppRunRequest& request,const CppRunResult& result) try {
-    if(!request.diagnostic||!result.diagnostic||!request.project_files.empty()||!request.source_files.empty()||!request.stdin_utf8.empty()||request.cmake||
+    if(!request.diagnostic||!result.diagnostic||!request.stdin_utf8.empty()||request.cmake||
         request.action!=CppRunRequest::Action::compile_run||request.request_id!=result.request_id||request.revision!=result.revision||
         !result.error_utf8.empty()||result.run_directory.empty()||!result.artifact.empty()||result.executable||!result.target_type.empty())return false;
     const auto unused=[](const CppPhaseResult& phase){return phase.status==CppPhaseStatus::not_started&&!phase.exit_code&&phase.stdout_bytes.empty()&&phase.stderr_bytes.empty();};
     if(!unused(result.execution)||!unused(result.configuration))return false;
+    if(request.diagnostic->project)return expected_project_diagnostic(request,result);
+    if(!request.project_files.empty()||!request.source_files.empty()||!result.diagnostic->control_units.empty()||
+            !result.diagnostic->candidate_units.empty()||!unused(result.diagnostic->control_link)||!unused(result.diagnostic->candidate_link))return false;
     const auto& objective=*request.diagnostic;const auto& evidence=*result.diagnostic;
     if(objective.expected_error_code.size()!=5||objective.expected_error_code.front()!='C'||
         diagnostic_number(std::string_view(objective.expected_error_code).substr(1))<2000||
@@ -680,9 +819,15 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             throw std::invalid_argument("Invalid educational execution limits");
         if(!request.project_files.empty())validate_request_project(request);
         else if(request.cmake||request.action!=CppRunRequest::Action::compile_run)throw std::invalid_argument("Project phase actions require projectFiles and CMake");
-        if(request.diagnostic&&(!request.project_files.empty()||!request.source_files.empty()||!request.stdin_utf8.empty()||
-                request.cmake||request.diagnostic->control_source_utf8.size()>4*1024*1024))
-            throw std::invalid_argument("A diagnostic objective requires one bounded translation unit without standard input");
+        if(request.diagnostic) {
+            if(!request.stdin_utf8.empty()||request.cmake||request.diagnostic->control_source_utf8.size()>4*1024*1024)
+                throw std::invalid_argument("A diagnostic objective cannot use runtime input or CMake");
+            if(request.diagnostic->project) {
+                if(request.project_files.empty())throw std::invalid_argument("A project diagnostic requires its captured files");
+                curriculum::validate_cpp_project(request.diagnostic->project->control_files,request.diagnostic->project->control_sources);
+            }else if(!request.project_files.empty()||!request.source_files.empty())
+                throw std::invalid_argument("A single-file diagnostic cannot use project files");
+        }
         result.run_directory = create_run_directory(request);
         const auto source = result.run_directory / L"main.cpp";
         const auto input = result.run_directory / L"stdin.bin";
@@ -696,9 +841,13 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         write_exact(compiler_input, "");
         write_exact(result.run_directory / L"toolchain.txt", "MSVC=14.51.36231\nSDK=" +
             utf8(build::educational_sdk_version) + "\ncompiler=" + utf8(compiler.wstring()) + "\n");
+        if(request.diagnostic){
+            if(request.diagnostic->project)run_project_diagnostic(request,result,compiler,compiler_input,stop);
+            else run_diagnostic(request,result,compiler,compiler_input,stop);
+            return result;
+        }
         if(request.cmake){run_cmake(request,result,input,compiler_input,stop);return result;}
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
-        if(request.diagnostic){run_diagnostic(request,result,compiler,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const std::vector<std::wstring> arguments{
             L"/nologo", L"/EHsc", build::cpp_standard_option, L"/Zc:__cplusplus", L"/permissive-", L"/utf-8", L"/W4",

@@ -14,6 +14,7 @@ namespace lgaed::curriculum {
 struct OutputCheck;
 struct FreshExecution;
 struct OutputEvaluation;
+struct Block;
 }
 
 namespace lgaed::windows {
@@ -31,6 +32,7 @@ struct CppPhaseResult {
     [[nodiscard]] bool succeeded() const noexcept {
         return status == CppPhaseStatus::completed && exit_code == std::uint32_t{0};
     }
+    bool operator==(const CppPhaseResult&) const = default;
 };
 
 // A diagnostic objective compares two fresh compilation-only attempts. A zero
@@ -40,6 +42,8 @@ struct CppDiagnosticRequest {
     std::string control_source_utf8;
     std::string expected_error_code;
     std::uint32_t first_line = 0, last_line = 0;
+    std::optional<curriculum::CppProjectDiagnostic> project;
+    bool operator==(const CppDiagnosticRequest&) const = default;
 };
 struct CppCompilerDiagnostic {
     std::string code;
@@ -52,6 +56,12 @@ struct CppDiagnosticEvidence {
     std::vector<CppCompilerDiagnostic> errors;
     std::string source_sha256, control_sha256;
     bool expected_rejection = false;
+    struct Unit {
+        std::string source;
+        CppPhaseResult phase;
+    };
+    std::vector<Unit> control_units, candidate_units;
+    CppPhaseResult control_link, candidate_link;
 };
 
 struct CppRunRequest {
@@ -103,6 +113,9 @@ struct CppProjectAvailability {
 // Reparse the captured compiler streams and verify both phases and the exact
 // request/revision; a cached summary boolean is never execution evidence.
 [[nodiscard]] bool expected_compile_diagnostic(const CppRunRequest&, const CppRunResult&);
+// Reconstruct the closed lesson objective from this exact visible snapshot.
+// Unrelated edits retain diagnostics but leave the accreditation fields empty.
+[[nodiscard]] CppDiagnosticRequest prepare_cpp_diagnostic_request(const curriculum::Block&, const CppRunRequest&);
 
 // Keep capture and the shared curriculum evaluator byte-exact. At the Windows
 // boundary, also accept CRT text-mode CRLF for authored LF-only output goals.

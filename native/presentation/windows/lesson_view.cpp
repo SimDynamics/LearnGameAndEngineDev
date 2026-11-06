@@ -1923,12 +1923,7 @@ struct LessonView {
         request.projects_directory=environment.paths.projects;request.project_key=draft_key(index);
         if(vm.project)vm.project->snapshot(request);
         if(block(index).compile_check){
-            windows::CppDiagnosticRequest check;check.control_source_utf8=block(index).initial_code;
-            if(const auto source=curriculum::prepare_compile_diagnostic_source(block(index),request.source_utf8)){
-                check.control_source_utf8=source->control_source;check.expected_error_code=source->expected_msvc_error;
-                check.first_line=static_cast<std::uint32_t>(source->first_line);check.last_line=static_cast<std::uint32_t>(source->last_line);
-            }
-            request.diagnostic=std::move(check);
+            request.diagnostic=windows::prepare_cpp_diagnostic_request(block(index),request);
         }
         return request;
     }
@@ -3560,8 +3555,13 @@ struct LessonView {
             }
             if(!result->error_utf8.empty())diagnostics+=(diagnostics.empty()?"":"\n")+result->error_utf8;
             vm.console_channels[2]=std::move(diagnostics);console_present(index,2);
+            const bool link_diagnostic=result->diagnostic&&result->diagnostic->candidate_link.status!=windows::CppPhaseStatus::not_started;
             if(vm.status)set_rich_text(vm.status,!control_valid||result->compilation.status!=windows::CppPhaseStatus::completed
                 ?ui("No se pudo completar la comprobación del diagnóstico.","The diagnostic check could not be completed.","La vérification du diagnostic n’a pas pu être terminée.")
+                :link_diagnostic
+                    ?(result->compilation.succeeded()
+                        ?ui("Enlace aceptado. El programa no se ejecutó.","Link accepted. The program was not run.","Édition de liens acceptée. Le programme n’a pas été exécuté.")
+                        :ui("Enlace rechazado. El programa no se ejecutó.","Link rejected. The program was not run.","Édition de liens rejetée. Le programme n’a pas été exécuté."))
                 :result->compilation.succeeded()
                     ?ui("Compilación aceptada. El programa no se ejecutó.","Compilation accepted. The program was not run.","Compilation acceptée. Le programme n’a pas été exécuté.")
                     :ui("Compilación rechazada. El programa no se ejecutó.","Compilation rejected. The program was not run.","Compilation rejetée. Le programme n’a pas été exécuté."));
@@ -3569,9 +3569,12 @@ struct LessonView {
                 const bool correct=windows::expected_compile_diagnostic(running_program,*result);
                 if(correct){
                     auto text=verdict_text(true)+"\n"+(block(index).compile_check->explanation.empty()
-                        ?ui("El compilador rechazó la operación solicitada; el programa no llegó a ejecutarse.",
+                        ?(link_diagnostic?ui("El enlazador detectó el problema solicitado; el programa no llegó a ejecutarse.",
+                            "The linker detected the requested problem; the program did not run.",
+                            "L’éditeur de liens a détecté le problème demandé ; le programme n’a pas été exécuté.")
+                        :ui("El compilador rechazó la operación solicitada; el programa no llegó a ejecutarse.",
                             "The compiler rejected the requested operation; the program did not run.",
-                            "Le compilateur a rejeté l’opération demandée ; le programme n’a pas été exécuté.")
+                            "Le compilateur a rejeté l’opération demandée ; le programme n’a pas été exécuté."))
                         :block(index).compile_check->explanation);
                     if(windows::record_compiler_diagnostic_case(data,lesson,block(index),running_program,*result,text)){
                         feedback(index,text,true,true);if(hooks.feedback_changed)hooks.feedback_changed(window,index,true);

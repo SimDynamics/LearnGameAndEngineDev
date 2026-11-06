@@ -179,7 +179,24 @@ private class Backend(private val resources: File, private val englishResources:
         require(!request.has("previousOutputDataPolicy") || request.opt("previousOutputDataPolicy") is Boolean) {
             "Invalid previous output-data policy"
         }
-        val items = WindowsNarrationSpeechRules.withPreviousOutputDataPolicy(request.optBoolean("previousOutputDataPolicy",false)) {
+        require(!request.has("outputDataPolicy") || request.opt("outputDataPolicy") is String) {
+            "Invalid output-data policy"
+        }
+        require(!request.has("outputDataPolicy") || !request.has("previousOutputDataPolicy")) {
+            "Conflicting output-data policies"
+        }
+        val policy = when (request.optString("outputDataPolicy", "")) {
+            "" -> if (request.optBoolean("previousOutputDataPolicy",false))
+                WindowsNarrationSpeechRules.OutputDataPolicy.ORIGINAL else WindowsNarrationSpeechRules.OutputDataPolicy.CURRENT
+            "current" -> WindowsNarrationSpeechRules.OutputDataPolicy.CURRENT
+            "b42" -> WindowsNarrationSpeechRules.OutputDataPolicy.B42
+            "original" -> WindowsNarrationSpeechRules.OutputDataPolicy.ORIGINAL
+            else -> error("Invalid output-data policy")
+        }
+        require(!request.has("outputDataPolicy") || request.getString("outputDataPolicy").isNotEmpty()) {
+            "Invalid output-data policy"
+        }
+        val items = WindowsNarrationSpeechRules.withOutputDataPolicy(policy) {
             planned(request.getString("text"),language(request),readingMode(request))
         }
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->
@@ -222,8 +239,10 @@ private class Backend(private val resources: File, private val englishResources:
                 }
             }
         }
-        val script = LessonNarrationScript.page(lesson,request.getInt("page"),
-            lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
+        val script = WindowsNarrationSpeechRules.withWholeReadingRegions {
+            LessonNarrationScript.page(lesson,request.getInt("page"),
+                lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
+        }
         val segments = NarrationSegments.sentences(script.texts).map { prepared ->
             // Background preparation uses the canonical already-normalized script.
             // It writes audio only. The visible reader retains its own exact
@@ -468,7 +487,7 @@ fun main(arguments: Array<String>) {
                 val id = request.get("id").toString(); require(id.length in 1..128)
                 val command = request.getString("command")
                 replyId = id; replyCommand = command
-                require(command == "plan" || !request.has("previousOutputDataPolicy")) {
+                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy"))) {
                     "Previous output-data policy is restricted to bookmark planning"
                 }
                 if (command == "cancel") {
