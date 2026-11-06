@@ -1215,6 +1215,14 @@ U12_COMPOSED_FEEDBACK_REVISION = (
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
+    if ((relative, pn, bn) == (
+            'app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json', 5, 4)
+            and old_lesson.get('id') == _state_layout.CRT_OUTPUT_REVISION['lesson']
+            and (_state_layout.fingerprint(old), _state_layout.fingerprint(current))
+            == (_state_layout.CRT_OUTPUT_REVISION['before'], _state_layout.CRT_OUTPUT_REVISION['after'])):
+        # One complete reviewed block gains only the exact raw CRT spelling.
+        # No other source, input, guide or output is exempted from preservation.
+        base = _state_layout.historical_crt_output_payload(current)
     if ((relative, pn, bn) == U12_COMPOSED_FEEDBACK_REVISION[:3]
             and old_lesson.get('id') == 'cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla'
             and old.get('type') == current.get('type') == 'cpp_compiler'

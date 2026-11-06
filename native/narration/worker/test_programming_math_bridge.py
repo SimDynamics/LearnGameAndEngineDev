@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 from fractions import Fraction
 import hashlib
+import importlib.util
 import itertools
 import json
 import subprocess
@@ -83,6 +84,22 @@ INSERTION_EXTRACTION_CASES = (
     ("extraer_un_tipo_sin_cambiarlo_en_fallo", (6, 3), "separar_objeto_indicadores_y_texto_restante", {
         "recorridos": matching(registro_y_resto="aceptado", dominio_rechazado="fuera_de_dominio",
                                cierre_ausente="truncado")}),
+)
+
+
+LOADING_STATE_CASES = (
+    ("leer_y_validar_una_linea_completa", (1, 4), "comparar_indicadores_tras_omitir_blancos", {
+        "indicadores": fields(eof_a=1, fail_a=1, eof_b=1, fail_b=0, eof_c=0, fail_c=0)}),
+    ("leer_y_validar_una_linea_completa", (4, 6), "distinguir_obtener_linea_y_aceptar_registro", {
+        "salida": choice("obtener_y_validar_por_separado")}),
+    ("aceptar_registros_y_detectar_duplicados", (2, 4), "aplicar_primera_valida_sin_reservar_rechazos", {
+        "contadores": fields(guardados=3, descartadas=3), "registros": choice("primera_valida_en_orden")}),
+    ("actualizar_todo_o_conservar_el_estado_anterior", (4, 3), "seguir_estado_actual_entre_recargas", {
+        "informes": matching(primera="rechazo_estado_inicial", segunda="coleccion_nueva",
+                             tercera="rechazo_estado_actual", cuarta="vacio_aceptado")}),
+    ("representar_presencia_y_cambiar_la_organizacion", (4, 2), "conservar_resultado_entre_consultas", {
+        "informes": matching(consulta_dos="presente_con_valores", consulta_tres="ausente_conserva_anterior",
+                             consulta_siete="presente_con_ceros", consulta_negativa="identificador_rechazado")}),
 )
 
 
@@ -492,6 +509,185 @@ class ProgrammingInsertionExtractionMathBridgeTest(unittest.TestCase):
         self.assertEqual(old["stateLayout"]["orderRefinements"], current["stateLayout"]["orderRefinements"])
 
     test_09_curated_puzzle_text_and_data_remain_byte_exact = (
+        ProgrammingFormattingMathBridgeTest.test_08_curated_puzzle_text_and_data_remain_byte_exact)
+
+
+class ProgrammingLoadingStateMathBridgeTest(unittest.TestCase):
+    """Only the five current U12L16–L19 additions and U12L16–L20 provenance."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sources, cls.lessons, cls.published, cls.fingerprints = {}, {}, {}, {}
+        cls.cases = []
+        names = tuple(dict.fromkeys(case[0] for case in LOADING_STATE_CASES)) + (
+            "clasificar_caracteres_y_normalizar_una_copia",)
+        for name in names:
+            path = UNIT / ("lesson_" + name + ".json")
+            raw = path.read_bytes()
+            cls.sources[path] = (raw, path.stat().st_mtime_ns)
+            cls.lessons[path] = json.loads(raw.decode("utf-8-sig"))
+            cls.published[path] = {}
+            for locale in ("es", "en", "fr"):
+                localized = ROOT / path.relative_to(ROOT).as_posix().replace("/es/", "/" + locale + "/")
+                old = subprocess.check_output(["git", "show", "690dc98092abf3108dd8f712a074fab1d0ac8f4b:" +
+                                               localized.relative_to(ROOT).as_posix()], cwd=ROOT)
+                cls.published[path][locale] = json.loads(old.decode("utf-8-sig"))
+                if locale != "es":
+                    original = localized.read_bytes()
+                    cls.sources[localized] = (original, localized.stat().st_mtime_ns)
+        for name, (page, position), identity, answers in LOADING_STATE_CASES:
+            path = UNIT / ("lesson_" + name + ".json")
+            lesson = cls.lessons[path]
+            block = lesson["pages"][page]["blocks"][position]
+            if (lesson["stateLayout"]["current"][page]["blocks"][position] != identity or
+                    block.get("id") != PREFIX + name + "__" + identity):
+                raise AssertionError(f"A loading-state math fixture changed identity or position: {path}")
+            cls.cases.append((path, block, answers))
+            canonical = json.dumps(without_reviews(block), ensure_ascii=False, separators=(",", ":")).replace("/", "\\/")
+            cls.fingerprints[block["id"]] = hashlib.sha256(canonical.encode()).hexdigest()
+        cls.before = copy.deepcopy(cls.lessons)
+        cls.worker = Worker(missing_resources=True)
+
+    tearDownClass = classmethod(ProgrammingFormattingMathBridgeTest.tearDownClass.__func__)
+    assert_correct = ProgrammingFormattingMathBridgeTest.assert_correct
+    assert_rejected = ProgrammingFormattingMathBridgeTest.assert_rejected
+    evaluate = ProgrammingInsertionExtractionMathBridgeTest.evaluate
+
+    def test_01_new_loading_activities_keep_exact_response_types_and_independent_answers(self):
+        self.assertEqual(5, len(self.cases))
+        numeric, matching_tiles, selections = 0, 0, 0
+        for path, block, answers in self.cases:
+            with self.subTest(lesson=path.name, puzzle=block["id"]):
+                self.assertEqual("math_puzzle", block["type"])
+                self.assertEqual(set(answers), {response["id"] for response in block["responses"]})
+                for response in block["responses"]:
+                    answer = answers[response["id"]]
+                    self.assertEqual(answer, known_answer(response["validator"]))
+                    self.assertNotIn("initial", response)
+                    if answer["type"] == "fields":
+                        self.assertEqual("math_multi_input", response["type"])
+                        self.assertEqual("table", response["layout"])
+                        definitions = response["fields"]
+                        self.assertEqual(set(answer["values"]), {field["id"] for field in definitions})
+                        cells = [cell["field"] for row in response["rows"] for cell in row if isinstance(cell, dict)]
+                        self.assertCountEqual(answer["values"], cells)
+                        for field in definitions:
+                            self.assertEqual("numeric", field["type"])
+                            self.assertNotIn("initial", field)
+                            self.assertNotIn("value", field)
+                            numeric += 1
+                    elif answer["type"] == "matching":
+                        self.assertEqual("math_matching_drag", response["type"])
+                        self.assertEqual(set(answer["pairs"]), {item["id"] for item in response["sources"]})
+                        self.assertEqual(set(answer["pairs"].values()), {item["id"] for item in response["targets"]})
+                        matching_tiles += len(answer["pairs"])
+                    else:
+                        self.assertEqual("math_multiple_choice_single", response["type"])
+                        self.assertTrue(set(answer["selected"]) <= {option["id"] for option in response["options"]})
+                        selections += 1
+        self.assertEqual((8, 8, 2), (numeric, matching_tiles, selections))
+
+    test_02_public_description_has_no_solution_or_preselected_answer = (
+        ProgrammingFormattingMathBridgeTest.test_02_public_description_has_no_solution_or_preselected_answer)
+    test_03_independent_answers_accept_and_empty_responses_never_succeed = (
+        ProgrammingFormattingMathBridgeTest.test_03_independent_answers_accept_and_empty_responses_never_succeed)
+    test_04_every_numeric_field_is_required_and_accepts_rational_equivalents = (
+        ProgrammingFormattingMathBridgeTest.test_04_every_field_is_required_wrong_values_reject_and_numeric_equivalents_accept)
+    test_05_every_matching_tile_rejects_swaps_missing_and_duplicate_targets = (
+        ProgrammingFormattingMathBridgeTest.test_05_every_matching_tile_rejects_swaps_missing_and_duplicate_targets)
+    test_06_every_wrong_choice_rejects_even_with_correct_numeric_fields = (
+        ProgrammingFormattingMathBridgeTest.test_06_mixed_tables_do_not_accept_only_the_correct_choice_or_only_the_table)
+    def test_07_all_permutations_preserve_meaning_without_relying_on_map_order(self):
+        for path, block, answers in self.cases:
+            for identity, answer in answers.items():
+                if answer["type"] != "matching":
+                    continue
+                expected = answer["pairs"]
+                for targets in itertools.permutations(expected.values()):
+                    attempt = {identity: matching(**dict(zip(expected, targets)))}
+                    with self.subTest(lesson=path.name, pairs=attempt):
+                        if attempt == answers:
+                            self.assert_correct(block, attempt)
+                        else:
+                            result = self.assert_rejected(block, attempt, evaluable=True)
+                            self.assertIn(block["feedback"]["incorrect"], result["feedback"])
+                self.assert_correct(block, {identity: matching(**dict(reversed(list(expected.items()))))})
+                self.assert_rejected(block, {identity: matching(**expected, obsolete_source="obsolete_target")}, evaluable=False)
+
+    def test_08_zero_is_a_valid_answer_but_nan_infinity_and_partial_numbers_are_not(self):
+        for path, block, answers in self.cases:
+            for identity, answer in answers.items():
+                if answer["type"] != "fields":
+                    continue
+                for key, value in answer["values"].items():
+                    if value == "0":
+                        for equivalent in ("0/2", "0.0", "-0"):
+                            with self.subTest(lesson=path.name, field=key, equivalent=equivalent):
+                                changed = copy.deepcopy(answers)
+                                changed[identity]["values"][key] = equivalent
+                                self.assert_correct(block, changed)
+                    for invalid in ("", "-", "NaN", "Infinity", "-Infinity", "1e309", "0/0"):
+                        with self.subTest(lesson=path.name, field=key, invalid=invalid):
+                            changed = copy.deepcopy(answers)
+                            changed[identity]["values"][key] = invalid
+                            self.assert_rejected(block, changed, evaluable=False)
+
+    def test_09_selected_guides_do_not_change_answer_identity_or_disclose_other_options(self):
+        guided = 0
+        for path, block, answers in self.cases:
+            for response in block["responses"]:
+                if response["type"] != "math_multiple_choice_single":
+                    continue
+                guided += 1
+                baseline = without_reviews(block)
+                current = self.assert_correct(block, answers)
+                previous = self.assert_correct(baseline, answers)
+                for field in ("contentFingerprint", "results", "feedback"):
+                    self.assertEqual(previous[field], current[field])
+                self.assertEqual(self.worker.ask("describe_math", block=block, language="es")["responses"],
+                                 self.worker.ask("describe_math", block=baseline, language="es")["responses"])
+                for option in response["options"]:
+                    self.assertTrue(option.get("reviewFeedback", "").strip())
+                    if option["id"] in answers[response["id"]]["selected"]:
+                        continue
+                    changed = copy.deepcopy(answers)
+                    changed[response["id"]] = choice(option["id"])
+                    result = self.assert_rejected(block, changed, evaluable=True)
+                    self.assertIn(option["reviewFeedback"], result["feedback"])
+                    for absent in response["options"]:
+                        if absent["id"] != option["id"]:
+                            self.assertNotIn(absent["reviewFeedback"], result["feedback"])
+        self.assertEqual(2, guided)
+
+    def test_10_original_storage_and_localized_families_match_the_published_positional_origin(self):
+        # Use the existing state-contract encoder against independent published
+        # sources. This verifies provenance, not native migration or user state.
+        spec = importlib.util.spec_from_file_location("loading_state_contracts", ROOT / "scripts/curriculum/stable_state_layout.py")
+        schema = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(schema)
+        protected = {"type", "id", "question", "code", "initialCode", "language", "options", "answers", "correctIndex",
+                     "correctOrder", "fragments", "explanation", "outputCheck", "projectFiles", "sourceFiles", "cmake"}
+        for path, current in self.lessons.items():
+            with self.subTest(lesson=path.name):
+                published = self.published[path]
+                expected_origin = schema.prepare(published["es"])["stateLayout"]["origin"]
+                self.assertEqual(expected_origin, current["stateLayout"]["origin"])
+                self.assertEqual({locale: {"sha256": schema.fingerprint(old),
+                                          "origin": schema.prepare(old)["stateLayout"]["origin"]}
+                                  for locale, old in published.items()}, current["stateLayout"]["family"])
+                current_blocks = {identity: block for page, slots in zip(current["pages"], current["stateLayout"]["current"])
+                                  for identity, block in zip(slots["blocks"], page["blocks"])}
+                for page, old_page in enumerate(published["es"]["pages"]):
+                    for position, old in enumerate(old_page["blocks"]):
+                        identity = f"block_{page:04d}_{position:04d}"
+                        self.assertIn(identity, current_blocks)
+                        self.assertEqual({key: value for key, value in old.items() if key in protected},
+                                         {key: value for key, value in current_blocks[identity].items() if key in protected}, identity)
+                for locale in ("en", "fr"):
+                    localized = ROOT / path.relative_to(ROOT).as_posix().replace("/es/", "/" + locale + "/")
+                    self.assertEqual(published[locale], json.loads(localized.read_bytes().decode("utf-8-sig")))
+
+    test_11_curated_puzzle_text_and_data_remain_byte_exact = (
         ProgrammingFormattingMathBridgeTest.test_08_curated_puzzle_text_and_data_remain_byte_exact)
 
 

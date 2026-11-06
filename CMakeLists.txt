@@ -222,6 +222,30 @@ option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
     # These focused contracts never create windows or access user input/audio.
+    add_executable(lgaed_lesson_entry_policy_tests native/core/lesson_entry_policy_tests.cpp)
+    target_link_libraries(lgaed_lesson_entry_policy_tests PRIVATE lgaed_host_options)
+    add_test(NAME native.lesson_entry_policy COMMAND lgaed_lesson_entry_policy_tests)
+    set_tests_properties(native.lesson_entry_policy PROPERTIES TIMEOUT 30)
+    set(LGAED_COMPILER_CONTRACT_FIXTURES
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/crt-b9e32b9/lesson_clasificar_caracteres_y_normalizar_una_copia.json"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-585cef9/lesson_compartir_flujos_sin_acoplar_el_calculo.json")
+    add_custom_command(OUTPUT ${LGAED_COMPILER_CONTRACT_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_contract_fixture_source.py"
+            --output-dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_contract_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMENT "Verifying immutable pre-adoption compiler contracts from local Git"
+        VERBATIM)
+    add_custom_target(lgaed_compiler_contract_fixtures DEPENDS ${LGAED_COMPILER_CONTRACT_FIXTURES})
+    add_executable(lgaed_crt_output_variant_tests native/platform/windows/crt_output_variant_tests.cpp)
+    target_link_libraries(lgaed_crt_output_variant_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_crt_output_variant_tests lgaed_cpp_tool_host lgaed_compiler_contract_fixtures)
+    add_test(NAME native.crt_output_variant COMMAND lgaed_crt_output_variant_tests)
+    set_tests_properties(native.crt_output_variant PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_test(NAME native.crt_output_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_crt_output_variant.py)
+    set_tests_properties(native.crt_output_authoring PROPERTIES TIMEOUT 60)
     add_executable(lgaed_reading_gate_policy_tests native/presentation/windows/reading_gate_policy_tests.cpp)
     target_link_libraries(lgaed_reading_gate_policy_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.reading_gate_policy COMMAND lgaed_reading_gate_policy_tests)
@@ -253,6 +277,10 @@ if(BUILD_TESTING)
     add_test(NAME native.u12_insertion_extraction_math COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py
         -k ProgrammingInsertionExtractionMathBridgeTest)
+    add_test(NAME native.u12_loading_state_math COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py
+        -k ProgrammingLoadingStateMathBridgeTest)
+    set_tests_properties(native.u12_loading_state_math PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     set_tests_properties(native.u12_output_speech native.u12_insertion_extraction_math PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME native.intentional_exit_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_output_exit_code_contract.py)
@@ -1123,6 +1151,7 @@ if(BUILD_TESTING)
     set_tests_properties(native.window_smoke PROPERTIES TIMEOUT 20)
     add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
     target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_lesson_tests lgaed_compiler_contract_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u11_session_editorial_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u12_append_hypothesis_fixtures)
     add_dependencies(lgaed_lesson_tests lgaed_u12_composed_output_fixtures)

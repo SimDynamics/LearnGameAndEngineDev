@@ -86,7 +86,12 @@ void flow(const Asset& asset,const state::StateData& data) {
             [&](const Block& compiler){return compiler_puzzle_completed(data,asset.lesson,compiler);});
         const auto catalog_available=compiler_reference_available(asset.metadata,projected_position->page,metadata,projected,
             [&](const Block& compiler){return compiler_puzzle_completed(data,asset.metadata,compiler);});
-        require(available==proofs.at(relation.activity)&&available==catalog_available,
+        bool expected=proofs.at(relation.activity);
+        for(const auto& prior:asset.lesson.pages[position->page].blocks) {
+            if(&prior==&block)break;
+            if(prior.type==BlockType::cpp_compiler)expected=expected&&compiler_puzzle_completed(data,asset.lesson,prior);
+        }
+        require(available==expected&&available==catalog_available,
             "A protected U12 reference bypassed its editor or catalog/runtime admission differs");
     }
     for(const auto& relation:asset.lesson.activity_after) {
@@ -265,11 +270,17 @@ int main() try {
         state::StateStore reset_store(environment.paths.root/L"reset"/std::to_wstring(index));(void)reset_store.load();reset_store.save(reset);
         require(reopen_state(reset_store)==expected,"A reset U12 prerequisite or conserved state changed on reopen");
     });
-    test("exploratory return-1 source and all eleven active assets stay unchanged",[&] {
-        const auto& exploratory=at(assets.at("compartir_flujos_sin_acoplar_el_calculo").lesson,"block_0005_0002");
-        require(!has_compiler_objective(exploratory)&&!exploratory.output_check
-            &&exploratory.initial_code.find("return 1;")!=std::string::npos,
-            "The unintegrated U12L13 example silently acquired an objective or lost its intentional exit");
+    test("the new authored return-1 objective stays independent of these eighteen checks",[&] {
+        const auto& asset=assets.at("compartir_flujos_sin_acoplar_el_calculo");
+        const auto& intentional=at(asset.lesson,"block_0005_0002");
+        require(has_compiler_objective(intentional)&&intentional.output_check&&intentional.output_check->cases.size()==1
+            &&intentional.output_check->cases.front().exit_code==1
+            &&intentional.output_check->cases.front().outputs==std::vector<std::string>{"Entrada invalida|9:4"}
+            &&intentional.initial_code.find("return 1;")!=std::string::npos,
+            "The integrated U12L13 objective lost its exact output or intentional process result");
+        require(!compiler_puzzle_completed(achieved,asset.lesson,intentional)&&!snapshot(asset.lesson,achieved).at(intentional.stable_id)
+            &&compiler_puzzle_case_count(achieved,asset.lesson,intentional)==0,
+            "The eighteen independent batch checks manufactured credit for the new intentional-exit objective");
         for(const auto& [name,asset]:assets)require(state::sha256(read(asset.path))==asset.hash,
             "The headless U12 integration batch changed an active curricular asset");
         require(runs==23,"The focused U12 batch repeated or omitted a planned real compiler program");

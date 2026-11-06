@@ -1,10 +1,27 @@
 #pragma once
 
-// QA only. Adopt the exact existing U12L13 exploratory editor in memory;
+// QA only. Adopt the exact historical U12L13 exploratory editor in memory;
 // preserve the authored program, every layout owner and all published history.
 #include "core/compile_check_test_fixture.hpp"
 
 namespace lgaed::test {
+inline constexpr std::string_view intentional_exit_filename="lesson_compartir_flujos_sin_acoplar_el_calculo.json";
+// Exact Git blob, without checkout newline conversion. Never reconstruct the
+// exploratory document by removing a goal from today's integrated curriculum.
+inline curriculum::Lesson load_pre_intentional_exit_lesson() {
+    std::array<wchar_t,32768> executable{};
+    const auto count=GetModuleFileNameW(nullptr,executable.data(),static_cast<DWORD>(executable.size()));
+    if(!count||count>=executable.size())throw std::runtime_error("Cannot resolve historical intentional-exit fixture directory");
+    const auto path=std::filesystem::path(std::wstring_view(executable.data(),count)).parent_path()
+        /"test-fixtures/exit-585cef9"/intentional_exit_filename;
+    const auto bytes=state::read_bytes(path);
+    if(bytes.size()!=59848||state::sha256(bytes)!="09e6e7922ca9504bb0f485189d154c66d666e1e4c0c91fb0b7c4783fc0089488")
+        throw std::runtime_error("Historical intentional-exit source differs from pinned 585cef9ff64dcc1bfbe37457ac6a59074650f978 Git bytes");
+    auto result=windows::load_lesson(path);
+    result.source_path=std::filesystem::path(build::source_root)
+        /"app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo"/intentional_exit_filename;
+    return result;
+}
 inline constexpr std::string_view intentional_exit_lesson_id=
     "cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo";
 inline constexpr std::string_view intentional_exit_editor_id="block_0005_0002";
