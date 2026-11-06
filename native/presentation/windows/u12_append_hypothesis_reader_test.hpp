@@ -2,11 +2,15 @@
 // The complete authenticated documents are QA fixtures, not a second active
 // curriculum. Answers and pauses below are earned through real controls/audio.
 void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
-        const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase) {
+        const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase,bool current_stage=false) {
     check(phase<2,"Invalid U12 append-hypothesis reader phase");
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
-    check(state::sha256(before_bytes)=="81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183"
-        &&state::sha256(after_bytes)=="d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc",
+    const auto before_hash=current_stage?"e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e"
+        :"81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183";
+    const auto after_hash=current_stage?"9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b"
+        :"d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc";
+    const std::size_t editorial_prefix=current_stage?11:6;
+    check(state::sha256(before_bytes)==before_hash&&state::sha256(after_bytes)==after_hash,
         "The U12 append-hypothesis reader fixtures differ from their authenticated complete documents");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
     const auto at=identity_position(before,"block_0002_0001"),revised_at=identity_position(after,"block_0002_0001");
@@ -22,13 +26,29 @@ void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker
         &&revised.question=="Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible."
         &&draft_at.page==3&&draft_at.block==3&&compiler.type==curriculum::BlockType::cpp_compiler
         &&before.state_layout.reading_revisions.empty()&&after.state_layout.reading_revisions.size()==1
-        &&after.state_layout.reading_revisions.front().editorial_prefix==6,
+        &&after.state_layout.reading_revisions.front().editorial_prefix==editorial_prefix,
         "The reviewed U12 hypothesis, independent draft owner or closed reading provenance changed");
+    if(current_stage){
+        check(!before.compiler_puzzles_required&&!after.compiler_puzzles_required
+            &&before.reference_after.size()==1&&after.reference_after.size()==1
+            &&before.reference_after.front().activity=="block_0003_0003"
+            &&after.reference_after.front().activity==before.reference_after.front().activity
+            &&before.reference_after.front().blocks==std::vector<std::string>{"block_0003_0004","block_0004_0000","block_0004_0001","block_0004_0002"}
+            &&after.reference_after.front().blocks==before.reference_after.front().blocks
+            &&before.activity_after.size()==1&&after.activity_after.size()==1
+            &&before.activity_after.front().activity=="block_0004_0003"
+            &&after.activity_after.front().activity==before.activity_after.front().activity
+            &&before.activity_after.front().prerequisites==std::vector<std::string>{"block_0003_0003"}
+            &&after.activity_after.front().prerequisites==before.activity_after.front().prerequisites
+            &&after.pages.at(draft_at.page).blocks.at(draft_at.block).initial_code==compiler.initial_code,
+            "The current 11-to-12 hypothesis pair changed the existing append editor, derived gates or references");
+    }
     const auto draft_key=curriculum::draft_key("programming",before,compiler);
     state::Draft draft;draft.source=compiler.initial_code+"\n// QA: conservar borrador independiente\n";draft.input=" entrada\t\r\n";
     draft.indentation_json=state::make_indentation_metadata(draft.source,{});draft.selection_start=3;draft.selection_end=12;
     const auto cache=std::filesystem::path(build::source_root)/"out/qa/u12-append-hypothesis-reader"/
-        ("pcm-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64())+"-"+std::to_string(phase));
+        ("pcm-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64())
+            +(current_stage?"-current-":"-historical-")+std::to_string(phase));
     Fixture f(backend,false,true,true,"es",before,true,at.page,true,false,[](HWND view){
         update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
     },[&](state::StateData& data){state::put_draft(data,draft_key,draft);
@@ -39,7 +59,8 @@ void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker
         &&value.index<value.segments.size()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});
     },"complete focal U12 hypothesis synthesis and word alignment",120000);};
     const auto control=[&](int part){return child(f.view,1000+static_cast<int>(at.block)*100+part);};
-    std::cout<<"PHASE U12 hypothesis "<<phase<<" preparing authentic current p3\n";ready();f.reader->pause();
+    std::cout<<"PHASE U12 hypothesis "<<(current_stage?"current":"historical")<<' '<<phase
+        <<" editorial="<<editorial_prefix<<"->"<<editorial_prefix+1<<" preparing authentic p3\n";ready();f.reader->pause();
     check(!IsWindowVisible(f.host)&&narration::read_history(read_lesson_state(f.view)).entries.empty(),
         "The fresh U12 hypothesis fixture inherited hearing or owns the desktop");
     for(const auto& page:before.pages)for(const auto& block:page.blocks)
@@ -144,7 +165,8 @@ void u12_append_hypothesis_reader(const std::shared_ptr<windows::NarrationWorker
     },phase==0?"complete corrected U12 question and original rejected-feedback retry stop":"complete corrected U12 question and actual following pending puzzle",120000);
     check(std::ranges::all_of(question_parts,[&](auto index){return heard.contains(index);})&&!f.snapshot().finished,
         "Explicit Play skipped part of the corrected U12 question or completed an unanswered page");preserve();
-    std::cout<<"PASS U12 append hypothesis phase "<<phase<<": actual "<<(phase==0?"incorrect":"correct")
+    std::cout<<"PASS "<<(current_stage?"current":"historical")<<" U12 append hypothesis "<<editorial_prefix<<"->"<<editorial_prefix+1
+        <<" phase "<<phase<<": actual "<<(phase==0?"incorrect":"correct")
         <<" prediction retained; real old "<<(phase==0?"question":"unchanged later feedback")
         <<" pause maps to complete corrected question at zero without audio credit/autoplay; exact second reopening, full new contextual PCM/timing/UTF-16 plan and explicit playback, independent draft and original WAV/source preserved. No compiler execution, whole-lesson traversal or human listening acceptance claimed.\n";
 }

@@ -3,7 +3,7 @@
 // Included inside lesson_tests.cpp's existing anonymous namespace. All state
 // below is explicitly synthetic unit data, never a student's curricular work.
 void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
-        const std::filesystem::path& after_path) {
+        const std::filesystem::path& after_path,bool current_stage=false) {
     using namespace lgaed;
     using namespace winrt::Windows::Data::Json;
     constexpr std::string_view identity="block_0002_0001";
@@ -12,8 +12,13 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
     constexpr std::string_view old_question="Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. Predice el diagnóstico visible.";
     constexpr std::string_view new_question="Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible.";
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
-    check(state::sha256(before_bytes)=="81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183"
-        &&state::sha256(after_bytes)=="d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc",
+    const unsigned editorial_prefix=current_stage?11:6;
+    check(state::sha256(before_bytes)==(current_stage
+        ?"e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e"
+        :"81fb6029dc88ca86fd412f9084b758a953bc14d20322a98c6dbc7fbc6987d183")
+        &&state::sha256(after_bytes)==(current_stage
+        ?"9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b"
+        :"d5cafa688c73961ff3f4e60897d23d69f0df7826a9c192e723bca7a1e34c3dcc"),
         "The complete U12L3 hypothesis fixtures differ from their pinned Git/candidate bytes");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
     const auto old_metadata=windows::parse_lesson_progress_metadata(before.raw_json),metadata=windows::parse_lesson_progress_metadata(after.raw_json);
@@ -40,11 +45,11 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
         &&exercise_key(before,previous)==exercise_key(after,current)
         &&exercise_key(metadata,metadata.pages.at(2).blocks.at(1))==exercise_key(before,previous),
         "The U12L3 question revision changed source, answer, explanation or historical state ownership");
-    check(old_editorial.Size()==6&&editorial.Size()==7
+    check(old_editorial.Size()==editorial_prefix&&editorial.Size()==editorial_prefix+1
         &&fingerprint(old_layout.GetNamedObject(L"family"))==fingerprint(layout.GetNamedObject(L"family"))
         &&fingerprint(old_layout.GetNamedArray(L"origin"))==fingerprint(layout.GetNamedArray(L"origin"))
         &&fingerprint(old_layout.GetNamedArray(L"current"))==fingerprint(layout.GetNamedArray(L"current")),
-        "The U12L3 hypothesis revision replaced its family, origin, current map or six-edge prefix");
+        "The U12L3 hypothesis revision replaced its family, origin, current map or authentic editorial prefix");
     for(unsigned index=0;index<old_editorial.Size();++index)
         check(fingerprint(old_editorial.GetAt(index))==fingerprint(editorial.GetAt(index)),
             "The U12L3 question revision rewrote an earlier editorial proof");
@@ -72,7 +77,7 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
         "An unchanged old question acquired unproved prior reading content");
     for(const auto* model:{&after,&metadata}) {
         const auto& revisions=model->state_layout.reading_revisions;
-        check(revisions.size()==1&&revisions[0].editorial_prefix==6&&revisions[0].previous_blocks.size()==1
+        check(revisions.size()==1&&revisions[0].editorial_prefix==editorial_prefix&&revisions[0].previous_blocks.size()==1
             &&revisions[0].previous_blocks.contains(std::string(identity))
             &&fingerprint(JsonObject::Parse(winrt::to_hstring(revisions[0].previous_blocks.at(std::string(identity)))))==old_full,
             "Runtime/catalog lacks the exact source-bound previous U12L3 question");
@@ -111,7 +116,7 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
             "Preparing the corrected U12L3 hypothesis changed a complete response, draft, opaque payload or current page");
     }
 
-    const auto refresh=[&](const JsonObject& root){root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").GetObjectAt(6)
+    const auto refresh=[&](const JsonObject& root){root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").GetObjectAt(editorial_prefix)
         .Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(fingerprint(target(root)))));};
     const auto no_annotation=[](const JsonObject& root,std::string_view locale="es") {
         const auto raw=winrt::to_string(root.Stringify());
@@ -136,7 +141,7 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
             map.Insert(L"locale",JsonValue::CreateStringValue(L"en"));
             map.GetNamedObject(L"family").Insert(L"en",JsonObject::Parse(map.GetNamedObject(L"family").GetNamedObject(L"es").Stringify()));
         } else if(mode=="no_proof")map.GetNamedArray(L"editorial").RemoveAtEnd();
-        else if(mode=="proof_before")map.GetNamedArray(L"editorial").GetObjectAt(6).Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
+        else if(mode=="proof_before")map.GetNamedArray(L"editorial").GetObjectAt(editorial_prefix).Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
         else {
             const auto paragraph=altered.GetNamedArray(L"pages").GetObjectAt(0).GetNamedArray(L"blocks").GetObjectAt(1);
             const auto old=fingerprint(paragraph);paragraph.Insert(L"text",JsonValue::CreateStringValue(L"Otra prosa posterior compatible."));
@@ -153,7 +158,7 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
         else if(mode=="type")block.Insert(L"type",JsonValue::CreateStringValue(L"fill_code"));
         else if(mode=="answer")block.GetNamedArray(L"answers").SetAt(0,JsonValue::CreateStringValue(L"Total=6"));
         else if(mode=="code")block.Insert(L"code",JsonValue::CreateStringValue(L"int main(){}\n"));
-        else if(mode=="proof_after")map.GetNamedArray(L"editorial").GetObjectAt(6).Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
+        else if(mode=="proof_after")map.GetNamedArray(L"editorial").GetObjectAt(editorial_prefix).Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
         else if(mode=="origin")map.GetNamedArray(L"origin").GetObjectAt(2).GetNamedArray(L"blocks").GetObjectAt(1).Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
         else map.Insert(L"reading_revisions",JsonArray{});
         if(mode=="identity"||mode=="type"||mode=="answer"||mode=="code")refresh(altered);
@@ -163,5 +168,6 @@ void u12_append_hypothesis_contract(const std::filesystem::path& before_path,
     }
     check(state::read_bytes(before_path)==before_bytes&&state::read_bytes(after_path)==after_bytes,
         "The U12L3 contract checks rewrote their immutable input fixtures");
-    std::cout<<"PASS U12L3 hypothesis contract: exact complete pair and one question only, authentic six-edge predecessor in runtime/catalog, 33 identities and eight code fields, original answers and independent source/input/indentation/selection across correct/error/draft unit states, coherent variants without borrowed reading provenance and incompatible payloads rejected; no compiler execution, student construction or listening claimed\n";
+    std::cout<<"PASS U12L3 hypothesis contract "<<editorial_prefix<<"->"<<editorial_prefix+1
+        <<": exact complete pair and one question only, authentic predecessor in runtime/catalog, 33 identities and eight code fields, original answers and independent source/input/indentation/selection across correct/error/draft unit states, coherent variants without borrowed reading provenance and incompatible payloads rejected; no compiler execution, student construction or listening claimed\n";
 }

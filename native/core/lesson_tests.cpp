@@ -1470,6 +1470,9 @@ int main(int argc,char** argv) {
         if(argc==4&&std::string_view(argv[1])=="--u12-append-hypothesis"){
             u12_append_hypothesis_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
         }
+        if(argc==4&&std::string_view(argv[1])=="--u12-append-hypothesis-current"){
+            u12_append_hypothesis_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),true);return 0;
+        }
         if(argc!=1)return 2;
         using lgaed::windows::parse_lesson_json;
         const auto root = std::filesystem::path(lgaed::build::source_root);

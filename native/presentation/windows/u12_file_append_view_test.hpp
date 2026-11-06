@@ -7,7 +7,7 @@ void current_u12_file_append_view(){
         "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_cerrar_reemplazar_y_anadir_datos.json";
     const auto original=state::read_bytes(asset);
     std::string normalized(reinterpret_cast<const char*>(original.data()),original.size());std::erase(normalized,'\r');
-    require(state::sha256(normalized)=="e08054fbdeb93756cb45ae6515279742ee273f55c4ddf6a1b6962b447ed50a4e",
+    require(state::sha256(normalized)=="9fa23a593751256a5936eabfe1ae7dc8a2388a2dd80a146af6338557c625a55b",
         "The current U12L3 append asset differs from its independently audited LF source");
     const auto lesson=windows::load_lesson(asset);
     constexpr std::size_t page=3,compiler=3,choice=2,note=4,reference_page=4;
@@ -21,7 +21,7 @@ void current_u12_file_append_view(){
     const std::vector<std::string> references{"block_0003_0004","block_0004_0000","block_0004_0001","block_0004_0002"};
     const curriculum::StatePosition owner{page,compiler};
     require(lesson.id=="cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos"
-        &&lesson.pages.size()==9&&lesson.state_layout.signatures.size()==33&&metadata.GetNamedArray(L"editorial").Size()==11
+        &&lesson.pages.size()==9&&lesson.state_layout.signatures.size()==33&&metadata.GetNamedArray(L"editorial").Size()==12
         &&!lesson.compiler_puzzles_required&&goal.stable_id=="block_0003_0003"
         &&goal.type==BlockType::cpp_compiler&&curriculum::compiler_is_puzzle_prerequisite(lesson,goal)
         &&goal.initial_code.size()==130&&state::sha256(goal.initial_code)=="6cd72c317fbe6d076adfee4158cc8b63d811b9a0ebc1fe132617f6394b980729"
