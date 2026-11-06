@@ -232,15 +232,26 @@
             "close reinicia el destino a cero."
           ],
           "correctIndex": 0,
-          "explanation": "La segunda apertura de salida predeterminada reemplaza la muestra. El espacio es válido; lo que falta son los dos valores previos."
+          "explanation": "La segunda apertura de salida predeterminada reemplaza la muestra. El espacio es válido; lo que falta son los dos valores previos.",
+          "reviewFeedback": [
+            "Sigue qué caracteres quedan después de la segunda apertura y cuántos enteros permite extraer ese texto.",
+            "La extracción de un entero omite los espacios iniciales. Comprueba cuántos valores numéricos conserva el archivo.",
+            "La llamada a close() actúa sobre el archivo asociado al flujo de salida. Localiza las instrucciones que leen valores hacia a, b y c."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Repara únicamente el modo de la segunda apertura para conservar los dos valores iniciales y añadir el tercero. El programa inicial compila, muestra Lectura incompleta y termina con código 1. La acción conserva ese diagnóstico sin calificar una ejecución fallida. El objetivo de reparación termina correctamente, calcula Total=12 desde tres datos leídos y puede comprobarse con Compilar, ejecutar y comprobar. Conserva las comprobaciones de todas las etapas.",
+          "text": "Usa este editor para reparar el modo de la segunda apertura del archivo. Recupera lo aprendido sobre conservar el contenido anterior al añadir datos; mantén la primera apertura, las cadenas escritas y las comprobaciones del programa.\n\nPrimero ejecuta el programa inicial con Compilar, ejecutar y comprobar. Si las aperturas, escrituras y cierres tienen éxito, la consola muestra Lectura incompleta y el programa termina con código `1`. Esta ejecución permite observar el fallo; todavía no completa el objetivo de reparación. Si aparece otro diagnóstico, identifica primero la etapa que indica.\n\nModifica únicamente el modo de la segunda apertura. La primera debe seguir preparando la muestra con el texto 3 4 en cada ejecución. Conserva la cadena `\" 5\"` de la segunda escritura, con su espacio inicial, los cierres y las comprobaciones de apertura, escritura y extracción.\n\nTras la reparación, el archivo debe contener el texto 3 4 5. El programa debe extraer tres enteros, comprobar que esa lectura tuvo éxito y calcular su suma desde los valores leídos. La consola debe mostrar exactamente Total=12, sin títulos ni líneas vacías, y el programa debe terminar con código `0`. Se admite ese texto sin salto final o con un único salto de línea al final.\n\nVuelve a usar Compilar, ejecutar y comprobar. Al completar el objetivo podrás consultar la referencia posterior: contrasta la segunda apertura y comprueba que la primera sigue preparando la muestra. Una consola coincidente no demuestra por sí sola que la suma proceda de los datos extraídos del archivo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold",
+              "occurrence": 2
             }
           ]
         },
@@ -1068,6 +1079,16 @@
         "id": "block_0002_0001",
         "beforeSha256": "3f3f15e209f0d54ce342167a2e007062ebf83bb1784531d40873a75dafd765ef",
         "afterSha256": "b80a16cd7af0d46d6628a11784747299e7607317f58f87b48a41019f923157b2"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "2605bd47eb587664152a36237fd8cd1ba76894dcc58c182ac8a74661eb68489d",
+        "afterSha256": "8bcee01baa4355084dbab89902780b269b72901347981fe9a7e8d0fd77e85acf"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5530152564fc0424d687b947084473adf203069edd6c1c9c9295f90a5138fae4",
+        "afterSha256": "8862987a96139ba33fd9ba1d1aa97dd2adf9378a38028beb15a738697512988d"
       }
     ]
   },
@@ -1080,6 +1101,13 @@
         "block_0004_0001",
         "block_0004_0002"
       ]
+    },
+    {
+      "activity": "block_0005_0003",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001"
+      ]
     }
   ],
   "activityAfter": [
@@ -1087,6 +1115,12 @@
       "activity": "block_0004_0003",
       "requires": [
         "block_0003_0003"
+      ]
+    },
+    {
+      "activity": "block_0007_0001",
+      "requires": [
+        "block_0005_0003"
       ]
     }
   ]
