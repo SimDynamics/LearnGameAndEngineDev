@@ -10,11 +10,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera struct, vector, funciones por referencia const y composición local. Registro contiene codigo string, cantidad int y medida double. Para este informe el llamador proporciona hasta veinte registros; códigos ASCII de hasta ocho caracteres; cantidades de cero a mil y medidas de cero a veinte. Las cantidades suman como máximo veinte mil, que cabe en int. Las medidas se calculan con los datos originales, antes de formarlas como texto."
+          "text": "Reúne lo aprendido sobre `struct`, `std::vector`, parámetros por referencia `const` y composición mediante un flujo local. Define `Registro` con los miembros `codigo` de tipo `std::string`, `cantidad` de tipo `int` y `medida` de tipo `double`.\n\nEl llamador proporciona como máximo veinte registros. Cada código contiene de cero a ocho caracteres ASCII imprimibles; esto admite el código vacío y excluye saltos de línea o tabuladores dentro de la etiqueta. Las cantidades van de cero a mil y las medidas de cero a veinte, incluidos los extremos. Son condiciones de entrada de este ejercicio: no se pide escribir un validador. La suma de cantidades no supera veinte mil y cabe en `int`.\n\nEl total suma las cantidades. La media simple suma las medidas originales y divide esa suma por el número de registros: cada medida interviene una vez. Una cantidad igual a cero no elimina su registro ni cambia el peso de su medida. Para una colección vacía no se calcula la media, porque no hay registros entre los que dividir.",
+          "emphasis": [
+            {
+              "text": "La media simple",
+              "style": "bold"
+            },
+            {
+              "text": "Para una colección vacía no se calcula la media",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Cada fila debe tener [CODIGO]|[CANTIDAD]|[MEDIDA]. El código pide mínimo seis posiciones, con el contenido alineado a la izquierda y espacios después. La cantidad pide mínimo cuatro, contenido a la derecha y decimal. La medida usa fixed con dos cifras tras el punto. Los campos largos no se recortan. Tras las filas se presenta Total:T;Media:M, o Total:0;Sin medidas cuando no hay registros."
+          "text": "Cada fila tiene la forma [CODIGO]|[CANTIDAD]|[MEDIDA]. El código pide un mínimo de seis posiciones, contenido a la izquierda y espacios después. La cantidad pide un mínimo de cuatro posiciones, contenido a la derecha y representación decimal. La medida usa `std::fixed` y dos cifras tras el punto. Los contenidos largos se conservan completos. Son las reglas de presentación que ya estudiaste; los manipuladores se aplicarán al flujo local de cada composición (Köppe et al., 2023).\n\nTras las filas se escribe Total:T;Media:M. T representa la suma de cantidades y M la media simple de las medidas, presentada también con dos decimales. Para una colección vacía se escribe Total:0;Sin medidas. Los marcadores T y M describen los lugares de los valores; no se copian como letras en el informe."
         }
       ]
     },
@@ -26,7 +36,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe componer_fila(const Registro&) y componer_informe(const vector<Registro>&), que devuelven string sin imprimir ni modificar registros. El informe usa una línea por fila y deja el resumen al final, sin salto final obligatorio. Usa {\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375}, {\"Pasillo\", 0, 0.0}. main sólo decide mostrar el resultado. Antes de construir y ejecutar el programa, completa el resumen y elige la presentación de las filas en el puzzle siguiente. Después, construye el programa en el editor y pulsa «Compilar, ejecutar y comprobar»."
+          "text": "Escribe `componer_fila(const Registro&)` y `componer_informe(const std::vector<Registro>&)`, ambas con resultado `std::string`. Deben devolver el texto, sin imprimir ni modificar los registros. Cada llamada empieza con su propio `std::ostringstream` vacío; el formato del llamador no decide el de esa composición. La composición local devuelve caracteres que después puede utilizar quien llamó a la función (Stroustrup, 2024, sección 9.11).\n\nLa función de fila devuelve sólo una fila, sin salto final. El informe añade un salto después de cada fila y sitúa el resumen al final, sin añadir un salto después de ese resumen. `main` decide mostrar el resultado; este primer cotejo admite también un salto al terminar su salida.\n\nUsa los registros {\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375} y {\"Pasillo\", 0, 0.0}, en ese orden. Antes de construir el programa, completa el resumen y elige la presentación de las filas en el puzzle siguiente. Después construye el modelo y las dos funciones en el editor; pulsa Compilar, ejecutar y comprobar cuando el programa esté listo.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "math_puzzle",
@@ -170,7 +186,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La actividad posterior «Reconstruir otro informe completo» tiene un editor propio para vacío, una observación de cantidad cero y una etiqueta de seis caracteres con cantidad mil. Este primer editor comprueba únicamente el informe inicial. En ambos casos deben conservarse orden y asociaciones; cada composición comienza vacía y el estado de cout no decide el formato interno."
+          "text": "Este primer editor comprueba únicamente el informe de los tres registros iniciales. La actividad posterior «Reconstruir otro informe completo» tiene un editor propio con otros casos: colección vacía, un registro de cantidad cero y una etiqueta de seis caracteres con cantidad mil. En ambas construcciones deben conservarse el orden y las asociaciones de los datos; cada llamada comienza una composición nueva. El cotejo comprueba la salida, mientras que la composición local y la conservación de los argumentos siguen siendo criterios del programa."
         }
       ]
     },
@@ -187,11 +203,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Las filas son [A     ]|[   5]|[4.31], [Sala  ]|[   7]|[6.94] y [Pasillo]|[   0]|[0.00]; el resumen es Total:12;Media:3.75. La suma de medidas original es 11.25 y la media de tres registros es 3.75. Criterios: los campos conservan su asociación y orden; cada ancho se aplica a su campo; se usa decimal para cantidades; la precisión sólo forma texto; vacío no divide; las funciones devuelven caracteres y dejan intactos los argumentos. Se aceptan otras implementaciones que cumplan esos contratos."
+          "text": "Las filas son [A     ]|[   5]|[4.31], [Sala  ]|[   7]|[6.94] y [Pasillo]|[   0]|[0.00]; el resumen es Total:12;Media:3.75. Las medidas originales suman 11.25 y se dividen entre los tres registros para obtener la media.\n\nCriterios: asociación y orden conservados; ancho aplicado a cada campo; cantidades decimales; cálculo con los datos originales; formato utilizado sólo para componer texto; vacío sin división. Las funciones devuelven la composición y dejan intactos sus argumentos. Se aceptan otras implementaciones que cumplan esos contratos."
         },
         {
           "type": "paragraph",
-          "text": "Para la colección vacía se devuelve Total:0;Sin medidas. Para un único registro, la media es su propia medida. La línea de \"Taller\" con cantidad mil no añade relleno al código ni a esa cantidad: ambos alcanzan el mínimo exacto."
+          "text": "Para la colección vacía se devuelve Total:0;Sin medidas. Con un único registro, la media es su propia medida, aunque su cantidad sea cero. En la comprobación posterior, el código \"Taller\" y la cantidad mil alcanzan exactamente sus mínimos y no necesitan relleno. Distingue comprobar la presentación de estos casos y comprobar que los datos siguen intactos."
         }
       ]
     },
@@ -209,7 +225,8 @@
           "answers": [
             "[R     ]|[   3]|[8.81]\n141"
           ],
-          "explanation": "La fila redondea para presentar; el miembro sigue conteniendo 8.8125 y el cálculo da ciento cuarenta y uno."
+          "explanation": "La fila redondea para presentar; el miembro sigue conteniendo 8.8125 y el cálculo da ciento cuarenta y uno.",
+          "reviewFeedback": "Distingue la escritura de dos decimales del valor que conserva el miembro. Sigue después el cálculo que usa ese dato original y el formato de su propia salida."
         },
         {
           "type": "multiple_choice",
@@ -220,11 +237,112 @@
             "Con la longitud de las cadenas numéricas ya compuestas."
           ],
           "correctIndex": 0,
-          "explanation": "El formato no debe introducir una modificación silenciosa de los datos usados para calcular."
+          "explanation": "El formato no debe introducir una modificación silenciosa de los datos usados para calcular.",
+          "reviewFeedback": [
+            "Distingue los datos usados para calcular de los caracteres producidos después.",
+            "Comprueba si redondear para mostrar justifica sustituir las medidas del cálculo.",
+            "Revisa qué magnitud pide la media: las medidas del registro o la longitud de sus textos."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En otros datos, promediar cantidades redondeadas puede producir un resultado diferente. La separación de composición y cálculo hace explícita cuál medida interviene. No se pide analizar de nuevo las cadenas que acabamos de construir."
+          "text": "Con otros datos, sustituir cada medida por su escritura redondeada antes de promediar puede cambiar incluso los dos decimales de la media final. Conserva las medidas originales para sumar y dividir, y aplica el formato al resultado del cálculo. La práctica siguiente compara ambos procedimientos con datos que sí permiten ver esa diferencia. No se pide volver a interpretar las cadenas compuestas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__componer_informes_sin_cambiar_los_datos__contrastar_media_antes_de_formatear",
+          "prompt": "Otro informe contiene tres registros con las medidas 0.0625, 0.0625 y 0.3125. Completa las dos sumas: una usa las medidas originales; la otra sustituye antes cada medida por su escritura de dos decimales, es decir, 0.06, 0.06 y 0.31. Después elige la media presentada con dos decimales que exige el contrato del informe. En ambos procedimientos se divide entre tres; las cantidades de los registros no ponderan esta media.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumas",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Datos sumados",
+                "Suma"
+              ],
+              "rows": [
+                [
+                  "Medidas originales",
+                  {
+                    "field": "original"
+                  }
+                ],
+                [
+                  "Medidas sustituidas por sus escrituras redondeadas",
+                  {
+                    "field": "redondeada"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Suma de las medidas originales",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "redondeada",
+                  "type": "numeric",
+                  "label": "Suma después de sustituir las medidas",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "0.4375"
+                  },
+                  "redondeada": {
+                    "type": "numeric",
+                    "expected": "0.43"
+                  }
+                }
+              }
+            },
+            {
+              "id": "media_presentada",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "original",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `Media:0.15`",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "sustituida",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Salida: `Media:0.14`",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "original"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las medidas originales suman 0.4375. Dividir esa suma entre tres da aproximadamente 0.145833, que se presenta como Media:0.15. Las escrituras de dos decimales suman 0.43; su media sería aproximadamente 0.143333 y se presentaría como Media:0.14. La diferencia confirma por qué el contrato conserva los datos originales para calcular y aplica el formato después.",
+            "incorrect": "Comprueba cada suma con su propio conjunto de datos. La media pedida utiliza las medidas originales, aunque cada fila muestre una escritura con menos cifras. Divide la suma correspondiente entre los tres registros y sólo después decide los dos decimales del resumen."
+          }
         }
       ]
     },
@@ -236,7 +354,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye otra función que reciba numero int entre cero y mil y devuelva muestra_NNNN.txt, con un mínimo de cuatro cifras decimales y ceros iniciales. Para siete debe devolver muestra_0007.txt; para mil, muestra_1000.txt. La función sólo forma un nombre: no abre ni escribe un archivo. Haz dos llamadas con siete y veintitrés y presenta los resultados en líneas distintas. Construye una batería con las llamadas para 7, 23, 0 y 1000, en ese orden, una por línea con salto final. Usa Compilar, ejecutar y comprobar cuando estén las cuatro llamadas en el mismo programa.",
+          "text": "Construye una función que reciba `numero`, de tipo `int`, entre cero y mil incluidos, y devuelva un `std::string` con la forma muestra_NNNN.txt. La parte numérica se presenta en decimal, con un mínimo de cuatro posiciones y ceros iniciales. Para siete debe devolver muestra_0007.txt; para mil, muestra_1000.txt.\n\nCada llamada compone y devuelve un nombre nuevo, sin imprimir ni cambiar `std::cout`. Formar ese texto no abre ni escribe un archivo. En `main`, presenta las llamadas para `7`, `23`, `0` y `1000`, en ese orden, con un salto después de cada nombre, incluido el último. Usa Compilar, ejecutar y comprobar cuando las cuatro llamadas pertenezcan al mismo programa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -260,7 +378,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La batería incorpora cero y el extremo mil. El sufijo .txt sigue inmediatamente al entero; no hereda un ancho de campo ni el resultado anterior. El cero inicial aquí rellena una cadena y no cambia la notación decimal de los datos del programa."
+          "text": "La batería incorpora cero y el extremo mil. El prefijo muestra_ se escribe antes de solicitar el ancho para el número; el sufijo .txt se escribe después. Insertar el entero consume ese ancho, por lo que el sufijo no recibe relleno. Los ceros añadidos son caracteres del nombre, sin convertir el valor del argumento en un literal octal (Köppe et al., 2023)."
         }
       ]
     },
@@ -277,15 +395,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Las líneas son muestra_0007.txt, muestra_0023.txt, muestra_0000.txt y muestra_1000.txt. Criterios: prefijo y sufijo constantes; el número procede del argumento, se presenta decimal y recibe ceros hasta cuatro posiciones; cada llamada usa una composición nueva; no imprime ni crea el archivo; la cadena retornada conserva el nombre completo. Otra escritura que cumpla el contrato es válida."
+          "text": "Esta primera referencia presenta los cuatro nombres, pero omite el salto después del último. Por eso no satisface todavía la salida literal del editor anterior. La referencia completa al final de esta página conserva las mismas cuatro llamadas y añade ese salto final.\n\nLos nombres son muestra_0007.txt, muestra_0023.txt, muestra_0000.txt y muestra_1000.txt. Criterios: prefijo y sufijo constantes; número tomado del argumento, presentado en decimal y rellenado hasta cuatro posiciones; composición nueva por llamada; nombre completo devuelto sin imprimir ni crear el archivo. Otra organización que cumpla el contrato es válida.",
+          "emphasis": [
+            {
+              "text": "omite el salto después del último",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La unidad ya enseñó a elegir el destino de una cadena. Si después se usa este nombre para abrir un archivo, apertura, escritura y cierre conservarán sus propias comprobaciones. Componer un nombre válido como texto no comprueba que ese destino pueda abrirse."
+          "text": "La unidad ya enseñó a elegir el destino de una cadena. Si más adelante se utiliza el nombre para abrir un archivo, habrá que comprobar la apertura y las operaciones de escritura correspondientes. Componer el nombre como texto no comprueba que el archivo pueda abrirse; son operaciones distintas (Stroustrup, 2024, sección 9.11)."
         },
         {
           "type": "paragraph",
-          "text": "Referencia posterior de las cuatro composiciones del nombre."
+          "text": "Referencia posterior que sí cumple la batería completa del nombre: cuatro composiciones en el orden pedido y salto después de cada una, incluida la última."
         },
         {
           "type": "code",
@@ -308,11 +432,12 @@
           "answers": [
             "Total:0;Sin medidas|1a"
           ],
-          "explanation": "El informe local presenta su total decimal. cout conserva hexadecimal para el entero que recibe directamente."
+          "explanation": "El informe local presenta su total decimal. cout conserva hexadecimal para el entero que recibe directamente.",
+          "reviewFeedback": "Sigue por separado el flujo local del informe y std::cout. Decide qué base recibe el entero insertado directamente después de la cadena devuelta."
         },
         {
           "type": "paragraph",
-          "text": "La construcción posterior retoma los contratos de datos, cálculo, formato y destino en un editor independiente. Criterios de transferencia: datos intactos, media de medidas originales, vacío sin división, formato explícito y flujo local por resultado. Los datos nuevos deben comprobar la misma lógica sin volver al editor de este informe."
+          "text": "La construcción siguiente retoma datos, cálculo, formato y presentación en otro editor. Conserva los criterios: argumentos intactos, media simple de medidas originales, colección vacía sin división, formato elegido explícitamente y composición local nueva por resultado. Usa los datos nuevos para comprobar la misma lógica, sin modificar el editor del informe inicial."
         }
       ]
     },
@@ -332,11 +457,16 @@
             "13.00: sumar las medidas ya da el resumen."
           ],
           "correctIndex": 0,
-          "explanation": "La media simple divide la suma 13 entre dos registros. Las cantidades participan en el total, sin ponderar esa media."
+          "explanation": "La media simple divide la suma 13 entre dos registros. Las cantidades participan en el total, sin ponderar esa media.",
+          "reviewFeedback": [
+            "Identifica cuántas medidas se promedian y qué papel tiene cada cantidad.",
+            "Revisa si el contrato pide una media simple o una ponderada.",
+            "Distingue la suma de medidas de la división que permite obtener su media."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye desde este editor las funciones componer_fila y componer_informe con los contratos ya definidos. main presenta en una sola batería: colección vacía; un registro {\"O\", 0, 2.0}; y la colección {\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}. Cada fila y cada final de resumen termina con salto. La función devuelve texto sin imprimir ni modificar sus registros. Usa Compilar, ejecutar y comprobar con las tres llamadas y consulta después la referencia.",
+          "text": "Reconstruye en este editor `Registro`, `componer_fila` y `componer_informe` con los contratos definidos al principio. Conserva la separación de saltos: la fila devuelta no lleva salto; el informe añade un salto después de cada fila y deja su resumen sin salto final; `main` añade un salto al mostrar cada informe completo. Así no aparecen líneas vacías entre resultados.\n\nDentro del mismo programa, presenta tres llamadas en este orden: colección vacía; el registro {\"O\", 0, 2.0}; y la colección {\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}. Cada función devuelve texto sin imprimir ni modificar los registros. Usa Compilar, ejecutar y comprobar con las tres llamadas y consulta después la referencia.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -598,7 +728,8 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
-          "block_0003_0003"
+          "block_0003_0003",
+          "contrastar_media_antes_de_formatear"
         ]
       },
       {
@@ -1126,13 +1257,159 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "contrastar_media_antes_de_formatear",
+        "sha256": "d3921c13a4ddfe2b918ba09647e9ad80d5fec0c41d91b508483aa6a1ec369e2c",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0001_0001",
         "beforeSha256": "2634648fff3ba9f7585eff1b94270ac3d0e0957f7b389cac2e2be86e8db59b6e",
         "afterSha256": "62a515230c68c4dd0fdc5018d071a34fe2e99ea4c5c7e2b6821fb03929039518"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c97e2669fc4d4c9358daf91b15df3a64f3bae9ef05f85e716211bc4085c9ea03",
+        "afterSha256": "171db37b96b083c02c691fcbca9eb51a2d1b29662121f4d361ad16f2f5a8dbf5"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "0877ddf4a5265bafa340193ae87455ec291818b9d3e528240339b3f4d4539f75",
+        "afterSha256": "750625d7965aa245a83d23af2cf7bfdc78fea183d2dbdfa63fb0b24453054b52"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "62a515230c68c4dd0fdc5018d071a34fe2e99ea4c5c7e2b6821fb03929039518",
+        "afterSha256": "b116f4b00f37619667b5e235a20fb5c22c8de585f8b56aa594392cfb126c6284"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "a2d8bede11b6bbf99748ed68e132173b20422e67fa42ef680cbf4db7aa8bbf23",
+        "afterSha256": "bc7a2f75454d2a101ed1a5b802346868471ee64cf20ede12e976246d0875fa56"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "9cc11aeaf5b4439e264a2d71b8e51e5db90a42e2465beef3352bbba5ebbebee2",
+        "afterSha256": "17177a4d7075897492f23cfca9fd8661a0bc1fdd1dba4f8741d0a5668723f37e"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "c47c60216d07100505c7827d6aeda186401d46900f8b0b33ef7355fe983a24c1",
+        "afterSha256": "f441cfb02c02e33be71d00662377dc67090ab080ad4b7e753a3e3a55f105d225"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "2ecedc9736b1dd878a11a591a179cdbcb12f317d25449aedffa05d161c441ed4",
+        "afterSha256": "aaadc3a1c2f2ddfc1ba36d1e5f8cef7c524684637dc286ca057fb3d144851a84"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "75e9841e3a8c036aa98371426b4e70be6ef7c559f3881d7e9c0119c9e3c47c8d",
+        "afterSha256": "a8835a619fd805e3cd0ec8f39634f340d76f4b4258bcbf67c527e9676a95ff2b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "6d573baf0d16fc2426aa30524a0aa88f1bb27a5ba3eb3bffae00939daae0632b",
+        "afterSha256": "51ea791dc2a01e624777a50e9cdce26c2eef8a56ef85c9dbb2962b1fd40cc8be"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2a22f5f74dae8d6cef617b3a6b8b5f59ae9642fa5c1eb2d0f6179fea141beab0",
+        "afterSha256": "fef7e95a3ce833cd5ad3a7551ced4671aed8a2af72ca0dd31ab5a3882e2cbcc6"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "c189b96fba71ee1708d112b6d34055b7a2d6124f9baf69f39e9cfa880eb0c142",
+        "afterSha256": "dfd84047401681a5c313113e6d647851798951be422d3aa2470eeb8c32e394e5"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "6e919247c69f21d96b9541dc04f7753610815794eece7a1cea488afdb114dc5c",
+        "afterSha256": "46d40f67e86b5d89939d64b2781b88f0ec0f6e285eac075a010e35487a98d80b"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "105f56ba8777c5a30a8fc69c19c233a9965c9100977d4fd36f0990c71962473b",
+        "afterSha256": "0c9bc1ec4191efc5edd552e542393afb24ed84d1e378995affa90c66e086838b"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "7162915d25cf0cdf30c04643642640c55e62224cf81947e69e7c00d7ec976523",
+        "afterSha256": "f9eed22417073c46a11d5d50f64407b050e6e24c5135ac0585ccd9411a24eda9"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "0b3a824c41ee51fcc5771fcf41e62dc0749b93834b1f5bf32e235ccfe5dc90bf",
+        "afterSha256": "57cc70585669ee64b58f3a20ff78635b016865aa20214a783a988dcbe9bf17f2"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "1e212d7adc3993abf61b60574b4d34f8026c4c6cb7df2007e4f47573e64841a3",
+        "afterSha256": "32743f099b8152dfa9b708695cdc91a62876b613dd712b55e55a41db464785a2"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "f4474b2fa5fad75aa35c952b291f28686fafae0a5cd4e37742d4d0410b20b354",
+        "afterSha256": "e32995510630939e3db9588736d696ea309cc1aa8e5d54479328932aedfc2193"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "0917ef52d6859f1385e6bd843d70264d2dae0a44ea070d0d8d2f85144f0649fa",
+        "afterSha256": "d72f583f121b584c2b0b91a1139971708af6b6090a358df71844e6e0866f9ba8"
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0001_0002",
+      "blocks": [
+        "block_0001_0003",
+        "block_0002_0000",
+        "block_0002_0001",
+        "block_0002_0002",
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0004_0002",
+      "blocks": [
+        "block_0004_0003",
+        "block_0005_0000",
+        "block_0005_0001",
+        "block_0005_0002",
+        "block_0005_0003",
+        "block_0005_0004",
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "block_0007_0003",
+      "blocks": [
+        "block_0008_0000",
+        "block_0008_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0003_0001",
+      "requires": [
+        "block_0001_0002"
+      ]
+    },
+    {
+      "activity": "block_0006_0001",
+      "requires": [
+        "block_0001_0002"
+      ]
+    }
+  ]
 }

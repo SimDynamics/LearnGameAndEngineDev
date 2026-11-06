@@ -10,11 +10,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Una medida double tiene un valor almacenado. El flujo elige qué caracteres mostrar de ese valor. Una salida más corta puede omitir detalle; una salida más larga puede mostrar más dígitos. Ninguna cambia por sí sola la variable ni hace más exacto el cálculo que la produjo. Vamos a elegir formatos y a comprobar también el valor que permanece disponible (Stroustrup, 2024, sección 9.10.2, pp. 278–279)."
+          "text": "Una variable de tipo `double` conserva un valor. Al insertar ese valor en un flujo de salida, elegimos cómo presentarlo mediante caracteres. Podemos mostrar menos cifras o más cifras sin asignar otro valor a la variable. Pedir más dígitos de salida tampoco mejora el cálculo que produjo el dato (Stroustrup, 2024, sección 9.10.2).\n\nAquí estudiaremos la precisión de presentación: una opción del flujo que controla cuántas cifras se escriben según el formato elegido. Esa opción se distingue del valor almacenado y de la exactitud con que una medida física describe su objeto. El programa conserva su dato aunque su escritura sea más breve.",
+          "emphasis": [
+            {
+              "text": "precisión de presentación",
+              "style": "bold"
+            },
+            {
+              "text": "sin asignar otro valor a la variable",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "std::fixed presenta notación decimal con un número elegido de cifras tras el punto. std::scientific presenta una cifra antes del punto y una potencia de diez. std::defaultfloat vuelve a la notación general, que elige escritura decimal o científica según magnitud y precisión. setprecision(n), de <iomanip>, controla la precisión; su significado depende de cuál formato esté activo."
+          "text": "`std::fixed` selecciona notación fija: los dígitos se escriben alrededor del punto decimal sin un exponente añadido. `std::scientific` selecciona notación científica: presenta una cifra antes del punto y añade una parte con e que indica cuántas veces multiplicar o dividir por diez. Interpretaremos esa parte en la página siguiente. `std::defaultfloat` selecciona el modo general, que elige una escritura sin exponente o una escritura científica según la magnitud y la precisión.\n\n`std::setprecision(2)` guarda el valor dos como opción de precisión del flujo. El entero entre paréntesis es el argumento de este manipulador; para utilizarlo incluimos `<iomanip>`. La precisión y el modo son opciones distintas: el significado de ese dos depende de si está seleccionado `std::fixed`, `std::scientific` o `std::defaultfloat`. Veremos ese conteo antes de trabajar con otros datos (Köppe et al., 2023, secciones 31.5.5.4 y 31.7.7; Stroustrup, 2024, sección 9.10.2).",
+          "emphasis": [
+            {
+              "text": "La precisión y el modo son opciones distintas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -23,7 +39,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta comparación guiada produce 12.50|1.25e+01|12.5. Las tres partes presentan doce y medio. Explicaremos la escritura científica y qué cuenta cada precisión antes de usar otros datos."
+          "text": "La comparación guiada produce 12.50|1.25e+01|12.5, sin salto final. Los separadores proceden de las cadenas del programa. Las tres partes representan doce y medio; no son tres asignaciones nuevas a `medida`. En las páginas siguientes distinguiremos el exponente y el número de cifras que controla cada modo."
         }
       ]
     },
@@ -35,7 +51,109 @@
         },
         {
           "type": "paragraph",
-          "text": "En 1.25e+01, e+01 indica multiplicar por diez: el resultado es 12.5. e+02 indicaría multiplicar por cien. En 1.25e-01 se divide por diez: 0.125. e-02 indicaría dividir por cien. Los ceros escritos en +01 o -01 forman parte del texto del exponente; no cambian el significado de uno. No confundas esta e con un dígito hexadecimal: aquí señala un factor decimal."
+          "text": "En la escritura científica, la parte posterior a e es el exponente: su signo y su valor indican cómo aplicar un factor de diez a la parte anterior. En 1.25e+01 se multiplica 1.25 por diez y se obtiene 12.5. Con e+02 se multiplica por cien, porque se aplica dos veces el factor diez.\n\nUn exponente negativo indica divisiones: 2.50e-01 representa 2.50 dividido por diez, es decir, 0.25; e-02 indica dividir por cien. El exponente cero no cambia la cantidad: en 2.50e+00 el factor es uno, por lo que se representa 2.50.\n\nLas cifras del exponente se leen en decimal. Sus ceros iniciales forman parte del formato: +01 expresa uno, no una selección de base octal. La e separa la parte numérica del exponente; aquí no es un dígito hexadecimal.",
+          "emphasis": [
+            {
+              "text": "El exponente cero no cambia la cantidad",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__precision_y_presentacion_de_double__interpretar_exponentes_distintos",
+          "prompt": "Relaciona cada escritura científica con el valor que representa. Atiende al signo y al valor del exponente. Usa cada destino una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "positivo",
+                  "label": "3.125e+02",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "3.125e+02",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "negativo",
+                  "label": "3.125e-02",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "3.125e-02",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "cero",
+                  "label": "3.125e+00",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "3.125e+00",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "pequeno",
+                  "label": "0.03125",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "0.03125",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "sin_cambio",
+                  "label": "3.125",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "3.125",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "grande",
+                  "label": "312.5",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "312.5",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "positivo": "grande",
+                  "negativo": "pequeno",
+                  "cero": "sin_cambio"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El exponente +02 indica multiplicar 3.125 por cien: 312.5. El exponente -02 indica dividir 3.125 por cien: 0.03125. El exponente cero corresponde a un factor uno, por lo que 3.125e+00 representa 3.125.",
+            "incorrect": "Separa la parte anterior a e del exponente. Decide si el exponente pide multiplicar por una potencia de diez, dividir por ella o conservar el valor mediante un factor uno."
+          }
         },
         {
           "type": "output_prediction",
@@ -45,7 +163,8 @@
           "answers": [
             "1.25e-01"
           ],
-          "explanation": "Se presenta 1.25 dividido por diez, que conserva el valor 0.125."
+          "explanation": "Se presenta 1.25 dividido por diez, que conserva el valor 0.125.",
+          "reviewFeedback": "Separa las cifras posteriores al punto del exponente. Conserva su signo y los caracteres que exige la notación científica del programa."
         },
         {
           "type": "multiple_choice",
@@ -56,7 +175,12 @@
             "Doscientos cincuenta."
           ],
           "correctIndex": 2,
-          "explanation": "El exponente positivo dos multiplica 2.50 por cien."
+          "explanation": "El exponente positivo dos multiplica 2.50 por cien.",
+          "reviewFeedback": [
+            "Aplica el factor indicado por el exponente a la parte anterior a e.",
+            "Cuenta cuántos factores de diez indica el exponente, no sólo su signo.",
+            "Relaciona el exponente positivo con la multiplicación correspondiente."
+          ]
         }
       ]
     },
@@ -64,15 +188,112 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "La precisión cuenta cosas distintas"
+          "text": "La precisión cuenta cifras distintas según el formato"
         },
         {
           "type": "paragraph",
-          "text": "Con fixed, setprecision(2) pide dos cifras después del punto: 8.8125 se presenta como 8.81. Con scientific pide también dos cifras después del punto, pero en la parte situada antes de e: 8.81e+00. Con defaultfloat pide dos cifras significativas en total: ese valor se presenta como 8.8. No cuenta el signo ni los caracteres del exponente como cifras significativas."
+          "text": "Con `std::fixed`, `std::setprecision(2)` pide dos cifras después del punto: 8.8125 se presenta como 8.81. Con `std::scientific` pide también dos cifras después del punto de la parte anterior a e: 8.81e+00. En esos casos no cuenta los caracteres del exponente.\n\nCon `std::defaultfloat`, esa misma precisión permite hasta dos cifras significativas en total: el dato del ejemplo se presenta como 8.8. Aquí el conteo empieza en la primera cifra distinta de cero. El signo y el punto no cuentan como cifras; tampoco se cuentan como parte de ese total los caracteres del exponente (Stroustrup, 2024, sección 9.10.2).",
+          "emphasis": [
+            {
+              "text": "dos cifras después del punto",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "hasta dos cifras significativas",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Las cifras significativas expresan el detalle numérico comenzando por la primera cifra no nula. En 0.0125, el 1, el 2 y el 5 son tres cifras significativas; los ceros anteriores sólo sitúan el punto. En notación general no se exige rellenar siempre con ceros hasta la precisión: 2 puede presentarse como 2 aunque se permitan más cifras."
+          "text": "El conteo se refiere a la escritura numérica que estamos mostrando. En 0.0125, las cifras significativas son 1, 2 y 5; los ceros anteriores sólo sitúan el punto. En 0.0105, el cero que está entre 1 y 5 sí cuenta: también hay tres cifras significativas.\n\nEn el modo general de estos ejemplos no se añaden necesariamente ceros hasta alcanzar la precisión permitida. Por eso un dato de valor dos puede presentarse como 2, y cero como 0. La opción limita el detalle de la escritura; no certifica por sí sola cuántos dígitos de una medida física son fiables."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__precision_y_presentacion_de_double__elegir_precision_para_el_mismo_dato",
+          "prompt": "Considera un flujo nuevo y el mismo dato 0.03125. Indica el entero positivo n de std::setprecision(n) que corresponde a cada objetivo. Con fixed y scientific se piden exactamente las escrituras indicadas. Con defaultfloat escribe el menor n que conserva todas las cifras significativas de esa escritura.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "Con fixed: 0.03125\nCon scientific: 3.125e-02\nCon defaultfloat: 0.03125",
+              "mathMode": "text"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "precisiones",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Formato",
+                "Valor de n"
+              ],
+              "rows": [
+                [
+                  "fixed",
+                  {
+                    "field": "fija"
+                  }
+                ],
+                [
+                  "scientific",
+                  {
+                    "field": "cientifica"
+                  }
+                ],
+                [
+                  "defaultfloat: menor n",
+                  {
+                    "field": "general"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "fija",
+                  "type": "numeric",
+                  "label": "Valor de n para la escritura con fixed",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cientifica",
+                  "type": "numeric",
+                  "label": "Valor de n para la escritura con scientific",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "general",
+                  "type": "numeric",
+                  "label": "Menor valor de n para conservar las cifras con defaultfloat",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fija": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "cientifica": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "general": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con fixed hay cinco cifras después del punto en 0.03125. Con scientific hay tres después del punto en la parte 3.125. Las cifras significativas son 3, 1, 2 y 5: el mínimo para conservarlas con defaultfloat es cuatro. Los ceros que preceden al primer dígito no nulo no cuentan como cifras significativas. Las tres escrituras conservan aquí el valor completo.",
+            "incorrect": "Cuenta en el lugar correspondiente a cada formato: tras el punto en fixed, tras el punto de la parte anterior a e en scientific y desde la primera cifra no nula en general. No cuentes los caracteres del exponente. Para general se pide el menor valor suficiente."
+          }
         },
         {
           "type": "output_prediction",
@@ -82,7 +303,8 @@
           "answers": [
             "4.31|4.31e+00|4.3"
           ],
-          "explanation": "fixed y scientific usan dos cifras tras el punto; general usa dos significativas en total."
+          "explanation": "fixed y scientific usan dos cifras tras el punto; general usa dos significativas en total.",
+          "reviewFeedback": "Mantén la precisión guardada al cambiar de modo y decide qué cuenta en fixed, scientific y general. No cambies el valor de la variable."
         },
         {
           "type": "multiple_choice",
@@ -93,7 +315,12 @@
             "Dos cifras posteriores al punto de la representación."
           ],
           "correctIndex": 2,
-          "explanation": "La precisión de fixed no es el ancho ni la cantidad total de cifras."
+          "explanation": "La precisión de fixed no es el ancho ni la cantidad total de cifras.",
+          "reviewFeedback": [
+            "Distingue el número de cifras solicitado de la longitud total del campo.",
+            "Comprueba si fixed cuenta también las posiciones anteriores al punto.",
+            "Identifica qué posiciones de la representación controla la precisión en fixed."
+          ]
         }
       ]
     },
@@ -104,6 +331,16 @@
           "text": "Redondear la representación conserva el dato"
         },
         {
+          "type": "paragraph",
+          "text": "Seleccionar un formato de salida no asigna un nuevo valor al dato. Al evaluar una expresión aritmética posterior se utiliza el valor de la variable, no una cadena que se haya mostrado antes. Sigue por separado las inserciones en el flujo y las operaciones del cálculo.\n\nLos datos de estos ejemplos se han elegido para estudiar el redondeo de la presentación sin resolver un empate entre dos escrituras posibles. Un `double` también puede contener una aproximación de un dato inicial; pedir más cifras no elimina esa aproximación. Conserva separados el cálculo y el formato del informe.",
+          "emphasis": [
+            {
+              "text": "no asigna un nuevo valor al dato",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
@@ -111,11 +348,8 @@
           "answers": [
             "6.94|111"
           ],
-          "explanation": "La presentación corta redondea, pero el cálculo usa 6.9375, no el texto 6.94."
-        },
-        {
-          "type": "paragraph",
-          "text": "Los ejemplos usan valores pequeños elegidos para comprobar la salida sin depender de una decisión de redondeo justo a mitad. La representación de double también puede aproximar un dato inicial; pedir más cifras de salida no elimina esa aproximación. Conserva separado el cálculo del formato del informe."
+          "explanation": "La presentación corta redondea, pero el cálculo usa 6.9375, no el texto 6.94.",
+          "reviewFeedback": "Distingue los caracteres de la primera inserción del valor que se multiplica después. Sigue también el modo y la precisión de la segunda salida."
         },
         {
           "type": "multiple_choice",
@@ -126,7 +360,12 @@
             "Asignó 6.94 a la variable."
           ],
           "correctIndex": 0,
-          "explanation": "El manipulador actúa sobre el flujo; no realiza una asignación al dato."
+          "explanation": "El manipulador actúa sobre el flujo; no realiza una asignación al dato.",
+          "reviewFeedback": [
+            "Relaciona el manipulador con las opciones del flujo, no con una asignación al dato.",
+            "Localiza si el programa modifica el cálculo o sólo la forma de presentar su resultado.",
+            "Comprueba si hay una asignación a la variable al seleccionar el formato."
+          ]
         }
       ]
     },
@@ -137,6 +376,16 @@
           "text": "El formato y la precisión permanecen por separado"
         },
         {
+          "type": "paragraph",
+          "text": "El modo y la precisión permanecen como opciones independientes del flujo. `std::defaultfloat` selecciona el modo general, pero no modifica por sí solo la precisión guardada; para cambiarla usamos `std::setprecision` (Köppe et al., 2023, secciones 31.5.2.3, 31.5.5.4 y 31.7.7).\n\nUn flujo nuevo comienza en modo general con precisión seis. Volver a `std::defaultfloat` no restaura toda la configuración inicial: por ejemplo, no cambia la base de los enteros. Elige deliberadamente cada opción que necesite tu informe, como hicimos con los flujos independientes.",
+          "emphasis": [
+            {
+              "text": "no modifica por sí solo la precisión guardada",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
@@ -144,7 +393,8 @@
           "answers": [
             "8.81|8.8|8.8125"
           ],
-          "explanation": "defaultfloat cambia el modo, pero conserva la precisión dos. Sólo después se establece seis."
+          "explanation": "defaultfloat cambia el modo, pero conserva la precisión dos. Sólo después se establece seis.",
+          "reviewFeedback": "Sigue dos opciones independientes: el modo seleccionado y el valor de precisión. defaultfloat no restaura por sí solo la precisión inicial."
         },
         {
           "type": "fill_code",
@@ -154,11 +404,8 @@
           "answers": [
             "defaultfloat"
           ],
-          "explanation": "defaultfloat selecciona el modo general. La precisión se cambia mediante otro control."
-        },
-        {
-          "type": "paragraph",
-          "text": "Un flujo nuevo empieza en modo general con precisión seis. Escribir defaultfloat no restaura toda la configuración original: no cambia por sí solo la precisión, el relleno ni la base de enteros. Elige deliberadamente los controles que necesita tu informe."
+          "explanation": "defaultfloat selecciona el modo general. La precisión se cambia mediante otro control.",
+          "reviewFeedback": "Escribe sólo el nombre del manipulador situado después de std::. La selección del modo general se distingue del ajuste de precisión que aparece después."
         }
       ]
     },
@@ -169,6 +416,16 @@
           "text": "La precisión no añade decimales a un int"
         },
         {
+          "type": "paragraph",
+          "text": "El formato de presentación para valores de punto flotante no convierte en double una expresión de tipo `int`. Cuando se inserta un entero, su representación sigue las reglas de salida de enteros. Cuando se inserta un `double`, el modo y la precisión elegidos determinan sus cifras de presentación.\n\nCon `std::fixed` también podemos pedir cero cifras después del punto. En ese caso puede aparecer una escritura sin punto aunque el dato siga siendo de tipo `double`. El aspecto del texto no basta para deducir el tipo de la expresión que lo produjo.",
+          "emphasis": [
+            {
+              "text": "no convierte en double una expresión de tipo `int`",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
@@ -176,7 +433,8 @@
           "answers": [
             "27|3.50"
           ],
-          "explanation": "El int mantiene su presentación entera; fixed y precisión afectan aquí al double."
+          "explanation": "El int mantiene su presentación entera; fixed y precisión afectan aquí al double.",
+          "reviewFeedback": "Identifica el tipo de cada expresión insertada antes de aplicar las reglas de formato para double."
         },
         {
           "type": "output_prediction",
@@ -186,11 +444,12 @@
           "answers": [
             "7|0.00"
           ],
-          "explanation": "Cero cifras tras el punto deja la representación redondeada a siete; cero double con dos cifras se presenta como 0.00."
+          "explanation": "Cero cifras tras el punto deja la representación redondeada a siete; cero double con dos cifras se presenta como 0.00.",
+          "reviewFeedback": "Analiza por separado la inserción con cero cifras después del punto y la inserción posterior del valor cero con otra precisión."
         },
         {
           "type": "note",
-          "text": "Estos programas no cambian la configuración regional: usan el punto decimal y los nombres de formato del C++ estándar. Una tabla de salida es texto producido, no una modificación del tipo de los datos."
+          "text": "Las salidas de estos programas utilizan el punto como separador decimal. Al escribir una predicción, conserva los caracteres mostrados en los ejemplos, incluidos el signo del exponente y sus ceros. Una representación con punto o sin él no cambia por sí sola el tipo del dato."
         },
         {
           "type": "multiple_choice",
@@ -202,7 +461,12 @@
             "F=12;S=12.00e+00;G=1.2"
           ],
           "correctIndex": 0,
-          "explanation": "Fixed cuenta posiciones tras el punto; scientific presenta una cifra antes del punto y dos después; general cuenta cifras significativas y no fuerza esos ceros finales."
+          "explanation": "Fixed cuenta posiciones tras el punto; scientific presenta una cifra antes del punto y dos después; general cuenta cifras significativas y no fuerza esos ceros finales.",
+          "reviewFeedback": [
+            "Cuenta por separado los decimales en F y S y las cifras significativas en G.",
+            "Comprueba los ceros exigidos por scientific y los que el modo general no obliga a añadir.",
+            "Revisa la posición del punto en scientific y el conteo correspondiente a cada formato."
+          ]
         }
       ]
     },
@@ -214,8 +478,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una función que reciba un double conocido entre cero y veinte y devuelva F=valor;S=valor;G=valor. F usa fixed con dos cifras tras el punto; S usa scientific con dos cifras tras el punto; G usa general con dos cifras significativas. La función no imprime ni modifica el dato del llamador. En main presenta las composiciones de 8.8125 y 6.9375 en líneas distintas, y comprueba luego que el primer dato multiplicado por dieciséis sigue dando ciento cuarenta y uno. Construye una sola batería: presenta primero 8.8125, después 6.9375, cero y doce mediante esa misma función. A continuación presenta el primer dato multiplicado por dieciséis, en formato general con precisión seis. Termina las cinco líneas con salto. Usa Compilar, ejecutar y comprobar cuando el programa contenga toda la batería.",
+          "text": "Construye una función que reciba un dato de tipo `double`, entre cero y veinte, y devuelva una cadena con el formato F=valor;S=valor;G=valor. Cada llamada debe crear su propio `std::ostringstream` local. F utiliza `std::fixed` con dos cifras tras el punto; S utiliza `std::scientific` con dos cifras tras el punto; G utiliza `std::defaultfloat` con precisión dos. La función devuelve el texto sin imprimir ni modificar el dato del programa que la llama.\n\nEn `main`, guarda 8.8125 en una variable. Presenta mediante la misma función ese primer dato, después 6.9375, cero y doce, en ese orden y en cuatro líneas. En una quinta línea, presenta el primer dato multiplicado por dieciséis, usando modo general con precisión seis. Todas las líneas terminan con salto, incluida la última.\n\nResuelve el puzzle previo, construye toda la batería y pulsa «Compilar, ejecutar y comprobar». El cotejo automático comprueba la salida; después contrasta también la organización de tu función y la conservación del dato con los criterios de referencia.",
           "emphasis": [
+            {
+              "text": "su propio `std::ostringstream` local",
+              "style": "bold"
+            },
             {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
@@ -238,7 +506,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada llamada compone en un flujo nuevo: el formato previo de cout no determina los campos internos. La batería incluye cero y doce para separar cifras decimales, cifras significativas y exponente; después observa el valor original en un cálculo independiente."
+          "text": "Las cuatro llamadas deben componer mensajes independientes. El flujo local configura los campos sin heredar el formato de `std::cout`; devolver una cadena tampoco transfiere sus opciones al destino. El cálculo posterior usa la variable original.\n\nUna salida coincidente no demuestra por sí sola que se haya creado la función pedida ni que las representaciones se obtengan insertando el dato. Revisa tu fuente: debe producir las tres escrituras de otra cantidad permitida sin sustituirlas por respuestas almacenadas como cadenas fijas."
         }
       ]
     },
@@ -255,7 +523,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Las líneas de referencia son F=8.81;S=8.81e+00;G=8.8, F=6.94;S=6.94e+00;G=6.9 y 141. Criterios: cada campo elige su modo y precisión correctos; la función devuelve una cadena sin imprimir; las llamadas no acumulan texto previo; el cálculo posterior usa el dato original. Para cero: F=0.00;S=0.00e+00;G=0. Para doce: F=12.00;S=1.20e+01;G=12. Otra organización que conserve el contrato es válida."
+          "text": "La primera referencia es una comparación parcial: presenta sólo las composiciones de 8.8125 y 6.9375 y el resultado 141. Su última línea no termina con salto. Ilustra la separación entre presentación y cálculo, pero no satisface aún las cuatro llamadas y las cinco líneas completas de la consigna. La referencia final de esta página sí incluye toda la batería.\n\nAl contrastar tu construcción, comprueba que cada campo elige su modo y precisión, que la función devuelve una cadena sin imprimir y que las llamadas no acumulan texto previo. El cálculo posterior debe usar el dato original. Para cero se obtiene F=0.00;S=0.00e+00;G=0; para doce, F=12.00;S=1.20e+01;G=12. Puedes elegir otra organización si conserva el contrato.",
+          "emphasis": [
+            {
+              "text": "comparación parcial",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -265,17 +539,1049 @@
           "answers": [
             "2.00|2.00e+00|2"
           ],
-          "explanation": "La parte general no exige dos ceros decimales; el valor dos es el mismo en las tres representaciones."
+          "explanation": "La parte general no exige dos ceros decimales; el valor dos es el mismo en las tres representaciones.",
+          "reviewFeedback": "Sigue el modo y la precisión antes de cada inserción. Distingue las cifras exigidas tras el punto de los ceros que el modo general puede omitir."
         },
         {
           "type": "paragraph",
-          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+          "text": "La referencia siguiente contiene las cuatro composiciones y el cálculo final, en las cinco líneas de la consigna y con salto al terminar cada una. Todas pertenecen al mismo programa; no hace falta cambiar de versión para obtener la batería completa."
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "d9d7dc7d9d26d610931abe2624dcc06d89439d97d59629959d2b197439d88c9f"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "b5ace44e897cdaf34529a0799c1cc67f72c77d8a5877633db12b096e759551e3"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "72bb15b5e68c419ebc6029c4585248ea15709f784ee7132dd5fbe6763aafc467"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "ca1c2d36a8d5daeaf2255a5ad79dd3e2f022a88ad9dbf588b23111a0894d3e28"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "200f405f72faf950134b1b764e8a22017640f4d9a34607a37e0d86bf8b56c660"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "bc8746bfabcb9eb773cf803c7617baf8f358239e99029f29f4eb4ff244ef1e61"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "32d824e621139c80e297da2b903750c40a45217c5a4f818d00bd827961deeb00"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "35bbe6615aae8b4a6634131d0b0f58f627da8724ca3da6a890ba8f34e8475af2"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "c0210e200297e1fb127ec1796bde03dcf9276543d2b08c129af77bca961de579"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "4bbfef707ce5b6cf8c4d0dc789f3c92e82991b86a9c41faf7e2ca753281d0861"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "e167e9c6c50730012604ce534245a5bd3f4fcf4c49e740138456deb47181604f"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "e9d537753d4dcaed1b6ee36254b44c0a199758746023bdf791d01d8a16df6d0a"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "5aedc87287c83bb617f076d71cee412e21069679a22c989c542fd6ef32fb678f"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "620581423f661563b1d8a147f8b7ff174781bb35a15df43be0a6d02a1453f099"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "e0c32a035045e590f8ac47d64f0aabff015aaf60fe31203985f90486ddcec757"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "07264a8698c077cbca75d46d1a32d247805aeec6ba40b822f3c8057c1e475d22"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "interpretar_exponentes_distintos",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "elegir_precision_para_el_mismo_dato",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0002",
+          "block_0003_0001",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0003",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "precision_y_tipo_insertado",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "6667cc2f4876b64efd1beffdc4a919ccf2708f7baa9c869c9ce9f205a3c139df",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "d9d7dc7d9d26d610931abe2624dcc06d89439d97d59629959d2b197439d88c9f"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b5ace44e897cdaf34529a0799c1cc67f72c77d8a5877633db12b096e759551e3"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5504b3e54002855ef9ce9d089bd45dff83aab278fa0e3a407eddd246fc2b8f89"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ca1c2d36a8d5daeaf2255a5ad79dd3e2f022a88ad9dbf588b23111a0894d3e28"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "97d9dbe2b2230234d8a92a3844ed18d8785c6bae7fa53a4c0eec57b7dbca5819"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "bc8746bfabcb9eb773cf803c7617baf8f358239e99029f29f4eb4ff244ef1e61"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "79cd84909bacb671db6219eab868eb2a8cf6484907b18168ad3c88d9c5709e7c"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "35bbe6615aae8b4a6634131d0b0f58f627da8724ca3da6a890ba8f34e8475af2"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "c0210e200297e1fb127ec1796bde03dcf9276543d2b08c129af77bca961de579"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "4bbfef707ce5b6cf8c4d0dc789f3c92e82991b86a9c41faf7e2ca753281d0861"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e167e9c6c50730012604ce534245a5bd3f4fcf4c49e740138456deb47181604f"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "d9402f79031ec2386a8844e5d7edc34a5d81fab56584ffc777a421fb93889299"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "620581423f661563b1d8a147f8b7ff174781bb35a15df43be0a6d02a1453f099"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "e0c32a035045e590f8ac47d64f0aabff015aaf60fe31203985f90486ddcec757"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "23341759a87d3821e41250eb9d326ac0f821347e6a6410299a9f977934b9e472",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "d9d7dc7d9d26d610931abe2624dcc06d89439d97d59629959d2b197439d88c9f"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b5ace44e897cdaf34529a0799c1cc67f72c77d8a5877633db12b096e759551e3"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "72bb15b5e68c419ebc6029c4585248ea15709f784ee7132dd5fbe6763aafc467"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ca1c2d36a8d5daeaf2255a5ad79dd3e2f022a88ad9dbf588b23111a0894d3e28"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "200f405f72faf950134b1b764e8a22017640f4d9a34607a37e0d86bf8b56c660"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "bc8746bfabcb9eb773cf803c7617baf8f358239e99029f29f4eb4ff244ef1e61"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "32d824e621139c80e297da2b903750c40a45217c5a4f818d00bd827961deeb00"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "35bbe6615aae8b4a6634131d0b0f58f627da8724ca3da6a890ba8f34e8475af2"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "c0210e200297e1fb127ec1796bde03dcf9276543d2b08c129af77bca961de579"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "4bbfef707ce5b6cf8c4d0dc789f3c92e82991b86a9c41faf7e2ca753281d0861"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e167e9c6c50730012604ce534245a5bd3f4fcf4c49e740138456deb47181604f"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "e9d537753d4dcaed1b6ee36254b44c0a199758746023bdf791d01d8a16df6d0a"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "5aedc87287c83bb617f076d71cee412e21069679a22c989c542fd6ef32fb678f"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "620581423f661563b1d8a147f8b7ff174781bb35a15df43be0a6d02a1453f099"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "e0c32a035045e590f8ac47d64f0aabff015aaf60fe31203985f90486ddcec757"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "07264a8698c077cbca75d46d1a32d247805aeec6ba40b822f3c8057c1e475d22"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "c030fa1ad392478f6e574f56b69876517cfaff6f75c077d0768c80b6bd5b8586",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "d9d7dc7d9d26d610931abe2624dcc06d89439d97d59629959d2b197439d88c9f"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b5ace44e897cdaf34529a0799c1cc67f72c77d8a5877633db12b096e759551e3"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "66ca41ab50ffb42ec277a73871edcd22cba0969d426f0a1145af4300252f1ccc"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ca1c2d36a8d5daeaf2255a5ad79dd3e2f022a88ad9dbf588b23111a0894d3e28"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "2a4514777fd8f26cc7e70afe1d71851474ad98aed64aa388b417d4211c74c64f"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "bc8746bfabcb9eb773cf803c7617baf8f358239e99029f29f4eb4ff244ef1e61"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "140774b6dd7b74fb2404bca0a83709a6df1107537066ee75e94ade04c2a7ae74"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "35bbe6615aae8b4a6634131d0b0f58f627da8724ca3da6a890ba8f34e8475af2"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "c0210e200297e1fb127ec1796bde03dcf9276543d2b08c129af77bca961de579"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "4bbfef707ce5b6cf8c4d0dc789f3c92e82991b86a9c41faf7e2ca753281d0861"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e167e9c6c50730012604ce534245a5bd3f4fcf4c49e740138456deb47181604f"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "e42ab5310e30a28234409ce68aa16962cd9b63fe438b760e03f63d58614fa58e"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "620581423f661563b1d8a147f8b7ff174781bb35a15df43be0a6d02a1453f099"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "e0c32a035045e590f8ac47d64f0aabff015aaf60fe31203985f90486ddcec757"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "interpretar_exponentes_distintos",
+        "sha256": "02c0241d7db85c5a41fe7bb55b850a068d53b99a4484184b9b39c66b2b3cd231",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "elegir_precision_para_el_mismo_dato",
+        "sha256": "6d5387cbf92b0e584054a8a466ee40cab62fa4949d844b9030d89063955e2f8d",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "precision_y_tipo_insertado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "ef7981b13ab9adfea96366b1aab4d038609483ab87223032656ca9e7437abc2f",
+        "afterSha256": "eb51431a395e315c8ce9aa4a678a4933372a32cb9221d36252fa19279805cd24"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "37615e24619fe8e4958ed055683af37723b70de0291c911174c154357b66ede0",
+        "afterSha256": "dc5e2f495da6404c2cd00e5d5e75c4740d737d1e7908b1966d8d0c800da8e946"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "102905df29bbea74a83a971021f17be53fc9ec77999a70d2feef6e0a7c190777",
+        "afterSha256": "96b6defa772177b6e72a1075659839843e33e5b4754ea660ae09ee08891d572d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "6daa0ef1d2303ea1f228d669380d76f643b51ee09c41c34d62ac0ec6861e8eb2",
+        "afterSha256": "6dc3e6ff317b41a71f375a450622c11fd9267503c13bd43174a663e629e8de51"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "1f476ec95e0a8fa3bb9ca86f41753998125c668c242997ea30526031facbad0f",
+        "afterSha256": "edd0dad9cc17ffdb01689466629794646edc25dfa4705833b9aab2f822a81d32"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "4f0769580b011141a2ecc36dee433bbe3acb5e39fa9653aae41254f84c73ab9a",
+        "afterSha256": "d1d39682a41e19202af773d9a887bb4e2fc3eb0f09a3555fe043ae80eaeee11c"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "d97b77138fa687839117eb5ca2fd0044f0cd4dc5efa4c70eff0518b727392be1",
+        "afterSha256": "014a73bba551cb19bf14d9501fb91c84bbd366194d4ac577f4615500c356c8c5"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "aeff5cef71873950f07302c8eecc4fc1d6bbd0fa54e798fab0e19caa7e27b8d4",
+        "afterSha256": "86e0cb9df84ed18b818344ea6184298cc8eac71f735661c5a9870ad97c99562e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "36cb6eee3cdda12f43f14f5192c709090cae115012f3d088814ee1c29bf849b9",
+        "afterSha256": "581fe3fb4ccfec27f0932719e2be82d4f8ee9d15f68f6d870c46d9e0999ac879"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "3afb4812041d5b845c23209070a7ee32cab776a3db94f0ddc138c638a4a4e471",
+        "afterSha256": "b7bf062d26c62436635b8588de0ef250fd729b6c56f6863236861ed9f9a18f3c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "fcc668c6f451a03ad7eef544607ae9784d9b46a0405f1d64f31e2f49839c8c60",
+        "afterSha256": "412f7f401d12693ed95355e81828acdd38234b1465aa97bc9e3b54dabc135d77"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "41f1721f92287722298b82d260ca99be591bd4b31a662483b25c25d9acc88237",
+        "afterSha256": "59b7ba57c95f3e6f235fd6c5d8850f63e12185b29bf5918b2e1ed4daf2f4dbe6"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "3dbcf899a83779ef6fd2e03a9844f2d520ce29d759a3f9caf431388e41fc150e",
+        "afterSha256": "6e0c3eb1e377834fa389c379375a11dc1e31e41ad9df69dfbbbf2f3a34f236f2"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "10238b61164191cadc3e9d553a4629be4455ebec42c7bf8c5d6c24fccb42ec91",
+        "afterSha256": "a0dd723f16d93e19d5def4c3197523c7be03ea800fed5b696a5a3e393f0618e5"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e437ca43b8f584f1870f6fdb09ac769028afd8e6153ae8df4aece75f000417b7",
+        "afterSha256": "337a719cdc7337bbca77ab4bb6bf67e6917b4c6aa52a0688ada78d9ccdd3107b"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d9241a040ee02f4331e5255dd80a617e1c5b548dc32b60c54c6d8aa9b1bc488c",
+        "afterSha256": "d08b3e8cfba92c3233f595353099c0182ad936fa438464a0fc4b61d34c3965f6"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "8baed5db8c9112a3152fb15b544bde1adbd21fe54ef0135352f262113f3f4a37",
+        "afterSha256": "812083871e260d8d9822d31e8635aab6437208992901ef3685262c9310dfe975"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "72823c6dea74636d639b37288e671f656c826b7e2d17bdd8b44892cb7eb588f8",
+        "afterSha256": "b272c47c03151a0b0625a58fb6990264847f66c4581f3f3a7a07d165ac2de0cd"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "1a3c7bc0248bcd9b05dd06df2de928361e68c79088db4c909000a77f793fa0c2",
+        "afterSha256": "bdcd20c433e3359b1633ee1a044eaa66656fdb1a5a40a7e55159830c41f114f2"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "9ee343055f004cbb8084afbac0e61cf22d6666301db6e4c72bd5fe7f85587ed9",
+        "afterSha256": "4ddbc88ae247582aefbff9ed1be021f660a256ad375de83db59dcf28cc62934d"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "3c8bb6da21f851b2089f155dd1d8d13e8e2a8a0fee1757055f84364914e47c41",
+        "afterSha256": "d43a1f36474db90e651595c750ff909e159849a6181e78c69378011bce1bf693"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "d8423077dbb0ca4ec0ebecc6f7c1f6f7cad69f9fd8a8d3e384a8c745c220d070",
+        "afterSha256": "14de5891fa3568878977e1962b1d49cfd57cc651647f1d9f8136b2e4e454ddd9"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "4aa5339c5424a2382f16cfb3b9e7b123ef6e2365e1b05551ab53499464f688f8",
+        "afterSha256": "94c92967c5fe3cf23e08540ade92f11470747689ab0a42a2b97b3e70542b22e4"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "85ba1a97183959dd404f7f513959e940a978eded0f001569e69a56b747de67fe",
+        "afterSha256": "40809b6d385572ddba650b631dfcf13abc93837deb684de3a6fc3ddf70d21dcb"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "1f6ac027fc17986896015133a8bcef9a3c08284164f2726fa0dac33452ecce7d",
+        "afterSha256": "b754dc88cb10644bc6bef3a7a5be702646116d8b4864af6ca4a9da5dbb97d61a"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "48bc54a6907017b9acd70ec083f2052f34167dd67fae4801df5f15f39a950f34",
+        "afterSha256": "844d0efba9fbdf179cc224c42f1173dc2f0b7c962fc1552c873b05f87c4ba116"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "dc5e2f495da6404c2cd00e5d5e75c4740d737d1e7908b1966d8d0c800da8e946",
+        "afterSha256": "e796437ddc1f18a8e068bca6ab18781cb3209530e7f7325f1de823f543e210c2"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "86e0cb9df84ed18b818344ea6184298cc8eac71f735661c5a9870ad97c99562e",
+        "afterSha256": "0ed654d37b64118069a21c927813ff2028732d75bc7f9211d7f3852972bf3dd6"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e796437ddc1f18a8e068bca6ab18781cb3209530e7f7325f1de823f543e210c2",
+        "afterSha256": "c276b0cdc8770166ed6cb4802e7b83abd4671c4a47df16cf068b1f25558b57d8"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0006_0003",
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002",
+        "block_0007_0004",
+        "block_0007_0005"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0003",
+      "requires": [
+        "block_0006_0002"
       ]
     }
   ]

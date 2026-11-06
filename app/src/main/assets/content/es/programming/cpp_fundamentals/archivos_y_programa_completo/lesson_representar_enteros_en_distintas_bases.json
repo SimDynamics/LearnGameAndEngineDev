@@ -10,11 +10,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Un int conserva un valor entero; para presentarlo, el flujo produce caracteres. En decimal usamos diez dígitos, de 0 a 9. En 42, la posición de la derecha cuenta unidades y la siguiente grupos de diez: cuatro grupos de diez más dos unidades. La base indica cuántas unidades de una posición forman una unidad de la siguiente (Stroustrup, 2024, sección 9.10.1, pp. 277–278)."
+          "text": "Un objeto de tipo `int` contiene un valor entero. Cuando ese valor se inserta en un flujo de salida, el flujo produce una escritura formada por caracteres. La base elegida determina cómo se escribe la cantidad; no sustituye el valor que conserva el objeto.\n\nEn el sistema decimal usamos diez dígitos, de 0 a 9. Es un sistema posicional: el aporte de cada dígito depende del lugar que ocupa en la escritura. En 42 decimal, el 4 ocupa la posición de las decenas y aporta cuatro grupos de diez; el 2 ocupa la posición de las unidades y aporta dos. La cantidad total es cuarenta y dos. Aquí hablamos de posiciones de los dígitos, no de índices de un vector.",
+          "emphasis": [
+            {
+              "text": "el aporte de cada dígito depende del lugar que ocupa",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Cambiar de base no cambia la cantidad representada. La misma cantidad puede escribirse con otros dígitos y otras posiciones. Para aprender el formato usaremos enteros no negativos de cero a mil; así no confundimos este objetivo con la representación de enteros negativos ni necesitamos conocer bits."
+          "text": "La base indica cuántas unidades de una posición forman una unidad de la siguiente: en decimal, diez unidades forman una decena. Al presentar un mismo entero en otra base cambia su escritura, mientras el objeto conserva su valor. Para interpretar una escritura también necesitamos conocer su base.\n\nEn esta lección usaremos enteros no negativos de cero a mil. Estudiaremos los dígitos que se escriben y su significado; no necesitamos introducir la representación en memoria ni los bits.",
+          "emphasis": [
+            {
+              "text": "el objeto conserva su valor",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -25,7 +37,12 @@
             "Seis grupos de diez."
           ],
           "correctIndex": 2,
-          "explanation": "La posición de las decenas aporta seis por diez; el tres aporta unidades."
+          "explanation": "La posición de las decenas aporta seis por diez; el tres aporta unidades.",
+          "reviewFeedback": [
+            "Distingue el dígito escrito del aporte que tiene por ocupar la posición de las decenas.",
+            "Identifica por separado el dígito de las decenas y el de las unidades.",
+            "Relaciona la posición izquierda con el tamaño de cada grupo que cuenta."
+          ]
         }
       ]
     },
@@ -37,11 +54,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La base octal usa ocho dígitos: 0, 1, 2, 3, 4, 5, 6 y 7. La posición derecha cuenta unidades; la siguiente cuenta grupos de ocho; la tercera cuenta grupos de ocho por ocho, es decir sesenta y cuatro. No hay un dígito octal 8: después de 7 se escribe 10 para representar ocho unidades."
+          "text": "El sistema octal tiene base ocho y usa los dígitos 0, 1, 2, 3, 4, 5, 6 y 7. Desde la derecha, la primera posición cuenta unidades; la siguiente, grupos de ocho; la tercera, grupos de ocho por ocho, es decir, de sesenta y cuatro.\n\nNo existe el dígito octal 8. Después de 7 se escribe 10 en octal: un grupo de ocho y cero unidades. Esa escritura representa ocho unidades, aunque sus caracteres coincidan con los de diez en decimal.",
+          "emphasis": [
+            {
+              "text": "Desde la derecha",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La escritura octal 52 representa cinco grupos de ocho más dos unidades: cuarenta y dos en decimal. La escritura octal 106 representa un grupo de sesenta y cuatro, cero grupos de ocho y seis unidades: setenta en decimal."
+          "text": "La escritura 52 en octal representa cinco grupos de ocho y dos unidades: en total, cuarenta y dos. La escritura 106 en octal representa un grupo de sesenta y cuatro, cero grupos de ocho y seis unidades: en total, setenta.\n\nEl cero de la posición intermedia mantiene el lugar de los grupos de ocho. No se puede quitar sin cambiar lo que representa la escritura: 16 en octal tiene sólo dos posiciones.",
+          "emphasis": [
+            {
+              "text": "El cero de la posición intermedia mantiene el lugar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -52,7 +81,12 @@
             "Veintitrés."
           ],
           "correctIndex": 1,
-          "explanation": "La posición izquierda vale grupos de ocho, no decenas."
+          "explanation": "La posición izquierda vale grupos de ocho, no decenas.",
+          "reviewFeedback": [
+            "Revisa la base indicada y qué tamaño tienen sus grupos en la segunda posición.",
+            "Comprueba el aporte de cada posición antes de sumarlos.",
+            "No interpretes como decimal una escritura cuya base está indicada como octal."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -63,7 +97,108 @@
             "26"
           ],
           "correctIndex": 1,
-          "explanation": "Octal sólo usa dígitos de cero a siete."
+          "explanation": "Octal sólo usa dígitos de cero a siete.",
+          "reviewFeedback": [
+            "Comprueba cada dígito con el repertorio de la base octal.",
+            "Localiza el dígito que excede el repertorio permitido.",
+            "Distingue el tamaño del número del conjunto de dígitos que pueden escribirlo."
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__representar_enteros_en_distintas_bases__descomponer_203_octal",
+          "prompt": "La escritura 203 es octal. Completa en decimal el aporte de cada una de sus tres posiciones y la cantidad total. El cero también ocupa una posición.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "aportes",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Parte de la escritura octal",
+                "Aporte en decimal"
+              ],
+              "rows": [
+                [
+                  "2 en los grupos de sesenta y cuatro",
+                  {
+                    "field": "sesenta_y_cuatro"
+                  }
+                ],
+                [
+                  "0 en los grupos de ocho",
+                  {
+                    "field": "ocho"
+                  }
+                ],
+                [
+                  "3 en las unidades",
+                  {
+                    "field": "unidades"
+                  }
+                ],
+                [
+                  "Cantidad total",
+                  {
+                    "field": "total"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "sesenta_y_cuatro",
+                  "type": "numeric",
+                  "label": "Aporte de los dos grupos de sesenta y cuatro",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "ocho",
+                  "type": "numeric",
+                  "label": "Aporte de los cero grupos de ocho",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "unidades",
+                  "type": "numeric",
+                  "label": "Aporte de las tres unidades",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Cantidad total en decimal",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "sesenta_y_cuatro": {
+                    "type": "numeric",
+                    "expected": "128"
+                  },
+                  "ocho": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "unidades": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "total": {
+                    "type": "numeric",
+                    "expected": "131"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada posición conserva su función: 2×64=128, 0×8=0 y 3×1=3. La suma es 131 en decimal. El cero no aporta unidades a la suma, pero mantiene la separación entre la posición de los grupos de sesenta y cuatro y la de las unidades.",
+            "incorrect": "Recorre las posiciones desde la derecha: unidades, grupos de ocho y grupos de sesenta y cuatro. Multiplica cada dígito por el tamaño de su grupo y suma los aportes sin quitar la posición del cero."
+          }
         }
       ]
     },
@@ -75,11 +210,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La base hexadecimal usa 0 a 9 y después a, b, c, d, e y f para las cantidades diez a quince. También pueden escribirse A a F con ese mismo significado. La posición siguiente a las unidades cuenta grupos de dieciséis; la tercera cuenta grupos de dieciséis por dieciséis, es decir doscientos cincuenta y seis."
+          "text": "El sistema hexadecimal tiene base dieciséis. Sus dígitos son 0 a 9 y después a, b, c, d, e y f, que representan las cantidades diez, once, doce, trece, catorce y quince. Las letras A a F también pueden utilizarse con esos mismos valores.\n\nDesde la derecha, la primera posición cuenta unidades; la siguiente, grupos de dieciséis; la tercera, grupos de dieciséis por dieciséis, es decir, de doscientos cincuenta y seis.",
+          "emphasis": [
+            {
+              "text": "base dieciséis",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En 2a hexadecimal hay dos grupos de dieciséis y diez unidades: cuarenta y dos en decimal. En 46 hexadecimal hay cuatro grupos de dieciséis y seis unidades: setenta en decimal. Las letras son dígitos de esa escritura, no nombres de variables."
+          "text": "La escritura 2a en hexadecimal representa dos grupos de dieciséis y diez unidades: cuarenta y dos en decimal. La escritura 46 en hexadecimal representa cuatro grupos de dieciséis y seis unidades: setenta en decimal.\n\nDentro de una escritura hexadecimal, a y las otras letras de su repertorio son dígitos. No designan variables de C++. Por ejemplo, la a de 2a aporta diez unidades.",
+          "emphasis": [
+            {
+              "text": "son dígitos",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -90,7 +237,97 @@
             "Uno por dieciséis más seis: veintidós."
           ],
           "correctIndex": 1,
-          "explanation": "f es el dígito para quince; la otra posición cuenta grupos de dieciséis."
+          "explanation": "f es el dígito para quince; la otra posición cuenta grupos de dieciséis.",
+          "reviewFeedback": [
+            "Comprueba qué base pide el enunciado antes de asignar el valor de la posición izquierda.",
+            "Relaciona el dígito de las unidades con el repertorio hexadecimal y suma ambos aportes.",
+            "Revisa el valor del dígito hexadecimal de las unidades."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En los ejemplos anteriores conservamos la cantidad y cambiamos su escritura. También puede ocurrir lo contrario: unos mismos caracteres se interpretan de forma diferente según la base indicada. La escritura 10 en decimal representa diez unidades; en octal, ocho; en hexadecimal, dieciséis. Por eso conocer los caracteres no basta: necesitamos saber con qué base se interpretan.",
+          "emphasis": [
+            {
+              "text": "según la base indicada",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__representar_enteros_en_distintas_bases__misma_escritura_bases_distintas",
+          "prompt": "Relaciona cada interpretación de la escritura 20 con la cantidad decimal que representa. Los caracteres son iguales, pero las bases están indicadas. Usa cada destino una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "decimal",
+                  "label": "20 en decimal",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "20 en decimal",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "octal",
+                  "label": "20 en octal",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "20 en octal",
+                      "mathMode": "text"
+                    }
+                  ]
+                },
+                {
+                  "id": "hexadecimal",
+                  "label": "20 en hexadecimal",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "20 en hexadecimal",
+                      "mathMode": "text"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "treinta_y_dos",
+                  "label": "Treinta y dos unidades."
+                },
+                {
+                  "id": "veinte",
+                  "label": "Veinte unidades."
+                },
+                {
+                  "id": "dieciseis",
+                  "label": "Dieciséis unidades."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "decimal": "veinte",
+                  "octal": "dieciseis",
+                  "hexadecimal": "treinta_y_dos"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La posición izquierda cuenta dos grupos: de diez en decimal, de ocho en octal y de dieciséis en hexadecimal. Por eso las cantidades representadas son veinte, dieciséis y treinta y dos, respectivamente. No hemos cambiado el formato de un mismo valor; hemos interpretado los mismos caracteres con tres bases distintas.",
+            "incorrect": "Observa la base escrita en cada ficha. El dígito de la izquierda cuenta grupos de esa base; el de las unidades aporta cero. No asignes decenas a las tres escrituras."
+          }
         }
       ]
     },
@@ -101,13 +338,19 @@
           "text": "Pedir la base al flujo de salida"
         },
         {
+          "type": "paragraph",
+          "text": "`std::dec`, `std::hex` y `std::oct` son manipuladores: al insertarlos en un flujo, seleccionan la base que ese flujo utilizará para presentar los enteros siguientes. Se escriben en una inserción con `<<`, como muestra el programa. No escriben por sí mismos los nombres decimal, hexadecimal u octal (Stroustrup, 2024, sección 9.10.1).\n\nEn este ejemplo, la variable `cantidad` conserva el valor cuarenta y dos. Cada aparición de `cantidad` consulta ese mismo valor; el manipulador situado antes selecciona cómo escribirlo. La salida es 42|2a|52, sin salto final. Los caracteres | proceden de las cadenas separadoras del programa.",
+          "emphasis": [
+            {
+              "text": "seleccionan la base",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 42;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n"
-        },
-        {
-          "type": "paragraph",
-          "text": "std::dec, std::hex y std::oct son manipuladores: cambian la base con la que ese flujo presentará los enteros siguientes. No imprimen por sí mismos el nombre de una base. La salida de esta comparación guiada es 42|2a|52: son tres representaciones del mismo valor."
         },
         {
           "type": "output_prediction",
@@ -117,7 +360,8 @@
           "answers": [
             "26|1a|32"
           ],
-          "explanation": "Un grupo de dieciséis más diez es veintiséis; tres grupos de ocho más dos también son veintiséis."
+          "explanation": "Un grupo de dieciséis más diez es veintiséis; tres grupos de ocho más dos también son veintiséis.",
+          "reviewFeedback": "Sigue la base seleccionada antes de cada inserción del entero. Las cadenas separadoras se insertan literalmente y la variable no cambia de valor."
         },
         {
           "type": "fill_code",
@@ -127,7 +371,8 @@
           "answers": [
             "oct"
           ],
-          "explanation": "oct selecciona grupos de ocho; diecisiete decimal se presenta como 21."
+          "explanation": "oct selecciona grupos de ocho; diecisiete decimal se presenta como 21.",
+          "reviewFeedback": "Escribe sólo el nombre situado después de std::. Relaciona la base pedida con el manipulador que la selecciona."
         }
       ]
     },
@@ -145,7 +390,8 @@
           "answers": [
             "1f|32"
           ],
-          "explanation": "La cantidad aumenta de treinta y uno a treinta y dos. Seleccionar hexadecimal sólo cambió sus caracteres de salida."
+          "explanation": "La cantidad aumenta de treinta y uno a treinta y dos. Seleccionar hexadecimal sólo cambió sus caracteres de salida.",
+          "reviewFeedback": "Separa la presentación inicial, la actualización de la variable y la selección de base posterior. No confundas el formato con el cálculo."
         },
         {
           "type": "output_prediction",
@@ -155,11 +401,12 @@
           "answers": [
             "10|16|16"
           ],
-          "explanation": "El entero se convierte según la base; la cadena 16 ya contiene caracteres y se inserta como texto."
+          "explanation": "El entero se convierte según la base; la cadena 16 ya contiene caracteres y se inserta como texto.",
+          "reviewFeedback": "Distingue la inserción de una variable entera de la inserción de una cadena que ya contiene sus caracteres."
         },
         {
           "type": "paragraph",
-          "text": "No confundas un texto que contiene dígitos con un entero. El manipulador no analiza ni recalcula una cadena. Esa distinción recupera la composición: primero se producen caracteres; después puede elegirse su destino."
+          "text": "La inserción del entero produce caracteres de acuerdo con la base del flujo. Una cadena ya contiene caracteres: insertarla no interpreta sus dígitos como un número ni cambia su escritura por haber seleccionado otra base.\n\nEn el segundo programa, `cantidad` se inserta como entero. En cambio, `\"16\"` es una cadena escrita en el código. Distinguir ambos casos permite componer un mensaje y elegir después su destino, como hicimos con `std::ostringstream`."
         }
       ]
     },
@@ -171,7 +418,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La notación del código fuente es otra decisión. Un literal entero sin prefijo como 42 es decimal. El prefijo 0x en 0x2a indica hexadecimal; un cero inicial en 052 indica octal. Estos tres literales producen el mismo valor int. No escribas ceros iniciales en un literal para decorar una cantidad decimal: 010 representa ocho, no diez."
+          "text": "La escritura de un literal entero en el código y el formato de salida son decisiones diferentes. En estos ejemplos, `42` es un literal decimal; `0x2a` usa el prefijo `0x` para indicar hexadecimal; `052` empieza con el cero que señala una escritura octal. Los tres representan el mismo valor, cuarenta y dos, y en estas definiciones tienen tipo `int` (Köppe et al., 2023).\n\nPor eso no añadimos ceros iniciales para decorar un literal decimal: `010` representa ocho. Al insertar después ese valor con `std::dec`, el flujo escribe la representación decimal de ocho; no vuelve a interpretar los caracteres del código fuente.",
+          "emphasis": [
+            {
+              "text": "son decisiones diferentes",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -186,7 +439,8 @@
           "answers": [
             "8|8"
           ],
-          "explanation": "El literal del fuente ya creó el valor ocho; el formato de salida no vuelve a interpretar el texto 010."
+          "explanation": "El literal del fuente ya creó el valor ocho; el formato de salida no vuelve a interpretar el texto 010.",
+          "reviewFeedback": "Interpreta primero el literal del código fuente según su notación; después aplica la base de salida a ese valor."
         },
         {
           "type": "note",
@@ -202,7 +456,12 @@
             "dec=31;hex=1f;oct=31"
           ],
           "correctIndex": 1,
-          "explanation": "Treinta y uno son 1×16+15, escrito 1f en hexadecimal, y 3×8+7, escrito 37 en octal. Sólo cambia la representación."
+          "explanation": "Treinta y uno son 1×16+15, escrito 1f en hexadecimal, y 3×8+7, escrito 37 en octal. Sólo cambia la representación.",
+          "reviewFeedback": [
+            "El enunciado pide tres bases: comprueba si sus escrituras pueden coincidir para este valor.",
+            "Contrasta ambas escrituras con los grupos correspondientes a sus bases.",
+            "Revisa también la escritura octal, no sólo la hexadecimal."
+          ]
         }
       ]
     },
@@ -214,7 +473,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para los valores decimales 0, 8, 15, 64 y 31, construye una batería que presenta una línea por valor, en ese orden, con el formato dec=D;hex=H;oct=O, sin prefijos de base. Los tres campos representan el mismo entero. Puedes usar un vector y recorrido o instrucciones separadas; cada campo selecciona su base y cada línea termina con salto. Resuelve el puzzle anterior y construye todo el programa antes de usar Compilar, ejecutar y comprobar. No sustituyas los enteros por respuestas guardadas como cadenas.",
+          "text": "Construye un programa que presente los valores decimales 0, 8, 15, 64 y 31, en ese orden, con una línea por valor. Cada línea tendrá el formato dec=D;hex=H;oct=O: D, H y O señalan los lugares donde deben aparecer las escrituras decimal, hexadecimal minúscula y octal del mismo entero. No escribas esos tres marcadores como parte del resultado ni añadas prefijos de base. Cada línea termina con un salto.\n\nPuedes usar un vector y un recorrido, o instrucciones separadas. Inserta los valores como enteros y selecciona la base antes de cada campo. Resuelve el puzzle anterior y construye el programa antes de pulsar «Compilar, ejecutar y comprobar». El cotejo automático comprueba la salida solicitada; después contrasta tu organización con los criterios de referencia.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -238,7 +497,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las etiquetas son texto literal; los valores se insertan como enteros y cada campo selecciona su base. No copies las respuestas como cadenas fijas: la composición debe funcionar con otros valores del dominio."
+          "text": "Las etiquetas del informe son cadenas fijas; las representaciones numéricas deben producirse al insertar enteros. Una salida coincidente no demuestra por sí sola esa organización del código. Después de comprobarla, revisa tu fuente: al cambiar un valor permitido, el programa debe obtener sus tres escrituras sin reemplazar respuestas guardadas como cadenas."
         }
       ]
     },
@@ -255,7 +514,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Las líneas de referencia son dec=0;hex=0;oct=0, dec=8;hex=8;oct=10, dec=15;hex=f;oct=17 y dec=64;hex=40;oct=100. Criterios: cada línea conserva un único valor en sus tres campos; las etiquetas y el orden corresponden al contrato; las bases se seleccionan antes de cada entero; la fuente usa literales decimales deliberados; el programa funciona también con otro dato permitido. No hay una única organización válida del recorrido."
+          "text": "La primera referencia muestra una organización con cuatro de los valores: 0, 8, 15 y 64. Sus líneas son dec=0;hex=0;oct=0, dec=8;hex=8;oct=10, dec=15;hex=f;oct=17 y dec=64;hex=40;oct=100. Ese programa parcial no incluye la quinta línea de la consigna, correspondiente a 31; la referencia completa de cinco valores aparece al final de esta página.\n\nAl contrastar tu construcción, comprueba que cada línea parte de un único entero, que las etiquetas y el orden cumplen el contrato y que se selecciona la base antes de insertar cada campo. Comprueba también la notación de los literales que utilizas en la preparación. Puedes organizar las instrucciones de distintas maneras, siempre que se conserve el resultado y la composición funcione con otros valores del dominio.",
+          "emphasis": [
+            {
+              "text": "programa parcial",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -265,17 +530,1046 @@
           "answers": [
             "30|26"
           ],
-          "explanation": "Tres grupos de ocho son veinticuatro. La suma produce veintiséis y se muestra en decimal."
+          "explanation": "Tres grupos de ocho son veinticuatro. La suma produce veintiséis y se muestra en decimal.",
+          "reviewFeedback": "Sigue el valor del entero y la operación aritmética por separado del formato seleccionado en cada inserción."
         },
         {
           "type": "paragraph",
-          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+          "text": "La referencia siguiente completa la batería de cinco valores del contrato. Todas las iteraciones pertenecen al mismo programa; no hay que cambiar de versión para obtener sus cinco líneas."
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    const std::vector<int> cantidades{0, 8, 15, 64, 31};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "7f2fb90332688c19c70125344269d2374131fbde098c9cf0b8a9d8d891cdaab8"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "ed85602a1c865b35b47552dfb9c9f553bb532537dbd1a894ee03a7418ee177c3"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "a511578fc56e3f45178f889d4327672d24d4a0ba8085f9b06c1a7211e08c9a3a"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "2e4156ddfa1f5e72ad7370f4f8fbb5323f6f49bd2837038fc31be370c8129c8b"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "0d5fdbda1ba5b1b80fd57d5db831b2548f842cdcc45bd0a210b07691e87b28b3"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "96716cb25183ed81b32abb9995568657f64d3b73e19f531be461c4603f53ac5c"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "7358f61d415ebc74699e05ffe228cb6f4c0514db2d960acc37475ba525aa70a2"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "2080e49526b2fe1e8b5e9a236df4c289aa5d6d22aa6381e0f05151df9f94ad32"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "bab0e6b74a72668dd00fced5b375d0a30a79b6ff5b622ddfa081f99565a93c31"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "4cfad9d07e9d72131a2536029300f3f0b077e285ff6fb4fca58021f8d9acd2f7"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "d2730f61277ecaf1a05c00c2248b4ba4a496a3bf569477c6ada6c41164468c37"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "a45a7e35fb8eb128cbf8b8256ba7fecf8cc133aed3bb1da56f8af3ecb4df3bb0"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1d67bdb4e49f9fbcc3c28a95153e37759fb02cfb5fe24328df47a79ad1b26091"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "479ab9e1be8b7f8d70410b43528b64d233382fa02acca2ea6867dff5019ba003"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "66e4bd3e3ca866a02a89910a98b0c295ff331a32c7a8f81e798521b0359dccb3"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "e1f9b98e72ea3ed2fa2b1689135c66db4f7ef9fac2128f70b5987ee29e8b6174"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "descomponer_203_octal"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "base_interpretada_tambien_importa",
+          "misma_escritura_bases_distintas"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0002",
+          "block_0003_0001",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "68323cb1059865f2db33b791ac142230fdba38168d0d96bb3ebfd5ebe9493799",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "f939096120b0db2842c1c4405eaf416cb23ff2dc23374a0d496c23a55417502d"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "685cf99903105289f53d6adb2ce1269ec5de5cc88fb7e627c0bfdedb5411f209"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "a511578fc56e3f45178f889d4327672d24d4a0ba8085f9b06c1a7211e08c9a3a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "490a57a856551620b57c9436c5436c5452c5f42fba55ee5839c8f531b2378d0b"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "0d5fdbda1ba5b1b80fd57d5db831b2548f842cdcc45bd0a210b07691e87b28b3"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "96716cb25183ed81b32abb9995568657f64d3b73e19f531be461c4603f53ac5c"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "7358f61d415ebc74699e05ffe228cb6f4c0514db2d960acc37475ba525aa70a2"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "2080e49526b2fe1e8b5e9a236df4c289aa5d6d22aa6381e0f05151df9f94ad32"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bab0e6b74a72668dd00fced5b375d0a30a79b6ff5b622ddfa081f99565a93c31"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "4cfad9d07e9d72131a2536029300f3f0b077e285ff6fb4fca58021f8d9acd2f7"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "d2730f61277ecaf1a05c00c2248b4ba4a496a3bf569477c6ada6c41164468c37"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "90b2604ef1209979f62b902adbf042be6b3d72324fee8d3d0a7c9c0b3c3a63bb"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "479ab9e1be8b7f8d70410b43528b64d233382fa02acca2ea6867dff5019ba003"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "66e4bd3e3ca866a02a89910a98b0c295ff331a32c7a8f81e798521b0359dccb3"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "6925ef31bd1592a732f049b3f6d3514cbfea5df6f0753b0e50207aa5c8197af7",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "7f2fb90332688c19c70125344269d2374131fbde098c9cf0b8a9d8d891cdaab8"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "ed85602a1c865b35b47552dfb9c9f553bb532537dbd1a894ee03a7418ee177c3"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "a511578fc56e3f45178f889d4327672d24d4a0ba8085f9b06c1a7211e08c9a3a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "2e4156ddfa1f5e72ad7370f4f8fbb5323f6f49bd2837038fc31be370c8129c8b"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "0d5fdbda1ba5b1b80fd57d5db831b2548f842cdcc45bd0a210b07691e87b28b3"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "96716cb25183ed81b32abb9995568657f64d3b73e19f531be461c4603f53ac5c"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "7358f61d415ebc74699e05ffe228cb6f4c0514db2d960acc37475ba525aa70a2"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "2080e49526b2fe1e8b5e9a236df4c289aa5d6d22aa6381e0f05151df9f94ad32"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bab0e6b74a72668dd00fced5b375d0a30a79b6ff5b622ddfa081f99565a93c31"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "4cfad9d07e9d72131a2536029300f3f0b077e285ff6fb4fca58021f8d9acd2f7"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "d2730f61277ecaf1a05c00c2248b4ba4a496a3bf569477c6ada6c41164468c37"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "a45a7e35fb8eb128cbf8b8256ba7fecf8cc133aed3bb1da56f8af3ecb4df3bb0"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1d67bdb4e49f9fbcc3c28a95153e37759fb02cfb5fe24328df47a79ad1b26091"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "479ab9e1be8b7f8d70410b43528b64d233382fa02acca2ea6867dff5019ba003"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "66e4bd3e3ca866a02a89910a98b0c295ff331a32c7a8f81e798521b0359dccb3"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "e1f9b98e72ea3ed2fa2b1689135c66db4f7ef9fac2128f70b5987ee29e8b6174"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "6424cd5cc2eda980d6639a5661de84391c98f145cf3cb15ff07ae95a0049575b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "128fbe343d42e8e8c9b6e6c1134aa89e74dd77e0174e094f29a5e62d84a04ee2"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "a100491a16cd7e2233885de2c3fabe6a5541a5cff175efe10176509d83f648e0"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "a511578fc56e3f45178f889d4327672d24d4a0ba8085f9b06c1a7211e08c9a3a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "c329d7b2b9d882affb516ac381fc2cc0b3edbe89f434e3a003bd38b065cf2e4a"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "0d5fdbda1ba5b1b80fd57d5db831b2548f842cdcc45bd0a210b07691e87b28b3"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "96716cb25183ed81b32abb9995568657f64d3b73e19f531be461c4603f53ac5c"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "7358f61d415ebc74699e05ffe228cb6f4c0514db2d960acc37475ba525aa70a2"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "2080e49526b2fe1e8b5e9a236df4c289aa5d6d22aa6381e0f05151df9f94ad32"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bab0e6b74a72668dd00fced5b375d0a30a79b6ff5b622ddfa081f99565a93c31"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "4cfad9d07e9d72131a2536029300f3f0b077e285ff6fb4fca58021f8d9acd2f7"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "d2730f61277ecaf1a05c00c2248b4ba4a496a3bf569477c6ada6c41164468c37"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "4a14521d5ce8849e09c9c403d2d8353ff8ee06cf0258419f22e23a7751cfbd75"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "479ab9e1be8b7f8d70410b43528b64d233382fa02acca2ea6867dff5019ba003"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "66e4bd3e3ca866a02a89910a98b0c295ff331a32c7a8f81e798521b0359dccb3"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "descomponer_203_octal",
+        "sha256": "d8ff50b5ee4e4442b85bf2b1bb70a7384f306d3c97abb152bffbb8a9dc8650b5",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "base_interpretada_tambien_importa",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "misma_escritura_bases_distintas",
+        "sha256": "b5077f68a6c1991c1c3fa4c172216b055db54dbbf0d0e014c46d18a9902919cf",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "1434d918b68a6f8a696ed5e70b2f962c9d5dd479bc8ce8114d179dddea5483f9",
+        "afterSha256": "a16a2f02a9944749af550678a8fe6275d89710ba180efeaa525baf452c3bf0dc"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "cef19f8d29d33a8bb9a04f73ee5e6d34e62b6d3893b63d6a850792db2cf10a7f",
+        "afterSha256": "ff9f6952bd2674e5c7881406c57f43ec993d70c9b27a1bf19a023ae5b28d1380"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "4d5661ad62611ee61e7ad50843f77b1d118010170b0b0c85b53fe77a948146ea",
+        "afterSha256": "5bd72e472a97cd5ea35f6eb0757cec8f570d472cf6269db9783575692897867a"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "dd6248fc5c919b7cf41822ec3b57a0f73d5fd97161ab2ffaddb124cc38cd33ba",
+        "afterSha256": "d3ecc2889ecead3dcfcba528ac1de5448c2447537bc4fbf50185678fe5c64e72"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "0ba09980f0822e1447c8a3c49bddc4cac72ae118cebe103d45e1ab12e62db29b",
+        "afterSha256": "6cdfba22a26900c938850e06b64c7af6295f18a33ffafdc545e57da5a4c5efc1"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "264e4ded644f47f35fa841e0ffabf911e0233ab141886822aee0c999b9177503",
+        "afterSha256": "c8dddc989e9116af929c12f8eb613c0c21a11aa276702179dffe05584b5d96a1"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5e5ef1904fcdf4ae7fa2ad62eaedbfbb85cbc9370e092813bd8b3da56a422837",
+        "afterSha256": "eb811156290836a03e5b4cc0fa8cd7f06ce155f6bf6f1069ce82ce91f7b68411"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a23f6ed5c2170577df0822c013c3f69706951d3a23c296c060d8802e35f103a7",
+        "afterSha256": "ee172c9ad68968d5e8e291d688acbce48f47e7423af42d93950f2425d1247186"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a579f50c830e5f549fff3c6f77651a732162a4ed58918f05767b43fa609180b6",
+        "afterSha256": "b4e902394d63e64f92ed40ad1de04bdccae98cce897b6d211fdd8b4d78e7a958"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "5c1187ea4b8042ff43055c9a0e2992cf49510dfd0e517ee96d649d854a00c37c",
+        "afterSha256": "9a6a864c7abd758075f250735445ef297c9680b84c82bb7dce88c23405a0e1a7"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8cbf916887de10ac59ba6b1770658134f10cf4a72b6c2139d8e0862e85fea873",
+        "afterSha256": "393fbd3093c210892fa914795f1b614bd912520e7bae4844cc22d36d43add978"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "2696f4e965703a6dc807360ea8b5ed57ffe95bd8c843c2b213557d35bd21bdf7",
+        "afterSha256": "133ac6932703b14f23fc081f78bfb6af16e72430ad7efa600db3ef48c8cd499c"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "538f5edb806040d3535add87f7f4312802d1b5a618c3988264d8531283aba839",
+        "afterSha256": "12c957842782072ce7b04c3ab040c93a08087f33af8b9297da3b2ca23d0f595b"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "88256af3e6d190b390e46608b588b6a6b052cab25e336e4102b8cb75e4522d2d",
+        "afterSha256": "2b7ec9192ef7a8a9bdcba0650e83ef44f14c51378590217c71b83b0dcaee5f40"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "3cf3eb57d7e1029ba2d29614f6ec3ad3d75aa35735d83408020ac990d8bd98a8",
+        "afterSha256": "39e7b6bd3d843ca39f26887a4e9b4cf46c449e9640cd0f091d34a9d8804dad0e"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "3fde82c5de94d6efe2a0991e19f22e4517022a33a517a95d3a1ead7f082922d1",
+        "afterSha256": "3057b1a7a9035229100f016815455faf5841fffcd87cadfc31f85f0acab99318"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "7e8f9a0baa168e2091129277ec053fdca9c717175c7023f621836d9c6f491898",
+        "afterSha256": "db5417c3521a1ac7d72af67438d31a9a7042669cb9d3e87d7972fc6fa0af26f3"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "01699715c9554e2f277a3a3cb176ea93d594c9f0ccb2c92288ffc82645c590a4",
+        "afterSha256": "163b0c0a23b6b2eb2c7f560e5ab13b4331fbbf1d27427dae92432289fcc06623"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "3fce78df9f9238d3f4c61795dfd06530953160fc76bc7729cea9089d7dd58676",
+        "afterSha256": "1f0454a9232b9202db9c4e9d350ea3f47ca2fb3b21d4d43ae8bc285c6092d1be"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "b8a026e7738f2c07dcfb49a89a2fc10178746f0e0ec3af276a777f7f76bae851",
+        "afterSha256": "f1c83a7c26d6601f8dba9a5410bce53b1fd8173d1adcf4e3d5a722279f0bb70f"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "b687d21616d301b10c607e013e291e4b53c9a8f46876b380a45a373fcae96de4",
+        "afterSha256": "23faad0f06fdfffae9a3ffbbe92c609b2690927187711a4459d8a1ea4d7cde88"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "809e36e98cfb2113fb9cbffbf703a9fb1be9193a4eb3754ee161e6530f4b5079",
+        "afterSha256": "ab8bb2c8c1cd56937439fc9c038b8c44c0ef0f3ec31ce1cd3df82d0470f05df9"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "b80d7720f9d271d45af05e62d86ee40628d3baaf933e58181e9bdd64b6c492bb",
+        "afterSha256": "d2077943dccc62c7b1ddacbedb0c264452409b70b10de6b4b03af616239c57f6"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "48bc54a6907017b9acd70ec083f2052f34167dd67fae4801df5f15f39a950f34",
+        "afterSha256": "ec98ca02bb053e5e9c4c89a75e37b78d143c6b7bc5d42e61df47c9c2a4b0a1cf"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "ab8bb2c8c1cd56937439fc9c038b8c44c0ef0f3ec31ce1cd3df82d0470f05df9",
+        "afterSha256": "8af0360a6b96cbc9e225fdee665bfb730d05dfbc9f6dfb141b97177c3abc10b5"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0006_0003",
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002",
+        "block_0007_0004",
+        "block_0007_0005"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0003",
+      "requires": [
+        "block_0006_0002"
       ]
     }
   ]

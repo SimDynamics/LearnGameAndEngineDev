@@ -10,7 +10,13 @@
         },
         {
           "type": "paragraph",
-          "text": "std::format, declarado en <format>, compone y devuelve std::string. El primer argumento describe el texto y los lugares donde insertar los valores siguientes. Un par de llaves {} es un campo: reserva un lugar para un argumento. Los caracteres ordinarios se conservan. Componer la cadena no imprime; main puede guardarla, mostrarla o pasarla a otra función (Stroustrup, 2024, sección 9.10.6, pp. 281–283)."
+          "text": "`std::format`, declarado en `<format>`, compone y devuelve un `std::string`. Su primer argumento es el patrón: una cadena que describe el texto fijo y los campos donde presentar los argumentos siguientes. Aquí escribiremos el patrón como un literal de cadena, entre comillas dobles en el código.\n\nDentro del patrón, un par de llaves `{}` delimita un campo de sustitución: en ese lugar del resultado se escribe la representación de un argumento. Los caracteres ordinarios del patrón se copian. Componer no imprime; `main` puede guardar la cadena devuelta, mostrarla o pasarla a otra función (Stroustrup, 2024, sección 9.10.6).",
+          "emphasis": [
+            {
+              "text": "Componer no imprime",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "code",
@@ -19,7 +25,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta comparación guiada produce Zona Sur; cantidad 6. El literal contiene dos campos; sus valores son los dos argumentos posteriores al patrón. No escribimos Sur ni 6 dentro del patrón. Mantendremos los patrones como literales conocidos en el código y cambiaremos los datos por medio de argumentos."
+          "text": "La comparación guiada produce Zona Sur; cantidad 6, sin salto final. El patrón contiene dos campos: el primero recibe el texto \"Sur\" y el segundo, el entero `6`, ambos proporcionados después del patrón. No escribimos esos datos dentro del patrón.\n\nMantendremos los patrones como literales conocidos en el código. Los datos, en cambio, pueden proceder de literales o variables que se pasan como argumentos. La llamada compone el resultado con los valores que recibe en ese momento."
         },
         {
           "type": "multiple_choice",
@@ -30,7 +36,12 @@
             "Un objeto ostringstream que conserva el patrón."
           ],
           "correctIndex": 1,
-          "explanation": "La función devuelve texto. Para mostrarlo hace falta una operación de salida elegida por el programa."
+          "explanation": "La función devuelve texto. Para mostrarlo hace falta una operación de salida elegida por el programa.",
+          "reviewFeedback": [
+            "Distingue componer una cadena de enviarla después a un flujo de salida.",
+            "Identifica qué tipo de resultado devuelve la función y qué operación lo mostraría.",
+            "Revisa si la llamada crea un flujo o devuelve sus caracteres como texto."
+          ]
         }
       ]
     },
@@ -42,7 +53,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando todos los campos son {}, se consumen argumentos en orden: el primer campo usa el primer argumento después del patrón; el segundo, el segundo. El número no pertenece al campo hasta que se construye la cadena. Una variable usada como argumento conserva su tipo y su valor."
+          "text": "Cuando los campos son `{}`, la selección es automática: el primero utiliza el primer argumento posterior al patrón, el segundo utiliza el segundo y así sucesivamente. Esta selección no consume ni elimina los datos. La llamada compone caracteres con los valores que recibe; no deja una relación que vuelva a componer la cadena al cambiar después una variable (Köppe et al., 2023).\n\nAsí, guardar el resultado permite conservar el mensaje de ese momento. Modificar más tarde una variable del llamador no modifica por sí solo los caracteres de la cadena guardada."
         },
         {
           "type": "output_prediction",
@@ -52,7 +63,8 @@
           "answers": [
             "Este:9|2"
           ],
-          "explanation": "La cadena se compuso con nueve. Cambiar luego la variable no vuelve a componer los caracteres almacenados."
+          "explanation": "La cadena se compuso con nueve. Cambiar luego la variable no vuelve a componer los caracteres almacenados.",
+          "reviewFeedback": "Localiza el momento en que se compone y guarda la cadena. Sigue después la asignación a la variable sin volver a ejecutar esa composición."
         },
         {
           "type": "output_prediction",
@@ -62,7 +74,8 @@
           "answers": [
             "[]|[N]-[0]"
           ],
-          "explanation": "La cadena vacía ocupa su campo sin aportar caracteres. Cero sí aporta el carácter 0."
+          "explanation": "La cadena vacía ocupa su campo sin aportar caracteres. Cero sí aporta el carácter 0.",
+          "reviewFeedback": "Una cadena vacía no aporta caracteres a su campo, pero no elimina los delimitadores literales. Distingue ese caso del entero cero."
         },
         {
           "type": "multiple_choice",
@@ -73,7 +86,12 @@
             "El primero usa 4 y el segundo usa 12."
           ],
           "correctIndex": 2,
-          "explanation": "La selección automática recorre los argumentos en su orden."
+          "explanation": "La selección automática recorre los argumentos en su orden.",
+          "reviewFeedback": [
+            "Relaciona los campos con el orden de los argumentos posteriores al patrón.",
+            "Comprueba si la selección automática repite un dato o avanza al siguiente.",
+            "Sigue cada campo en su posición dentro del patrón."
+          ]
         }
       ]
     },
@@ -85,7 +103,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Un campo {0} selecciona el primer argumento posterior al patrón; {1}, el segundo. Los índices comienzan en cero, como en vector, pero aquí seleccionan argumentos de la llamada. Pueden cambiar el orden de presentación o reutilizar un dato. Si eliges esta forma, escribe índices en todos los campos de esa llamada; no mezcles {0} con {}."
+          "text": "Un campo `{0}` selecciona el primer argumento posterior al patrón; `{1}`, el segundo. Los índices comienzan en cero, como en `std::vector`, pero aquí identifican posiciones de argumentos en la llamada. Permiten cambiar su orden de presentación o utilizar el mismo dato varias veces, sin modificarlo.\n\nCada índice debe corresponder a un argumento que exista. Seleccionar `{2}` exige que haya un tercer argumento, aunque los dos anteriores no se utilicen en ningún campo. Los argumentos no seleccionados siguen ocupando su posición. Repetir un índice no exige otro argumento: selecciona otra vez el mismo. Por tanto, no siempre coincide el número de campos con la cantidad de argumentos necesaria.\n\nSi eliges índices explícitos, escríbelos en todos los campos de esa llamada. No mezcles `{0}` con `{}`; las llaves dobles que producen texto literal no son campos y no cuentan como selección automática (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "Cada índice debe corresponder a un argumento que exista",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -95,7 +119,8 @@
           "answers": [
             "8/Sol/8"
           ],
-          "explanation": "El índice uno selecciona ocho y se reutiliza. El índice cero selecciona Sol."
+          "explanation": "El índice uno selecciona ocho y se reutiliza. El índice cero selecciona Sol.",
+          "reviewFeedback": "Los índices seleccionan posiciones de argumentos posteriores al patrón. Sigue cada índice, incluso cuando uno se repite."
         },
         {
           "type": "fill_code",
@@ -105,7 +130,8 @@
           "answers": [
             "0"
           ],
-          "explanation": "El primer argumento posterior al patrón tiene índice cero. El patrón entero conserva selección manual."
+          "explanation": "El primer argumento posterior al patrón tiene índice cero. El patrón entero conserva selección manual.",
+          "reviewFeedback": "Escribe sólo el índice del argumento pedido. No cuentes el patrón como uno de los argumentos numerados ni cambies los campos restantes."
         },
         {
           "type": "multiple_choice",
@@ -116,7 +142,12 @@
             "\"{1}/{1}\""
           ],
           "correctIndex": 2,
-          "explanation": "El índice uno identifica el segundo argumento, sin consumirlo ni modificarlo."
+          "explanation": "El índice uno identifica el segundo argumento, sin consumirlo ni modificarlo.",
+          "reviewFeedback": [
+            "Comprueba si ambos índices seleccionan el segundo argumento.",
+            "Identifica qué posición posterior al patrón corresponde al índice cero.",
+            "Relaciona el índice con el argumento elegido, no con el número de veces que aparece."
+          ]
         }
       ]
     },
@@ -128,7 +159,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Las llaves simples del patrón delimitan campos. Para producir una llave literal, escribe {{ o }} dentro del patrón. Se obtiene una sola llave de cada par. En \"{{{}}}\" se combinan una llave literal inicial, un campo automático y una llave literal final. El resultado rodea al argumento con llaves."
+          "text": "Las llaves simples del patrón delimitan campos. Para obtener una llave visible sin abrir un campo, escribe `{{` o `}}` dentro del patrón: cada par produce una sola llave en el resultado.\n\nEl patrón \"{{{}}}\" reúne tres fragmentos: `{{` escribe la llave inicial, `{}` selecciona el argumento y `}}` escribe la llave final. Las llaves que ya contiene el argumento son datos de ese campo: esta llamada las copia sin interpretarlas otra vez como parte del patrón (Köppe et al., 2023).",
+          "emphasis": [
+            {
+              "text": "sin interpretarlas otra vez como parte del patrón",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -138,7 +175,8 @@
           "answers": [
             "{codigo=T}|{dato}"
           ],
-          "explanation": "Las llaves dobles pertenecen al patrón. Las llaves que ya contiene el argumento se copian como datos; no se vuelven a interpretar como campos."
+          "explanation": "Las llaves dobles pertenecen al patrón. Las llaves que ya contiene el argumento se copian como datos; no se vuelven a interpretar como campos.",
+          "reviewFeedback": "Distingue las llaves dobles escritas en el patrón de las llaves que ya forman parte del dato. Cada una interviene en una etapa diferente."
         },
         {
           "type": "multiple_choice",
@@ -149,7 +187,132 @@
             "Crean otro campo que exige un argumento adicional."
           ],
           "correctIndex": 0,
-          "explanation": "Sólo el primer argumento es el patrón interpretado por esta llamada."
+          "explanation": "Sólo el primer argumento es el patrón interpretado por esta llamada.",
+          "reviewFeedback": [
+            "Distingue el patrón interpretado de los datos que éste presenta.",
+            "Comprueba si copiar los caracteres de una cadena elimina sus llaves.",
+            "Identifica cuál argumento de la llamada proporciona el patrón."
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales__contar_campos_y_argumentos_necesarios",
+          "prompt": "Para cada patrón literal, cuenta sus campos de sustitución reales e indica la menor cantidad de argumentos que debe haber después del patrón en una llamada válida. No cuentes el patrón como argumento numerado. Las llaves dobles producen caracteres literales; repetir un índice no crea otro argumento. Considera argumentos de tipos admitidos por estos campos básicos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conteos",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Patrón literal",
+                "Campos reales",
+                "Mínimo de argumentos después del patrón"
+              ],
+              "rows": [
+                [
+                  "`\"{2}/{2}\"`",
+                  {
+                    "field": "campos_repetidos"
+                  },
+                  {
+                    "field": "argumentos_repetidos"
+                  }
+                ],
+                [
+                  "`\"{{{1}}}\"`",
+                  {
+                    "field": "campos_rodeados"
+                  },
+                  {
+                    "field": "argumentos_rodeados"
+                  }
+                ],
+                [
+                  "`\"{{}}:{}\"`",
+                  {
+                    "field": "campos_automaticos"
+                  },
+                  {
+                    "field": "argumentos_automaticos"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "campos_repetidos",
+                  "type": "numeric",
+                  "label": "Campos reales en el patrón que repite el índice dos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "argumentos_repetidos",
+                  "type": "numeric",
+                  "label": "Argumentos mínimos para el patrón que repite el índice dos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "campos_rodeados",
+                  "type": "numeric",
+                  "label": "Campos reales en el patrón con el índice uno rodeado de llaves",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "argumentos_rodeados",
+                  "type": "numeric",
+                  "label": "Argumentos mínimos para el patrón con el índice uno",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "campos_automaticos",
+                  "type": "numeric",
+                  "label": "Campos reales en el patrón con llaves literales y campo automático",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "argumentos_automaticos",
+                  "type": "numeric",
+                  "label": "Argumentos mínimos para el patrón con campo automático",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "campos_repetidos": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "argumentos_repetidos": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "campos_rodeados": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "argumentos_rodeados": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "campos_automaticos": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "argumentos_automaticos": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer patrón tiene dos campos que seleccionan el mismo tercer argumento: exige tres argumentos, aunque no presente los dos primeros. El segundo tiene un solo campo, con índice uno, entre llaves literales: necesita dos argumentos. En el tercero, las llaves dobles escriben un par de llaves y sólo queda un campo automático: necesita un argumento. Contar los campos y localizar las posiciones seleccionadas son comprobaciones distintas.",
+            "incorrect": "Separa primero las llaves dobles de los campos reales. Después identifica qué posición selecciona cada campo: el índice cero corresponde al primer argumento posterior al patrón. Para el mínimo debe existir la posición más alta seleccionada, aunque otras posiciones no aparezcan en el resultado."
+          }
         }
       ]
     },
@@ -161,7 +324,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Sin especificación adicional, un int se presenta decimal, un char como carácter y un bool como true o false. Para una cadena se copian sus caracteres. Esta presentación básica de bool difiere del formato habitual de cout usado en las lecciones anteriores, que presentaba cero o uno. Elegir otra operación de composición no convierte los datos a otro tipo."
+          "text": "Sin una especificación adicional dentro del campo, un `int` se presenta en decimal, un `char` como carácter y un `bool` como true o false. Para una cadena se copian sus caracteres. Esta presentación básica de `bool` difiere de la inserción habitual en `std::cout` que hemos utilizado sin activar palabras lógicas, donde aparecían cero o uno.\n\nElegir una operación de composición no convierte el argumento a otro tipo. Dos argumentos de tipos distintos pueden producir caracteres iguales, aunque conserven su diferencia de tipo (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
@@ -171,7 +334,8 @@
           "answers": [
             "7|7|true|false"
           ],
-          "explanation": "El entero y el carácter producen aquí caracteres iguales. Los valores lógicos se presentan como palabras."
+          "explanation": "El entero y el carácter producen aquí caracteres iguales. Los valores lógicos se presentan como palabras.",
+          "reviewFeedback": "Identifica el tipo de cada argumento y su presentación básica. No deduzcas que dos escrituras iguales proceden del mismo tipo."
         },
         {
           "type": "output_prediction",
@@ -181,11 +345,12 @@
           "answers": [
             "31:false|1f"
           ],
-          "explanation": "format compone su cadena con sus propias reglas. cout conserva hexadecimal sólo para el entero que recibe directamente."
+          "explanation": "format compone su cadena con sus propias reglas. cout conserva hexadecimal sólo para el entero que recibe directamente.",
+          "reviewFeedback": "Sigue por separado la cadena que compone format y el entero insertado directamente en cout. No traslades entre ambas operaciones el estado del flujo."
         },
         {
           "type": "paragraph",
-          "text": "El patrón no hereda hex, fixed, precisión ni relleno de cout. La inserción posterior de la cadena sí se realiza en ese flujo: por ejemplo, un setw pendiente puede rellenar la cadena completa. Más adelante compararemos el formato interno de un campo con el formato externo de su destino."
+          "text": "`std::format` compone su cadena con las reglas del patrón y los tipos de sus argumentos. No consulta la base, el modo de decimales, la precisión ni el relleno seleccionados en `std::cout` (Köppe et al., 2023).\n\nMostrar después esa cadena sí es otra operación, realizada en el flujo de destino. Por ejemplo, un ancho pendiente de `std::setw` puede añadir relleno alrededor de la cadena completa. Distingue la composición del texto y su inserción posterior; más adelante compararás ambos formatos en detalle."
         }
       ]
     },
@@ -197,7 +362,13 @@
         },
         {
           "type": "paragraph",
-          "text": "En estas llamadas C++23 el patrón literal se comprueba durante la compilación según la cantidad y los tipos de argumentos. \"{}:{}\" necesita argumentos para ambos campos; {1} necesita que exista un segundo argumento. Las especificaciones que aprenderemos también deben corresponder al tipo. Un patrón mal escrito debe corregirse: no es una salida alternativa que haya que adivinar."
+          "text": "En estas llamadas de C++23, el patrón literal se comprueba durante la compilación. Cada campo debe seleccionar un argumento existente y su especificación, si la tiene, debe corresponder al tipo. El patrón \"{}:{}\" necesita argumentos para los dos campos; `{1}` requiere que exista un segundo argumento. Puede haber argumentos que ningún campo utilice: lo importante es que existan todos los seleccionados. También deben estar bien escritas las llaves y mantenerse una sola forma de seleccionar índices en cada llamada (Köppe et al., 2023).\n\nUn patrón incorrecto se corrige antes de ejecutar; no produce una salida alternativa que debas adivinar. Esta comprobación del patrón no significa que se hayan calculado antes de ejecutar los valores de las variables: la composición utiliza los argumentos cuando se realiza la llamada.",
+          "emphasis": [
+            {
+              "text": "Un patrón incorrecto se corrige antes de ejecutar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -208,7 +379,12 @@
             "std::format(\"{}:{0}\", 2, 5)"
           ],
           "correctIndex": 2,
-          "explanation": "El patrón \"{}:{0}\" combina un campo automático con otro de índice explícito. Cada patrón debe usar una sola forma de seleccionar sus argumentos."
+          "explanation": "El patrón \"{}:{0}\" combina un campo automático con otro de índice explícito. Cada patrón debe usar una sola forma de seleccionar sus argumentos.",
+          "reviewFeedback": [
+            "Revisa si todos los campos usan índices escritos o todos los omiten.",
+            "Distingue una selección automática válida de una combinación de formas.",
+            "Comprueba cada campo: no basta con que existan los argumentos si se mezclan las dos formas de selección."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -219,11 +395,16 @@
             "Poner A como texto literal tras el segundo {} para darle un valor a ese campo."
           ],
           "correctIndex": 0,
-          "explanation": "Los caracteres del patrón no proporcionan el valor que necesita el segundo campo. Un índice selecciona un argumento que ya debe existir; no lo crea. Añadir texto literal tampoco completa un campo sin argumento."
+          "explanation": "Los caracteres del patrón no proporcionan el valor que necesita el segundo campo. Un índice selecciona un argumento que ya debe existir; no lo crea. Añadir texto literal tampoco completa un campo sin argumento.",
+          "reviewFeedback": [
+            "Relaciona el campo pendiente con el argumento que necesita recibir.",
+            "Un índice selecciona un argumento existente; comprueba si lo crea o sólo lo nombra.",
+            "Distingue añadir caracteres literales al patrón de proporcionar un argumento a la llamada."
+          ]
         },
         {
           "type": "note",
-          "text": "La biblioteca estándar también tiene mecanismos para patrones conocidos durante la ejecución. Aquí el contrato es más pequeño: patrones literales y datos como argumentos. Una variable string con un patrón no se intercambia sin más con el literal de estas llamadas."
+          "text": "El contrato de esta lección utiliza patrones literales y pasa los datos por separado. Un `std::string` construido durante la ejecución no sustituye sin más al literal en las llamadas que estamos usando. Mantén el patrón entre comillas en el código y proporciona los valores variables después de él (Köppe et al., 2023)."
         },
         {
           "type": "multiple_choice",
@@ -235,7 +416,12 @@
             "pedido {}: 6 unidades; copia="
           ],
           "correctIndex": 0,
-          "explanation": "Las llaves exteriores pertenecen al mensaje; las interiores forman parte del código. El dato se copia literalmente en ambos lugares."
+          "explanation": "Las llaves exteriores pertenecen al mensaje; las interiores forman parte del código. El dato se copia literalmente en ambos lugares.",
+          "reviewFeedback": [
+            "Separa las llaves exteriores del mensaje de las llaves que ya contiene el código.",
+            "Comprueba si la segunda aparición del dato debe conservar los mismos caracteres.",
+            "El código contiene caracteres propios; revisa cuáles aporta además el patrón."
+          ]
         }
       ]
     },
@@ -247,7 +433,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe resumen(const string& codigo, int unidades), que devuelve pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. El código puede ser una cadena ASCII de cero a ocho caracteres y unidades está entre cero y mil. Usa un patrón literal con índices: el mismo argumento codigo debe servir en sus dos lugares. Las llaves visibles que rodean el código son parte del resultado. La función no imprime ni modifica los argumentos. En main compón mensajes para \"B\", 4 y para \"\", 0 en líneas separadas. En la misma ejecución guarda el primer mensaje, cambia después unidades de 4 a 9 y presenta la cadena ya guardada. Presenta después el caso vacío y resumen(\"{X}\", 6). Esas son las tres líneas de la batería, cada una terminada con salto. Las llaves del dato son caracteres del argumento, no otro patrón. Usa Compilar, ejecutar y comprobar con todo el programa.",
+          "text": "Escribe `std::string resumen(const std::string& codigo, int unidades)`, que devuelve un mensaje con la forma pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. CODIGO y UNIDADES indican los lugares de los argumentos; no se copian como esas palabras. El código contiene de cero a ocho caracteres ASCII imprimibles, incluidas llaves si las tiene; las unidades van de cero a mil, incluidos los extremos.\n\nUsa un patrón literal con índices para presentar el mismo argumento `codigo` en sus dos lugares. Las llaves exteriores son texto del mensaje. La función devuelve el resultado sin salto final, sin imprimir ni modificar los argumentos.\n\nConstruye una sola batería en `main`. Primero prepara el código \"B\" y una variable entera con valor `4`; compón y guarda el primer mensaje. Cambia después esa variable a `9` y presenta la cadena guardada, sin volver a componerla. Presenta a continuación `resumen(\"\", 0)` y después `resumen(\"{X}\", 6)`. Escribe un salto después de cada una de esas tres líneas, incluida la última.\n\nPuedes llamar `cantidad` a la variable del llamador: es distinta del parámetro `unidades`, que recibe el valor pasado al llamar a `resumen`. Completa el puzzle de la página anterior, construye el programa y usa Compilar, ejecutar y comprobar con toda la batería.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -271,7 +457,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El primer mensaje debe conservar la cantidad que había al componerse. La batería contrasta dato vacío, cero y llaves dentro del argumento sin cambiar el patrón ni la implementación entre llamadas."
+          "text": "El primer mensaje debe conservar las unidades que había al componerse. La batería comprueba también el dato vacío, el valor cero y las llaves dentro del código, manteniendo el mismo patrón y la misma implementación entre llamadas. La salida literal no demuestra por sí sola que se haya reutilizado el argumento o conservado sus datos: esos criterios se contrastan también con la organización del programa."
         }
       ]
     },
@@ -279,7 +465,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia y criterios del mensaje"
+          "text": "Referencia parcial y criterios del mensaje"
         },
         {
           "type": "code",
@@ -288,7 +474,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Las líneas son pedido {B}: 4 unidades; copia=B, pedido {}: 0 unidades; copia= y pedido {{X}}: 6 unidades; copia={X}. Criterios: la función devuelve una cadena completa; reutiliza el mismo código sin modificarlo; el patrón distingue sus llaves literales de los campos; vacío y cero conservan separadores; las llamadas no acumulan resultados; la cantidad cambiada después no altera guardado. Se aceptan otras escrituras que cumplan el contrato."
+          "text": "Esta primera referencia realiza las tres composiciones requeridas, pero omite el salto después de la última línea. Por ese detalle no satisface todavía la salida literal del editor anterior; la referencia completa al final de esta página añade el salto que falta.\n\nLas líneas son pedido {B}: 4 unidades; copia=B, pedido {}: 0 unidades; copia= y pedido {{X}}: 6 unidades; copia={X}. Criterios: función que devuelve una cadena completa; código reutilizado sin modificarlo; llaves literales distinguidas de los campos; separadores conservados con vacío y cero; llamadas que no acumulan resultados. Cambiar `cantidad` después de la primera composición no modifica `guardado`. Se aceptan otras escrituras que cumplan el contrato.",
+          "emphasis": [
+            {
+              "text": "omite el salto después de la última línea",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -298,7 +490,8 @@
           "answers": [
             "{R}-{R}|{R}"
           ],
-          "explanation": "El argumento se copia en dos campos y permanece intacto. Sus llaves no se interpretan de nuevo."
+          "explanation": "El argumento se copia en dos campos y permanece intacto. Sus llaves no se interpretan de nuevo.",
+          "reviewFeedback": "Reutilizar el argumento presenta de nuevo sus caracteres. No vuelve a interpretar sus llaves como un patrón ni cambia el dato original."
         },
         {
           "type": "multiple_choice",
@@ -310,11 +503,16 @@
             "Cambiar el código del llamador al texto completo de la salida."
           ],
           "correctIndex": 1,
-          "explanation": "Los campos pertenecen al patrón y los caracteres del código al argumento. Reutilizar su índice conserva la relación sin interpretar las llaves del dato como campos nuevos."
+          "explanation": "Los campos pertenecen al patrón y los caracteres del código al argumento. Reutilizar su índice conserva la relación sin interpretar las llaves del dato como campos nuevos.",
+          "reviewFeedback": [
+            "Distingue los caracteres fijos del patrón de los caracteres que llegan como datos.",
+            "Comprueba cómo repetir un dato sin convertirlo en parte del patrón interpretado.",
+            "Revisa si la composición exige modificar el argumento del llamador."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+          "text": "Referencia posterior de la batería completa: conserva las tres llamadas en el mismo programa y escribe el salto final después de cada resultado, también después del tercero."
         },
         {
           "type": "code",
@@ -339,11 +537,16 @@
             "envio {0}: 6 cajas; codigo=0"
           ],
           "correctIndex": 1,
-          "explanation": "El argumento vacío no elimina los textos literales del patrón: se conservan llaves, dos puntos y la segunda etiqueta."
+          "explanation": "El argumento vacío no elimina los textos literales del patrón: se conservan llaves, dos puntos y la segunda etiqueta.",
+          "reviewFeedback": [
+            "Una cadena vacía no elimina los textos literales que la rodean.",
+            "Distingue los delimitadores del patrón del contenido del argumento.",
+            "Comprueba si el dato vacío aporta un cero o no aporta caracteres."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Escribe envio(const std::string& codigo, int cajas), que devuelve envio {CODIGO}: CAJAS cajas; codigo=CODIGO. Usa un patrón literal con índices para repetir el código; las llaves exteriores forman parte del mensaje. El código contiene de cero a ocho caracteres ASCII y cajas está entre cero y mil. main presenta envio(\"Z\", 0) y envio(\"\", 6). La función devuelve string sin imprimir ni modificar sus argumentos.\n\nConstruye aquí una solución nueva para este objetivo. Toda la batería pertenece al mismo programa; usa Compilar, ejecutar y comprobar cuando esté completa. Cada línea presentada termina con salto. La referencia aparece en la página siguiente.",
+          "text": "Escribe `std::string envio(const std::string& codigo, int cajas)`, que devuelve un mensaje con la forma envio {CODIGO}: CAJAS cajas; codigo=CODIGO. Usa un patrón literal con índices para repetir el código. Las llaves exteriores pertenecen al mensaje; las que contenga el dato se conservan como caracteres de ese dato.\n\nEl código contiene de cero a ocho caracteres ASCII imprimibles y `cajas` está entre cero y mil, incluidos los extremos. La función devuelve texto sin salto final, sin imprimir ni modificar sus argumentos. `main` presenta primero `envio(\"Z\", 0)` y después `envio(\"\", 6)`, con un salto después de cada resultado.\n\nConstruye una solución nueva en este editor y reúne toda la batería en el mismo programa. Usa Compilar, ejecutar y comprobar cuando esté completa. La referencia aparece en la página siguiente.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -378,6 +581,1191 @@
           "language": "cpp",
           "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::cout << envio(\"Z\", 0) << \"\\n\" << envio(\"\", 6) << \"\\n\";\n    return 0;\n}\n"
         }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "df5d1030b224ece9279d5b5ddfc79fcbd6649eb1b64e7ea62e95bd41a92f35d9"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "bc8963ed59d4f2c1e977e4919f8c6cdc5b8bc2fcb97a6458d708fc4d77ed3d5b"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "7fd17cea583898861a6b994c98af94f2df003524a8acae82e50ed48f95836e76"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "5f8bc56ec990ccdcd6693b870dc16cd5967150e2f0e80d8a9266594c1b3efafe"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "6792375dc755bb810a96ce0ab76673104664a7d1ee9a7da8c2d6af5b52a0a451"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "d4a326ac2d6db707158f8bffd4cbaca39bc33cfac154cd7d7b0aeecc6fdc31e9"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "ce8aa47c1e914717236bf9fa241d13ec6a138a56cfab2906f2dd51049c749337"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "85ff366fafdf03fcaf2e080810b2a885196b2daf5ca89baf6be926a17821a86e"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "4df74fe9ca82f413648cdfba9047eed76ff228e27651990384b4548c4b76b8e6"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "b3395a4d97273deb91ada97f46fccd3532bc1588332013f7c93c3e05700f675e"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "bd020f86adf222bcdb417004cf8d900647cd5d1252b54d6a0c44252ebd8b48c5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "7500a17209334d5f9499c9c109afb4a863e9857c293120eef8f6b56976eac666"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "5e327b823ace374e83fabeab69c1a542bb19db9f5f4e5883562dad9521a3b175"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "597f55435fabb8d37f97ac48245bbc77b862093260d8c95b9a590404e0ebdfb9"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "e700c4bde635ceac3e17716374cab552cb5f80ece08c2fa11885878069938055"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "e840fb541d47b21796e9170ace1854b53daa76de56abcee4498371e61e2fcfa3"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "9d2cd3f50d5e6930013bdc95c0ea37b7e971ae021ee9f3c68d1ac37360bc7ef3"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "0cae7ccdab02065f69624e877512358c3e7f9959671814dee6fb26b8b685366f"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "7b101f01a40222f5f11d810ed1f561f056fbafa646980528e6bc7872ab411458"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "370dc6afa62fc838a5023ec170cd83b54d3b0bb57db9351d4b8497058ad81fca"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "e8e80fbe7a789cc2ce326536b5b152330c3d0b972d6c05fda6439cf24e9fa237"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "5043f3a74586e2c6518a29632b0ad3a91ff6b120296768ba219027fd041a6f36"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "9a5cf7f5d378210ed9d747f67d1bf66aad1d57def790be601272b08fa988e199"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "contar_campos_y_argumentos_necesarios"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "9279c64cc88bce302549f4fe97b61ad7a4a850eaf7690c486aa577b27908dae1",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1b2540eaec89d15b619ca254c46361828f5b65d14a9da495901d5b2a669a6514"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "433bbe86232503dbd8ca6b12369c856c18987b1ef9ec1bec9e59fa996be8b83f"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "f637b077d1384dcfa89b2b1275c470b9d27087c01c4170f42ce3bcd641cbd8b8"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5f8bc56ec990ccdcd6693b870dc16cd5967150e2f0e80d8a9266594c1b3efafe"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "92591e60375fccf97c4aa3beb08803d9462cf1188312001ca33428df28b8cd5e"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "f6bd75acc657f69fd217408e1cf2e98a099450e010e74e1f69119c1094452623"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ce8aa47c1e914717236bf9fa241d13ec6a138a56cfab2906f2dd51049c749337"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "85ff366fafdf03fcaf2e080810b2a885196b2daf5ca89baf6be926a17821a86e"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "44ba5ba83e854a229138a7576bad07f0d40ce2987736157b9db5bb898f6661df"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "da5652c932ea0e2e7869ba125ac337b1c6d0ee0da373d9f27d6315fd8c12403e"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bd020f86adf222bcdb417004cf8d900647cd5d1252b54d6a0c44252ebd8b48c5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7500a17209334d5f9499c9c109afb4a863e9857c293120eef8f6b56976eac666"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5e327b823ace374e83fabeab69c1a542bb19db9f5f4e5883562dad9521a3b175"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "c74704aa75081eb6f74a4960f1022262c0c449e64c3f6118d701535c3bbc1645"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "c39b81883085a677042447e4c50a1942af16ad4943c4c9ca6483ffaebd3e5ed7"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "f0f126ec07ae4ca6b9b3e78e0f55f7e2099803b0bb18128641f57094415b970d"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "0cae7ccdab02065f69624e877512358c3e7f9959671814dee6fb26b8b685366f"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "8c7d17576e8b44186c1d2c2bb84990b30ca09e0cae8a3403f16d6591610d9132",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "df5d1030b224ece9279d5b5ddfc79fcbd6649eb1b64e7ea62e95bd41a92f35d9"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "bc8963ed59d4f2c1e977e4919f8c6cdc5b8bc2fcb97a6458d708fc4d77ed3d5b"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "7fd17cea583898861a6b994c98af94f2df003524a8acae82e50ed48f95836e76"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5f8bc56ec990ccdcd6693b870dc16cd5967150e2f0e80d8a9266594c1b3efafe"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "6792375dc755bb810a96ce0ab76673104664a7d1ee9a7da8c2d6af5b52a0a451"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "d4a326ac2d6db707158f8bffd4cbaca39bc33cfac154cd7d7b0aeecc6fdc31e9"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ce8aa47c1e914717236bf9fa241d13ec6a138a56cfab2906f2dd51049c749337"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "85ff366fafdf03fcaf2e080810b2a885196b2daf5ca89baf6be926a17821a86e"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "4df74fe9ca82f413648cdfba9047eed76ff228e27651990384b4548c4b76b8e6"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "b3395a4d97273deb91ada97f46fccd3532bc1588332013f7c93c3e05700f675e"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bd020f86adf222bcdb417004cf8d900647cd5d1252b54d6a0c44252ebd8b48c5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7500a17209334d5f9499c9c109afb4a863e9857c293120eef8f6b56976eac666"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5e327b823ace374e83fabeab69c1a542bb19db9f5f4e5883562dad9521a3b175"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "597f55435fabb8d37f97ac48245bbc77b862093260d8c95b9a590404e0ebdfb9"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "e700c4bde635ceac3e17716374cab552cb5f80ece08c2fa11885878069938055"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "e840fb541d47b21796e9170ace1854b53daa76de56abcee4498371e61e2fcfa3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "9d2cd3f50d5e6930013bdc95c0ea37b7e971ae021ee9f3c68d1ac37360bc7ef3"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "0cae7ccdab02065f69624e877512358c3e7f9959671814dee6fb26b8b685366f"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "7b101f01a40222f5f11d810ed1f561f056fbafa646980528e6bc7872ab411458"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "370dc6afa62fc838a5023ec170cd83b54d3b0bb57db9351d4b8497058ad81fca"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "e8e80fbe7a789cc2ce326536b5b152330c3d0b972d6c05fda6439cf24e9fa237"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "5043f3a74586e2c6518a29632b0ad3a91ff6b120296768ba219027fd041a6f36"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "9a5cf7f5d378210ed9d747f67d1bf66aad1d57def790be601272b08fa988e199"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "6bc27fc8a83bb513efd982a689b3d0884fdf1c79f2d70c462a320cb3622f558d",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "8e0f9e6f89a3bdea01bc677b951e38a8f9b44fe58e773a53142715442178a768"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "857b1a7f9ed8062398a47d392981913222451827449eb1c1844b3a6a60387460"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "9c4eb9fba582625d9337a7ce51c3ca09f933ecc004ecb5bf6e05764679c4fa76"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5f8bc56ec990ccdcd6693b870dc16cd5967150e2f0e80d8a9266594c1b3efafe"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1f7e3c654f48be8f468d67a909821bbcdc9700493a4aa42dd890dbf673195b5b"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "d4a326ac2d6db707158f8bffd4cbaca39bc33cfac154cd7d7b0aeecc6fdc31e9"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "ce8aa47c1e914717236bf9fa241d13ec6a138a56cfab2906f2dd51049c749337"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "85ff366fafdf03fcaf2e080810b2a885196b2daf5ca89baf6be926a17821a86e"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "c8053ae51d7f49f21b3b8ce3aaaf1f2b49f7a5640e43929d5fbe4920cff488b5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "12c5382a6041fbea93f53bb5cdfc0062196eb836299be21a1b2b865cc067733b"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bd020f86adf222bcdb417004cf8d900647cd5d1252b54d6a0c44252ebd8b48c5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7500a17209334d5f9499c9c109afb4a863e9857c293120eef8f6b56976eac666"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5e327b823ace374e83fabeab69c1a542bb19db9f5f4e5883562dad9521a3b175"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "f24551dbd6b41cda5b42125a17176608b37ecb0b4c409232bbe207ef93f47941"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "83b36a05c22dd3bfa181ea8227eff26f87dc7ad0de0826811061fa6db34f09e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "b0e99a4a2a4e395035d6f3f81cf99f6054cd73ada38f158b5128554f6eaa0e1b"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "0cae7ccdab02065f69624e877512358c3e7f9959671814dee6fb26b8b685366f"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "contar_campos_y_argumentos_necesarios",
+        "sha256": "8d6b8566a548f968a57a5db4dcc842b64d2ae6fcd732607535c9f1fae1237e74",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "558776e541b3faf52900914fdfd3478833818426300bec0c2b43d1f17298c9c4",
+        "afterSha256": "b9a822d109ed61171b412ada69bd5e232c442b3215f54fe95dca7043a2a2cff3"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "c10d0f628de66967da534676901c3b83b40b0ec540c7213bc2dbcdcb15717713",
+        "afterSha256": "7e1c9e0482b5b5df169674ba861f951538d5e520901363c20b1279a2fc0adc01"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "eec32676d091cae23165901de09dcc6e941652cfc80ece37ed4f35224412df9f",
+        "afterSha256": "33ebb09eefe5fcac06e4825b889b24c475ba82d1c426916cedf23d5ff013183a"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "4c35003a9eeb4df1592c6b794dc2f14f0bc82f631e07bbbe1e1b1171fa5c0d7b",
+        "afterSha256": "d5dd91e2fb9b1f3bc89a94bf1b4d2b824cf1c73dfa053ee036424f3a8fe73595"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "79b6e896ff27a16de5537735ae46f401db021a4f20fa1c7419b46dec636606ff",
+        "afterSha256": "c8395a37280a59e980dad2e4171b58911bc6eb2261a7da4dbe2eb6db91e9c936"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "16524d85f7ce3d56703dc483eba24b0d30972c3834dbc805d5248fe41bfc6a09",
+        "afterSha256": "2e5db05dac8fa25835ffaf2af593fe5ad8435ab1271e4b799e152f430d6bdb06"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "624fbc734ae233f8c854469f7d63606dc7d6402a3d2c242a3e3ce45c80f93c8c",
+        "afterSha256": "fa2ae3e025a36312f5c488209281a42c55ef73eedb5ed26413210382501b3761"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ab58cc1fbe4c02b442435b0890511bc13414b7a9171055dec9d455b6436fe2e4",
+        "afterSha256": "d7a289abcd03330cbe261f83f53974fdeac1dbbc73c5eded63f2e521cdced24a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "263ecc9a8211565fb8593b9bff5f806ebb98a2660bac66fcd483874fea483436",
+        "afterSha256": "baccca39758e60c842a6ebabc5b55bcae3547571730525ba61c2468739d3c039"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "49305eead12772cb07e2f9b2f06126131a72a61dea00f07a02d34dfc8b953600",
+        "afterSha256": "4379059b28d57010e17b448938435cb90ca616036c1d80f3c9014457fa34d53b"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "cf06c73a69ce675a1c2d7469d587bf5c41836475167a308a8e0d433ed4045759",
+        "afterSha256": "b9a405b734d430d25972cc4f609a4442b95ef62da68ed021acc40f7894a5e1c1"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "337cbf0c82fe7c28694640946ef3ab6f8ff94faffe3e727bc9df5c2f1680bf3c",
+        "afterSha256": "f5c203b754a18fd35beae31e29932708a63a89d896496bc9e4c631e0d8f19c92"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a99a8bcc1f5a892c66f9a48aa71dec6b2748daf605d61c9631b41c7698c5c7d1",
+        "afterSha256": "0f7d800e84e1049808c0cb156644e12bd96533c033f75edcf8a12959875c4bca"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "0d58c53fd4c1949ee948575eea8c334b04bbda242746ffbdb70ad0f80cf2a676",
+        "afterSha256": "cfcfaa07c5c101637eaf3900e3d4218d004187f106abafbaee87f14b09e7bc0a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7cd03d8d66175c76f215d48516aaeb72ee3c450355b9aca15e44ee88771e3498",
+        "afterSha256": "35f88941b488cecd544a0490ee905933e4e01e812732e4002e0ae28eeb25cadf"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "085681b1cb5efb98522e29cec4b3122de7d1963eeb4887f448827402aad6a6e1",
+        "afterSha256": "3b3d4b7bfdac678a841e8e666aadb03688b8827b10f1dc126d413d79ce58c87b"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "41c3d3456d318aba74cc4a9f94735217ff1ad0851292dca080fb1c25a23bb919",
+        "afterSha256": "4a0ac4650c0eb1180c32225a21c6c58bf638c267edfb0be46cedd8769d825857"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "60428a67d3025e3ea1ae70e205fbf91e2ec62e9335f8f2780b243c8eb1748c12",
+        "afterSha256": "f50285ea54c52a6f73c31b9562ed3e2a1f5d32a75a6a3f76c5ec94dc9a842c7d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "91ff91856c588800c39743fee10b14b9c4d13dd41aa4dfb0b7c8d09ddbffa9f2",
+        "afterSha256": "5c97153c468e268b668d586674a50cba2c3a7786e00d10e31105d520724f88bf"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ee4469768c8012d9e7afac651a2a199d7c88d9af8807c0055acdcc0f43edafc0",
+        "afterSha256": "e0f7d9c90476960b88e4631775829de1b7382d2ebe36f31e7493a477ff1c748c"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "fce82571c93534acab77e93a3cea72aba31207d288ac4d1b41bcf0f4ec8b2974",
+        "afterSha256": "4f27485f85513414a3430039b2f2cca7c46acc455b2fa3a343bf52849e08d7ad"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "528c4d4b75f0174aee41963c8a156068bd9b5fa34f7c72510c9186291fac80bd",
+        "afterSha256": "fe9ba13ca488d005465e95b50973b4c1f0f79f4034401462c68a32f566fa44f7"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "c26f51ca98a191f5d0b1fb465ffe895ceec1186aa396fca86705b19705779235",
+        "afterSha256": "a81c5dabf0309ba04d837a5f15b3e836173896ef3accd164e544e8a1a118c0f9"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8e942e200cb2a555f4b544186cd45ccacd7ac06c267f67a2b8490c5ee5d644cc",
+        "afterSha256": "27e99561d30efca4058e129863a592aa3e7fd33357054bd2a171f78d8acbc809"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "db4cf131da9c8bc5e35080179fd93b40860d11622ee787b47ba64b0dccb8f9f8",
+        "afterSha256": "6397bfd5db0107a0fe908a59637d76690e13f45dc5b4b04ed3aca18e44a9fa20"
+      },
+      {
+        "id": "block_0007_0000",
+        "beforeSha256": "ba100873946c3bdf2820e0338bb09fc4f2f742162b22f6dee1c6c2c60735c575",
+        "afterSha256": "7e383b33ad8966630bad0cac4ec463da108a8aa88b6f2c18b54e005d83d2849c"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "42d0993c16dd4c58fb50879ebf8d18301b897627604c5d960bb1717a54e5863c",
+        "afterSha256": "fec839018ab9277f13223aefa36274aeddfb6d6c22e82851453efaf0383e736a"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "4adb02a06e723126bb68721838dd4140e864eb5bdd7957b554abd65fac234c9a",
+        "afterSha256": "3d46deb6296e2cf74ba498f2fab15575d2eaee6bdf563cc305264e9230fb5e1b"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "eae502a49e0e0edd5b6965918d740960afa9ba14f0f2b7d8e9324befb73177ea",
+        "afterSha256": "9aba8fba32dbb95393d4db41211deb24238b9735d071f8b256dce2e5856e8277"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "48bc54a6907017b9acd70ec083f2052f34167dd67fae4801df5f15f39a950f34",
+        "afterSha256": "a7f1eec45858e7610b41f0a052e929012aabb4490170b14a12902b5ea5bd3243"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "11f9f99e23732d0a5e1b81c55805d012e616ac6fefbcc30cd62281f07f490a8f",
+        "afterSha256": "9c1ef42591f41774ed6b49a7c2d478e70ac5d3da2ca359ad1ba74f3dc2641f06"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "9904a081d05509fa58a9fef2c0e707f9bfe905b24031dd6c077b1854d930d7cb",
+        "afterSha256": "cb8d556e66c292874d884ea50ff2ec902c3f5037b0c1866ff879b30bad81a65d"
+      }
+    ]
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0006_0003",
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002",
+        "block_0007_0005",
+        "block_0007_0006"
+      ]
+    },
+    {
+      "activity": "block_0008_0003",
+      "blocks": [
+        "block_0009_0000",
+        "block_0009_0001"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0007_0003",
+      "requires": [
+        "block_0006_0002"
       ]
     }
   ]
