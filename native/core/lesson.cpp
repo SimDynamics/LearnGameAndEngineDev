@@ -340,6 +340,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         // Keep stdout-only proof identities byte-for-byte compatible, while a
         // newly authored stderr objective always requires fresh native proof.
         if (item.standard_error == StandardErrorExpectation::non_blank) token("standard-error/nonBlank/v1");
+        // A normal nonzero termination is a new objective, never an inherited
+        // stdout-only proof. Omitted/explicit zero keeps every old byte intact.
+        if (item.exit_code != 0) { token("process-exit-code/v1"); token(std::to_string(item.exit_code)); }
     }
     result += ']';
     return result;
@@ -527,7 +530,9 @@ bool uses_single_line_answer(const Block& block) {
 }
 OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExecution& execution, std::uint64_t current_revision) {
     if (execution.source_revision != current_revision || !execution.compilation_succeeded ||
-        !execution.execution_succeeded || execution.exit_code != 0) return {};
+        (!execution.execution_succeeded && !execution.execution_completed) ||
+        execution.exit_code < 0 || execution.exit_code > 255 ||
+        (execution.exit_code != 0 && !execution.execution_completed)) return {};
     const OutputCase* selected = nullptr;
     for (const auto& item : check.cases) {
         const bool input_matches = check.input_comparison == TextComparison::tokens ?
@@ -538,9 +543,13 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         }
     }
     if (!selected) return {};
+    if (selected->exit_code < 0 || selected->exit_code > 255 ||
+        (selected->exit_code == 0 && execution.exit_code != 0)) return {};
     const bool stdout_correct = std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end();
     const bool stderr_correct = selected->standard_error == StandardErrorExpectation::ignored ||
         !trimmed(execution.standard_error).empty();
+    const bool exit_code_correct = execution.exit_code == selected->exit_code;
+    if (!exit_code_correct) return {OutputVerdict::incorrect, {}, stdout_correct, stderr_correct, false};
     if (stdout_correct && stderr_correct)
         return {OutputVerdict::correct, selected->explanation, true, true};
     if (stdout_correct)

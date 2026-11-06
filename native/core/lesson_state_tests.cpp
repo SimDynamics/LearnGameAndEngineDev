@@ -615,7 +615,8 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
             Draft draft;draft.source=captured.source_utf8;draft.input=old.standard_input.value_or("");put_draft(data,draft_key("programming",before,old),draft);
             const auto seeded=mode==2?old.output_check->cases.size():mode==1?old.output_check->cases.size()/2:0;
             for(std::size_t i=0;i<seeded;++i) {
-                const auto& item=old.output_check->cases[i];FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
+                const auto& item=old.output_check->cases[i];captured.stdin_utf8=item.standard_input;
+                FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
                 (void)record_compiler_puzzle_case(data,before,old,captured,execution,"Correcto histórico.");
             }
             const auto original=data;prepare_lesson_state(data,current);validate_lesson_state(data,current);
@@ -668,7 +669,8 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
             if(!plan.suffix&&mode==2) {
                 auto inherited=data,changed_program=data;auto different=captured;different.source_utf8+="// different captured program\n";
                 for(std::size_t extra=old.output_check->cases.size();extra<block.output_check->cases.size();++extra) {
-                    const auto& item=block.output_check->cases[extra];FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
+                    const auto& item=block.output_check->cases[extra];captured.stdin_utf8=item.standard_input;different.stdin_utf8=item.standard_input;
+                    FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
                     (void)record_compiler_puzzle_case(inherited,current,block,captured,execution,"Correcto ampliado.");
                     (void)record_compiler_puzzle_case(changed_program,current,block,different,execution,"Only new contrasts.");
                 }
@@ -700,6 +702,7 @@ void reviewed_compiler_expansions_preserve_execution_history(const std::filesyst
             require(!record_compiler_puzzle_case(reopened,current,block,captured,failed,"Incorrecto")&&compiler_puzzle_historical_case_count(reopened,current,block)==seeded,
                 "A technical failure accredited a compiler expansion or erased its historical cases");
             for(const auto& item:block.output_check->cases) {
+                captured.stdin_utf8=item.standard_input;
                 FreshExecution execution{7,true,true,0,item.standard_input,item.outputs.front()};
                 (void)record_compiler_puzzle_case(reopened,current,block,captured,execution,"Correcto ampliado.");
             }
@@ -1465,18 +1468,28 @@ void rejected_compiler_reviews_preserve_captured_attempts(const std::filesystem:
         &&compiler_puzzle_review(partial,lesson,block,second).empty()&&compiler_puzzle_case_count(partial,lesson,block)==2
         &&compiler_puzzle_completed(partial,lesson,block),"Completing both unit-level cases retained a rejected review or lost sealed success");
     const auto sealed=partial;
-    require(!record_compiler_puzzle_review(partial,lesson,block,second,wrong_second,feedback)&&partial==sealed,
-        "A later rejection downgraded or modified a sealed completed objective");
+    require(record_compiler_puzzle_review(partial,lesson,block,second,wrong_second,feedback)
+        &&compiler_puzzle_review(partial,lesson,block,second)==feedback
+        &&compiler_puzzle_completed(partial,lesson,block)&&compiler_puzzle_case_count(partial,lesson,block)==2
+        &&compiler_puzzle_feedback(partial,lesson,block)=="Correcto\nAmbos casos",
+        "A new evaluated rejection after achievement was hidden, or replaced the independent captured success");
+    for(const auto& [domain,values]:sealed.preferences)for(const auto& [name,value]:values)
+        require(find(partial,domain,name)&&*find(partial,domain,name)==value,
+            "A new rejected review rewrote a historical success receipt, draft or unrelated student data");
+    store.save(partial);const auto reviewed_after_completion=store.load();
+    require(reviewed_after_completion==partial&&compiler_puzzle_review(reviewed_after_completion,lesson,block,second)==feedback
+        &&compiler_puzzle_completed(reviewed_after_completion,lesson,block),
+        "Reopening a completed objective hid its latest rejected review or lost the independent achievement");
     auto edited=second;edited.source_utf8+="// later draft\n";invalidate_compiler_puzzle_attempt(partial,lesson,block,edited);
     require(partial==sealed&&compiler_puzzle_feedback(partial,lesson,block)=="Correcto\nAmbos casos",
-        "Editing after success changed the independent captured achievement");
+        "Editing after success retained a stale rejected review or changed the independent captured achievement");
     auto reset=reviewed;reset_compiler_puzzle(reset,lesson,block);
     require(compiler_puzzle_review(reset,lesson,block,captured).empty()&&!compiler_puzzle_completed(reset,lesson,block)
         &&compiler_puzzle_case_count(reset,lesson,block)==0,"Explicit Reset retained a rejected review or execution receipt");
     auto reset_expected=original;reset_expected.preferences["native_windows"]={};
     require(reset==reset_expected,"Reset of a reviewed attempt rewrote its draft, selection, input or unrelated response");
     ++groups;
-    std::cout<<"PASS compiler review state: synthetic evaluator rejection only, exact source/stdin/project/target/objective binding, typed tamper refusal, state-store reopen, scoped invalidation/Reset and unchanged independent partial/sealed success; no compiler execution or audio claimed\n";
+    std::cout<<"PASS compiler review state: synthetic evaluator rejection before/after achievement, exact source/stdin/project/target/objective binding, typed tamper refusal, state-store reopen, scoped invalidation/Reset and unchanged independent partial/sealed success; no compiler execution or audio claimed\n";
 }
 }
 int main(int argc, char** argv) {

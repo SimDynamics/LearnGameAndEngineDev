@@ -950,8 +950,11 @@ def validate_cpp_output_check_contract(block, where):
         require(isinstance(case, dict), case_where, "caso debe ser un objeto")
         if not isinstance(case, dict):
             continue
-        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError"}, case_where,
+        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError", "exitCode"}, case_where,
                 "campo de caso outputCheck no admitido")
+        if "exitCode" in case:
+            require(type(case["exitCode"]) is int and 0 <= case["exitCode"] <= 255, case_where,
+                    "exitCode de caso requiere un entero de 0 a 255; omitirlo conserva la salida de proceso 0")
         if "standardError" in case:
             require(case["standardError"] == "nonBlank", case_where,
                     "standardError de caso sólo admite nonBlank; omitirlo conserva stdout solamente")

@@ -221,6 +221,27 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    # These focused contracts never create windows or access user input/audio.
+    add_executable(lgaed_reading_gate_policy_tests native/presentation/windows/reading_gate_policy_tests.cpp)
+    target_link_libraries(lgaed_reading_gate_policy_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.reading_gate_policy COMMAND lgaed_reading_gate_policy_tests)
+    add_executable(lgaed_curricular_output_roles_tests native/presentation/windows/curricular_output_roles_tests.cpp)
+    target_link_libraries(lgaed_curricular_output_roles_tests PRIVATE lgaed_presentation_windows lgaed_host_options)
+    add_test(NAME native.curricular_output_roles COMMAND lgaed_curricular_output_roles_tests)
+    add_executable(lgaed_intentional_exit_tests native/platform/windows/intentional_exit_tests.cpp)
+    target_link_libraries(lgaed_intentional_exit_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_intentional_exit_tests lgaed_cpp_tool_host)
+    add_test(NAME native.intentional_exit_execution COMMAND lgaed_intentional_exit_tests)
+    add_test(NAME native.intentional_exit_contract COMMAND lgaed_lesson_tests --intentional-exit-code)
+    add_test(NAME native.compiler_recheck_contract COMMAND lgaed_lesson_tests --compiler-recheck)
+    add_test(NAME native.intentional_exit_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_output_exit_code_contract.py)
+    add_test(NAME native.programming_math_contracts COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py)
+    set_tests_properties(native.intentional_exit_execution PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    set_tests_properties(native.reading_gate_policy native.curricular_output_roles
+        native.intentional_exit_contract native.compiler_recheck_contract native.intentional_exit_authoring native.programming_math_contracts
+        PROPERTIES TIMEOUT 60)
     add_test(NAME native.narration_english_pack COMMAND "${Python3_EXECUTABLE}" -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/narration" -p test_prepare_english_ai_pack.py)
     add_test(NAME native.narration_distribution_contract COMMAND "${Python3_EXECUTABLE}" -m unittest discover

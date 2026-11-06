@@ -43,6 +43,12 @@ std::string complete_seal(const std::string& key,std::string_view program,const 
 std::string review_target(const CppRunRequest& request) {
     return request.cmake?request.cmake->target:std::string{};
 }
+bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::FreshExecution& execution) {
+    return !captured.diagnostic
+        &&(captured.action==CppRunRequest::Action::compile_run||captured.action==CppRunRequest::Action::execute)
+        &&captured.stdin_utf8==execution.standard_input
+        &&(!captured.cmake||execution.executable==std::optional<std::string>{captured.cmake->target});
+}
 std::string review_rules(const curriculum::Block& block) {
     // Pedagogical guides can change without changing successful-case identity.
     // A rejection must not resurrect an earlier version of that feedback.
@@ -53,6 +59,7 @@ std::string review_rules(const curriculum::Block& block) {
         frame+=token(item.standard_input)+token(item.executable.value_or(""))+token(item.explanation)
             +token(item.standard_error==curriculum::StandardErrorExpectation::non_blank?"nonBlank":"ignored")
             +token(std::to_string(item.outputs.size()));
+        if(item.exit_code!=0)frame+=token("process-exit-code/v1")+token(std::to_string(item.exit_code));
         for(const auto& output:item.outputs)frame+=token(output);
         frame+=token(std::to_string(item.review_feedback.size()));
         for(const auto& guide:item.review_feedback){
@@ -77,7 +84,7 @@ curriculum::Block historical_block(const curriculum::Block& block) {
 }
 bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& right) {
     return left.standard_input==right.standard_input&&left.outputs==right.outputs&&left.executable==right.executable&&
-        left.standard_error==right.standard_error;
+        left.standard_error==right.standard_error&&left.exit_code==right.exit_code;
 }
 void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return;const auto key=base(lesson,block);
@@ -133,7 +140,7 @@ std::string compiler_puzzle_feedback(const state::StateData& data,const curricul
 }
 std::string compiler_puzzle_review(const state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& current) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||compiler_puzzle_completed(data,lesson,block))return {};
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)return {};
     const auto key=base(lesson,block)+"review/";
     const auto text=[&](std::string_view suffix)->const std::string*{
         const auto value=state::find(data,"native_windows",key+std::string(suffix));
@@ -145,12 +152,17 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
         ||*rules!=review_rules(block)||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
     return *feedback;
 }
+std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,const CppRunRequest& current) {
+    if(auto review=compiler_puzzle_review(data,lesson,block,current);!review.empty())return CompilerFeedback{std::move(review),false};
+    if(auto earned=compiler_puzzle_feedback(data,lesson,block);!earned.empty())return CompilerFeedback{std::move(earned),true};
+    return std::nullopt;
+}
 bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& captured,const curriculum::FreshExecution& execution,
         std::string_view feedback) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()||compiler_puzzle_completed(data,lesson,block)
-        ||captured.stdin_utf8!=execution.standard_input
-        ||(captured.cmake&&execution.executable!=std::optional<std::string>{captured.cmake->target})
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()
+        ||!matches_runtime_capture(captured,execution)
         ||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::incorrect)return false;
     const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
     auto& values=data.preferences["native_windows"];
@@ -220,9 +232,10 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
 }
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
-    if(compiler_puzzle_completed(data,lesson,block)){clear_compiler_puzzle_review(data,lesson,block);return true;}
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::correct)return false;
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||!matches_runtime_capture(captured,execution)
+        ||evaluate_cpp_output_check(*block.output_check,execution,captured.revision).verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);
+    if(compiler_puzzle_completed(data,lesson,block))return true;
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
     auto proofs=case_proofs(data,key);
     if(state::string_value(data,"native_windows",key+"program")!=program)proofs.clear();
@@ -240,13 +253,13 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
 }
 bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const CppRunResult& result,std::string_view feedback) {
-    if(compiler_puzzle_completed(data,lesson,block)){clear_compiler_puzzle_review(data,lesson,block);return true;}
     if(!block.compile_check||!captured.diagnostic||!expected_compile_diagnostic(captured,result))return false;
     const auto source=curriculum::prepare_compile_diagnostic_source(block,captured.source_utf8);
     if(!source||captured.diagnostic->control_source_utf8!=source->control_source||
         captured.diagnostic->expected_error_code!=source->expected_msvc_error||
         captured.diagnostic->first_line!=source->first_line||captured.diagnostic->last_line!=source->last_line)return false;
     clear_compiler_puzzle_review(data,lesson,block);
+    if(compiler_puzzle_completed(data,lesson,block))return true;
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
     const std::vector<std::string> proofs{diagnostic_proof(key,program,block)};
     auto& values=data.preferences["native_windows"];

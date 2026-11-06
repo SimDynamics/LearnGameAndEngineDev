@@ -16,6 +16,7 @@
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/lesson_reader.hpp"
+#include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/order_code_view.hpp"
 #include "core/learning_flow.hpp"
 #include "core/catalog.hpp"
@@ -766,7 +767,10 @@ struct LessonView {
             if (!target || source.empty() || (!fullscreen_block&&!(GetWindowLongPtrW(target,GWL_STYLE) & WS_VISIBLE))) return;
             const auto& current = block(index); const auto& vm = controls[index];
             const bool compiler_feedback=is_feedback&&current.type==BlockType::cpp_compiler;
-            const bool compiler_gate=compiler_completion_required(lesson,current);
+            // Narration must wait for every authored compiler objective. The
+            // lesson-wide navigation flag and activity dependencies do not
+            // decide whether an individual checked program is still pending.
+            const bool compiler_gate=reading_gate::compiler_objective(current);
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
                 is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback||compiler_gate,
@@ -2532,17 +2536,11 @@ struct LessonView {
         // MathPuzzleRenderer owns 12dp inside its card and a separate 24dp
         // bottomMargin. The contour below closes after only the inner 12dp.
         rows.back().padding_before=12;rows.back().padding_after=mathematical?36:24;
-        if(block(index).type==BlockType::cpp_compiler&&windows::compiler_puzzle_completed(data,lesson,block(index))){
-            const auto restored=windows::compiler_puzzle_feedback(data,lesson,block(index));
-            const auto body=restored.find_first_of("\r\n");
-            auto text=verdict_text(true);if(body!=std::string::npos)text+=restored.substr(body);
-            feedback(index,text,true,true);
-        } else if(block(index).type==BlockType::cpp_compiler){
-            const auto restored=windows::compiler_puzzle_review(data,lesson,block(index),program_snapshot(index));
-            if(!restored.empty()){
-                const auto body=restored.find_first_of("\r\n");
-                auto text=verdict_text(false);if(body!=std::string::npos)text+=restored.substr(body);
-                feedback(index,text,false,true);
+        if(block(index).type==BlockType::cpp_compiler){
+            if(const auto restored=windows::compiler_puzzle_current_feedback(data,lesson,block(index),program_snapshot(index))){
+                const auto body=restored->text.find_first_of("\r\n");
+                auto text=verdict_text(restored->correct);if(body!=std::string::npos)text+=restored->text.substr(body);
+                feedback(index,text,restored->correct,true);
             }
         } else if (vm.response.correct) {
             const auto& current=block(index);
@@ -3489,7 +3487,8 @@ struct LessonView {
         }
         running_block = index; running_input = request.stdin_utf8;running_program=request;refresh_project_actions(index);
         EnableWindow(vm.compile, FALSE);
-        if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index, "", false);
+        // The earned objective remains stored; this run needs its own verdict.
+        feedback(index, "", false);
         if(laboratory()){laboratory_status=LaboratoryStatus::running;refresh_laboratory_status();}
         updating = true;set_rich_text(vm.console,"");updating = false;
         if(block(index).cmake&&vm.status)set_rich_text(vm.status,action==windows::CppRunRequest::Action::configure?ui("Configurando y generando el proyecto…","Configuring and generating the project…","Configuration et génération du projet…")
@@ -3537,7 +3536,7 @@ struct LessonView {
                 :result->compilation.succeeded()
                     ?ui("Compilación aceptada. El programa no se ejecutó.","Compilation accepted. The program was not run.","Compilation acceptée. Le programme n’a pas été exécuté.")
                     :ui("Compilación rechazada. El programa no se ejecutó.","Compilation rejected. The program was not run.","Compilation rejetée. Le programme n’a pas été exécuté."));
-            if(!windows::compiler_puzzle_completed(data,lesson,block(index))){
+            {
                 const bool correct=windows::expected_compile_diagnostic(running_program,*result);
                 if(correct){
                     auto text=verdict_text(true)+"\n"+(block(index).compile_check->explanation.empty()
@@ -3563,6 +3562,10 @@ struct LessonView {
         const bool cmake=block(index).cmake.has_value();
         const bool configuration_failed=cmake&&result->configuration.status!=windows::CppPhaseStatus::not_started&&!result->configuration.succeeded();
         const bool executed=running_action==windows::CppRunRequest::Action::compile_run||running_action==windows::CppRunRequest::Action::execute;
+        const auto fresh=windows::capture_cpp_execution(running_program,*result);
+        const auto evaluation=block(index).output_check&&executed
+            ?windows::evaluate_cpp_output_check(*block(index).output_check,fresh,vm.revision):curriculum::OutputEvaluation{};
+        const bool completed_for_objective=fresh.execution_completed&&evaluation.verdict!=curriculum::OutputVerdict::unavailable;
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
             output=diagnostic_text(phase.stdout_bytes+phase.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;
@@ -3572,7 +3575,7 @@ struct LessonView {
             if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
             if (result->compilation.status == windows::CppPhaseStatus::timed_out) output += '\n' + ui("La compilación superó el tiempo permitido.",
                 "Compilation exceeded the time limit.","La compilation a dépassé le temps autorisé.");
-        } else if (!result->execution.succeeded()) {
+        } else if (!result->execution.succeeded()&&!completed_for_objective) {
             output = ui("La ejecución no terminó correctamente.\n","Execution did not finish successfully.\n","L'exécution ne s'est pas terminée correctement.\n") + diagnostic_text(result->execution.stdout_bytes);
             output += diagnostic_text(result->execution.stderr_bytes);
             if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
@@ -3593,7 +3596,7 @@ struct LessonView {
             std::string status;
             if(!cmake){
                 if(result->compilation.exit_code&&!result->compilation.succeeded())status=ui("La compilación falló (código ","Compilation failed (code ","Échec de la compilation (code ")+std::to_string(*result->compilation.exit_code)+").";
-                else if(result->execution.exit_code)status=(result->execution.succeeded()
+                else if(result->execution.exit_code)status=(result->execution.succeeded()||completed_for_objective
                     ?ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")
                     :ui("La ejecución falló (código ","Execution failed (code ","L’exécution a échoué (code "))+std::to_string(*result->execution.exit_code)+").";
                 else status=ui("No se pudo ejecutar.","Could not execute.","Impossible d’exécuter.");
@@ -3606,7 +3609,7 @@ struct LessonView {
             else if(running_action==windows::CppRunRequest::Action::build)status=!result->compilation.succeeded()?failed(ui("Construcción","Build","Construction"),result->compilation):result->artifact.empty()
                 ?ui("Objetivo construido; no produce un programa ejecutable.","Target built; it does not produce an executable program.","Cible construite ; elle ne produit pas de programme exécutable.")
                 :ui("Objetivo construido. Ejecútalo para observar su comportamiento.","Target built. Run it to observe its behavior.","Cible construite. Exécutez-la pour observer son comportement.");
-            else if(result->execution.succeeded())status=ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")+std::to_string(*result->execution.exit_code)+").";
+            else if(result->execution.succeeded()||completed_for_objective)status=ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")+std::to_string(*result->execution.exit_code)+").";
             else status=failed(ui("Ejecución","Execution","Exécution"),result->execution);
             set_rich_text(vm.status,status);
         }
@@ -3622,21 +3625,17 @@ struct LessonView {
         int preferred_channel = -1;
         if (configuration_failed||(cmake&&!executed)||(!cmake&&!result->compilation.succeeded())
             ||(cmake&&result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded())) { vm.console_channels[2] = output; preferred_channel = 2; }
-        else if (!result->execution.succeeded()) { vm.console_channels[1] = output; preferred_channel = 1; }
+        else if (!result->execution.succeeded()&&!completed_for_objective) { vm.console_channels[1] = output; preferred_channel = 1; }
         console_present(index,preferred_channel);
-        if (block(index).output_check&&executed&&!windows::compiler_puzzle_completed(data,lesson,block(index))) {
-            curriculum::FreshExecution fresh;
-            fresh.source_revision = result->revision;
-            fresh.compilation_succeeded = result->compilation.succeeded(); fresh.execution_succeeded = result->execution.succeeded();
-            fresh.exit_code = result->execution.exit_code ? static_cast<int>(*result->execution.exit_code) : -1;
-            fresh.standard_input = running_input; fresh.standard_output = result->execution.stdout_bytes;
-            fresh.executable=result->executable;
-            fresh.standard_error=result->execution.stderr_bytes;
-            auto evaluation = windows::evaluate_cpp_output_check(*block(index).output_check, fresh, vm.revision);
+        if (block(index).output_check&&executed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct;
                 auto text = verdict_text(correct);
-                if(evaluation.stdout_correct&&!evaluation.stderr_correct)text+='\n'+ui(
+                if(evaluation.stdout_correct&&!evaluation.exit_code_correct)text+='\n'+ui(
+                    "La salida estándar es correcta; el código de salida no coincide con el requerido.",
+                    "Standard output is correct; the process exit code does not match the required code.",
+                    "La sortie standard est correcte ; le code de sortie ne correspond pas au code demandé.");
+                else if(evaluation.stdout_correct&&!evaluation.stderr_correct)text+='\n'+ui(
                     "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.",
                     "Standard output is correct; the requested runtime diagnostic is missing from stderr.",
                     "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr.");

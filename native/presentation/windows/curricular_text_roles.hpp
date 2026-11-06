@@ -1,6 +1,7 @@
 #pragma once
 
 #include "presentation/windows/programming_technical_ranges.hpp"
+#include <optional>
 
 namespace lgaed::presentation::technical_prose {
 // Displayed UTF-16 offsets only. Source strings, narration and authored state
@@ -95,7 +96,7 @@ inline bool output_cue(std::wstring_view prefix) {
     return has(prefix,LR"((?:\b(?:la\s+)?(?:salida|consola|mensaje|resultado|output|console|sortie)\s+(?:(?:exact[oa]|final|esperad[oa])\s+)?(?:(?:debe|puede)\s+)?(?:ser|es|son|mostrar|muestra|imprime|contiene|produce|shows?|prints?|is|are|affiche|est)\s*|\b(?:se\s+muestra|se\s+imprime|mostrar|imprimir|muestre|muestra|produce)\s+|\b(?:salida|output|sortie)(?:\s+exacta)?\s*[:=]\s*)$)",true);
 }
 inline bool string_cue(std::wstring_view prefix) {
-    return has(prefix,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:\s+de\s+(?:texto|caracteres))?|std::string)\s+(?:(?:exact[oa]|contiene|aporta|conserva|es|con|como)\s+)?$)",true);
+    return has(prefix,LR"(\b(?:literal(?:\s+de\s+(?:texto|cadena))?|cadena(?:\s+de\s+(?:texto|caracteres))?|etiqueta(?:\s+de\s+texto)?|std::string)\s+(?:(?:exact[oa]|contiene|aporta|conserva|es|con|como)\s+)?$)",true);
 }
 inline std::wstring_view data_sentence(std::wstring_view prefix) {
     std::size_t first=0;
@@ -113,7 +114,16 @@ inline bool composed_data_sample(std::wstring_view value) {
     // display role does not certify that the candidate has the right value.
     // A source declaration/statement, quoted literal or ordinary sentence is
     // not such a sample merely because it mentions an equals sign.
-    return has(value,LR"(^[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:;[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+)*$)");
+    return has(value,LR"(^[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:\.[A-Za-z_0-9=+:-]+)*(?:;[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:\.[A-Za-z_0-9=+:-]+)*)*$)");
+}
+inline bool formatted_message_sample(std::wstring_view value) {
+    // A visible formatted-message candidate may contain a literal brace field,
+    // a quantity and an empty/repeated trailing field. This recognizes its
+    // presentation shape, never whether it satisfies the exercise.
+    return has(value,LR"(^[A-Za-z_][A-Za-z_0-9]*(?:[ \t]+\{[A-Za-z_0-9{}]*\})?:[ \t]*[0-9]+[ \t]+[A-Za-z_][A-Za-z_0-9]*(?:;[ \t]*[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9{}]*)?$)");
+}
+inline bool result_list_cue(std::wstring_view prefix) {
+    return has(prefix,LR"(\b(?:(?:sus|las)\s+l[ií]neas\s+son|su\s+fila\s+es)\s*$)",true);
 }
 inline bool composed_data_cue(std::wstring_view prefix) {
     return has(prefix,LR"((?:\b(?:forma(?:n)?|compone(?:n)?|construye(?:n)?|obtiene(?:n)?|genera(?:n)?|produce(?:n)?)\s+(?:el\s+|un\s+)?(?:texto|cadena)|\bse\s+ve|\b(?:texto|cadena|string)\s+con\s+el\s+formato)\s*$)",true);
@@ -155,11 +165,19 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
     // An unquoted composed value is data when the local prose introduces its
     // composition/result. Preserve every explicitly marked C++ occurrence,
     // even if it has an identical spelling elsewhere in this same paragraph.
-    matches(text,LR"([A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:;[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+)*)",[&](const auto& match){
+    std::optional<std::size_t> previous_output_end;
+    matches(text,LR"((?:[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:\.[A-Za-z_0-9=+:-]+)*(?:;[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_0-9=+:-]+(?:\.[A-Za-z_0-9=+:-]+)*)*|\[[^\]\r\n]*\](?:\|\[[^\]\r\n]*\])+))",[&](const auto& match){
         const auto first=static_cast<std::size_t>(match.position()),last=first+static_cast<std::size_t>(match.length());
         if((first&&identifier(text[first-1]))||(last<text.size()&&identifier(text[last]))||overlaps({first,last},marked))return;
         const auto prefix=tail(text,first,192);
-        if(composed_data_cue(prefix)||output_cue(prefix))add(roles.outputs,first,last);
+        // A comma/conjunction continues only the immediately introduced list.
+        // Neither intervening prose nor another source sample inherits it.
+        const bool continues=previous_output_end&&*previous_output_end<=first&&
+            has(text.substr(*previous_output_end,first-*previous_output_end),LR"(^[ \t]*(?:,[ \t]*|y[ \t]+)$)",true);
+        if(composed_data_cue(prefix)||output_cue(prefix)||result_list_cue(prefix)||continues){
+            add(roles.outputs,first,last);
+            if(!overlaps({first,last},protected_ranges))previous_output_end=last;
+        }
     });
     for(std::size_t at=0;at<text.size();++at){
         if(text[at]!=L'"'&&text[at]!=L'“'&&text[at]!=L'«')continue;

@@ -2,6 +2,7 @@
 #include "presentation/windows/reader_shortcut_focus.hpp"
 #include "core/narration_speed.hpp"
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/ui_language.hpp"
@@ -365,7 +366,16 @@ struct LessonReader::Impl {
         const auto next_regions=lesson_reading_regions(view);std::string next_signature=next_page;
         for(const auto& region:next_regions)next_signature+='\0'+region.key+'\0'+region.source_text
             +'\0'+region.reading_context+'\0'+region.math_mode;
-        if(next_signature==signature){regions=next_regions;for(auto& part:parts)for(const auto& region:regions)if(region.key==part.region.key){part.region=region;break;}return;}
+        if(next_signature==signature){
+            if(!reading_gate::reconcile(parts,next_regions,[](auto& part)->auto&{return part.region;})){
+                signature.clear();changed();return;
+            }
+            regions=next_regions;
+            if((parts.empty()||!parts[current()].region.feedback)&&constrain_required_compiler_bookmark()){
+                paint_progress();update_buttons();
+            }
+            return;
+        }
         // An automatic partial plan during asynchronous answer restoration has
         // no user-owned position. It must not supersede the stored full-page
         // bookmark when the verified feedback finishes restoring.
@@ -488,7 +498,13 @@ struct LessonReader::Impl {
         }
         if(!result.error.empty()){error=result.error;planning=false;wanted=false;
             try{(void)player.release();}catch(...){}cancel_playback_verification();continue;}
-        if(result.planned){parts=std::move(result.parts);key=result.key;has_plan=true;planning=false;position={};
+        if(result.planned){parts=std::move(result.parts);
+            // Preparation captures speech, not permission to pass an exercise.
+            // Answers can change while the same spoken script is in flight.
+            if(!reading_gate::reconcile(parts,regions,[](auto& part)->auto&{return part.region;})){
+                signature.clear();changed();continue;
+            }
+            key=result.key;has_plan=true;planning=false;position={};
             restored_bookmark=false;resume_needs_replay=false;
             const auto history=narration::read_history(data());if(const auto saved=narration::restore(history,key,parts.size())){
                 position=*saved;restored_bookmark=!position.finished;}
@@ -685,45 +701,32 @@ struct LessonReader::Impl {
         }
         restored_bookmark=false;resume_needs_replay=false;
     }
-    void constrain_required_compiler_bookmark(){
-        const auto at=current();
-        for(std::size_t first=0;first<parts.size();){
-            auto last=first;
-            while(last+1<parts.size()&&parts[last+1].region.block_index==parts[first].region.block_index)++last;
-            const bool pending=std::ranges::any_of(parts.begin()+first,parts.begin()+last+1,[](const auto& part){
-                return part.region.required_compiler&&!part.region.solved;
-            });
-            if(pending&&(at>last||(position.finished&&at>=first))){
+    bool constrain_required_compiler_bookmark(){
+        if(const auto first=reading_gate::compiler_rewind_target(parts,current(),position.finished,
+                [](const auto& part)->const auto&{return part.region;})){
                 // A new prerequisite can leave the exact same spoken script
                 // and recording key. Its old finished/late bookmark is still
                 // historical data, never permission to skip the pending run.
                 // Adjust only this in-memory position; opening the lesson must
                 // not rewrite the student's three saved page slots.
-                position.segment=static_cast<std::int64_t>(first);position.milliseconds=0;position.finished=false;
+                release_player();
+                position.segment=static_cast<std::int64_t>(*first);position.milliseconds=0;position.finished=false;finished=false;
                 position.heard_through=std::min(position.heard_through,position.segment);
                 position.heard_prefix.reset();restored_bookmark=false;resume_needs_replay=false;
-                answer_priority.reset();wanted=false;waiting_gate=false;return;
-            }
-            first=last+1;
+                answer_priority.reset();wanted=false;waiting_gate=false;prioritize(*first);return true;
         }
+        return false;
     }
     std::optional<std::size_t> correct_feedback_start(std::size_t block)const{
         for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.block_index==block&&parts[i].region.feedback&&parts[i].region.correct&&parts[i].region.solved)return i;
         return {};
     }
     bool passes_prefix(std::size_t destination,bool manual_forward=false)const{
-        const auto active=answer_priority?correct_feedback_start(answer_priority->block):std::optional<std::size_t>{};
-        const bool within_feedback=active&&destination<parts.size()&&parts[destination].region.feedback
-            &&parts[destination].region.block_index==answer_priority->block;
-        for(std::size_t i=0;i<destination&&i<parts.size();++i){const auto& part=parts[i];if(!part.region.is_exercise)continue;
-            // A fresh answer may read its complete feedback. It cannot grant
-            // permission to continue past a different pending compiler.
-            if(active&&i<*active&&(!part.region.required_compiler||within_feedback))continue;
-            const bool last=i+1>=parts.size()||parts[i+1].region.block_index!=part.region.block_index;
-            if(!last)continue;if(!part.region.solved)return false;
-            const auto permitted=active?static_cast<std::int64_t>(answer_priority->allowed_through):position.heard_through;
-            if(part.region.feedback&&part.region.correct&&permitted<=static_cast<std::int64_t>(i)&&!(active&&manual_forward))return false;
-        }return true;
+        const auto feedback_priority=answer_priority
+            ?std::optional{reading_gate::FeedbackPriority{answer_priority->block,answer_priority->allowed_through}}
+            :std::optional<reading_gate::FeedbackPriority>{};
+        return reading_gate::prefix_admitted(parts,destination,position.heard_through,feedback_priority,manual_forward,
+            [](const auto& part)->const auto&{return part.region;});
     }
     bool can_enter(std::size_t destination,bool manual_forward=false)const{
         return destination<=current()||passes_prefix(destination,manual_forward);
@@ -739,6 +742,11 @@ struct LessonReader::Impl {
         answer_priority=restored;
     }
     void play_current(){if(!wanted||!has_plan||finished||parts.empty()||player.allocated()||preparation_suspended)return;
+        // A fresh answer may jump to its own feedback. Seeking back from that
+        // feedback must not start prose located past another pending program.
+        if(!parts[current()].region.feedback&&constrain_required_compiler_bookmark()){
+            paint_progress();update_buttons();return;
+        }
         auto at=current();prioritize(at);if(!parts[at].audio)return;
         if(!parts[at].playback_lease){validate_for_playback(at);return;}
         recover_explicit_resume();at=current();prioritize(at);if(!parts[at].audio)return;
@@ -823,6 +831,7 @@ struct LessonReader::Impl {
         // Explicit preview cancels legacy recovery. A zero certificate records
         // known identity, never a prefix inferred from the new visual offset.
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();
+        if(!parts[current()].region.feedback)constrain_required_compiler_bookmark();
         if(owner.empty())acquire();save();paint_progress();play_current();update_buttons();}
     void restart(){if(!has_plan)return;release_player();listened.clear();listened_recordings.clear();answer_priority.reset();previous_priority.reset();position={};
         restored_bookmark=false;resume_needs_replay=false;explicit_resume_requested=false;bind_preview_certificate();

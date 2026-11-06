@@ -234,6 +234,26 @@ void validate_compile_check_payload(const JsonObject& source) {
     require(sha256(text(original,"initialCode"))==spec->source_sha256&&fingerprint(original)==spec->payload_sha256,
         "A reviewed compilation diagnostic cannot alter its initial source or original block");
 }
+constexpr std::string_view intentional_exit_lesson="cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo";
+constexpr std::string_view intentional_exit_identity="block_0005_0002";
+constexpr std::string_view intentional_exit_before="d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c";
+bool reviewed_intentional_exit_goal(const JsonObject& block) {
+    if(text(block,"type")!="cpp_compiler"||!block.HasKey(L"outputCheck"))return false;
+    const auto original=JsonObject::Parse(block.Stringify());original.Remove(L"outputCheck");
+    if(fingerprint(original)!=intentional_exit_before)return false;
+    // This is one closed adoption of a previously exploratory editor, never a
+    // general exemption for adding/changing output contracts in old state maps.
+    const auto config=block.GetNamedObject(L"outputCheck");allowed_keys(config,{"cases"},true);
+    const auto cases=array(config,"cases");require(cases.Size()==1,"The reviewed intentional-exit editor requires exactly one output case");
+    const auto item=cases.GetObjectAt(0);allowed_keys(item,{"standardInput","outputs","exitCode","explanation"},true);
+    const auto outputs=strings(array(item,"outputs"),true);
+    require(text(item,"standardInput").empty()&&outputs==std::vector<std::string>{"Entrada invalida|9:4"}
+        &&integer(item.GetNamedValue(L"exitCode"),255)==1,
+        "The reviewed editor requires exact stdout without a final newline, empty input and return 1");
+    const auto wording=key(text(item,"explanation"));
+    require(std::ranges::any_of(wording,[](wchar_t c){return !narration_space(c);}),"The reviewed intentional-exit goal requires an explanation");
+    return true;
+}
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
     const auto type = text(value, "type");
@@ -241,6 +261,7 @@ std::string state_fingerprint(const JsonObject& original) {
         validate_compile_check_payload(value);
         value.Remove(L"compileCheck");
     }
+    if(reviewed_intentional_exit_goal(value))value.Remove(L"outputCheck");
     if (type == "heading" || type == "paragraph" || type == "note") {
         value.Remove(L"text"); if (value.HasKey(L"emphasis")) value.Remove(L"emphasis");
     } else if (type == "multiple_choice" || type == "fill_code" || type == "output_prediction" || type == "order_code" ||
@@ -374,7 +395,9 @@ bool reviewed_compiler_reference_payload(std::string_view digest) {
 }
 void reject_unmapped_compiler_revisions(const JsonArray& pages) {
     for(const auto& page:pages)for(const auto& item:array(page.GetObject(),"blocks")) {
-        const auto block=item.GetObject();require(text(block,"type")!="cpp_compiler"||!reviewed_compiler_payload(state_fingerprint(block)),
+        const auto block=item.GetObject();require(!reviewed_intentional_exit_goal(block),
+            "The reviewed intentional-exit goal needs its original Spanish v2 identity and proof");
+        require(text(block,"type")!="cpp_compiler"||!reviewed_compiler_payload(state_fingerprint(block)),
             "A reviewed compiler expansion needs its published v2 snapshot and proof");
         require(text(block,"type")!="code"||!reviewed_compiler_reference_payload(state_fingerprint(block)),
             "An expanded reference needs its paired reviewed compiler and original code archive");
@@ -1081,6 +1104,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(active!=return_actual_blocks.end()&&text(previous,"type")==text(active->second,"type")
                     &&state_fingerprint(previous)==state_fingerprint(active->second),
                     "Editorial return archive changed the current owner's protected contract");
+                if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
+                    "A published intentional-exit objective cannot be removed by an editorial return");
                 const auto previous_raw=utf8(previous.Stringify());
                 (void)read_block(previous,previous_raw);
                 result.editorial_returns.push_back({id,previous_raw});
@@ -1242,15 +1267,27 @@ TextComparison comparison(std::string_view mode, bool input = false) {
     if (!input && mode == "trimmed") return TextComparison::trimmed;
     invalid("Unknown text comparison");
 }
-OutputCheck read_output_check(const JsonObject& value,bool cmake=false) {
+OutputCheck read_output_check(const JsonObject& value,std::string_view original,bool cmake=false) {
     allowed_keys(value, {"inputComparison", "cases"});
     OutputCheck result;
     result.input_comparison = comparison(value.HasKey(L"inputComparison") ? text(value, "inputComparison") : "exact", true);
     const auto cases = array(value, "cases"); require(cases.Size() > 0, "Missing output check cases");
+    const OriginalJson source(original);
+    const auto original_cases = source.elements(source.member(source.root(),"cases"));
+    require(original_cases.size() == cases.Size(), "Output check source cases differ from the parsed document");
+    std::size_t case_index = 0;
     for (const auto& case_value : cases) {
-        const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError"});
+        const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError", "exitCode"});
         OutputCase record; record.standard_input = text(item, "standardInput"); record.outputs = strings(array(item, "outputs"), true);
         record.explanation = optional_text(item, "explanation");
+        if (item.HasKey(L"exitCode")) {
+            // Windows.Data.Json erases the distinction between 1 and 1.0.
+            // Inspect the exact authored token as well as its bounded value.
+            const auto token = source.text(source.member(original_cases[case_index],"exitCode"));
+            require(!token.empty() && std::ranges::all_of(token,[](char c) { return c >= '0' && c <= '9'; }),
+                "Runtime exitCode requires an integer from 0 through 255");
+            record.exit_code = static_cast<int>(integer(item.GetNamedValue(L"exitCode"),255));
+        }
         if (item.HasKey(L"standardError")) {
             require(text(item, "standardError") == "nonBlank", "Unknown runtime stderr expectation");
             record.standard_error = StandardErrorExpectation::non_blank;
@@ -1268,6 +1305,7 @@ OutputCheck read_output_check(const JsonObject& value,bool cmake=false) {
         }
         require(std::set<std::string>(record.outputs.begin(), record.outputs.end()).size() == record.outputs.size(), "Duplicate accepted outputs");
         result.cases.push_back(std::move(record));
+        ++case_index;
     }
     // The pure evaluator also checks matching ambiguity; reject it at load time.
     for (const auto& item : result.cases) {
@@ -1384,7 +1422,11 @@ Block read_block(const JsonObject& value,std::string_view original) {
             }
         }else{require(!value.HasKey(L"cmake")&&!value.HasKey(L"sourceFiles"),"Project metadata requires projectFiles");require(!result.initial_code.empty(), "Compiler block requires its source");}
         if (value.HasKey(L"initialStandardInput")) result.standard_input = text(value, "initialStandardInput");
-        if (value.HasKey(L"outputCheck")) result.output_check = read_output_check(value.GetNamedObject(L"outputCheck"),result.cmake.has_value());
+        if (value.HasKey(L"outputCheck")) {
+            const OriginalJson source(original);
+            result.output_check = read_output_check(value.GetNamedObject(L"outputCheck"),
+                source.text(source.member(source.root(),"outputCheck")),result.cmake.has_value());
+        }
         if(value.HasKey(L"compileCheck"))result.compile_check=read_compile_check(value.GetNamedObject(L"compileCheck"));
         if (!result.standard_input && result.output_check && std::ranges::any_of(result.output_check->cases,
             [](const auto& item) { return !item.standard_input.empty(); })) result.standard_input = "";
@@ -1442,6 +1484,18 @@ void apply_reviewed_order_equivalences(const Lesson& lesson,Block& block) {
 }
 void resolve_addresses(Lesson& lesson) {
     auto& layout = lesson.state_layout;
+    const auto intentional_exit_owner=[&](const Block& block) {
+        if(block.type!=BlockType::cpp_compiler||block.raw_json.empty()||!reviewed_intentional_exit_goal(JsonObject::Parse(key(block.raw_json))))return;
+        require(layout.version==2&&lesson.locale=="es"&&lesson.id==intentional_exit_lesson&&block.stable_id==intentional_exit_identity,
+            "The reviewed intentional-exit goal belongs to its original Spanish v2 editor");
+        const auto metadata=JsonObject::Parse(key(layout.raw_json));
+        bool original_edge=false;
+        for(const auto& value:array(metadata,"editorial")) {
+            const auto proof=value.GetObject();
+            original_edge=original_edge||(text(proof,"id")==block.stable_id&&text(proof,"beforeSha256")==intentional_exit_before);
+        }
+        require(original_edge,"The intentional-exit goal requires its exact complete original/editorial provenance");
+    };
     std::map<std::string, StateAddress> addresses;
     std::map<std::string,const OrderRefinement*> refinements;
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
@@ -1500,11 +1554,13 @@ void resolve_addresses(Lesson& lesson) {
                 require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
                     "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
             }
+            intentional_exit_owner(block);
         }
     }
     for (const auto& retired : layout.retired) {
         auto block = read_block(JsonObject::Parse(winrt::to_hstring(retired.raw_json)),retired.raw_json);
         block.stable_id = retired.id; block.address = addresses.at(retired.id);
+        intentional_exit_owner(block);
         if(block.compile_check) {
             const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
             require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
@@ -1523,6 +1579,15 @@ void resolve_addresses(Lesson& lesson) {
             for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
                 auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
+                intentional_exit_owner(block);
+                if(reviewed_intentional_exit_goal(source)) {
+                    const auto active=stable_block_position(lesson,block.stable_id);
+                    const auto archived=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
+                    const auto* current=active?&lesson.pages[active->page].blocks[active->block]:
+                        archived!=lesson.retired_blocks.end()?&*archived:nullptr;
+                    require(current&&reviewed_intentional_exit_goal(JsonObject::Parse(key(current->raw_json))),
+                        "A historical intentional-exit objective must retain its current archived or active goal");
+                }
                 if(block.compile_check) {
                     const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
                     require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,

@@ -110,4 +110,10 @@ struct CppProjectAvailability {
 [[nodiscard]] curriculum::OutputEvaluation evaluate_cpp_output_check(
     const curriculum::OutputCheck&, const curriculum::FreshExecution&, std::uint64_t current_revision);
 
+// Capture only the completed phases belonging to this exact request/revision.
+// A normal nonzero process code is distinct from cancellation, timeout, launch
+// failure, output overflow or an abnormal Windows termination. No UI is used.
+[[nodiscard]] curriculum::FreshExecution capture_cpp_execution(
+    const CppRunRequest&, const CppRunResult&);
+
 } // namespace lgaed::windows

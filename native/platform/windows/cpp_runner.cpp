@@ -615,6 +615,24 @@ bool expected_compile_diagnostic(const CppRunRequest& request,const CppRunResult
         item.line>=objective.first_line&&item.line<=objective.last_line&&same_diagnostic_source(item.source,source);});
 }catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}
 
+curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,const CppRunResult& result) {
+    curriculum::FreshExecution fresh;
+    if(request.request_id!=result.request_id||request.revision!=result.revision||request.diagnostic
+        ||(request.action!=CppRunRequest::Action::compile_run&&request.action!=CppRunRequest::Action::execute)
+        ||!result.error_utf8.empty()
+        ||(request.cmake&&result.executable!=std::optional<std::string>{request.cmake->target}))return fresh;
+    fresh.source_revision=result.revision;
+    fresh.compilation_succeeded=result.compilation.succeeded()
+        &&(result.configuration.status==CppPhaseStatus::not_started||result.configuration.succeeded());
+    fresh.execution_succeeded=result.execution.succeeded();
+    fresh.execution_completed=result.execution.status==CppPhaseStatus::completed
+        &&result.execution.exit_code&&*result.execution.exit_code<=255;
+    if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
+    fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
+    fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    return fresh;
+}
+
 curriculum::OutputEvaluation evaluate_cpp_output_check(const curriculum::OutputCheck& check,
     const curriculum::FreshExecution& execution,std::uint64_t current_revision) {
     const auto exact = curriculum::evaluate_output_check(check,execution,current_revision);

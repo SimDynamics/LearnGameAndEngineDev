@@ -3,6 +3,7 @@
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
 #include "core/compile_check_test_fixture.hpp"
+#include "core/exit_code_test_fixture.hpp"
 #include "core/math_label_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -641,6 +642,8 @@ void reviewed_session_literal_supplies_only_authenticated_reading_provenance() {
 #include "core/u12_append_hypothesis_contract_test.hpp"
 #include "core/u12_composed_output_contract_test.hpp"
 #include "core/u12_composed_feedback_contract_test.hpp"
+#include "core/exit_code_contract_test.hpp"
+#include "core/compiler_recheck_contract_test.hpp"
 void mathematical_puzzle_identity_remains_optional() {
     using namespace lgaed::windows;
     // Same valid, unnamed puzzle used by the reader's mathematical keyboard
@@ -1470,6 +1473,12 @@ void inline_feedback_optional_contract_tests() {
 }
 int main(int argc,char** argv) {
     try {
+        if(argc==2&&std::string_view(argv[1])=="--compiler-recheck"){
+            compiler_recheck_contract();return 0;
+        }
+        if(argc==2&&std::string_view(argv[1])=="--intentional-exit-code"){
+            intentional_exit_code_contract();return 0;
+        }
         if(argc==4&&std::string_view(argv[1])=="--u12-composed-feedback"){
             u12_composed_feedback_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
         }

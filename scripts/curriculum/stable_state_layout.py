@@ -165,6 +165,40 @@ def validate_compile_check_contract(block: dict) -> dict | None:
     return spec
 
 
+INTENTIONAL_EXIT_GOAL = {
+    "lesson": "cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo",
+    "identity": "block_0005_0002",
+    "before": "d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c",
+    "output": "Entrada invalida|9:4",
+}
+
+
+def reviewed_intentional_exit_goal(block: dict) -> bool:
+    """Only this complete exploratory editor may gain its reviewed return-1 goal.
+
+    The existing source/draft address stays intact; native completion proofs
+    independently include stdout and the newly authored nonzero process result.
+    """
+    if block.get("type") != "cpp_compiler" or "outputCheck" not in block:
+        return False
+    original = {key: value for key, value in block.items() if key != "outputCheck"}
+    if fingerprint(original) != INTENTIONAL_EXIT_GOAL["before"]:
+        return False
+    config = block["outputCheck"]
+    require(type(config) is dict and set(config) == {"cases"},
+            "The reviewed intentional-exit editor needs its exact output contract")
+    cases = config["cases"]
+    require(type(cases) is list and len(cases) == 1 and type(cases[0]) is dict,
+            "The reviewed intentional-exit editor needs exactly one output case")
+    case = cases[0]
+    require(set(case) == {"standardInput", "outputs", "exitCode", "explanation"}
+            and case["standardInput"] == "" and case["outputs"] == [INTENTIONAL_EXIT_GOAL["output"]]
+            and type(case["exitCode"]) is int and case["exitCode"] == 1
+            and type(case["explanation"]) is str and bool(case["explanation"].strip()),
+            "The reviewed editor requires exact stdout without a final newline, empty input, return 1 and an explanation")
+    return True
+
+
 # CPP_DISTRACTOR_EDITORIAL_CON_ESTADO_U11L5, CPP_PRECISION_EXCEPCIONES_U11L14
 # and CPP_PRECISION_OPCION_CONSULTA_U11L18: eight individually reviewed
 # Spanish options. A protected digest covers every response/code field, not
@@ -419,6 +453,8 @@ def _compiler_payload(block: dict) -> dict:
     payload = deepcopy(block)
     if validate_compile_check_contract(payload) is not None:
         payload.pop("compileCheck")
+    if reviewed_intentional_exit_goal(payload):
+        payload.pop("outputCheck")
     config = payload.get("outputCheck")
     if type(config) is dict and type(config.get("cases")) is list:
         for case in config["cases"]:
@@ -651,6 +687,9 @@ def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
         if "compileCheck" in block:
             require(after[identity].get("compileCheck") == block["compileCheck"],
                     "A published compiler diagnostic objective cannot be removed or replaced")
+        if reviewed_intentional_exit_goal(block):
+            require(reviewed_intentional_exit_goal(after[identity]),
+                    "A published intentional-exit objective cannot be removed or replaced")
         old_config, config = block.get("outputCheck"), after[identity].get("outputCheck")
         if type(old_config) is not dict or type(config) is not dict:
             continue  # Full response fingerprints protect removal/type changes.
@@ -1332,6 +1371,34 @@ def _validate_compile_checks(document: dict) -> None:
                             "A historical compiler diagnostic must retain its current archived or active objective")
 
 
+def _validate_intentional_exit_goals(document: dict) -> None:
+    meta = document.get("stateLayout", {})
+    available = (_all_blocks(document) if type(meta) is dict and "current" in meta else
+                 {f"block_{p:04d}_{b:04d}": block for p, page in enumerate(_pages(document))
+                  for b, block in enumerate(page.get("blocks", []))})
+
+    def owner(identity: str, block: dict) -> None:
+        if not reviewed_intentional_exit_goal(block):
+            return
+        require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es"
+                and document.get("id") == INTENTIONAL_EXIT_GOAL["lesson"]
+                and identity == INTENTIONAL_EXIT_GOAL["identity"],
+                "The reviewed intentional-exit goal belongs to its original Spanish v2 editor")
+        proofs = [proof for proof in meta["editorial"] if proof["id"] == identity]
+        require(proofs and any(proof["beforeSha256"] == INTENTIONAL_EXIT_GOAL["before"] for proof in proofs),
+                "The intentional-exit goal requires its exact complete original/editorial provenance")
+
+    for identity, block in available.items():
+        owner(identity, block)
+    for snapshot in meta.get("retirementHistory", []) if type(meta) is dict else []:
+        for page, record in zip(snapshot["pages"], snapshot["current"]):
+            for identity, block in zip(record["blocks"], page.get("blocks", [])):
+                owner(identity, block)
+                if reviewed_intentional_exit_goal(block):
+                    require(reviewed_intentional_exit_goal(available[identity]),
+                            "A historical intentional-exit objective must retain its current archived or active goal")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
@@ -1340,6 +1407,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
+    _validate_intentional_exit_goals(document)
     return mapping
 
 

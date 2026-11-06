@@ -89,7 +89,7 @@ void compiler_puzzles_keep_captured_success_until_explicit_reset() {
     const auto progress=[&]{return catalog_lesson_page_progress(data,lesson,[&](const Block& item){return windows::compiler_puzzle_completed(data,lesson,item);});};
     check(!windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==0,
         "An old correct flag or completed page manufactured a compiler execution proof");
-    windows::CppRunRequest captured;captured.revision=7;captured.source_utf8="same captured program";
+    windows::CppRunRequest captured;captured.revision=7;captured.source_utf8="same captured program";captured.stdin_utf8="1";
     FreshExecution execution{7,true,true,0,"1","2"};
     auto stale=execution;stale.source_revision=6;
     check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,stale,"Correcto"),"A stale result accredited a compiler objective");
@@ -105,11 +105,13 @@ void compiler_puzzles_keep_captured_success_until_explicit_reset() {
     execution.standard_input="2";execution.standard_output="4";
     check(windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto\nExplicación comprobada.")&&progress().completed==1,
         "Both actual matching cases did not complete the opted-in compiler page");
+    const auto sealed=data;
     windows::invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
-    auto failed=execution;failed.standard_output="wrong";failed.compilation_succeeded=false;
-    check(windows::record_compiler_puzzle_case(data,lesson,block,edited,failed,"Incorrecto")
-        &&windows::compiler_puzzle_feedback(data,lesson,block)=="Correcto\nExplicación comprobada.",
-        "Editing or compiling again downgraded a captured completed objective");
+    auto failed=execution;failed.standard_input=edited.stdin_utf8;failed.standard_output="wrong";failed.compilation_succeeded=false;
+    check(!windows::record_compiler_puzzle_case(data,lesson,block,edited,failed,"Incorrecto")
+        &&windows::compiler_puzzle_completed(data,lesson,block)&&windows::compiler_puzzle_case_count(data,lesson,block)==2
+        &&windows::compiler_puzzle_feedback(data,lesson,block)=="Correcto\nExplicación comprobada."&&data==sealed,
+        "A failed new compilation reused historical success as its verdict or altered the independent captured achievement");
     const auto restored=state::decode(state::encode(data));
     check(windows::compiler_puzzle_completed(restored,lesson,block),"Reopening discarded a real completed compiler objective");
     auto changed=lesson;changed.pages[0].blocks[0].output_check->cases[0].outputs={"another goal"};

@@ -1069,6 +1069,16 @@ RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,
     const bool composed=technical_prose::has(prompt,
         LR"(\bqu[eé]\s+debe\s+contener\s+(?:la\s+|una\s+)?(?:(?:primera|segunda|nueva|resultante)\s+)?cadena\b)",true);
     if(composed&&technical_prose::curricular_role_detail::composed_data_sample(value))return RichTextReferenceRole::output;
+    // These questions ask for a public formatted result rather than a source
+    // implementation. Apply the same role to every shaped candidate, including
+    // incorrect/empty-field candidates; no answer key or feedback participates.
+    const bool formatted_result=technical_prose::has(prompt,
+        LR"(\bqu[eé]\s+(?:cadena\s+(?:resulta|respeta)\b|separadores\s+deben\s+conservarse\b))",true);
+    if(formatted_result&&(technical_prose::curricular_role_detail::composed_data_sample(value)||
+            technical_prose::curricular_role_detail::formatted_message_sample(value)))return RichTextReferenceRole::output;
+    const bool scalar_format=technical_prose::has(prompt,
+        LR"(\bqu[eé]\s+produce\s+\{[0-9]+:[^{}\r\n]+\}\s+para\s+el\s+entero\b)",true);
+    if(scalar_format&&technical_prose::has(value,LR"(^(?:0[xX])?[0-9A-Fa-f]+$)"))return RichTextReferenceRole::output;
     if(output){
         // Alternatives that explain a cause are prose, rather than purported
         // output. Punctuation, escapes and line breaks can all be data. A

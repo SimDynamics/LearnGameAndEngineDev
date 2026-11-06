@@ -60,6 +60,8 @@ struct OutputCase {
     std::vector<OutputReviewFeedback> review_feedback;
     std::optional<std::string> executable;
     StandardErrorExpectation standard_error = StandardErrorExpectation::ignored;
+    // Omission keeps the historical successful-process objective.
+    int exit_code = 0;
 };
 struct OutputCheck {
     TextComparison input_comparison = TextComparison::exact;
@@ -251,7 +253,9 @@ struct AnswerEvaluation { bool correct = false; std::string feedback; };
 [[nodiscard]] std::string normalize_cpp_answer(std::string_view answer);
 [[nodiscard]] bool uses_single_line_answer(const Block&);
 
-// A failed/stale execution is never a wrong educational answer. No heart ledger is involved.
+// A technical failure/stale execution is never an educational answer. An
+// explicitly authored normal nonzero exit can be part of the requested result.
+// No heart ledger is involved.
 struct FreshExecution {
     std::uint64_t source_revision = 0;
     bool compilation_succeeded = false;
@@ -261,6 +265,9 @@ struct FreshExecution {
     std::optional<std::string> executable;
     // Runtime stderr only. Build diagnostics never enter this field.
     std::string standard_error;
+    // The process runner, not stdout or a stored answer, authenticates normal
+    // completion. execution_succeeded retains its historical zero-exit meaning.
+    bool execution_completed = false;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {
@@ -268,6 +275,7 @@ struct OutputEvaluation {
     std::string feedback;
     bool stdout_correct = false;
     bool stderr_correct = false;
+    bool exit_code_correct = true;
 };
 [[nodiscard]] OutputEvaluation evaluate_output_check(
     const OutputCheck&, const FreshExecution&, std::uint64_t current_revision);
