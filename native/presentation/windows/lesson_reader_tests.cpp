@@ -2498,7 +2498,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool u12_composed_feedback_only=argc==4&&std::string_view(argv[1])=="--u12-composed-feedback";
     const bool u12_composed_question_only=argc==5&&std::string_view(argv[1])=="--u12-composed-question";
     if(u12_composed_question_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
-    const bool u12_composed_output_only=argc==5&&std::string_view(argv[1])=="--u12-composed-output";
+    const bool u12_composed_output_current=argc==5&&std::string_view(argv[1])=="--u12-composed-output-current";
+    const bool u12_composed_output_only=argc==5&&(std::string_view(argv[1])=="--u12-composed-output"||u12_composed_output_current);
     if(u12_composed_output_only&&(std::string_view(argv[4]).size()!=1||argv[4][0]<'0'||argv[4][0]>'2'))return 2;
     const bool u12_append_hypothesis_current=argc==5&&std::string_view(argv[1])=="--u12-append-hypothesis-current";
     const bool u12_append_hypothesis_suffix=argc==5&&std::string_view(argv[1])=="--u12-append-hypothesis-suffix";
@@ -2551,7 +2552,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(u12_file_repairs_only){current_u12_file_repairs_reader(backend);return 0;}
         if(u12_composed_feedback_only){u12_composed_feedback_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
         if(u12_composed_question_only){u12_composed_question_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
-        if(u12_composed_output_only){u12_composed_output_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
+        if(u12_composed_output_only){u12_composed_output_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u12_composed_output_current);return 0;}
         if(u12_append_hypothesis_only){u12_append_hypothesis_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u12_append_hypothesis_stage);return 0;}
         if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}
         if(dependencies_only){dependent_puzzle_reader_bookmarks(backend);independent_feedback_does_not_complete_a_pending_compiler(backend);return 0;}

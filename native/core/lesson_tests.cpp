@@ -1476,6 +1476,9 @@ int main(int argc,char** argv) {
         if(argc==4&&std::string_view(argv[1])=="--u12-composed-output"){
             u12_composed_output_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
         }
+        if(argc==4&&std::string_view(argv[1])=="--u12-composed-output-current"){
+            u12_composed_output_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),true);return 0;
+        }
         if(argc==4&&std::string_view(argv[1])=="--u12-append-hypothesis"){
             u12_append_hypothesis_contract(std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;
         }

@@ -53,6 +53,28 @@ GUIDES = {
     "block_0001_0005": (1, 5, "2b80ca083b2d0eb1b2a5b9492a15ae5ae2095f880cbcb65f36276a6069705109",
                          "8216c1ca7b4af782b539a6e72edf5b36ccd0d3fcf98103a21da4453398dbaf22"),
 }
+# The authentic later publication keeps the first two adopted pages intact.
+# It is a separate QA pair, never a rewritten destination of the v0->8 pair.
+CURRENT_AFTER_COMMIT = "57c0044a7484f1e6726383e9f880137cf43f6aa9"
+CURRENT_SOURCE_HASHES = dict(SOURCE_HASHES, es="ef77e1f7d47ab04a43690723c0bf18a97d52bb8ab7323c0df48f34997b807d87")
+CURRENT_EDITORIAL_SHA256 = "317364cd08c3847423c5a3d3a6b8b017e1882f91be895b738361aef13a68a956"
+CURRENT_PAGES_SHA256 = "5c2c07a09c4679edb36ce6c246d0dcb265f00ab856f583ee52a4ad5e1c2ef14b"
+CURRENT_SUFFIX = {
+    "block_0002_0001": (2, 1, "5683b9e6da30e5658b28bbbbbc4cfa602b652c8cb562d846f32c20ab336b2fe5",
+                         "8aad687163b7361a3fdbab5bebb06aa3b0e57af18d50765a8938368805660e15"),
+    "block_0002_0002": (2, 2, "f3456920a23b18612356d5296cfcf87adb6e561f03ab7a7273a7ac441c59e6f6",
+                         "555990b854070163a6d96061ca9fa690a0a2cd8a1c9e47b478eb0dd80b112cbe"),
+    "block_0002_0004": (2, 4, "b19392377d5785801d0bbd9fe19e2c2ef50978ebf3fbbb5a510fcbdf1636bc08",
+                         "139186b1b82089ff714c591ffc9c4ed37bea650945b460e7ff5e8dc0d45f9b42"),
+    "block_0003_0000": (3, 0, "188c6c1eb53fc0be219b19b818186ea265781a702fc61f0d857218b0ceda24c3",
+                         "087adcf253a4fe3b8c6a7ec07f9ff09d5328f159d5862f6e93533e40224e558d"),
+    "block_0003_0002": (3, 2, "f277c8b2a5771dfce3e39f4aec72e1901985325daa8b26e70323bd66bcdb2ab7",
+                         "0c246776640f64ba0d425dc54691b9ce686e2d4bdf9726c48b881b1c14993610"),
+    "block_0003_0003": (3, 3, "9a5f1fe62ddc28a6d0149f303e7259032bdad3930f7142b1a0c09e1dfa49f402",
+                         "678f48ca832205258f8e20b607727d87300dffa7e708c9ff6dae5ed7a823246e"),
+    "block_0003_0004": (3, 4, "4c7882e27fbce78d45d53fd67b0e9f7eb25a26693e4ad2709ba1bb2bc6be75da",
+                         "3582a8ce527b0e5a588794b19fce3238e5d7560740da2c930c3247a4ed4b55c8"),
+}
 
 
 def json_bytes(value: dict) -> bytes:
@@ -140,6 +162,87 @@ def candidate() -> tuple[dict, dict, dict[str, dict]]:
     return before, after, family
 
 
+def verify_current_bytes(locale: str, payload: bytes) -> bytes:
+    if locale not in CURRENT_SOURCE_HASHES or hashlib.sha256(payload).hexdigest() != CURRENT_SOURCE_HASHES[locale]:
+        raise ValueError("Current U12L4 fixture differs from its complete pinned fifteen-edge Git publication")
+    return payload
+
+
+def historical_current_bytes(locale: str = "es") -> bytes:
+    if locale not in CURRENT_SOURCE_HASHES:
+        raise ValueError("Unsupported current U12L4 QA locale")
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    payload = subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show",
+         f"{CURRENT_AFTER_COMMIT}:{PREFIX.format(locale=locale) + LESSON}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    return verify_current_bytes(locale, payload)
+
+
+def verify_current_pair(before: dict, current: dict, family: dict[str, dict]) -> None:
+    """Keep real later p3/p4 content; only p1/p2 have old reading payloads."""
+    verify_bytes("es", json_bytes(before))
+    verify_current_bytes("es", json_bytes(current))
+    adoption = json.loads(historical_bytes(after=True))
+    verify_pair(before, adoption, family)
+    metadata = current["stateLayout"]
+    if (current["id"] != LESSON_ID or tuple(len(page["blocks"]) for page in current["pages"]) != SHAPE
+            or len(layout._blocks(current)) != 25 or len(metadata["editorial"]) != 15
+            or metadata["editorial"][:8] != adoption["stateLayout"]["editorial"]
+            or layout.fingerprint(metadata["editorial"]) != CURRENT_EDITORIAL_SHA256
+            or layout.fingerprint(current["pages"]) != CURRENT_PAGES_SHA256
+            or current["pages"][:2] != adoption["pages"][:2]):
+        raise ValueError("Current U12L4 lost its authentic first two pages, eight-edge prefix or seven-edge suffix")
+    for field in adoption["stateLayout"]:
+        if field != "editorial" and metadata[field] != adoption["stateLayout"][field]:
+            raise ValueError("Current U12L4 changed its family, origin, stable owners or addition set")
+    prior, active = layout._blocks(adoption), layout._blocks(current)
+    if {identity for identity in prior if prior[identity] != active[identity]} != CURRENT_SUFFIX.keys():
+        raise ValueError("Current U12L4 altered content beyond its seven complete later prose blocks")
+    for index, (identity, (page, block, old_sha, new_sha)) in enumerate(CURRENT_SUFFIX.items()):
+        old, new = prior[identity], active[identity]
+        fields = {field for field in old.keys() | new.keys() if old.get(field) != new.get(field)}
+        expected_fields = {"text", "emphasis"} if identity in ("block_0002_0001", "block_0002_0002") else {"text"}
+        if (old != adoption["pages"][page]["blocks"][block] or new != current["pages"][page]["blocks"][block]
+                or (layout.fingerprint(old), layout.fingerprint(new)) != (old_sha, new_sha)
+                or fields != expected_fields or metadata["editorial"][8 + index]
+                != {"id": identity, "beforeSha256": old_sha, "afterSha256": new_sha}):
+            raise ValueError("Current U12L4 changed a complete later paragraph or its authentic ordered edge")
+    references = [{"activity": "block_0002_0003", "blocks": [f"block_0003_{index:04d}" for index in range(6)]}]
+    activities = [{"activity": "block_0004_0001", "requires": ["block_0002_0003"]}]
+    if (current.get("compilerPuzzlesRequired") is not True or current.get("referenceAfter") != references
+            or current.get("activityAfter") != activities):
+        raise ValueError("Current U12L4 lost its authored required-editor, reference or dependent-activity gates")
+    restored = deepcopy(current)
+    for identity, (page, block, _, _) in CURRENT_SUFFIX.items():
+        restored["pages"][page]["blocks"][block] = deepcopy(prior[identity])
+    del restored["stateLayout"]["editorial"][8:]
+    for field in ("compilerPuzzlesRequired", "referenceAfter", "activityAfter"):
+        del restored[field]
+    if restored != adoption:
+        raise ValueError("Current U12L4 invented another predecessor or changed independent metadata")
+    original = layout._blocks(layout.prepare(before))
+    if (sum(field in block for block in original.values() for field in ("code", "initialCode")) != 7
+            or any(original[key].get(field) != active[key].get(field)
+                   for key in original for field in ("code", "initialCode"))
+            or any(layout.state_fingerprint(original[key]) != layout.state_fingerprint(active[key]) for key in original)):
+        raise ValueError("Current U12L4 changed one of its seven original programs or historical response contracts")
+    layout.validate_transition(adoption, current)
+    layout.validate_transition(before, current)
+    layout.check_localized_family([current, family["en"], family["fr"]], ["es", "en", "fr"])
+
+
+def current_candidate() -> tuple[dict, dict, dict[str, dict]]:
+    family = {locale: json.loads(historical_bytes(locale)) for locale in SOURCE_HASHES}
+    before = family["es"]
+    current = json.loads(historical_current_bytes())
+    for locale in ("en", "fr"):
+        if historical_current_bytes(locale) != json_bytes(family[locale]):
+            raise ValueError("Current U12L4 changed an unrevised original translation")
+    verify_current_pair(before, current, family)
+    return before, current, family
+
+
 def export(output: Path) -> Path:
     """Export immutable fixture bytes only inside the caller checkout's QA area."""
     output = Path(os.path.abspath(output))
@@ -195,9 +298,68 @@ def export(output: Path) -> Path:
     return output / "manifest.json"
 
 
+def export_current(output: Path) -> Path:
+    """Export a separate v0->15 pair; existing v0->8 evidence is untouched."""
+    output = Path(os.path.abspath(output))
+    for entry in (output, *output.parents):
+        try:
+            attributes = entry.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(attributes.st_mode) or getattr(attributes, "st_file_attributes", 0) & 0x400:
+            raise ValueError("Current U12L4 QA output cannot follow links or reparse points")
+    output = output.resolve(); owner = ROOT.resolve()
+    if not any(output.is_relative_to(owner / allowed) and output != owner / allowed for allowed in ("out", "build")):
+        raise ValueError("Current U12L4 fixtures must stay in this checkout's out/build QA directory")
+    for parent in (output, *output.parents):
+        if parent == owner:
+            break
+        if (parent / ".git").exists():
+            raise ValueError("Current U12L4 QA output cannot write another checkout")
+    before, current, _ = current_candidate()
+    prior = layout._blocks(layout.prepare(before))
+    manifest = {
+        "beforeCommit": BEFORE_COMMIT, "afterCommit": CURRENT_AFTER_COMMIT, "adoptionCommit": AFTER_COMMIT,
+        "relative": RELATIVE, "lessonId": LESSON_ID, "coordinateBase": 0, "identities": 25, "sources": 7,
+        "beforeLayoutVersion": 0, "afterLayoutVersion": 2, "editorialBefore": 0, "editorialAfter": 15,
+        "sourceSha256": SOURCE_HASHES, "afterSourceSha256": CURRENT_SOURCE_HASHES,
+        "familySha256": FAMILY_SHA256, "originSha256": ORIGIN_SHA256, "currentSha256": CURRENT_SHA256,
+        "editorialPrefixSha256": EDITORIAL_SHA256, "editorialSha256": CURRENT_EDITORIAL_SHA256,
+        "beforePagesSha256": BEFORE_PAGES_SHA256, "afterPagesSha256": CURRENT_PAGES_SHA256,
+        "before": {"file": "before.json", "sha256": SOURCE_HASHES["es"]},
+        "after": {"file": "after.json", "sha256": CURRENT_SOURCE_HASHES["es"]},
+        "previousBlocks": {identity: prior[identity] for identity in sorted({**PARAGRAPHS, **GUIDES})},
+        "reconstructedPages": [0, 1], "editorial": current["stateLayout"]["editorial"],
+        "laterEditorial": current["stateLayout"]["editorial"][8:],
+        "compilerPuzzlesRequired": current["compilerPuzzlesRequired"],
+        "referenceAfter": current["referenceAfter"], "activityAfter": current["activityAfter"],
+    }
+    payloads = {"before.json": json_bytes(before), "after.json": json_bytes(current), "manifest.json": json_bytes(manifest)}
+    for name, payload in payloads.items():
+        target = output / name
+        if target.exists() or target.is_symlink():
+            attributes = target.lstat()
+            if (not stat.S_ISREG(attributes.st_mode) or getattr(attributes, "st_file_attributes", 0) & 0x400
+                    or target.read_bytes() != payload):
+                raise FileExistsError("Refusing to replace an existing current U12L4 QA document")
+    output.mkdir(parents=True, exist_ok=True)
+    for name, payload in payloads.items():
+        target = output / name
+        if not target.exists():
+            with target.open("xb") as stream:
+                stream.write(payload)
+    return output / "manifest.json"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output-dir", required=True, type=Path)
+    destinations = parser.add_mutually_exclusive_group(required=True)
+    destinations.add_argument("--output-dir", type=Path)
+    destinations.add_argument("--current-output-dir", type=Path)
     arguments = parser.parse_args()
-    export(arguments.output_dir)
-    print(f"Verified U12L4's original publication and first v2 adoption through {AFTER_COMMIT}.")
+    if arguments.current_output_dir is not None:
+        export_current(arguments.current_output_dir)
+        print(f"Verified U12L4's original publication and current fifteen-edge publication through {CURRENT_AFTER_COMMIT}.")
+    else:
+        export(arguments.output_dir)
+        print(f"Verified U12L4's original publication and first v2 adoption through {AFTER_COMMIT}.")
