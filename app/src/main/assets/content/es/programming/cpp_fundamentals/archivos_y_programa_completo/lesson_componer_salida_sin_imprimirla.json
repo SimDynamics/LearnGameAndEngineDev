@@ -136,14 +136,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe una función que reciba validos y rechazados, cantidades conocidas entre 0 y 10, y devuelva una string con el formato Validos=V;Rechazados=R. Precondición: el llamador proporciona esas dos cantidades válidas; la función sólo compone el texto y no debe imprimir ni modificar datos del llamador. Decide su nombre y construye un ostringstream local."
+          "text": "Escribe una función con dos parámetros de tipo `int`, `validos` y `rechazados`, que devuelva una `std::string`. Cada argumento será una cantidad entre 0 y 10, ambos incluidos. Esta es la precondición: el llamador proporciona esas cantidades válidas; aquí no se pide comprobarlas ni aceptar otros valores.\n\nLa cadena devuelta debe tener el formato Validos=V;Rechazados=R. V representa los dígitos del valor recibido en `validos` y R los del valor recibido en `rechazados`; no escribas las letras V y R como parte del resultado. Conserva las mayúsculas, los dos signos igual y el punto y coma, sin espacios añadidos.\n\nElige el nombre de la función y define en ella un `std::ostringstream` local para componer el texto desde los parámetros. Devuelve la cadena obtenida del flujo. La función no debe imprimir ni modificar datos del llamador.",
+          "emphasis": [
+            {
+              "text": "no debe imprimir ni modificar datos del llamador",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En main llama con 2 y 1, con 0 y 0 y con 5 y 3, en ese orden. Guarda las tres cadenas y después preséntalas, una por línea con salto final, sin que una acumule las anteriores. Devolver una cadena, conservar campos y separadores y dejar la presentación a main son criterios del mismo programa. Resuelve el puzzle previo y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "text": "En `main`, llama a tu función con los pares de argumentos `(2, 1)`, `(0, 0)` y `(5, 3)`, en ese orden. Guarda cada resultado en una variable `std::string` distinta antes de mostrar las tres cadenas. Cada cadena debe contener únicamente el resumen de su propia llamada.\n\nDespués, desde `main`, muestra exactamente estas tres líneas, con un salto de línea también después de la última:\nValidos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n\nUsa Compilar, ejecutar y comprobar. Una ejecución del programa debe producir las tres líneas: esta batería no solicita entrada estándar ni tres ejecuciones separadas. Si la salida difiere, corrige el programa y vuelve a comprobarlo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            },
+            {
+              "text": "también después de la última",
               "style": "bold"
             }
           ]
@@ -164,7 +174,7 @@
         },
         {
           "type": "note",
-          "text": "No escribas la respuesta como una cadena fija para todos los datos: el contenido de los dos campos debe proceder de los argumentos. Consulta la referencia después del intento."
+          "text": "Además de obtener la salida pedida, la función debe componer los campos desde sus parámetros y devolver la cadena, dejando la presentación a main. No sustituyas ese trabajo por imprimir una respuesta fija. La comprobación compara la salida; por sí sola no demuestra cómo la construiste. Contrasta también la organización de tu programa con la referencia después del intento."
         }
       ]
     },
@@ -172,7 +182,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior al intento"
+          "text": "Tras el intento: ejemplo parcial y programa completo"
         },
         {
           "type": "code",
@@ -181,15 +191,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida de referencia tiene dos líneas: Validos=2;Rechazados=1 y Validos=0;Rechazados=0. Cada llamada crea un flujo vacío; los campos se forman desde sus argumentos y str() proporciona el valor que retorna. La función no conoce el destino posterior de esa cadena. Puedes elegir otro nombre de función o usar una organización distinta si conservas el contrato."
+          "text": "El primer programa es un ejemplo parcial: sólo realiza las llamadas con 2 y 1 y con 0 y 0. Muestra dos líneas, Validos=2;Rechazados=1 y Validos=0;Rechazados=0, sin salto de línea después de la segunda. Por eso no satisface toda la batería de la página anterior.\n\nEn cada llamada, la función crea un flujo vacío y forma los campos a partir de los valores de sus parámetros. La llamada `texto.str()` proporciona la cadena que devuelve la función. Es `main` quien decide enviarla a `std::cout`. Puedes elegir otro nombre para la función o una organización distinta que conserve esos requisitos."
         },
         {
           "type": "paragraph",
-          "text": "La tercera llamada devuelve Validos=5;Rechazados=3 y no cambia los dos resultados anteriores. Crear un flujo local nuevo evita acumular otra llamada. Una salida durante la llamada mezclaría presentación con composición. Este contrato restringe los argumentos; no certifica validación para cualquier entero."
+          "text": "En el programa completo que sigue, la tercera llamada devuelve Validos=5;Rechazados=3. Los resultados de las dos primeras llamadas conservan sus valores. Cada llamada define su propio flujo local, de modo que no reutiliza el texto de la llamada anterior.\n\nLa función compone y devuelve la cadena; las inserciones en `std::cout` están en `main`, después de guardar los tres resultados. La precondición sigue siendo recibir cantidades entre 0 y 10, ambos incluidos: este programa no comprueba valores fuera de ese intervalo."
         },
         {
           "type": "paragraph",
-          "text": "Referencia de las tres llamadas de la batería."
+          "text": "Referencia completa: las tres llamadas de la batería, con un salto de línea después de cada resultado, incluido el último."
         },
         {
           "type": "code",
@@ -813,7 +823,64 @@
         "id": "block_0001_0005",
         "beforeSha256": "2b80ca083b2d0eb1b2a5b9492a15ae5ae2095f880cbcb65f36276a6069705109",
         "afterSha256": "8216c1ca7b4af782b539a6e72edf5b36ccd0d3fcf98103a21da4453398dbaf22"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "5683b9e6da30e5658b28bbbbbc4cfa602b652c8cb562d846f32c20ab336b2fe5",
+        "afterSha256": "8aad687163b7361a3fdbab5bebb06aa3b0e57af18d50765a8938368805660e15"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "f3456920a23b18612356d5296cfcf87adb6e561f03ab7a7273a7ac441c59e6f6",
+        "afterSha256": "555990b854070163a6d96061ca9fa690a0a2cd8a1c9e47b478eb0dd80b112cbe"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b19392377d5785801d0bbd9fe19e2c2ef50978ebf3fbbb5a510fcbdf1636bc08",
+        "afterSha256": "139186b1b82089ff714c591ffc9c4ed37bea650945b460e7ff5e8dc0d45f9b42"
+      },
+      {
+        "id": "block_0003_0000",
+        "beforeSha256": "188c6c1eb53fc0be219b19b818186ea265781a702fc61f0d857218b0ceda24c3",
+        "afterSha256": "087adcf253a4fe3b8c6a7ec07f9ff09d5328f159d5862f6e93533e40224e558d"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f277c8b2a5771dfce3e39f4aec72e1901985325daa8b26e70323bd66bcdb2ab7",
+        "afterSha256": "0c246776640f64ba0d425dc54691b9ce686e2d4bdf9726c48b881b1c14993610"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9a5f1fe62ddc28a6d0149f303e7259032bdad3930f7142b1a0c09e1dfa49f402",
+        "afterSha256": "678f48ca832205258f8e20b607727d87300dffa7e708c9ff6dae5ed7a823246e"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "4c7882e27fbce78d45d53fd67b0e9f7eb25a26693e4ad2709ba1bb2bc6be75da",
+        "afterSha256": "3582a8ce527b0e5a588794b19fce3238e5d7560740da2c930c3247a4ed4b55c8"
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0003",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0001",
+      "requires": [
+        "block_0002_0003"
+      ]
+    }
+  ]
 }
