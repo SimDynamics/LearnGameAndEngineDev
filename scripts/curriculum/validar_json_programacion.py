@@ -1081,6 +1081,12 @@ U11_QUESTION_EDITORIAL_REVISIONS = {
 # La explicación antigua de U1L2 no es una autorización de destino genérico:
 # ya coincide con sus fuentes publicadas y sólo admite esta revisión exacta.
 WORK_EXACT_EDITORIAL_REVISIONS = {
+    # CPP_COMPOSICION_RETROALIMENTACION_U12L4: successful close belongs to
+    # this prediction's exact hypothesis; source, answer and owner stay fixed.
+    ('archivos_y_programa_completo/lesson_componer_salida_sin_imprimirla.json',
+     5, 2, 'output_prediction', 'question', 'destino_archivo_no_es_stdout'): (
+        '44be22b8c5afc28f285e283cf50713a62711a14d3578c77cb3dca36fcdbfed8a',
+        'eefe8a4510dea813550508f4eb2c63305a824f465719fec486eba0e828dade82'),
     # CPP_HIPOTESIS_PREDICCION_U12L3: distinguish successful opening/writing/
     # closing from the intentionally incomplete extraction. Only this exact
     # Spanish question pair belongs to the original prediction and its ID.
@@ -1192,10 +1198,27 @@ U11_COMPILER_EXPLANATION_REVISION = (
     'b27ec986ffb0d8f18c2b84772251abd95f9d49e5e01fe391f54245ad1ccf16b5',
 )
 
+# CPP_COMPOSICION_RETROALIMENTACION_U12L4: this complete pair adds only the
+# reviewed success explanation and two exact-output guides to the existing
+# single case. Full block hashes also close source, IDs and other extensions.
+U12_COMPOSED_FEEDBACK_REVISION = (
+    'app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_componer_salida_sin_imprimirla.json',
+    2, 3,
+    '628f37fb8e1fb1f82180b90a6ff241b9e868482914e4ce9dd84149e453b8e00d',
+    '2a22d63af34fb093c3feeef538fdb794fa6b57074fddcc601b473162937043b7',
+)
+
 
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
+    if ((relative, pn, bn) == U12_COMPOSED_FEEDBACK_REVISION[:3]
+            and old_lesson.get('id') == 'cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla'
+            and old.get('type') == current.get('type') == 'cpp_compiler'
+            and 'id' not in old and 'id' not in current
+            and (_state_layout.fingerprint(old), _state_layout.fingerprint(current))
+            == U12_COMPOSED_FEEDBACK_REVISION[3:]):
+        base = dict(base, outputCheck=old['outputCheck'])
     if isinstance(old.get('outputCheck'), dict) and isinstance(base.get('outputCheck'), dict):
         # Adding an explicit runtime-channel objective preserves historical draft
         # addresses and stdout answers. Completion proofs independently hash the

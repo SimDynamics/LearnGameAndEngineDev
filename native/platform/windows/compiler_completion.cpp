@@ -114,7 +114,22 @@ bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Le
     return state::string_value(data,"native_windows",key+"completed")==complete_seal(key,captured,proofs);
 }
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    return compiler_puzzle_completed(data,lesson,block)?state::string_value(data,"native_windows",base(lesson,block)+"feedback"):std::string{};
+    if(!compiler_puzzle_completed(data,lesson,block))return {};
+    auto stored=state::string_value(data,"native_windows",base(lesson,block)+"feedback");
+    // This authenticated text-only review retains the very same successful
+    // execution objective. Present its new explanation without rewriting the
+    // original receipt, running another program or inventing listening credit.
+    if(!stored.empty()&&lesson.locale=="es"
+        &&lesson.id=="cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla"
+        &&block.stable_id=="block_0002_0003"&&block.output_check&&block.output_check->cases.size()==1
+        &&std::ranges::any_of(lesson.state_layout.reading_revisions,[](const auto& revision){
+            return revision.editorial_prefix==15&&!revision.positional_page_identity&&revision.previous_blocks.size()==2
+                &&revision.previous_blocks.contains("block_0002_0003")&&revision.previous_blocks.contains("block_0004_0001");
+        })){
+        const auto& explanation=block.output_check->cases.front().explanation;
+        if(!explanation.empty())return stored.substr(0,stored.find_first_of("\r\n"))+'\n'+explanation;
+    }
+    return stored;
 }
 std::string compiler_puzzle_review(const state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& current) {

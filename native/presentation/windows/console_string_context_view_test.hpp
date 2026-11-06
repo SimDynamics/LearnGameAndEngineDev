@@ -152,5 +152,44 @@ void current_console_string_references(){
             &&state::read_bytes(lesson.source_path)==bytes,"A composed-result color/reopen changed the answer or asset");
         std::cout<<"PASS actual U12L4 composed results: both paragraph occurrences and both data alternatives use native neutral ink/backdrop; distinct marked C++ integer/string and ordinary prose preserved; four zooms, two accents, pending gray, exact source/state/reopen, no compiler receipts/execution or hearing claimed\n";
     }
+    {
+        const auto lesson=load("archivos_y_programa_completo/lesson_componer_salida_sin_imprimirla.json");
+        const auto bytes=state::read_bytes(lesson.source_path);const auto at=curriculum::stable_block_position(lesson,"block_0002_0002");
+        check(at&&at->page==2&&at->block==2,"The actual three-line composition instruction moved");
+        const auto& prose=lesson.pages[at->page].blocks[at->block];
+        const std::array<std::wstring_view,3> lines{L"Validos=2;Rechazados=1",L"Validos=0;Rechazados=0",L"Validos=5;Rechazados=3"};
+        check(prose.type==curriculum::BlockType::paragraph
+            &&prose.text.find("última:\nValidos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n\nUsa")!=std::string::npos,
+            "The actual three-line result or its significant blank-line boundary changed");
+        // Start explicitly at this public instruction. No answers, compiler
+        // receipts or storage-only narration history make the text visible.
+        View f(lesson,at->page,false,{},false);
+        const auto uncredited=[&]{const auto data=read_lesson_state(f.view);
+            for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
+                check(!state::get_response(data,lesson,block),"A formatting-only instruction check fabricated a response");
+                if(curriculum::has_compiler_objective(block))check(windows::compiler_puzzle_case_count(data,lesson,block)==0
+                    &&!windows::compiler_puzzle_completed(data,lesson,block),"A formatting-only instruction check fabricated an execution receipt");}
+            check(narration::read_history(data).entries.empty(),"A static gray/restore color probe claimed hearing evidence");
+        };
+        const auto verify=[&]{const auto target=f.item(at->block,0);
+            check(edit_text(target)==visible_prose(prose.text),"Three-line result formatting changed the complete curricular source");
+            for(const auto line:lines){neutral(target,line,line);
+                const auto digit=line.find_first_of(L"0123456789");
+                role_reference(f,target,line,line.substr(digit,1),true);}
+            for(const auto arguments:{L"(2, 1)",L"(0, 0)",L"(5, 3)"})role_reference(f,target,arguments,arguments);
+            ordinary_span(target,L"Usa Compilar, ejecutar y comprobar.",L"Usa Compilar, ejecutar y comprobar.");
+            source_and_shading(f,target,prose.text,prose.emphasis);uncredited();
+        };
+        for(const auto accent:{RGB(238,51,77),RGB(82,223,241)}){
+            reader_theme::set_accent(f.host,accent);
+            for(const int zoom:{75,100,150,200}){SendMessageW(f.item(at->block,0),EM_SETZOOM,zoom,100);verify();}}
+        SendMessageW(f.item(at->block,0),EM_SETZOOM,0,0);check(flush_lesson_view(f.view),"Cannot checkpoint the isolated result-color probe");
+        const auto before=read_lesson_state(f.view);f.reopen();verify();
+        check(read_lesson_state(f.view)==before&&state::read_bytes(lesson.source_path)==bytes,
+            "Three-line result recoloring/reopening changed curricular state or its immutable asset");
+        std::cout<<"PASS actual U12L4 p3b3 three-line output: all result characters use native neutral ink and existing backdrop; "
+            <<"distinct C++ argument pairs, blank-line prose boundary, four zooms/two accents, exact narration source, emphasis/selection "
+            <<"and static pending-gray/restoration preserved; full silent reopen without answers, compiler receipts, executions or hearing\n";
+    }
     std::cout<<"PASS actual U1/U2 console and string references: all choices including wrong samples, mixed literal/output feedback, current ink/backdrop, pending gray/restoration, exact source/selection/state and silent reopen; compiler prerequisite receipts are synthetic formatting QA, no execution/listening claim\n";
 }

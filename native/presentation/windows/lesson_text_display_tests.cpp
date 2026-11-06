@@ -125,6 +125,22 @@ void string_prose(HWND host){
     colored(row,L"\"Cajas=4;Estado=listo\"",green);
     const auto code_number=wide(edit_text(row)).find(L"Cajas=4")+6;
     require(ink(row,static_cast<LONG>(code_number))==RGB(224,151,109),"A real marked assignment was recolored as composed data");
+    const std::string three_lines="En `main`, llama a tu función con los pares de argumentos `(2, 1)`, `(0, 0)` y `(5, 3)`, en ese orden. Guarda cada resultado en una variable `std::string` distinta antes de mostrar las tres cadenas. Cada cadena debe contener únicamente el resumen de su propia llamada.\n\nDespués, desde `main`, muestra exactamente estas tres líneas, con un salto de línea también después de la última:\nValidos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n\nUsa Compilar, ejecutar y comprobar. Una ejecución del programa debe producir las tres líneas: esta batería no solicita entrada estándar ni tres ejecuciones separadas. Si la salida difiere, corrige el programa y vuelve a comprobarlo.";
+    auto three_lines_display=three_lines;std::erase(three_lines_display,'`');set_rich_text(row,three_lines);
+    require(edit_text(row)==three_lines_display,"The three-line output instruction changed its source or significant line breaks");
+    for(const auto sample:{L"Validos=2;Rechazados=1",L"Validos=0;Rechazados=0",L"Validos=5;Rechazados=3"}){
+        colored(row,sample,base);require(background_at(sample)==background_at(L"(2, 1)"),
+            "An exact next-line output row lost the existing neutral technical backdrop");}
+    for(const auto arguments:{L"(2, 1)",L"(0, 0)",L"(5, 3)"}){const auto start=wide(edit_text(row)).find(arguments);
+        require(start!=std::wstring::npos,"A distinct explicit argument pair disappeared");
+        for(std::size_t at=0;arguments[at];++at)if(arguments[at]>=L'0'&&arguments[at]<=L'9')
+            require(ink(row,static_cast<LONG>(start+at))==RGB(224,151,109),"A result row recolored an earlier C++ argument");}
+    colored(row,L"Usa Compilar, ejecutar y comprobar.",base);
+    const auto prose_start=wide(edit_text(row)).find(L"Usa Compilar");const auto result_ranges=rich_text_reference_ranges(row);
+    require(std::ranges::none_of(result_ranges,[&](const auto& range){return range.first<=prose_start&&prose_start<range.second;}),
+        "A next-line output block continued beyond its own blank line into prose");
+    set_rich_text(row,"La instrucción `std::cout << \"muestra exactamente estas tres líneas:\\nValidos=2;Rechazados=1\";` contiene un literal.");
+    colored(row,L"\"muestra exactamente estas tres líneas:\\nValidos=2;Rechazados=1\"",green);
     DestroyWindow(row);FreeLibrary(library);
     std::cout<<"PASS explicit string/output prose: real mixed U1 feedback, all output alternatives, quoted concatenation alternatives, independent output blocks and prompt labels; complete existing ink/backdrops, no source changes\n";
 }
