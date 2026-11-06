@@ -210,6 +210,8 @@ struct Fixture{
 #include "presentation/windows/u12_file_append_reader_test.hpp"
 #include "presentation/windows/u12_file_repairs_reader_test.hpp"
 #include "presentation/windows/u12_composed_output_reader_test.hpp"
+#include "presentation/windows/u12_composed_feedback_reader_test.hpp"
+#include "presentation/windows/u12_composed_question_reader_test.hpp"
 void runtime_stderr_reader_objective(const std::shared_ptr<windows::NarrationWorker>& backend) {
     auto lesson=compiler_model(true);lesson.id="qa_native_reader_runtime_stderr";
     auto& expected=lesson.pages[0].blocks[1].output_check->cases[0];
@@ -2493,6 +2495,9 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool u12_file_roundtrip_only=argc==2&&std::string_view(argv[1])=="--u12-file-roundtrip-reader";
     const bool u12_file_append_only=argc==2&&std::string_view(argv[1])=="--u12-file-append-reader";
     const bool u12_file_repairs_only=argc==2&&std::string_view(argv[1])=="--u12-file-repairs-reader";
+    const bool u12_composed_feedback_only=argc==4&&std::string_view(argv[1])=="--u12-composed-feedback";
+    const bool u12_composed_question_only=argc==5&&std::string_view(argv[1])=="--u12-composed-question";
+    if(u12_composed_question_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
     const bool u12_composed_output_only=argc==5&&std::string_view(argv[1])=="--u12-composed-output";
     if(u12_composed_output_only&&(std::string_view(argv[4]).size()!=1||argv[4][0]<'0'||argv[4][0]>'2'))return 2;
     const bool u12_append_hypothesis_current=argc==5&&std::string_view(argv[1])=="--u12-append-hypothesis-current";
@@ -2517,7 +2522,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
     const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -2544,6 +2549,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(u12_file_roundtrip_only){current_u12_file_roundtrip_reader(backend);return 0;}
         if(u12_file_append_only){current_u12_file_append_reader(backend);return 0;}
         if(u12_file_repairs_only){current_u12_file_repairs_reader(backend);return 0;}
+        if(u12_composed_feedback_only){u12_composed_feedback_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]));return 0;}
+        if(u12_composed_question_only){u12_composed_question_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
         if(u12_composed_output_only){u12_composed_output_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
         if(u12_append_hypothesis_only){u12_append_hypothesis_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u12_append_hypothesis_stage);return 0;}
         if(current_inline_only){current_inline_feedback_reader(backend,current_inline_case);return 0;}

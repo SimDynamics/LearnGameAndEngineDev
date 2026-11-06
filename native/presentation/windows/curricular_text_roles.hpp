@@ -130,6 +130,17 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
         auto last=text.find(L"\n\n",first);if(last==text.npos)last=text.size();
         add(roles.outputs,first,last);
     },true);
+    // A literal output can start on the very next line, after a bounded
+    // instruction about its final newline. Its three data rows are not C++
+    // assignments. The next blank line still ends this local output block;
+    // argument lists and source references elsewhere retain their own roles.
+    matches(text,LR"(\bmuestra\s+(?:exactamente\s+)?estas?\s+(?:(?:dos|tres|[0-9]+)\s+)?l[ií]neas(?:[ \t]*,[^\n:]{0,128})?[ \t]*:[ \t]*\n)",[&](const auto& match){
+        const auto cue=static_cast<std::size_t>(match.position()),end=cue+static_cast<std::size_t>(match.length());
+        if(overlaps({cue,end},marked)||overlaps({cue,end},protected_ranges))return;
+        auto first=end;while(first<text.size()&&(text[first]==L'\n'||text[first]==L'\r'))++first;
+        auto last=text.find(L"\n\n",first);if(last==text.npos)last=text.size();
+        add(roles.outputs,first,last);
+    },true);
     for(const auto range:marked){
         if(range.first>=range.second||range.second>text.size())continue;
         const auto prefix=tail(text,range.first,192),fragment=text.substr(range.first,range.second-range.first);

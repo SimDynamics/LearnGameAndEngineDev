@@ -772,16 +772,25 @@ std::optional<StateReadingRevision> composed_output_reading_revision(const JsonO
         const StateLayout& layout,std::string_view lesson_id) {
     constexpr std::string_view owner="cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla";
     if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
-    // This is the exact first adoption of the real 4741c42 publication. It
-    // supplies old narration only, never an editable history or a state slot.
-    // Pin all five pages as well: a later unreviewed heading/code change must
-    // not borrow an invented predecessor from these eight authentic blocks.
+    // The first adoption, later publication and exact proposed review retain
+    // the same first two pages. They may restore only those pages' authentic
+    // positional narration, never later pages or an editable history.
     if(pages.Size()!=5||layout.signatures.size()!=25
         ||fingerprint(metadata.GetNamedObject(L"family"))!="f9865100c59e76353575893fd342d00b0ce5eee3ef2c9605a4b9189db4fbd887"
         ||fingerprint(array(metadata,"origin"))!="6c5a4300e032dfde02180cfb468cbb2b418931fbc65fb8f771561aa30b2dbee3"
-        ||fingerprint(array(metadata,"current"))!="430aa6b167fac29d684c9c45734b6c611ce06be9bbd16a303c598d1c562a6e92"
-        ||fingerprint(array(metadata,"editorial"))!="1ad25edf3618c1f51a1e21504b52bbc65f27d70b7deba6ef5344d126912c345b"
-        ||fingerprint(pages)!="b3ee4c125cf8fbc0242a4a0cbb24f34dc03677d84ad6485c7c319c8fbd878852")return {};
+        ||fingerprint(array(metadata,"current"))!="430aa6b167fac29d684c9c45734b6c611ce06be9bbd16a303c598d1c562a6e92")return {};
+    const auto editorial=array(metadata,"editorial");
+    const auto history_hash=fingerprint(editorial),pages_hash=fingerprint(pages);
+    const bool first=editorial.Size()==8
+        &&history_hash=="1ad25edf3618c1f51a1e21504b52bbc65f27d70b7deba6ef5344d126912c345b"
+        &&pages_hash=="b3ee4c125cf8fbc0242a4a0cbb24f34dc03677d84ad6485c7c319c8fbd878852";
+    const bool published=editorial.Size()==15
+        &&history_hash=="317364cd08c3847423c5a3d3a6b8b017e1882f91be895b738361aef13a68a956"
+        &&pages_hash=="5c2c07a09c4679edb36ce6c246d0dcb265f00ab856f583ee52a4ad5e1c2ef14b";
+    const bool feedback=editorial.Size()==17
+        &&history_hash=="3ff7da20dbe7d2e0709b927606c59890b4dd3d975bfd6e67ad0f44ecb29a0c29"
+        &&pages_hash=="e9960d58dacdbb79b32b45e8c4b8d5db23fb0090eee6ab758152078754c65950";
+    if(!first&&!published&&!feedback)return {};
     struct ReviewedBlock {unsigned page,block;const char* id;const char* before;const char* after;const wchar_t* prose;};
     constexpr std::array<ReviewedBlock,8> reviewed{{
         {0,1,"block_0000_0001","c02adc2d24a66e7b0dce4f5aa5692cb2f204850bb1552792ca1bd5e2087c6b19",
@@ -804,8 +813,6 @@ std::optional<StateReadingRevision> composed_output_reading_revision(const JsonO
         {1,5,"block_0001_0005","2b80ca083b2d0eb1b2a5b9492a15ae5ae2095f880cbcb65f36276a6069705109",
             "8216c1ca7b4af782b539a6e72edf5b36ccd0d3fcf98103a21da4453398dbaf22",nullptr},
     }};
-    const auto editorial=array(metadata,"editorial");
-    if(editorial.Size()!=reviewed.size())return {};
     const auto reconstructed=JsonArray::Parse(pages.Stringify());
     StateReadingRevision result;result.editorial_prefix=8;result.positional_page_identity=true;
     for(unsigned index=0;index<reviewed.size();++index){
@@ -823,7 +830,55 @@ std::optional<StateReadingRevision> composed_output_reading_revision(const JsonO
         array(reconstructed.GetObjectAt(item.page),"blocks").SetAt(item.block,previous);
         result.previous_blocks.emplace(item.id,utf8(previous.Stringify()));
     }
-    if(fingerprint(reconstructed)!="ffeb1349bb0fcd7d1bc9e7002c344ce68e3fcf4a8162464e9b908606521010a8")return {};
+    JsonArray positional_pages;positional_pages.Append(reconstructed.GetAt(0));positional_pages.Append(reconstructed.GetAt(1));
+    if(fingerprint(positional_pages)!="fcc6108499fd8f21209a035a8676be437251dc5ab2c7c849b18f57f20f2bd966"
+        ||(first&&fingerprint(reconstructed)!="ffeb1349bb0fcd7d1bc9e7002c344ce68e3fcf4a8162464e9b908606521010a8"))return {};
+    return result;
+}
+std::optional<StateReadingRevision> composed_feedback_reading_revision(const JsonObject& metadata,const JsonArray& pages,
+        const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla";
+    constexpr std::string_view identity="block_0004_0001";
+    constexpr std::string_view before="cf06a21a5f5a9b85cc94cf0d4e41cebc672813a7a82c30728832291dc25bcdb8";
+    constexpr std::string_view after="4bddac581f21a70aa212ec0039f9ab2ab64badbcd315419e2e149a7ae7240166";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es"||pages.Size()!=5||layout.signatures.size()!=25
+        ||fingerprint(metadata.GetNamedObject(L"family"))!="f9865100c59e76353575893fd342d00b0ce5eee3ef2c9605a4b9189db4fbd887"
+        ||fingerprint(array(metadata,"origin"))!="6c5a4300e032dfde02180cfb468cbb2b418931fbc65fb8f771561aa30b2dbee3"
+        ||fingerprint(array(metadata,"current"))!="430aa6b167fac29d684c9c45734b6c611ce06be9bbd16a303c598d1c562a6e92"
+        ||fingerprint(array(metadata,"editorial"))!="3ff7da20dbe7d2e0709b927606c59890b4dd3d975bfd6e67ad0f44ecb29a0c29"
+        ||fingerprint(pages)!="e9960d58dacdbb79b32b45e8c4b8d5db23fb0090eee6ab758152078754c65950")return {};
+    const auto editorial=array(metadata,"editorial");
+    if(editorial.Size()!=17||layout.origin.size()!=5||layout.current.size()!=5
+        ||layout.origin[4].blocks.size()!=3||layout.origin[4].blocks[1]!=identity
+        ||layout.current[4].blocks!=layout.origin[4].blocks)return {};
+    const auto edge=editorial.GetObjectAt(16);
+    if(edge.Size()!=3||text(edge,"id")!=identity||text(edge,"beforeSha256")!=before||text(edge,"afterSha256")!=after)return {};
+    const auto active=array(pages.GetObjectAt(4),"blocks").GetObjectAt(1);
+    if(fingerprint(active)!=after)return {};
+    const auto previous=JsonObject::Parse(active.Stringify());
+    previous.Insert(L"question",JsonValue::CreateStringValue(
+        L"Supón que se completan apertura y escritura. ¿Qué texto aparece en la salida estándar de este programa?"));
+    if(fingerprint(previous)!=before)return {};
+    const auto compiler_edge=editorial.GetObjectAt(15);
+    if(compiler_edge.Size()!=3||text(compiler_edge,"id")!="block_0002_0003"
+        ||text(compiler_edge,"beforeSha256")!="628f37fb8e1fb1f82180b90a6ff241b9e868482914e4ce9dd84149e453b8e00d"
+        ||text(compiler_edge,"afterSha256")!="2a22d63af34fb093c3feeef538fdb794fa6b57074fddcc601b473162937043b7")return {};
+    const auto compiler=array(pages.GetObjectAt(2),"blocks").GetObjectAt(3);
+    if(fingerprint(compiler)!="2a22d63af34fb093c3feeef538fdb794fa6b57074fddcc601b473162937043b7")return {};
+    const auto old_compiler=JsonObject::Parse(compiler.Stringify());
+    const auto old_case=array(old_compiler.GetNamedObject(L"outputCheck"),"cases").GetObjectAt(0);
+    old_case.Remove(L"explanation");old_case.Remove(L"reviewFeedback");
+    if(fingerprint(old_compiler)!="628f37fb8e1fb1f82180b90a6ff241b9e868482914e4ce9dd84149e453b8e00d")return {};
+    const auto reconstructed=JsonArray::Parse(pages.Stringify());
+    array(reconstructed.GetObjectAt(2),"blocks").SetAt(3,old_compiler);
+    array(reconstructed.GetObjectAt(4),"blocks").SetAt(1,previous);
+    if(fingerprint(reconstructed)!="5c2c07a09c4679edb36ce6c246d0dcb265f00ab856f583ee52a4ad5e1c2ef14b")return {};
+    // Both complete old payloads belong to the same authentic prefix15.
+    // Each view extracts only its own page; the independent positional p1/p2
+    // archive must not acquire this stable v2 feedback/question history.
+    StateReadingRevision result;result.editorial_prefix=15;
+    result.previous_blocks.emplace("block_0002_0003",utf8(old_compiler.Stringify()));
+    result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
@@ -1176,6 +1231,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     if(auto revision=append_hypothesis_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=composed_output_reading_revision(metadata,pages,result,lesson_id))
+        result.reading_revisions.push_back(std::move(*revision));
+    if(auto revision=composed_feedback_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
     return result;
 }
