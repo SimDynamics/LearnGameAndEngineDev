@@ -118,41 +118,135 @@ internal object WindowsTextSemantics {
         }
         values[result] = Field(result,spans); return result
     }
+    /** Format the one visible unit placeholder without losing its source owner. */
+    fun unitCaption(template: String, unit: String): String {
+        val placeholders = Regex("%(?:1\\\$)?s").findAll(template).toList()
+        require(placeholders.size == 1) { "A unit caption requires its one typed source placeholder" }
+        val token = placeholders.single()
+        val prefix = String.format(java.util.Locale.ROOT,template.substring(0,token.range.first))
+        val suffix = String.format(java.util.Locale.ROOT,template.substring(token.range.last+1))
+        return compose(listOf(prefix,unit,suffix),"")
+    }
+    /** Match rich_text's complete inline delimiters over the original field,
+     * before a semantic range can divide either delimiter or its contents. */
+    private fun hiddenPresentation(field: Field): BooleanArray {
+        val source = field.source
+        val mathematics = BooleanArray(source.length)
+        val links = BooleanArray(source.length)
+        fun protect(first: Int, last: Int) { for (at in first until last) mathematics[at] = true }
+        fun space(char: Char) = char in " \t\r\n\u000b\u000c\u00a0\u202f"
+        var cursor = 0
+        while (cursor < source.length) {
+            var opening = when {
+                source.startsWith("\\(",cursor) -> "\\("
+                source.startsWith("\\[",cursor) -> "\\["
+                source.startsWith("$$",cursor) -> "$$"
+                source[cursor] == '$' -> "$"
+                else -> ""
+            }
+            if (opening.isEmpty()) { cursor++; continue }
+            var closing = when (opening) { "\\(" -> "\\)"; "\\[" -> "\\]"; else -> opening }
+            var end = source.indexOf(closing,cursor + opening.length)
+            if (opening == "$$" && end < 0) { opening = "$"; closing = "$"; end = source.indexOf('$',cursor + 1) }
+            if (end < 0 || opening == "$" && (end == cursor + 1 ||
+                    (cursor + 1 until end).any { source[it] == '\r' || source[it] == '\n' })) { cursor++; continue }
+            protect(cursor,end + closing.length); cursor = end + closing.length
+        }
+        // Native mathematical spans protect their own notation even when the
+        // author selects a natural rather than an automatic mathematical voice.
+        for (span in field.spans) if (span.role == "math") protect(span.start,span.end)
+        cursor = 0
+        while (cursor < source.length) {
+            if (!source.regionMatches(cursor,"http://",0,7,true) &&
+                !source.regionMatches(cursor,"https://",0,8,true) &&
+                !source.regionMatches(cursor,"www.",0,4,true)) { cursor++; continue }
+            var end = cursor
+            while (end < source.length && !space(source[end]) && source[end] != '`') end++
+            for (at in cursor until end) links[at] = true
+            cursor = end
+        }
+        val hidden = BooleanArray(source.length)
+        cursor = 0
+        while (cursor < source.length) {
+            if (source[cursor] != '`' || mathematics[cursor] || links[cursor]) { cursor++; continue }
+            val delimiter = if (source.startsWith("```",cursor)) "```" else "`"
+            val end = source.indexOf(delimiter,cursor + delimiter.length)
+            if (end < 0) { cursor += delimiter.length; continue }
+            if ((cursor + delimiter.length until end).any { !space(source[it]) } &&
+                (cursor until end).none { mathematics[it] }) {
+                for (at in cursor until cursor + delimiter.length) hidden[at] = true
+                for (at in end until end + delimiter.length) hidden[at] = true
+            }
+            cursor = end + delimiter.length
+        }
+        return hidden
+    }
     /** One semantic frontend serves direct plans and anticipatory extraction. */
     fun projection(field: Field, language: NarrationLanguage): NarrationSourceProjection.Projection {
-        val output = StringBuilder().append(ManualEnglishSpeech.PREPARED)
-        val owners = mutableListOf(ReadingTextRange(0,0))
-        fun append(start: Int, end: Int, role: String, reading: String) {
-            if (start == end) return
-            val text = field.source.substring(start,end)
-            val technical = reading == "technical" || reading == "auto" && role in setOf("cpp","string")
-            val math = reading == "auto" && role == "math"
-            val piece = when {
-                technical -> NarrationSourceProjection.semanticCode(text,language)
-                math -> NarrationSourceProjection.forLanguage(text,"inline",language) ?: error("Unprojectable mathematical semantic span")
-                else -> {
-                    val shown = StringBuilder(); val origins = mutableListOf<ReadingTextRange>(); var cursor = 0
-                    while (cursor < text.length) {
-                        // Existing inline delimiters are hidden presentation,
-                        // never a reason to re-enter technical inference.
-                        if (text[cursor] == '`' || text.startsWith("**",cursor)) {
-                            cursor += if (text[cursor] == '`') 1 else 2; continue
-                        }
-                        val width = Character.charCount(text.codePointAt(cursor)); val source = ReadingTextRange(cursor,cursor+width)
-                        repeat(width) { shown.append(text[cursor+it]); origins += source }; cursor += width
-                    }
-                    NarrationSourceProjection.Projection(shown.toString(),origins)
-                }
+        val hidden = hiddenPresentation(field)
+        data class Input(val mode: Int, var whitespaceGap: Boolean = false, val text: StringBuilder = StringBuilder(),
+                         val owners: MutableList<ReadingTextRange> = mutableListOf())
+        val inputs = mutableListOf<Input>()
+        fun appendSource(start: Int, end: Int, role: String, reading: String, gap: Boolean = false) {
+            val mode = when {
+                reading == "technical" || reading == "auto" && role in setOf("cpp","string") -> 1
+                reading == "auto" && role == "math" -> 2
+                else -> 0
             }
-            val prefix = if (piece.text.startsWith(ManualEnglishSpeech.PREPARED)) 1 else 0
-            output.append(piece.text.substring(prefix))
-            owners += piece.owners.drop(prefix).map { if (it.endExclusive > it.start) ReadingTextRange(it.start+start,it.endExclusive+start) else it }
+            var cursor = start
+            while (cursor < end) {
+                if (hidden[cursor]) { cursor++; continue }
+                val width = Character.charCount(field.source.codePointAt(cursor))
+                if (mode == 1 && inputs.size >= 2) {
+                    val between = inputs.last()
+                    val previous = inputs[inputs.lastIndex - 1]
+                    if (previous.mode == 1 && between.mode == 0 && between.whitespaceGap && between.text.all(Char::isWhitespace)) {
+                        previous.text.append(between.text); previous.owners += between.owners
+                        inputs.removeAt(inputs.lastIndex)
+                    }
+                }
+                val input = inputs.lastOrNull()?.takeIf { it.mode == mode } ?: Input(mode,gap).also(inputs::add)
+                if (!gap) input.whitespaceGap = false
+                val owner = ReadingTextRange(cursor,cursor + width)
+                repeat(width) { input.text.append(field.source[cursor + it]); input.owners += owner }
+                cursor += width
+            }
         }
         var cursor = 0
         for (span in field.spans) {
-            append(cursor,span.start,"prose","natural");append(span.start,span.end,span.role,span.reading);cursor=span.end
+            appendSource(cursor,span.start,"prose","natural",gap=true)
+            appendSource(span.start,span.end,span.role,span.reading); cursor = span.end
         }
-        append(cursor,field.source.length,"prose","natural")
+        appendSource(cursor,field.source.length,"prose","natural",gap=true)
+        val output = StringBuilder().append(ManualEnglishSpeech.PREPARED)
+        val owners = mutableListOf(ReadingTextRange(0,0))
+        var previousMode = 0
+        fun wordStart(char: Char) = char.isLetterOrDigit() || char.isSurrogate() || char == '_' || char == ManualEnglishSpeech.START
+        fun wordEnd(char: Char) = char.isLetterOrDigit() || char.isSurrogate() || char == '_' || char == ManualEnglishSpeech.END
+        for (input in inputs) {
+            val source = input.text.toString()
+            val piece = when (input.mode) {
+                1 -> NarrationSourceProjection.semanticCode(source,language)
+                2 -> NarrationSourceProjection.forLanguage(source,"inline",language) ?: error("Unprojectable mathematical semantic span")
+                else -> NarrationSourceProjection.Projection(source,input.owners)
+            }
+            val prefix = if (piece.text.startsWith(ManualEnglishSpeech.PREPARED)) 1 else 0
+            val body = piece.text.substring(prefix)
+            if (body.isEmpty()) continue
+            // Separate spoken words introduced at a mixed semantic boundary;
+            // unchanged prose and its punctuation keep their exact spelling.
+            if (output.length > 1 && (previousMode != 0 || input.mode != 0) && wordEnd(output.last()) && wordStart(body.first())) {
+                output.append(' '); owners += ReadingTextRange(0,0)
+            }
+            output.append(body)
+            owners += if (input.mode == 0) input.owners else piece.owners.drop(prefix).map { owner ->
+                if (owner.endExclusive <= owner.start) ReadingTextRange(0,0) else {
+                    require(owner.start >= 0 && owner.endExclusive <= input.owners.size) { "Invalid semantic preparation source range" }
+                    ReadingTextRange(input.owners[owner.start].start,input.owners[owner.endExclusive - 1].endExclusive)
+                }
+            }
+            previousMode = input.mode
+        }
         return NarrationSourceProjection.Projection(output.toString(),owners)
     }
     fun prepared(field: Field, language: NarrationLanguage): String = projection(field,language).text

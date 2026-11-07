@@ -254,7 +254,7 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
 }
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop,
     std::string_view reading_context,std::string_view math_mode,NarrationOutputDataPolicy output_data_policy,
-    const std::optional<curriculum::TextSemantics>& semantics){
+    const std::optional<curriculum::TextSemantics>& semantics,NarrationSemanticPolicy semantic_policy){
     if(reading_context!="auto"&&reading_context!="cpp"&&reading_context!="cpp_previous_parentheses")throw std::invalid_argument("Invalid narration reading context");
     if(math_mode!="auto"&&math_mode!="text"&&math_mode!="inline"&&math_mode!="block")throw std::invalid_argument("Invalid narration mathematical mode");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);
@@ -276,6 +276,12 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
     case NarrationOutputDataPolicy::b42:put(request,L"outputDataPolicy","b42");break;
     case NarrationOutputDataPolicy::original:put(request,L"outputDataPolicy","original");break;
     default:throw std::invalid_argument("Invalid narration output-data policy");
+    }
+    switch(semantic_policy){
+    case NarrationSemanticPolicy::current:break;
+    case NarrationSemanticPolicy::original:
+        if(semantics)put(request,L"semanticProjectionPolicy","original");break;
+    default:throw std::invalid_argument("Invalid narration semantic projection policy");
     }
     const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};

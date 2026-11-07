@@ -27,6 +27,9 @@ struct NarrationSegment {
 // These historical policies authenticate existing bookmarks only. Their
 // prepared texts retain their original recording keys without synthesizing.
 enum class NarrationOutputDataPolicy { current,b42,original };
+// Authentication of saved semantic-v1 page proofs only. Not a curricular
+// option, synthesizer setting or alternative cache identity.
+enum class NarrationSemanticPolicy { current,original };
 struct NarrationTiming {std::size_t start=0,end=0;double start_ms=0,end_ms=0;};
 struct NarrationAudio {
     std::string key,source,spoken,provider;
@@ -77,7 +80,7 @@ public:
     // for identity only; historical plans are never synthesized.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={},
         std::string_view reading_context="auto",std::string_view math_mode="auto",NarrationOutputDataPolicy=NarrationOutputDataPolicy::current,
-        const std::optional<curriculum::TextSemantics>& semantics={});
+        const std::optional<curriculum::TextSemantics>& semantics={},NarrationSemanticPolicy=NarrationSemanticPolicy::current);
     // Preserve the old bool API exactly: true means pre-B42; false is current.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token,
         std::string_view reading_context,std::string_view math_mode,bool previous_output_data);

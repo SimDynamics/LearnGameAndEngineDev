@@ -24,7 +24,7 @@ struct SemanticRegionProof {
     bool operator==(const SemanticRegionProof&)const=default;
 };
 struct SemanticPlanProof {
-    std::string policy="windows-semantic-v1";
+    std::string policy="windows-semantic-v2";
     std::vector<SemanticRegionProof> regions;
     bool operator==(const SemanticPlanProof&)const=default;
 };

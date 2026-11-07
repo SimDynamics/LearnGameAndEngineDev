@@ -597,11 +597,28 @@ bool unused_phase(const CppPhaseResult& phase) {
 std::string diagnostic_project_hash(const curriculum::CppProjectFiles& files,const std::vector<std::string>& sources) {
     return state::sha256(curriculum::cpp_project_frame(files,sources,std::nullopt));
 }
+bool diagnostic_phase_bounded(const CppPhaseResult& phase,std::size_t limit) {
+    return phase.stdout_bytes.size()<=limit&&phase.stderr_bytes.size()<=limit;
+}
+bool diagnostic_streams_fit(const std::vector<CppDiagnosticEvidence::Unit>& units,const CppPhaseResult& link,std::size_t limit) {
+    std::size_t stdout_left=limit,stderr_left=limit;
+    const auto consume=[&](const CppPhaseResult& phase){
+        if(phase.stdout_bytes.size()>stdout_left||phase.stderr_bytes.size()>stderr_left)return false;
+        stdout_left-=phase.stdout_bytes.size();stderr_left-=phase.stderr_bytes.size();return true;
+    };
+    for(const auto& unit:units)if(!consume(unit.phase))return false;
+    return unused_phase(link)||consume(link);
+}
 CppPhaseResult diagnostic_aggregate(const std::vector<CppDiagnosticEvidence::Unit>& units,const CppPhaseResult& link,
         std::size_t limit) {
-    CppPhaseResult result;
-    for(const auto& unit:units)merge_phase(result,unit.phase,limit);
-    if(!unused_phase(link))merge_phase(result,link,limit);
+    CppPhaseResult result;bool truncated=false;
+    const auto append=[&](const CppPhaseResult& phase){merge_phase(result,phase,limit);
+        truncated=truncated||result.status==CppPhaseStatus::output_limit;};
+    for(const auto& unit:units)append(unit.phase);
+    if(!unused_phase(link))append(link);
+    // A later successful unit/link must not relabel discarded diagnostics as
+    // a complete capture. Preserve the bytes and final exit code as captured.
+    if(truncated)result.status=CppPhaseStatus::output_limit;
     return result;
 }
 void run_project_diagnostic(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& compiler,
@@ -663,6 +680,8 @@ bool expected_project_diagnostic(const CppRunRequest& request,const CppRunResult
         return true;
     };
     if(!valid_units(evidence.control_units,plan.control_sources,true)||!valid_units(evidence.candidate_units,request.source_files,false)||
+            !diagnostic_streams_fit(evidence.control_units,evidence.control_link,request.output_limit_bytes)||
+            !diagnostic_streams_fit(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes)||
             !evidence.control.succeeded()||evidence.control!=diagnostic_aggregate(evidence.control_units,evidence.control_link,request.output_limit_bytes)||
             result.compilation!=diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes))return false;
     const auto failed=[](const CppPhaseResult& phase){return phase.status==CppPhaseStatus::completed&&phase.exit_code&&*phase.exit_code&&*phase.exit_code<=255;};
@@ -746,7 +765,9 @@ bool expected_compile_diagnostic(const CppRunRequest& request,const CppRunResult
         evidence.source_sha256!=state::sha256(request.source_utf8)||evidence.control_sha256!=state::sha256(objective.control_source_utf8)||
         result.compilation.status!=CppPhaseStatus::completed||!result.compilation.exit_code||
         !*result.compilation.exit_code||*result.compilation.exit_code>255)return false;
-    if(!compilation_errors(evidence.control,result.run_directory/L"control").empty())return false;
+    if(!diagnostic_phase_bounded(evidence.control,request.output_limit_bytes)||
+        !diagnostic_phase_bounded(result.compilation,request.output_limit_bytes)||
+        !compilation_errors(evidence.control,result.run_directory/L"control").empty())return false;
     const auto errors=compilation_errors(result.compilation,result.run_directory/L"candidate");
     if(errors.empty()||errors!=evidence.errors)return false;
     const auto source=result.run_directory/L"candidate/main.cpp";
@@ -760,8 +781,7 @@ bool accepted_compile_diagnostic(const CppRunRequest& request,const CppRunResult
         !result.error_utf8.empty()||result.run_directory.empty()||!result.artifact.empty()||result.executable||!result.target_type.empty()||
         !unused_phase(result.execution)||!unused_phase(result.configuration)||!result.compilation.succeeded())return false;
     const auto& objective=*request.diagnostic;const auto& evidence=*result.diagnostic;
-    const auto complete=[&](const CppPhaseResult& phase){return phase.succeeded()&&
-        phase.stdout_bytes.size()<=request.output_limit_bytes&&phase.stderr_bytes.size()<=request.output_limit_bytes;};
+    const auto complete=[&](const CppPhaseResult& phase){return phase.succeeded()&&diagnostic_phase_bounded(phase,request.output_limit_bytes);};
     if(!complete(evidence.control)||!complete(result.compilation)||!evidence.errors.empty()||
         !compilation_errors(evidence.control,result.run_directory/L"control").empty()||
         !compilation_errors(result.compilation,result.run_directory/L"candidate").empty())return false;
@@ -783,19 +803,8 @@ bool accepted_compile_diagnostic(const CppRunRequest& request,const CppRunResult
     if(!units_complete(evidence.control_units,project.control_sources)||!units_complete(evidence.candidate_units,request.source_files))return false;
     if(project.link){if(!complete(evidence.control_link)||!complete(evidence.candidate_link))return false;}
     else if(!unused_phase(evidence.control_link)||!unused_phase(evidence.candidate_link))return false;
-    // An aggregate may end with a successful empty phase after an earlier
-    // phase overflowed its remaining stream budget. Count the full capture
-    // before comparing that aggregate; truncated output is never a verdict.
-    const auto streams_fit=[&](const auto& units,const CppPhaseResult& link){
-        std::size_t stdout_left=request.output_limit_bytes,stderr_left=request.output_limit_bytes;
-        const auto consume=[&](const CppPhaseResult& phase){
-            if(phase.stdout_bytes.size()>stdout_left||phase.stderr_bytes.size()>stderr_left)return false;
-            stdout_left-=phase.stdout_bytes.size();stderr_left-=phase.stderr_bytes.size();return true;
-        };
-        for(const auto& unit:units)if(!consume(unit.phase))return false;
-        return unused_phase(link)||consume(link);
-    };
-    if(!streams_fit(evidence.control_units,evidence.control_link)||!streams_fit(evidence.candidate_units,evidence.candidate_link))return false;
+    if(!diagnostic_streams_fit(evidence.control_units,evidence.control_link,request.output_limit_bytes)||
+        !diagnostic_streams_fit(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes))return false;
     return evidence.control==diagnostic_aggregate(evidence.control_units,evidence.control_link,request.output_limit_bytes)&&
         result.compilation==diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes);
 }catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}

@@ -312,6 +312,7 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_compiler_diagnostic_review_tests lgaed_cpp_tool_host)
     add_test(NAME native.compiler_diagnostic_review COMMAND lgaed_compiler_diagnostic_review_tests)
     add_test(NAME native.compiler_diagnostic_review_real COMMAND lgaed_compiler_diagnostic_review_tests --real)
+    add_test(NAME native.compiler_diagnostic_rejection_budget COMMAND lgaed_compiler_diagnostic_review_tests --rejection-model)
     set_tests_properties(native.compiler_diagnostic_review_real PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     set_tests_properties(native.crt_output_variant PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_test(NAME native.crt_output_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover

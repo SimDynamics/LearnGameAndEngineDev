@@ -58,6 +58,80 @@ class ExplicitTextSemanticsTest(unittest.TestCase):
         output = self.plan("7:3", descriptor("7:3", role="output"))
         self.assertNotIn("dos puntos", " ".join(part["spokenText"] for part in output))
 
+    def test_adjacent_technical_ranges_are_one_lexical_input_with_original_owners(self):
+        for source, first in (("x+y", 0), ("😀\r\n`x+y`.", units("😀\r\n`"))):
+            with self.subTest(source=source):
+                whole = descriptor(source, start=first, end=first + 3)
+                divided = {"spans": [descriptor(source, start=first + at, end=first + at + 1)["spans"][0]
+                                     for at in range(3)]}
+                expected = self.plan(source, whole)
+                self.assertEqual(expected, self.plan(source, divided))
+                spoken = " ".join(part["spokenText"] for part in expected)
+                self.assertIn("equis más i griega", spoken)
+                raw = source.encode("utf-16-le")
+                for part in expected:
+                    self.assertEqual(part["text"], raw[2 * part["sourceStart"]:2 * part["sourceEnd"]].decode("utf-16-le"))
+                    for shown in part["displayedRanges"]:
+                        # Decoding independently also rejects a range through
+                        # either half of the original supplementary character.
+                        selected = part["text"].encode("utf-16-le")[2 * shown["start"]:2 * shown["end"]]
+                        self.assertTrue(selected.decode("utf-16-le"))
+        # Reading intent, rather than ink role, owns the lexical preparation.
+        mixed = {"spans": [dict(start=0, end=1, text="x", role="cpp"),
+                             dict(start=1, end=2, text="+", role="output", reading="technical"),
+                             dict(start=2, end=3, text="y", role="string")]}
+        self.assertEqual(self.plan("x+y", descriptor("x+y")), self.plan("x+y", mixed))
+
+    def test_unmarked_whitespace_preserves_technical_context_without_crossing_natural_spans(self):
+        for source, positions in (("x * y", (0, 2, 4)), ("x\r\n*\r\ny", (0, 3, 6))):
+            with self.subTest(source=source):
+                divided = {"spans": [descriptor(source, start=at, end=at + 1)["spans"][0] for at in positions]}
+                expected = self.plan(source, descriptor(source))
+                self.assertEqual(expected, self.plan(source, divided))
+                self.assertIn("equis por i griega", " ".join(part["spokenText"] for part in expected))
+        source = "x * y"
+        # Explicit natural whitespace is an authored reading boundary; only
+        # unmarked whitespace gaps may carry the surrounding technical context.
+        explicit = {"spans": [descriptor(source, role="prose" if at in (1, 3) else "cpp",
+                                                  reading="natural" if at in (1, 3) else "auto",
+                                                  start=at, end=at + 1)["spans"][0] for at in range(5)]}
+        self.assertIn("asterisco", " ".join(part["spokenText"] for part in self.plan(source, explicit)))
+        source = "x y y"
+        marked = {"spans": [descriptor(source, start=at, end=at + 1)["spans"][0] for at in (0, 4)]}
+        self.assertIn("equis y i griega", " ".join(part["spokenText"] for part in self.plan(source, marked)))
+
+    def test_literal_presentation_symbols_are_not_invented_markdown_delimiters(self):
+        for source in ("izquierda**derecha", "**y**", "a`b", "a``b", "`  `",
+                       "`\\(x+y\\)`", "`$x+y$`"):
+            with self.subTest(source=source):
+                prepared = " ".join(part["preparedText"] for part in self.plan(source, {"spans": []}))
+                self.assertIn(source, prepared)
+        # A literal unmatched delimiter in technical source is also retained.
+        technical = " ".join(part["preparedText"] for part in self.plan("a`b", descriptor("a`b")))
+        self.assertIn("`", technical)
+
+    def test_complete_inline_wrappers_are_hidden_before_semantic_ranges_are_divided(self):
+        for source, first, last in (("`y`", 1, 2), ("```y```", 3, 4), ("`x+y`", 1, 4)):
+            with self.subTest(source=source):
+                whole = self.plan(source, descriptor(source))
+                inner = self.plan(source, descriptor(source, start=first, end=last))
+                self.assertEqual(inner, whole)
+                self.assertNotIn("`", " ".join(part["preparedText"] for part in whole))
+        # Native inline formatting accepts URLs inside complete backticks;
+        # protecting the URL itself must not protect its outer delimiters.
+        url = "`https://ejemplo.test/y`"
+        self.assertNotIn("`", " ".join(part["preparedText"] for part in self.plan(url, {"spans": []})))
+
+    def test_mixed_semantic_boundaries_separate_introduced_words_only(self):
+        for source, first, expected in (("ay", 1, "a i griega"), ("ya", 0, "i griega a")):
+            with self.subTest(source=source):
+                parts = self.plan(source, descriptor(source, start=first, end=first + 1))
+                self.assertIn(expected, " ".join(part["spokenText"] for part in parts))
+                self.assertEqual(source, " ".join(part["spokenText"] for part in self.plan(source, {"spans": []})))
+        source = "`y`."
+        parts = self.plan(source, descriptor(source, start=1, end=2))
+        self.assertIn("i griega.", " ".join(part["spokenText"] for part in parts))
+
     def test_duplicate_strings_keep_distinct_field_owners_and_match_foreground_cache_keys(self):
         block = dict(type="multiple_choice", question="y", options=["y", "a"], explanation="y",
                      validator={"expected": "HIDDEN_ANSWER"}, reviewFeedback=[{"text": "HIDDEN_REVIEW"}])

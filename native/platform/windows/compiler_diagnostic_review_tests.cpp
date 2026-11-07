@@ -206,10 +206,98 @@ void real_tests(const WindowsEnvironment& environment){
     require(state::sha256(state::read_bytes(lesson.source_path))==asset_before,"Diagnostic review QA changed a curricular asset");
     std::cout<<"PASS two real MSVC compilation-only captures: correct -> rejected recheck -> reopened rejection -> correct, retained achievement/markers\n";
 }
+CppRunResult project_rejection_capture(const CppRunRequest& request){
+    const auto& recipe=*request.diagnostic->project;auto result=accepted_capture(request);
+    if(recipe.link){
+        const bool duplicate=std::ranges::find(recipe.error_codes,"LNK2005")!=recipe.error_codes.end();
+        const std::string primary=duplicate?"LNK2005":"LNK2019",summary=duplicate?"LNK1169":"LNK1120";
+        auto& link=result.diagnostic->candidate_link;link.exit_code=2;
+        for(const auto& symbol:recipe.symbols){
+            link.stderr_bytes+="unit.obj : error "+primary+": ?"+symbol+"@@ QA model rejection\n";
+            result.diagnostic->errors.push_back({primary,{},0,0});
+        }
+        link.stderr_bytes+="candidate.exe : fatal error "+summary+": QA model summary\n";
+        result.diagnostic->errors.push_back({summary,{},0,0});result.compilation=link;
+    }else{
+        const auto at=std::ranges::find(request.source_files,recipe.expected_file);
+        require(at!=request.source_files.end(),"The compile-only model lost its authored failing translation unit");
+        auto& units=result.diagnostic->candidate_units;units.resize(static_cast<std::size_t>(at-request.source_files.begin())+1);
+        auto& phase=units.back().phase;phase.exit_code=2;
+        const auto path=result.run_directory/L"candidate/project"/recipe.expected_file;const auto bytes=path.u8string();
+        const std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
+        for(const auto& code:recipe.error_codes){
+            phase.stderr_bytes+=source+'('+std::to_string(recipe.first_line)+",1): error "+code+": QA model rejection\n";
+            result.diagnostic->errors.push_back({code,path,static_cast<std::uint32_t>(recipe.first_line),1});
+        }
+        result.compilation=phase;
+    }
+    return result;
+}
+void candidate_diagnostics_on_stdout(CppRunResult& result){
+    for(auto& unit:result.diagnostic->candidate_units)std::swap(unit.phase.stdout_bytes,unit.phase.stderr_bytes);
+    std::swap(result.diagnostic->candidate_link.stdout_bytes,result.diagnostic->candidate_link.stderr_bytes);
+    std::swap(result.compilation.stdout_bytes,result.compilation.stderr_bytes);
+}
+void rejection_aggregate_models(){
+    // Model only: actual current U6/U9 recipes and synthetic captured phases.
+    // No compiler, process, profile, audio or learner progress is involved.
+    std::size_t exact_limits=0,rejected=0;
+    const auto no_grade=[&](const Lesson& lesson,const Block& block,const CppRunRequest& request,const CppRunResult& result){
+        state::StateData data;const auto before=data;
+        const bool evaluated=expected_compile_diagnostic(request,result);
+        const bool recorded=record_compiler_diagnostic_case(data,lesson,block,request,result,"Correcto\nQA model only");
+        const bool reviewed=record_compiler_diagnostic_review(data,lesson,block,request,result,"Incorrecto\nQA model only");
+        require(!evaluated&&!recorded&&!reviewed&&!compiler_puzzle_completed(data,lesson,block)&&data==before,
+            "A truncated diagnostic capture received a verdict, completion receipt or changed progress");++rejected;
+    };
+    for(const auto& spec:std::vector<std::pair<const char*,const char*>>{
+        {"lesson_declaraciones_y_firmas.json","block_0014_0002"},
+        {"lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json","block_0019_0002"},
+        {"lesson_declaraciones_y_firmas.json","block_0017_0002"}}){
+        const auto lesson=load_lesson(content()/"funciones_y_contratos"/spec.first);const auto& block=editor(lesson,spec.second);
+        CppRunRequest request;request.request_id=91;request.revision=103;request.output_limit_bytes=4096;
+        request.source_utf8=block.initial_code;request.project_files=block.project_files;request.source_files=block.source_files;
+        request.diagnostic=prepare_cpp_diagnostic_request(block,request);
+        require(request.diagnostic&&request.diagnostic->project,"The overflow model lost its actual current U6 recipe");
+        const auto baseline=project_rejection_capture(request);
+        require(expected_compile_diagnostic(request,baseline),"The untruncated U6 model does not satisfy its production evaluator");
+        for(const bool candidate:{false,true})for(const bool standard_error:{false,true}){
+            auto exact=baseline;if(candidate&&standard_error)candidate_diagnostics_on_stdout(exact);
+            auto& units=candidate?exact.diagnostic->candidate_units:exact.diagnostic->control_units;
+            auto& aggregate=candidate?exact.compilation:exact.diagnostic->control;
+            (standard_error?units.front().phase.stderr_bytes:units.front().phase.stdout_bytes)=std::string(request.output_limit_bytes,'A');
+            (standard_error?aggregate.stderr_bytes:aggregate.stdout_bytes)=std::string(request.output_limit_bytes,'A');
+            require(expected_compile_diagnostic(request,exact),"An exact-limit complete U6 capture was rejected");++exact_limits;
+            auto overflow=exact;auto& last=candidate?overflow.diagnostic->candidate_units.back():overflow.diagnostic->control_units.back();
+            (standard_error?last.phase.stderr_bytes:last.phase.stdout_bytes)+='x';
+            // Both the old misleading completed aggregate and the truthful
+            // output_limit summary must be technical outcomes without grading.
+            no_grade(lesson,block,request,overflow);
+            (candidate?overflow.compilation:overflow.diagnostic->control).status=CppPhaseStatus::output_limit;
+            no_grade(lesson,block,request,overflow);
+        }
+        std::cout<<"PASS actual U6 "<<block.compile_check->diagnostic<<": exact budgets and control/candidate overflow on both streams\n";
+    }
+    const auto lesson=single_lesson();const auto& block=editor(lesson,"block_0006_0006");auto request=single_request(block,true);
+    request.output_limit_bytes=4096;const auto baseline=correct_capture(request);
+    for(const bool candidate:{false,true})for(const bool standard_error:{false,true}){
+        auto exact=baseline;if(candidate&&standard_error)candidate_diagnostics_on_stdout(exact);
+        auto& phase=candidate?exact.compilation:exact.diagnostic->control;
+        (standard_error?phase.stderr_bytes:phase.stdout_bytes)=std::string(request.output_limit_bytes,'A');
+        require(expected_compile_diagnostic(request,exact),"An exact-limit complete single-source capture was rejected");++exact_limits;
+        auto overflow=exact;auto& invalid=candidate?overflow.compilation:overflow.diagnostic->control;
+        (standard_error?invalid.stderr_bytes:invalid.stdout_bytes)+='x';no_grade(lesson,block,request,overflow);
+        invalid.status=CppPhaseStatus::output_limit;no_grade(lesson,block,request,overflow);
+    }
+    std::cout<<"PASS rejection budgets: "<<exact_limits<<" complete exact-limit models; "<<rejected
+        <<" truncated models rejected without grading or state changes\n";
+}
 }
 int main(int argc,char** argv) try {
     const bool real=argc==2&&std::string_view(argv[1])=="--real";
-    require(argc==1||real,"Usage: compiler_diagnostic_review_tests [--real]");
+    const bool aggregate_model=argc==2&&std::string_view(argv[1])=="--rejection-model";
+    require(argc==1||real||aggregate_model,"Usage: compiler_diagnostic_review_tests [--real|--rejection-model]");
+    if(aggregate_model){rejection_aggregate_models();return 0;}
     const LaunchOptions options{ProfileId::Codex,L"diagnostic-review-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
     if(real)real_tests(environment);else model_tests(environment);return 0;

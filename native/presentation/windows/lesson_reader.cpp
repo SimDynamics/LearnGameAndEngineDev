@@ -491,12 +491,14 @@ struct LessonReader::Impl {
                     }
                     for(const auto& entry:history.entries)if(entry.page==current_page&&entry.semantic_plan){
                         std::vector<Part> previous;bool exact=true;
+                        const auto semantic_policy=entry.semantic_plan->policy=="windows-semantic-v1"
+                            ?windows::NarrationSemanticPolicy::original:windows::NarrationSemanticPolicy::current;
                         for(const auto& proof:entry.semantic_plan->regions){
                             const auto found=std::ranges::find_if(snapshot,[&](const auto& region){return (region.anchor.empty()?region.key:region.anchor)==proof.owner
                                 &&region.source_text==proof.source&&region.reading_context==proof.context&&region.math_mode==proof.math_mode;});
                             if(found==snapshot.end()){exact=false;break;}
                             auto origin=*found;origin.text_semantics=proof.semantics;std::map<std::string,std::size_t> occurrences;
-                            for(auto sentence:backend->plan(origin.source_text,lang,stop,origin.reading_context,origin.math_mode,windows::NarrationOutputDataPolicy::current,origin.text_semantics)){
+                            for(auto sentence:backend->plan(origin.source_text,lang,stop,origin.reading_context,origin.math_mode,windows::NarrationOutputDataPolicy::current,origin.text_semantics,semantic_policy)){
                                 const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
                         }
                         if(exact){std::vector<windows::NarrationSegment> planned_previous_sentences;for(const auto& part:previous)planned_previous_sentences.push_back(part.sentence);

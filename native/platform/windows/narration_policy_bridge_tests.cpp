@@ -2,6 +2,8 @@
 #include "platform/windows/narration_worker.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
+#include "core/narration_state.hpp"
+#include "presentation/windows/narration_legacy_policy.hpp"
 
 #include <windows.h>
 #include <winrt/Windows.Data.Json.h>
@@ -216,6 +218,51 @@ int main() try {
         stale=technical;stale.spans.front().text="another";rejected_descriptor(stale);
         stale=technical;stale.spans.front().start=1;stale.spans.front().end=2;stale.spans.front().text="x";rejected_descriptor(stale);
         for(const auto policy:{Policy::b42,Policy::original})owners(source,worker.plan(source,"es",{},"cpp","auto",policy));
+        ++groups;
+    }
+    {
+        using namespace lgaed::curriculum;using SemanticPolicy=NarrationSemanticPolicy;
+        const std::string source="Antes conserva el dato. izquierda**derecha. Después conserva el dato.";
+        const TextSemantics marked{source,{}};
+        const auto current=worker.plan(source,"es",{},"auto","auto",Policy::current,marked);
+        const auto original=worker.plan(source,"es",{},"auto","auto",Policy::current,marked,SemanticPolicy::original);
+        owners(source,current);owners(source,original);
+        require(current.size()==3&&original.size()==3&&same(current[0],original[0])&&same(current[2],original[2])&&
+            current[1].prepared!=original[1].prepared,"Semantic V1 authentication changed neighboring speech or failed to distinguish the literal repair");
+        const std::string expected_v1="Antes conserva el dato. izquierdaderecha. Después conserva el dato.";
+        const auto reference=worker.plan(expected_v1,"es",{},"auto","auto",Policy::current,TextSemantics{expected_v1,{}});
+        const auto previous_key=worker.identity("qa-semantic-frontend","es","ef_dora",original);
+        const auto current_key=worker.identity("qa-semantic-frontend","es","ef_dora",current);
+        require(previous_key!=current_key&&previous_key==worker.identity("qa-semantic-frontend","es","ef_dora",reference)&&
+            same(original,worker.plan(source,"es",{},"auto","auto",Policy::current,marked,SemanticPolicy::original)),
+            "The original semantic frontend no longer reconstructs its exact historical prepared-text key");
+        require(same(current,worker.plan(source,"es",{},"auto","auto",Policy::current,marked)),
+            "A private V1 authentication request contaminated current semantic planning");
+        const auto unmarked=worker.plan(source,"es");
+        require(same(unmarked,worker.plan(source,"es",{},"auto","auto",Policy::current,{},SemanticPolicy::original)),
+            "An unannotated historical region changed its existing speech path");
+        for(const auto slot:{0u,1u,2u})for(const auto at:{0u,1u,2u}){
+            // State-only certificates below are labelled model fixtures; no
+            // audio is generated, listened to or attributed to a real learner.
+            narration::History history;for(unsigned i=0;i<3;++i)history.entries.push_back({"other-"+std::to_string(i),{},
+                narration::Position{0,123+static_cast<std::int64_t>(i),0,false},"other-page-"+std::to_string(i),{}});
+            auto& entry=history.entries[slot];entry.key=previous_key;entry.page="qa-semantic-frontend";
+            entry.position={at,567,0,false,narration::HeardPrefix{std::string(64,'a'),12000,30000}};
+            entry.semantic_plan=narration::SemanticPlanProof{"windows-semantic-v1",{{"exact-owner",source,"auto","auto",marked}}};
+            const auto before=history;const bool unchanged=same(current[at],original[at]);
+            const auto mapped=presentation::narration_legacy::changed_speech_position(entry.position,unchanged);
+            require(presentation::narration_legacy::rekey_authenticated_bookmark(history,previous_key,current_key,mapped,entry.page),
+                "An IPC-authenticated semantic history failed to rekey its existing slot");
+            history.entries[slot].semantic_plan=narration::SemanticPlanProof{"windows-semantic-v2",{{"exact-owner",source,"auto","auto",marked}}};
+            state::StateData data;narration::write_history(data,history);require(narration::read_history(data)==history&&history.entries.size()==3,
+                "Native V1/V2 IPC migration lost its original three bounded slots");
+            for(unsigned i=0;i<3;++i)if(i!=slot)require(history.entries[i]==before.entries[i],"IPC migration changed another page's saved position");
+            if(unchanged)require(history.entries[slot].position==before.entries[slot].position,"Unchanged IPC speech lost a compatible offset/certificate");
+            else require(history.entries[slot].position.milliseconds==0&&!history.entries[slot].position.heard_prefix&&
+                !history.entries[slot].position.finished,"Changed IPC speech inherited an incompatible recording position");
+        }
+        bool invalid=false;try{(void)worker.plan(source,"es",{},"auto","auto",Policy::current,marked,static_cast<SemanticPolicy>(-1));}
+        catch(const std::invalid_argument&){invalid=true;}require(invalid,"An unknown native semantic frontend policy was silently coerced");
         ++groups;
     }
     worker.shutdown();worker.shutdown();

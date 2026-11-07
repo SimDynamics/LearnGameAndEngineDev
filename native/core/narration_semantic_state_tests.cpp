@@ -27,13 +27,33 @@ History three(){
 }
 int main()try{
     unsigned passed=0;
+    check(SemanticPlanProof{}.policy=="windows-semantic-v2","New semantic provenance still declares the old frontend");
+    for(const std::string policy:{"windows-semantic-v1","windows-semantic-v2"})
     for(const bool marked:{false,true})for(const unsigned slot:{0u,1u,2u}){
-        auto history=three();history.entries[slot].semantic_plan=plan(marked);state::StateData data;
+        auto history=three();history.entries[slot].semantic_plan=plan(marked);history.entries[slot].semantic_plan->policy=policy;state::StateData data;
         data.preferences[resume_domain]["unrelated"]=std::string("preserve");write_history(data,history);
         check(read_history(data)==history,"Exact three-slot semantic proof did not round trip");
         check(state::string_value(data,resume_domain,"unrelated")=="preserve","Writing semantic provenance changed unrelated metadata");
         const auto resumed=begin(history,history.entries[slot].key,"new-owner",history.entries[slot].position);
         check(resumed.entries.front().semantic_plan==history.entries[slot].semantic_plan,"Exact-key resumption lost its source provenance");
+        ++passed;
+    }
+    for(const unsigned slot:{0u,1u,2u})for(const bool same_recording:{false,true}){
+        auto history=three();history.entries[slot].semantic_plan=plan(true);state::StateData data;write_history(data,history);
+        const auto original=read_history(data);const auto& previous=original.entries[slot];
+        check(previous.semantic_plan->policy=="windows-semantic-v1","The legacy fixture lost its exact frontend generation");
+        const auto mapped=changed_speech_position(previous.position,same_recording);
+        auto migrated=original;check(rekey_authenticated_bookmark(migrated,previous.key,"authenticated-semantic-v2",mapped,previous.page),
+            "A proven V1 key could not be replaced in its existing slot");
+        auto current=*previous.semantic_plan;current.policy="windows-semantic-v2";migrated.entries[slot].semantic_plan=std::move(current);
+        write_history(data,migrated);check(read_history(data)==migrated&&migrated.entries.size()==3,
+            "Frontend migration lost exact provenance or consumed a fourth page slot");
+        for(unsigned i=0;i<3;++i)if(i!=slot)check(migrated.entries[i]==original.entries[i],"Frontend migration changed another page's pause or recency");
+        check(migrated.entries[slot].position.heard_through<=previous.position.heard_through,
+            "Frontend migration invented a played feedback prefix");
+        if(same_recording)check(migrated.entries[slot].position==previous.position,"An unchanged prepared recording lost its exact pause/certificate");
+        else check(!migrated.entries[slot].position.finished&&migrated.entries[slot].position.milliseconds==0&&
+            !migrated.entries[slot].position.heard_prefix,"Changed pronunciation inherited an old offset or hearing certificate");
         ++passed;
     }
     for(const unsigned slot:{0u,1u,2u}){

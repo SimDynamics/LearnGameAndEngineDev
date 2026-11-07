@@ -5,6 +5,15 @@ import org.json.JSONObject
 
 /** Mirrors the presentation inventory, not a recursive walk through validators. */
 internal object WindowsSemanticFields {
+    /** Match the native card's winner, retaining the parsed source object. */
+    fun visibleCardSource(item: JSONObject): String {
+        val source = listOf("label","text","value").firstOrNull(item::has)?.let(item::getString).orEmpty()
+        return if (source.isEmpty()) item.optString("id") else source
+    }
+    /** Text and formula controls share the native representation precedence. */
+    fun visibleRepresentationSource(config: JSONObject): String =
+        listOf("latex","text","formula","value").firstOrNull(config::has)?.let(config::getString).orEmpty()
+
     private class Inventory {
         val fields = linkedMapOf<String,String>()
         fun objects(values: JSONArray?): List<JSONObject> = if (values == null) emptyList()

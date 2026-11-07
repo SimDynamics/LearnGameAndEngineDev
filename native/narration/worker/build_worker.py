@@ -758,6 +758,23 @@ def windows_reading_source(name: str, code: str) -> str:
         code = exact(code, 'listOf("auto", "text", "inline", "block")',
                      'listOf("auto", "text", "inline", "block", "cpp", "cpp_previous_parentheses")')
     elif name == "LessonNarrationText":
+        # Only current Windows anticipation selects the exact sources shown by
+        # native controls. Historical export keeps its preceding extractor.
+        code = exact(code, '''            val label = if (completeVisibleLabels)
+                item.optString("label", item.optString("text", item.optString("id")))''', '''            val label = if (WindowsNarrationSpeechRules.keepWholeReadingRegions())
+                lgaed.narration.windows.WindowsSemanticFields.visibleCardSource(item)
+                else if (completeVisibleLabels)
+                item.optString("label", item.optString("text", item.optString("id")))''')
+        code = exact(code, '''            "text" -> append(output, if (completeVisibleLabels) config.optString("text", config.optString("value"))''', '''            "text" -> append(output, if (WindowsNarrationSpeechRules.keepWholeReadingRegions())
+                lgaed.narration.windows.WindowsSemanticFields.visibleRepresentationSource(config)
+                else if (completeVisibleLabels) config.optString("text", config.optString("value"))''')
+        code = exact(code, '''        if (!completeVisibleLabels) append(output, response.string("unit"))''', '''        if (!completeVisibleLabels) append(output, response.string("unit"))
+        if (WindowsNarrationSpeechRules.keepWholeReadingRegions())
+            append(output, response.string("instruction"), response.mode())''')
+        code = exact(code, '                    if (it.optBoolean("interactive", false)) {',
+            '                    if (it.optBoolean("interactive", false) &&\n'
+            '                        (!WindowsNarrationSpeechRules.keepWholeReadingRegions() ||\n'
+            '                            it.optString("type", "text") !in setOf("text", "math_formula", "math_table", "rich_answer_option"))) {')
         code = exact(code, '        // Recognize quoted/embedded C++ before math can reinterpret its operators.', '''        val explicit = lgaed.narration.windows.WindowsTextSemantics.lookup(source)
         if (explicit != null) {
             val prepared = lgaed.narration.windows.WindowsTextSemantics.prepared(explicit, speechLanguage)
@@ -898,6 +915,15 @@ def host_sources() -> list[Path]:
     sources.append(generated("LessonNarrationText.kt", windows_reading_source("LessonNarrationText",
         (APP / "narration/LessonNarrationText.kt").read_text(encoding="utf-8-sig"))))
     math_ui = (APP / "math/MathPuzzleUiInstructions.kt").read_text(encoding="utf-8-sig")
+    math_ui = exact(math_ui,
+        '        if (type !in textResponseTypes || config.has("fields")) return ""',
+        '        if (type !in textResponseTypes || if (com.learngraphicsprogramming.app.narration.WindowsNarrationSpeechRules.keepWholeReadingRegions())\n'
+        '            (config.optJSONArray("fields")?.length() ?: 0) > 0 else config.has("fields")) return ""')
+    math_ui = exact(math_ui,
+        '        return if (template.isBlank()) unit else String.format(Locale.ROOT, template, unit)',
+        '        return if (template.isBlank()) unit else if (com.learngraphicsprogramming.app.narration.WindowsNarrationSpeechRules.keepWholeReadingRegions())\n'
+        '            lgaed.narration.windows.WindowsTextSemantics.unitCaption(template,unit)\n'
+        '        else String.format(Locale.ROOT, template, unit)')
     math_ui = exact(math_ui,
         '        "math_rigid_angle_copy" -> listOf(resolve(RIGID_ANGLE_HELP), resolve(RIGID_ANGLE_LEGEND))',
         '        "math_rigid_angle_copy" -> listOf(resolve(RIGID_ANGLE_HELP), resolve(RIGID_ANGLE_LEGEND))\n'

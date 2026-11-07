@@ -7,7 +7,7 @@
 namespace lgaed::narration {
 namespace {
 void validate_semantic_plan(const SemanticPlanProof& value) {
-    if(value.policy!="windows-semantic-v1"||value.regions.empty()||value.regions.size()>2048)
+    if((value.policy!="windows-semantic-v1"&&value.policy!="windows-semantic-v2")||value.regions.empty()||value.regions.size()>2048)
         throw std::invalid_argument("Invalid bounded semantic narration provenance");
     std::size_t bytes=0,spans=0;std::set<std::string> owners;
     for(const auto& region:value.regions){

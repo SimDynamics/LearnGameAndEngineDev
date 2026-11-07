@@ -145,7 +145,7 @@ private class Backend(private val resources: File, private val englishResources:
         return if (mode == "auto" && context in setOf("cpp","cpp_previous_parentheses")) context else mode
     }
     private fun planned(source: String, language: NarrationLanguage, mode: String,
-                        semantics: WindowsTextSemantics.Field? = null): List<Pair<IntRange,Segment>> {
+                        semantics: WindowsTextSemantics.Field? = null, originalSemantics: Boolean = false): List<Pair<IntRange,Segment>> {
         require(source.length in 1..32768 && '\u0000' !in source) { "Narration text must contain 1–32768 original UTF-16 characters" }
         require(mode in setOf("auto","text","inline","block","cpp","cpp_previous_parentheses")) { "Invalid mathematical reading mode" }
         // The Android feedback presentation omits only its leading native
@@ -161,7 +161,10 @@ private class Backend(private val resources: File, private val englishResources:
                 val start = (span.start - iconPrefix).coerceAtLeast(0);val end = span.end - iconPrefix
                 span.copy(start=start,end=end,text=speechSource.substring(start,end))
             }) }
-        val projection = if (speechSemantics != null) WindowsTextSemantics.projection(speechSemantics,language)
+        val projection = if (speechSemantics != null) {
+            if (originalSemantics) WindowsLegacyTextSemantics.projection(speechSemantics,language)
+            else WindowsTextSemantics.projection(speechSemantics,language)
+        }
             else NarrationSourceProjection.forLanguage(speechSource,mode,language)
             ?: error("The existing frontend cannot safely project this text")
         val prepared = NarrationSegments.sentences(listOf(projection.text))
@@ -189,11 +192,14 @@ private class Backend(private val resources: File, private val englishResources:
             require(first in 0 until source.length && last in first + 1..source.length) { "Sentence has no original visible owner" }
             val segment = Segment(source.substring(first,last),sentence,mapping?.spoken.orEmpty(),
                 mapping?.displayed?.map { ReadingTextRange(it.start - first,it.endExclusive - first) }.orEmpty())
-            plans[planKey(language,segment.source,segment.prepared)] = segment
+            if (!originalSemantics) plans[planKey(language,segment.source,segment.prepared)] = segment
             (first until last) to segment
         }
     }
     fun plan(request: JSONObject): JSONObject {
+        require(!request.has("semanticProjectionPolicy") || request.opt("semanticProjectionPolicy") == "original" && request.has("textSemantics")) {
+            "Invalid private semantic projection policy"
+        }
         require(!request.has("previousOutputDataPolicy") || request.opt("previousOutputDataPolicy") is Boolean) {
             "Invalid previous output-data policy"
         }
@@ -218,7 +224,7 @@ private class Backend(private val resources: File, private val englishResources:
             val source = request.getString("text")
             val explicit = if (request.has("textSemantics"))
                 WindowsTextSemantics.parse(source,request.getJSONObject("textSemantics")) else null
-            planned(source,language(request),readingMode(request),explicit)
+            planned(source,language(request),readingMode(request),explicit,request.has("semanticProjectionPolicy"))
         }
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->
             JSONObject().put("text",segment.source).put("preparedText",segment.prepared)
@@ -513,7 +519,7 @@ fun main(arguments: Array<String>) {
                 val id = request.get("id").toString(); require(id.length in 1..128)
                 val command = request.getString("command")
                 replyId = id; replyCommand = command
-                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy") && !request.has("textSemantics"))) {
+                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy") && !request.has("textSemantics") && !request.has("semanticProjectionPolicy"))) {
                     "Previous output-data policy is restricted to bookmark planning"
                 }
                 if (command == "cancel") {

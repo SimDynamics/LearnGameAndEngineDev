@@ -2308,7 +2308,10 @@ struct LessonView {
         if(!result->error.empty()){feedback(index,result->error,false);return;}
         const auto reply=JsonObject::Parse(winrt::to_hstring(result->reply));
         const auto text=winrt::to_string(reply.GetNamedString(L"feedback",L""));
-        if(!reply.GetNamedBoolean(L"evaluable",false)){feedback(index,text,false);return;}
+        const auto semantics=math_feedback_semantics(index,reply);
+        if(!reply.GetNamedBoolean(L"evaluable",false)){
+            feedback(index,text,false,false,false,{},semantics?&*semantics:nullptr);return;
+        }
         vm.response.correct=reply.GetNamedBoolean(L"correct",false);
         rejected_math.erase(key(index));deferred_entry.cancel();
         record_attempt(index,vm.response.correct);
@@ -2317,7 +2320,6 @@ struct LessonView {
         if(reply.HasKey(L"contentFingerprint"))saved.Insert(L"contentFingerprint",reply.GetNamedValue(L"contentFingerprint"));
         vm.response.raw_json=winrt::to_string(saved.Stringify());
         state::mark_response_reviewed(vm.response,block(index));state::put_response(data, lesson, block(index), vm.response);mark_dirty();flush();
-        const auto semantics=math_feedback_semantics(index,reply);
         feedback(index,text,vm.response.correct,false,false,{},semantics?&*semantics:nullptr);sync_quiz_controls(index);
         if(hooks.feedback_changed)hooks.feedback_changed(window,index,vm.response.correct);
     }

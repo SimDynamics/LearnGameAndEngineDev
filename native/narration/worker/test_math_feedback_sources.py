@@ -78,6 +78,26 @@ class MathFeedbackSourcesTest(unittest.TestCase):
         self.assertFalse(reply["correct"])
         self.assertEqual([("/label", "😀 Pregunta 1"), ("/options/0/reviewFeedback", "Revisa 3:2")], self.origins(reply))
 
+    def test_incomplete_answer_exposes_typed_label_without_any_selected_review(self):
+        block = self.block()
+        reply = self.evaluate(block, {})
+        self.assertFalse(reply["evaluable"])
+        self.assertFalse(reply["correct"])
+        self.assertEqual([("/responses/0/label", "😀 Pregunta 1")], self.origins(reply))
+        self.assertNotIn("Revisa 3:2", reply["feedback"])
+        self.assertNotIn("HIDDEN_REVIEW", reply["feedback"])
+        self.assertNotIn("Resultado: 7", reply["feedback"])
+        # This descriptor also serves the native incomplete-answer branch.
+        # It changes presentation/reading, never the response or verdict.
+        label = reply["feedbackSources"][0]
+        marked = {"spans": [dict(start=label["start"], end=label["end"],
+            text="😀 Pregunta 1", role="output", reading="natural")]}
+        plan = self.worker.ask("plan", text=reply["feedback"], language="es", mathMode="auto",
+            readingContext="cpp", textSemantics=marked)
+        self.assertTrue(plan["segments"])
+        for segment in plan["segments"]:
+            self.assertEqual(segment["text"], selected(reply["feedback"], segment["sourceStart"], segment["sourceEnd"]))
+
 
 if __name__ == "__main__":
     unittest.main()
