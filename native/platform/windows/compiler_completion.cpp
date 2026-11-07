@@ -177,6 +177,22 @@ const curriculum::OutputCase* current_crt_feedback_case(const curriculum::Lesson
     std::string expanded;for(const char value:*block.crt_output_original){if(value=='\n')expanded+='\r';expanded+=value;}
     return item.outputs.back()==expanded?&item:nullptr;
 }
+struct CurrentCompilerGuidance {std::string_view explanation,path;};
+std::optional<CurrentCompilerGuidance> current_v2_guidance(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    const auto& layout=lesson.state_layout;
+    if(layout.version!=2||layout.locale!=lesson.locale||layout.raw_json.empty()||block.type!=curriculum::BlockType::cpp_compiler||
+        !layout.signatures.contains(block.stable_id))return {};
+    const auto position=curriculum::stable_block_position(lesson,block.stable_id);
+    if(!position||position->page>=layout.current.size()||position->block>=layout.current[position->page].blocks.size()||
+        layout.current[position->page].blocks[position->block]!=block.stable_id||
+        &lesson.pages[position->page].blocks[position->block]!=&block)return {};
+    // A sole authored case has one unambiguous success explanation. Multiple
+    // cases keep their exact saved provenance; never choose a guide by wording.
+    if(block.compile_check)return CurrentCompilerGuidance{block.compile_check->explanation,"/compileCheck/explanation"};
+    if(block.output_check&&block.output_check->cases.size()==1)
+        return CurrentCompilerGuidance{block.output_check->cases.front().explanation,"/outputCheck/cases/0/explanation"};
+    return {};
+}
 bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& right) {
     return left.standard_input==right.standard_input&&left.outputs==right.outputs&&left.executable==right.executable&&
         left.standard_error==right.standard_error&&left.exit_code==right.exit_code;
@@ -262,6 +278,14 @@ std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::St
     if(auto review=compiler_puzzle_review(data,lesson,block,current);!review.empty()){
         auto path=restored_feedback_origin(data,key+"review/",block,review,state::string_value(data,"native_windows",key+"review/seal"));
         return CompilerFeedback{std::move(review),false,std::move(path)};
+    }
+    if(const auto guidance=current_v2_guidance(lesson,block);guidance&&compiler_puzzle_completed(data,lesson,block)){
+        const auto original=state::string_value(data,"native_windows",key+"feedback");
+        if(!original.empty()){
+            auto shown=original.substr(0,original.find_first_of("\r\n"));
+            if(!guidance->explanation.empty())shown+='\n'+std::string(guidance->explanation);
+            return CompilerFeedback{std::move(shown),true,guidance->explanation.empty()?std::string{}:std::string(guidance->path)};
+        }
     }
     if(auto earned=compiler_puzzle_feedback(data,lesson,block);!earned.empty()){
         auto path=restored_feedback_origin(data,key,block,earned,state::string_value(data,"native_windows",key+"completed"));

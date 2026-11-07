@@ -120,7 +120,7 @@ class SequencePreservationTest(unittest.TestCase):
         self.assertEqual(expected, after)
         self.assertTrue(contract.preserves_previous_compiler(relative, 4, 2, before, after, document))
 
-    def test_output_guide_approval_cannot_change_compiler_goal_source_or_slot(self):
+    def test_editorial_output_guides_cannot_change_compiler_goal_or_source(self):
         relative, document, before, after = self.compiler_case()
         for key, value in [('outputs', ['Wrong']), ('standardInput', 'Wrong')]:
             candidate = copy.deepcopy(after)
@@ -128,7 +128,8 @@ class SequencePreservationTest(unittest.TestCase):
             self.assertFalse(contract.preserves_previous_compiler(relative, 4, 2, before, candidate, document))
         candidate = dict(after, initialCode='int main() {}')
         self.assertFalse(contract.preserves_previous_compiler(relative, 4, 2, before, candidate, document))
-        self.assertFalse(contract.preserves_previous_compiler(relative, 5, 2, before, after, document))
+        # Slot/family/edge validation remains the whole lesson's responsibility.
+        self.assertTrue(contract.preserves_previous_compiler(relative, 5, 2, before, after, document))
 
     def test_reordered_prediction_and_editor_keep_their_real_historical_contracts(self):
         lesson = 'programas_y_ejecucion/lesson_primer_programa_y_salida.json'

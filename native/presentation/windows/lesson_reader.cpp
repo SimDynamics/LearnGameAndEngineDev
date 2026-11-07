@@ -439,19 +439,20 @@ struct LessonReader::Impl {
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                 Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;
                 if(!history.entries.empty()&&std::ranges::none_of(history.entries,[&](const auto& entry){return entry.key==resume_key;})){
-                    const auto register_legacy=[&](std::vector<Part> old,const std::string& old_page,bool editorial_formatting,bool previous_context_policy,const std::vector<std::string>& revised_regions,bool positional_page_identity,bool semantic_policy=false){
+                    const auto register_legacy=[&](std::vector<Part> old,const std::string& old_page,bool editorial_formatting,bool previous_context_policy,const std::vector<std::string>& revised_regions,bool positional_page_identity,bool semantic_policy=false,bool component_mode_policy=false){
                         std::vector<windows::NarrationSegment> script;for(const auto& part:old)script.push_back(part.sentence);
                         const auto old_key=backend->identity(old_page,lang,selected_voice,script,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                         if(old_key!=resume_key&&std::ranges::none_of(plan.legacy,[&](const auto& legacy){return legacy.key==old_key;})
                             &&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.key==old_key;}))
                         {
                             if(semantic_policy)for(auto& part:old)part.region.reading_context=std::string(narration_legacy::semantic_prefix)+part.region.reading_context;
-                            plan.legacy.push_back({old_key,std::move(old),editorial_formatting,previous_context_policy||semantic_policy,revised_regions,positional_page_identity});
+                            if(component_mode_policy)for(auto& part:old)part.region.reading_context=std::string(narration_legacy::component_mode_prefix)+part.region.reading_context;
+                            plan.legacy.push_back({old_key,std::move(old),editorial_formatting,previous_context_policy||semantic_policy||component_mode_policy,revised_regions,positional_page_identity});
                         }
                     };
                     std::map<std::string,std::vector<windows::NarrationSegment>> previous_context_plans;
-                    const auto add_legacy=[&](const std::vector<Part>& old,const std::string& old_page,bool editorial_formatting=false,const std::vector<std::string>& revised_regions=std::vector<std::string>{},bool positional_page_identity=false,bool semantic_policy=false){
-                        register_legacy(old,old_page,editorial_formatting,false,revised_regions,positional_page_identity,semantic_policy);
+                    const auto add_legacy=[&](const std::vector<Part>& old,const std::string& old_page,bool editorial_formatting=false,const std::vector<std::string>& revised_regions=std::vector<std::string>{},bool positional_page_identity=false,bool semantic_policy=false,bool component_mode_policy=false){
+                        register_legacy(old,old_page,editorial_formatting,false,revised_regions,positional_page_identity,semantic_policy,component_mode_policy);
                         const bool cpp_context=std::ranges::any_of(old,[](const auto& part){return part.region.reading_context=="cpp"&&part.region.math_mode=="auto";});
                         // Historical output policy is independent of C++ math
                         // context, including explicit mathMode:text. Compose
@@ -479,10 +480,24 @@ struct LessonReader::Impl {
                                     const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
                                 do{++i;}while(i<old.size()&&old[i].region.key==part.region.key&&old[i].region.source_text==part.region.source_text);
                             }
-                            register_legacy(std::move(previous),old_page,editorial_formatting,true,revised_regions,positional_page_identity,semantic_policy);
+                            register_legacy(std::move(previous),old_page,editorial_formatting,true,revised_regions,positional_page_identity,semantic_policy,component_mode_policy);
                         }
                     };
                     add_legacy(planned,current_page);
+                    if(std::ranges::any_of(snapshot,[](const auto& region){return region.previous_math_mode.has_value();})){
+                        // Rebuild the immediately preceding whole-page script,
+                        // not an approximate sentence alias. Registration still
+                        // requires the exact existing saved key before mapping.
+                        std::vector<Part> previous;
+                        for(auto origin:snapshot){
+                            if(!origin.previous_math_mode){for(const auto& part:planned)if(part.region.key==origin.key)previous.push_back(part);continue;}
+                            origin.math_mode=*origin.previous_math_mode;origin.previous_math_mode.reset();
+                            std::map<std::string,std::size_t> occurrences;
+                            for(auto sentence:backend->plan(origin.source_text,lang,stop,origin.reading_context,origin.math_mode,windows::NarrationOutputDataPolicy::current,origin.text_semantics)){
+                                const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
+                        }
+                        add_legacy(previous,current_page,false,{},false,false,true);
+                    }
                     if(std::ranges::any_of(snapshot,[](const auto& region){return region.text_semantics.has_value();})){
                         std::vector<Part> previous;
                         for(auto origin:snapshot){origin.text_semantics.reset();std::map<std::string,std::size_t> occurrences;
@@ -491,20 +506,21 @@ struct LessonReader::Impl {
                         add_legacy(previous,current_page,false,{},false,true);
                     }
                     for(const auto& entry:history.entries)if(entry.page==current_page&&entry.semantic_plan){
-                        std::vector<Part> previous;bool exact=true;
+                        std::vector<Part> previous;bool exact=true,component_mode_policy=false;std::vector<std::string> revised_guides;
                         const auto semantic_policy=entry.semantic_plan->policy=="windows-semantic-v1"
                             ?windows::NarrationSemanticPolicy::original:windows::NarrationSemanticPolicy::current;
                         for(const auto& proof:entry.semantic_plan->regions){
-                            const auto found=std::ranges::find_if(snapshot,[&](const auto& region){return (region.anchor.empty()?region.key:region.anchor)==proof.owner
-                                &&region.source_text==proof.source&&region.reading_context==proof.context&&region.math_mode==proof.math_mode;});
+                            const auto found=std::ranges::find_if(snapshot,[&](const auto& region){return narration_legacy::matches_saved_semantic_region(proof,region);});
                             if(found==snapshot.end()){exact=false;break;}
-                            auto origin=*found;origin.text_semantics=proof.semantics;std::map<std::string,std::size_t> occurrences;
+                            component_mode_policy=component_mode_policy||found->math_mode!=proof.math_mode;
+                            if(found->source_text!=proof.source)revised_guides.push_back(found->key);
+                            auto origin=*found;origin.source_text=proof.source;origin.math_mode=proof.math_mode;origin.text_semantics=proof.semantics;std::map<std::string,std::size_t> occurrences;
                             for(auto sentence:backend->plan(origin.source_text,lang,stop,origin.reading_context,origin.math_mode,windows::NarrationOutputDataPolicy::current,origin.text_semantics,semantic_policy)){
                                 const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
                         }
                         if(exact){std::vector<windows::NarrationSegment> planned_previous_sentences;for(const auto& part:previous)planned_previous_sentences.push_back(part.sentence);
                             const auto authenticated=backend->identity(current_page,lang,selected_voice,planned_previous_sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
-                            if(authenticated==entry.key)register_legacy(std::move(previous),current_page,false,true,{},false,true);}
+                            if(authenticated==entry.key)register_legacy(std::move(previous),current_page,false,true,revised_guides,false,true,component_mode_policy);}
                     }
                     std::vector<Part> prefix;
                     if(!legacy_title.empty()){
@@ -774,13 +790,14 @@ struct LessonReader::Impl {
         for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.block_index==block&&parts[i].region.feedback&&parts[i].region.correct&&parts[i].region.solved)return i;
         return {};
     }
-    bool passes_prefix(std::size_t destination,bool manual_forward=false)const{
+    std::optional<reading_gate::PrefixBlocker> prefix_blocker(std::size_t destination,bool manual_forward=false)const{
         const auto feedback_priority=answer_priority
             ?std::optional{reading_gate::FeedbackPriority{answer_priority->block,answer_priority->allowed_through}}
             :std::optional<reading_gate::FeedbackPriority>{};
-        return reading_gate::prefix_admitted(parts,destination,position.heard_through,feedback_priority,manual_forward,
+        return reading_gate::prefix_blocker(parts,destination,position.heard_through,feedback_priority,manual_forward,
             [](const auto& part)->const auto&{return part.region;});
     }
+    bool passes_prefix(std::size_t destination,bool manual_forward=false)const{return !prefix_blocker(destination,manual_forward);}
     bool can_enter(std::size_t destination,bool manual_forward=false)const{
         return destination<=current()||passes_prefix(destination,manual_forward);
     }
@@ -843,12 +860,23 @@ struct LessonReader::Impl {
                 answer_priority->allowed_through=std::max(answer_priority->allowed_through,at+1);
             const bool wrong=parts[at].region.feedback&&!parts[at].region.correct;
             const bool end_of_wrong=wrong&&(at+1==parts.size()||!parts[at+1].region.feedback||parts[at+1].region.block_index!=parts[at].region.block_index);
-            const bool pending_feedback=parts[at].region.feedback&&parts[at].region.correct&&position.heard_through<=static_cast<std::int64_t>(at);
-            const bool unanswered=parts[at].region.is_exercise&&!parts[at].region.solved;
             if(end_of_wrong){wanted=false;waiting_gate=false;save();}
-            else if(at+1==parts.size()&&(!pending_feedback||(answer_priority&&answer_priority->allowed_through>at))&&!unanswered
-                &&passes_prefix(parts.size())){finished=true;wanted=false;save(true);}
-            else if(at+1==parts.size()||(!wrong&&!can_enter(at+1))){wanted=false;waiting_gate=true;save();}
+            else if(const auto blocked=wrong?std::optional<reading_gate::PrefixBlocker>{}:prefix_blocker(at+1);blocked){
+                if(blocked->reason==reading_gate::BlockerReason::answer&&blocked->block==parts[at].region.block_index){
+                    // Its prompt and every option have already played. Wait
+                    // only at the end of this actual unanswered activity.
+                    wanted=false;waiting_gate=true;save();
+                }else{
+                    // A later fresh answer may interrupt an earlier gate to
+                    // hear its own feedback. Afterwards return to the genuine
+                    // pending prompt/guide, instead of asking for an answer
+                    // while the displayed activity is already solved.
+                    position=narration::seek(position,static_cast<std::int64_t>(blocked->index),0);
+                    position.heard_prefix.reset();finished=false;waiting_gate=false;resume_needs_replay=false;restored_bookmark=false;
+                    bind_preview_certificate();prioritize(blocked->index);save(false);play_current();
+                }
+            }
+            else if(at+1==parts.size()){finished=true;wanted=false;save(true);}
             else{position.segment=static_cast<std::int64_t>(at+1);position.milliseconds=0;position.heard_prefix.reset();
                 bind_preview_certificate();save();play_current();}
             paint_progress();update_buttons();}}

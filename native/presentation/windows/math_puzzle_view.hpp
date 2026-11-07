@@ -19,6 +19,9 @@ struct MathReadingRegion {
     // A spoken field caption may anchor to a native input column rather than
     // a RichEdit. Its typed source still owns the author's reading intention.
     std::optional<curriculum::TextSemantics> text_semantics;
+    // Preserve the original component's mode, including nested/config text.
+    // Non-RichEdit anchors retain the containing block's existing context.
+    std::optional<std::string> math_mode;
 };
 using MathFeedbackSource=SemanticFieldOrigin;
 struct MathPuzzleCallbacks {

@@ -585,16 +585,17 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                 target.clear(); target.update(deepcopy(block(revised(lesson, identity), identity)))
                 with self.assertRaisesRegex(layout.LayoutError, "active revision archive"): layout.validate(current)
 
-    def test_new_guidance_is_not_hidden_from_the_ordinary_curricular_guard(self):
+    def test_new_guidance_remains_visible_and_editorial_after_an_archived_case_revision(self):
         lesson, identity = next(iter(layout.COMPILER_CASE_REVISIONS))
         before = revised(lesson, identity); draft = deepcopy(before)
         block(draft, identity)["outputCheck"]["cases"][0]["explanation"] = "Una explicación nueva."
         family = {locale: published(lesson, locale) for locale in ("es", "en", "fr")}
         current = layout.prepare_v2(draft, "es", family, previous=before)
+        layout.validate_transition(before, current)
         aligned = layout.align_for_previous_validation(published(lesson), current)
         _, page, position = identity.split("_"); page, position = int(page), int(position)
         self.assertEqual("Una explicación nueva.", block(aligned, identity)["outputCheck"]["cases"][0]["explanation"])
-        self.assertFalse(contract.preserves_previous_compiler(PREFIX + asset_path(lesson), page, position,
+        self.assertTrue(contract.preserves_previous_compiler(PREFIX + asset_path(lesson), page, position,
             block(published(lesson), identity), block(aligned, identity), published(lesson)))
 
     def test_nine_reference_expansions_require_their_matching_compiler_and_immutable_archive(self):

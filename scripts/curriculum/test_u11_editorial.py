@@ -140,31 +140,30 @@ class U11EditorialTest(unittest.TestCase):
         self.assertEqual(old_case["outputs"], new_case["outputs"])
         self.assertTrue(self.compiler_preserved())
 
-    def test_compiler_explanation_is_scoped_to_the_original_location_type_and_identity(self):
+    def test_compiler_guidance_is_general_but_cannot_change_existing_identity_or_type(self):
         for relative, page, block in (
             (RELATIVE.replace("/es/", "/fr/"), 4, 3),
             (RELATIVE.replace("lesson_palabras", "lesson_otras_palabras"), 4, 3),
             (RELATIVE, 3, 3), (RELATIVE, 5, 3), (RELATIVE, 4, 2), (RELATIVE, 4, 4),
         ):
             with self.subTest(relative=relative, page=page, block=block):
-                self.assertFalse(self.compiler_preserved(relative=relative, page=page, block=block))
+                self.assertTrue(self.compiler_preserved(relative=relative, page=page, block=block))
         for identity in ("different_editor", None, 17):
             self.assertFalse(self.compiler_preserved(new=dict(self.new_compiler, id=identity)))
-            self.assertFalse(self.compiler_preserved(dict(self.old_compiler, id=identity),
-                                                     dict(self.new_compiler, id=identity)))
-        self.assertFalse(self.compiler_preserved(dict(self.old_compiler, type="code"),
-                                                 dict(self.new_compiler, type="code")))
+        self.assertTrue(self.compiler_preserved(dict(self.old_compiler, id="same_editor"),
+                                                dict(self.new_compiler, id="same_editor")))
+        self.assertFalse(self.compiler_preserved(new=dict(self.new_compiler, type="code")))
 
-    def test_compiler_requires_the_exact_new_explanation_and_absence_before_it(self):
-        for original_explanation in ("", "different old text", None):
+    def test_compiler_explanations_can_be_revised_or_removed_without_changing_execution(self):
+        for original_explanation in ("different old text",):
             old = deepcopy(self.old_compiler)
             old["outputCheck"]["cases"][0]["explanation"] = original_explanation
-            self.assertFalse(self.compiler_preserved(old=old))
-        for explanation in (EXPLANATION + ".", "different new text", None, ""):
+            self.assertTrue(self.compiler_preserved(old=old))
+        for explanation in (EXPLANATION + ".", "different new text"):
             new = deepcopy(self.new_compiler)
             new["outputCheck"]["cases"][0]["explanation"] = explanation
-            self.assertFalse(self.compiler_preserved(new=new))
-        self.assertFalse(self.compiler_preserved(self.new_compiler, self.old_compiler))
+            self.assertTrue(self.compiler_preserved(new=new))
+        self.assertTrue(self.compiler_preserved(self.new_compiler, self.old_compiler))
         self.assertTrue(self.compiler_preserved(self.new_compiler, self.new_compiler))
 
     def test_compiler_source_stdout_stdin_and_comparisons_remain_exact(self):
@@ -172,7 +171,7 @@ class U11EditorialTest(unittest.TestCase):
         for field, value in (
             ("standardInput", "different input"), ("outputs", ["different stdout"]),
             ("outputs", self.new_compiler["outputCheck"]["cases"][0]["outputs"] + ["extra accepted output"]),
-            ("target", "another_target"), ("standardError", "nonBlank"),
+            ("target", "another_target"), ("standardError", "nonEmpty"),
         ):
             with self.subTest(field=field, value=value):
                 new = deepcopy(self.new_compiler)
@@ -183,14 +182,14 @@ class U11EditorialTest(unittest.TestCase):
             new["outputCheck"][field] = value
             self.assertFalse(self.compiler_preserved(new=new))
 
-    def test_compiler_cannot_apply_the_same_explanation_to_a_different_case_or_count(self):
+    def test_compiler_guidance_can_follow_another_case_without_adding_or_removing_cases(self):
         first = deepcopy(self.old_compiler["outputCheck"]["cases"][0])
         first["standardInput"] = "different prepared input"
         for index in (0, 1):
             old, new = deepcopy(self.old_compiler), deepcopy(self.new_compiler)
             old["outputCheck"]["cases"].insert(index, deepcopy(first))
             new["outputCheck"]["cases"].insert(index, deepcopy(first))
-            self.assertFalse(self.compiler_preserved(old, new))
+            self.assertTrue(self.compiler_preserved(old, new))
         for cases in ([], self.new_compiler["outputCheck"]["cases"] * 2):
             new = deepcopy(self.new_compiler)
             new["outputCheck"]["cases"] = deepcopy(cases)

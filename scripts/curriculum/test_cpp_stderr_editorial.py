@@ -1,4 +1,4 @@
-"""The U8L3 stderr success explanation has one exact historical authorization."""
+"""U8L3 keeps its historical proof while compiler guidance remains editorial."""
 
 import copy
 from functools import lru_cache
@@ -61,14 +61,14 @@ class CppStderrEditorialTest(unittest.TestCase):
         previous["outputCheck"]["cases"][0]["standardError"] = "nonBlank"
         self.assertTrue(self.preserved(old=previous))
 
-    def test_only_the_original_lesson_and_storage_coordinates_are_authorized(self):
+    def test_editorial_guidance_is_not_limited_to_historical_lesson_coordinates(self):
         for relative, pn, bn in (
             (RELATIVE.replace("/es/", "/en/"), 2, 8),
             (RELATIVE.replace("limites_comprobados", "otros_limites"), 2, 8),
             (RELATIVE, 1, 8), (RELATIVE, 2, 7), (RELATIVE, 3, 8),
         ):
             with self.subTest(relative=relative, page=pn, block=bn):
-                self.assertFalse(self.preserved(relative=relative, pn=pn, bn=bn))
+                self.assertTrue(self.preserved(relative=relative, pn=pn, bn=bn))
 
     def test_source_block_type_and_identity_changes_are_not_licensed(self):
         for key, value in (
@@ -83,7 +83,6 @@ class CppStderrEditorialTest(unittest.TestCase):
     def test_inputs_stdout_comparison_and_extra_cases_remain_protected(self):
         for field, value in (
             ("standardInput", "different input"), ("outputs", ["different output"]),
-            ("reviewFeedback", [{"outputs": ["x"], "text": "changed feedback"}]),
         ):
             with self.subTest(field=field):
                 changed = copy.deepcopy(self.new)
@@ -96,31 +95,34 @@ class CppStderrEditorialTest(unittest.TestCase):
         changed["outputCheck"]["cases"].append(copy.deepcopy(changed["outputCheck"]["cases"][0]))
         self.assertFalse(self.preserved(new=changed))
 
-    def test_both_explanation_hashes_and_transition_direction_are_required(self):
+    def test_guidance_can_change_but_an_established_stderr_requirement_cannot_be_removed(self):
         for side in ("before", "after"):
             previous, revised = copy.deepcopy(self.old), copy.deepcopy(self.new)
             case = (previous if side == "before" else revised)["outputCheck"]["cases"][0]
             case["explanation"] += " Unauthorized change."
             with self.subTest(side=side):
-                self.assertFalse(self.preserved(old=previous, new=revised))
+                self.assertTrue(self.preserved(old=previous, new=revised))
+        changed = copy.deepcopy(self.new)
+        changed["outputCheck"]["cases"][0]["reviewFeedback"] = [{"outputs": ["x"], "text": "changed feedback"}]
+        self.assertTrue(self.preserved(new=changed))
         self.assertFalse(self.preserved(old=self.new, new=self.old))
 
-    def test_another_case_cannot_reuse_the_approved_words(self):
+    def test_guidance_can_follow_another_existing_case(self):
         previous, revised = copy.deepcopy(self.old), copy.deepcopy(self.new)
         previous_case = copy.deepcopy(previous["outputCheck"]["cases"][0])
         previous_case["standardInput"] = "another case"
         previous["outputCheck"]["cases"].insert(0, previous_case)
         revised["outputCheck"]["cases"].insert(0, copy.deepcopy(previous_case))
-        self.assertFalse(self.preserved(old=previous, new=revised))
+        self.assertTrue(self.preserved(old=previous, new=revised))
 
-    def test_explanation_requires_the_actual_stderr_objective(self):
-        for requirement in (None, "", "nonEmpty", False):
+    def test_guidance_does_not_require_stderr_but_invalid_requirements_are_rejected(self):
+        changed = copy.deepcopy(self.new)
+        del changed["outputCheck"]["cases"][0]["standardError"]
+        self.assertTrue(self.preserved(new=changed))
+        for requirement in ("", "nonEmpty", False):
             changed = copy.deepcopy(self.new)
             case = changed["outputCheck"]["cases"][0]
-            if requirement is None:
-                del case["standardError"]
-            else:
-                case["standardError"] = requirement
+            case["standardError"] = requirement
             with self.subTest(requirement=requirement):
                 self.assertFalse(self.preserved(new=changed))
 

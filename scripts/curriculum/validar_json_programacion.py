@@ -1213,7 +1213,7 @@ U12_COMPOSED_FEEDBACK_REVISION = (
 
 
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
-    """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
+    """Conserva el contrato ejecutable previo; sus guías son presentación."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
     if ((relative, pn, bn) == (
             'app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json', 5, 4)
@@ -1272,6 +1272,12 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
             'fa139154bb8c6ed05b663b3da212137c1d42302c7a6ac4e664e74802689ccb7f'
         ):
             base = dict(base, outputCheck=old['outputCheck'])
+    # Guide shape and exact source ownership are validated independently on the
+    # complete visible lesson. Their editorial prose is not executable source,
+    # a changed expected result, another case or a new compilation diagnostic.
+    # Apply this same projection after the existing closed executable migrations.
+    base = _state_layout.without_compiler_guidance(base)
+    old = _state_layout.without_compiler_guidance(old)
     if relative == STDIN_LESSON and (pn, bn) == (6, 2):
         # Única sustitución autorizada: p7 b3 pasa del esqueleto a p8 b2 existente.
         expected = dict(old)

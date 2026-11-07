@@ -287,14 +287,18 @@ CRT_OUTPUT_REVISION = {
 
 
 def without_compiler_guidance(block: dict) -> dict:
-    """Project only existing case guidance, retaining every executable byte.
+    """Project only compiler guidance, retaining every executable byte.
 
-    These two fields already have editorial semantics in _compiler_payload.
+    Case guides and diagnostic explanations already have editorial semantics
+    in _compiler_payload; diagnostic identities themselves remain protected.
     The CRT review must use that same boundary before recognizing its exact
     output alias; presentation cannot unreview or replace the execution goal.
     Content validators still check each guide's supported structure.
     """
     result = deepcopy(block)
+    diagnostic = result.get("compileCheck")
+    if type(diagnostic) is dict:
+        diagnostic.pop("explanation", None)
     config = result.get("outputCheck")
     if type(config) is dict and type(config.get("cases")) is list:
         for case in config["cases"]:
@@ -816,7 +820,9 @@ def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
         if block.get("type") != "cpp_compiler" or identity not in after:
             continue
         if "compileCheck" in block:
-            require(after[identity].get("compileCheck") == block["compileCheck"],
+            require("compileCheck" in after[identity]
+                    and without_compiler_guidance(after[identity])["compileCheck"]
+                    == without_compiler_guidance(block)["compileCheck"],
                     "A published compiler diagnostic objective cannot be removed or replaced")
         if (spec := reviewed_intentional_exit_spec(block)) is not None:
             require(reviewed_intentional_exit_spec(after[identity]) == spec,
@@ -1131,6 +1137,11 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     "An editorial return must archive its complete exact previous block")
             require(state_fingerprint(previous_block) == state_fingerprint(actual[identity]),
                     "An editorial return previous block cannot change its protected owner contract")
+            if "compileCheck" in previous_block:
+                require("compileCheck" in actual[identity]
+                        and without_compiler_guidance(previous_block)["compileCheck"]
+                        == without_compiler_guidance(actual[identity])["compileCheck"],
+                        "A published compiler diagnostic cannot be removed or replaced by an editorial return")
         else:
             require("returnTo" not in proof, "A new editorial payload cannot claim a return")
         chains[identity].append(after)
@@ -1485,23 +1496,26 @@ def _validate_compile_checks(document: dict) -> None:
     require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
             "Compiler diagnostic goals require their existing Spanish stateLayout v2 family")
     available = _all_blocks(document)
-    def owner(identity: str, block: dict) -> None:
+    def owner(identity: str, block: dict, *, historical: bool = False) -> None:
         spec = validate_compile_check_contract(block)
         if spec is not None:
             require(COMPILE_DIAGNOSTICS.get((document.get("id"), identity)) == spec,
                     "A reviewed compiler diagnostic belongs to its exact lesson and stable editor identity")
             proofs = [proof for proof in meta["editorial"] if proof["id"] == identity]
             require(proofs and any(proof["beforeSha256"] == spec["before"] for proof in proofs)
-                    and proofs[-1]["afterSha256"] == fingerprint(block),
+                    and (any(fingerprint(block) in (proof["beforeSha256"], proof["afterSha256"]) for proof in proofs)
+                         if historical else proofs[-1]["afterSha256"] == fingerprint(block)),
                     "A new compiler diagnostic requires complete published before/after editorial provenance")
     for identity, block in available.items():
         owner(identity, block)
     for snapshot in meta.get("retirementHistory", []):
         for page, record in zip(snapshot["pages"], snapshot["current"]):
             for identity, block in zip(record["blocks"], page.get("blocks", [])):
-                owner(identity, block)
+                owner(identity, block, historical=True)
                 if "compileCheck" in block:
-                    require(available[identity].get("compileCheck") == block["compileCheck"],
+                    require("compileCheck" in available[identity]
+                            and without_compiler_guidance(available[identity])["compileCheck"]
+                            == without_compiler_guidance(block)["compileCheck"],
                             "A historical compiler diagnostic must retain its current archived or active objective")
 
 

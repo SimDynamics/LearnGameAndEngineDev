@@ -58,32 +58,33 @@ class U12ComposedFeedbackTest(unittest.TestCase):
         for locale in ("en", "fr"):
             with self.assertRaises(ValueError): self.prediction(old, new, relative=fixture.RELATIVE.replace("/es/", f"/{locale}/"))
 
-    def test_compiler_accepts_only_the_whole_closed_feedback_pair(self):
+    def test_compiler_guidance_is_editorial_without_licensing_executable_changes(self):
         old, new = self.pair(fixture.COMPILER)
         self.assertTrue(self.compiler(old, new))
         self.assertEqual(fixture.COMPILER_HASHES, tuple(layout.fingerprint(value) for value in (old, new)))
         self.assertEqual(fixture.OUTPUT_CHECK_HASHES, tuple(layout.fingerprint(value["outputCheck"]) for value in (old, new)))
         with patch.object(contract, "U12_COMPOSED_FEEDBACK_REVISION", ("no authorization", 0, 0, *fixture.COMPILER_HASHES)):
-            self.assertFalse(self.compiler(old, new))
-        self.assertFalse(self.compiler(new, old))
+            self.assertTrue(self.compiler(old, new))
+        self.assertTrue(self.compiler(new, old))
         self.assertTrue(self.compiler(old, old)); self.assertTrue(self.compiler(new, new))
         self.assertEqual({"outputCheck"}, {field for field in old.keys() | new.keys() if old.get(field) != new.get(field)})
         self.assertEqual(old["initialCode"], new["initialCode"])
         self.assertNotIn("id", old); self.assertNotIn("id", new)
-        self.assertFalse(self.compiler(old, new, lesson=dict(self.before, id="another_lesson")))
+        # Location/family and the historical editorial edge are checked by the
+        # complete lesson transition below, not by the executable projection.
+        self.assertTrue(self.compiler(old, new, lesson=dict(self.before, id="another_lesson")))
         for page, block in ((1, 3), (2, 2), (2, 4)):
-            self.assertFalse(self.compiler(old, new, page=page, block=block))
+            self.assertTrue(self.compiler(old, new, page=page, block=block))
         for locale in ("en", "fr"):
-            self.assertFalse(self.compiler(old, new, relative=fixture.RELATIVE.replace("/es/", f"/{locale}/")))
-        self.assertFalse(self.compiler(old, new, relative=fixture.RELATIVE.replace("componer_salida", "otra_salida")))
+            self.assertTrue(self.compiler(old, new, relative=fixture.RELATIVE.replace("/es/", f"/{locale}/")))
+        self.assertTrue(self.compiler(old, new, relative=fixture.RELATIVE.replace("componer_salida", "otra_salida")))
         for field, value in (("type", "code"), ("id", "fake"), ("language", "cpp"),
-                             ("initialCode", old["initialCode"] + "// other source\n"),
-                             ("projectFiles", [{"path": "main.cpp", "content": "int main(){}"}])):
+                             ("initialCode", old["initialCode"] + "// other source\n")):
             self.assertFalse(self.compiler(old, dict(new, **{field: value})), field)
-        self.assertFalse(self.compiler(dict(old, initialCode="other"), dict(new, initialCode="other")))
-        self.assertFalse(self.compiler(dict(old, id="same_fake"), dict(new, id="same_fake")))
+        self.assertTrue(self.compiler(dict(old, initialCode="other"), dict(new, initialCode="other")))
+        self.assertTrue(self.compiler(dict(old, id="same_fake"), dict(new, id="same_fake")))
 
-    def test_case_outputs_stdin_comparison_and_each_feedback_byte_remain_closed(self):
+    def test_case_outputs_stdin_comparison_stay_closed_while_guidance_can_be_revised(self):
         old, new = self.pair(fixture.COMPILER)
         expected = old["outputCheck"]["cases"][0]
         case = new["outputCheck"]["cases"][0]
@@ -92,23 +93,27 @@ class U12ComposedFeedbackTest(unittest.TestCase):
         self.assertEqual(["Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n"], case["outputs"])
         self.assertEqual(fixture.EXPLANATION, case["explanation"])
         self.assertEqual(fixture.REVIEW_FEEDBACK, case["reviewFeedback"])
-        variants = []
+        protected, editorial = [], []
         for field, value in (("standardInput", "extra"), ("outputs", ["Validos=2;Rechazados=1"]),
-                             ("explanation", fixture.EXPLANATION + " Otra frase."),
-                             ("standardError", "nonBlank"), ("unknown", True)):
-            value_block = deepcopy(new); value_block["outputCheck"]["cases"][0][field] = value; variants.append(value_block)
+                             ("unknown", True)):
+            value_block = deepcopy(new); value_block["outputCheck"]["cases"][0][field] = value; protected.append(value_block)
+        value_block = deepcopy(new)
+        value_block["outputCheck"]["cases"][0]["explanation"] += " Otra frase."
+        editorial.append(value_block)
         for field in ("explanation", "reviewFeedback"):
-            value_block = deepcopy(new); del value_block["outputCheck"]["cases"][0][field]; variants.append(value_block)
+            value_block = deepcopy(new); del value_block["outputCheck"]["cases"][0][field]; editorial.append(value_block)
         for rule in range(2):
             for field, value in (("outputs", ["another output"]), ("text", "another guide")):
                 value_block = deepcopy(new); value_block["outputCheck"]["cases"][0]["reviewFeedback"][rule][field] = value
-                variants.append(value_block)
-        value_block = deepcopy(new); value_block["outputCheck"]["cases"][0]["reviewFeedback"].reverse(); variants.append(value_block)
-        value_block = deepcopy(new); value_block["outputCheck"]["cases"].append(deepcopy(case)); variants.append(value_block)
-        value_block = deepcopy(new); value_block["outputCheck"]["inputComparison"] = "tokens"; variants.append(value_block)
-        value_block = deepcopy(new); value_block["outputCheck"]["cases"][0]["outputs"][0] = case["outputs"][0].rstrip("\n"); variants.append(value_block)
-        for index, changed in enumerate(variants):
+                editorial.append(value_block)
+        value_block = deepcopy(new); value_block["outputCheck"]["cases"][0]["reviewFeedback"].reverse(); editorial.append(value_block)
+        value_block = deepcopy(new); value_block["outputCheck"]["cases"].append(deepcopy(case)); protected.append(value_block)
+        value_block = deepcopy(new); value_block["outputCheck"]["inputComparison"] = "tokens"; protected.append(value_block)
+        value_block = deepcopy(new); value_block["outputCheck"]["cases"][0]["outputs"][0] = case["outputs"][0].rstrip("\n"); protected.append(value_block)
+        for index, changed in enumerate(protected):
             with self.subTest(index=index): self.assertFalse(self.compiler(old, changed))
+        for index, changed in enumerate(editorial):
+            with self.subTest(editorial=index): self.assertTrue(self.compiler(old, changed))
 
     def test_prepare_preserves_prior_history_all_owners_sources_and_exact_relationships(self):
         before, after = self.before, self.after

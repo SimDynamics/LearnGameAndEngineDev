@@ -1,4 +1,5 @@
 #include "presentation/windows/reading_gate_policy.hpp"
+#include "core/narration_state.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
@@ -182,11 +183,77 @@ void ordinary_and_mixed_requirements() {
         !reading_gate::prefix_admitted(planned,7,8,priority,true,projection),
         "A late asynchronous plan reinstated solved metadata for an ordinary puzzle");
 }
+void cadenas_three_puzzle_flow(){
+    using namespace curriculum;
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_cadenas_y_texto.json";
+    const auto lesson=windows::load_lesson(path);const auto& page=lesson.pages.at(2);
+    require(page.stable_id=="page_0002"&&page.blocks.at(2).stable_id=="block_0002_0002"&&
+        page.blocks.at(3).stable_id=="block_0002_0003"&&page.blocks.at(4).stable_id=="block_0002_0004"&&
+        page.blocks[2].type==BlockType::output_prediction&&page.blocks[3].type==BlockType::fill_code&&
+        page.blocks[4].type==BlockType::multiple_choice&&page.blocks[4].options.size()==3,
+        "The reported U2L7 page or its three actual puzzle contracts changed");
+    std::vector<LessonReadingRegion> regions;
+    const auto add=[&](std::size_t block,std::string source,bool feedback=false){
+        LessonReadingRegion region;region.key=page.blocks[block].stable_id+'/'+std::to_string(regions.size());
+        region.block_index=block;region.source_text=std::move(source);region.is_exercise=block>=2;
+        region.solved=block!=4;region.feedback=feedback;region.correct=feedback;regions.push_back(std::move(region));
+    };
+    add(0,page.blocks[0].text);add(1,page.blocks[1].text);
+    add(2,page.blocks[2].question);const auto prediction_prompt=regions.size()-1;
+    add(2,"Ejercicio de código C más más.");regions.back().passive_label=true;
+    const auto prediction_feedback=regions.size();add(2,"Correcto",true);add(2,page.blocks[2].explanation,true);
+    const auto prediction_heard=regions.size();
+    add(3,page.blocks[3].question);add(3,"Ejercicio de código C más más.");regions.back().passive_label=true;
+    const auto fill_feedback=regions.size();add(3,"Correcto",true);add(3,page.blocks[3].explanation,true);
+    const auto sur_prompt=regions.size();add(4,page.blocks[4].question);
+    for(const auto& option:page.blocks[4].options)add(4,option);
+    const reading_gate::FeedbackPriority fill_priority{3,sur_prompt};
+    // This is the reported adjacent transition, with the earlier prediction
+    // actually solved and heard. The pending next puzzle must narrate its
+    // prompt and every option before its own answer gate closes.
+    for(auto at=sur_prompt;at<regions.size();++at)
+        require(!reading_gate::prefix_blocker(regions,at,static_cast<std::int64_t>(prediction_heard),fill_priority)&&
+            reading_gate::prefix_admitted(regions,at,static_cast<std::int64_t>(prediction_heard),fill_priority),
+            "A solved/heard prefix stopped before the Sur prompt or one of its three options");
+    const auto pending=reading_gate::prefix_blocker(regions,regions.size(),static_cast<std::int64_t>(prediction_heard),fill_priority);
+    require(pending&&pending->reason==reading_gate::BlockerReason::answer&&pending->index==sur_prompt&&pending->block==4,
+        "The next activity did not wait only after its complete spoken prompt/options");
+    // A fresh later answer may interrupt to read only its own feedback. If an
+    // earlier correct guide was never heard, identify that exact guide rather
+    // than mislabelling the already-correct later exercise as unanswered.
+    require(reading_gate::prefix_admitted(regions,fill_feedback,0,fill_priority),"The fill's fresh feedback permission was lost");
+    const auto unheard=reading_gate::prefix_blocker(regions,sur_prompt,0,fill_priority);
+    require(unheard&&unheard->reason==reading_gate::BlockerReason::correct_feedback&&unheard->index==prediction_feedback&&unheard->block==2,
+        "A previous unheard guide was reported as the later pending answer");
+    narration::Position position{static_cast<std::int64_t>(sur_prompt-1),900,0,false,
+        narration::HeardPrefix{"qa-later-guide",900000,900000}};
+    const auto redirected=narration::seek(position,static_cast<std::int64_t>(unheard->index),0);
+    require(redirected.segment==static_cast<std::int64_t>(prediction_feedback)&&redirected.milliseconds==0&&
+        redirected.heard_through==position.heard_through&&!redirected.heard_prefix&&!redirected.finished,
+        "Returning to an unheard guide fabricated offset, certificate or prior listening credit");
+    require(reading_gate::prefix_admitted(regions,sur_prompt,static_cast<std::int64_t>(prediction_heard),fill_priority),
+        "Hearing the actual earlier guide failed to release the already-heard fill and next prompt");
+    // A genuinely unanswered earlier activity still wins; no new permission
+    // skips it merely because a later answer has been checked correctly.
+    for(auto& region:regions)if(region.block_index==2){region.solved=false;region.feedback=false;region.correct=false;}
+    const auto earlier=reading_gate::prefix_blocker(regions,sur_prompt,0,fill_priority);
+    require(earlier&&earlier->reason==reading_gate::BlockerReason::answer&&earlier->index==prediction_prompt&&earlier->block==2,
+        "A fresh later answer bypassed the actual pending prediction");
+    for(auto at=prediction_prompt;at<prediction_feedback;++at)
+        require(reading_gate::prefix_admitted(regions,at,0,fill_priority),"The pending prediction could not narrate its own prompt/caption");
+    // The recorded model still contains its old feedback slots, now belonging
+    // to the same pending group. Waiting at that group's end cannot rewind
+    // and loop its prompt; the reader distinguishes the block owner.
+    const auto same=reading_gate::prefix_blocker(regions,prediction_heard,0,fill_priority);
+    require(same&&same->reason==reading_gate::BlockerReason::answer&&same->block==2,
+        "An ordinary pending group's end lost its same-owner answer gate");
+}
 }
 int main() {
     try {
-        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();
-        std::cout<<"PASS current U2L6 objectives, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
+        current_objectives();grouped_feedback();asynchronous_metadata();preview_from_later_feedback();ordinary_and_mixed_requirements();cadenas_three_puzzle_flow();
+        std::cout<<"PASS current U2L6 objectives, actual U2L7 three-puzzle prompt/feedback gates, ordinary/mixed groups, late/finished bookmarks, local feedback permission and asynchronous same-script invalidation; pure gates only\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

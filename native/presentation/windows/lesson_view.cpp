@@ -803,6 +803,9 @@ struct LessonView {
                 compiler_gate?windows::compiler_puzzle_completed(data,lesson,current):compiler_feedback?vm.feedback_correct:vm.response.correct});
             result.back().required_compiler=compiler_gate;
             reading_context(result.back(),current);
+            result.back().compiler_guidance=is_feedback&&compiler_gate&&vm.feedback_correct&&lesson.state_layout.version==2&&
+                ((current.compile_check&&vm.feedback_field_path=="/compileCheck/explanation")||
+                 (current.output_check&&current.output_check->cases.size()==1&&vm.feedback_field_path=="/outputCheck/cases/0/explanation"));
             if(auto semantics=rich_text_semantics(target);semantics&&semantics->source==source)
                 result.back().text_semantics=std::move(semantics);
             result.back().anchor=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id
@@ -839,6 +842,10 @@ struct LessonView {
                 result.push_back({lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+region.key,
                     region.source_text,region.target,index,false,false,true,vm.response.correct});
                 reading_context(result.back(),current);
+                if(script_version==0&&region.math_mode&&*region.math_mode!=result.back().math_mode){
+                    result.back().previous_math_mode=result.back().math_mode;
+                    result.back().math_mode=*region.math_mode;
+                }
                 if(region.text_semantics&&region.text_semantics->source==region.source_text)
                     result.back().text_semantics=region.text_semantics;
                 else if(auto semantics=rich_text_semantics(region.target);semantics&&semantics->source==region.source_text)

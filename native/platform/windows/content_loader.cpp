@@ -298,6 +298,9 @@ constexpr std::string_view crt_output_before="b475e21c42a6b93cb635f5bfd5197b66b7
 constexpr std::string_view crt_output_after="53648380e15d1148a779de47c0f94dc08f63e2319f79bdc08e72d25a6992ed31";
 JsonObject without_compiler_guidance(const JsonObject& block) {
     const auto result=JsonObject::Parse(block.Stringify());
+    if(result.HasKey(L"compileCheck")&&result.GetNamedValue(L"compileCheck").ValueType()==JsonValueType::Object){
+        const auto config=result.GetNamedObject(L"compileCheck");if(config.HasKey(L"explanation"))config.Remove(L"explanation");
+    }
     if(result.HasKey(L"outputCheck")&&result.GetNamedValue(L"outputCheck").ValueType()==JsonValueType::Object){
         const auto config=result.GetNamedObject(L"outputCheck");
         if(config.HasKey(L"cases")&&config.GetNamedValue(L"cases").ValueType()==JsonValueType::Array)
@@ -1177,7 +1180,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
                     "A published intentional-exit objective cannot be removed by an editorial return");
                 if(previous.HasKey(L"compileCheck"))require(active->second.HasKey(L"compileCheck")
-                    &&fingerprint(previous.GetNamedObject(L"compileCheck"))==fingerprint(active->second.GetNamedObject(L"compileCheck")),
+                    &&fingerprint(without_compiler_guidance(previous).GetNamedObject(L"compileCheck"))==
+                        fingerprint(without_compiler_guidance(active->second).GetNamedObject(L"compileCheck")),
                     "A published compilation diagnostic cannot be removed or replaced by an editorial return");
                 if(reviewed_crt_output_original(previous))require(reviewed_crt_output_original(active->second).has_value(),
                     "A published reviewed CRT spelling cannot be removed by an editorial return");
@@ -1274,7 +1278,11 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(fingerprint(shell)==fingerprint(shells.at(record.id)),"Historical reading page metadata changed");
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
-                    const auto digest = state_fingerprint(blocks.GetAt(static_cast<unsigned>(b)).GetObject());
+                    const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
+                    const auto digest = state_fingerprint(source);
+                    if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
+                        std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
+                        "A historical compilation diagnostic needs an exact occurrence in its owner's published editorial chain");
                     validate_choice_pair(blocks.GetAt(static_cast<unsigned>(b)).GetObject(),reviewed_choice_owner(lesson_id,id));
                     snapshot_contracts.emplace(id,digest);
                     if(reviewed_compiler_payload(digest))require(revised_compilers.contains(id)&&revised_compilers.at(id)->lesson==lesson_id&&locale=="es",
@@ -1850,7 +1858,7 @@ void resolve_addresses(Lesson& lesson) {
                     const auto archived=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
                     const auto current=position?&lesson.pages[position->page].blocks[position->block]:
                         archived!=lesson.retired_blocks.end()?&*archived:nullptr;
-                    require(current&&current->compile_check==block.compile_check,
+                    require(current&&current->compile_check&&current->compile_check->diagnostic==block.compile_check->diagnostic,
                         "A historical compilation diagnostic must retain its current archived or active objective");
                 }
                 // A reading snapshot made before the split retains grouped

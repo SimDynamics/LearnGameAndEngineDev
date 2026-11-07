@@ -169,11 +169,14 @@ class CppOutputCheckContractTest(unittest.TestCase):
         self.assertTrue(contract.preserves_previous_compiler("fixture.json", 0, 0, old, revised, {}))
         self.assertFalse(contract.preserves_previous_compiler("fixture.json", 0, 0, revised, old, {}))
         for patch in ({"outputs": ["Other"]}, {"standardInput": "Other"}, {"target": "Other"},
-                      {"explanation": "Another explanation"}, {"standardError": "nonEmpty"}):
+                      {"standardError": "nonEmpty"}):
             changed = copy.deepcopy(revised)
             changed["outputCheck"]["cases"][0].update(patch)
             with self.subTest(patch=patch):
                 self.assertFalse(contract.preserves_previous_compiler("fixture.json", 0, 0, old, changed, {}))
+        changed = copy.deepcopy(revised)
+        changed["outputCheck"]["cases"][0]["explanation"] = "Another explanation"
+        self.assertTrue(contract.preserves_previous_compiler("fixture.json", 0, 0, old, changed, {}))
         changed = copy.deepcopy(revised)
         changed["initialCode"] = "Different source"
         self.assertFalse(contract.preserves_previous_compiler("fixture.json", 0, 0, old, changed, {}))

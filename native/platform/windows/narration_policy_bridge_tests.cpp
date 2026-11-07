@@ -72,6 +72,26 @@ std::string current_l17_report() {
     const auto lesson=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(bytes));
     return winrt::to_string(lesson.GetNamedArray(L"pages").GetAt(3).GetObject().GetNamedArray(L"blocks").GetAt(2).GetObject().GetNamedString(L"text"));
 }
+struct ComponentSource {std::string lesson,source,owner,previous_mode,mode;std::size_t page=0;};
+ComponentSource current_component_source(std::string_view relative,std::size_t page,std::size_t block_index,
+        std::size_t response,std::string_view group,std::size_t item) {
+    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/relative;
+    std::ifstream input(path,std::ios::binary);require(static_cast<bool>(input),"Cannot read a real P1 nested component source");
+    std::string bytes{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
+    if(bytes.starts_with("\xef\xbb\xbf"))bytes.erase(0,3);
+    const auto lesson=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(bytes));
+    const auto block=lesson.GetNamedArray(L"pages").GetAt(static_cast<unsigned>(page)).GetObject()
+        .GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(block_index)).GetObject();
+    const auto component=block.GetNamedArray(L"responses").GetAt(static_cast<unsigned>(response)).GetObject()
+        .GetNamedArray(winrt::to_hstring(group)).GetAt(static_cast<unsigned>(item)).GetObject()
+        .GetNamedArray(L"content").GetAt(0).GetObject();
+    const auto config=component.HasKey(L"config")?component.GetNamedObject(L"config"):component;
+    const auto owner=winrt::to_string(lesson.GetNamedObject(L"stateLayout").GetNamedArray(L"current")
+        .GetAt(static_cast<unsigned>(page)).GetObject().GetNamedArray(L"blocks").GetAt(static_cast<unsigned>(block_index)).GetString());
+    return {std::move(bytes),winrt::to_string(config.GetNamedString(L"text")),owner+"/responses/"+std::to_string(response)+"/"+
+        std::string(group)+"/"+std::to_string(item)+"/content/0/text",winrt::to_string(block.GetNamedString(L"mathMode",L"auto")),
+        winrt::to_string(config.GetNamedString(L"mathMode",L"auto")),page};
+}
 }
 
 int main() try {
@@ -308,6 +328,142 @@ int main() try {
         try{(void)worker.plan(source,"es",{},"cpp","auto",Policy::current,literal,NarrationSemanticPolicy::original);}
         catch(const std::exception&){original_rejected=true;}
         require(original_rejected,"A new character intent was falsely attributed to the historical V1 frontend");
+        ++groups;
+    }
+    {
+        const std::vector<ComponentSource> sources{
+            current_component_source("archivos_y_programa_completo/lesson_precision_y_presentacion_de_double.json",1,2,0,"targets",1),
+            current_component_source("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json",5,4,0,"sources",0),
+            current_component_source("archivos_y_programa_completo/lesson_aceptar_registros_y_detectar_duplicados.json",2,4,1,"options",0)};
+        require(sources[0].source=="3.125"&&sources[1].source=="ultimo"&&sources[2].source.starts_with("Salida:\n"),
+            "The real P1 component-mode sources changed; inspect their original public fields");
+        Plan previous_script,current_script;
+        narration::SemanticPlanProof previous_proof,current_proof;
+        for(std::size_t i=0;i<sources.size();++i){const auto& source=sources[i];
+            require(source.previous_mode=="auto"&&source.mode=="text","A nested P1 source no longer owns the tested native text mode");
+            const auto previous=worker.plan(source.source,"es",{},"auto",source.previous_mode);
+            const auto current=worker.plan(source.source,"es",{},"auto",source.mode);
+            owners(source.source,previous);owners(source.source,current);
+            require(previous.size()==current.size(),"A component mode changed the exact source segmentation");
+            const auto background=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(
+                worker.curriculum_plan(source.lesson,source.page,"es","ef_dora","es",{},"cpp","es"))).GetNamedArray(L"segments");
+            for(const auto& part:current){bool found=false;
+                for(const auto& candidate:background)if(winrt::to_string(candidate.GetObject().GetNamedString(L"preparedText"))==part.prepared)found=true;
+                require(found,"The real native component mode lost its corresponding anticipated recording");}
+            if(i==0)require(!same(previous,current)&&spoken(previous)=="tres coma uno dos cinco"&&spoken(current)=="3.125",
+                "Native IPC lost the real decimal's distinct auto/text pronunciation");
+            else require(same(previous,current),"The mode transport changed an unaffected real P1 control passage");
+            previous_script.insert(previous_script.end(),previous.begin(),previous.end());
+            current_script.insert(current_script.end(),current.begin(),current.end());
+            previous_proof.regions.push_back({source.owner,source.source,"auto",source.previous_mode,{}});
+            current_proof.regions.push_back({source.owner,source.source,"auto",source.mode,{}});
+        }
+        const std::string page="qa-component-mode-model";
+        const auto previous_key=worker.identity(page,"es","ef_dora",previous_script);
+        const auto current_key=worker.identity(page,"es","ef_dora",current_script);
+        require(previous_key!=current_key&&previous_proof.policy=="windows-semantic-v2"&&current_proof.policy=="windows-semantic-v2",
+            "A changed component mode lost its authenticated page-key/provenance distinction");
+        const auto& old_decimal=previous_script.front();const auto& decimal=current_script.front();
+        const auto alias=std::string(presentation::narration_legacy::component_mode_prefix)+"auto";
+        const presentation::narration_legacy::Passage before{sources[0].owner,sources[0].source,alias,"auto",old_decimal.prepared,old_decimal.start,old_decimal.end};
+        const presentation::narration_legacy::Passage after{sources[0].owner,sources[0].source,"auto","text",decimal.prepared,decimal.start,decimal.end};
+        require(presentation::narration_legacy::same_previous_passage(before,after),"The authenticated component-mode alias lost its exact original decimal passage");
+        auto invalid=before;invalid.context="auto";require(!presentation::narration_legacy::same_previous_passage(invalid,after),
+            "A direct mode change borrowed historical compatibility without the authenticated alias");
+        invalid=before;invalid.owner="other-owner";require(!presentation::narration_legacy::same_previous_passage(invalid,after),"A component-mode alias crossed owners");
+        invalid=before;invalid.source="different";require(!presentation::narration_legacy::same_previous_passage(invalid,after),"A component-mode alias crossed source text");
+        invalid=before;++invalid.end;require(!presentation::narration_legacy::same_previous_passage(invalid,after),"A component-mode alias crossed source ranges");
+        for(unsigned slot=0;slot<3;++slot)for(std::size_t at=0;at<previous_script.size();++at){
+            // This aggregate page and its certificates are explicit state-model
+            // fixtures, not learner data or evidence of synthesized/heard audio.
+            narration::History history;
+            for(unsigned i=0;i<3;++i)history.entries.push_back({"unrelated-"+std::to_string(i),"stable-"+std::to_string(i),
+                narration::Position{0,100+static_cast<std::int64_t>(i),0,false},"other-page-"+std::to_string(i),{}});
+            auto& entry=history.entries[slot];entry.key=previous_key;entry.page=page;
+            entry.position={static_cast<std::int64_t>(at),567,0,at+1==previous_script.size(),
+                narration::HeardPrefix{std::string(64,'c'),12000,30000}};
+            entry.semantic_plan=previous_proof;history.active_key=previous_key;history.active_owner="headless-model-owner";
+            state::StateData data;narration::write_history(data,history);
+            require(narration::read_history(data)==history,"The original V2 root-mode proof did not round-trip through the bounded model");
+            const auto original=history;const bool compatible=same(previous_script[at],current_script[at]);
+            const auto mapped=presentation::narration_legacy::changed_speech_position(entry.position,compatible);
+            require(presentation::narration_legacy::rekey_authenticated_bookmark(history,previous_key,current_key,mapped,page),
+                "An IPC-authenticated component-mode key failed to rekey its own original slot");
+            history.entries[slot].semantic_plan=current_proof;narration::write_history(data,history);
+            require(narration::read_history(data)==history&&history.entries.size()==3&&history.active_key==current_key&&
+                history.active_owner==original.active_owner,"Component-mode recovery changed the three-slot owner or current V2 proof");
+            for(unsigned i=0;i<3;++i)if(i!=slot)require(history.entries[i]==original.entries[i],"Component-mode recovery changed an unrelated bookmark");
+            if(compatible)require(history.entries[slot].position==original.entries[slot].position,
+                "An unchanged recording lost its existing position/certificate during mode recovery");
+            else require(history.entries[slot].position.segment==static_cast<std::int64_t>(at)&&history.entries[slot].position.milliseconds==0&&
+                history.entries[slot].position.heard_through==0&&!history.entries[slot].position.heard_prefix&&!history.entries[slot].position.finished,
+                "A newly prepared decimal inherited an incompatible offset, terminal state or listening credit");
+        }
+        ++groups;
+    }
+    {
+        using namespace lgaed::curriculum;
+        // Generic QA guidance, planned by the real backend. These are not
+        // authored answers, learner progress or evidence of heard recordings.
+        const std::string old_source="✓ Correcto\n\nLa guía conserva el resultado.";
+        const std::string new_source="✓ Correcto\n\nLa guía verifica cada resultado conservado.";
+        const TextSemantics old_semantics{old_source,{}},new_semantics{new_source,{}};
+        const narration::SemanticRegionProof saved_guide{"qa-earned-compiler-guide",old_source,"cpp","auto",old_semantics};
+        struct LiveRegion {
+            std::string anchor,key,source_text,reading_context,math_mode;
+            std::optional<std::string> previous_math_mode;
+            bool compiler_guidance=false,feedback=false,correct=false,required_compiler=false;
+        };
+        const LiveRegion live{saved_guide.owner,"qa-current-guide-key",new_source,"cpp","auto",{},true,true,true,true};
+        require(presentation::narration_legacy::matches_saved_semantic_region(saved_guide,live),
+            "A currently earned compiler guide lost its exact historical source owner");
+        const auto old_guide=worker.plan(old_source,"es",{},"cpp","auto",Policy::current,old_semantics);
+        const auto current_guide=worker.plan(new_source,"es",{},"cpp","auto",Policy::current,new_semantics);
+        const auto replayed=worker.plan(saved_guide.source,"es",{},saved_guide.context,saved_guide.math_mode,Policy::current,saved_guide.semantics);
+        owners(old_source,old_guide);owners(new_source,current_guide);owners(saved_guide.source,replayed);
+        require(same(old_guide,replayed)&&!same(old_guide,current_guide),
+            "Historical compiler guidance was reconstructed from today's replacement rather than its saved exact source");
+        const std::string neighbor="Después revisa la salida.";
+        const auto control=worker.plan(neighbor,"es",{},"cpp","auto");owners(neighbor,control);
+        Plan old_page=old_guide,current_page=current_guide,replayed_page=replayed;
+        for(auto* plan:{&old_page,&current_page,&replayed_page})plan->insert(plan->end(),control.begin(),control.end());
+        const std::string page="qa-revised-compiler-guide-model";
+        const auto old_key=worker.identity(page,"es","ef_dora",old_page);
+        const auto replayed_key=worker.identity(page,"es","ef_dora",replayed_page);
+        const auto current_key=worker.identity(page,"es","ef_dora",current_page);
+        require(old_key==replayed_key&&old_key!=current_key,"A revised compiler guide bypassed full historical page-key authentication");
+        const narration::SemanticRegionProof saved_neighbor{"qa-guide-neighbor",neighbor,"cpp","auto",{}};
+        for(unsigned slot=0;slot<3;++slot){
+            // Synthetic bounded-state certificates exercise preservation only;
+            // no offset, certificate or credit comes from the plan-only IPC.
+            narration::History history;
+            for(unsigned i=0;i<3;++i)history.entries.push_back({"other-guide-model-"+std::to_string(i),"stable-"+std::to_string(i),
+                narration::Position{0,200+static_cast<std::int64_t>(i),0,false},"other-page-"+std::to_string(i),{}});
+            auto& saved=history.entries[slot];saved.key=old_key;saved.page=page;
+            saved.position={static_cast<std::int64_t>(old_page.size()-1),432,static_cast<std::int64_t>(old_page.size()),true,
+                narration::HeardPrefix{std::string(64,'d'),5000,9000}};
+            saved.semantic_plan=narration::SemanticPlanProof{"windows-semantic-v2",{saved_guide,saved_neighbor}};
+            history.active_key=old_key;history.active_owner="headless-guide-model";
+            state::StateData data;narration::write_history(data,history);
+            require(narration::read_history(data)==history,"Saved compiler-guide source provenance did not round-trip exactly");
+            const auto before=history;
+            auto mapped=presentation::narration_legacy::changed_speech_position(saved.position,false);
+            // The typed revised guide is the first region of this model page.
+            // Its existing revision boundary is revisited, even after finishing.
+            mapped.segment=0;mapped.heard_through=0;
+            require(presentation::narration_legacy::rekey_authenticated_bookmark(history,replayed_key,current_key,mapped,page),
+                "Authenticated historical compiler guidance failed to rekey its own existing slot");
+            history.entries[slot].semantic_plan=narration::SemanticPlanProof{"windows-semantic-v2",{
+                {saved_guide.owner,new_source,"cpp","auto",new_semantics},saved_neighbor}};
+            narration::write_history(data,history);
+            require(narration::read_history(data)==history&&history.entries.size()==3&&history.active_key==current_key,
+                "Revised compiler guidance lost its current source proof or created a fourth bookmark");
+            for(unsigned i=0;i<3;++i)if(i!=slot)require(history.entries[i]==before.entries[i],"A revised guide changed another stored pause");
+            const auto& restored=history.entries[slot].position;
+            require(restored.segment==0&&restored.milliseconds==0&&restored.heard_through==0&&!restored.finished&&!restored.heard_prefix&&
+                history.entries[slot].stable==before.entries[slot].stable&&history.active_owner==before.active_owner,
+                "A replacement guide inherited old milliseconds, a recording certificate or listening credit");
+        }
         ++groups;
     }
     worker.shutdown();worker.shutdown();
