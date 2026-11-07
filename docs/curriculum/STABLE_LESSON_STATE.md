@@ -894,9 +894,11 @@ límites y el significado; el motor usa las paletas y fondos existentes.
 Por ejemplo, una cadena citada del código puede ser `string`; la misma palabra
 citada como salida es `output`. Una conjunción de la prosa sigue siendo prosa.
 La puntuación que queda fuera del fragmento no hereda su tinta, fondo ni lectura
-técnica. El estado leído atenúa la tinta sin cambiar los límites ni el color del
-fondo neutro. Las citas completas deben delimitarse como `citation`, incluidos
-sus localizadores; no se marcan sus años como datos del programa.
+técnica. Las referencias pendientes de lectura se muestran grises; después de
+leerse recuperan su tinta contextual. El fondo neutro conserva el mismo color,
+límites y dimensiones en ambos estados. Las citas completas deben delimitarse
+como `citation`, incluidos sus localizadores; no se marcan sus años como datos
+del programa.
 
 ### Campos admitidos
 

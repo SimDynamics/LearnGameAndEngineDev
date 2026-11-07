@@ -1979,8 +1979,13 @@ struct LessonView {
     void project_changed(std::size_t index,bool source_changed) {
         if(updating)return;auto& vm=controls.at(index);
         if(source_changed){++vm.revision;clear_reference_completion(index);if(running_block==index)worker.request_stop();
-            windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),program_snapshot(index));
-            if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index,"",false);
+            const auto current=program_snapshot(index);
+            windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),current);
+            // An earned objective does not keep a rejection for an old draft
+            // visible or available to the reader after its capture expires.
+            if(!windows::compiler_puzzle_completed(data,lesson,block(index))||
+                (!vm.feedback_source.empty()&&!vm.feedback_correct&&
+                    windows::compiler_puzzle_review(data,lesson,block(index),current).empty()))feedback(index,"",false);
             vm.console_channels={};const auto before=updating;updating=true;
             set_rich_text(vm.console,ui("El programa cambió. Ejecuta de nuevo para obtener una salida actual.",
                 "The program changed. Run it again to obtain current output.","Le programme a changé. Exécute-le à nouveau pour obtenir une sortie actuelle."));updating=before;}
@@ -3565,8 +3570,11 @@ struct LessonView {
                 clear_reference_completion(index);
                 if (running_block == index) { worker.request_stop(); }
                 capture_draft(index);
-                windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),program_snapshot(index));
-                if(!windows::compiler_puzzle_completed(data,lesson,block(index)))feedback(index, "", false);
+                const auto current=program_snapshot(index);
+                windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),current);
+                if(!windows::compiler_puzzle_completed(data,lesson,block(index))||
+                    (!vm.feedback_source.empty()&&!vm.feedback_correct&&
+                        windows::compiler_puzzle_review(data,lesson,block(index),current).empty()))feedback(index, "", false);
                 vm.console_channels = {};
                 updating = true; set_rich_text(vm.console,block(index).compile_check
                     ?ui("El código cambió. Compila de nuevo para comprobar el diagnóstico actual.",

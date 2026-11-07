@@ -227,7 +227,9 @@ void export_preferences(const std::filesystem::path& root,const state::StateData
         output.write(xml.data(),static_cast<std::streamsize>(xml.size()));require(bool(output),"Could not export isolated ordinary-guide QA preferences");
     }
 }
-int ordinary_guides_only(bool late=false) {
+enum class OrdinaryBatch {formatting,late,final};
+int ordinary_guides_only(OrdinaryBatch batch=OrdinaryBatch::formatting) {
+    const bool late=batch==OrdinaryBatch::late,final=batch==OrdinaryBatch::final;
     struct GuidePlan {const char* file;std::size_t count;bool guided=true;OrdinarySelection selection={};};
     constexpr std::array<GuidePlan,9> formatting{{
         {"representar_enteros_en_distintas_bases",11},{"estado_del_formato_y_flujos_independientes",12},
@@ -242,8 +244,21 @@ int ordinary_guides_only(bool late=false) {
         {"leer_un_grupo_con_cierre_propio",6},{"componer_grupos_sin_mezclar_sus_datos",5},
         {"extraer_un_tipo_sin_cambiarlo_en_fallo",1,true,{BlockType::order_code,"orden_para_conservar_el_destino"}}
     }};
-    const std::span<const GuidePlan> plans=late?std::span<const GuidePlan>(late_plans):std::span<const GuidePlan>(formatting);
-    const LaunchOptions options{ProfileId::Codex,(late?L"u12-late-ordinary-guides-":L"u12-ordinary-guides-")+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
+    constexpr std::array<GuidePlan,8> final_plans{{
+        {"escribir_un_formato_que_pueda_leerse",5},{"comprobar_ida_y_vuelta_sin_perder_datos",6,false},
+        {"construir_un_programa_de_carga_y_guardado",1,false,{BlockType::multiple_choice,"block_0001_0002"}},
+        {"construir_un_programa_de_carga_y_guardado",1,false,{BlockType::multiple_choice,"block_0004_0004"}},
+        {"construir_un_programa_de_carga_y_guardado",1,true,{BlockType::multiple_choice,"block_0004_0005"}},
+        {"construir_un_programa_de_carga_y_guardado",1,false,{BlockType::output_prediction,"block_0009_0001"}},
+        {"construir_un_programa_de_carga_y_guardado",1,false,{BlockType::output_prediction,"block_0009_0002"}},
+        {"construir_un_programa_de_carga_y_guardado",1,false,{BlockType::multiple_choice,"block_0009_0003"}}
+    }};
+    const std::span<const GuidePlan> plans=final?std::span<const GuidePlan>(final_plans):
+        (late?std::span<const GuidePlan>(late_plans):std::span<const GuidePlan>(formatting));
+    const auto selected_by_any_plan=[&](std::string_view file,const Block& block){return std::ranges::any_of(plans,[&](const auto& plan){
+        return file==plan.file&&ordinary_selected(block,plan.selection);});};
+    const LaunchOptions options{ProfileId::Codex,(final?L"u12-final-ordinary-guides-":
+        (late?L"u12-late-ordinary-guides-":L"u12-ordinary-guides-"))+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
     state::StateStore store(environment.paths.root);auto data=store.load();require(data.preferences.empty(),"The private ordinary-guide profile contains old state");
     data.preferences["u12-batch-unrelated"]["opaque"]=std::string(" Preserve\t\r\n保存 ");
@@ -253,32 +268,40 @@ int ordinary_guides_only(bool late=false) {
         "storage-only source; no recording or listening evidence","qa-storage-page-"+std::to_string(index));
     narration::write_history(data,history);
     const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo";
-    std::vector<Asset> assets;std::size_t choices=0,predictions=0,fills=0,orders=0,total=0;
-    for(const auto& plan:plans){Asset asset;asset.path=root/(std::string("lesson_")+plan.file+".json");const auto bytes=read(asset.path);
-        asset.hash=state::sha256(bytes);asset.lesson=parse_lesson_json(bytes);asset.metadata=parse_lesson_progress_metadata(bytes);
-        state::prepare_lesson_state(data,asset.lesson);
+    std::map<std::string,Asset> assets;std::set<std::string> selected_owners;std::size_t choices=0,predictions=0,fills=0,orders=0,total=0;
+    for(const auto& plan:plans){
+        if(!assets.contains(plan.file)){Asset asset;asset.path=root/(std::string("lesson_")+plan.file+".json");const auto bytes=read(asset.path);
+            asset.hash=state::sha256(bytes);asset.lesson=parse_lesson_json(bytes);asset.metadata=parse_lesson_progress_metadata(bytes);
+            state::prepare_lesson_state(data,asset.lesson);
+            for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler){
+                state::Draft draft;draft.source=block.initial_code+"\n// isolated uncompiled guide-preservation draft\r\n";
+                draft.input=" \t preserved QA input\r\n";draft.selection_start=2;draft.selection_end=7;
+                draft.indentation_json=state::make_indentation_metadata(draft.source,{});
+                state::put_draft(data,draft_key("programming",asset.lesson,block),draft);}
+            assets.emplace(plan.file,std::move(asset));
+        }
+        const auto& asset=assets.at(plan.file);
         for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks){
             if(ordinary_selected(block,plan.selection)){
+                require(selected_owners.insert(asset.lesson.id+'/'+block.stable_id).second,"A guide fixture evaluated the same ordinary owner twice");
                 choices+=block.type==BlockType::multiple_choice;predictions+=block.type==BlockType::output_prediction;
                 fills+=block.type==BlockType::fill_code;orders+=block.type==BlockType::order_code;
                 if(!plan.guided)require(!winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(block.raw_json)).HasKey(L"reviewFeedback"),
-                    "The current U12L21 no-guide controls acquired an unreviewed authored guide");
+                    "The selected no-guide activity acquired an unreviewed authored guide");
                 const auto position=stable_block_position(asset.metadata,block.stable_id);
                 require(position&&asset.metadata.pages[position->page].blocks[position->block].text_semantics==block.text_semantics,
                     "Runtime and progress metadata disagree about the selected ordinary field's exact semantic owners");
             }
-            if(block.type==BlockType::cpp_compiler){state::Draft draft;draft.source=block.initial_code+"\n// isolated uncompiled guide-preservation draft\r\n";
-                draft.input=" \t preserved QA input\r\n";draft.selection_start=2;draft.selection_end=7;
-                draft.indentation_json=state::make_indentation_metadata(draft.source,{});
-                state::put_draft(data,draft_key("programming",asset.lesson,block),draft);}
         }
-        assets.push_back(std::move(asset));total+=plan.count;
+        total+=plan.count;
     }
-    require(late?(total==33&&choices==20&&predictions==10&&fills==2&&orders==1):
-        (total==114&&choices==48&&predictions==59&&fills==7&&orders==0),
+    require((final?(total==17&&choices==12&&predictions==5&&fills==0&&orders==0):
+        (late?(total==33&&choices==20&&predictions==10&&fills==2&&orders==1):
+        (total==114&&choices==48&&predictions==59&&fills==7&&orders==0)))&&selected_owners.size()==total
+        &&assets.size()==(final?3u:(late?5u:9u)),
         "The ordinary-guide fixture lost its independently selected lesson/type inventory");
     const auto untouched=data;store.save(data);
-    for(std::size_t index=0;index<plans.size();++index){ordinary_guides(assets[index],store,data,plans[index].count,plans[index].guided,plans[index].selection);
+    for(std::size_t index=0;index<plans.size();++index){ordinary_guides(assets.at(plans[index].file),store,data,plans[index].count,plans[index].guided,plans[index].selection);
         std::cout<<"PASS "<<plans[index].file<<": "<<plans[index].count<<" ordinary activities ("
             <<(plans[index].guided?"authored retry guides":"no authored retry guide")<<") and exact state reopen\n";}
     preserve_values(untouched,data);require(narration::read_history(data)==history,"An ordinary answer altered one of the three storage-only pauses");
@@ -287,11 +310,11 @@ int ordinary_guides_only(bool late=false) {
     const auto destination=environment.paths.root/L"ordinary-guide-import";state::commit_android_import(preview,destination);
     state::StateStore imported_store(destination);auto imported=imported_store.load();require(imported==data,"The isolated Android XML transaction changed ordinary guide state");
     std::size_t imported_answers=0,excluded_answers=0;
-    for(std::size_t index=0;index<assets.size();++index){const auto& asset=assets[index];
+    for(const auto& [file,asset]:assets){
         state::prepare_lesson_state(imported,asset.lesson);state::validate_lesson_state(imported,asset.lesson);
         for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks){
             if(block.type==BlockType::cpp_compiler)require(!compiler_puzzle_completed(imported,asset.lesson,block),"Ordinary guide QA manufactured compiler execution credit");
-            if(!ordinary_selected(block,plans[index].selection)){
+            if(!selected_by_any_plan(file,block)){
                 if(ordinary_selected(block)){
                     require(!state::get_response(imported,asset.lesson,block),"The filtered guide fixture manufactured an answer outside its selected activity IDs");
                     ++excluded_answers;
@@ -309,8 +332,9 @@ int ordinary_guides_only(bool late=false) {
     for(const auto& file:preview.files)require(state::sha256(state::read_bytes(exported/file.relative_path))==file.sha256&&
         state::sha256(state::read_bytes(destination/L"state"/L"active"/L"android"/file.relative_path))==file.sha256,
         "The isolated XML transaction modified its source or archived original files");
-    std::cout<<"PASS "<<(late?"32 ordinary U12L20-L23 activities plus only the one U12L15 order control (eight neighboring answers untouched)":
-        "114 ordinary U12L5-L13 activities")<<": per-option rejection, raw authored guides/explanations, exact StateStore/XML import, drafts and three storage-only pauses; 0 compiler programs, no UI/audio.\n";
+    std::cout<<"PASS "<<(final?"17 ordinary U12L24-L26 activities (six authored guides, eleven legitimate guide absences)":
+        (late?"32 ordinary U12L20-L23 activities plus only the one U12L15 order control (eight neighboring answers untouched)":
+        "114 ordinary U12L5-L13 activities"))<<": per-option rejection, raw authored guides/explanations, exact StateStore/XML import, drafts and three storage-only pauses; 0 compiler programs, no UI/audio.\n";
     return 0;
 }
 }
@@ -319,8 +343,10 @@ int main(int argc,char** argv) try {
     const bool loading_state=argc==2&&std::string_view(argv[1])=="--loading-state";
     const bool guides_only=argc==2&&std::string_view(argv[1])=="--ordinary-guides";
     const bool late_guides=argc==2&&std::string_view(argv[1])=="--late-ordinary-guides";
-    require(argc==1||loading_state||guides_only||late_guides,"Usage: u12_compiler_batch_tests [--loading-state|--ordinary-guides|--late-ordinary-guides]");
-    if(guides_only||late_guides)return ordinary_guides_only(late_guides);
+    const bool final_guides=argc==2&&std::string_view(argv[1])=="--final-ordinary-guides";
+    require(argc==1||loading_state||guides_only||late_guides||final_guides,"Usage: u12_compiler_batch_tests [--loading-state|--ordinary-guides|--late-ordinary-guides|--final-ordinary-guides]");
+    if(guides_only||late_guides||final_guides)return ordinary_guides_only(final_guides?OrdinaryBatch::final:
+        (late_guides?OrdinaryBatch::late:OrdinaryBatch::formatting));
     const std::span<const Plan> plans=loading_state?std::span<const Plan>(loading_state_plans):std::span<const Plan>(formatting_plans);
     const LaunchOptions options{ProfileId::Codex,(loading_state?L"u12-loading-batch-":L"u12-batch-")+
         std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};

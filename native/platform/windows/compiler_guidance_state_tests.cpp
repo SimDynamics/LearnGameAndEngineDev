@@ -1,8 +1,11 @@
 #include "core/compile_check_test_fixture.hpp"
 #include "core/narration_state.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "presentation/windows/text_semantic_composition.hpp"
+#include <array>
 #include <functional>
 #include <iostream>
+#include <set>
 
 namespace {
 using namespace lgaed;
@@ -369,12 +372,108 @@ int review_priority_models(const std::filesystem::path& content,const std::files
         catch(const std::exception& error){++failures;std::cerr<<"FAIL "<<(diagnostic?"diagnostic":"stdout")<<" latest rejection priority: "<<error.what()<<'\n';}
     }return failures?1:0;
 }
+TextSemantics authored_guide_semantics(const JsonObject& root,std::string_view owner,
+        std::string_view path,std::string_view source){
+    std::optional<TextSemantics> result;
+    for(const auto& item:root.GetNamedObject(L"textSemantics").GetNamedArray(L"fields")){
+        const auto field=item.GetObject();
+        if(field.GetNamedString(L"block")!=winrt::to_hstring(owner)||field.GetNamedString(L"path")!=winrt::to_hstring(path))continue;
+        require(!result,"The authored guide has ambiguous semantic owners");
+        require(winrt::to_string(field.GetNamedString(L"sourceSha256"))==state::sha256(source),"The authored guide source digest changed");
+        TextSemantics value{std::string(source),{}};
+        for(const auto& entry:field.GetNamedArray(L"spans")){const auto span=entry.GetObject();
+            value.spans.push_back({static_cast<std::size_t>(span.GetNamedNumber(L"start")),
+                static_cast<std::size_t>(span.GetNamedNumber(L"end")),winrt::to_string(span.GetNamedString(L"text")),
+                parse_semantic_role(winrt::to_string(span.GetNamedString(L"role"))),
+                parse_semantic_reading(winrt::to_string(span.GetNamedString(L"reading",L"auto")))});}
+        validate_text_semantics(value);result=std::move(value);
+    }
+    require(result.has_value(),"A current authored L24 guide lost its exact semantic field");return *result;
+}
+int authored_l24_guides(const std::filesystem::path& content,const std::filesystem::path& qa){
+    using namespace lgaed::presentation;
+    const auto path=content/"archivos_y_programa_completo/lesson_escribir_un_formato_que_pueda_leerse.json";
+    const auto lesson=load_lesson(path),metadata=parse_lesson_progress_metadata(lesson.raw_json,lesson.locale);
+    const auto raw=JsonObject::Parse(winrt::to_hstring(lesson.raw_json));
+    const std::array<std::string_view,2> owners{"block_0002_0004","block_0006_0002"};
+    constexpr std::string_view review_path="/outputCheck/cases/0/reviewFeedback/0/text";
+    std::set<std::pair<std::string,std::string>> expected_fields,actual_fields;
+    for(const auto owner:owners)for(const auto field:{explanation_path,review_path})expected_fields.emplace(owner,field);
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)if(block.type==BlockType::cpp_compiler)
+        for(const auto& [field,value]:block.text_semantics){(void)value;actual_fields.emplace(block.stable_id,field);}
+    require(actual_fields==expected_fields,"The focused L24 compiler guide inventory is no longer exactly four fields");
+    state::StateStore store(qa/"authored-l24-guides");auto data=store.load();
+    require(data.preferences.empty(),"The isolated L24 guide profile contains existing data");
+    for(const auto owner:owners){seed(data,lesson,owner);const auto& block=editor(lesson,owner);
+        auto draft=state::get_draft(data,draft_key("programming",lesson,block),block.initial_code);
+        draft.input=block.output_check->cases.front().standard_input;
+        state::put_draft(data,draft_key("programming",lesson,block),draft);}
+    const auto independent=data;const auto pauses=narration::read_history(data);
+    require(pauses.entries.size()==3,"The L24 model fixture lost one of its storage-only bookmark slots");
+    const auto preserve=[&](const state::StateData& before){
+        for(const auto& [domain,values]:before.preferences)for(const auto& [key,value]:values)
+            require(state::find(data,domain,key)&&*state::find(data,domain,key)==value,
+                "A guide model overwrote an achievement, draft, bookmark or unrelated preference");};
+    std::size_t checked=0;
+    for(const auto owner:owners){const auto& block=editor(lesson,owner);
+        require(block.output_check&&block.output_check->cases.size()==1,"L24 guide QA needs its current sole output case");
+        const auto raw_case=editor(raw,lesson,owner).GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetObjectAt(0);
+        const auto raw_reviews=raw_case.GetNamedArray(L"reviewFeedback");
+        require(raw_reviews.Size()==1&&!block.output_check->cases.front().review_feedback.front().outputs.empty(),
+            "L24 guide QA lost its one authored rejection rule");
+        auto captured=request(block);const auto draft=state::get_draft(data,draft_key("programming",lesson,block),block.initial_code);
+        captured.source_utf8=draft.source;captured.stdin_utf8=draft.input;
+        for(const bool correct:{true,false}){
+            const auto field_path=correct?explanation_path:review_path;
+            const auto source=winrt::to_string(correct?raw_case.GetNamedString(L"explanation"):raw_reviews.GetObjectAt(0).GetNamedString(L"text"));
+            const auto authored=authored_guide_semantics(raw,owner,field_path,source);
+            require(block.text_semantics.at(std::string(field_path))==authored&&
+                editor(metadata,owner).text_semantics.at(std::string(field_path))==authored,
+                "Runtime or catalog lost raw authored guide roles, readings or UTF-16 ranges");
+            // Explicit adapter models, never executions of the educational code.
+            auto model=execution(block,captured);
+            if(!correct)model.standard_output=winrt::to_string(raw_reviews.GetObjectAt(0).GetNamedArray(L"outputs").GetStringAt(0));
+            const auto evaluation=evaluate_cpp_output_check(*block.output_check,model,captured.revision);
+            require(evaluation.verdict==(correct?OutputVerdict::correct:OutputVerdict::incorrect)&&
+                evaluation.feedback==source&&evaluation.feedback_path==field_path,
+                "The L24 evaluated model selected another authored guide or path");
+            const auto before=data;const auto earned=receipts(data);const auto verdict=correct?"Correcto":"Incorrecto";
+            const auto recorded=std::string(verdict)+'\n'+source;
+            require(correct?record_compiler_puzzle_case(data,lesson,block,captured,model,recorded):
+                record_compiler_puzzle_review(data,lesson,block,captured,model,recorded),"The L24 evaluated guide model was not recorded");
+            preserve(before);if(!correct)require(receipts(data)==earned,"An incorrect L24 review altered its independent achievement");
+            store.save(data);const auto saved=data;data=reopen(store);require(data==saved,"Reopening changed the exact authored L24 guide state");
+            const auto unchanged=data;const auto restored=compiler_puzzle_current_feedback(data,lesson,block,captured);
+            require(restored&&restored->correct==correct&&restored->text==recorded&&restored->source_path==field_path&&data==unchanged,
+                "Restored L24 feedback lost its latest verdict, exact source or typed semantic origin");
+            const auto prefix=std::string(correct?"✓ ":"✗ ")+verdict;
+            const auto full=prefix+"\n\n"+source;
+            const auto composed=verdict_text_semantics(full,prefix,&block.text_semantics.at(restored->source_path));
+            auto expected=authored;expected.source=full;const auto offset=semantic_utf8_boundaries(prefix+"\n\n").size()-1;
+            for(auto& span:expected.spans){span.start+=offset;span.end+=offset;}
+            require(composed&&*composed==expected,"Native verdict composition changed authored L24 roles, readings or source owners");
+            const auto units=semantic_utf8_boundaries(full).size()-1;std::vector<std::size_t> identity(units+1);
+            for(std::size_t i=0;i<identity.size();++i)identity[i]=i;
+            const auto runs=semantic_display_runs(*composed,identity,units);
+            require(!runs.empty()&&runs.front().start==0&&runs.front().end>=offset&&runs.front().role==SemanticRole::prose,
+                "A generated L24 verdict borrowed its guide's technical background");
+            for(const auto& span:expected.spans)require(std::ranges::find(runs,SemanticDisplayRun{span.start,span.end,span.role,span.reading})!=runs.end(),
+                "A displayed L24 guide lost an exact authored range or its reading intent");
+            require(compiler_puzzle_completed(data,lesson,block),"A rejected guide model revoked a prior L24 achievement");++checked;
+        }
+    }
+    preserve(independent);require(checked==4&&narration::read_history(data)==pauses,"L24 guide QA omitted a field or changed one of the three storage-only pauses");
+    require(load_lesson(path).raw_json==lesson.raw_json,"L24 guide QA changed an active curricular asset");
+    std::cout<<"PASS four authored U12L24 compiler guides: raw roles/readings/ranges, typed evaluator origins, exact StateStore reopen and native verdict projection; achievements/drafts/three storage-only pauses retained. Adapter models only, no compiler/JVM/UI/audio.\n";
+    return 0;
+}
 }
 int main(int argc,char** argv)try{
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     const auto qa=std::filesystem::path(build::source_root)/"out/qa"/
         ("compiler-guidance-"+std::to_string(GetCurrentProcessId())+'-'+std::to_string(GetTickCount64()));
     if(argc==2&&std::string_view(argv[1])=="--review-priority")return review_priority_models(content,qa);
+    if(argc==2&&std::string_view(argv[1])=="--authored-l24-guides")return authored_l24_guides(content,qa);
     if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     sole_output_sequence(lesson,"block_0005_0004",qa);sole_output_sequence(lesson,"block_0009_0002",qa);

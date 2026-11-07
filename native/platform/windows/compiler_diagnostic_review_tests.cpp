@@ -292,7 +292,7 @@ void rejection_aggregate_models(){
     std::cout<<"PASS rejection budgets: "<<exact_limits<<" complete exact-limit models; "<<rejected
         <<" truncated models rejected without grading or state changes\n";
 }
-void interrupted_attempt_models(const WindowsEnvironment& environment){
+void interrupted_attempt_models(const WindowsEnvironment& environment,bool edited_only=false){
     // Model captures only. These tests exercise the real preflight, grading
     // and persistence APIs without compiling, creating windows or using audio.
     unsigned preserved_attempts=0;
@@ -336,6 +336,38 @@ void interrupted_attempt_models(const WindowsEnvironment& environment){
             record_compiler_puzzle_review(data,lesson,block,current,capture_cpp_execution(current,wrong),review),
             "The model did not establish the exact current rejected attempt");
         const auto rejected=data;const auto saved_draft=state::get_draft(data,draft_identity,block.initial_code,block.standard_input.value_or(""));
+        if(edited_only){
+            // Exercise the existing presentation backend, not a copy of the
+            // window's clear/keep predicate. Session counters alone preserve
+            // the exact review; an incompatible document retires it while
+            // the immutable historical objective remains credited.
+            auto unchanged=current;unchanged.request_id+=100;unchanged.revision+=100;
+            invalidate_compiler_puzzle_attempt(data,lesson,block,unchanged);
+            auto feedback=compiler_puzzle_current_feedback(data,lesson,block,unchanged);
+            require(data==rejected&&feedback&&!feedback->correct&&feedback->text==review,
+                "An unchanged editor snapshot lost its current rejected feedback");
+            auto edited=current;edited.source_utf8+="\n// QA incompatible editor revision";
+            if(diagnostic)edited.diagnostic=prepare_cpp_diagnostic_request(block,edited);
+            auto changed_draft=saved_draft;changed_draft.source=edited.source_utf8;changed_draft.input=edited.stdin_utf8;
+            state::put_draft(data,draft_identity,changed_draft);
+            invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
+            auto expected=achievement;state::put_draft(expected,draft_identity,changed_draft);
+            require(data==expected&&compiler_puzzle_completed(data,lesson,block)&&
+                compiler_puzzle_review(data,lesson,block,current).empty()&&compiler_puzzle_review(data,lesson,block,edited).empty(),
+                "An edited program retained another program's rejection or changed the original achievement");
+            const auto protected_state=data;feedback=compiler_puzzle_current_feedback(data,lesson,block,edited);
+            require(feedback&&feedback->correct&&feedback->text!=review&&data==protected_state,
+                "The edited program's presentation backend retained a rejected verdict or rewrote state");
+            store.save(data);state::StateStore reopen(store.root().parent_path());const auto restored=reopen.load();
+            const auto restored_feedback=compiler_puzzle_current_feedback(restored,lesson,block,edited);
+            const auto restored_draft=state::get_draft(restored,draft_identity,block.initial_code,block.standard_input.value_or(""));
+            require(restored==expected&&restored_feedback&&restored_feedback->correct&&restored_feedback->text==feedback->text&&
+                restored_feedback->source_path==feedback->source_path&&narration::read_history(restored)==markers&&
+                restored_draft.source==changed_draft.source&&restored_draft.input==changed_draft.input&&
+                restored_draft.selection_start==changed_draft.selection_start&&restored_draft.selection_end==changed_draft.selection_end,
+                "Reopening an edited draft restored an obsolete rejection or changed receipts, draft or three pauses");
+            ++preserved_attempts;continue;
+        }
         // Reproduce the discarded startup operation directly. With no new
         // verdict it erases the review and exposes the historical Correcto.
         auto legacy=data;clear_compiler_puzzle_review(legacy,lesson,block);
@@ -384,16 +416,18 @@ void interrupted_attempt_models(const WindowsEnvironment& environment){
         require(data==expected&&compiler_puzzle_completed(data,lesson,block),
             "The preflight retained an incompatible rejection or revoked the original achievement");
     }
-    std::cout<<"PASS "<<preserved_attempts<<" interrupted stdout/diagnostic models: legacy loss reproduced; last evaluated rejection, achievement, draft and three pauses survive reopen\n";
+    if(edited_only)std::cout<<"PASS "<<preserved_attempts<<" edited stdout/diagnostic feedback models: unchanged snapshots retain rejection; incompatible source retires it; historical achievement, exact edited draft and three pauses survive reopen. No UI, audio or new compilation.\n";
+    else std::cout<<"PASS "<<preserved_attempts<<" interrupted stdout/diagnostic models: legacy loss reproduced; last evaluated rejection, achievement, draft and three pauses survive reopen\n";
 }
 }
 int main(int argc,char** argv) try {
     const bool real=argc==2&&std::string_view(argv[1])=="--real";
     const bool aggregate_model=argc==2&&std::string_view(argv[1])=="--rejection-model";
     const bool interruptions=argc==2&&std::string_view(argv[1])=="--interrupted";
-    require(argc==1||real||aggregate_model||interruptions,"Usage: compiler_diagnostic_review_tests [--real|--rejection-model|--interrupted]");
+    const bool edited_feedback=argc==2&&std::string_view(argv[1])=="--edited-feedback";
+    require(argc==1||real||aggregate_model||interruptions||edited_feedback,"Usage: compiler_diagnostic_review_tests [--real|--rejection-model|--interrupted|--edited-feedback]");
     if(aggregate_model){rejection_aggregate_models();return 0;}
     const LaunchOptions options{ProfileId::Codex,L"diagnostic-review-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
-    if(real)real_tests(environment);else if(interruptions)interrupted_attempt_models(environment);else model_tests(environment);return 0;
+    if(real)real_tests(environment);else if(interruptions||edited_feedback)interrupted_attempt_models(environment,edited_feedback);else model_tests(environment);return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
