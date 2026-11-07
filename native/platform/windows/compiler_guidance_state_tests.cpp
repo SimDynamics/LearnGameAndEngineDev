@@ -235,11 +235,147 @@ void multicase_isolation(const Lesson& actual){
     require(feedback&&feedback->text=="Correcto\nQA second authored guide"&&feedback->source_path.empty()&&data==before,
         "A multicase goal arbitrarily selected the first current explanation");
 }
+std::string legacy_review_token(std::string_view text){return std::to_string(text.size())+':'+std::string(text);}
+state::StateData legacy_review_fixture(state::StateData data,const Block& block,const CppRunRequest& request){
+    // Frozen V1 framing, independently reproduced from the historical format.
+    // This is a compatibility model, not a migration or a real execution.
+    const auto token=[](std::string_view value){return legacy_review_token(value);};
+    std::string rules;
+    if(block.compile_check){const auto& plan=*request.diagnostic;require(!plan.project,"The legacy diagnostic fixture must remain single-source");
+        rules="compiler-diagnostic-review-rules-v1/"+token(block.compile_check->diagnostic)+token(block.compile_check->explanation)
+            +token("compile")+token(plan.control_source_utf8)+token(plan.expected_error_code)
+            +token(std::to_string(plan.first_line))+token(std::to_string(plan.last_line));
+    }else{const auto& check=*block.output_check;rules="compiler-review-rules-v1/"+
+        token(check.input_comparison==TextComparison::tokens?"tokens":"exact")+token(std::to_string(check.cases.size()));
+        for(const auto& item:check.cases){rules+=token(item.standard_input)+token(item.executable.value_or(""))+token(item.explanation)
+                +token(item.standard_error==StandardErrorExpectation::non_blank?"nonBlank":"ignored")+token(std::to_string(item.outputs.size()));
+            if(item.exit_code!=0)rules+=token("process-exit-code/v1")+token(std::to_string(item.exit_code));
+            for(const auto& output:item.outputs)rules+=token(output);rules+=token(std::to_string(item.review_feedback.size()));
+            for(const auto& guide:item.review_feedback){rules+=token(std::to_string(guide.outputs.size()));
+                for(const auto& output:guide.outputs)rules+=token(output);rules+=token(guide.text);}
+        }
+    }
+    auto& values=data.preferences.at("native_windows");std::string prefix;
+    for(const auto& [key,value]:values)if(key.ends_with("/review/rules")){(void)value;require(prefix.empty(),"Ambiguous legacy review fixture");prefix=key.substr(0,key.size()-5);}
+    require(!prefix.empty(),"Missing model rejection for V1 compatibility");
+    const auto text=[&](std::string_view suffix){return std::get<std::string>(values.at(prefix+std::string(suffix)));};
+    values[prefix+"rules"]=state::sha256(rules);
+    const auto seal=state::sha256("compiler-review-v1/"+token(prefix)+token(text("program"))+token(text("input"))+
+        token(text("target"))+token(text("rules"))+token(text("feedback")));
+    auto execution_seal=seal;
+    if(block.compile_check){auto frame="compiler-diagnostic-review-v1/"+token(seal);
+        for(const auto& field:std::get<std::vector<std::string>>(values.at(prefix+"capture")))frame+=token(field);
+        execution_seal=state::sha256(frame);require(!values.contains(prefix+"feedback-origin/v1"),
+            "A generated diagnostic rejection acquired an authored success origin");
+    }
+    values[prefix+"seal"]=execution_seal;
+    if(const auto found=values.find(prefix+"feedback-origin/v1");found!=values.end()){
+        auto fields=std::get<std::vector<std::string>>(found->second);require(fields.size()==3,"Malformed model feedback origin");
+        fields[2]=state::sha256("compiler-feedback-origin-v1/"+token(prefix)+token(execution_seal)+token(text("feedback"))+token(fields[0])+token(fields[1]));
+        found->second=std::move(fields);
+    }
+    return data;
 }
-int main()try{
+void review_priority_after_success_edit(const std::filesystem::path& content,const std::filesystem::path& qa,bool diagnostic){
+    // Explicit adapter models only. These captures exercise admission and
+    // persisted presentation; no compiler or educational program runs here.
+    const std::string id=diagnostic?"block_0006_0006":"block_0005_0004";
+    const auto actual=load_lesson(content/(diagnostic?
+        "datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json":
+        "archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json"));
+    auto original=guidance(actual,id,"QA original success explanation");
+    auto revised=guidance(original,id,"QA revised success explanation only");
+    auto& old=editor(original,id);auto& current=editor(revised,id);
+    std::string review_text,review_path;
+    if(!diagnostic){
+        require(old.output_check->cases.size()==1&&!old.output_check->cases.front().review_feedback.empty(),
+            "The reviewed CRT fixture lost its actual authored rejection guide");
+        const auto& guide=old.output_check->cases.front().review_feedback.front();
+        require(!guide.outputs.empty()&&current.output_check->cases.front().review_feedback.front().outputs==guide.outputs&&
+            current.output_check->cases.front().review_feedback.front().text==guide.text,
+            "The success-only edit changed the rejection's authored conditions or guide");
+        review_text="Incorrecto\n"+guide.text;review_path="/outputCheck/cases/0/reviewFeedback/0/text";
+        const auto length=winrt::to_hstring(guide.text).size();
+        const TextSemantics descriptor{guide.text,{{0,length,guide.text,SemanticRole::output}}};validate_text_semantics(descriptor);
+        old.text_semantics[review_path]=descriptor;current.text_semantics[review_path]=descriptor;
+    }else review_text="Incorrecto\nQA accepted compilation; the requested diagnostic is still pending.";
+    require(reference_objective_frame(original,old)==reference_objective_frame(revised,current),
+        "A success explanation changed the reviewed execution objective");
+    state::StateStore store(qa/(diagnostic?"diagnostic-review-priority":"stdout-review-priority"));auto data=store.load();seed(data,original,id);
+    auto accepted=request(old),rejected=accepted;rejected.request_id=12;rejected.revision=72;
+    if(diagnostic){
+        accepted=diagnostic_request(old);
+        require(record_compiler_diagnostic_case(data,original,old,accepted,diagnostic_capture(accepted),"Correcto\n"+old.compile_check->explanation),
+            "Could not seed the explicit diagnostic achievement model");
+        rejected.diagnostic=prepare_cpp_diagnostic_request(old,rejected);
+        CppRunResult result;result.request_id=rejected.request_id;result.revision=rejected.revision;
+        result.run_directory=L"C:/qa-guidance-accepted-diagnostic";result.compilation={CppPhaseStatus::completed,0};result.diagnostic.emplace();
+        result.diagnostic->control={CppPhaseStatus::completed,0};result.diagnostic->source_sha256=state::sha256(rejected.source_utf8);
+        result.diagnostic->control_sha256=state::sha256(rejected.diagnostic->control_source_utf8);
+        require(record_compiler_diagnostic_review(data,original,old,rejected,result,review_text),"The accepted diagnostic candidate did not record its model rejection");
+    }else{
+        require(record_compiler_puzzle_case(data,original,old,accepted,execution(old,accepted),"Correcto\n"+old.output_check->cases.front().explanation),
+            "Could not seed the explicit stdout achievement model");
+        rejected.source_utf8+="\n// QA rejected draft";auto failure=execution(old,rejected);
+        failure.standard_output=old.output_check->cases.front().review_feedback.front().outputs.front();
+        require(record_compiler_puzzle_review(data,original,old,rejected,failure,review_text),"The actual authored rejection fixture was not admitted");
+    }
+    auto draft=state::get_draft(data,draft_key("programming",original,old),old.initial_code);
+    draft.source=rejected.source_utf8;draft.input=rejected.stdin_utf8;state::put_draft(data,draft_key("programming",original,old),draft);
+    const auto check_feedback=[&](const Lesson& model){const auto snapshot=data;
+        const auto saved=state::get_draft(data,draft_key("programming",model,editor(model,id)),editor(model,id).initial_code);
+        require(saved.source==rejected.source_utf8&&saved.input==rejected.stdin_utf8,"The reviewed fixture does not match its exact reopened draft");
+        const auto value=compiler_puzzle_current_feedback(data,model,editor(model,id),rejected);
+        require(value&&!value->correct&&value->text==review_text&&value->source_path==review_path,
+            diagnostic?"A success-only diagnostic explanation edit displaced the exact latest rejection":
+                       "A success-only stdout explanation edit displaced the exact latest rejection or its typed guide");
+        require(data==snapshot,"Restoring a reviewed attempt mutated StateData");};
+    check_feedback(original);store.save(data);data=reopen(store);check_feedback(original);
+    const auto current_format=data;data=legacy_review_fixture(data,old,rejected);const auto legacy=data;
+    check_feedback(original);store.save(data);data=reopen(store);require(data==legacy,"An unchanged V1 rejection failed exact reopen");check_feedback(original);
+    require(compiler_puzzle_review(data,revised,current,rejected).empty(),
+        "A V1 rejection with changed complete rules was reinterpreted as a V2 rejection");
+    require(receipts(data)==receipts(current_format)&&narration::read_history(data)==narration::read_history(current_format),
+        "The isolated V1 fixture altered original achievement or page slots");
+    data=current_format;
+    const auto original_state=data;const auto original_receipts=receipts(data);const auto original_markers=narration::read_history(data);
+    state::prepare_lesson_state(data,revised);state::validate_lesson_state(data,revised);
+    require(data==original_state,"A success-only guide adoption changed immutable attempts, draft or three bookmark slots");
+    store.save(data);data=reopen(store);require(data==original_state&&receipts(data)==original_receipts&&
+        narration::read_history(data)==original_markers&&compiler_puzzle_completed(data,revised,current),
+        "Reopening a success-only edit changed achievement, reviewed state or bookmarks");
+    check_feedback(revised);
+    const auto preserved=data;
+    for(unsigned change=0;change<5;++change){auto query=rejected;auto altered=revised;
+        if(change==0)query.source_utf8+="\n// different untested editor";
+        if(change==1)query.stdin_utf8+='x';
+        if(change==2){query.cmake=CmakeConfig{};query.cmake->target="different-target";}
+        if(change==3){if(diagnostic)query.diagnostic->first_line+=1;
+            else editor(altered,id).output_check->cases.front().review_feedback.front().outputs.front()+='x';}
+        if(change==4){if(diagnostic)editor(altered,id).compile_check->diagnostic="other-qa-diagnostic";
+            else editor(altered,id).output_check->cases.front().exit_code=1;}
+        require(compiler_puzzle_review(data,altered,editor(altered,id),query).empty()&&data==preserved,
+            "Changed source/input/target/selector/objective reused the current rejection");
+    }
+    if(!diagnostic){auto changed_error=revised;editor(changed_error,id).output_check->cases.front().review_feedback.front().text+=" QA changed error guide";
+        require(compiler_puzzle_review(data,changed_error,editor(changed_error,id),rejected).empty()&&data==preserved,
+            "A changed rejection guide resurrected obsolete feedback without an actual output capture");}
+    auto tampered=data;for(auto& [key,value]:tampered.preferences.at("native_windows"))if(key.ends_with("/review/feedback"))value=std::string("Correcto\nQA tampered verdict");
+    require(compiler_puzzle_review(tampered,revised,current,rejected).empty(),"An altered verdict bypassed its captured review seal");
+}
+int review_priority_models(const std::filesystem::path& content,const std::filesystem::path& qa){
+    unsigned failures=0;for(const bool diagnostic:{false,true}){
+        try{review_priority_after_success_edit(content,qa,diagnostic);std::cout<<"PASS "<<(diagnostic?"diagnostic":"stdout")<<" latest rejection survives success-only guide edit\n";}
+        catch(const std::exception& error){++failures;std::cerr<<"FAIL "<<(diagnostic?"diagnostic":"stdout")<<" latest rejection priority: "<<error.what()<<'\n';}
+    }return failures?1:0;
+}
+}
+int main(int argc,char** argv)try{
     const auto content=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals";
     const auto qa=std::filesystem::path(build::source_root)/"out/qa"/
         ("compiler-guidance-"+std::to_string(GetCurrentProcessId())+'-'+std::to_string(GetTickCount64()));
+    if(argc==2&&std::string_view(argv[1])=="--review-priority")return review_priority_models(content,qa);
+    if(argc!=1)return 2;
     const auto lesson=load_lesson(content/"archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json");
     sole_output_sequence(lesson,"block_0005_0004",qa);sole_output_sequence(lesson,"block_0009_0002",qa);
     diagnostic_sequence(content,qa);multicase_isolation(lesson);

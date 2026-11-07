@@ -98,15 +98,17 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
         &&captured.stdin_utf8==execution.standard_input
         &&(!captured.cmake||execution.executable==std::optional<std::string>{captured.cmake->target});
 }
-std::string review_rules(const curriculum::Block& block) {
-    // Pedagogical guides can change without changing successful-case identity.
-    // A rejection must not resurrect an earlier version of that feedback.
-    const auto& check=*block.output_check;std::string frame="compiler-review-rules-v1/";
+std::string review_rules(const curriculum::Block& block,bool legacy=false) {
+    // Success explanations do not describe a rejected attempt. V2 keeps that
+    // attempt when only successful guidance changes, while error selectors and
+    // error guides remain exact. V1 reconstruction retains every old byte.
+    const auto& check=*block.output_check;std::string frame=legacy?"compiler-review-rules-v1/":"compiler-review-rules-v2/";
     frame+=token(check.input_comparison==curriculum::TextComparison::tokens?"tokens":"exact")
         +token(std::to_string(check.cases.size()));
     for(const auto& item:check.cases){
-        frame+=token(item.standard_input)+token(item.executable.value_or(""))+token(item.explanation)
-            +token(item.standard_error==curriculum::StandardErrorExpectation::non_blank?"nonBlank":"ignored")
+        frame+=token(item.standard_input)+token(item.executable.value_or(""));
+        if(legacy)frame+=token(item.explanation);
+        frame+=token(item.standard_error==curriculum::StandardErrorExpectation::non_blank?"nonBlank":"ignored")
             +token(std::to_string(item.outputs.size()));
         if(item.exit_code!=0)frame+=token("process-exit-code/v1")+token(std::to_string(item.exit_code));
         for(const auto& output:item.outputs)frame+=token(output);
@@ -126,10 +128,11 @@ std::string review_seal(std::string_view key,std::string_view program,std::strin
 std::string diagnostic_review_phase(const CppRunRequest& request) {
     return request.diagnostic&&request.diagnostic->project&&request.diagnostic->project->link?"link":"compile";
 }
-std::string diagnostic_review_rules(const curriculum::Block& block,const CppRunRequest& request) {
+std::string diagnostic_review_rules(const curriculum::Block& block,const CppRunRequest& request,bool legacy=false) {
     const auto& objective=*request.diagnostic;
-    auto frame="compiler-diagnostic-review-rules-v1/"+token(block.compile_check->diagnostic)
-        +token(block.compile_check->explanation)+token(diagnostic_review_phase(request))
+    auto frame=std::string(legacy?"compiler-diagnostic-review-rules-v1/":"compiler-diagnostic-review-rules-v2/")+token(block.compile_check->diagnostic);
+    if(legacy)frame+=token(block.compile_check->explanation);
+    frame+=token(diagnostic_review_phase(request))
         +token(objective.control_source_utf8)+token(objective.expected_error_code)
         +token(std::to_string(objective.first_line))+token(std::to_string(objective.last_line));
     if(objective.project){const auto& project=*objective.project;
@@ -266,9 +269,10 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
         if(!current.diagnostic||*current.diagnostic!=prepare_cpp_diagnostic_request(block,current))return {};
         const auto stored=state::find(data,"native_windows",key+"capture");
         const auto capture=stored?std::get_if<std::vector<std::string>>(stored):nullptr;
-        if(!capture||!diagnostic_review_capture_matches(*capture,block,current)||*rules!=diagnostic_review_rules(block,current)||
+        if(!capture||!diagnostic_review_capture_matches(*capture,block,current)||
+            (*rules!=diagnostic_review_rules(block,current)&&*rules!=diagnostic_review_rules(block,current,true))||
             *seal!=diagnostic_review_seal(key,*program,*input,*target,*rules,*feedback,*capture))return {};
-    }else if(*rules!=review_rules(block)||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
+    }else if((*rules!=review_rules(block)&&*rules!=review_rules(block,true))||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
     return *feedback;
 }
 std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData& data,

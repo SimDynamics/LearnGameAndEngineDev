@@ -234,6 +234,8 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_compiler_guidance_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
     set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 30)
+    add_test(NAME native.compiler_review_guidance_priority COMMAND lgaed_compiler_guidance_state_tests --review-priority)
+    set_tests_properties(native.compiler_review_guidance_priority PROPERTIES TIMEOUT 30)
     add_test(NAME curriculum.compiler_guidance_projection COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_guidance_projection.py)
     add_executable(lgaed_text_semantic_projection_tests native/presentation/windows/text_semantic_projection_tests.cpp)

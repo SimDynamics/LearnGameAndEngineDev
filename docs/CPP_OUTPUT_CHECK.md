@@ -319,6 +319,15 @@ varios casos mantienen su retroalimentación acreditada, sin elegir arbitrariame
 la explicación de uno de ellos. Un cambio de guía puede exigir volver a leer
 esa explicación desde su inicio; no acredita escucha ni duplica marcadores.
 
+Los rechazos nuevos usan reglas privadas v2 que no dependen de las explicaciones
+de acierto. Editar sólo ese texto conserva la prioridad y la procedencia de un
+rechazo válido, también en diagnósticos. Sus condiciones ejecutables y las
+reglas/textos de error siguen comprobándose completos. Los registros v1 se
+aceptan únicamente cuando sus reglas originales completas aún coinciden; no se
+reinterpretan como v2 ni se reescriben. Si cambia una guía de error o su selector,
+no se deduce otra guía desde el texto anterior: hace falta una nueva comprobación
+para registrar la revisión correspondiente.
+
 Las guías admiten el mismo `textSemantics` raíz que los demás textos públicos.
 La referencia estable del bloque y el JSON Pointer identifican su campo exacto;
 la igualdad de dos frases no decide el propietario. La anticipación prepara sólo
