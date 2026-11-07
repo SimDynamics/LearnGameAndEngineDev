@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Nuestro escritor elige una forma textual: nombres exactos, espacios determinados y enteros sin signo + ni ceros iniciales. La entrada podía usar otra cantidad de blancos y +07 para el ID 7. Por eso no es necesario que el texto recibido y el texto compuesto sean idénticos. El criterio es la igualdad de los datos y, después, la estabilidad de la forma compuesta."
+          "text": "Nuestro escritor elige una forma textual: nombres exactos, espacios determinados y enteros sin un + delante ni ceros iniciales. La entrada podía usar otra cantidad de blancos y +07 para el ID 7. Por eso no es necesario que el texto recibido y el texto compuesto sean idénticos: las dos escrituras pueden representar los mismos datos. Después de leer el primer texto compuesto, componemos los datos recuperados una segunda vez. Esa segunda composición debe producir exactamente el mismo texto que la primera; a esa coincidencia la llamamos estabilidad de la forma compuesta."
         },
         {
           "type": "multiple_choice",
@@ -26,7 +26,12 @@
             "No: también debe conservarse la asociación con el grupo."
           ],
           "correctIndex": 2,
-          "explanation": "El grupo pertenece a la identidad completa. Contar o sumar ocultaría ese cambio."
+          "explanation": "El grupo pertenece a la identidad completa. Contar o sumar ocultaría ese cambio.",
+          "reviewFeedback": [
+            "El registro conserva su ID y sus cantidades, pero revisa también a qué grupo pertenece en cada conjunto. Esa asociación forma parte del dato que queremos recuperar.",
+            "La cantidad de grupos y registros no describe sus asociaciones. Sigue el registro 7[2;1] y comprueba el grupo al que pertenece en cada conjunto.",
+            "Al comparar conjuntos, comprueba tanto los valores de cada registro como el grupo que lo contiene. La asociación también debe conservarse."
+          ]
         }
       ]
     },
@@ -50,7 +55,12 @@
             "true si el registro restante tiene cantidades cero."
           ],
           "correctIndex": 0,
-          "explanation": "La presencia no se reconstruye a partir de las cantidades ni de una suma."
+          "explanation": "La presencia no se reconstruye a partir de las cantidades ni de una suma.",
+          "reviewFeedback": [
+            "Distingue entre no tener un grupo y tenerlo sin registros. Compara primero qué grupos están presentes; después sus registros y cantidades.",
+            "Un grupo vacío sigue siendo un elemento del vector de grupos. Que no añada cantidades a la suma no permite tratarlo como ausente.",
+            "Las cantidades de un registro no deciden si otro grupo estaba presente. Revisa la diferencia entre el conjunto sin rojo y el que sí lo contiene vacío."
+          ]
         },
         {
           "type": "paragraph",
@@ -66,7 +76,12 @@
             "Devolver true sólo cuando sus cantidades coincidan."
           ],
           "correctIndex": 1,
-          "explanation": "El escritor recorre los vectores sin ordenar. Cambiar el orden altera lo que aquí hemos acordado conservar."
+          "explanation": "El escritor recorre los vectores sin ordenar. Cambiar el orden altera lo que aquí hemos acordado conservar.",
+          "reviewFeedback": [
+            "El compositor recorre los vectores en el orden que ya tienen. No hay una ordenación previa que permita ignorar sus posiciones.",
+            "Comprueba los registros de ambos conjuntos posición por posición, además de comprobar sus ID y cantidades. El contrato incluye el orden.",
+            "Dos registros pueden tener cantidades iguales y seguir siendo distintos por su ID o por su posición. Revisa qué exige conservar este contrato."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -78,7 +93,12 @@
             "Sólo sumar cantidades y comprobar que no sean negativas."
           ],
           "correctIndex": 0,
-          "explanation": "Un ciclo estable puede repetir la misma pérdida. Comparar identidades, presencia, valores y orden con el original detecta lo que ya desapareció antes de la segunda escritura."
+          "explanation": "Un ciclo estable puede repetir la misma pérdida. Comparar identidades, presencia, valores y orden con el original detecta lo que ya desapareció antes de la segunda escritura.",
+          "reviewFeedback": [
+            "El texto reducido se obtiene después de perder un registro. Para detectar esa pérdida, la comprobación necesita un punto de comparación que todavía conserve ese registro.",
+            "La segunda escritura parte de los datos que el lector ya recuperó del texto reducido. Piensa qué información ya no puede aparecer en ninguno de esos dos textos.",
+            "Una suma puede mantenerse aunque cambien ID, asociaciones o presencia. Revisa qué comparación conserva por separado esos datos del conjunto original."
+          ]
         }
       ]
     },
@@ -90,11 +110,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa la comparación y construye la prueba: prepara un Conjunto original válido; compón su texto; léelo en otro Conjunto; compara el original con el recuperado; compón una segunda vez y compara ambos textos compuestos. Comprueba cada bool antes de continuar para distinguir un error de composición de uno de lectura."
+          "text": "Implementa mismos_datos y organiza en main la prueba de ida y vuelta: prepara un Conjunto original válido; compón su texto; lee ese texto en otro Conjunto; compara el original con el recuperado; y vuelve a componer los datos recuperados para comparar los dos textos. Comprueba el resultado de componer_conjunto y de leer_muestra_completa antes de utilizar lo que producen: si una operación devuelve false, no continúes como si hubiera tenido éxito. En cambio, las comparaciones pueden devolver false intencionadamente cuando pruebes datos diferentes; ese resultado se presenta y se interpreta como parte de la prueba."
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería a partir de azul con 7[0;0], seguido de rojo con 4[3;1].\n\nCompón, lee, compara datos y vuelve a componer, comprobando cada bool antes de continuar.\n\nPresenta primero iguales:segunda_composicion:texto_estable y después el texto completo, una línea por resultado.\n\nCrea cuatro copias independientes del recuperado: cambia sólo el ID del primer grupo de azul a verde; sólo aceptados del primer registro de 0 a 1; sólo el ID de ese registro de 7 a 6; y sólo el orden de los dos grupos.\n\nPresenta Grupo:bool, Cantidad:bool, ID:bool y Orden:bool comparando cada copia con el original.\n\nLas cuatro variantes siguen siendo válidas y deben diferenciarse.\n\nDespués compara un dato inválido con cantidad 11 y presenta Invalido:bool; dos conjuntos vacíos como Vacio:bool; ausencia frente a un grupo verde vacío como Presencia:bool; y dos registros de un mismo grupo en orden invertido como Orden de registros:bool.\n\nFinalmente comprueba ida y vuelta de rojo con 7[0;0] y azul con 7[3;1], mostrando ID local:bool.\n\nCada línea termina con salto, sin líneas vacías.\n\nResuelve el puzzle previo y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "text": "Construye una sola batería en el editor, organizada en estas etapas:\n\n1. Prepara el original con azul y su registro 7[0;0], seguido de rojo y su registro 4[3;1]. Compón el texto y léelo en otro Conjunto, comprobando el éxito de ambas operaciones. Compara los datos originales con los recuperados y vuelve a componer estos últimos.\n\n2. En la primera línea muestra tres valores bool separados por dos puntos, en este orden: el resultado de comparar los datos; el éxito de la segunda composición; y el resultado de comparar los dos textos compuestos. En la segunda línea muestra el primer texto compuesto completo.\n\n3. Crea cuatro copias independientes del recuperado. En la primera cambia sólo el ID del primer grupo, de azul a verde. En la segunda cambia sólo aceptados del primer registro, de 0 a 1. En la tercera cambia sólo el ID de ese registro, de 7 a 6. En la cuarta intercambia únicamente el orden de los dos grupos. Compara cada copia con el original y presenta el resultado bool tras Grupo:, Cantidad:, ID: y Orden:, respectivamente. Las cuatro copias siguen siendo válidas, pero contienen datos diferentes del original.\n\n4. Prepara las demás comparaciones: un conjunto con una cantidad 11, que es inválida, frente al original (Invalido:); dos conjuntos vacíos (Vacio:); un conjunto sin grupos frente a otro que contiene sólo verde vacío (Presencia:); y dos conjuntos con los mismos dos registros de un grupo, pero en orden invertido (Orden de registros:). Muestra cada resultado bool después de su rótulo.\n\n5. Comprueba también la ida y vuelta de un conjunto con rojo y su registro 7[0;0], seguido de azul y su registro 7[3;1]. El ID 7 puede repetirse entre grupos distintos. Muestra la comparación entre ese original y su recuperado tras ID local:.\n\nCada resultado ocupa una línea. No añadas espacios entre los rótulos y sus valores bool, ni líneas vacías; todas las líneas terminan con salto. Usa Compilar, ejecutar y comprobar con la batería completa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -111,6 +131,15 @@
                 "standardInput": "",
                 "outputs": [
                   "1:1:1\n{ conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }\nGrupo:0\nCantidad:0\nID:0\nOrden:0\nInvalido:0\nVacio:1\nPresencia:0\nOrden de registros:0\nID local:1\n"
+                ],
+                "explanation": "La salida coincide con las once líneas de la batería. En 1:1:1, el primer valor indica igualdad entre los datos originales y recuperados; el segundo, éxito de la segunda composición; y el tercero, igualdad entre los dos textos compuestos. Grupo:0, Cantidad:0, ID:0 y Orden:0 distinguen del original las cuatro copias modificadas. Invalido:0 corresponde al conjunto con una cantidad fuera del límite. Vacio:1 compara dos conjuntos sin grupos, mientras Presencia:0 distingue no tener grupos de tener un grupo vacío. Orden de registros:0 distingue el orden local invertido. ID local:1 corresponde a la recuperación del conjunto que repite un ID en grupos distintos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "El programa todavía no ha mostrado la batería. Organiza primero la composición, la lectura y las dos comparaciones; después añade las copias independientes y los casos de presencia, validez, orden e ID local. Comprueba el éxito de las funciones que producen datos antes de usarlos y muestra también los resultados false de las comparaciones previstas."
+                  }
                 ]
               }
             ]
@@ -135,11 +164,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera línea es 1:1:1. La segunda es { conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }. Conservamos el orden, el cero válido y las asociaciones. La estabilidad textual sólo complementa la comparación de datos; no la reemplaza."
+          "text": "El programa de esta página desarrolla el ciclo inicial de la batería: componer, leer, comparar los datos y componer de nuevo. Su primera línea es 1:1:1. Los datos coinciden, la segunda composición tiene éxito y ambos textos compuestos coinciden. La segunda línea es { conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }. Conservamos el orden de azul antes de rojo, las cantidades cero y la asociación de cada registro con su grupo. La referencia de la batería completa aparece en la página de conservación e igualdad completa."
         },
         {
           "type": "paragraph",
-          "text": "La batería compara todos los campos y posiciones, separa las variantes válidas diferentes de los datos inválidos y mantiene independientes original y recuperado. Los casos vacío, grupo presente vacío, orden local e ID compartido entre grupos comprueban partes que un informe de totales podría ocultar."
+          "text": "En la batería completa, cada copia cambia una sola característica: el grupo, una cantidad, un ID o el orden de los grupos. La comparación debe detectar esa diferencia sin confundirla con un dato inválido. Después se comprueban por separado los conjuntos vacíos, la presencia de un grupo vacío, el orden de los registros dentro de un grupo y la repetición permitida de un ID en grupos distintos. Contar registros o sumar cantidades no basta: esas operaciones pueden dar el mismo resultado aunque un registro cambie de grupo o desaparezca un grupo vacío. Comparar de nuevo los textos compuestos añade una comprobación de estabilidad; no sustituye la comparación de los datos con el original."
         },
         {
           "type": "output_prediction",
@@ -150,7 +179,8 @@
           "answers": [
             "1:1:0\n{ conjunto { grupo azul 7[0;1] } { grupo rojo } }"
           ],
-          "explanation": "El lector obtiene los datos y el compositor los escribe en la forma elegida. Los blancos, + y ceros iniciales del recibido no se copian literalmente."
+          "explanation": "El lector obtiene los datos y el compositor los escribe en la forma elegida. Los blancos, + y ceros iniciales del recibido no se copian literalmente.",
+          "reviewFeedback": "Sigue por separado las dos operaciones y la comparación final: leer_muestra_completa obtiene los datos; componer_conjunto elige su escritura; y recibido == canon compara caracteres, incluidos los blancos. No confundas obtener los mismos datos con conservar literalmente el texto recibido."
         }
       ]
     },
@@ -169,7 +199,8 @@
           "answers": [
             "1:0"
           ],
-          "explanation": "Los dos textos compuestos coinciden, pero falta el grupo rojo presente y vacío. La estabilidad por sí sola no demuestra conservación."
+          "explanation": "Los dos textos compuestos coinciden, pero falta el grupo rojo presente y vacío. La estabilidad por sí sola no demuestra conservación.",
+          "reviewFeedback": "Localiza de qué conjunto parte la primera composición y cuál se usa como original en mismos_datos. Comprueba si ambos contienen los mismos grupos, incluso cuando un grupo no tiene registros. La comparación de los dos textos y la comparación de los datos no contestan la misma pregunta."
         },
         {
           "type": "paragraph",
@@ -181,7 +212,7 @@
         },
         {
           "type": "note",
-          "text": "Una prueba de lectura y escritura necesita comparar la cantidad de elementos y sus valores recuperados; mostrar ambos textos no basta para demostrar igualdad de datos (Stroustrup, 2024, práctica del capítulo 9, pasos 11–17, pp. 284–285). Nuestra comparación incluye identidades, cantidades, presencia y orden. La estabilidad de la forma textual es una segunda propiedad y no sustituye esa comparación."
+          "text": "Una prueba de lectura y escritura necesita comparar la cantidad de elementos y sus valores recuperados; mostrar ambos textos no basta para demostrar igualdad de datos (Stroustrup, 2024). Nuestra comparación incluye identidades, cantidades, presencia y orden. La estabilidad de la forma textual es una segunda propiedad y no sustituye esa comparación."
         }
       ]
     },
@@ -206,7 +237,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las funciones de presencia y conversión ya estudiadas se proporcionan como apoyo. Construye main y un cliente que reciba el grupo azul con registros en orden {7,{0,0}} y {2,{3,1}}. Antes de convertir muestra Origen: seguido de cada ID y dos puntos, sin espacios, en el orden de su vector. Convierte sus registros a una tabla nueva; presenta Tabla: en una línea y luego los presentes recorriendo ID 0..9 como ID:aceptados:rechazados. Finalmente vuelve a mostrar el origen con el mismo formato. Conserva el Grupo mediante const referencia y no lo reordenes para formar la tabla. Cada línea termina con salto. Usa Compilar, ejecutar y comprobar; la tabla nueva cambia el recorrido sin reemplazar la colección que conserva el orden.",
+          "text": "Construye main y una función que muestre un grupo sin modificarlo. En main prepara el grupo azul con dos registros, en este orden: ID 7 con cantidades 0 y 0; después, ID 2 con cantidades 3 y 1. La función de observación debe recibir const Grupo&: la referencia permite consultar el grupo original y const impide modificarlo a través de ese parámetro.\n\n1. Antes de convertir, muestra Origen: seguido del ID de cada registro y de dos puntos, sin espacios y en el orden del vector. Termina la línea con un salto.\n\n2. Usa convertir para construir una tabla nueva a partir de los registros. Comprueba su resultado antes de consultar la tabla. Muestra Tabla: en una línea y recorre después los ID de 0 a 9. Para cada celda presente, muestra ID:aceptados:rechazados en su propia línea. Las funciones convertir y consultar ya se proporcionan como apoyo.\n\n3. Vuelve a mostrar el grupo de origen con la misma función y el mismo formato. La tabla se recorre por ID creciente; el grupo conserva el orden en que guardaba sus registros. No reordenes el vector para construir la tabla ni reemplaces con ella el grupo original.\n\nTodas las líneas terminan con salto. Usa Compilar, ejecutar y comprobar.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -223,6 +254,15 @@
                 "standardInput": "",
                 "outputs": [
                   "Origen:7:2:\nTabla:\n2:3:1\n7:0:0\nOrigen:7:2:\n"
+                ],
+                "explanation": "La salida coincide con las cinco líneas solicitadas. Origen:7:2: aparece antes y después de Tabla: y de sus registros: ambas observaciones muestran primero el ID siete y luego el ID dos. Bajo Tabla: aparecen 2:3:1 y 7:0:0, en orden de ID creciente. Las cantidades siguen asociadas a su registro, y el registro siete sigue presente aunque sus dos cantidades sean cero. La colección de origen permite conservar el orden de llegada mientras la tabla facilita consultar por ID.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "Todavía no se muestran las observaciones solicitadas. Construye el grupo en main y usa una función con const Grupo& para mostrar su orden; convierte sus registros en una tabla nueva y consulta sus celdas por ID; después vuelve a mostrar el mismo grupo. Comprueba el éxito de convertir antes de consultar la tabla."
+                  }
                 ]
               }
             ]
@@ -924,8 +964,1617 @@
         "id": "block_0002_0004",
         "beforeSha256": "e3b4dff6b439cd525be3e8353130fe0350fd8a4988b75b89fbf7918dc4ce57b0",
         "afterSha256": "fa66e14b760732183c1d3354650a74b3d88e13588f01c6fcbc0f244f04028dd2"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f9641c6959221e63065769ef0897826372754605b0db94ca5e8883a352da2f74",
+        "afterSha256": "2e5fd88f8c82b57e93227a1b1637fd5b0c528a7b18fd3a1e66c4ed30c95f866f"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "a2ebb13017edd08c1c145b3e2893c076f45e4808fa2ccdb437396bee46cceb10",
+        "afterSha256": "7f3a19f97716a9d231136034214a7ed68938fd44173f0ba3deb50b0b885a6386"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "6b6c9ef6cae360d7a58acae1e6e4c693937343e9f8f6ef0fbb494cb0d7e91111",
+        "afterSha256": "e6a17b7fcded129eae9224d70fdb424a93658d8b343eee4e1c29b67e9bfb4e0c"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "07c56951d9ec2b2626a4097044d6ca3b439f662f2607b08af1cb92cc80b107e8",
+        "afterSha256": "b2606c32f4f28b78e8d562483557ced7e3bce8b8c2ea4f523b9dee3c3047ad57"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "42a3d0d00f895e97f990e9b79d8657c23276cd72c609722bbf7ff4aa23c7e9b6",
+        "afterSha256": "b8e00742733c0895d3ba127e3eead76183d99640a8a3d0989c83480b60b03e33"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "04d3a1e07ded2145ee9c56966d36c925a565a2f7ec3bc5d43609716a8d52cc92",
+        "afterSha256": "d9e5ef82c07282ba6b400d384dda20d0aa6ff9e83c164938629b007ae0d6b16b"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d80939ec4e5ca6c6f37e6106cda5e579a28fe93683c617a895a0b6ce465b4d1c",
+        "afterSha256": "6fa63e072952875a3025159e08b1f272acbf2af8b1b9c5830cd93eef1d35fa88"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "b7bbf185ad7daa95890218b64eb2bbda5d1e91208472f3e8eec2a8229bf9196b",
+        "afterSha256": "a4cafe43a868f170fe555682bfc75ed2fb88af99e08fb7e21d0de1913f308505"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a38894ffcb87f9e75ddc59c096d5569e9b3b0ce4bb8509443fa0b4acfea00cae",
+        "afterSha256": "8f3114b9607410c8b9ab37b0517b1459c22475e5bdacd67446fa3abc5c5a32d6"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ab939d0a9a2f78d3fd640f49701afabf99ab5ef19bd5f643d51dd8fd17f5f0ff",
+        "afterSha256": "4d8256255f5ce3dff5ce02867117572d5be943b4f349323fac6e99717b217ce7"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "ee6dc86d630c57ccbf90fedb1c3ad468e6255efc837b185685651457be8eed17",
+        "afterSha256": "a7b49a67bda9d9f853ecc9bf6ebc236d05b84328c21c360ad7000e703c2312f8"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "398bfc5a07c070981ecb1304139b9507149bd4b99a8b73397a9bd9850c25fff3",
+        "afterSha256": "c394b67bf2575af5c4ef008d912bd01ffadcd894cdac06389cea123b95ad5c72"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "73c27f97d02e5ece61a82220417e0f77b63e3d2fe91b6ff2127741d80356eb8a",
+        "afterSha256": "d8ae1d2243735c58bc950093235220c33b8af4d69638ec6774a427219400c400"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "29bd03af784a4e1615d2b196b5a8895bb7cea85c0b8fc4439747020117009760",
+        "afterSha256": "8d028343267d46605e419f0162d77d9eac664ba8f4ec734a4aac4a5701055fab"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "abbfa55f6663c68b1e189149a37fcc83b7de749fee222957097c875324b07433",
+        "afterSha256": "a18eddb4c8e447c807fd706bae9d94be0e5c1f87494ce6b7cb7eef42be4a6bae"
       }
     ]
   },
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "447826358ad15e61d64910a8f2092f3cfadbcdc0785127b13e9982cbc3ae49d6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "501732eaa0abc54dc23e167e4d28bf1066cafebb7538831795abf5b167fe0635",
+        "spans": [
+          {
+            "start": 291,
+            "end": 300,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "c85d0ac60a1fb5fa15f83f36ad703482dbfd9afacb05d94a0dc0abfef14011f2",
+        "spans": [
+          {
+            "start": 98,
+            "end": 99,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "ceros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "+07",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 285,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "a0317c1160a2b1deb2c161a48dc6c6aa0269f2ebe7b5d6e6b4f77b8cf6e3f2bf",
+        "spans": [
+          {
+            "start": 33,
+            "end": 39,
+            "text": "7[2;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 66,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "b783fa0aef7238e60cf8b4190bee03901097b0081de21669d30f13802eefd6e3",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "1755a0df1da5db9b06ce314097f8e00da728f79f1c0069e66ab514340e6bb748",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "c9799b14986c1b9e5d8e7a2d604ab025689964fcd63f74e6e84a26c91efab97e",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "0b90895a0d2c2765a89e6e59854b17fd98a57888623e4543abad05c06eba70f1",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a3b0c995c79bb3f5deaa2247ac676bf4a861d0a2c85adce5d09eeac9621dad2a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1946a2f11a1ac8342d1ee93c83baeff3aef533aa33f682441597d643d5b007eb",
+        "spans": [
+          {
+            "start": 82,
+            "end": 88,
+            "text": "7[2;1]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "7407ca67d53dfe65e8ec7f6565e00d2f39dfb17a842fc2191b0a71315d7c4a24",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "2a9c3867735ef16cd03fe0830a59302820e89ee6c133baf0b471e2a9ba923d3c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "081c7720f698e4b689050307842e76a48bdecfe4e93196eca72ff93fb9b6f55f",
+        "spans": [
+          {
+            "start": 7,
+            "end": 19,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 158,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 223,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "53e766c80a5dca4f5fa85069840852fcbf3f7931a1af86c84d6f27d5a7ee31a7",
+        "spans": [
+          {
+            "start": 21,
+            "end": 25,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "fe9348222698cd287935aa4afb0b5b678faf9c586000c09c22aae45bad3147ed",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/options/0",
+        "sourceSha256": "a179aecfe3f5603cf2f9c3ea719896b2895f35850018d9a4c739bcce20a684ec",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/options/1",
+        "sourceSha256": "d062456a6fde2c75eae35e3b4d30864ce6b381b1251e709b2f19bf5b1bc51bf7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/options/2",
+        "sourceSha256": "9c2eb1cd8de1a22c51159ab8bedaeaf9421f2d1bda8f107383408766c60228f7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "39ad4f2f95dbf6fa15cdb70c5b136ea9017a125b8db4ff5c103b37cae69650d5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "259415de82f23414379e4ebac88fba4a9d1c65cafcae83ef1a59b2279a4cd93a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "39f449a7f7cb35b9551eb0d14de9c3c3cb4e0ccb6cd916895c775aa3d05fd864",
+        "spans": [
+          {
+            "start": 115,
+            "end": 119,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "f4b047cd45d18710e2de5ba47089b10e5de6d40e33aadb7b3579cf4540b4ce47",
+        "spans": [
+          {
+            "start": 95,
+            "end": 98,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 120,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "at()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 284,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "5262ad5da0edc03ee561344aad0d90a936529fd6551e61efc7d7d93cef146bdc",
+        "spans": [
+          {
+            "start": 37,
+            "end": 40,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "2c6fb1ac158c351c9516f7fbd04bf3a180576e4c002c8072c144ba3134ec5e12",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "2246d748dc79036c5298660d7b369f4e10c156053811f7548ace8c6e0badc52c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "f438a436c827b3efc41817d6cfafce2627d2b7399f29dba82b6afd929002cea5",
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "f81a2877796430a177f5fd2f15bc503e8aca76a0369ae86c4bf04a23c01e9f22",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "792b60f1d3d849592f2f83f88ed4c425a1a3721182fef05c84d026044fc264c3",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "2b8799323fda6cd40c64a60a9826ef11e59615f114a0203e7ffb3da3ecf68ed2",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "350854b93babeb960a324a23650e010b663c40f2a44e6281c536bb24e8f6f3cf",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "590433a928c7d1cf64291d15a166d19f91f406b4f6ef460063fdff03e28fd5e6",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "7b123592ef924ba243a9ce82ce3926deaeb0270edc977df92e053847b2e08038",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "61e229fcfa253478bb3a5908fad08ac037ce5d97f1ac2b0dbbe0595ddf2b7211",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "c6895a4ae4715ea8aaca49a7fa7bd5fff2e94bf51c937711c1b3e4efcc345041",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "ce9d6f5dbb5f3f4c3f8d39711e42f63cf44483df98eb314bd7ce78defeb06553",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "78d0df370f16fc17b8fcc1a928687a12307dace90f50efe1740bb943fda123f9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "c4fba9f78907b167108227622d60068d8df880988861a51a0ad82ca48e2671aa",
+        "spans": [
+          {
+            "start": 149,
+            "end": 152,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "a3b907df4d36ad85abaafa35212e85a840aafba9bdb61429ffeca51e4378f832",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "8137db5a0dd21acf80f7e052d03501ab1ddd61d75fa7fc799304202afd4216e6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "5d12a813a13a972a42bf2589adca525d2c39d94a1811b296974d2ec26f5859b1",
+        "spans": [
+          {
+            "start": 11,
+            "end": 23,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 42,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 89,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 154,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 258,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 310,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 337,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 404,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 494,
+            "end": 499,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "e39adaca600d360ac5038de28411050e3b38f4b16c78261f1c0105c138010100",
+        "spans": [
+          {
+            "start": 70,
+            "end": 71,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 101,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 122,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 139,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 160,
+            "text": "4[3;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 202,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 332,
+            "end": 333,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 367,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 376,
+            "end": 380,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 525,
+            "end": 528,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 613,
+            "end": 614,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 621,
+            "end": 627,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 719,
+            "end": 723,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 726,
+            "end": 731,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 759,
+            "end": 768,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 793,
+            "end": 794,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 797,
+            "end": 798,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 852,
+            "end": 853,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 856,
+            "end": 857,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 911,
+            "end": 914,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 982,
+            "end": 986,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 992,
+            "end": 998,
+            "text": "Grupo:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1000,
+            "end": 1009,
+            "text": "Cantidad:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1011,
+            "end": 1014,
+            "text": "ID:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1017,
+            "end": 1023,
+            "text": "Orden:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1046,
+            "end": 1052,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1130,
+            "end": 1131,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1195,
+            "end": 1197,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1236,
+            "end": 1245,
+            "text": "Invalido:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1248,
+            "end": 1251,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1270,
+            "end": 1276,
+            "text": "Vacio:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1334,
+            "end": 1339,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1347,
+            "end": 1357,
+            "text": "Presencia:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1362,
+            "end": 1365,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1391,
+            "end": 1394,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1443,
+            "end": 1462,
+            "text": "Orden de registros:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1488,
+            "end": 1492,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1516,
+            "end": 1517,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1572,
+            "end": 1576,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1591,
+            "end": 1597,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1610,
+            "end": 1614,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1629,
+            "end": 1635,
+            "text": "7[3;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1643,
+            "end": 1644,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1748,
+            "end": 1757,
+            "text": "ID local:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1843,
+            "end": 1847,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0848a055d56978f479a227be76ef215bc991fc72d11bcadb1dd263385f4f2671",
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "once",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 62,
+            "text": "1:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 219,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 246,
+            "text": "Grupo:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 258,
+            "text": "Cantidad:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 264,
+            "text": "ID:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 274,
+            "text": "Orden:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 309,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 340,
+            "text": "Invalido:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 407,
+            "text": "Vacio:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 416,
+            "end": 419,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 462,
+            "text": "Presencia:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 534,
+            "text": "Orden de registros:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 571,
+            "end": 581,
+            "text": "ID local:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "32cb34424a228001b50e4361ff1036fb30848cd880960a19862fb135dcb6bd1b",
+        "spans": [
+          {
+            "start": 97,
+            "end": 100,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 319,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "8c45155929a71393e61b047e94bb60409f252ed6ff411010d8acf283fe415f9e",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "778ab30d940122ea88f1972e3ecd15b9f563734b27be830396c4377a1fa1776d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "463b14dcbca93b814ca1a27ded7162692ab6b8cb7e53ac14376222bdb40740a1",
+        "spans": [
+          {
+            "start": 146,
+            "end": 151,
+            "text": "1:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 322,
+            "text": "{ conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 352,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 366,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 387,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "625360ed190bb5aed69a75e1a029caf4654810a7f75c2155415da3e00dbc639b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "5b2ba2174cae063b6ac2b3224fdcecb3dfea1f34b34055dabb17b0eba1c69a63",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "044532547a7c4f2ad4fa28107a96fecf3643ca1694a04f56c991240e132833cb",
+        "spans": [
+          {
+            "start": 90,
+            "end": 91,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 94,
+            "end": 99,
+            "text": "ceros",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "61017703831411b4f3bd59a195f7c1828c650a1609a6cc18f415f2217f3e3e6e",
+        "spans": [
+          {
+            "start": 23,
+            "end": 26,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 84,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 121,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 161,
+            "text": "recibido == canon",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "309307794943146386b0b9a1821eda7bca09c5c8a0942eb6d4e6092a92e771d4",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "402c4fba957d5b9f43853fa56189b3dca60ddc50daf227694050f5e8d65124d7",
+        "spans": [
+          {
+            "start": 27,
+            "end": 37,
+            "text": "incompleto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 56,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 73,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 78,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "3eb574f289fedac5437d46f618463243baddb88c47a543eec49229d79cd34bb9",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 61,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/reviewFeedback",
+        "sourceSha256": "87af3f1425b2689dd385c26215940a12812e6757a425da73c666853bee8d00cb",
+        "spans": [
+          {
+            "start": 85,
+            "end": 97,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 216,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "d4293c1effed0d658d4352e9885466ecc224747bb8f30918055d11d197670452",
+        "spans": [
+          {
+            "start": 144,
+            "end": 148,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "8a84fd1a05ea1807c2092b565c74025b2cde9cb825592477f650932090b6f538",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "ab07737715250add9f1c288b11ce36160f3a5b643f546dccb11961d172c946d5",
+        "spans": [
+          {
+            "start": 167,
+            "end": 185,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "593c7fa480b92c56f663da58280a1513088cb1763ece2cff472d717289692b96",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "93b40bb9d0824786f749fd4487a4b1ae93c0f0127a56033f44187221189a5dc1",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "03801e074211b913150c2efcea1f9d172b6d9f2d3655169dfd1622da92e50de6",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 96,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 104,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 192,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 245,
+            "text": "const Grupo&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 304,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 353,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 390,
+            "text": "Origen:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 512,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 518,
+            "end": 527,
+            "text": "convertir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 646,
+            "end": 652,
+            "text": "Tabla:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 694,
+            "end": 695,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 698,
+            "end": 699,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 735,
+            "end": 758,
+            "text": "ID:aceptados:rechazados",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 793,
+            "end": 802,
+            "text": "convertir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 805,
+            "end": 814,
+            "text": "consultar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 847,
+            "end": 848,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "98c0704b62a181028162ffb1d67f39274556eb51c01b8bef063ba00db23d777a",
+        "spans": [
+          {
+            "start": 27,
+            "end": 32,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 64,
+            "text": "Origen:7:2:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 98,
+            "text": "Tabla:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 167,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 185,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 198,
+            "text": "Tabla:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 213,
+            "text": "2:3:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 221,
+            "text": "7:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 315,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 345,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 366,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "bf779fd3bc82032e970af63f221b73173c440feb2cb2d1ca40084546e0fbd34f",
+        "spans": [
+          {
+            "start": 76,
+            "end": 80,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 115,
+            "text": "const Grupo&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 284,
+            "text": "convertir",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "c06fa9f55369edd5755050190c1f35fd37d5c20b68f51007cc2f394ac4f9b47e",
+        "spans": []
+      }
+    ]
+  }
 }
