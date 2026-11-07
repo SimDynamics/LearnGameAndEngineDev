@@ -94,6 +94,32 @@ int main()try{
             compiler_puzzle_completed(restored,revised,editor(revised))==earned,
             "A second guidance revision replaced the original proof or bookmarks");
         store.save(restored);check(reopen(store)==restored,"Second guidance revision failed exact reopen");
+        if(earned){
+            // A real recheck is modelled here after an older success without
+            // these guides. Its historical receipt remains byte-for-byte old;
+            // reopening must still show the current sole-case explanation.
+            auto annotated=guided;const auto at=stable_block_position(annotated,test::crt_output_editor_id);
+            auto& shown=annotated.pages[at->page].blocks[at->block];
+            const auto& explanation=shown.output_check->cases.front().explanation;
+            constexpr auto path="/outputCheck/cases/0/explanation";
+            shown.text_semantics[path]=TextSemantics{explanation,{{0,explanation.size(),explanation,SemanticRole::output}}};
+            auto checked=capture;checked.revision=43;auto accepted=execution;accepted.source_revision=43;
+            accepted.standard_output=shown.output_check->cases.front().outputs.at(1);
+            check(record_compiler_puzzle_case(restored,annotated,shown,checked,accepted,"Correcto\n"+explanation),
+                "A fresh CRT recheck failed to retain its original achievement");
+            store.save(restored);restored=reopen(store);
+            const auto current_feedback=compiler_puzzle_current_feedback(restored,annotated,shown,checked);
+            check(current_feedback&&current_feedback->correct&&current_feedback->text=="Correcto\n"+explanation&&
+                current_feedback->source_path==path,"Reopening an earned CRT recheck lost its current success explanation or exact semantic origin");
+            check(receipts(restored)==prior_receipts&&narration::read_history(restored)==prior_markers,
+                "Restoring the current explanation rewrote original CRT receipts or paused page slots");
+            auto incorrect=accepted;incorrect.standard_output="";
+            check(record_compiler_puzzle_review(restored,annotated,shown,checked,incorrect,"Incorrecto\n"+guides.front().text),
+                "The CRT success explanation prevented a later rejected attempt");
+            store.save(restored);restored=reopen(store);const auto rejected_again=compiler_puzzle_current_feedback(restored,annotated,shown,checked);
+            check(rejected_again&&!rejected_again->correct&&rejected_again->text=="Incorrecto\n"+guides.front().text&&
+                receipts(restored)==prior_receipts,"An old achievement's explanation overrode the latest actual rejection");
+        }
     }
     std::cout<<"PASS CRT guidance adoption/revision: raw controls and objective preserved, earned/unattempted state, exact reopen, draft and three bookmarks; adapter fixtures only, no compilation/UI/audio.\n";
     return 0;

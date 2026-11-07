@@ -335,7 +335,7 @@ void interrupted_attempt_models(const WindowsEnvironment& environment){
         require(diagnostic?record_compiler_diagnostic_review(data,lesson,block,current,wrong,review):
             record_compiler_puzzle_review(data,lesson,block,current,capture_cpp_execution(current,wrong),review),
             "The model did not establish the exact current rejected attempt");
-        const auto rejected=data;const auto saved_draft=state::get_draft(data,draft_identity);
+        const auto rejected=data;const auto saved_draft=state::get_draft(data,draft_identity,block.initial_code,block.standard_input.value_or(""));
         // Reproduce the discarded startup operation directly. With no new
         // verdict it erases the review and exposes the historical Correcto.
         auto legacy=data;clear_compiler_puzzle_review(legacy,lesson,block);
@@ -366,7 +366,7 @@ void interrupted_attempt_models(const WindowsEnvironment& environment){
             require(data==rejected,"An unevaluable interruption changed the last review or independent state");
             store.save(data);state::StateStore reopen(store.root().parent_path());const auto restored=reopen.load();
             const auto feedback=compiler_puzzle_current_feedback(restored,lesson,block,attempt);
-            const auto resumed_draft=state::get_draft(restored,draft_identity);
+            const auto resumed_draft=state::get_draft(restored,draft_identity,block.initial_code,block.standard_input.value_or(""));
             require(restored==rejected&&feedback&&!feedback->correct&&feedback->text==review&&compiler_puzzle_completed(restored,lesson,block)&&
                 narration::read_history(restored)==markers&&resumed_draft.source==saved_draft.source&&resumed_draft.input==saved_draft.input&&
                 resumed_draft.selection_start==saved_draft.selection_start&&resumed_draft.selection_end==saved_draft.selection_end&&

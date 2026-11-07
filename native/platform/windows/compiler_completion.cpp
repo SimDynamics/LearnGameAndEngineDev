@@ -165,6 +165,18 @@ curriculum::Block historical_block(const curriculum::Block& block) {
     original.initial_code=block.compiler_revision->previous_initial_code;
     original.raw_json=block.compiler_revision->raw_json;original.compiler_revision.reset();return original;
 }
+const curriculum::OutputCase* current_crt_feedback_case(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    // This derived flag is granted only by the loader's reviewed CRT owner and
+    // editorial proof. Its sole case keeps the same authenticated objective;
+    // current guide wording is presentation, not another execution receipt.
+    if(!block.crt_output_original||lesson.locale!="es"||lesson.state_layout.version!=2||
+        lesson.id!="cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia"||
+        block.stable_id!="block_0005_0004"||!block.output_check||block.output_check->cases.size()!=1)return nullptr;
+    const auto& item=block.output_check->cases.front();
+    if(item.outputs.size()!=2||item.outputs.front()!=*block.crt_output_original)return nullptr;
+    std::string expanded;for(const char value:*block.crt_output_original){if(value=='\n')expanded+='\r';expanded+=value;}
+    return item.outputs.back()==expanded?&item:nullptr;
+}
 bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& right) {
     return left.standard_input==right.standard_input&&left.outputs==right.outputs&&left.executable==right.executable&&
         left.standard_error==right.standard_error&&left.exit_code==right.exit_code;
@@ -206,6 +218,8 @@ bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Le
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!compiler_puzzle_completed(data,lesson,block))return {};
     auto stored=state::string_value(data,"native_windows",base(lesson,block)+"feedback");
+    if(!stored.empty())if(const auto current=current_crt_feedback_case(lesson,block);current&&!current->explanation.empty())
+        return stored.substr(0,stored.find_first_of("\r\n"))+'\n'+current->explanation;
     // This authenticated text-only review retains the very same successful
     // execution objective. Present its new explanation without rewriting the
     // original receipt, running another program or inventing listening credit.
@@ -251,6 +265,8 @@ std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::St
     }
     if(auto earned=compiler_puzzle_feedback(data,lesson,block);!earned.empty()){
         auto path=restored_feedback_origin(data,key,block,earned,state::string_value(data,"native_windows",key+"completed"));
+        if(const auto current_case=current_crt_feedback_case(lesson,block);current_case&&!current_case->explanation.empty())
+            path="/outputCheck/cases/0/explanation";
         return CompilerFeedback{std::move(earned),true,std::move(path)};
     }
     return std::nullopt;

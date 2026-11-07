@@ -127,6 +127,82 @@ internal object WindowsTextSemantics {
         val suffix = String.format(java.util.Locale.ROOT,template.substring(token.range.last+1))
         return compose(listOf(prefix,unit,suffix),"")
     }
+    /** Each entry is a separate RichEdit (or the inline field's own caption
+     * region); joining them would manufacture recordings the reader never asks for. */
+    fun nativeFieldSources(response: JSONObject): List<String> {
+        val fields = response.optJSONArray("fields")
+        val definitions = linkedMapOf<String,JSONObject>()
+        for (index in 0 until (fields?.length() ?: 0)) {
+            val field = fields!!.getJSONObject(index); definitions[field.getString("id")] = field
+        }
+        val result = mutableListOf<String>(); val used = mutableSetOf<String>()
+        fun text(value: JSONObject, key: String) { (value.opt(key) as? String)?.takeIf(String::isNotEmpty)?.let(result::add) }
+        fun field(id: String, inline: Boolean) {
+            val value = definitions[id] ?: error("A displayed math field has no definition")
+            require(used.add(id)) { "A mathematical template repeats the same field" }
+            val fixed = value.optString("type","numeric") == "fixed"
+            if (!inline || !fixed) text(value,"label")
+            if (fixed) text(value,"text")
+            text(value,"unit")
+        }
+        val segments = response.optJSONArray("segments")
+        val rows = response.optJSONArray("rows")?.takeIf { response.optString("layout") == "table" && it.length() > 0 }
+        when {
+            segments != null -> for (index in 0 until segments.length()) {
+                val segment = segments.getJSONObject(index)
+                if (segment.has("field")) field(segment.getString("field"),true) else text(segment,"text")
+            }
+            rows != null -> {
+                val headers = response.optJSONArray("headers")
+                for (index in 0 until (headers?.length() ?: 0)) (headers!!.opt(index) as? String)?.let(result::add)
+                for (rowIndex in 0 until rows.length()) {
+                    val cells = rows.getJSONArray(rowIndex)
+                    for (index in 0 until cells.length()) when (val cell = cells.get(index)) {
+                        is JSONObject -> field(cell.getString("field"),false)
+                        is String -> result += cell
+                        is Number -> result += cell.toString()
+                    }
+                }
+            }
+            else -> definitions.keys.forEach { field(it,false) }
+        }
+        definitions.keys.filter { it !in used }.forEach { field(it,segments != null) }
+        return result
+    }
+    private val feedbackLanguages = ThreadLocal<Pair<String,String>?>()
+    fun <T> withNativeFeedback(uiLanguage: String, contentLanguage: String, action: () -> T): T {
+        val previous = feedbackLanguages.get(); feedbackLanguages.set(uiLanguage to contentLanguage)
+        return try { action() } finally {
+            if (previous == null) feedbackLanguages.remove() else feedbackLanguages.set(previous)
+        }
+    }
+    /** The actual successful native feedback is one region. Preparation omits
+     * only its decoration icon, exactly like the direct plan frontend. */
+    fun nativeCorrectFeedbackSpeech(block: JSONObject): String {
+        val (uiLanguage,contentLanguage) = feedbackLanguages.get() ?: error("Missing native feedback locale owners")
+        val mathematical = block.optString("type").startsWith("math_")
+        val original = if (mathematical) block.optJSONObject("feedback")?.opt("correct") as? String
+            else block.opt("explanation") as? String
+        val raw = original.orEmpty()
+        val trim = if (mathematical) 0 else raw.indexOfFirst { it != '\r' && it != '\n' }.let { if (it < 0) raw.length else it }
+        val included = if (mathematical) raw.isNotBlank() else trim < raw.length
+        val heading = if (mathematical) MathLocaleResources.resolve("math_ui_correct_heading",emptyList(),contentLanguage)
+            else "✓ " + if (uiLanguage.startsWith("es")) "Correcto" else "Correct"
+        val prefix = heading + if (included) { if (mathematical) "\n" else "\n\n" } else ""
+        val full = prefix + if (included) raw.substring(trim) else ""
+        val icon = IncorrectFeedbackNarration.verdictIconPrefix(full)
+        val speech = IncorrectFeedbackNarration.visibleSpeech(full)
+        val descriptor = original?.let(::lookup)?.takeIf { !mathematical || included }
+        if (descriptor != null) {
+            val offset = prefix.length - icon
+            val spans = if (!included) emptyList() else descriptor.spans.mapNotNull { span ->
+                val first = maxOf(span.start,trim)
+                if (first >= span.end) null else span.copy(start=offset+first-trim,end=offset+span.end-trim,text=raw.substring(first,span.end))
+            }
+            bound.get()?.set(speech,Field(speech,spans))
+        }
+        return speech
+    }
     /** Match rich_text's complete inline delimiters over the original field,
      * before a semantic range can divide either delimiter or its contents. */
     private fun hiddenPresentation(field: Field): BooleanArray {

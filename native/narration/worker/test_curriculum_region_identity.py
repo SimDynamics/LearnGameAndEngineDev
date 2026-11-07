@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import unittest
 
-from test_text_semantics import descriptor, field
+from test_text_semantics import descriptor, field, units
 from test_worker import Worker
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -37,21 +37,26 @@ class CurriculumRegionIdentityTest(unittest.TestCase):
         self.assertEqual(before["stateLayout"], lesson["stateLayout"])
         return lesson
 
-    def assert_native_regions(self, block, definitions, regions):
+    def assert_native_regions(self, block, definitions, regions, *, ui="es", language="es", content_language=None,
+                              reading_context="auto"):
         lesson = self.lesson(block, definitions)
         snapshot = deepcopy(lesson)
-        reply = self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson), page=0,
-                                language="es", voice="ef_dora", uiLanguage="es", readingContext="cpp")
+        request = dict(lessonJson=json.dumps(lesson), page=0, language=language, voice="ef_dora",
+                       uiLanguage=ui, readingContext="cpp")
+        if content_language is not None:
+            request["contentLanguage"] = content_language
+        reply = self.worker.ask("curriculum_plan", **request)
         self.assertEqual(snapshot, lesson)
         keys = {item["key"] for item in reply["segments"]}
         for source, semantics in regions:
-            request = dict(text=source, language="es", voice="ef_dora", readingContext="cpp", mathMode="auto")
+            request = dict(text=source, language=language, voice="ef_dora", readingContext=reading_context, mathMode="auto")
             if semantics is not None:
                 request["textSemantics"] = semantics
             expected = self.worker.ask("plan", **request)["segments"]
             for item in expected:
                 self.assertIn(item["key"], keys, dict(nativeSource=source, expected=item["preparedText"],
                     anticipated=[part["preparedText"] for part in reply["segments"]]))
+        return reply
 
     def test_representation_table_cells_are_independent_native_rich_edits(self):
         block = dict(type="math_puzzle", schemaVersion=1, prompt="Observa.", responses=[],
@@ -86,6 +91,74 @@ class CurriculumRegionIdentityTest(unittest.TestCase):
                        ("/responses/0/fields/0/label", "Campo", {"spans": []}),
                        ("/responses/0/segments/2/text", " x", descriptor(" x"))]
         self.assert_native_regions(block, definitions, [(source, value) for _, source, value in definitions])
+
+    def test_partial_region_annotation_does_not_force_other_cells_or_field_parts(self):
+        block = dict(type="math_puzzle", schemaVersion=1, prompt="Observa.", responses=[],
+                     representations=[dict(type="math_table", headers=["y", "Prosa vecina"], rows=[])])
+        value = descriptor("y")
+        self.assert_native_regions(block, [("/representations/0/headers/0", "y", value)],
+                                   [("y", value), ("Prosa vecina", None)])
+        response = dict(id="q", type="math_multi_input", fields=[dict(id="a", type="fixed", label="Rótulo", text="y", unit="unidades")],
+                        validator=dict(type="fields", fields=dict(a=dict(type="numeric", expected="1"))))
+        block = dict(type="math_puzzle", schemaVersion=1, prompt="Observa.", responses=[response])
+        self.assert_native_regions(block, [("/responses/0/fields/0/text", "y", value)],
+                                   [("Rótulo", None), ("y", value), ("unidades", None)])
+
+    @staticmethod
+    def feedback_descriptor(guide, value, prefix, trim=0):
+        raw = guide.encode("utf-16-le")
+        return {"spans": [dict(span, start=units(prefix)+max(span["start"], trim)-trim,
+                                     end=units(prefix)+span["end"]-trim,
+                                     text=raw[2*max(span["start"], trim):2*span["end"]].decode("utf-16-le"))
+                           for span in value["spans"] if span["end"] > trim]}
+
+    def test_success_feedback_uses_the_actual_native_region_and_its_locale_owners(self):
+        guide = "\r\n`y`."
+        value = descriptor(guide, start=units("\r\n`"), end=units("\r\n`y"))
+        for content, ui, speech in (("es", "fr", "es"), ("fr", "es", "es"), ("es", "en", "en-US")):
+            with self.subTest(kind="math", content=content, ui=ui, speech=speech):
+                block = dict(type="math_puzzle", schemaVersion=1, prompt="Observa.", feedback=dict(correct=guide, incorrect="HIDDEN_INCORRECT"),
+                             responses=[dict(id="q", type="math_multiple_choice_single", options=[dict(id="a", label="A")],
+                                             validator=dict(type="choice", expected=["a"]))])
+                verdict = self.worker.ask("validate_math", blockJson=json.dumps(block),
+                    responsesJson=json.dumps({"q": dict(type="choice", selected=["a"])}), language=content)
+                heading = "✓ Correcto" if content == "es" else "✓ Correct"
+                self.assertTrue(verdict["correct"])
+                self.assertEqual(heading+"\n"+guide, verdict["feedback"])
+                whole = self.feedback_descriptor(guide, value, heading+"\n")
+                definitions = [("/feedback/correct", guide, value), ("/feedback/incorrect", "HIDDEN_INCORRECT", {"spans": []})]
+                reply = self.assert_native_regions(block, definitions, [(verdict["feedback"], whole)],
+                    ui=ui, language=speech, content_language=content)
+                self.assertNotIn("HIDDEN_INCORRECT", " ".join(part["preparedText"] for part in reply["segments"]))
+            with self.subTest(kind="ordinary", content=content, ui=ui, speech=speech):
+                block = dict(type="multiple_choice", question="Elige.", options=["A", "B"], explanation=guide,
+                             reviewFeedback=["HIDDEN_REVIEW_A", "HIDDEN_REVIEW_B"])
+                prefix = "✓ " + ("Correcto" if ui == "es" else "Correct") + "\n\n"
+                full = prefix+guide.lstrip("\r\n")
+                whole = self.feedback_descriptor(guide, value, prefix, trim=units(guide)-units(guide.lstrip("\r\n")))
+                reply = self.assert_native_regions(block, [("/explanation", guide, value)], [(full, whole)],
+                    ui=ui, language=speech, content_language=content, reading_context="cpp")
+                self.assertNotIn("HIDDEN_REVIEW", " ".join(part["preparedText"] for part in reply["segments"]))
+
+    def test_success_feedback_without_annotation_and_without_guidance_keeps_native_keys(self):
+        for mathematical in (False, True):
+            for guide in ("", "Texto válido."):
+                with self.subTest(mathematical=mathematical, guide=guide):
+                    block = dict(type="math_puzzle", schemaVersion=1, prompt="Observa.", responses=[], feedback=dict(correct=guide)) if mathematical else dict(
+                        type="multiple_choice", question="Elige.", options=["A"], explanation=guide)
+                    prefix = "✓ Correcto" if mathematical else "✓ Correct"
+                    full = prefix + (("\n" if mathematical else "\n\n")+guide if guide else "")
+                    self.assert_native_regions(block, [], [(full, None)], ui="fr", content_language="es",
+                        reading_context="auto" if mathematical else "cpp")
+
+    def test_content_language_owner_rejects_invalid_values_and_uses_stable_layout_fallback(self):
+        block = dict(type="math_puzzle", schemaVersion=1, prompt="Observa.", responses=[], feedback=dict(correct="Texto válido."))
+        # The stable source locale is es even while UI and speech are French.
+        self.assert_native_regions(block, [], [("✓ Correcto\nTexto válido.", None)], ui="fr", language="fr")
+        for invalid in ("de", True, ""):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(AssertionError, "Narration failed"):
+                self.worker.ask("curriculum_plan", lessonJson=json.dumps(self.lesson(block, [])), page=0,
+                    language="es", voice="ef_dora", uiLanguage="es", contentLanguage=invalid)
 
 
 if __name__ == "__main__":

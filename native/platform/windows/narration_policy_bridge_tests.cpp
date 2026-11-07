@@ -265,6 +265,27 @@ int main() try {
         catch(const std::invalid_argument&){invalid=true;}require(invalid,"An unknown native semantic frontend policy was silently coerced");
         ++groups;
     }
+    {
+        // Native content, UI and selected speech languages have independent
+        // owners. Planning another voice must not translate the visible verdict.
+        const std::string lesson=R"({"id":"qa-native-region-languages","pages":[{"blocks":[{"type":"multiple_choice","question":"Elige.","options":["Uno","Dos"],"correctAnswer":0,"explanation":"Texto válido."},{"type":"math_puzzle","schemaVersion":1,"prompt":"Figura.","responses":[],"feedback":{"correct":"Figura válida."}}]}]})";
+        const auto background=[&](std::string_view content){
+            return winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(
+                worker.curriculum_plan(lesson,0,"es","ef_dora","fr",{},"cpp",content))).GetNamedArray(L"segments");
+        };
+        const auto contains=[&](const auto& segments,std::string_view source){
+            const auto plan=worker.plan(source,"es",{},"cpp");owners(source,plan);
+            for(const auto& part:plan){bool found=false;
+                for(const auto& candidate:segments)if(winrt::to_string(candidate.GetObject().GetNamedString(L"preparedText"))==part.prepared)found=true;
+                require(found,"Native curriculum IPC lost the exact feedback region or its UI/content language");}
+        };
+        const auto spanish=background("es"),french=background("fr");
+        contains(spanish,"✓ Correct\n\nTexto válido.");
+        contains(spanish,"✓ Correcto\nFigura válida.");
+        contains(french,"✓ Correct\n\nTexto válido.");
+        contains(french,"✓ Correct\nFigura válida.");
+        ++groups;
+    }
     worker.shutdown();worker.shutdown();
     std::cout<<"PASS "<<groups<<" real native/JVM output-policy groups, UTF-16 owners, context/mode and identity serialization. "
         "No synthesis, playback, windows or saved listening credit.\n";

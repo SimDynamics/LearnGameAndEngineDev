@@ -168,12 +168,9 @@ class ExplicitTextSemanticsTest(unittest.TestCase):
                 self.assertLess(shown["start"], shown["end"])
                 self.assertLessEqual(shown["end"], units(part["text"]))
 
-    def test_composed_table_fields_keep_distinct_ranges_and_reject_partial_groups(self):
+    def test_independent_table_fields_keep_their_own_roles_and_allow_partial_annotation(self):
         import json
         owner = "stable-table"
-        source = "y; y"
-        composed = {"spans": [dict(start=0, end=1, text="y", role="cpp"),
-                                dict(start=3, end=4, text="y", role="output")]}
         block = dict(type="math_puzzle", representations=[dict(type="math_table", config=dict(headers=["y", "y"], rows=[["y", "y"]]))], responses=[])
         paths = ["/representations/0/config/headers/0", "/representations/0/config/headers/1",
                  "/representations/0/config/rows/0/0", "/representations/0/config/rows/0/1"]
@@ -185,12 +182,14 @@ class ExplicitTextSemanticsTest(unittest.TestCase):
         def background(value):
             return self.worker.ask("curriculum_plan", lessonJson=json.dumps(value), page=0, language="es", voice="ef_dora", uiLanguage="es", readingContext="cpp")
         keys = [part["key"] for part in background(lesson)["segments"]]
-        for part in self.plan(source, composed):
-            self.assertIn(part["key"], keys)
+        for role in ("cpp", "output"):
+            for part in self.plan("y", descriptor("y", role=role)):
+                self.assertIn(part["key"], keys)
         partial = deepcopy(lesson)
         partial["textSemantics"]["fields"].pop(1)
-        with self.assertRaisesRegex(AssertionError,"Narration failed"):
-            background(partial)
+        partial_keys = [part["key"] for part in background(partial)["segments"]]
+        for part in self.worker.ask("plan", text="y", language="es", readingContext="auto", mathMode="auto")["segments"]:
+            self.assertIn(part["key"], partial_keys)
         self.assertEqual(keys, [part["key"] for part in background(lesson)["segments"]])
 
     def test_hidden_unsupported_and_stale_curricular_pointers_are_rejected(self):
@@ -229,7 +228,10 @@ class ExplicitTextSemanticsTest(unittest.TestCase):
         standalone = dict(type="math_numeric_input", label="response", feedback={"correct": "y"})
         value = lesson(standalone,[field(owner,"/feedback/correct","y",descriptor("y", role="output"))])
         keys = [part["key"] for part in background(value)["segments"]]
-        self.assertIn(self.plan("y",descriptor("y", role="output"))[0]["key"],keys)
+        prefix = "✓ Correcto\n"
+        source = prefix + "y"
+        composed = descriptor(source, role="output", start=units(prefix), end=units(source))
+        self.assertIn(self.plan(source,composed)[0]["key"],keys)
 
     def test_marked_compiler_guides_are_anticipated_with_exact_native_verdict_sources_only(self):
         import json

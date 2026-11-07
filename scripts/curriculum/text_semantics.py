@@ -178,89 +178,6 @@ def feedback_origins(block):
     return result
 
 
-def presentation_groups(block):
-    """Fields joined by the common extractor must switch policy together."""
-    public, groups = public_text_fields(block), []
-    nonblank = lambda path: path in public and bool(public[path].strip(TRIM_CHARS))
-
-    def add(paths):
-        group = {path for path in paths if nonblank(path)}
-        if len(group) > 1:
-            groups.append(group)
-
-    def strings(values, path):
-        if isinstance(values, list):
-            add(f"{path}/{n}" for n in range(len(values)))
-
-    def content(values, path, depth):
-        _require(depth <= 32, "Semantic rich content is too deeply nested")
-        if isinstance(values, list):
-            for n, value in enumerate(values):
-                if isinstance(value, dict):
-                    representation(value, f"{path}/{n}", depth + 1)
-
-    def representation(spec, path, depth=0):
-        if not isinstance(spec, dict):
-            return
-        config = spec.get("config", spec)
-        if not isinstance(config, dict):
-            return
-        location = path + ("/config" if "config" in spec else "")
-        if spec.get("type") == "math_table":
-            strings(config.get("headers"), location + "/headers")
-            for n, row in enumerate(config.get("rows", [])):
-                strings(row, f"{location}/rows/{n}")
-        elif spec.get("type") == "rich_answer_option":
-            content(config.get("content"), location + "/content", depth)
-
-    kind = block.get("type", "")
-    if not isinstance(kind, str) or not kind.startswith("math_"):
-        return groups
-    for name in ("representations", "tools"):
-        for n, spec in enumerate(block.get(name, [])):
-            representation(spec, f"/{name}/{n}")
-    responses = block.get("responses", []) if kind == "math_puzzle" else [block]
-    for n, response in enumerate(responses):
-        if not isinstance(response, dict):
-            continue
-        path = f"/responses/{n}" if kind == "math_puzzle" else ""
-        fields = response.get("fields", [])
-        definitions = {field.get("id"): (index, field) for index, field in enumerate(fields) if isinstance(field, dict)}
-        inline = "segments" in response
-
-        def field_paths(identifier):
-            entry = definitions.get(identifier)
-            if entry is None:
-                return set()
-            index, field = entry
-            location = f"{path}/fields/{index}"
-            names = (["label"] if field.get("type", "numeric") != "fixed" or not inline else [])
-            if field.get("type") == "fixed":
-                names.append("text")
-            names.append("unit")
-            selected = {location + "/" + name for name in names if nonblank(location + "/" + name)}
-            add(selected)
-            return selected
-
-        for identifier in definitions:
-            field_paths(identifier)
-        if inline:
-            joined = set()
-            for index, segment in enumerate(response.get("segments", [])):
-                if isinstance(segment, dict):
-                    joined.update(field_paths(segment["field"]) if "field" in segment else {f"{path}/segments/{index}/text"})
-            add(joined)
-        elif response.get("layout") == "table":
-            strings(response.get("headers"), path + "/headers")
-            # Current separateTableCells policy keeps each response-row cell
-            # independent; representation-table rows still use strings().
-        for name in ("options", "items", "sources", "targets"):
-            for index, item in enumerate(response.get(name, [])):
-                if isinstance(item, dict):
-                    content(item.get("content"), f"{path}/{name}/{index}/content", 0)
-    return groups
-
-
 def _blocks(document):
     layout = document.get("stateLayout")
     _require(isinstance(layout, dict) and type(layout.get("version")) is int and layout["version"] == 2,
@@ -336,9 +253,6 @@ def validate(document):
         group = feedback_origins(blocks[owner])
         _require(not group.intersection(fields) or group <= fields.keys(),
                  "Annotating mathematical feedback requires every possible authored feedback origin in that block")
-        for group in presentation_groups(blocks[owner]):
-            _require(not group.intersection(fields) or group <= fields.keys(),
-                     "Annotating a joined mathematical passage requires all its authored source fields")
     return result
 
 

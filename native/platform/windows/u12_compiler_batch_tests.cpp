@@ -18,6 +18,9 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <optional>
+#include <set>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -44,7 +47,7 @@ state::StateData reopen_state(const state::StateStore& store) {
     return reopened.load();
 }
 struct Plan {const char* file;const char* editor;const char* complete;const char* partial=nullptr;};
-constexpr std::array<Plan,18> plans{{
+constexpr std::array<Plan,18> formatting_plans{{
     {"representar_enteros_en_distintas_bases","block_0006_0002","block_0007_0005","block_0007_0001"},
     {"estado_del_formato_y_flujos_independientes","block_0006_0002","block_0007_0005"},
     {"precision_y_presentacion_de_double","block_0006_0002","block_0007_0005"},
@@ -63,6 +66,16 @@ constexpr std::array<Plan,18> plans{{
     {"compartir_flujos_sin_acoplar_el_calculo","block_0006_0002","block_0007_0001"},
     {"insertar_un_tipo_y_encadenar_la_salida","block_0003_0004","block_0005_0001"},
     {"extraer_un_tipo_sin_cambiarlo_en_fallo","block_0005_0005","block_0007_0001","block_0006_0001"}
+}};
+constexpr std::array<Plan,8> loading_state_plans{{
+    {"leer_y_validar_una_linea_completa","block_0003_0003","block_0005_0001","block_0004_0001"},
+    {"aceptar_registros_y_detectar_duplicados","block_0003_0003","block_0004_0001"},
+    {"aceptar_registros_y_detectar_duplicados","block_0006_0002","block_0007_0001"},
+    {"actualizar_todo_o_conservar_el_estado_anterior","block_0002_0003","block_0005_0001","block_0003_0001"},
+    {"actualizar_todo_o_conservar_el_estado_anterior","block_0006_0002","block_0007_0001"},
+    {"representar_presencia_y_cambiar_la_organizacion","block_0002_0004","block_0006_0001","block_0003_0001"},
+    {"representar_presencia_y_cambiar_la_organizacion","block_0004_0003","block_0007_0001","block_0005_0001"},
+    {"clasificar_caracteres_y_normalizar_una_copia","block_0009_0002","block_0010_0001"}
 }};
 struct Asset {Lesson lesson,metadata;std::filesystem::path path;std::string hash;};
 const Block& at(const Lesson& lesson,std::string_view identity) {
@@ -159,8 +172,12 @@ void ordinary_guides(const Asset& asset,state::StateStore& store,state::StateDat
 }
 }
 
-int main() try {
-    const LaunchOptions options{ProfileId::Codex,L"u12-batch-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
+int main(int argc,char** argv) try {
+    const bool loading_state=argc==2&&std::string_view(argv[1])=="--loading-state";
+    require(argc==1||loading_state,"Usage: u12_compiler_batch_tests [--loading-state]");
+    const std::span<const Plan> plans=loading_state?std::span<const Plan>(loading_state_plans):std::span<const Plan>(formatting_plans);
+    const LaunchOptions options{ProfileId::Codex,(loading_state?L"u12-loading-batch-":L"u12-batch-")+
+        std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
     const auto source_root=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo";
@@ -174,17 +191,22 @@ int main() try {
         state::save_current_page(data,asset.lesson,asset.lesson.pages.size()-1);
         assets.emplace(plan.file,std::move(asset));
     }
-    require(assets.size()==11,"The U12 compiler batch no longer covers exactly L5 through L15");
+    require(assets.size()==(loading_state?5:11),"The selected U12 compiler batch changed its exact lesson inventory");
     for(const auto& plan:plans) {
         const auto& asset=assets.at(plan.file);const auto& editor=at(asset.lesson,plan.editor);
         require(editor.output_check&&editor.output_check->cases.size()==1&&editor.output_check->cases.front().standard_input.empty(),
             "A reviewed U12 editor changed from its single aggregate empty-input objective");
-        state::Draft draft;draft.source=editor.initial_code+"\n// isolated personal QA draft\n";draft.input="";
+        if(loading_state)require(editor.project_files.empty()&&editor.source_files.empty()&&!editor.cmake&&
+                !editor.output_check->cases.front().executable&&editor.output_check->cases.front().exit_code==0,
+            "A loading-state capture requires its exact current single-source, empty-input, default-target process frame");
+        state::Draft draft;draft.source=editor.initial_code+(loading_state?"":"\n// isolated personal QA draft\n");draft.input="";
         draft.selection_start=2;draft.selection_end=7;state::put_draft(data,draft_key("programming",asset.lesson,editor),draft);
     }
     store.save(data);
     const auto programs=environment.paths.projects/L"Código & (U12 integrado)";
     std::uint64_t sequence=0;unsigned runs=0,passed=0,failed=0;
+    std::set<std::string> captured_loading_frames;
+    std::set<std::filesystem::path> captured_run_directories;
     const auto test=[&](std::string_view name,const std::function<void()>& action) {
         try{action();++passed;std::cout<<"PASS "<<name<<'\n';}
         catch(const std::exception& error){++failed;std::cerr<<"FAIL "<<name<<": "<<error.what()<<'\n';}
@@ -193,25 +215,35 @@ int main() try {
         Capture capture;capture.request.request_id=++sequence;capture.request.revision=100+sequence;
         capture.request.source_utf8=std::move(source);capture.request.projects_directory=programs;
         capture.request.compile_timeout=30s;capture.request.execution_timeout=3s;
+        if(loading_state)require(captured_loading_frames.insert(compiler_program_frame(capture.request)).second,
+            "The reviewed loading-state plans no longer have twenty distinct source/project frames");
         ++runs;capture.result=run_cpp(capture.request);capture.execution=capture_cpp_execution(capture.request,capture.result);
         require(capture.result.error_utf8.empty()&&capture.result.compilation.succeeded()
             &&capture.execution.execution_completed&&capture.execution.execution_succeeded&&capture.execution.exit_code==0,
             "A U12 integration program failed to compile or complete normally: "+capture.result.error_utf8+
             capture.result.compilation.stdout_bytes+capture.result.compilation.stderr_bytes);
+        require(captured_run_directories.insert(capture.result.run_directory).second,
+            "A separate U12 compiler action reused another capture's run directory");
         require(read(capture.result.run_directory/L"main.cpp")==capture.request.source_utf8
-            &&read(capture.result.run_directory/L"execution-stdout.bin")==capture.execution.standard_output,
-            "The adapter changed the captured U12 source or raw output bytes");
+            &&read(capture.result.run_directory/L"stdin.bin")==capture.request.stdin_utf8
+            &&read(capture.result.run_directory/L"execution-stdout.bin")==capture.execution.standard_output
+            &&read(capture.result.run_directory/L"execution-stderr.bin")==capture.execution.standard_error,
+            "The adapter changed the captured U12 source, input or raw output channels");
         return capture;
     };
-    // A single controlled empty program exercises all aggregate-oracle negatives.
-    // Work already checked each separate empty curricular starter; do not repeat it.
-    const auto empty=run("int main(){return 0;}\n");require(empty.execution.standard_output.empty(),"The empty U12 probe wrote output");
+    // Preserve the old formatting batch's controlled empty probe. The loading
+    // batch below instead captures its eight different published starters.
+    std::optional<Capture> empty;
+    if(!loading_state){empty=run("int main(){return 0;}\n");require(empty->execution.standard_output.empty(),"The empty U12 probe wrote output");}
     for(const auto& plan:plans)test(std::string(plan.file)+"/"+plan.editor,[&] {
         const auto& asset=assets.at(plan.file);const auto& editor=at(asset.lesson,plan.editor);
         const auto initial=data;flow(asset,data);
         require(!compiler_puzzle_completed(data,asset.lesson,editor),"An unexecuted U12 editor inherited another goal's achievement");
-        require(evaluate_cpp_output_check(*editor.output_check,empty.execution,empty.request.revision).verdict==OutputVerdict::incorrect
-            &&!record_compiler_puzzle_case(data,asset.lesson,editor,empty.request,empty.execution,"Incorrecto\nControlled empty output.")&&data==initial,
+        // The new batch uses every published starter exactly. They have eight
+        // different source/program frames, so none shares an execution capture.
+        const auto starter=loading_state?run(editor.initial_code):*empty;
+        require(evaluate_cpp_output_check(*editor.output_check,starter.execution,starter.request.revision).verdict==OutputVerdict::incorrect
+            &&!record_compiler_puzzle_case(data,asset.lesson,editor,starter.request,starter.execution,"Incorrecto\nPublished starter output.")&&data==initial,
             "An empty successful program completed a nonempty U12 aggregate objective");
         const auto reject=[&](const Capture& capture) {
             require(evaluate_cpp_output_check(*editor.output_check,capture.execution,capture.request.revision).verdict==OutputVerdict::incorrect,
@@ -224,11 +256,16 @@ int main() try {
             require(feedback&&!feedback->correct&&!compiler_puzzle_completed(restored,asset.lesson,editor),
                 "Reopening lost an actual U12 rejection or invented completion");flow(asset,restored);
         };
-        reject(empty);
-        if(plan.partial)reject(run(at(asset.lesson,plan.partial).code));
+        reject(starter);
+        const auto require_reference=[&](const Block& reference) {
+            const auto owner=reference_activity(asset.lesson,reference);
+            require(reference.type==BlockType::code&&owner&&
+                asset.lesson.pages[owner->page].blocks[owner->block].stable_id==editor.stable_id,
+                "The current U12 program is not a published reference protected by this exact editor");
+        };
+        if(plan.partial){const auto& partial=at(asset.lesson,plan.partial);require_reference(partial);reject(run(partial.code));}
         const auto& reference=at(asset.lesson,plan.complete);
-        require(reference.type==BlockType::code&&reference_activity(asset.lesson,reference).has_value(),
-            "The complete U12 program is not an explicitly protected reference");
+        require_reference(reference);
         const auto capture=run(reference.code);
         const auto verdict=evaluate_cpp_output_check(*editor.output_check,capture.execution,capture.request.revision);
         require(verdict.verdict==OutputVerdict::correct&&verdict.stdout_correct&&verdict.exit_code_correct,
@@ -244,6 +281,13 @@ int main() try {
             "An actual complete U12 program retained obsolete rejected feedback");
         store.save(data);require(reopen_state(store)==data,"A real U12 achievement changed on reopen");
         flow(asset,data);
+        if(loading_state&&std::string_view(plan.file)=="clasificar_caracteres_y_normalizar_una_copia") {
+            // This batch excludes the already-tested first CRT editor. A real
+            // receipt for its successor cannot manufacture that prerequisite.
+            const auto& first=at(asset.lesson,"block_0005_0004");const auto proofs=snapshot(asset.lesson,data);
+            require(!compiler_puzzle_completed(data,asset.lesson,first)&&!proofs.at(first.stable_id)
+                &&!proofs.at(editor.stable_id),"The second L20 editor bypassed the unresolved first CRT prerequisite");
+        }
         if(std::string_view(plan.file)=="compartir_flujos_sin_acoplar_el_calculo"&&std::string_view(plan.editor)=="block_0006_0002")
             require(read(capture.result.run_directory/L"balance_compartido_lgp.txt")=="Balance=5",
                 "The real U12L13 round trip did not preserve its nine exact file bytes");
@@ -251,7 +295,13 @@ int main() try {
             require(read(capture.result.run_directory/L"recuento_lgp.txt")=="[10;10]",
                 "The real U12L14 battery did not replace the file with its final seven bytes");
     });
-    test("sixteen ordinary U12L14/L15 answers, exact guides and state reopen",[&] {
+    if(loading_state)test("nineteen ordinary U12L16-L19 answers, exact guides and state reopen",[&] {
+        ordinary_guides(assets.at("leer_y_validar_una_linea_completa"),store,data,5,true);
+        ordinary_guides(assets.at("aceptar_registros_y_detectar_duplicados"),store,data,5,true);
+        ordinary_guides(assets.at("actualizar_todo_o_conservar_el_estado_anterior"),store,data,5,true);
+        ordinary_guides(assets.at("representar_presencia_y_cambiar_la_organizacion"),store,data,4,true);
+    });
+    else test("sixteen ordinary U12L14/L15 answers, exact guides and state reopen",[&] {
         ordinary_guides(assets.at("insertar_un_tipo_y_encadenar_la_salida"),store,data,7,false);
         ordinary_guides(assets.at("extraer_un_tipo_sin_cambiarlo_en_fallo"),store,data,9,true);
     });
@@ -270,7 +320,7 @@ int main() try {
         state::StateStore reset_store(environment.paths.root/L"reset"/std::to_wstring(index));(void)reset_store.load();reset_store.save(reset);
         require(reopen_state(reset_store)==expected,"A reset U12 prerequisite or conserved state changed on reopen");
     });
-    test("the new authored return-1 objective stays independent of these eighteen checks",[&] {
+    if(!loading_state)test("the new authored return-1 objective stays independent of these eighteen checks",[&] {
         const auto& asset=assets.at("compartir_flujos_sin_acoplar_el_calculo");
         const auto& intentional=at(asset.lesson,"block_0005_0002");
         require(has_compiler_objective(intentional)&&intentional.output_check&&intentional.output_check->cases.size()==1
@@ -281,9 +331,19 @@ int main() try {
         require(!compiler_puzzle_completed(achieved,asset.lesson,intentional)&&!snapshot(asset.lesson,achieved).at(intentional.stable_id)
             &&compiler_puzzle_case_count(achieved,asset.lesson,intentional)==0,
             "The eighteen independent batch checks manufactured credit for the new intentional-exit objective");
-        for(const auto& [name,asset]:assets)require(state::sha256(read(asset.path))==asset.hash,
+        for(const auto& [name,entry]:assets)require(state::sha256(read(entry.path))==entry.hash,
             "The headless U12 integration batch changed an active curricular asset");
         require(runs==23,"The focused U12 batch repeated or omitted a planned real compiler program");
+    });
+    else test("eight loading-state objectives and their captures stay exact and independent",[&] {
+        require(runs==20&&captured_loading_frames.size()==20&&captured_run_directories.size()==20,
+            "The loading-state batch repeated or omitted one of its eight starters, eight complete or four partial programs");
+        const auto& asset=assets.at("clasificar_caracteres_y_normalizar_una_copia");
+        const auto& first=at(asset.lesson,"block_0005_0004");
+        require(!compiler_puzzle_completed(achieved,asset.lesson,first)&&compiler_puzzle_case_count(achieved,asset.lesson,first)==0,
+            "The loading-state batch manufactured an execution receipt for the excluded first CRT objective");
+        for(const auto& [name,entry]:assets)require(state::sha256(read(entry.path))==entry.hash,
+            "The headless loading-state batch changed an active curricular asset");
     });
     std::cout<<"Headless U12 compiler batch: "<<passed<<" groups passed, "<<failed<<" failed; "<<runs
         <<" actual compiler programs, no UI or audio.\n";

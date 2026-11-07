@@ -760,6 +760,20 @@ def windows_reading_source(name: str, code: str) -> str:
     elif name == "LessonNarrationText":
         # Only current Windows anticipation selects the exact sources shown by
         # native controls. Historical export keeps its preceding extractor.
+        code = exact(code, '''        when {
+            segments != null -> {''', '''        if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) {
+            lgaed.narration.windows.WindowsTextSemantics.nativeFieldSources(response).forEach { append(output,it) }
+        } else when {
+            segments != null -> {''')
+        code = exact(code, '        if (completeVisibleLabels && (segments != null || table != null)) {',
+                     '        if (!WindowsNarrationSpeechRules.keepWholeReadingRegions() && completeVisibleLabels && (segments != null || table != null)) {')
+        code = exact(code, '''        if (values == null) return
+        val spoken = (0 until minOf(values.length(), limit)).map { scalar(values.opt(it)) }''', '''        if (values == null) return
+        if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) {
+            for (index in 0 until minOf(values.length(),limit)) append(output,scalar(values.opt(index)))
+            return
+        }
+        val spoken = (0 until minOf(values.length(), limit)).map { scalar(values.opt(it)) }''')
         code = exact(code, '''            val label = if (completeVisibleLabels)
                 item.optString("label", item.optString("text", item.optString("id")))''', '''            val label = if (WindowsNarrationSpeechRules.keepWholeReadingRegions())
                 lgaed.narration.windows.WindowsSemanticFields.visibleCardSource(item)
@@ -930,6 +944,16 @@ def host_sources() -> list[Path]:
         '        "math_segment_transport" -> listOf(resolve("math_segment_transport:help"), resolve("math_segment_transport:legend"))')
     sources.append(generated("MathPuzzleUiInstructions.kt", math_ui))
     script = (APP / "narration/LessonNarrationScript.kt").read_text(encoding="utf-8-sig")
+    script = exact(script, '''                if (!isExercise(type)) continue
+                val start = texts.size''', '''                if (!isExercise(type)) continue
+                if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) {
+                    val start = texts.size
+                    append(paragraph(lgaed.narration.windows.WindowsTextSemantics.nativeCorrectFeedbackSpeech(block),
+                        block.optString("mathMode","auto")),index,feedback=true)
+                    if (texts.size > start) gates += NarrationTextGate(index,start,texts.size)
+                    continue
+                }
+                val start = texts.size''')
     sources.append(generated("LessonNarrationScript.kt", script[:script.index("internal object NarrationScriptSegments")]))
     instructions = (APP / "narration/NarrationUiInstructions.kt").read_text(encoding="utf-8-sig")
     mapping = dict(re.findall(r'"([^"]+)" -> R.string.([a-z_]+)', instructions))

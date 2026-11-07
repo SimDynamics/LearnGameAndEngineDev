@@ -245,6 +245,8 @@ if(BUILD_TESTING)
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_curriculum_visible_semantics.py)
     add_test(NAME native.math_feedback_sources COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_math_feedback_sources.py)
+    add_test(NAME native.curriculum_region_identity COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_curriculum_region_identity.py)
     add_test(NAME curriculum.text_semantics COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_text_semantics.py)
     # These focused contracts never create windows or access user input/audio.
@@ -315,6 +317,7 @@ if(BUILD_TESTING)
     add_test(NAME native.compiler_diagnostic_review COMMAND lgaed_compiler_diagnostic_review_tests)
     add_test(NAME native.compiler_diagnostic_review_real COMMAND lgaed_compiler_diagnostic_review_tests --real)
     add_test(NAME native.compiler_diagnostic_rejection_budget COMMAND lgaed_compiler_diagnostic_review_tests --rejection-model)
+    add_test(NAME native.compiler_interrupted_review COMMAND lgaed_compiler_diagnostic_review_tests --interrupted)
     set_tests_properties(native.compiler_diagnostic_review_real PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     set_tests_properties(native.crt_output_variant PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     add_test(NAME native.crt_output_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
@@ -346,6 +349,8 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_u12_compiler_batch_tests lgaed_cpp_tool_host)
     add_test(NAME native.u12_compiler_batch COMMAND lgaed_u12_compiler_batch_tests)
     set_tests_properties(native.u12_compiler_batch PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    add_test(NAME native.u12_loading_compiler_batch COMMAND lgaed_u12_compiler_batch_tests --loading-state)
+    set_tests_properties(native.u12_loading_compiler_batch PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     add_test(NAME native.u12_output_speech COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_u12_output_speech.py)
     add_test(NAME native.output_data_policy_versions COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
