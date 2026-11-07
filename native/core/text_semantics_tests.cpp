@@ -17,7 +17,7 @@ int main() try {
     require(value.source==source&&value.spans[0].text=="int p;","Validation changed an authored source");
     for(const auto role:{SemanticRole::prose,SemanticRole::cpp,SemanticRole::string,SemanticRole::data,SemanticRole::math,SemanticRole::output,SemanticRole::citation})
         require(parse_semantic_role(semantic_role_name(role))==role,"Semantic role round trip changed");
-    for(const auto reading:{SemanticReading::automatic,SemanticReading::natural,SemanticReading::technical})
+    for(const auto reading:{SemanticReading::automatic,SemanticReading::natural,SemanticReading::technical,SemanticReading::characters})
         require(parse_semantic_reading(semantic_reading_name(reading))==reading,"Semantic reading round trip changed");
     rejects([]{(void)parse_semantic_role("red");});rejects([]{(void)parse_semantic_reading("phonetic");});
     for(const auto [first,last]:{std::pair<std::size_t,std::size_t>{0,1},{1,2},{2,2},{10,8},{0,1000}})

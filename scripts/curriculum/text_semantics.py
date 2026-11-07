@@ -6,7 +6,7 @@ import hashlib
 import re
 
 ROLES = frozenset({"prose", "cpp", "string", "data", "math", "output", "citation"})
-READINGS = frozenset({"auto", "natural", "technical"})
+READINGS = frozenset({"auto", "natural", "technical", "characters"})
 ROOT_FIELD = "textSemantics"
 TRIM_CHARS = ''.join(chr(n) for n in (*range(9, 14), *range(0x1c, 0x21), 0xa0, 0x1680,
                                     *range(0x2000, 0x200b), 0x2028, 0x2029, 0x202f, 0x205f, 0x3000))

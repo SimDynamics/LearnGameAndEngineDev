@@ -239,8 +239,14 @@ if(BUILD_TESTING)
     add_executable(lgaed_narration_semantic_state_tests native/core/narration_semantic_state_tests.cpp)
     target_link_libraries(lgaed_narration_semantic_state_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.narration_semantic_state COMMAND lgaed_narration_semantic_state_tests)
+    add_executable(lgaed_narration_file_access_tests native/platform/windows/narration_file_access_tests.cpp)
+    target_link_libraries(lgaed_narration_file_access_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.narration_file_access COMMAND lgaed_narration_file_access_tests)
+    set_tests_properties(native.narration_file_access PROPERTIES TIMEOUT 30)
     add_test(NAME native.text_semantics_plan COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_text_semantics.py)
+    add_test(NAME native.character_speech COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_character_speech.py)
     add_test(NAME native.curriculum_visible_semantics COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_curriculum_visible_semantics.py)
     add_test(NAME native.math_feedback_sources COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover

@@ -286,6 +286,30 @@ int main() try {
         contains(french,"✓ Correct\nFigura válida.");
         ++groups;
     }
+    {
+        using namespace lgaed::curriculum;
+        const std::string source="𐐀 letras y palabras: LaGo!";
+        const auto at=wide(source).find_last_of(L'!');
+        const TextSemantics literal{source,{{at,at+1,"!",SemanticRole::data,SemanticReading::characters}}};
+        auto natural=literal;natural.spans.front().reading=SemanticReading::natural;
+        const auto before=worker.plan(source,"es",{},"cpp","auto",Policy::current,natural);
+        const auto named=worker.plan(source,"es",{},"cpp","auto",Policy::current,literal);
+        owners(source,before);owners(source,named);
+        require(spoken(named).find("exclamación")!=std::string::npos&&spoken(named).find("negación")==std::string::npos&&
+            spoken(named).find("letras y palabras")!=std::string::npos,
+            "Native literal-character intent was lost or became a C++ operator outside its exact data span");
+        require(worker.identity("qa-character-intent","es","ef_dora",before)!=worker.identity("qa-character-intent","es","ef_dora",named)&&
+            same(before,worker.plan(source,"es",{},"cpp","auto",Policy::current,natural)),
+            "Literal-character intent reused incompatible speech or contaminated the following natural request");
+        auto same_intent=literal;same_intent.spans.front().role=SemanticRole::output;
+        require(same(named,worker.plan(source,"es",{},"cpp","auto",Policy::current,same_intent)),
+            "Literal-character intent depended on an arbitrary code/output color category");
+        bool original_rejected=false;
+        try{(void)worker.plan(source,"es",{},"cpp","auto",Policy::current,literal,NarrationSemanticPolicy::original);}
+        catch(const std::exception&){original_rejected=true;}
+        require(original_rejected,"A new character intent was falsely attributed to the historical V1 frontend");
+        ++groups;
+    }
     worker.shutdown();worker.shutdown();
     std::cout<<"PASS "<<groups<<" real native/JVM output-policy groups, UTF-16 owners, context/mode and identity serialization. "
         "No synthesis, playback, windows or saved listening credit.\n";
