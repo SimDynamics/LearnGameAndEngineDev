@@ -241,6 +241,8 @@ if(BUILD_TESTING)
     add_test(NAME native.narration_semantic_state COMMAND lgaed_narration_semantic_state_tests)
     add_test(NAME native.text_semantics_plan COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_text_semantics.py)
+    add_test(NAME native.curriculum_visible_semantics COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_curriculum_visible_semantics.py)
     add_test(NAME native.math_feedback_sources COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_math_feedback_sources.py)
     add_test(NAME curriculum.text_semantics COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
