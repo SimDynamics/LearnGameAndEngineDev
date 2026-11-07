@@ -13,6 +13,9 @@
 #include "core/retirement_test_fixture.hpp"
 #include "core/profile.hpp"
 #include "core/narration_state.hpp"
+#include "core/compiler_flow.hpp"
+#include "core/lesson_entry_policy.hpp"
+#include "core/lesson_page_reach.hpp"
 #include "core/view_preferences.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/narration_worker.hpp"
@@ -4039,42 +4042,111 @@ void narration_checkpoints_do_not_reformat_or_reflow_the_page() {
 }
 
 void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() {
-    struct Plan { const char* filename; std::size_t page,block; std::vector<std::string> incorrect; };
+    struct Plan { const char* filename; std::size_t page,block; std::vector<std::string> incorrect;
+        std::size_t ordinary_prefix,compiler_prefix=0; };
     const Plan plans[]{
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"}},
-        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"}},
-        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"}},
-        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"}},
-        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4,{"recibidos","sobres_recibidos"}},
-        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"}},
-        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""}},
-        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"}},
-        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1,{"<<","\"Carga\""}},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",7,6,{"int","longitud_metros","partes"},12,2},
+        {"objetos_y_estado/lesson_enteros_y_aproximaciones.json",3,3,{"double","int"},6},
+        {"objetos_y_estado/lesson_declarar_e_inicializar.json",2,4,{"12","3"},3},
+        {"objetos_y_estado/lesson_estado_asignacion_y_copia.json",5,4,{"+","-"},10},
+        {"objetos_y_estado/lesson_nombres_con_intencion.json",3,4,{"recibidos","sobres_recibidos"},5},
+        {"objetos_y_estado/lesson_conversiones_y_deduccion.json",3,5,{"int"},6},
+        {"objetos_y_estado/lesson_cadenas_y_texto.json",3,4,{"\"Sector\"","\"Este\""},6},
+        {"objetos_y_estado/lesson_caracteres_y_valores_logicos.json",2,3,{"'Y'","'Y'"},4},
+        {"programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",4,1,{"<<","\"Carga\""},12},
     };
-    std::size_t alternatives=0;
+    const auto ordinary=[](BlockType type){return type==BlockType::multiple_choice||type==BlockType::output_prediction||
+        type==BlockType::fill_code||type==BlockType::order_code||type==BlockType::inline_fill_code||type==BlockType::drag_fill_code;};
+    const auto entry=[&](const state::StateData& data,const curriculum::Lesson& lesson,std::size_t requested){
+        std::vector<curriculum::EntryRequirement> requirements;
+        const auto proofs=curriculum::compiler_completion_snapshot(lesson,[&](const auto& block){
+            return windows::compiler_puzzle_completed(data,lesson,block);});
+        for(std::size_t page=0;page<lesson.pages.size();++page)for(const auto& block:lesson.pages[page].blocks){
+            if(curriculum::compiler_requires_completion(block))requirements.push_back({page,proofs.at(block.stable_id)
+                ?curriculum::EntryCompletion::complete:curriculum::EntryCompletion::incomplete});
+            else if(ordinary(block.type)){
+                const auto response=state::get_response(data,lesson,block);
+                requirements.push_back({page,response&&response->correct?curriculum::EntryCompletion::complete:curriculum::EntryCompletion::incomplete});
+            }else if(page<requested)require(block.type!=BlockType::math_puzzle,
+                "The nine audited inline prefixes acquired an unreviewed mathematical prerequisite");
+        }
+        return curriculum::lesson_entry_decision(state::clamp_reachable_page(data,lesson,requested),lesson.pages.size(),requirements);
+    };
+    std::size_t alternatives=0,synthetic_ordinary=0,synthetic_compilers=0;
     for(const auto& plan:plans){
         const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals"/plan.filename;
         const auto hash=state::sha256(state::read_bytes(path));
         Fixture f([&](state::StateData& data,const curriculum::Lesson& lesson){
-            state::prepare_lesson_state(data,lesson);state::save_current_page(data,lesson,plan.page);
-            // These synthetic receipts isolate the actual inline control from
-            // preceding compiler gates. They certify no C++ execution, and the
-            // target answer itself always comes through its real native fields.
-            for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
-                if(block.type!=BlockType::cpp_compiler||!block.output_check)continue;
-                windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
-                for(const auto& item:block.output_check->cases){
-                    curriculum::FreshExecution result{1,true,true,0,item.standard_input,item.outputs.front()};
-                    result.executable=item.executable;
-                    if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)result.standard_error="QA prerequisite only";
-                    (void)windows::record_compiler_puzzle_case(data,lesson,block,request,result,"Synthetic inline QA prerequisite only");
+            using namespace winrt::Windows::Data::Json;
+            state::prepare_lesson_state(data,lesson);const auto empty=data;
+            require(entry(empty,lesson,plan.page).page<plan.page,
+                "The old address-only inline fixture unexpectedly bypassed its uncompleted prefix");
+            std::vector<std::string> answers,compilers;
+            // QA isolation only: evaluate the canonical ordinary prefix and
+            // disclose the two model compiler receipts. The target and every
+            // subsequent page stay untouched. Arrival is not listening/study.
+            for(std::size_t page=0;page<=plan.page;++page){
+                const auto decision=entry(data,lesson,page);
+                require(decision.page==page&&!decision.pending_math&&state::can_reach_page(data,lesson,page),
+                    "The inline QA setup attempted to skip an unresolved activity or an unreached page");
+                state::save_current_page(data,lesson,page);
+                if(page==plan.page)break;
+                for(const auto& block:lesson.pages[page].blocks){
+                    if(block.type==BlockType::cpp_compiler){
+                        require(block.output_check&&!block.output_check->cases.empty()&&!block.compile_check,
+                            "The audited inline prefix needs a new compiler prerequisite policy");
+                        windows::CppRunRequest request;request.revision=1;request.source_utf8=block.initial_code;
+                        request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
+                        for(const auto& item:block.output_check->cases){
+                            require(item.exit_code==0&&!item.outputs.empty(),"The inline prefix acquired another process-result contract");
+                            request.stdin_utf8=item.standard_input;
+                            curriculum::FreshExecution result{1,true,true,0,item.standard_input,item.outputs.front()};result.executable=item.executable;
+                            if(item.standard_error==curriculum::StandardErrorExpectation::non_blank)result.standard_error="Synthetic QA prerequisite only";
+                            (void)windows::record_compiler_puzzle_case(data,lesson,block,request,result,"Synthetic inline QA prerequisite only");
+                        }
+                        require(windows::compiler_puzzle_completed(data,lesson,block),"The synthetic inline prefix did not satisfy its owned compiler gate");
+                        compilers.push_back(block.stable_id);continue;
+                    }
+                    if(!ordinary(block.type))continue;
+                    require(!state::get_response(data,lesson,block),"The fresh inline QA setup refuses to replace an existing response");
+                    state::Response response;curriculum::AnswerEvaluation result;
+                    if(block.type==BlockType::multiple_choice){
+                        require(block.correct_index&&*block.correct_index<block.options.size(),"Missing canonical inline-prefix choice");
+                        response.selected=static_cast<std::int64_t>(*block.correct_index);response.answer=block.options[*block.correct_index];
+                        result=curriculum::evaluate_choice(block,*block.correct_index);
+                    }else if(block.type==BlockType::order_code){
+                        response.order.assign(block.correct_order.begin(),block.correct_order.end());result=curriculum::evaluate_order(block,block.correct_order);
+                    }else if(block.type==BlockType::inline_fill_code||block.type==BlockType::drag_fill_code){
+                        JsonObject raw;JsonArray values;
+                        if(block.type==BlockType::inline_fill_code){
+                            result=curriculum::evaluate_hole_answers(block,block.answers);
+                            for(const auto& answer:block.answers)values.Append(JsonValue::CreateStringValue(winrt::to_hstring(answer)));
+                        }else{
+                            result=curriculum::evaluate_drag_answers(block,block.correct_order);
+                            for(const auto slot:block.correct_order)values.Append(JsonValue::CreateNumberValue(static_cast<double>(slot)));
+                        }
+                        raw.Insert(block.type==BlockType::inline_fill_code?L"answers":L"slots",values);response.raw_json=winrt::to_string(raw.Stringify());
+                    }else{
+                        require(!block.answers.empty(),"Missing canonical inline-prefix text answer");response.answer=block.answers.front();
+                        result=curriculum::evaluate_text_answer(block,response.answer);
+                    }
+                    require(result.correct,"The synthetic inline prefix failed its actual authored evaluator");
+                    response.correct=true;state::mark_response_reviewed(response,block);state::put_response(data,lesson,block,response);answers.push_back(block.stable_id);
                 }
             }
+            require(answers.size()==plan.ordinary_prefix&&compilers.size()==plan.compiler_prefix,
+                "The audited inline fixture's exact synthetic prefix inventory changed");
+            state::validate_lesson_state(data,lesson);synthetic_ordinary+=answers.size();synthetic_compilers+=compilers.size();
+            data.preferences["inline_feedback_qa"]["synthetic_ordinary_prefix_only"]=answers;
+            data.preferences["inline_feedback_qa"]["synthetic_compiler_prefix_only"]=compilers;
             data.preferences["inline_feedback_qa"]["unrelated"]=std::string(" \t preserve\r\n");
         },[&](const curriculum::Lesson&){return windows::load_lesson(path);},true);
         const auto& block=f.lesson.pages.at(plan.page).blocks.at(plan.block);
         require(block.type==BlockType::inline_fill_code&&!block.review_feedback.empty()&&!block.explanation.empty(),
             "A registered inline feedback location no longer identifies its authored contract");
+        require(!state::get_response(f.initial_data,f.lesson,block)&&!IsWindowVisible(f.host)&&
+            GetAncestor(GetForegroundWindow(),GA_ROOT)!=f.host,
+            "Inline QA seeded its target or activated its hidden host during setup");
         require(plan.incorrect.size()==block.answers.size()&&!curriculum::evaluate_hole_answers(block,plan.incorrect).correct,
             "The focal incorrect answer must exercise the authored evaluator");
         const auto unchanged=f.saved().preferences.at("inline_feedback_qa");
@@ -4132,15 +4204,34 @@ void current_inline_feedback_uses_authored_controls_and_restores_each_attempt() 
             f.reopen();verify_fields(answer,false);require(f.text(plan.block,4)==correct,"Reopening changed a valid alternative's completion");
             f.click(plan.block,12);++alternatives;
         }
-        require(!IsWindowVisible(f.host)&&f.saved().preferences.at("inline_feedback_qa")==unchanged
+        const auto final=f.saved();
+        for(std::size_t page=0;page<f.lesson.pages.size();++page)for(const auto& current:f.lesson.pages[page].blocks){
+            if(page<plan.page&&ordinary(current.type)){
+                const auto key=state::response_storage_key(f.lesson,current);
+                require(state::string_value(final,"learning_progress",key)==state::string_value(f.initial_data,"learning_progress",key),
+                    "Inline control QA changed an exact synthetic prerequisite response");
+            }else if(ordinary(current.type)&& &current!=&block)require(!state::get_response(final,f.lesson,current),
+                "Inline control QA manufactured an answer outside its prefix and actual target");
+            if(current.type==BlockType::cpp_compiler)require(windows::compiler_puzzle_completed(final,f.lesson,current)==(page<plan.page),
+                "Inline control QA changed an independent compiler gate or credited a later editor");
+        }
+        for(const auto& [key,value]:f.initial_data.preferences.at("native_windows"))if(key.starts_with("compiler-puzzle/v1/"))
+            require(state::find(final,"native_windows",key)&&*state::find(final,"native_windows",key)==value,
+                "Inline control QA rewrote one of its disclosed model compiler receipts");
+        require(!IsWindowVisible(f.host)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=f.host&&final.preferences.at("inline_feedback_qa")==unchanged
             &&hash==state::sha256(state::read_bytes(path)),"Inline QA changed a curricular asset, unrelated state or the user's desktop");
         std::cout<<"PASS actual inline feedback "<<plan.filename<<" p"<<plan.page+1<<" b"<<plan.block+1
             <<": draft/rejection/correction/success/Reset/reopen and exact feedback narration sources\n";
     }
+    require(synthetic_ordinary==64&&synthetic_compilers==2,"The nine inline controls used another synthetic prerequisite scope");
+    std::cout<<"QA setup only: 64 canonical ordinary prerequisites and two synthetic compiler objectives, with sequential admitted arrivals; no compiler executions or prior listening claimed.\n";
     std::cout<<"PASS nine registered inline controls and "<<alternatives<<" additional authored alternatives; no synthesis or human listening claimed\n";
 }
 
 int main(int argc,char* argv[]) {
+#ifdef LGAED_INLINE_FEEDBACK_ONLY
+    if(argc!=2||std::string_view(argv[1])!="--inline-feedback")return 2;
+#endif
     if (argc > 1 && std::string_view(argv[1]) == "--prepare-stderr-visual") {
         const bool shape = argc == 4 && (std::string_view(argv[2]) == "u8" || std::string_view(argv[2]) == "u10");
         const auto raw = shape ? std::string_view(argv[3]) : std::string_view{};

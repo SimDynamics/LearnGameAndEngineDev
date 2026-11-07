@@ -3,7 +3,7 @@ from copy import deepcopy
 import hashlib
 import unittest
 
-from test_worker import Worker
+from test_worker import ROOT, Worker
 
 
 def units(text):
@@ -284,6 +284,103 @@ class ExplicitTextSemanticsTest(unittest.TestCase):
         compile_reply = background(compile_lesson)
         self.assertTrue(any("griega" in part["preparedText"] for part in compile_reply["segments"]))
         self.assertNotIn("HIDDEN_COMPILE_SOURCE", " ".join(part["preparedText"] for part in compile_reply["segments"]))
+
+    def test_current_l25_l26_compiler_guides_keep_native_prepared_identity(self):
+        import json
+        base = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo"
+        inventory = {
+            "lesson_comprobar_ida_y_vuelta_sin_perder_datos.json": {
+                "block_0002_0003", "block_0006_0002"},
+            "lesson_construir_un_programa_de_carga_y_guardado.json": {
+                "block_0002_0003", "block_0004_0008", "block_0004_0012",
+                "block_0005_0007", "block_0007_0007"},
+        }
+        empty_success = {"block_0004_0012", "block_0005_0007", "block_0007_0007"}
+        checked = set()
+        for filename, owners in inventory.items():
+            asset = base / filename
+            original = asset.read_bytes()
+            lesson = json.loads(original.decode("utf-8-sig"))
+            snapshot = deepcopy(lesson)
+            fields = {(item["block"], item["path"]): item
+                      for item in lesson["textSemantics"]["fields"]}
+            selected = {}
+            for page_index, page in enumerate(lesson["pages"]):
+                for block_index, block in enumerate(page["blocks"]):
+                    owner = lesson["stateLayout"]["current"][page_index]["blocks"][block_index]
+                    if owner in owners:
+                        self.assertNotIn(owner, selected)
+                        selected[owner] = (page_index, block)
+            self.assertEqual(owners, set(selected), filename)
+            background = {}
+            for owner in sorted(owners):
+                page_index, block = selected[owner]
+                self.assertEqual("cpp_compiler", block["type"])
+                self.assertEqual(1, len(block["outputCheck"]["cases"]))
+                case = block["outputCheck"]["cases"][0]
+                self.assertEqual(0, case.get("exitCode", 0))
+                self.assertEqual(1, len(case["reviewFeedback"]))
+                guides = ((True, "/outputCheck/cases/0/explanation", case["explanation"]),
+                          (False, "/outputCheck/cases/0/reviewFeedback/0/text", case["reviewFeedback"][0]["text"]))
+                for correct, path, source in guides:
+                    identity = (filename, owner, path)
+                    checked.add(identity)
+                    authored = fields[(owner, path)]
+                    self.assertEqual(hashlib.sha256(source.encode("utf-8")).hexdigest(), authored["sourceSha256"], identity)
+                    self.assertEqual(correct and owner in empty_success, not authored["spans"], identity)
+                    raw = source.encode("utf-16-le")
+                    for span in authored["spans"]:
+                        self.assertEqual(span["text"], raw[2 * span["start"]:2 * span["end"]].decode("utf-16-le"), identity)
+                    # Compiler feedback is a whole native RichEdit region. Its
+                    # verdict follows UI language, while the authored Spanish
+                    # body and its roles/readings remain exact and independent.
+                    body = source.lstrip("\r\n")
+                    removed = units(source) - units(body)
+                    for ui in ("es", "en", "fr"):
+                        with self.subTest(asset=filename, owner=owner, path=path, ui=ui):
+                            word = ("Correcto" if correct else "Incorrecto") if ui == "es" else ("Correct" if correct else "Incorrect")
+                            prefix = ("✓ " if correct else "✗ ") + word + ("\n\n" if body else "")
+                            full = prefix + body
+                            spans = []
+                            for span in authored["spans"]:
+                                first = max(span["start"], removed)
+                                if first >= span["end"]:
+                                    continue
+                                shifted = dict(span, start=units(prefix) + first - removed,
+                                               end=units(prefix) + span["end"] - removed,
+                                               text=raw[2 * first:2 * span["end"]].decode("utf-16-le"))
+                                self.assertEqual(span["role"], shifted["role"])
+                                self.assertEqual(span.get("reading", "auto"), shifted.get("reading", "auto"))
+                                spans.append(shifted)
+                            immediate = self.plan(full, {"spans": spans}, voice="ef_dora", readingContext="auto")
+                            self.assertTrue(immediate)
+                            if not authored["spans"]:
+                                # Explicit [] owns all prose; an automatically
+                                # inferred C++ operator is never its oracle.
+                                natural = descriptor(full, role="prose", reading="natural")
+                                self.assertEqual(immediate, self.plan(full, natural, voice="ef_dora", readingContext="auto"))
+                            cache = (page_index, ui)
+                            if cache not in background:
+                                background[cache] = self.worker.ask("curriculum_plan", lessonJson=original.decode("utf-8-sig"),
+                                    page=page_index, language="es", voice="ef_dora", uiLanguage=ui,
+                                    contentLanguage="es", readingContext="cpp")["segments"]
+                            full_bytes = full.encode("utf-16-le")
+                            for part in immediate:
+                                self.assertEqual(part["text"], full_bytes[2 * part["sourceStart"]:2 * part["sourceEnd"]].decode("utf-16-le"))
+                                self.assertEqual(len(part["spokenRanges"]), len(part["displayedRanges"]))
+                                for spoken, shown in zip(part["spokenRanges"], part["displayedRanges"]):
+                                    self.assertTrue(0 <= spoken["start"] < spoken["end"] <= units(part["spokenText"]))
+                                    self.assertTrue(0 <= shown["start"] < shown["end"] <= units(part["text"]))
+                                    part["text"].encode("utf-16-le")[2 * shown["start"]:2 * shown["end"]].decode("utf-16-le")
+                                # Anticipation exports normalized speech and
+                                # cache identity, not the reader's source map.
+                                # Check that map above against the raw field;
+                                # compare every shared transport value here.
+                                expected = dict(text=part["spokenText"], preparedText=part["preparedText"], key=part["key"])
+                                self.assertIn(expected, background[cache])
+            self.assertEqual(snapshot, lesson)
+            self.assertEqual(original, asset.read_bytes())
+        self.assertEqual(14, len(checked))
 
     def test_malformed_ranges_roles_presence_and_exact_text_are_rejected(self):
         source = "😀 y"

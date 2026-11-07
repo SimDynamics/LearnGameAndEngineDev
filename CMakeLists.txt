@@ -397,6 +397,10 @@ if(BUILD_TESTING)
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py
         -k ProgrammingFinalIntegratorMatchingBridgeTest)
     set_tests_properties(native.u12_final_integrator_matching PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.u12_current_compiler_guide_plans COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_text_semantics.py
+        -k test_current_l25_l26_compiler_guides_keep_native_prepared_identity)
+    set_tests_properties(native.u12_current_compiler_guide_plans PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     set_tests_properties(native.u12_output_speech native.u12_insertion_extraction_math PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME native.intentional_exit_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_output_exit_code_contract.py)
@@ -1382,6 +1386,12 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_view_tests lgaed_narration_runtime)
     add_dependencies(lgaed_lesson_view_tests LearnGameAndEngineDev)
+    # The focused hidden-control check needs neither the app executable nor
+    # the narration runtime used by other lesson-view scenarios.
+    add_executable(lgaed_curricular_inline_feedback_tests native/presentation/windows/lesson_view_tests.cpp)
+    target_compile_definitions(lgaed_curricular_inline_feedback_tests PRIVATE LGAED_INLINE_FEEDBACK_ONLY=1)
+    target_link_libraries(lgaed_curricular_inline_feedback_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_curricular_inline_feedback_tests lgaed_retirement_fixtures)
     add_test(NAME native.lesson_view COMMAND lgaed_lesson_view_tests)
     set_tests_properties(native.lesson_view PROPERTIES TIMEOUT 180)
     add_test(NAME native.compiler_pointer_scroll COMMAND lgaed_lesson_view_tests --compiler-scroll)
@@ -1418,7 +1428,7 @@ if(BUILD_TESTING)
     set_tests_properties(native.u11_editorial PROPERTIES TIMEOUT 120)
     add_test(NAME native.narration_repaint COMMAND lgaed_lesson_view_tests --narration-repaint)
     set_tests_properties(native.narration_repaint PROPERTIES TIMEOUT 60)
-    add_test(NAME native.curricular_inline_feedback COMMAND lgaed_lesson_view_tests --inline-feedback)
+    add_test(NAME native.curricular_inline_feedback COMMAND lgaed_curricular_inline_feedback_tests --inline-feedback)
     set_tests_properties(native.curricular_inline_feedback PROPERTIES TIMEOUT 120)
     add_test(NAME native.compiler_editor_height COMMAND lgaed_lesson_view_tests --compiler-height)
     set_tests_properties(native.compiler_editor_height PROPERTIES TIMEOUT 60)
