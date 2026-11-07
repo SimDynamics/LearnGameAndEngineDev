@@ -58,7 +58,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Declara el vector inicial `{-3, 2, 9}`, construye las funciones fuera de `main` y conecta sus llamadas. Si una función llama a otra, su declaración debe ser visible. El editor no entrega firmas ni condiciones.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es `Niveles: 0 2 6` y `Al limite: 1` en dos líneas, con salto final opcional."
+          "text": "Declara el vector inicial `{-3, 2, 9}`, construye las funciones fuera de `main` y conecta sus llamadas. Si una función llama a otra, su declaración debe ser visible (Stroustrup, 2024). El editor no entrega firmas ni condiciones.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es `Niveles: 0 2 6` y `Al limite: 1` en dos líneas, con salto final opcional."
         },
         {
           "type": "cpp_compiler",
@@ -105,7 +105,7 @@
         },
         {
           "type": "note",
-          "text": "Los puzzles de esta página permiten comprobar esas decisiones de llamada. La función que cuenta debe observar los valores ya transformados; no necesita modificar el vector."
+          "text": "El puzzle de esta página permite comprobar esas decisiones de llamada. La función que cuenta debe observar los valores ya transformados; no necesita modificar el vector."
         }
       ]
     },
@@ -227,7 +227,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La política nueva limita ahora la salida a cero..cuatro y cuenta niveles en ese límite superior. El dominio de entrada sigue siendo hasta ocho enteros de menos diez a diez. Los puzzles siguientes permiten razonar qué funciones cambian. Después aparece un editor propio para construir la transferencia sin modificar el primer programa."
+          "text": "La política nueva limita ahora la salida de cero a cuatro y cuenta niveles en ese límite superior. El dominio de entrada sigue siendo hasta ocho enteros de menos diez a diez. Los puzzles siguientes permiten razonar qué funciones cambian. Después aparece un editor propio para construir la transferencia sin modificar el primer programa."
         },
         {
           "type": "multiple_choice",
@@ -275,6 +275,275 @@
             ]
           },
           "initialStandardInput": "1 4"
+        },
+        {
+          "type": "heading",
+          "text": "Construcción propia: integrar la política de cero a cuatro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto un programa con las cuatro responsabilidades del contrato, eligiendo sus nombres y firmas. La validación consulta la colección sin modificarla y acepta como máximo 8 niveles, todos entre -10 y 10. El cálculo individual recibe un nivel por valor y devuelve 0 si era negativo, 4 si superaba 4, o su mismo valor si estaba entre 0 y 4. La transformación cambia el vector original reutilizando ese cálculo y conserva el tamaño y el orden de sus elementos. La inspección final sólo lee el vector ya transformado y devuelve cuántos valores son iguales a 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main, lee primero n, la cantidad de niveles, y después exactamente n enteros. Los ensayos garantizan n entre 0 y 9 y cada dato entre -11 y 11, con todos los valores presentes y escritos válidamente; los espacios y los saltos de línea pueden separar los enteros. Éste es el dominio de preparación de los ensayos, que incluye rechazos deliberados. La colección sólo es válida con hasta 8 niveles entre -10 y 10.\n\nConstruye el vector y valida antes de cambiar cualquier elemento. Con datos válidos, transforma, cuenta el estado posterior y presenta el resultado, en ese orden. Con datos inválidos, muestra únicamente Lecturas invalidas. No transformes la colección en ese camino. Los datos deben pasar por las llamadas, sin variables globales modificables."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida válida tiene dos líneas. La primera empieza con Niveles: y añade, en el orden original, cada valor transformado precedido por un espacio. Si el vector está vacío, esa línea contiene sólo Niveles:, sin espacio final. La segunda empieza con Al limite:, un espacio y la cantidad contada. No añadas otros textos ni espacios finales. El salto después del último mensaje es opcional, tanto en el caso válido como en el rechazo. Pulsa «Compilar, ejecutar y comprobar» para verificar los nueve casos, conservando tu programa y cambiando sólo Entrada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «4 -10 0 6 10» → salida:\nNiveles: 0 0 4 4\nAl limite: 2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «0» → salida:\nNiveles:\nAl limite: 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «3 1 3 2» → salida:\nNiveles: 1 3 2\nAl limite: 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 -11» → salida:\nLecturas invalidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 11» → salida:\nLecturas invalidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «9 0 0 0 0 0 0 0 0 0» → salida:\nLecturas invalidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 4» → salida:\nNiveles: 4\nAl limite: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «8 0 0 0 0 0 0 0 0» → salida:\nNiveles: 0 0 0 0 0 0 0 0\nAl limite: 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 5» → salida:\nNiveles: 4\nAl limite: 1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "4 -10 0 6 10",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 -10 0 6 10",
+                "outputs": [
+                  "Niveles: 0 0 4 4\nAl limite: 2",
+                  "Niveles: 0 0 4 4\nAl limite: 2\n"
+                ],
+                "explanation": "Los extremos válidos menos diez y diez se transforman en cero y cuatro. También el seis pasa a cuatro. El contador encuentra dos niveles en el límite superior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 0 0 6 6\nAl limite: 2",
+                      "Niveles: 0 0 6 6\nAl limite: 2\n"
+                    ],
+                    "text": "Las lecturas mostradas todavía incluyen seis. La política nueva sólo permite valores de cero a cuatro después de transformar; contrasta esa condición con los valores que estás presentando."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Niveles:\nAl limite: 0",
+                  "Niveles:\nAl limite: 0\n"
+                ],
+                "explanation": "La colección vacía es válida. La primera línea conserva sólo Niveles: y el contador devuelve cero.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Lecturas invalidas",
+                      "Lecturas invalidas\n"
+                    ],
+                    "text": "La salida recibida es un rechazo, pero la colección vacía cumple este contrato. Revisa que ese caso válido llegue a las dos líneas de presentación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 1 3 2",
+                "outputs": [
+                  "Niveles: 1 3 2\nAl limite: 0",
+                  "Niveles: 1 3 2\nAl limite: 0\n"
+                ],
+                "explanation": "Estos niveles ya están dentro del intervalo permitido. Se conserva su orden y el contador devuelve cero porque ninguno está en el límite superior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 1 2 3\nAl limite: 0",
+                      "Niveles: 1 2 3\nAl limite: 0\n"
+                    ],
+                    "text": "La salida recibida cambia el orden de los elementos. La transformación debe conservar el orden de entrada; esta tarea limita valores, no ordena la colección."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -11",
+                "outputs": [
+                  "Lecturas invalidas",
+                  "Lecturas invalidas\n"
+                ],
+                "explanation": "El valor menos once queda fuera del dominio de entrada, de menos diez a diez. Se rechaza antes de transformar.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 0\nAl limite: 0",
+                      "Niveles: 0\nAl limite: 0\n"
+                    ],
+                    "text": "Se presentó un nivel cero, pero el dato menos once es inválido. Revisa que la validación de entrada decida el rechazo antes de transformar."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 11",
+                "outputs": [
+                  "Lecturas invalidas",
+                  "Lecturas invalidas\n"
+                ],
+                "explanation": "El valor once supera el extremo superior diez. Debe rechazarse antes de aplicar la transformación.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 4\nAl limite: 1",
+                      "Niveles: 4\nAl limite: 1\n"
+                    ],
+                    "text": "Se presentó un nivel cuatro, pero el dato once no pertenece al dominio permitido. Revisa la validación del extremo superior antes de calcular."
+                  }
+                ]
+              },
+              {
+                "standardInput": "9 0 0 0 0 0 0 0 0 0",
+                "outputs": [
+                  "Lecturas invalidas",
+                  "Lecturas invalidas\n"
+                ],
+                "explanation": "La colección contiene nueve niveles y el máximo permitido es ocho. Aunque cada dato individual sea válido, la cantidad obliga al rechazo.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 0 0 0 0 0 0 0 0 0\nAl limite: 0",
+                      "Niveles: 0 0 0 0 0 0 0 0 0\nAl limite: 0\n"
+                    ],
+                    "text": "Se presentaron los nueve niveles. El máximo admitido es ocho: comprueba la condición de tamaño antes de transformar o mostrar el resultado válido."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Niveles: 4\nAl limite: 1",
+                  "Niveles: 4\nAl limite: 1\n"
+                ],
+                "explanation": "El dato cuatro coincide con el límite y se conserva. La inspección posterior debe contarlo y devolver uno.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 4\nAl limite: 0",
+                      "Niveles: 4\nAl limite: 0\n"
+                    ],
+                    "text": "El nivel mostrado es cuatro, pero el contador mostrado es cero. La igualdad con el límite debe contarse; revisa la inspección del estado transformado."
+                  }
+                ]
+              },
+              {
+                "standardInput": "8 0 0 0 0 0 0 0 0",
+                "outputs": [
+                  "Niveles: 0 0 0 0 0 0 0 0\nAl limite: 0",
+                  "Niveles: 0 0 0 0 0 0 0 0\nAl limite: 0\n"
+                ],
+                "explanation": "Los ocho ceros forman una colección válida en el tamaño máximo incluido. Se conservan y el contador devuelve cero.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Lecturas invalidas",
+                      "Lecturas invalidas\n"
+                    ],
+                    "text": "La colección de ocho niveles está dentro del contrato. Revisa que el máximo de tamaño se acepte por igualdad y pueda llegar a la presentación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 5",
+                "outputs": [
+                  "Niveles: 4\nAl limite: 1",
+                  "Niveles: 4\nAl limite: 1\n"
+                ],
+                "explanation": "El dato cinco es válido como entrada y se transforma en cuatro. El contador debe observar ese nuevo estado y devolver uno.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo texto. Revisa que main lea toda la entrada y que el camino válido o el de rechazo presente el resultado que pide este ensayo."
+                  },
+                  {
+                    "outputs": [
+                      "Niveles: 5\nAl limite: 0",
+                      "Niveles: 5\nAl limite: 0\n"
+                    ],
+                    "text": "El dato cinco apareció sin cambiar en la salida. El máximo de salida ahora es cuatro; comprueba tanto la transformación como la inspección posterior."
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "heading",
@@ -549,6 +818,20 @@
           "block_0006_0004",
           "block_0006_0005",
           "block_0006_0006",
+          "limite_cuatro_construccion_multicaso_titulo",
+          "limite_cuatro_construccion_multicaso_contratos",
+          "limite_cuatro_construccion_multicaso_entrada",
+          "limite_cuatro_construccion_multicaso_formato",
+          "limite_cuatro_construccion_multicaso_caso_1",
+          "limite_cuatro_construccion_multicaso_caso_2",
+          "limite_cuatro_construccion_multicaso_caso_3",
+          "limite_cuatro_construccion_multicaso_caso_4",
+          "limite_cuatro_construccion_multicaso_caso_5",
+          "limite_cuatro_construccion_multicaso_caso_6",
+          "limite_cuatro_construccion_multicaso_caso_7",
+          "limite_cuatro_construccion_multicaso_caso_8",
+          "limite_cuatro_construccion_multicaso_caso_9",
+          "limite_cuatro_propio_multicaso_editor",
           "limite_cuatro_referencia_titulo",
           "limite_cuatro_referencia_explicacion",
           "limite_cuatro_referencia_programa"
@@ -1076,6 +1359,132 @@
           "block": 2
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_contratos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_formato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 11
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_6",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 12
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_7",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 13
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_8",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 14
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_caso_9",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 15
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "limite_cuatro_propio_multicaso_editor",
+        "sha256": "a5a032a4e87c3d300049b58d0c72f3325addc72e4e52e3f3997b56d840edb937",
+        "storage": {
+          "page": 7,
+          "block": 16
+        },
+        "progressPage": "page_0006"
       }
     ],
     "editorial": [
@@ -1088,6 +1497,21 @@
         "id": "block_0003_0003",
         "beforeSha256": "76225118facb9a44fb808437cb5ec99c02a083aea0301a5066101c4c4fa0a765",
         "afterSha256": "e70286e4e8d637b43b99b9d791e0503c985bbd134f612c9c23551e0a53337f63"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "5f87af6667ce018bed871ede3bc378e912689fceb49ba485f1d83f81f2c8e85c",
+        "afterSha256": "4a116a84530550e43368273a603bb99b04544ec29ef3c2d98ccf374a71c45c6a"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "e70286e4e8d637b43b99b9d791e0503c985bbd134f612c9c23551e0a53337f63",
+        "afterSha256": "5e5f90d09a37e848d4c56493d1a7b455c5c2e29b5c47395da508cff5a2959c8d"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "bf5ffea81963cd4a4f3a405d19f6a71cc836bd5b4d6ee38e220505a8393aba19",
+        "afterSha256": "b804d5f8b4cdeb78be7b5e1d00f80c2835b74aa7350072c3b1223622c20f257f"
       }
     ]
   },
@@ -1102,7 +1526,7 @@
       ]
     },
     {
-      "activity": "block_0006_0006",
+      "activity": "limite_cuatro_propio_multicaso_editor",
       "blocks": [
         "limite_cuatro_referencia_titulo",
         "limite_cuatro_referencia_explicacion",
@@ -1122,7 +1546,1956 @@
       "requires": [
         "block_0004_0006"
       ]
+    },
+    {
+      "activity": "limite_cuatro_propio_multicaso_editor",
+      "requires": [
+        "block_0006_0006"
+      ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "4150ace707c19a36df76dad93c65894a3cc529b951cdc5b9ef5c0a95aa8d873f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "88cc2da0e646e9ebce213c1fc9f34c5a0a85c1dbc6a6642148980e4536d4b160",
+        "spans": [
+          {
+            "start": 110,
+            "end": 113,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 159,
+            "text": "-10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 164,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 238,
+            "text": "Lecturas invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "3ee891b9d73b62fc7bcbd1c2c5db04573a8d50c480dc2fd2102aaa5171ad1c69",
+        "spans": [
+          {
+            "start": 60,
+            "end": 61,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 85,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 122,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 126,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "e1dc9340907a798c020df307553478746daa8d64ecac5c4fd04bd819684b7ecf",
+        "spans": [
+          {
+            "start": 24,
+            "end": 31,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 62,
+            "text": "Niveles:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 131,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 160,
+            "text": "Al limite:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 174,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 235,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 264,
+            "text": "Niveles:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 277,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 290,
+            "text": "Al limite: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "51efb4c7f712a0cd540dde42f85fdd04a24bbc105e117a494c6ab1f698841ff4",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "a17c564d5b8b09aea241340717bb003efeb3e2ccfcc7f7da248fa550bfe0bc93",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "4c954ec5b08771e5fc5356f5cac0f3440cf01d6fcac673ff2c59f554e2a7bb21",
+        "spans": [
+          {
+            "start": 16,
+            "end": 26,
+            "text": "{-3, 2, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 55,
+            "text": "Niveles: 0 2 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 70,
+            "text": "Al limite: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 101,
+            "text": "{-10, 0, 6, 10}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 132,
+            "text": "Niveles: 0 0 6 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 147,
+            "text": "Al limite: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 165,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 211,
+            "text": "-10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 216,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "c2b26e88ca6549330b438781393f09052fc33d420cbc63173497c2e7812dcc68",
+        "spans": [
+          {
+            "start": 104,
+            "end": 114,
+            "text": "menos diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 121,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 140,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "0ec96b808eb0d915221817db427fac176dca8d0754dd768835a32199d335b451",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "fb514cbc6fcaaac521f91626a101afed0fad9f72d14daf7fa3983d031669c24d",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "9878ef6382749f393f3d23eb15907bfcf4b8aecbdf1e9553afe0c5f42b128f6b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "a02231011d369cb71f9d9dcff2cb00a35465d9cca4e5baa51c95ea7c52de0bb6",
+        "spans": [
+          {
+            "start": 27,
+            "end": 37,
+            "text": "{-3, 2, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 78,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 183,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 300,
+            "text": "Niveles: 0 2 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 317,
+            "text": "Al limite: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 325,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "86e0da9d38f01159864156c4b09bbd5132b20712e19010ec4a55518de7189099",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "cb039de79b79090df0deb08b6584c2ae627f207ded6bce3c44cb63a02ce0b811",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/question",
+        "sourceSha256": "c6e00b6efcde0ee19723cb78b8d55fb66abd2c6aaa29afbd6161b6b3a9f4a844",
+        "spans": [
+          {
+            "start": 96,
+            "end": 105,
+            "text": "int nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 127,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 150,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/explanation",
+        "sourceSha256": "41d8519c2a024e7364242b109ffb48018d70e4dfb3cc84715ef3a5701a830238",
+        "spans": [
+          {
+            "start": 65,
+            "end": 74,
+            "text": "int nivel",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/options/0",
+        "sourceSha256": "a2d152f76381b0a190e00af7fc7856b01943d4e59eae2b2400a11181e8ad2c7f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/options/1",
+        "sourceSha256": "836398c5c1873f62bfa5aa3cae57ffb376a431c78c18a29dc3e615a9c5811e5a",
+        "spans": [
+          {
+            "start": 20,
+            "end": 24,
+            "text": "void",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/options/2",
+        "sourceSha256": "5c54ecbce151c1533bd49c5e79752b3df90057885641227a1a97f17dba744977",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "3764d54deacdfc1d2bae988c849be8353257888bd339fb6eabaa85c714c3eb07",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "15fd59a832c08ef42b55179a2a651263e56a20138526f5cc687a4fa097f2fe47",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "48d3d7e7e40d88b8b8a1a1b3dc9cba28fe3f117a16862b8df0e1a26c4ba86c93",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "458cca51327928991057ed763c0551376ec1e34791de0d0f07afdf1d9b912871",
+        "spans": [
+          {
+            "start": 21,
+            "end": 32,
+            "text": "{-5, 4, 10}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 190,
+            "text": "normalizar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 225,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "a1c00056226f2347eced10c6ce93c394ce11ee5da4665f0e6b226882a15ab31b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "83c1bdfe2198691a59e3d71b92ee4e80d636d80d41e7d316f39b3833bb81b764",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "eca3ea28c1663f0ca234882c2351b35711e2c91b8d86f36c3f8b14f9d056ab76",
+        "spans": [
+          {
+            "start": 320,
+            "end": 332,
+            "text": "4 -10 0 6 10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 336,
+            "end": 337,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 341,
+            "end": 348,
+            "text": "3 1 4 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 357,
+            "text": "1 -11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 365,
+            "text": "1 11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 388,
+            "text": "9 0 0 0 0 0 0 0 0 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 392,
+            "end": 395,
+            "text": "1 6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "c2622a4b261bae7f0d67f86addcc6f62ff4b6f0bd24d34ca7b4259a4c1287dcb",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/question",
+        "sourceSha256": "4cf8c656f7049e532f146941e158a8b55df5808c34ed88ef989c18680d57d685",
+        "spans": [
+          {
+            "start": 32,
+            "end": 45,
+            "text": "{-1, 6, 8, 3}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/explanation",
+        "sourceSha256": "dee06a711ca9a902a303625c99aee8dfc2b5c89eccd2e7470bae7567b0ad8867",
+        "spans": [
+          {
+            "start": 26,
+            "end": 27,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "244f01b85f736433809a1ab6952ed7f28815befc5d1cb714f6cdf4c2b23425dc",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 40,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "0102caf6b3faa80e1d97faf7a4172a5f34bae60d5e74602e8a4535561cd83a13",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "6c52d73ffce4c30fa8bdc558a5f6b062f662f041d813478ef79d6b234977e5e7",
+        "spans": [
+          {
+            "start": 44,
+            "end": 48,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 57,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 144,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 166,
+            "text": "menos diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 173,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/question",
+        "sourceSha256": "97b4783138bf06b6a77354df250673325fba02ffa9401142e09b6533abc6c74a",
+        "spans": [
+          {
+            "start": 63,
+            "end": 64,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/explanation",
+        "sourceSha256": "c51c1e04d5aaefecd8305b9862ea6177ccac54f4a1ac04f7e83c860bd71f69f3",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/0",
+        "sourceSha256": "bc1e5b02e88716b269aec52156b480e5a6f4436473f8ed7af7851bf717e692a9",
+        "spans": [
+          {
+            "start": 5,
+            "end": 9,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/1",
+        "sourceSha256": "f8422b75218b6a19580afa90e24701b4c3d571764feb077207c4391c69526dd4",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/2",
+        "sourceSha256": "8a9f496946c2a5101857dc2e669651d8b189de4bb2fe5d54f5f7f818b13ae972",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "d38117b1debb8bef5d5cf6bbc809328056285cad0124e867e9437ea946f32a5d",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "82f197f2d0c6b5cd9552500637cdcda26c2fcaffc2a734360469bcd3fcbcac8d",
+        "spans": [
+          {
+            "start": 36,
+            "end": 42,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "9cbe947777bf87890c3d4a7e6578fccb8263c34c1d02cfd50f06c78872e238b0",
+        "spans": [
+          {
+            "start": 142,
+            "end": 145,
+            "text": "1 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 167,
+            "text": "Niveles: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 184,
+            "text": "Al limite: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 200,
+            "text": "3 -2 3 6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 226,
+            "text": "Niveles: 0 3 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 243,
+            "text": "Al limite: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 252,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "3bdf69d5912ce033015c85e00e42ca224a5c0a542f72b68604a5f2d737d50b59",
+        "spans": [
+          {
+            "start": 44,
+            "end": 50,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "9fe796505f53c30a96c55c81d735f1a630ee58c17218932dee8358a4a66e9a8a",
+        "spans": [
+          {
+            "start": 62,
+            "end": 75,
+            "text": "limitar_nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 89,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 147,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 188,
+            "text": "0..4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 200,
+            "text": "normalizar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 356,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 381,
+            "text": "{-2, 3, 6}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 400,
+            "text": "{0, 3, 4}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 412,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 443,
+            "text": "{4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 463,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 481,
+            "end": 484,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 520,
+            "end": 527,
+            "text": "-10..10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 540,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_titulo",
+        "path": "/text",
+        "sourceSha256": "c7a1f8dbc3b5381f56f828bde52c5e521c9d86131eba9da4eb642493ebda4e7e",
+        "spans": [
+          {
+            "start": 45,
+            "end": 49,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_contratos",
+        "path": "/text",
+        "sourceSha256": "7fae4ecef78b75834fe77c710bcde5a29e62785794d87ec5e47b767076c40bc4",
+        "spans": [
+          {
+            "start": 49,
+            "end": 55,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 219,
+            "text": "-10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 224,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 286,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 305,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 318,
+            "end": 319,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 355,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 359,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 577,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_entrada",
+        "path": "/text",
+        "sourceSha256": "c263c7b6211b1073db16f91432af788935c1c62d18ab1b98f3ab827b0fa9deb4",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 21,
+            "end": 22,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 139,
+            "text": "-11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 144,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 388,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 406,
+            "text": "-10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 409,
+            "end": 411,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 617,
+            "end": 635,
+            "text": "Lecturas invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_formato",
+        "path": "/text",
+        "sourceSha256": "3dd068fa57d2cb8adf17c25aa4c07cae7af5d11f4660389d65a7ba190267e3e1",
+        "spans": [
+          {
+            "start": 23,
+            "end": 26,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 45,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 66,
+            "text": "Niveles:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 138,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 205,
+            "text": "Niveles:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 236,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 259,
+            "text": "Al limite:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 263,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 490,
+            "end": 495,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_1",
+        "path": "/text",
+        "sourceSha256": "87e3bac0661fc6dd4ac267766e190a2152bf2e94b76d53fc646ffff1952fe321",
+        "spans": [
+          {
+            "start": 9,
+            "end": 21,
+            "text": "4 -10 0 6 10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 62,
+            "text": "Niveles: 0 0 4 4\nAl limite: 2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_2",
+        "path": "/text",
+        "sourceSha256": "da409b45b3c2f0e7e972f2b825415784a3d262ef55190a3cd08ff3f63cea602c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 43,
+            "text": "Niveles:\nAl limite: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_3",
+        "path": "/text",
+        "sourceSha256": "a28cd370048b923f10fff4f8a3bace447583aec1817bc593b14d856e3c4fbd9f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 16,
+            "text": "3 1 3 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 55,
+            "text": "Niveles: 1 3 2\nAl limite: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_4",
+        "path": "/text",
+        "sourceSha256": "132c379b46e33e7e87ac08891bb62ddd6478d742561391aa7f8130409704ae28",
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "1 -11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 44,
+            "text": "Lecturas invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_5",
+        "path": "/text",
+        "sourceSha256": "754a01ef2fba82dfe3d5652d2d7d2a86e1e3b59269f1657631c8588c96dee7cb",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "1 11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 43,
+            "text": "Lecturas invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_6",
+        "path": "/text",
+        "sourceSha256": "7afcf75402de7a083ea0814f6e5d3b10957b157d0dc69006c0fc51b5ad311a2e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 28,
+            "text": "9 0 0 0 0 0 0 0 0 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 58,
+            "text": "Lecturas invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_7",
+        "path": "/text",
+        "sourceSha256": "3d7d35f80c01209ea5997b7e79fde272446cde2b3f01c5f11619fd2aa34c35c8",
+        "spans": [
+          {
+            "start": 9,
+            "end": 12,
+            "text": "1 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 47,
+            "text": "Niveles: 4\nAl limite: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_8",
+        "path": "/text",
+        "sourceSha256": "12f7322ec112395540e8a455b8ce81fcc21d5e1f1ec497513f6fba6814942913",
+        "spans": [
+          {
+            "start": 9,
+            "end": 26,
+            "text": "8 0 0 0 0 0 0 0 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 75,
+            "text": "Niveles: 0 0 0 0 0 0 0 0\nAl limite: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_construccion_multicaso_caso_9",
+        "path": "/text",
+        "sourceSha256": "59a20dd2eb280709d1141355360b2f7b78fd3d07302a84cd60151fc3a955853e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 12,
+            "text": "1 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 47,
+            "text": "Niveles: 4\nAl limite: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "06400f2532b297c5e04f3bb3a967cfcd78ce3cfc603b09fe72c80eb74b6cb52b",
+        "spans": [
+          {
+            "start": 21,
+            "end": 31,
+            "text": "menos diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 61,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 70,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 101,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 128,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "48def952a2dc74a0ded9120b87da8a3808c78694f92235b3f49a9289a5dc565c",
+        "spans": [
+          {
+            "start": 40,
+            "end": 44,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 101,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "ee65fb3d532fc1f54e8c4183676dec8b40f1e8e1cd33482f60d3f85f3465dca9",
+        "spans": [
+          {
+            "start": 33,
+            "end": 40,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 69,
+            "text": "Niveles:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 97,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/1/text",
+        "sourceSha256": "c00f2b018f424bffa9fe4cda0840a916b062b52ff146364d13cdfe790fcde633",
+        "spans": [
+          {
+            "start": 120,
+            "end": 123,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "ee496ba568d83eba404ee81154c9833490f4cdc9e69ebec7c4ec456f2a4804fc",
+        "spans": [
+          {
+            "start": 99,
+            "end": 103,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/1/text",
+        "sourceSha256": "bd40fb7f6e4a4d5c5834e2a696bb5db223c5d93467aadec26f2320a35331f934",
+        "spans": []
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "2a791b6f187bd60c714c7a89e173ea76ea288243c21a839d056e08dc13bff0cc",
+        "spans": [
+          {
+            "start": 9,
+            "end": 19,
+            "text": "menos once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 69,
+            "text": "menos diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/1/text",
+        "sourceSha256": "89db0214273800bca146b5c6ee1c6f5346013c4179c69ca6f404db63612cb244",
+        "spans": [
+          {
+            "start": 21,
+            "end": 25,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 50,
+            "text": "menos once",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "877e507ac9801c92a99c4eec6841c86675355c2f91ef2a0bbd4422830e0cb05f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/1/text",
+        "sourceSha256": "b97c76d7423a088fb35dd4a6512c19c130259342d27fa1102892fccc63373100",
+        "spans": [
+          {
+            "start": 21,
+            "end": 27,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "04863c5e55e8fd2ca569a5df5413b4ad17ab6884b03cb26445aa4b90770cf816",
+        "spans": [
+          {
+            "start": 22,
+            "end": 27,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 65,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/1/text",
+        "sourceSha256": "1235a06c9870bbe859882528a7dee733ee07bd954803057fe80132d31f50b653",
+        "spans": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "nueve",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/6/explanation",
+        "sourceSha256": "530fbdd3560f03f72eccac139d3274defe9713a6c7034925ef3cfed959e93e50",
+        "spans": [
+          {
+            "start": 8,
+            "end": 14,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/6/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/6/reviewFeedback/1/text",
+        "sourceSha256": "402220a3ae1fe67fc6eac648746fd3b9a2fb7e75b43383eb944787a82e0099f9",
+        "spans": [
+          {
+            "start": 21,
+            "end": 27,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/7/explanation",
+        "sourceSha256": "84eb1b7e62b89a13dbf25cf97df5f6e9e76a9f002f559f78d55cbab4554f1cf4",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 9,
+            "end": 14,
+            "text": "ceros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/7/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/7/reviewFeedback/1/text",
+        "sourceSha256": "e7459651560a55074449dfb1ec788918454ceb31d0f227d856956896f2b10bb8",
+        "spans": [
+          {
+            "start": 16,
+            "end": 20,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/8/explanation",
+        "sourceSha256": "e74b194bdf778dff0caa1bfb9b140eb0077b6c67a1d6f890b1fee6127a5cab42",
+        "spans": [
+          {
+            "start": 8,
+            "end": 13,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 62,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/8/reviewFeedback/0/text",
+        "sourceSha256": "144304a33f5a8169cdb84b64b6b834d166071170f2b77c1035e49dbe7b449337",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "limite_cuatro_propio_multicaso_editor",
+        "path": "/outputCheck/cases/8/reviewFeedback/1/text",
+        "sourceSha256": "f5c5d2e4d3d24ce1d1e19156df426492ed9234db5319bd2b144fadc4753c16aa",
+        "spans": [
+          {
+            "start": 8,
+            "end": 13,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 84,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "8274425549dba684d0317ffb199553f505831934dfd9bd0e134ce6cbdc6f51c7",
+        "spans": []
+      }
+    ]
+  }
 }

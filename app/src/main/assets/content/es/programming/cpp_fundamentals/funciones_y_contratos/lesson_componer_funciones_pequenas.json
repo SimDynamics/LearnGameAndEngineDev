@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Componer funciones significa usar resultados de unas en el trabajo de otras. Cada llamada debe cumplir su contrato. En este ejemplo, con_reserva suma 2 a una cantidad de 0 a 20. posiciones usa ese resultado para calcular tres posiciones por unidad. Los valores intermedios, hasta 22 y 66, siguen siendo representables."
+          "text": "Componer funciones significa usar resultados de unas en el trabajo de otras. Cada llamada debe cumplir su contrato (Stroustrup, 2024). En este ejemplo, con_reserva suma 2 a una cantidad de 0 a 20. posiciones usa ese resultado para calcular tres posiciones por unidad. Los valores intermedios, hasta 22 y 66, siguen siendo representables."
         },
         {
           "type": "output_prediction",
@@ -116,7 +116,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El lote y la capacidad están declarados. El contrato permite hasta 6 pedidos, cada uno entre 0 y 20, y una capacidad de 1 a 10. Primero se valida; después se suman las unidades, se calculan contenedores suficientes y se presenta el plan. Una cantidad sobrante requiere un contenedor adicional. El lote vacío es válido y necesita cero contenedores."
+          "text": "El lote y la capacidad están declarados. El contrato permite hasta 6 pedidos, cada uno entre 0 y 20, y una capacidad de 1 a 10. Primero se valida; después se suman las unidades, se calculan contenedores suficientes y se presenta el plan. Una cantidad sobrante requiere un contenedor adicional. Por ejemplo, con 12 unidades y capacidad 5, dos contenedores llenos guardan 10 unidades; sobran 2 y hace falta un tercero para guardarlas. El plan necesita así 3 contenedores. El lote vacío es válido y necesita cero contenedores."
         },
         {
           "type": "paragraph",
@@ -298,6 +298,311 @@
             ]
           },
           "initialStandardInput": "0 5"
+        },
+        {
+          "type": "heading",
+          "text": "Construcción propia: Plan con reserva"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este encargo, la reserva es una cantidad adicional para todo el lote: se suma una sola vez, no una vez por pedido. También cuenta si no hay pedidos. Con pedidos de 3, 4 y 5 unidades, la suma es 12; al añadir reserva 2 quedan 14 unidades. Con capacidad 5, dos contenedores completos guardan 10 y quedan 4: el plan necesita 3 contenedores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define bool plan_valido(const std::vector<int>& pedidos, int capacidad, int reserva). Debe devolver true exactamente cuando el lote tenga como máximo 6 pedidos, todos entre 0 y 20, la capacidad esté entre 1 y 10 y la reserva entre 0 y 3; en cualquier otro caso devuelve false. La colección se recibe para lectura y debe conservarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define int unidades_con_reserva(const std::vector<int>& pedidos, int reserva). Su precondición es que el lote y la reserva ya estén validados. Debe devolver la suma de los pedidos más la reserva, añadida una sola vez al total del lote, también si el vector está vacío. No modifica los pedidos. El resultado estará entre 0 y 123: el extremo superior procede de 6 pedidos de 20 unidades más reserva 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define int contenedores_necesarios(int unidades, int capacidad). Recibe unidades entre 0 y 123 y capacidad entre 1 y 10, ya validadas por la composición anterior. Devuelve la menor cantidad de contenedores que permita guardar todas las unidades. Un reparto exacto no requiere otro contenedor; con 0 unidades debe devolver 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define void mostrar_plan(int unidades, int contenedores). Esta función recibe los resultados y presenta exactamente dos líneas: primero el rótulo Unidades: seguido de un espacio y el total; después Contenedores: seguido de un espacio y la cantidad de contenedores. Ambas líneas terminan con salto de línea. Para el ejemplo anterior, la salida completa es:\nUnidades: 14\nContenedores: 3\nNo añadas otros mensajes cuando los datos sean válidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el esqueleto con las cuatro funciones anteriores y main. La entrada contiene, en este orden, n, la cantidad de pedidos; exactamente n valores de pedido; capacidad; y reserva. Usa números enteros separados por espacios o saltos de línea. Los ensayos garantizan n entre 0 y 7, pedidos entre -1 y 21, capacidad entre 0 y 11 y reserva entre -1 y 4, con todos los datos presentes y escritos como enteros. Estos límites permiten leer y guardar el ensayo completo; no significan que el plan sea válido.\n\nEn main, lee los datos y construye el vector. Llama a plan_valido antes de calcular unidades o dividir. Si devuelve false, muestra únicamente Datos fuera del dominio y un salto de línea. Si devuelve true, compón los otros cálculos y pasa sus resultados a mostrar_plan. Conserva las funciones al variar sólo Entrada. Pulsa «Compilar, ejecutar y comprobar» para comprobar los catorce casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «0 5 0» → salida:\nUnidades: 0\nContenedores: 0\nEl lote está vacío y la reserva es 0: el total es 0 y no se necesita ningún contenedor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «0 5 2» → salida:\nUnidades: 2\nContenedores: 1\nAunque el lote está vacío, la reserva 2 aporta 2 unidades al total. Caben en 1 contenedor de capacidad 5."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «3 3 4 5 5 2» → salida:\nUnidades: 14\nContenedores: 3\nLos pedidos suman 12. La reserva 2 eleva el total a 14; dos contenedores de capacidad 5 guardan 10 y quedan 4 unidades, de modo que hacen falta 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 5 5 0» → salida:\nUnidades: 5\nContenedores: 1\nEl pedido 5 y la reserva 0 dejan 5 unidades. Con capacidad 5, el reparto es exacto y basta 1 contenedor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 5 5 1» → salida:\nUnidades: 6\nContenedores: 2\nAl pedido 5 se añade reserva 1 y quedan 6 unidades. La capacidad 5 obliga a usar 2 contenedores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «6 20 20 20 20 20 20 10 3» → salida:\nUnidades: 123\nContenedores: 13\nLos 6 pedidos de 20 suman 120; la reserva 3 lleva el total a 123. Con capacidad 10 se necesitan 13 contenedores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos cinco ensayos deben mostrar únicamente Datos fuera del dominio, con salto de línea final:\n- 1 3 0 1: la capacidad es 0.\n- 1 -1 5 0: un pedido es -1.\n- 7 1 1 1 1 1 1 1 5 0: hay 7 pedidos.\n- 0 5 4: la reserva es 4.\n- 0 11 0: la capacidad es 11.\nSe leen los datos de cada ensayo, pero no se calcula el total ni se divide cuando el plan no cumple el contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 21 5 0» → salida:\nDatos fuera del dominio\nEl pedido 21 supera el máximo permitido 20, aunque la capacidad y la reserva sean válidas. Se muestra Datos fuera del dominio antes de calcular."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «0 5 -1» → salida:\nDatos fuera del dominio\nLa reserva -1 queda por debajo del mínimo permitido 0. El lote vacío no elimina ese requisito y se muestra Datos fuera del dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada «1 0 1 0» → salida:\nUnidades: 0\nContenedores: 0\nEl pedido 0 y la capacidad mínima 1 están incluidos en el contrato. Con reserva 0, el total sigue siendo 0 y no se necesita ningún contenedor."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "0 5 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 5 0",
+                "outputs": [
+                  "Unidades: 0\nContenedores: 0\n"
+                ],
+                "explanation": "El lote está vacío y la reserva es 0: el total es 0 y no se necesita ningún contenedor.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Para el lote vacío con reserva 0 también se deben presentar las dos líneas del plan; revisa el camino válido y la llamada de presentación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0 5 2",
+                "outputs": [
+                  "Unidades: 2\nContenedores: 1\n"
+                ],
+                "explanation": "Aunque el lote está vacío, la reserva 2 aporta 2 unidades al total. Caben en 1 contenedor de capacidad 5.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Este lote vacío tiene reserva 2, por lo que sigue necesitando cálculo y presentación. Revisa ese camino sin suponer que todo lote vacío se rechaza."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 3 4 5 5 2",
+                "outputs": [
+                  "Unidades: 14\nContenedores: 3\n"
+                ],
+                "explanation": "Los pedidos suman 12. La reserva 2 eleva el total a 14; dos contenedores de capacidad 5 guardan 10 y quedan 4 unidades, de modo que hacen falta 3.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Revisa que leas los tres pedidos, la capacidad y la reserva, y que el camino válido llegue a la presentación del plan."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 5 5 0",
+                "outputs": [
+                  "Unidades: 5\nContenedores: 1\n"
+                ],
+                "explanation": "El pedido 5 y la reserva 0 dejan 5 unidades. Con capacidad 5, el reparto es exacto y basta 1 contenedor.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Este pedido con reserva 0 es válido. Revisa que el cálculo exacto también llegue a la presentación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 5 5 1",
+                "outputs": [
+                  "Unidades: 6\nContenedores: 2\n"
+                ],
+                "explanation": "Al pedido 5 se añade reserva 1 y quedan 6 unidades. La capacidad 5 obliga a usar 2 contenedores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Este ensayo válido añade reserva 1 al pedido. Revisa la lectura de ese dato y el camino que muestra el plan."
+                  }
+                ]
+              },
+              {
+                "standardInput": "6 20 20 20 20 20 20 10 3",
+                "outputs": [
+                  "Unidades: 123\nContenedores: 13\n"
+                ],
+                "explanation": "Los 6 pedidos de 20 suman 120; la reserva 3 lleva el total a 123. Con capacidad 10 se necesitan 13 contenedores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Aquí se incluyen los 6 pedidos permitidos y la reserva máxima 3. Revisa que los extremos incluidos puedan llegar al cálculo y a la presentación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 3 0 1",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "La capacidad 0 no permite dividir. El rechazo se decide antes de llamar a los cálculos y se muestra Datos fuera del dominio.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. La capacidad 0 exige el mensaje de rechazo. Revisa que el camino inválido lo presente antes de cualquier división."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -1 5 0",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "El pedido -1 queda fuera del intervalo permitido, de 0 a 20. Se muestra Datos fuera del dominio sin calcular el total.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. El pedido -1 incumple el contrato del lote. Revisa que se presente el rechazo sin ejecutar los cálculos del plan."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7 1 1 1 1 1 1 1 5 0",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "Aunque cada pedido vale 1, hay 7 pedidos y el límite es 6. El plan no es válido y se muestra Datos fuera del dominio.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. La entrada contiene 7 pedidos, por encima del máximo permitido 6. Revisa que se lea el ensayo y se presente el rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0 5 4",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "La reserva 4 supera el máximo permitido 3. El lote vacío no elimina esa exigencia: se muestra Datos fuera del dominio.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. Una reserva 4 queda fuera del máximo permitido 3, aunque el lote esté vacío. Revisa la validación de ese dato y su mensaje de rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0 11 0",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "La capacidad 11 supera el máximo permitido 10. Incluso sin pedidos y sin reserva, se comprueba el contrato y se muestra Datos fuera del dominio.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. La capacidad 11 supera el máximo permitido 10. Revisa que el camino inválido presente el rechazo incluso con el lote vacío."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 21 5 0",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "El pedido 21 supera el máximo permitido 20, aunque la capacidad y la reserva sean válidas. Se muestra Datos fuera del dominio antes de calcular.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. El pedido 21 también debe rechazarse por superar 20. Revisa que el límite superior de cada pedido controle el camino que presenta el rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0 5 -1",
+                "outputs": [
+                  "Datos fuera del dominio\n"
+                ],
+                "explanation": "La reserva -1 queda por debajo del mínimo permitido 0. El lote vacío no elimina ese requisito y se muestra Datos fuera del dominio.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. La reserva -1 incumple su límite inferior 0, también sin pedidos. Revisa que ese dato se compruebe antes de los cálculos y se presente el rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0 1 0",
+                "outputs": [
+                  "Unidades: 0\nContenedores: 0\n"
+                ],
+                "explanation": "El pedido 0 y la capacidad mínima 1 están incluidos en el contrato. Con reserva 0, el total sigue siendo 0 y no se necesita ningún contenedor.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola está vacía. El pedido 0 y la capacidad 1 son válidos. Revisa que se acepten esos extremos y que el total 0 también llegue a la presentación del plan."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: Componer un plan con reserva"
+        },
+        {
+          "type": "note",
+          "text": "La referencia reúne las cuatro funciones solicitadas. La validación controla el camino que llega a las funciones de cálculo; el cálculo de unidades recibe un lote válido y una reserva válida; el cálculo de contenedores recibe ese total y una capacidad válida; la presentación recibe los dos resultados. Los pedidos se conservan porque sólo se leen."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool plan_valido(const std::vector<int>& pedidos, int capacidad, int reserva) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    if ((capacidad < 1) || (capacidad > 10)\n        || (reserva < 0) || (reserva > 3)) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint unidades_con_reserva(const std::vector<int>& pedidos, int reserva) {\n    int unidades = reserva;\n    for (int cantidad : pedidos) {\n        unidades = unidades + cantidad;\n    }\n    return unidades;\n}\n\nint contenedores_necesarios(int unidades, int capacidad) {\n    int contenedores = unidades / capacidad;\n    if (unidades % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int unidades, int contenedores) {\n    std::cout << \"Unidades: \" << unidades << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores << \"\\n\";\n}\n\nint main() {\n    int n{0};\n    std::cin >> n;\n    std::vector<int> pedidos;\n    for (int i{0}; i < n; ++i) {\n        int pedido{0};\n        std::cin >> pedido;\n        pedidos.push_back(pedido);\n    }\n    int capacidad{0};\n    int reserva{0};\n    std::cin >> capacidad >> reserva;\n    if (plan_valido(pedidos, capacidad, reserva)) {\n        const int unidades = unidades_con_reserva(pedidos, reserva);\n        const int contenedores = contenedores_necesarios(unidades, capacidad);\n        mostrar_plan(unidades, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "unidades_con_reserva empieza con la reserva y después añade cada pedido. Así no se pierde la reserva del lote vacío ni se repite por pedido. Con reserva 2 y sin pedidos, devuelve 2; con reserva 0, devuelve 0. En contenedores_necesarios, la división da los contenedores completos y sólo un resto distinto de cero exige otro. Por eso 5 unidades con capacidad 5 necesitan 1 contenedor, mientras que 6 necesitan 2. La suma máxima 120 más la reserva máxima 3 da 123 unidades; con capacidad 10 hacen falta 13 contenedores."
         }
       ]
     }
@@ -550,7 +855,29 @@
           "block_0006_0004",
           "block_0006_0005",
           "block_0006_0006",
-          "block_0006_0007"
+          "block_0006_0007",
+          "plan_reserva_construccion_titulo",
+          "plan_reserva_construccion_problema",
+          "plan_reserva_contrato_validacion",
+          "plan_reserva_contrato_unidades",
+          "plan_reserva_contrato_contenedores",
+          "plan_reserva_contrato_presentacion",
+          "plan_reserva_construccion_entrada",
+          "plan_reserva_caso_valido_1",
+          "plan_reserva_caso_valido_2",
+          "plan_reserva_caso_valido_3",
+          "plan_reserva_caso_valido_4",
+          "plan_reserva_caso_valido_5",
+          "plan_reserva_caso_valido_6",
+          "plan_reserva_casos_de_rechazo",
+          "plan_reserva_caso_pedido_superior_invalido",
+          "plan_reserva_caso_reserva_negativa",
+          "plan_reserva_caso_pedido_cero_capacidad_minima",
+          "plan_reserva_propio_editor",
+          "plan_reserva_referencia_titulo",
+          "plan_reserva_referencia_criterios",
+          "plan_reserva_referencia_codigo",
+          "plan_reserva_referencia_razonamiento"
         ]
       }
     ],
@@ -1072,7 +1399,206 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "plan_reserva_construccion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_construccion_problema",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_contrato_validacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_contrato_unidades",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_contrato_contenedores",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_contrato_presentacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_construccion_entrada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_valido_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_valido_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_valido_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_valido_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_valido_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 11
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_valido_6",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 12
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_casos_de_rechazo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 13
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_propio_editor",
+        "sha256": "011fa891a82cdbf02f65d373ad7ce7f146a1ca44064796037bfda48ddb61ed11",
+        "storage": {
+          "page": 7,
+          "block": 14
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 15
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_referencia_criterios",
+        "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1",
+        "storage": {
+          "page": 7,
+          "block": 16
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_referencia_codigo",
+        "sha256": "b4582dc33be14106ff8eefa1d28b0ea5ad4e6fedda8a3f1a2b9173e8e9d11f7a",
+        "storage": {
+          "page": 7,
+          "block": 17
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 18
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_pedido_superior_invalido",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 19
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_reserva_negativa",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 20
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "plan_reserva_caso_pedido_cero_capacidad_minima",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 21
+        },
+        "progressPage": "page_0006"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0006_0001",
@@ -1088,8 +1614,3384 @@
         "id": "block_0005_0002",
         "beforeSha256": "790a7b89df488c93c8094061d8284ce994c295633caf18adc75e44aba809b922",
         "afterSha256": "fbdec6dea046c3e6f2c9495a91fcb7a1a08d15a234a2b480cedc148b37560f9b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "8bdb29016c239145f347be1db93ea50a2774950de89c9dcaab4092843a563dc2",
+        "afterSha256": "240434fd42426fe15c1b0f99ea415a68fa3d504cb19ea1b282d0315dc301cc6d"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "80bebc62eb5547aed024f3db6e1dc4a3fa3a56b3c146471fd67a0c1cbac9149f",
+        "afterSha256": "1b42936a04cfbf9fb800d58f9199fa2e841c0c7e76e9301f1d5e82bf27341517"
       }
     ]
   },
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "6b43a3e09b13864ffe4c8c6249235432c68672e101e28f8ea42d1c0c360fd924",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "393c55f9e49e88f340b50ddd54073178c9cf6e0aee46763afbb2ec425748a399",
+        "spans": [
+          {
+            "start": 297,
+            "end": 315,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "3323e7f47ccf0d87c59b71e9f832dc0b5627cca6d058b071d8cb96015fb6098d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "faltantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 64,
+            "text": "mostrar_faltantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 110,
+            "text": "Faltan: 4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "a18880f47d33d4c12bcefd7174a9401ccfa653666bb2067629ada082ae30aed6",
+        "spans": [
+          {
+            "start": 18,
+            "end": 27,
+            "text": "faltantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 44,
+            "text": "necesarias",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 60,
+            "text": "disponibles",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "f344dd32ba82d596ca7d94b048aa035e8080afb0e6a99c1fc792c88aac5928b7",
+        "spans": [
+          {
+            "start": 66,
+            "end": 67,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 183,
+            "text": "mostrar_faltantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 196,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "e23d958f492c271b0be4fe73ad20a732e8086245bf395202bf28b693318acbdd",
+        "spans": [
+          {
+            "start": 32,
+            "end": 34,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 50,
+            "text": "5 - 8",
+            "role": "math"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "81c1b486ef1e1010247ece60bb0de8c28ab3a36d5e2ba8f3ac0f579508bbfafb",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "b591435aee94e341c356ad3a58e7f4c434a2ad69152a7c4c03e120e59c775c52",
+        "spans": [
+          {
+            "start": 16,
+            "end": 20,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 40,
+            "text": "faltantes",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "daf168791f1029e8f26d49f16f9ef6a9d7232badf99e8de566ed1ba2d3873dd2",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "b02b267b6abbf0688e305d4cf583bb61a9f2d7b1f7b534646fa0fabbe2594362",
+        "spans": [
+          {
+            "start": 115,
+            "end": 133,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 163,
+            "text": "con_reserva",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 195,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 207,
+            "text": "posiciones",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 244,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 301,
+            "text": "22",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 306,
+            "text": "66",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "74f73a1e0fab8acaa295cde93f9f23d7c38c67a3a7afeca0694abcce0f0d9b70",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "7b468850f6b069f37af520a7950f5c91a1f8c6757ed36a7ee2739adeeb7fcdb0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "con_reserva(4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 23,
+            "end": 24,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 36,
+            "text": "posiciones",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "3",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "70e73e058db0613fcf4cfc24c383458ff563191afda71a34aa02497c72a4c0f6",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "9df291ac3b5b1c33f5c71c712464aa982f997130ad13c765087a9f666e801c9c",
+        "spans": [
+          {
+            "start": 97,
+            "end": 101,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "6306d5afdfc5cf71b18d282668be3fbf2633032fd7969515ec2b16e0f71029e9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "07cb906803f78c08bf090be7c7e4a63a16bacfebbb1ad72f20766e2679992f52",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "2e66d9159e434531291ff9b0c5b42b2a2a590c0b5126588777b5e8cfdec7af51",
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "4372135e998f27bcc1976ac533f0e1761c6f2cff04487972c973f75749e04068",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "ff55b9202bd5851e114008b2f847ffce2e25a87795f39c40c6e82450b6f20c2e",
+        "spans": [
+          {
+            "start": 80,
+            "end": 84,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 198,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 213,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 218,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 241,
+            "text": "160",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "4eef7f300482079a9900c93615e2a175b3ee5c3b5c3f008ecfdeaa888c430a9a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "cumple_minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 68,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "e12182f85f9ec245420b7d242bb3fc7a04022d30d5d2735ccdd59de69ba0dc56",
+        "spans": [
+          {
+            "start": 32,
+            "end": 55,
+            "text": "const std::vector<int>&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "0986554fd00812c6de4c2a21864cdc792bddabf95ddaa92d13ccb6df961e8926",
+        "spans": [
+          {
+            "start": 106,
+            "end": 111,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "45e56179ed821738bc5d14c0acda66f0490bd38cefa957743af4c8ff2e1cd192",
+        "spans": [
+          {
+            "start": 24,
+            "end": 29,
+            "text": "sumar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "fa2aac47074c32290ac2145bd7f59dd819d2201f81204c4225cb061234c6b0d9",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "6ab22bf66d6db1362ba0960da1c59bb1031f58b923bc357c0fb7c0e377739f0b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "b385281622c8fd8cefda6490461a876bb2489f2a663cdc3f92fd09fd14487961",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "f57af32311d1ba92a48bafe66468ec17f98bd7e42c7177cc6fcc1eb7dc15af75",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "sumar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "text": ">=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 108,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "3ba647ea311d72bb6668d37d68a4c130ffcf0101f32b604ac362bf1e0d125604",
+        "spans": [
+          {
+            "start": 67,
+            "end": 68,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 99,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 126,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 271,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 313,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 336,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 341,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 372,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 391,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 415,
+            "text": "tercero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 455,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 505,
+            "end": 509,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "c3ec4883090eca7f0fa0de8e972b044fb76554ee80bb016206fa6f910fdb950e",
+        "spans": [
+          {
+            "start": 37,
+            "end": 46,
+            "text": "{3, 4, 5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 67,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 82,
+            "text": "Unidades: 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 102,
+            "text": "Contenedores: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 111,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "da64477cd93c0fc1ebcabc3be3719dcf17b8366e6cb471a1a9457146ff8a5d8d",
+        "spans": [
+          {
+            "start": 30,
+            "end": 31,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "fac4f3557e3b7f35679b0a310f0e744ed4f864a1534179714c9deadd2d21a443",
+        "spans": [
+          {
+            "start": 50,
+            "end": 51,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "75bd06974013f6364633f985cb6197ccda8472df027dd350f0d2dfe96d96a73b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "Unidades: 0\nContenedores: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "07d73b605c2d317b48b4c50c3b0ffe7f7ee3e486b84ac4017a0618f539c4d070",
+        "spans": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "11e54dc6cfba1761c2fa9c18058569e1e02c6452e9ebb5775c8f5f20f411a8a9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "Unidades: 0\nContenedores: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "4db9de747721198ac0708de1fbec60b3f7f331dce2eeb50dd638513588a273a8",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "05564fbb8f24a6f2fa14a4a7c7300e625f5ce4115c64866e3774eea22b25de9d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "df18739dfa0a6625bf068ca005449aed146f25c6f8a4dc740ef46beb7d2b96e5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "text": "24",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 64,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "d919bbca42a0572a929728705c7663c4032ffd56a4c9eb5845e4b9960713974b",
+        "spans": [
+          {
+            "start": 74,
+            "end": 78,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "ff30eca13fb239547d54c9f7d37f904b5daa1863cebd3a9f8740640ed8854c0f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/0",
+        "sourceSha256": "bfe73fee55b3573dbbd47f42cf2837d13af351d0c39ce4fe55abc6d89f2d7103",
+        "spans": [
+          {
+            "start": 8,
+            "end": 9,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 12,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
+            "end": 16,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/1",
+        "sourceSha256": "c30473b3d4d647b6e979929c32862ac76ff368f2f756633ac5c72bb77326c970",
+        "spans": [
+          {
+            "start": 8,
+            "end": 9,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 12,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
+            "end": 16,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/2",
+        "sourceSha256": "5201ea8102a4f6a49a94d3884f9e3d113f65ede3ee1b410d640b65fef8c04e74",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "25",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "4411afacfb91981519dce8942223e5dc25c5cf857c4e75bf12f588c2c5eb505b",
+        "spans": [
+          {
+            "start": 18,
+            "end": 32,
+            "text": "total_unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 83,
+            "text": "contenedores_necesarios",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 112,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 124,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 137,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "aee15a93ac93a57dd45d96cb634622393680da5c3722b120984b472bced5f1d6",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/question",
+        "sourceSha256": "928d35f20da89ceda064d5a44f673c7545155fa2d098a85c7eb097cf1679aaf9",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/explanation",
+        "sourceSha256": "6c85935b738eab5c032a1198c97e915d342271498da52cbaf0e9fd21db25ea05",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/options/0",
+        "sourceSha256": "43cd1e83c3ee0bf8a43f57ea9f977679ac835ce77e62a93b009bf8f577ce6fd8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/options/1",
+        "sourceSha256": "374abe5d5435206e648ef3ded24a24a3a8fcbb20e540aefcd5b0514c66e144c0",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/options/2",
+        "sourceSha256": "20f7ba606e3902651ce3b2e64379984ff5b755862615d448c5e6657e84f52b25",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "0e25885ef3d51d0567313d52144b80177fed9ebd2deb64a8d51ed2cd8105325d",
+        "spans": [
+          {
+            "start": 167,
+            "end": 185,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "f4c9dc6945d8eab514e28af10a7e042c2733d600036f55612ae9273c5b7076a6",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "f56bdeae50d74ec0ae7732264d905301d928296b39b16def654d9ed5aded3399",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "bb3e00dc6a064fd5e5c8fa5bda0391f1c558572dc4d4a2cd89e4c3582f209eb1",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "8db40326d4518262bbffbd881348b6d476b1b8df0697ca1f959f5c714f02ae1d",
+        "spans": [
+          {
+            "start": 29,
+            "end": 36,
+            "text": "{3,4,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 75,
+            "text": "Unidades: 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 93,
+            "text": "Contenedores: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 122,
+            "text": "{}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 158,
+            "text": "{5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 165,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 177,
+            "text": "{5,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 181,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "{6}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 198,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 297,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 318,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 331,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 336,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 353,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 358,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 386,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 401,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "87bb6d8d2aab5462a68dfeb61f1010b4195fb5ffabaa33a4f65b57a9d8eca1df",
+        "spans": [
+          {
+            "start": 186,
+            "end": 190,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "9bb4116f3cc4c4f99cc4aa22f55ea5b38d99712857655e875fb6a406ba0c363c",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "71ed2cf96e793c016731c66c94dcb0d698ff5e4b83b3739e18f09161ffbb72fd",
+        "spans": [
+          {
+            "start": 87,
+            "end": 90,
+            "text": "0 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 99,
+            "text": "1 5 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 110,
+            "text": "2 5 5 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 119,
+            "text": "1 6 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 132,
+            "text": "3 3 4 5 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 143,
+            "text": "1 -1 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 153,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 212,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 262,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 278,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_construccion_titulo",
+        "path": "/text",
+        "sourceSha256": "d638b579cc8fb381e30b46b10e29364ce40720c68d244bb25b016450be178a3e",
+        "spans": []
+      },
+      {
+        "block": "plan_reserva_construccion_problema",
+        "path": "/text",
+        "sourceSha256": "5bff4cf557715000f1b59ce8b36ebae97803f9fb45d6037fa266e737aa56574b",
+        "spans": [
+          {
+            "start": 81,
+            "end": 84,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 101,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 168,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 199,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 230,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 256,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 261,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 295,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 306,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 326,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_contrato_validacion",
+        "path": "/text",
+        "sourceSha256": "a43264e89134dc0c4725697ff0cc49488b186695304bc90225295856da9439fe",
+        "spans": [
+          {
+            "start": 7,
+            "end": 84,
+            "text": "bool plan_valido(const std::vector<int>& pedidos, int capacidad, int reserva)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 104,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 179,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 211,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 232,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 236,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 275,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_contrato_unidades",
+        "path": "/text",
+        "sourceSha256": "c71a64bed8f8da75b64561680fe64f3bae9630b3ab14fbac32100f8a048077cd",
+        "spans": [
+          {
+            "start": 7,
+            "end": 77,
+            "text": "int unidades_con_reserva(const std::vector<int>& pedidos, int reserva)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 207,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 321,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 327,
+            "text": "123",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 361,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 375,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 397,
+            "end": 398,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_contrato_contenedores",
+        "path": "/text",
+        "sourceSha256": "a09e6d3005b10870ed449e189d18688c42fc0932ff01fb2c2ad262bad1e6a9fc",
+        "spans": [
+          {
+            "start": 7,
+            "end": 63,
+            "text": "int contenedores_necesarios(int unidades, int capacidad)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 80,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "123",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 106,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 119,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 298,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 323,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_contrato_presentacion",
+        "path": "/text",
+        "sourceSha256": "cfe9f8d84103cc3afde058b815779385ac5d5248a5dcbdd89888cedc45694d2f",
+        "spans": [
+          {
+            "start": 7,
+            "end": 56,
+            "text": "void mostrar_plan(int unidades, int contenedores)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 119,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 155,
+            "text": "Unidades:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 169,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 211,
+            "text": "Contenedores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 225,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 384,
+            "text": "Unidades: 14\nContenedores: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_construccion_entrada",
+        "path": "/text",
+        "sourceSha256": "01051efac7ed791fb60494e506ad073e24e24ff8ce62713a0a5366c75e9f8835",
+        "spans": [
+          {
+            "start": 30,
+            "end": 36,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 64,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 171,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 182,
+            "text": "reserva",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 278,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 282,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 300,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 305,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 316,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 324,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 327,
+            "end": 329,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 339,
+            "text": "reserva",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 348,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 352,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 513,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 560,
+            "end": 571,
+            "text": "plan_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 622,
+            "end": 627,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 648,
+            "end": 671,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 705,
+            "end": 709,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 761,
+            "end": 773,
+            "text": "mostrar_plan",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 880,
+            "end": 887,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_valido_1",
+        "path": "/text",
+        "sourceSha256": "c8cf80dce0c3f75c7627993ddfbc2e79d7b7ae64888433128c6013c259f00269",
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "0 5 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 53,
+            "text": "Unidades: 0\nContenedores: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_valido_2",
+        "path": "/text",
+        "sourceSha256": "9bbcf371456925879c41cc8aceb2fefec09514553eedd87a4cdd93f921008262",
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "0 5 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 53,
+            "text": "Unidades: 2\nContenedores: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 102,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_valido_3",
+        "path": "/text",
+        "sourceSha256": "5a7f0bdd250c738fb2803fd2a7a96c47b7c18da8028e7ce03c51edd58445324c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 20,
+            "text": "3 3 4 5 5 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 60,
+            "text": "Unidades: 14\nContenedores: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 81,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 95,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 115,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 120,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 159,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_valido_4",
+        "path": "/text",
+        "sourceSha256": "1058ff403697107f40dc71a61a9abf8fb151c8db36b834995e2992af1f605a71",
+        "spans": [
+          {
+            "start": 9,
+            "end": 16,
+            "text": "1 5 5 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 55,
+            "text": "Unidades: 5\nContenedores: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 116,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_valido_5",
+        "path": "/text",
+        "sourceSha256": "529ad8e36d70d8b0ac2e7ef260408e00e71a62b95413471cd7cf569ed6a82472",
+        "spans": [
+          {
+            "start": 9,
+            "end": 16,
+            "text": "1 5 5 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 55,
+            "text": "Unidades: 6\nContenedores: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 122,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_valido_6",
+        "path": "/text",
+        "sourceSha256": "a44ec1e37da2a1181a093e0c7003057e1015489a3d50a0583d4a10f89c03b5aa",
+        "spans": [
+          {
+            "start": 9,
+            "end": 33,
+            "text": "6 20 20 20 20 20 20 10 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 75,
+            "text": "Unidades: 123\nContenedores: 13",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 95,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "120",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 119,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "123",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 158,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 174,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_casos_de_rechazo",
+        "path": "/text",
+        "sourceSha256": "96a606b181ff5633a3afbd3c93452ca2aeecad43068f4492a0b5eb4c10423114",
+        "spans": [
+          {
+            "start": 6,
+            "end": 11,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 68,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 105,
+            "text": "1 3 0 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 136,
+            "text": "1 -1 5 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 153,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 176,
+            "text": "7 1 1 1 1 1 1 1 5 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 183,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 200,
+            "text": "0 5 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 217,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 227,
+            "text": "0 11 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 247,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "5545ecc4f981c23ab4061908392862d1ef788ee84b7f953d3e036ae68528b944",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "df066cbcc6ca854e8892db193eccead519bcdf0331b31b6e62ce80b14a6773f8",
+        "spans": [
+          {
+            "start": 54,
+            "end": 55,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 90,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "69abe50457508da58437d0d67b51c7c6d0fd0070a7370198f1ad51f7cdc47245",
+        "spans": [
+          {
+            "start": 38,
+            "end": 39,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "b36b28de1ee484db84fac4d30b2edff87d4cb76dab16969a219dc19a0a8518d9",
+        "spans": [
+          {
+            "start": 53,
+            "end": 54,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "c9c4f2af13fe190647c4062d6f8d5eecec3393691b40b5ec13435a4520197685",
+        "spans": [
+          {
+            "start": 18,
+            "end": 20,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 54,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 59,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 87,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 98,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "c4a9a01d33c20705637bc6e31aaafd9fc4ad50ade6ef163c8d54ac74d4e94037",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "bcf07859b674f2cca172e5052a4279bbde4bf486b9955a093f842403deb207f2",
+        "spans": [
+          {
+            "start": 10,
+            "end": 11,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "178f2b8676446b57506d8d18f79e613025dc5138d902a558555b3eca59f251dc",
+        "spans": [
+          {
+            "start": 47,
+            "end": 48,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "0badc4d54b04c3fe7ee51b021945e95a4f3e9d2a93586f8c858801cd98af71f5",
+        "spans": [
+          {
+            "start": 10,
+            "end": 11,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "42bdd460864b0f7fff44121a02c84e5840807e7e78f3a993702340bdb3a4ca2f",
+        "spans": [
+          {
+            "start": 56,
+            "end": 57,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "fc329274906df15740538b2e3dbd736e9368cd3228efb96b2584d7b646b005ce",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 19,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 29,
+            "text": "120",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 64,
+            "text": "123",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 82,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 98,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "c85b29f1cb1e4744ebe82cbafd761c59357a2e0e679fe3c9bceecebca6947fff",
+        "spans": [
+          {
+            "start": 44,
+            "end": 45,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/6/explanation",
+        "sourceSha256": "81b5977aaa2bc34c01957fb801791b1a0a226d079a952de266c162f02b034d94",
+        "spans": [
+          {
+            "start": 13,
+            "end": 14,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 123,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/6/reviewFeedback/0/text",
+        "sourceSha256": "3d515d0a516ef3f1a0755071053143135ced6b13ce41cd67556b02b53fddbd09",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/7/explanation",
+        "sourceSha256": "7e8a1e738de26e507104d1b0c36a3900ff69be9911d7f5932de1d85deebe2766",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 54,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 59,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 95,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/7/reviewFeedback/0/text",
+        "sourceSha256": "4b7d6f9019f3af72720b6e423f5b9b462dc59423901e78c7699d35e8665f3ae5",
+        "spans": [
+          {
+            "start": 33,
+            "end": 35,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/8/explanation",
+        "sourceSha256": "a1a3a2ae31f33795c3eeb6cf30ceb1e26511f7ea9ee84184a2c0cc634d15a02f",
+        "spans": [
+          {
+            "start": 24,
+            "end": 25,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 32,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 116,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/8/reviewFeedback/0/text",
+        "sourceSha256": "ada9826bde3994e903ced8efa11d6ac5f493a618e201c6ad0e4f7efdbbb0eaa2",
+        "spans": [
+          {
+            "start": 43,
+            "end": 44,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 87,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/9/explanation",
+        "sourceSha256": "fe85a217f1379d43e1346dcc3eea96b69e400bb2322555af32f6202ee73df8c1",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 117,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/9/reviewFeedback/0/text",
+        "sourceSha256": "11f6e32f5702b5f1e4e8865a4f4f8668736551bc5f1998615f1408835c578609",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/10/explanation",
+        "sourceSha256": "64635171fbc9d6c6ebdfe819212c2928f59bd2d3c4d96cf4bce9a357f566210b",
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 143,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/10/reviewFeedback/0/text",
+        "sourceSha256": "0e2540ba5790e02ff642282e10174910d634628ee6ba020038e5a1388144d6e8",
+        "spans": [
+          {
+            "start": 36,
+            "end": 38,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 68,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "d2d47a102550f110214330e9d2efe1932849d66f6fce61facef666256c5257cc",
+        "spans": []
+      },
+      {
+        "block": "plan_reserva_referencia_criterios",
+        "path": "/text",
+        "sourceSha256": "b072592d88415e12e6519f3739e231db30a0113d6fb3e85529676842b9bc4cae",
+        "spans": [
+          {
+            "start": 24,
+            "end": 30,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 290,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "0a1759403f6352c99a23f3ee64a9c67d0f87e350fef037c23d9086b5e9911ada",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "unidades_con_reserva",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 154,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 180,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 195,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 207,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 235,
+            "text": "contenedores_necesarios",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 311,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 333,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 357,
+            "end": 358,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 370,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 397,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 429,
+            "text": "120",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 453,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 460,
+            "text": "123",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 485,
+            "end": 487,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 500,
+            "end": 502,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/11/explanation",
+        "sourceSha256": "8f565d3962c7d237121acbe765bd46c474cbd39157eca78f7e5fb659a3b2f5b0",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 42,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 125,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/11/reviewFeedback/0/text",
+        "sourceSha256": "e58301ea6bff4bccc07996f81b2576445435029ecfb95306b41bef2f20add4a6",
+        "spans": [
+          {
+            "start": 33,
+            "end": 35,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 74,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_pedido_superior_invalido",
+        "path": "/text",
+        "sourceSha256": "6d1b846de5989943d88d7998ba64ed53ffd7357f2f809a47d0608aa9cc2cfd42",
+        "spans": [
+          {
+            "start": 9,
+            "end": 17,
+            "text": "1 21 5 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 52,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 95,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 178,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/12/explanation",
+        "sourceSha256": "cd1766e4de03ece7177b26d51a905796c4ed0e39a0d6b8d315cd558ec626a871",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 130,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/12/reviewFeedback/0/text",
+        "sourceSha256": "95eebfd06660806796aef8c10774ec3acc0c6587d3756911b762a46704d76b37",
+        "spans": [
+          {
+            "start": 34,
+            "end": 36,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_reserva_negativa",
+        "path": "/text",
+        "sourceSha256": "dc24bf01ddd62f452dab925fe5e341a94688f689aa1931d8048b1caf39aef938",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "0 5 -1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 50,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 181,
+            "text": "Datos fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/13/explanation",
+        "sourceSha256": "9287afa32202bf21708533bd15759aad4a94d076f1871a910a7934919b579b88",
+        "spans": [
+          {
+            "start": 10,
+            "end": 11,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_propio_editor",
+        "path": "/outputCheck/cases/13/reviewFeedback/0/text",
+        "sourceSha256": "de0ef03b1cd91b91d2ccd5f5004ec11619c1ea594aa6c005c5c91a1e42ffff66",
+        "spans": [
+          {
+            "start": 33,
+            "end": 34,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "plan_reserva_caso_pedido_cero_capacidad_minima",
+        "path": "/text",
+        "sourceSha256": "f7268f70072b99257cdb667117508f3b7e6ee77b3d07fb44479160774a45038d",
+        "spans": [
+          {
+            "start": 9,
+            "end": 16,
+            "text": "1 0 1 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 55,
+            "text": "Unidades: 0\nContenedores: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 162,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "f31ce29087f987b0283913b543990c56f9638dbac8c00921c2ea7606c5d57144",
+        "spans": []
+      }
+    ]
+  },
+  "activityAfter": [
+    {
+      "activity": "plan_reserva_propio_editor",
+      "requires": [
+        "block_0006_0007"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "plan_reserva_propio_editor",
+      "blocks": [
+        "plan_reserva_referencia_titulo",
+        "plan_reserva_referencia_criterios",
+        "plan_reserva_referencia_codigo",
+        "plan_reserva_referencia_razonamiento"
+      ]
+    }
+  ]
 }

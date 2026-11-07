@@ -247,6 +247,24 @@
               }
             ]
           }
+        },
+        {
+          "type": "order_code",
+          "id": "dias_completos_definicion_anterior_orden",
+          "language": "cpp",
+          "question": "Ordena los tres fragmentos para que dias_completos esté definida antes de su llamada en main y no haya declaración aislada. Coloca la inclusión al comienzo. El compilador anterior comprueba la salida 6; aquí se comprueba la organización de las definiciones.",
+          "fragments": [
+            "int main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}",
+            "int dias_completos(int horas) {\n    return horas / 8;\n}",
+            "#include <iostream>"
+          ],
+          "correctOrder": [
+            2,
+            1,
+            0
+          ],
+          "explanation": "La definición completa de dias_completos también declara la función antes de la llamada de main y aporta el cuerpo. Esta organización no necesita una declaración aislada. El argumento 53 produce 6 jornadas completas de 8 horas; ese resultado también lo puede producir la organización anterior, por lo que la salida no demuestra por sí sola dónde está la definición.",
+          "reviewFeedback": "Comprueba dónde aparece la llamada: el compilador debe conocer la función antes de ese punto. Aquí la definición completa de dias_completos ya aporta la declaración y el cuerpo. Mantén la inclusión al comienzo y la llamada dentro de main."
         }
       ]
     },
@@ -280,6 +298,48 @@
         {
           "type": "heading",
           "text": "Laboratorio: una interfaz, dos archivos fuente"
+        },
+        {
+          "type": "heading",
+          "text": "Preparar una cabecera sin repetir su contenido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cabecera es un archivo que podemos incluir para incorporar sus declaraciones en una fuente. En este proyecto se llama diferencia.h; diferencia.cpp y main.cpp son las fuentes que se compilan por separado. Durante la preparación del texto de cada fuente se atienden instrucciones que empiezan con #, llamadas directivas de preprocesamiento. Por ejemplo, #include \"diferencia.h\" incorpora el contenido de esa cabecera en ese punto del archivo para procesarlo junto con la fuente (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera usa el nombre CPP_FUNDAMENTALS_DIFERENCIA_H como una marca. Un nombre que se define mediante #define se llama macro. Aquí #define CPP_FUNDAMENTALS_DIFERENCIA_H la deja definida sin añadir ningún texto después del nombre: no es una variable de C++ ni necesita guardar un número. #ifndef CPP_FUNDAMENTALS_DIFERENCIA_H permite procesar el contenido siguiente sólo si esa macro todavía no está definida. #endif cierra ese contenido condicional; no borra la marca (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera inclusión desde main.cpp, la marca todavía no está definida: se procesa #define y se incorpora la declaración de diferencia. Al incluir la misma cabecera otra vez desde esa fuente, la marca sigue definida y #ifndef hace que se omita el contenido protegido hasta #endif. Esta organización se llama guarda de inclusión. Al preparar diferencia.cpp, se procesa otra fuente con sus propias inclusiones; la marca creada al preparar main.cpp no se transfiere a esa preparación. Su primera inclusión también incorpora la declaración (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo, la cabecera sólo declara una función; no contiene su cuerpo. Repetir esa misma declaración es válido y no crea otra definición de la función (Köppe et al., 2023). Por eso obtener 7 en la consola no demuestra por sí solo el efecto de la guarda: ese resultado también sería posible si esta declaración se incorporara dos veces. La actividad siguiente comprueba qué contenido se procesa en cada inclusión."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "guarda_cabecera_primera_segunda_y_fuentes",
+          "question": "main.cpp incluye diferencia.h dos veces y diferencia.cpp la incluye una vez. Al comenzar a preparar cada fuente, la macro CPP_FUNDAMENTALS_DIFERENCIA_H aún no está definida en ella. ¿Qué recorrido describe correctamente el contenido protegido por #ifndef y #endif?",
+          "options": [
+            "En la primera inclusión de main.cpp se define la marca y se incorpora la declaración; la segunda se omite. Al preparar diferencia.cpp se reutiliza la marca de main.cpp y también se omite la declaración.",
+            "En main.cpp, la primera inclusión define la marca e incorpora la declaración; la segunda omite el contenido protegido. Al preparar diferencia.cpp, su propia primera inclusión también incorpora la declaración.",
+            "En main.cpp, cada inclusión incorpora la declaración porque #endif borra la marca. Al preparar diferencia.cpp, su inclusión incorpora la declaración y #endif vuelve a borrar la marca."
+          ],
+          "correctIndex": 1,
+          "explanation": "La marca creada al preparar main.cpp permanece definida después de #endif: la segunda inclusión no vuelve a procesar el contenido protegido. diferencia.cpp se prepara por separado, sin heredar la marca de main.cpp; su primera inclusión sí incorpora la declaración. El contenido omitido pertenece sólo a esa inclusión dentro de una fuente, no a todas las fuentes del proyecto.",
+          "reviewFeedback": [
+            "La marca creada al preparar main.cpp no se comparte con la preparación de diferencia.cpp. Sigue por separado qué fuente se prepara en cada paso.",
+            "Sigue por separado la preparación de main.cpp y de diferencia.cpp, conservando la marca después de #endif dentro de la preparación de cada fuente.",
+            "#endif cierra el contenido condicional; no elimina la definición de la macro. Revisa por qué la marca sigue presente en la segunda inclusión de main.cpp."
+          ]
         },
         {
           "type": "paragraph",
@@ -655,7 +715,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye desde el esqueleto las dos declaraciones de `por_persona`, sus definiciones para ocho personas y un cliente que lea piezas como `int` y metros como `double`. Guarda ambos resultados en objetos `double`, conserva los argumentos y presenta `Piezas: R` y `Metros: R` en dos líneas, cada una terminada con salto.\n\nComprueba `0 0.0`, `7 7.0`, `8 8.0`, `20 20.0` y `1 0.5`. Los objetivos están en la comparación de esta página: las piezas conservan unidades completas y los metros pueden conservar una fracción. Pulsa «Compilar, ejecutar y comprobar» sin cambiar la regla entre entradas."
+          "text": "Reconstruye desde el esqueleto las dos declaraciones de `por_persona`, sus definiciones para ocho personas y un cliente que lea piezas como `int` y metros como `double`. Guarda ambos resultados en objetos `double` y conserva los argumentos. Presenta dos líneas: en la primera escribe `Piezas:`, un espacio y el resultado de la llamada con el argumento `int`; en la segunda escribe `Metros:`, un espacio y el resultado de la llamada con el argumento `double`. Termina ambas líneas con salto.\n\nComprueba `0 0.0`, `7 7.0`, `8 8.0`, `20 20.0` y `1 0.5`. Los objetivos están en la comparación de esta página: las piezas conservan unidades completas y los metros pueden conservar una fracción. Pulsa «Compilar, ejecutar y comprobar» sin cambiar la regla entre entradas."
         },
         {
           "type": "cpp_compiler",
@@ -892,7 +952,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva `int` en la cabecera y define la misma función con resultado `double` en la implementación, que incluye esa cabecera. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el diagnóstico de compilación de `diferencia.cpp`, antes de cualquier ejecución; no se comprueba stdout."
+          "text": "Este proyecto conserva `int` en la cabecera y define la misma función con resultado `double` en la implementación, que incluye esa cabecera. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el diagnóstico de compilación de `diferencia.cpp`, antes de cualquier ejecución; no se comprueba la salida del programa."
         },
         {
           "type": "cpp_compiler",
@@ -976,7 +1036,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto pide una cabecera que no está entre sus archivos. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el fallo de inclusión durante la compilación de `main.cpp`; todavía no se alcanza el enlace ni hay stdout nuevo que comprobar."
+          "text": "Este proyecto pide una cabecera que no está entre sus archivos. Pulsa «Compilar y comprobar diagnóstico». El objetivo es observar el fallo de inclusión durante la compilación de `main.cpp`; todavía no se alcanza el enlace ni hay una salida nueva del programa que comprobar."
         },
         {
           "type": "cpp_compiler",
@@ -1548,7 +1608,8 @@
           "block_0004_0004",
           "block_0004_0005",
           "block_0004_0006",
-          "block_0004_0007"
+          "block_0004_0007",
+          "dias_completos_definicion_anterior_orden"
         ]
       },
       {
@@ -1565,6 +1626,13 @@
         "id": "page_0006",
         "blocks": [
           "block_0006_0000",
+          "guarda_cabecera_introduccion_titulo",
+          "guarda_cabecera_preparacion",
+          "guarda_cabecera_ejemplo",
+          "guarda_cabecera_mecanismo",
+          "guarda_cabecera_inclusiones",
+          "guarda_cabecera_limite_de_la_salida",
+          "guarda_cabecera_primera_segunda_y_fuentes",
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003",
@@ -2946,6 +3014,78 @@
           "block": 8
         },
         "progressPage": "page_0013"
+      },
+      {
+        "id": "dias_completos_definicion_anterior_orden",
+        "sha256": "3ad42e2eee4b91b5913ec2dcb7b0cb1513e362191e6779bdde7b9284f73eb417",
+        "storage": {
+          "page": 19,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "guarda_cabecera_introduccion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 19,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "guarda_cabecera_preparacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 19,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "guarda_cabecera_ejemplo",
+        "sha256": "7229342136ee3314ba74e7fc6c11a5ff19a38af845ec397b37fd76ef175bfc63",
+        "storage": {
+          "page": 19,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "guarda_cabecera_mecanismo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 19,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "guarda_cabecera_inclusiones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 19,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "guarda_cabecera_limite_de_la_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 19,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "guarda_cabecera_primera_segunda_y_fuentes",
+        "sha256": "a7ef27f5f69a66f1bf015658cbf0d6978c6f99a15ce421470486fb9742c79908",
+        "storage": {
+          "page": 19,
+          "block": 7
+        },
+        "progressPage": "page_0006"
       }
     ],
     "editorial": [
@@ -3058,6 +3198,21 @@
         "id": "block_0009_0002",
         "beforeSha256": "efcb15156c50f0528799c2027af4c6e6f99dbf005da128e14cabc82ac11bd84b",
         "afterSha256": "aa4c081874d189c190f89ecdc016e5dfb3a2b58ed069fd5d2d2cfbdf4fe98f32"
+      },
+      {
+        "id": "block_0011_0008",
+        "beforeSha256": "4b9bb254cae77a62c88bf4d6cc600f94726ac587100e298f51df059a3e53e43a",
+        "afterSha256": "8b64b9ff0678bbbebec54111acf37528dec193013bb85bee7145128005fd5ef2"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "8464a40029c0910a7eb7e547ba5bc6a0cceba06515bf6268b6bba9d9114b09cd",
+        "afterSha256": "fe5faba87aff62d1b1324561bf504107dd3dfc558c60926d279205fce841824d"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "264f4524bbb518bbfc2fecd3f6844673586a2769155a789235b5b4f4440775d9",
+        "afterSha256": "62313ff1b07ecd20a94149febe2301e9a14c48756b7485ee12aa6e942c600346"
       }
     ]
   },
@@ -3084,6 +3239,12 @@
       "activity": "block_0011_0009",
       "requires": [
         "block_0010_0003"
+      ]
+    },
+    {
+      "activity": "dias_completos_definicion_anterior_orden",
+      "requires": [
+        "block_0004_0007"
       ]
     }
   ],
@@ -3238,6 +3399,4030 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "8c12b9e3dfa4bb1c1b7eafca1d2a5a4a02337f466d75e9bf92f5ec5c36e579c0",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "cd4b1a9560611ac7991e637d8bf16ea0c702d87aced72e6a08f8c8578ce7e7e8",
+        "spans": [
+          {
+            "start": 204,
+            "end": 208,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 240,
+            "text": "(Stroustrup, 2024, sección 7.2)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 436,
+            "text": "(Stroustrup, 2024, sección 3.5.2)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "6961d2be50adce73ee4237f97d1d12300fd562fc30fc5d8b39c998f85f813442",
+        "spans": [
+          {
+            "start": 33,
+            "end": 49,
+            "text": "diferencia(9, 2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "8bf33b929dc8ba4259e224c65f492650f0a6ce5989e3bd400f0b60d6c39db596",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "796d097ee464930190add374d140ecd8bd7efd7c21b9d2eb0a0b02891328bd6f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "5b919890ec69f5321ffae6017c30ac428c04529ca45fdc6030ef9bc0704afdb4",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "35057b5ef274eb467be7aa5681142aa7b2254874589f3818019cae6751a22ce6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "cdca6435e07519b60f47acecbdbb1f8b53a51b15f067669cdc6253762222f65b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "23e120e89b975a230192548d4ee1ccbdddb2d1eb985aa917732f6ece11526c2c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "74340da60e081b763ec6423ce1def3f6f1a5d2dfb8a6c0cd07fcf6790855130c",
+        "spans": [
+          {
+            "start": 12,
+            "end": 47,
+            "text": "int combinar(int cajas, int piezas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 58,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 73,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 92,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 219,
+            "text": "(Stroustrup, 2024, sección 7.4.1)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "34f36941ba5ad60de0dcc30fc33e499809033cdf2c35e3948468165cd7210d63",
+        "spans": [
+          {
+            "start": 73,
+            "end": 76,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "d335fe01719532aaff71a282ef8aa2814a06ce086c7010576e6de674b9c19762",
+        "spans": [
+          {
+            "start": 54,
+            "end": 57,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "dcd6e0d028d089d64fc35bf4ee1098681a8b16f4078f3986926538a97ce0b786",
+        "spans": [
+          {
+            "start": 17,
+            "end": 52,
+            "text": "int combinar(int cajas, int piezas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 104,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "3e59d638296e29d7534cab37ab4d27e4aa0bc73a49493d92e95f0aa381fff082",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "text": "4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 20,
+            "end": 23,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "390d183056bc42895926bb39c0136bd827c46b1d666ec83729c1772b7864f81b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "combinar(3, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "9f10f0d947ca97424c0b055ea0326ab446c4f0950f5cf501b53a50f82848e3c9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "combinar(3)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "3c9e2527f33e28d687c952639b44725d6acf04f2b76a4012955da0db4118094a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "combinar(\"3\", \"4\")",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "bde8bb04f12a8f1bc937bcd0574df0d4233cebe229ed261388c0770018ffc56b",
+        "spans": [
+          {
+            "start": 51,
+            "end": 52,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 57,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 87,
+            "text": "400",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 109,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "04241a4687e507390fbfedaece273fc400db3b3f42cb709558b9dd1ed4d1c6b1",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "677220fed028d8c3b8da9419389eb03f516cd09ddb3efaf84d3bd44af076223c",
+        "spans": [
+          {
+            "start": 176,
+            "end": 209,
+            "text": "(Stroustrup, 2024, sección 7.4.7)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 268,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 304,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "fc7fe231b503a630fcfbc47c0f64de1ab6d73bf49b818fcecc70f82c8a829740",
+        "spans": [
+          {
+            "start": 29,
+            "end": 36,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 55,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 68,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 75,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "ea3f98cf334d184af8dd67a01fca5a6adaf0ec17522ebed096db2a46459a8325",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 50,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 99,
+            "text": "3.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "7c85133a4370520630d182bbaf0d5bd2ba9e5dc75539b55ba15a1a6166db4b94",
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "3.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "745407e0631bb4319899d2436f764bbf241ddb0d217e856cb4ab462f9384455f",
+        "spans": [
+          {
+            "start": 48,
+            "end": 54,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "00c8a31fdcbbe8c762caafe9df0b409c8bdd54d20384acb52b3c9dd1eaf2b2ac",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "f3eb705bebe1b217381fb7ae516a57a99b32ce50233e5e93c2e9a830fa60c7d6",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "79025ec18137470816dfa181ad7f52713e573e2a5f64ac17820e3b51bdfa476f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "27daaffca0ae270cfce8a57645c57b8552b3e8d4773ad0556ba2a626a9ca54c0",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "ca989c91de4e39bc370c61b24f3cfa2438016fe0530e8a86c903b5cdf3afddf6",
+        "spans": [
+          {
+            "start": 13,
+            "end": 18,
+            "text": "2 2.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 21,
+            "text": "5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 28,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "5.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 44,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "d5de1009512d319ed67b30ac1417938d72dd9c7786d186ff5754755f30cc969c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "5383adcb4b9b1c2cf6bcdc2069a1548994f4d23b40aa717a09a9825f5f718b47",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "4ec9a9af1b98ff2bac03e79618fb1f94f714d335c9267d78f6e9cecc4ca0a11b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "9f0e88166d06e28d5167e1667e310e60f5b0b7c7c7a6a9e0a01ad4aa1858f7c1",
+        "spans": [
+          {
+            "start": 21,
+            "end": 35,
+            "text": "dias_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 51,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 94,
+            "text": "cincuenta y tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "19386f81ea1f744267099d76d80a8caf12d7be55a18acc90355f8cbbb91d14dd",
+        "spans": [
+          {
+            "start": 80,
+            "end": 84,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "5b2bca4279b9b0ecfe6a5a657b8a4451b9499fd352f6a20df94af36ab42e5a54",
+        "spans": [
+          {
+            "start": 122,
+            "end": 126,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/0",
+        "sourceSha256": "fdb602c5971f8e839de9107a37c5fb53bd05aebccf73f7b0d2d1724e9c1972a9",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/1",
+        "sourceSha256": "f22696b6392f20273632f5e2572f72b447cff58085bc51abdea3cf129eece057",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/2",
+        "sourceSha256": "f5493ef1fb24c4642276c53656835d067f334c825be9db4ddc0b1e7169f16d21",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "1e1e21127a13233530422d16ef1f08d839ab180069ba723235b52e8f6c970749",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "6a49fdb813cf5f7081ab821eeb31d490e97db12e8c312e724cbb2f8ed04409d7",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "35ea8994bfc4e371acdfa823e85dfc4d842faf03b6e74c0e760a0c8e4a85ee06",
+        "spans": [
+          {
+            "start": 72,
+            "end": 86,
+            "text": "dias_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 102,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 239,
+            "text": "cincuenta y tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 268,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "32478ee44d38c36b05f1d145f770e976bf74ed1d217f0accaa391ed2534cd52d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "f70e945e5c96dd0b709ddd9d4380266d3df4d1b7d72a9e88638e3d2efa3ad3dc",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "f96fbcb045c898371b5b27ad83c5a6a09550bc7b419a2ef17775d724da85b083",
+        "spans": [
+          {
+            "start": 25,
+            "end": 39,
+            "text": "dias_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 53,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 76,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 125,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 134,
+            "text": "53",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 158,
+            "text": "0,8,16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 173,
+            "text": "0,1,2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 270,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "b5c1dd7369738f2cb61361648236fc54a93214f5277ab0557d7fe5ef09cd5842",
+        "spans": [
+          {
+            "start": 175,
+            "end": 183,
+            "text": "una sola",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 287,
+            "text": "53",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 326,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "fcd30f7885fbc097e9f0a88b1fe022c7e1e61509d1f06bf3972421280501480c",
+        "spans": [
+          {
+            "start": 27,
+            "end": 30,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "68b674d728207b125df14887fb7f5ded37c0e053b082efa5b620d723904d7275",
+        "spans": [
+          {
+            "start": 37,
+            "end": 49,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 84,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 111,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": ".cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 224,
+            "text": "tercera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 302,
+            "text": "diferencia(9, 2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 320,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "9fa5161b4c41d21ddc2c60d4c09c537afae6bd61d695bba5600a564b7f0d95ef",
+        "spans": [
+          {
+            "start": 54,
+            "end": 60,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "c7495bc2c4930f04092127507144f684fba5b198173d31a6c3a6b1b9f192f330",
+        "spans": [
+          {
+            "start": 239,
+            "end": 246,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "a96ce4de442562042ea342031684268c89a560137ff8b7fd59b7f523a24384eb",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "680df4f6f78f86430c28d691b451aaf299a650f052fbd9e29c702183e7d4effd",
+        "spans": [
+          {
+            "start": 18,
+            "end": 26,
+            "text": "una sola",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 121,
+            "text": ".cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 217,
+            "text": "(Stroustrup, 2024, sección 7.7.2)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "ff7abbedcb8ab6d80199e3205756dd38a0799750c00d9160e9e701f843f73cee",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "9f8cb3c8245b7afa4b1aad073d7225f8bfbf968f4b8ab96a1d60dc040a67a48e",
+        "spans": [
+          {
+            "start": 43,
+            "end": 49,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 267,
+            "text": "una cuarta parte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 289,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 364,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "1ca626312fe9bbedb5eae6613fa3606c6b79d4257755f774290479e771e0d9ab",
+        "spans": [
+          {
+            "start": 10,
+            "end": 21,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 43,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 59,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 79,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 104,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 123,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 135,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 190,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 212,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 217,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 261,
+            "text": "0.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "cb19f914f7debb4d3a6ce9acd28ed20ce5417b1b1bbab829d4cd0f797d3b0bf3",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 43,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 111,
+            "text": "7.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 147,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 188,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 206,
+            "text": "Piezas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 221,
+            "text": "Metros: 1.75",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 234,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "e1d53b0ac97c262d3d4675db66ae4e2b4a7d85e3697e9478be6ceb9f8d44c422",
+        "spans": [
+          {
+            "start": 179,
+            "end": 182,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 233,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 257,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/text",
+        "sourceSha256": "19a23fe14cd7c495e0c4444abe9134798fc566cd2803a564a4674d4dfb180769",
+        "spans": [
+          {
+            "start": 61,
+            "end": 67,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 103,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "61a9aec61a9b17f8149eceb86a7891f2a58bba595884b96d6d747d958ac8ac6e",
+        "spans": [
+          {
+            "start": 43,
+            "end": 46,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "1988f983ae3666d59904af839eff611abbe2b15227ee804afbb1f67864093eff",
+        "spans": [
+          {
+            "start": 33,
+            "end": 34,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 47,
+            "text": "9.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "fb5b5e6582f204e712b7585d99ff11ca5cb9cb9e589e984437b5abb536c66980",
+        "spans": [
+          {
+            "start": 23,
+            "end": 32,
+            "text": "Piezas: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 48,
+            "text": "Metros: 2.375",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 55,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 239,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 304,
+            "text": "una única",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/text",
+        "sourceSha256": "5889bce377192c7d9f1eb6a0def28b0cf6cd30d6bbd68c21c47671146c149816",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 35,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 59,
+            "text": "3.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "0.75",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 86,
+            "text": "4.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 105,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 112,
+            "text": "20.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 127,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 151,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 185,
+            "text": "0.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 206,
+            "text": "0.125",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/text",
+        "sourceSha256": "499e8822883c5e98784bbfb6fcfff6a6eefc85e15e00dea60aeb4568382004b8",
+        "spans": [
+          {
+            "start": 81,
+            "end": 85,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 187,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 352,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/text",
+        "sourceSha256": "dd31a9af73ccbf99b8ae82eb1b6c7825dec7a05a4f2bb272b48fffed04ba6e99",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 28,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0007",
+        "path": "/text",
+        "sourceSha256": "360791555876f939c2148b62eada3c87fde645170b949a7f76e27ba447df6e4c",
+        "spans": [
+          {
+            "start": 83,
+            "end": 88,
+            "text": "0 0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 97,
+            "text": "3 3.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 106,
+            "text": "4 4.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 117,
+            "text": "20 20.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 127,
+            "text": "1 0.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "eec06c6e9131caa68d75fc2ad4742e8cf64aa5396a733e5556295ff9abfd931a",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/question",
+        "sourceSha256": "e926ef50ba251294a24f8d9e9f749ee271114d20676eee2e4b1eb37e7011ce16",
+        "spans": [
+          {
+            "start": 67,
+            "end": 73,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/explanation",
+        "sourceSha256": "86c2b9ebc3998c4674c1cc626ab5b17c77e8b1e248cd4fcf3e15deed50ebeca3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 21,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "11/4",
+            "role": "math"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 107,
+            "text": "desde_piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 119,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 127,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 187,
+            "text": "2.75",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/question",
+        "sourceSha256": "f2f232385ac62e401293b04591a1735ed00eebe6bda9d7910dd94c02d831e64f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "por_persona(4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 33,
+            "text": "por_persona(4.0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 52,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 113,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/explanation",
+        "sourceSha256": "d5163c5c3db2cabc45770a35c7d41638a52d8d648cfa254949da3cb73657296c",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 78,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/options/0",
+        "sourceSha256": "77b2f8643a05256579a39a677e8ad5e6697e8e3c6c6f0533ead1b1fdd59c7212",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/options/1",
+        "sourceSha256": "4072ded03e6ba11589fc4724715e0ec686dd54f1de641816c9db45cde2fa2580",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/options/2",
+        "sourceSha256": "6e0470dd5232b12ebc3c3e5809efede4df4707be8f1cc6b3d82d9721031ed333",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/text",
+        "sourceSha256": "bc5f05c57197208e23c4aced6188bf14bd14cde62015939e59a472ee7c06879c",
+        "spans": [
+          {
+            "start": 99,
+            "end": 102,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 181,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 217,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 250,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/text",
+        "sourceSha256": "ae6850edff6854b07271a813883ea78874f4d352bb824b4b184e7282ef66d817",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0006",
+        "path": "/text",
+        "sourceSha256": "f29f866e20e3d53039a489ccef2bf2bdd6a215c24e21d36fc897589e4ab4f1f4",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 122,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 147,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 156,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 184,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 221,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 260,
+            "end": 266,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 289,
+            "text": "Piezas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 306,
+            "text": "Metros: 1.75",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 314,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0007",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "abb2217f4c265a82c371e9ba3cc1eae8dbac32f4eb1a257889e98f5b4d3de9f9",
+        "spans": [
+          {
+            "start": 19,
+            "end": 25,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 100,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 167,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0007",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "041f63805a74a65040225e2b24cece83e416252c03f1e99df06d1543d55c80d0",
+        "spans": [
+          {
+            "start": 35,
+            "end": 42,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 124,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "receptores_double_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "79f6b13d3e581f03e32038bf0493b336bff2663655903ca5d1b884c26c64d799",
+        "spans": []
+      },
+      {
+        "block": "receptores_double_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "df45bf7238ee553a373dc1d8eb3c337a011d864f7a3b1d0fbb5ee6ae6634ba03",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 21,
+            "end": 24,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 53,
+            "text": "por_persona(piezas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 122,
+            "text": "parte_piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 134,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 163,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 190,
+            "text": "1.75",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 222,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0000",
+        "path": "/text",
+        "sourceSha256": "ed1da188fa74e68c65a0428a8cdf44b3fcfc55466a72228361abd3073b59dda0",
+        "spans": [
+          {
+            "start": 24,
+            "end": 28,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0001",
+        "path": "/text",
+        "sourceSha256": "1edefcce67fbb05af20ab923cabd971213280e3152643db13e67917b6db73301",
+        "spans": [
+          {
+            "start": 32,
+            "end": 36,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 67,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 76,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 114,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 122,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 127,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 150,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 155,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "0.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 386,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/text",
+        "sourceSha256": "128f6f9a5d5801fec2a51e21411091feb3c73aeb4b674b02152d752ad8c35f41",
+        "spans": [
+          {
+            "start": 195,
+            "end": 197,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 213,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 220,
+            "text": "11.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 239,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 282,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 303,
+            "text": "Piezas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 319,
+            "text": "Metros: 1.375",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 326,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/text",
+        "sourceSha256": "7cc889b8886a81eec01b7ceb3e2f10b5ae27d684f640be7fe2d8e643d2bc76b8",
+        "spans": [
+          {
+            "start": 59,
+            "end": 63,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 207,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 214,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0005",
+        "path": "/text",
+        "sourceSha256": "ded5ab77823255c912ef7093784aeebfa772d8597ee14aa7a80c2495612ee4e5",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0006",
+        "path": "/text",
+        "sourceSha256": "b82c3de1660d7a9368220abdd01e752eb2950afb6f8a179d09b67c4059c3c0a2",
+        "spans": [
+          {
+            "start": 41,
+            "end": 44,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 98,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 163,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0000",
+        "path": "/text",
+        "sourceSha256": "08c534e237c72de999afd2f83d1f619ea998d25589022c4670bf676ada4e1021",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0001",
+        "path": "/text",
+        "sourceSha256": "cc9fdf601df4ec227b4198bef3504ae9ab5c5193a5c6fe21e2d92b3bf61e96a8",
+        "spans": [
+          {
+            "start": 31,
+            "end": 33,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "text": "13.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 63,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 141,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 156,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 185,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 222,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0003",
+        "path": "/text",
+        "sourceSha256": "64f3c53817d9047da611cf1a5076c773237378c372a47efd48c0fa80b39e0787",
+        "spans": [
+          {
+            "start": 24,
+            "end": 33,
+            "text": "Piezas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 50,
+            "text": "Metros: 1.6875",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 118,
+            "text": "7.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 137,
+            "text": "0.875",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 146,
+            "text": "8.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 157,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 165,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "20.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 183,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "2.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 194,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 213,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 235,
+            "text": "0.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 257,
+            "text": "0.0625",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0004",
+        "path": "/text",
+        "sourceSha256": "c525fdf1b694de6b6500a9e62ffe112e9f8b5c93965a8782cd70ab5d0044c4fd",
+        "spans": [
+          {
+            "start": 20,
+            "end": 24,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 220,
+            "text": "2.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 250,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/question",
+        "sourceSha256": "176e0ac7c2b9fb8978e78b32a3aaeecc1221c7f84e8e822dc0ec3ed02818916b",
+        "spans": [
+          {
+            "start": 35,
+            "end": 39,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 76,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 127,
+            "text": "10",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/explanation",
+        "sourceSha256": "97360c8128a8c37749fc99b7c1901981b3298b0ab85d88967c504c64fa19fb3f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 21,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 48,
+            "text": "por_persona(int)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 89,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 186,
+            "text": "por_persona(double)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 204,
+            "text": "1.25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 233,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/text",
+        "sourceSha256": "9c45d52feeccab7fe443881f83560bfcf41ba4332bcb3bc3afa6fa456f57109a",
+        "spans": [
+          {
+            "start": 55,
+            "end": 58,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0007",
+        "path": "/text",
+        "sourceSha256": "6b0627350f692544128747993134ea398e65be961efe79ed4b9a247fdd7b8a4f",
+        "spans": [
+          {
+            "start": 22,
+            "end": 26,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0008",
+        "path": "/text",
+        "sourceSha256": "d54773c17014cf45144c54793062be06b56211c6ebd5e47774de9c6f75f64f29",
+        "spans": [
+          {
+            "start": 35,
+            "end": 38,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 68,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 97,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 144,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 167,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 212,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 253,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 275,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 292,
+            "text": "Piezas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 297,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 356,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 372,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 389,
+            "text": "Metros:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 392,
+            "end": 394,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 456,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 503,
+            "end": 508,
+            "text": "0 0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 512,
+            "end": 517,
+            "text": "7 7.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 526,
+            "text": "8 8.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 530,
+            "end": 537,
+            "text": "20 20.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 547,
+            "text": "1 0.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "reparto_ocho_entrada_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "1a7d45678f28b75d310e8e4650361c2217e9043fbe35dcc8e9a54f5d0191782c",
+        "spans": []
+      },
+      {
+        "block": "reparto_ocho_entrada_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "988540630076d5e217fdb663b658091b293503d82361490bdd74a8988d00ee7d",
+        "spans": [
+          {
+            "start": 15,
+            "end": 21,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 28,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 37,
+            "text": "metros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 47,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 96,
+            "text": "por_persona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 137,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 209,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 235,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 264,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 298,
+            "text": "0.875",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 416,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 484,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0000",
+        "path": "/text",
+        "sourceSha256": "d2662f8389cc42ed7f34e9b4e01b58e2b96fb13e7fd8a6cb05f9ee9f05426a10",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0001",
+        "path": "/text",
+        "sourceSha256": "1339eb4263ff1b4b82ff317ff4c84d8034a869371cfa6e3415ae2b32207846aa",
+        "spans": [
+          {
+            "start": 30,
+            "end": 34,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 50,
+            "text": "ciento veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 88,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0013_0000",
+        "path": "/text",
+        "sourceSha256": "c16f48f1c8819e7148f73725953e6316e344d9d65378f490349601c63cbc30b7",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0001",
+        "path": "/text",
+        "sourceSha256": "babb830cd1df6ea600c040461624921bb812cdf159f36c47c77c812d1713f972",
+        "spans": [
+          {
+            "start": 43,
+            "end": 57,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 183,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "cambio_cuerpo_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "386f22f20b289b267e75d654a764970e869a9115c0e73757eeaa811b788e90a9",
+        "spans": []
+      },
+      {
+        "block": "cambio_cuerpo_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "853bdd6ad19672fe1f675a315e73e1e9fd9e624d21dfb2495d65a512092618ad",
+        "spans": [
+          {
+            "start": 3,
+            "end": 17,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 68,
+            "text": "primero - segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 88,
+            "text": "primero + segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 113,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 135,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 171,
+            "text": ".cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 237,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 241,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 274,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0000",
+        "path": "/text",
+        "sourceSha256": "eb3615d73139d87f0b7313a650eca8e9d72a7ec639669ce27a00f165607be031",
+        "spans": []
+      },
+      {
+        "block": "block_0014_0001",
+        "path": "/text",
+        "sourceSha256": "4c753e7104fb78647a8411ff6319c8e247796ed7d973bcae03aa4947bdef735a",
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 72,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 249,
+            "text": "diferencia",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0002",
+        "path": "/compileCheck/explanation",
+        "sourceSha256": "fac15e8d69c1e5eaed5fc51427181af42027233effd44a05e7539d6d88c92cae",
+        "spans": [
+          {
+            "start": 19,
+            "end": 31,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 73,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 96,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 167,
+            "text": "diferencia",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/question",
+        "sourceSha256": "fe3bfe0e51223c6dd2a525e28b2301d8fc2ca29250a48ac3266da134922563eb",
+        "spans": [
+          {
+            "start": 19,
+            "end": 31,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 75,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/explanation",
+        "sourceSha256": "90e78e14681e74dde8b1347f77a2f4bd5db2b2f6507b497de72a0c559e980956",
+        "spans": [
+          {
+            "start": 102,
+            "end": 116,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/options/0",
+        "sourceSha256": "68850808b13c1c87536a2e207608e2fcb66aa588515a868e32f131eee5bd9384",
+        "spans": [
+          {
+            "start": 36,
+            "end": 50,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/options/1",
+        "sourceSha256": "6e42241b804bf3bc80bb4af4cec89d892d3c0b0e16ff15024be8ec82a3cdda41",
+        "spans": []
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/options/2",
+        "sourceSha256": "2ba698898d616c14b745f65a1fec57b0f58ee3d96246989a956300235df98ba0",
+        "spans": [
+          {
+            "start": 49,
+            "end": 56,
+            "text": "tercera",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "8ba81ba35510b25e1af6d66d75550cc4ff29082c7b70efa9aeb4bba2c05b8b02",
+        "spans": []
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d2ab993bc7e34a0600cd3974ebfeb5fa3e0a3d93c4a2d63a141d93a4a39536e5",
+        "spans": []
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "cac41f0ccc0b89c7e9eb9ef49d01b12f7c2545129c39aa5f6d3af56a5c5771aa",
+        "spans": []
+      },
+      {
+        "block": "block_0015_0000",
+        "path": "/text",
+        "sourceSha256": "43c258ccc84c012c62d30b525352768d76e220edad2706296fcd56fa2fc113c8",
+        "spans": []
+      },
+      {
+        "block": "block_0015_0001",
+        "path": "/text",
+        "sourceSha256": "3059bf60285d0a4303fbe22b2e551a08385af1c193edf9f997d7eff64e70dd20",
+        "spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 255,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0015_0002",
+        "path": "/compileCheck/explanation",
+        "sourceSha256": "968d1983fd473b6e6fe087624e6c6d56a2106d78dcd5cee33790c499893a2979",
+        "spans": [
+          {
+            "start": 1,
+            "end": 15,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 60,
+            "text": "diferencia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 78,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 119,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 228,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0016_0000",
+        "path": "/text",
+        "sourceSha256": "b1fb7523683c0bfc43560b954b410f75e3618e6d23d1b54104c9b218b1a8eca8",
+        "spans": []
+      },
+      {
+        "block": "block_0016_0001",
+        "path": "/text",
+        "sourceSha256": "dd69ce2c0efb1b448d9cfcf4da677731cfca80804bd2b0584a8300e44f37dbea",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 45,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 97,
+            "text": ".cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0017_0000",
+        "path": "/text",
+        "sourceSha256": "baa7a1bc4120d13957608508d97ef0ab9c1982413a139119ed05b23d3fbb96be",
+        "spans": []
+      },
+      {
+        "block": "block_0017_0001",
+        "path": "/text",
+        "sourceSha256": "7e3cdb9a8d4d53b12226f1632fd2a43209c559d118643cb8af379056a7baa460",
+        "spans": [
+          {
+            "start": 179,
+            "end": 187,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0017_0002",
+        "path": "/compileCheck/explanation",
+        "sourceSha256": "16922ceadfa7870d7295a034c08c153ed9fbdea151ce7b3ce4a1cb3bfa62c132",
+        "spans": [
+          {
+            "start": 1,
+            "end": 9,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 45,
+            "text": "diferencia_ausente.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 116,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "dias_completos_definicion_anterior_orden",
+        "path": "/question",
+        "sourceSha256": "3c537aee4357d1296ba9682a569ee01714952625dba2424bec0d143621372efd",
+        "spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 50,
+            "text": "dias_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 201,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dias_completos_definicion_anterior_orden",
+        "path": "/explanation",
+        "sourceSha256": "731fa2e6ae8cc3c6a182e65d3d0f3f82327a147d17ce69411004c7b062b92ef5",
+        "spans": [
+          {
+            "start": 26,
+            "end": 40,
+            "text": "dias_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 186,
+            "text": "53",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 196,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dias_completos_definicion_anterior_orden",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5d1be94c4a9f5cebbcff6cf9840c2952e3b954b3661916cbade0285ee90c11cc",
+        "spans": [
+          {
+            "start": 125,
+            "end": 139,
+            "text": "dias_completos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_introduccion_titulo",
+        "path": "/text",
+        "sourceSha256": "feb1845eb9f9807d53dc2f191eb0d6fbfcde4790462d38262ea78eef1ae94dcd",
+        "spans": []
+      },
+      {
+        "block": "guarda_cabecera_preparacion",
+        "path": "/text",
+        "sourceSha256": "f03cdc3685041f7777efbad548903ab37c0529e9f293d39b3242e7d6fdb4d345",
+        "spans": [
+          {
+            "start": 122,
+            "end": 134,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 150,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 161,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 300,
+            "text": "#",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 356,
+            "end": 379,
+            "text": "#include \"diferencia.h\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 500,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_mecanismo",
+        "path": "/text",
+        "sourceSha256": "3e6688997a55a2934b73c2b4d75f56158a136cb1e885441fd0c370be08a64d5e",
+        "spans": [
+          {
+            "start": 26,
+            "end": 55,
+            "text": "CPP_FUNDAMENTALS_DIFERENCIA_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 112,
+            "text": "#define",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 171,
+            "text": "#define CPP_FUNDAMENTALS_DIFERENCIA_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 327,
+            "text": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 418,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 491,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_inclusiones",
+        "path": "/text",
+        "sourceSha256": "e6efbd8f10f4105047efa415862a2c497efe016a37c1b3b1c749f89a329b79bc",
+        "spans": [
+          {
+            "start": 6,
+            "end": 13,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 38,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 93,
+            "text": "#define",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 137,
+            "text": "diferencia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 228,
+            "text": "#ifndef",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 282,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 358,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 448,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 488,
+            "end": 495,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 539,
+            "end": 559,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_limite_de_la_salida",
+        "path": "/text",
+        "sourceSha256": "f1a067dac5c373b014029e259e759ab8894f759bf89764a6e0549a2d19715eff",
+        "spans": [
+          {
+            "start": 158,
+            "end": 178,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 197,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 335,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/question",
+        "sourceSha256": "35fb51f7118554ac83a5f1a0521258e3f911e843715fe58d02cee3ec5eabe80a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 29,
+            "text": "diferencia.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 33,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 56,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 71,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 151,
+            "text": "CPP_FUNDAMENTALS_DIFERENCIA_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 254,
+            "text": "#ifndef",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 263,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/explanation",
+        "sourceSha256": "d877a56133bf87f2770b94edc5e6d8a14382c8a0487443b49b8da53c93e2fcb7",
+        "spans": [
+          {
+            "start": 28,
+            "end": 36,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 85,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 155,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 213,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 225,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/options/0",
+        "sourceSha256": "5bc12be83e00f6851f2b21e84d9f74cd610d42b120c5ca5cbfb6b6aad47ca23d",
+        "spans": [
+          {
+            "start": 6,
+            "end": 13,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 35,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 133,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 167,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/options/1",
+        "sourceSha256": "603a2979d92e851794da56de78c6eeb76b51e9532ce400377ddb8092325b3ca6",
+        "spans": [
+          {
+            "start": 3,
+            "end": 11,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 16,
+            "end": 23,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 88,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 145,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 164,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/options/2",
+        "sourceSha256": "1a536427c5324a066ec336dd3e02003ef2c91f8366728a7b0febb975301c6515",
+        "spans": [
+          {
+            "start": 3,
+            "end": 11,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 66,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 109,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 157,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6185dbd0abec4ebc7a472486ee94a2a55da247bb96dadd411f902d970f51036c",
+        "spans": [
+          {
+            "start": 28,
+            "end": 36,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 88,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "c3614622a1e54362e034f0951154460834bba4b443319af9b5405aa7446840a9",
+        "spans": [
+          {
+            "start": 37,
+            "end": 45,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 65,
+            "text": "diferencia.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 105,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "guarda_cabecera_primera_segunda_y_fuentes",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "9fc2c402d736517bf77a020cdd6faa6cacba1bc6ff0cf527171d96ef7575c87b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 130,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 152,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "e6fdbcf1e66405b11a65bb915d5dec98e47bb5280c593eb6d5482f97709fc09b",
+        "spans": []
       }
     ]
   }

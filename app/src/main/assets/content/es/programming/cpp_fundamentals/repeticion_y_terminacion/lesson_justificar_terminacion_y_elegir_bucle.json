@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Un for con inicio, extremo y avance visibles suele comunicar un recorrido regular. Un while suele comunicar que seguimos trabajando hasta que el estado satisface una condición. Ambos pueden expresar muchos de los mismos procedimientos: elige la forma que permita ver la regla de progreso y de salida. No conviertas la preferencia de estilo en una regla de que while sólo sirve para entrada o for sólo sirve para contar."
+          "text": "Un for con inicio, extremo y avance visibles suele comunicar un recorrido regular. Un while suele comunicar que seguimos trabajando hasta que el estado satisface una condición. Ambos pueden expresar muchos de los mismos procedimientos: elige la forma que permita ver la regla de progreso y de salida. No conviertas la preferencia de estilo en una regla de que while sólo sirve para entrada o for sólo sirve para contar (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Para justificar una terminación identifica una magnitud que se aproxima al final y que no puede seguir cambiando indefinidamente dentro del dominio del problema. Para una cuenta pequeña, quedan disminuye hasta cero; para partir una cantidad entera positiva en mitades, la cantidad se reduce hasta cero. La condición debe rechazar el estado final. Los límites de representación del tipo también forman parte del razonamiento. La actualización cantidad /= 2 del siguiente programa equivale aquí a cantidad = cantidad / 2: obtiene el cociente entero y lo guarda en el mismo objeto. Con cantidad positiva y divisor fijo 2, el cociente se trunca hacia cero y es menor que la cantidad anterior. La operación no utiliza un divisor variable ni intenta dividir entre cero."
+          "text": "Para justificar una terminación identifica una magnitud que se aproxima al final y que no puede seguir cambiando indefinidamente dentro del dominio del problema. Para una cuenta pequeña, quedan disminuye hasta cero; para partir una cantidad entera positiva en mitades, la cantidad se reduce hasta cero. La condición debe rechazar el estado final. Los límites de representación del tipo también forman parte del razonamiento. La actualización cantidad /= 2 del siguiente programa equivale aquí a cantidad = cantidad / 2: obtiene el cociente entero y lo guarda en el mismo objeto. Con cantidad positiva y divisor fijo 2, el cociente se trunca hacia cero y es menor que la cantidad anterior (Köppe et al., 2023). La operación no utiliza un divisor variable ni intenta dividir entre cero."
         },
         {
           "type": "code",
@@ -91,7 +91,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No todo cambio constituye progreso hacia la salida. Si n empieza en 1 y aumenta de dos en dos, una condición n!=4 nunca encuentra exactamente 4. Para recorrer valores inferiores a un extremo, n<4 expresa la frontera mejor que pedir llegar por igualdad. Mantén valores pequeños y analiza el procedimiento antes de ejecutarlo; no pruebes un bucle no terminante en el editor de código."
+          "text": "No todo cambio constituye progreso hacia la salida. Si n empieza en 1 y aumenta de dos en dos, una condición n!=4 nunca encuentra exactamente 4. Para recorrer valores inferiores a un extremo, n<4 expresa la frontera mejor que pedir llegar por igualdad. Mantén valores pequeños y analiza el procedimiento antes de ejecutarlo; no pruebes un bucle no terminante en el editor de código.\n\nSi el resultado de la siguiente actualización queda fuera del rango del tipo entero con signo, se produce un desbordamiento. C++ no define el comportamiento del programa para esa operación; por eso no podemos justificar la salida suponiendo que el contador se volverá negativo (Köppe et al., 2023)."
         },
         {
           "type": "multiple_choice",
@@ -138,7 +138,7 @@
         },
         {
           "type": "paragraph",
-          "text": "do { cuerpo } while (condicion); evalúa la condición después del cuerpo. Su cuerpo se ejecuta al menos una vez al alcanzar la estructura. Puede expresar un procedimiento donde hay una primera acción obligatoria y luego se decide si repetir. No sustituye automáticamente a while: cambiar la posición de la comprobación cambia el comportamiento cuando la condición inicial es falsa. El punto y coma después de while(condicion) pertenece a la sintaxis de do-while."
+          "text": "do { cuerpo } while (condicion); evalúa la condición después del cuerpo. Su cuerpo se ejecuta al menos una vez al alcanzar la estructura. Puede expresar un procedimiento donde hay una primera acción obligatoria y luego se decide si repetir. No sustituye automáticamente a while: cambiar la posición de la comprobación cambia el comportamiento cuando la condición inicial es falsa. El punto y coma después de while(condicion) pertenece a la sintaxis de do-while (Köppe et al., 2023)."
         },
         {
           "type": "output_prediction",
@@ -988,6 +988,26 @@
         "id": "block_0005_0001",
         "beforeSha256": "d4a69bc3c94666f27bcc2e56feabde66265f1169b01d8c001bb13ae5b69bd88f",
         "afterSha256": "a3eb03b14d1f5a779c32dd43a6d6c6fdf6455579940b8368842b3076af982ffa"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c1220a83cabf75fd972917a8045346f19586917cfd1597faa79d0d7b80372fad",
+        "afterSha256": "2b60929aeba53b611e5b58306f2dd443fb25a4da2085c43a1e66ba0c1d10fcec"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "5ec74277d3e5aa83db471dbbb99b8bdac23063e24c738db32a64d5aa10579230",
+        "afterSha256": "0ddc15775de793f03dcb6c94fe927c7947db51527edb797ab80f35039f0844d0"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "5080086c88f64bc36af0b153c9e06e39e6cbbd408345aee07e9c2e631003bfaa",
+        "afterSha256": "95f5d923064275119635e781ee3bddae19f6388644b49ec02c59b9254bb5c2bc"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "4e560c929538c2b574e5bcc61189caadb98585861c7bfb8ee94df6b64688aa2a",
+        "afterSha256": "ed0f851e6baaf7a923621d3661bdb9f7a2559a9575caf77d5d315dc59bfb0186"
       }
     ]
   },
@@ -1010,5 +1030,1073 @@
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "673f4b6f1946750bfa7e353239f33ea15e0295fef254dc868c2d6cf68816094f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "21adb84587a731a3dfb74734a5d08a62a9db5666804fdae910c6a046da804f6e",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 91,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 360,
+            "end": 365,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 395,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 419,
+            "end": 437,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "cc6d53e89454cd0df8bac433886460f72b614c4dfc30f1ce1255697ea02462a4",
+        "spans": [
+          {
+            "start": 187,
+            "end": 193,
+            "text": "quedan",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 214,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 301,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 455,
+            "text": "cantidad /= 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 495,
+            "end": 518,
+            "text": "cantidad = cantidad / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 583,
+            "end": 591,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 616,
+            "end": 617,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 647,
+            "end": 651,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 688,
+            "end": 708,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 779,
+            "end": 783,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "31ef58ed6abfcce36ca20d8cd62d71455146bf2f003b7d6cdc79b984126bd74a",
+        "spans": [
+          {
+            "start": 52,
+            "end": 59,
+            "text": "5,2,1,0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 96,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 145,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "e6d58853513e9707d0b43e6e2038acacc8a7fc2d3b46bfc5fb3154f37f70dfd0",
+        "spans": [
+          {
+            "start": 29,
+            "end": 34,
+            "text": "3,1,0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 40,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "0dd9e7dcc005eefbca5f643302f7bfa073a2d1fe49c6631ac01b26c720210bae",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/explanation",
+        "sourceSha256": "28ce89c5d2b33ba0ae5db3c6bc81bdf344367b019f22f6517f4579430b954413",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Un único paso",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "a862f26206b24757528c6eeec9e820187faeb5f14f31001d2e7edb776d91d4a8",
+        "spans": [
+          {
+            "start": 24,
+            "end": 29,
+            "text": "falsa",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "d4e5491f62bdf0463b742d913ae561694a03a00f546554049cf5a483fcba7d51",
+        "spans": [
+          {
+            "start": 108,
+            "end": 109,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 114,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 195,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "f6e832468e4e2b289e66740d3d7602455b0a58c2ce3148a38a22634c3adc3b45",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "b1b168656e7da803e5436c8063947837ef09ad4ad3e5b1fc27b3cd819506bdae",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "fef7d428071a2b512148b696c9c03a40a4794f0d9bf6f600621552d09b4f8618",
+        "spans": [
+          {
+            "start": 55,
+            "end": 56,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 93,
+            "text": "dos en dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "n!=4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "n<4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 509,
+            "end": 512,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 661,
+            "end": 681,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "371b9e59788d84b7ed131bc9b47b1fcb89f0ae07b678d44cfe5b33642523b475",
+        "spans": [
+          {
+            "start": 22,
+            "end": 23,
+            "text": "n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "n!=4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 126,
+            "text": "1,3,5,7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "3342db21e9f4bfec85b3753f516e3b21c14c07fb2b8b5a0ed304882af15ffdfd",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/options/0",
+        "sourceSha256": "87cf981badbc6c3cbf5a66e903f375a549a8bfa6392b4bd7eba82e1a583a9ce1",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/options/1",
+        "sourceSha256": "1ab7e6c32d8702d292850bbf42841fbbd39ed9b6846e43e702e5b4e62d17fec6",
+        "spans": [
+          {
+            "start": 30,
+            "end": 31,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "n!=4",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/options/2",
+        "sourceSha256": "28f91b20d57365cea9b0aca46d86e4d49859289f9e3118b44d22ad7601b2f4cc",
+        "spans": [
+          {
+            "start": 24,
+            "end": 25,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "7acdd3b4ee89aff21191a3a0d607052126cf84b148740296a17c160d8efd0d5e",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 10,
+            "text": "n<4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 14,
+            "end": 19,
+            "text": "falsa",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "fa822bc24bb4dfe2c8e02b503c1fb31f27e12d6809d6b30fff85e40a4ea1dfec",
+        "spans": [
+          {
+            "start": 27,
+            "end": 30,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "5157a54b09393ada1cd6d8e0335c7cdc2a7d018f76b7852562cf070371852ed2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/0",
+        "sourceSha256": "63a7d3671a5a83e5a84be7603a3fd9503346b0be759b5725147131cc4183cb90",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/1",
+        "sourceSha256": "7323b636d4f6243ef4c497ae9b95f8ce110e099912c1e86831fd878ce793ddc5",
+        "spans": [
+          {
+            "start": 65,
+            "end": 68,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/2",
+        "sourceSha256": "637f00c59bebf4a411a8f101fadf6ea53e51ad749600eb285bdaf5c68c610e8f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "95b64415cc5a77ff9d45aef5437b54f66ab581a8e225de9cc8c8c09277c0a978",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "6348e321a30c08125ee9c9b4651ba0cdee8064572b46ac74f1d415c83145d4c9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 32,
+            "text": "do { cuerpo } while (condicion);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 277,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 374,
+            "end": 379,
+            "text": "falsa",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 424,
+            "text": "while(condicion)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 452,
+            "end": 460,
+            "text": "do-while",
+            "role": "cpp",
+            "reading": "natural"
+          },
+          {
+            "start": 461,
+            "end": 481,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/explanation",
+        "sourceSha256": "474c2876fec3fb2023f6dc488237e6b92aefda5ce578e0ae1489c7da9511d93c",
+        "spans": [
+          {
+            "start": 72,
+            "end": 75,
+            "text": "4<3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 81,
+            "text": "falsa",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/explanation",
+        "sourceSha256": "95e44e0e7a952083f0f36b321c60da5f37eee02dba4732e1f4588dd41399e3fd",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "c6889ed453dc8d68f042f3df49772835066d87329224319e2a64c4dca1b84fdb",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "c3869afcbe678c81992ff2401747b15558c4e5e68e8c31f7018961cf1eec40a0",
+        "spans": [
+          {
+            "start": 12,
+            "end": 27,
+            "text": "do-cuerpo-while",
+            "role": "cpp",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "179fd6319b8a39d078893a447a0f85268ebc0b535d3b39fec8b5e1fad972cc41",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "2d93c84452964089cabbabcf42fdffd1f9258ba63c71315ac8e8893d9958906f",
+        "spans": [
+          {
+            "start": 48,
+            "end": 52,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "7117df58885b4556d6fcde5e3fc74fb6d7637ca931aa6e0491cd4ae7b97fb782",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/options/0",
+        "sourceSha256": "c30ca9c76a1dbd4ca9dce1e6e1a06642f0c9f225fef5b409680e824c8bdbcbcb",
+        "spans": [
+          {
+            "start": 37,
+            "end": 45,
+            "text": "do-while",
+            "role": "cpp",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/options/1",
+        "sourceSha256": "97afd87b4a47fecba3cf3c7dc6e933218cef14695687b866942328e9042bb1ef",
+        "spans": [
+          {
+            "start": 27,
+            "end": 32,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/options/2",
+        "sourceSha256": "2e4c1dcf981d5797e8c8fa9023becef399e9d97d6017a5d2e2ff8f2fa3bd3452",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "95b305021f9ceae44c9667986cdc6df4f46e75704b771e14b123e60fff09c1b9",
+        "spans": [
+          {
+            "start": 93,
+            "end": 100,
+            "text": "una vez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "trece",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 161,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 242,
+            "text": "Fin;Pasos=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 318,
+            "end": 337,
+            "text": "6;3;1;0;Fin;Pasos=4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "d004a349a11e2f2148a7a387108b1eb717a42493fa4a665e767ebf1688139389",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "68ed3d7101d8d18bb7c23cc70d2ee9ee2f566de75d0b08776ef9d817e0448111",
+        "spans": [
+          {
+            "start": 94,
+            "end": 95,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 106,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 160,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 209,
+            "text": "pasos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 229,
+            "text": "una vez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 263,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 304,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "19b1a48fecc6fc7f475eb8d4a122af7eed39d59b5d94a51ad28184e3717c2313",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 50,
+            "text": "Fin;Pasos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 76,
+            "text": "0;Fin;Pasos=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 108,
+            "text": "4;2;1;0;Fin;Pasos=4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 119,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 141,
+            "text": "6;3;1;0;Fin;Pasos=4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "c96eeaf0b4f0a7951384728af205e9f4414c29bcdc603c0fac336d9c35ce30e0",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "5b354d6722e85fdd979212daaff92817418a55491b403f4d42a5f324b45939c1",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 47,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 78,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 108,
+            "text": "Fin;Pasos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 131,
+            "text": "0;Fin;Pasos=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 160,
+            "text": "4;2;1;0;Fin;Pasos=4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 168,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 192,
+            "text": "6;3;1;0;Fin;Pasos=4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "Ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 207,
+            "text": "trece",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "c8541a966bb13f74e4f8a5964d16b21f0d9ee6c10e384486ff33fa4b44943753",
+        "spans": []
+      }
+    ]
+  }
 }

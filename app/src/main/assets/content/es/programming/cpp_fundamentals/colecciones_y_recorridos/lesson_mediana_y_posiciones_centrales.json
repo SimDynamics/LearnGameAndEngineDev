@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La mediana se obtiene de los valores ordenados. Usaremos la convención habitual: con una cantidad impar de datos, es el valor central; con una cantidad par, es la media de los dos valores centrales. El centro se define por posiciones en el orden, incluso cuando varios valores son iguales. No significa que deba haber exactamente tantos valores estrictamente menores como mayores cuando existen repeticiones."
+          "text": "La mediana se obtiene de los valores ordenados. Usaremos la convención habitual: con una cantidad impar de datos, es el valor central; con una cantidad par, es la media de los dos valores centrales (Filliben & Heckert, s. f.). El centro se define por posiciones en el orden, incluso cuando varios valores son iguales. No significa que deba haber exactamente tantos valores estrictamente menores como mayores cuando existen repeticiones."
         },
         {
           "type": "paragraph",
@@ -123,7 +123,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Convertimos un valor a double antes de sumarlos; así la suma de esta expresión también se calcula en double. Dividir por 2.0 conserva la fracción. No usamos una suma int potencialmente fuera de rango y esperamos que convertirla después la repare. En la práctica trabajamos con cantidades pequeñas o mediciones, no con dinero que requiera otra representación."
+          "text": "Convertimos un valor a double antes de sumarlos; así la suma de esta expresión también se calcula en double. Dividir por 2.0 conserva la fracción. No usamos una suma int potencialmente fuera de rango y esperamos que convertirla después la repare (Köppe et al., 2023). En la práctica trabajamos con cantidades pequeñas o mediciones, no con dinero que requiera otra representación."
         },
         {
           "type": "inline_fill_code",
@@ -261,6 +261,188 @@
         {
           "type": "paragraph",
           "text": "El tamaño decide qué rama y qué posiciones existen. La actividad siguiente permite contrastar los casos pares, impares, vacíos y repetidos sin modificar el programa. El original conserva su orden porque sólo se ordena la copia."
+        },
+        {
+          "type": "heading",
+          "text": "Construir la mediana con entradas variables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el programa a partir de la lectura ya preparada. Entrada contiene primero la cantidad de datos, de cero a veinte, y después esa cantidad de enteros entre -50 y 50, separados por espacios o saltos de línea. Calcula la mediana de una copia ordenada: con cantidad impar usa el valor central y con cantidad par promedia los dos centrales conservando la fracción. Conserva todos los datos recibidos, sus repeticiones y su orden.\n\nPresenta dos líneas. La primera empieza por Mediana:, un espacio y el valor, o muestra Sin datos cuando la colección está vacía. La segunda empieza por Original: y muestra cada dato recibido seguido de punto y coma, en su orden original. En vacío queda sólo el rótulo. No añadas preguntas ni otros mensajes a la consola. El salto final es opcional."
+        },
+        {
+          "type": "paragraph",
+          "text": "Colección vacía\nEntrada: 0\nSalida:\nSin datos\nOriginal:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cero como observación\nEntrada: 1 0\nSalida:\nMediana: 0\nOriginal:0;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una observación negativa\nEntrada: 1 -7\nSalida:\nMediana: -7\nOriginal:-7;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos centrales con fracción\nEntrada: 2 2 7\nSalida:\nMediana: 4.5\nOriginal:2;7;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuatro observaciones desordenadas\nEntrada: 4 9 1 6 2\nSalida:\nMediana: 4\nOriginal:9;1;6;2;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cantidad impar desordenada\nEntrada: 3 12 1 2\nSalida:\nMediana: 2\nOriginal:12;1;2;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repeticiones en el centro\nEntrada: 5 9 3 3 8 3\nSalida:\nMediana: 3\nOriginal:9;3;3;8;3;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fracción negativa\nEntrada: 2 -5 -2\nSalida:\nMediana: -3.5\nOriginal:-5;-2;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para cada entrada. Mantén el mismo programa y cambia únicamente el campo Entrada entre todos los casos. Compara las dos líneas completas con la salida correspondiente."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    // Completa aqui el procedimiento y el informe solicitados.\n    return 0;\n}\n",
+          "initialStandardInput": "0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos\nOriginal:",
+                  "Sin datos\nOriginal:\n"
+                ],
+                "explanation": "No hay posiciones centrales. La primera línea informa Sin datos y la segunda conserva el rótulo Original: sin inventar valores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Mediana: 0\nOriginal:0;",
+                  "Mediana: 0\nOriginal:0;\n"
+                ],
+                "explanation": "Ordenar una copia produce {0}. El valor central es 0; ésa es la mediana. La línea Original: conserva 0;, sin copiar el orden de la colección ordenada. La mediana cero corresponde a un dato presente; no es ausencia de datos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -7",
+                "outputs": [
+                  "Mediana: -7\nOriginal:-7;",
+                  "Mediana: -7\nOriginal:-7;\n"
+                ],
+                "explanation": "Ordenar una copia produce {-7}. El valor central es -7; ésa es la mediana. La línea Original: conserva -7;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 2 7",
+                "outputs": [
+                  "Mediana: 4.5\nOriginal:2;7;",
+                  "Mediana: 4.5\nOriginal:2;7;\n"
+                ],
+                "explanation": "Ordenar una copia produce {2, 7}. Los dos valores centrales son 2 y 7; al promediarlos se obtiene 4.5. La línea Original: conserva 2;7;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4 9 1 6 2",
+                "outputs": [
+                  "Mediana: 4\nOriginal:9;1;6;2;",
+                  "Mediana: 4\nOriginal:9;1;6;2;\n"
+                ],
+                "explanation": "Ordenar una copia produce {1, 2, 6, 9}. Los dos valores centrales son 2 y 6; al promediarlos se obtiene 4. La línea Original: conserva 9;1;6;2;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 12 1 2",
+                "outputs": [
+                  "Mediana: 2\nOriginal:12;1;2;",
+                  "Mediana: 2\nOriginal:12;1;2;\n"
+                ],
+                "explanation": "Ordenar una copia produce {1, 2, 12}. El valor central es 2; ésa es la mediana. La línea Original: conserva 12;1;2;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "5 9 3 3 8 3",
+                "outputs": [
+                  "Mediana: 3\nOriginal:9;3;3;8;3;",
+                  "Mediana: 3\nOriginal:9;3;3;8;3;\n"
+                ],
+                "explanation": "Ordenar una copia produce {3, 3, 3, 8, 9}. El valor central es 3; ésa es la mediana. La línea Original: conserva 9;3;3;8;3;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 -5 -2",
+                "outputs": [
+                  "Mediana: -3.5\nOriginal:-5;-2;",
+                  "Mediana: -3.5\nOriginal:-5;-2;\n"
+                ],
+                "explanation": "Ordenar una copia produce {-5, -2}. Los dos valores centrales son -5 y -2; al promediarlos se obtiene -3.5. La línea Original: conserva -5;-2;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -274,6 +456,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Una solución con mediana y original"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lectura construye datos y el cálculo ordena únicamente ordenados, su copia. Con {2, 7}, los dos centrales producen 4.5, mientras Original:2;7; conserva la secuencia recibida. Con {9, 3, 3, 8, 3}, las cinco observaciones ordenadas son {3, 3, 3, 8, 9} y la central es 3; no se eliminan las repeticiones.\n\nLa rama de colección vacía presenta Sin datos antes de cualquier acceso central. La última parte recorre datos para mostrar el original incluso cuando no tiene elementos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    std::cout << \"\\nOriginal:\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -682,7 +877,19 @@
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002",
-          "block_0007_0003"
+          "block_0007_0003",
+          "mediana_general_propia_titulo",
+          "mediana_general_propia_consigna",
+          "mediana_general_propia_caso_0",
+          "mediana_general_propia_caso_1",
+          "mediana_general_propia_caso_2",
+          "mediana_general_propia_caso_3",
+          "mediana_general_propia_caso_4",
+          "mediana_general_propia_caso_5",
+          "mediana_general_propia_caso_6",
+          "mediana_general_propia_caso_7",
+          "mediana_general_propia_accion",
+          "mediana_general_propia_editor"
         ]
       },
       {
@@ -690,6 +897,9 @@
         "blocks": [
           "block_0008_0000",
           "block_0008_0001",
+          "mediana_general_propia_referencia_titulo",
+          "mediana_general_propia_referencia_explicacion",
+          "mediana_general_propia_referencia_codigo",
           "block_0008_0002",
           "block_0008_0003",
           "block_0008_0004",
@@ -1353,15 +1563,165 @@
         ]
       }
     },
-    "additions": [],
-    "editorial": []
+    "additions": [
+      {
+        "id": "mediana_general_propia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 7
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_6",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 8
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_caso_7",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 9
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_accion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 10
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_editor",
+        "sha256": "b06e4324dddbca0e0b28ae339b78faa8f474d64bc23d1350317b6b9f97c1b9a9",
+        "storage": {
+          "page": 10,
+          "block": 11
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "mediana_general_propia_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 12
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "mediana_general_propia_referencia_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 13
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "mediana_general_propia_referencia_codigo",
+        "sha256": "754ee2482dbdc3d44355d233464038b6ff2068408c28d1f2dc6bf80494c32812",
+        "storage": {
+          "page": 10,
+          "block": 14
+        },
+        "progressPage": "page_0008"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "3d982548fa7a751fff8a9b28d38d839640abc1e641feff95c1a430052829d95e",
+        "afterSha256": "604636cf11872e5d5b1699a42d7bdbfb141c3caf3be1328a1b87be86c384da44"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9d229d7b7a86dc159eb07f8c2a752c47737f1bbc72ca17e26f8b2ca1c6a87786",
+        "afterSha256": "ea6e04a16cdb638ed272576823c841664f7c600f8583482fd6e0990e802d5230"
+      }
+    ]
   },
   "referenceAfter": [
     {
-      "activity": "block_0007_0002",
+      "activity": "mediana_general_propia_editor",
       "blocks": [
         "block_0008_0000",
-        "block_0008_0001"
+        "block_0008_0001",
+        "mediana_general_propia_referencia_titulo",
+        "mediana_general_propia_referencia_explicacion",
+        "mediana_general_propia_referencia_codigo"
       ]
     }
   ],
@@ -1369,9 +1729,1981 @@
     {
       "activity": "block_0008_0005",
       "requires": [
+        "mediana_general_propia_editor"
+      ]
+    },
+    {
+      "activity": "mediana_general_propia_editor",
+      "requires": [
         "block_0007_0002"
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "39ccf3ee283b9204a4fc4e4b5f480e2276f549167e65e2712554cc000b9d597f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "c4edef7d74f1e51b723a75a1c0aeefb9444113ed32f1c4ffcc54745ce7a38f06",
+        "spans": [
+          {
+            "start": 176,
+            "end": 179,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 225,
+            "text": "(Filliben & Heckert, s. f.)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "3497f101e62e53e1ad18d7dcae560e4cbfaca9bb837b356b9892d7770599e64c",
+        "spans": [
+          {
+            "start": 86,
+            "end": 96,
+            "text": "{1, 2, 12}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 115,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 135,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "49dbc38d7a2991b4ff90e08b6928ded9c1206662bb5bf38b2eab66b1fa5d75bf",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "8b074407a04bf34404e68641a7ed605cc4c0940cc921d04bf006773b8326be8e",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "7d28a68de02e38e70b76b120b7207ee6be26214b3b4fd0800b3dd135b15e8f60",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "cc088f4a2630df4cf7a7899f6e380e41004ceda5b1108b87083dde2554a2ec2d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "9ca18996305760672708d2ae4d783a07e040c6c32970b9fec4764ab155a415c7",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "30a0d671e39bcff935df83963bcd0e7ea1f301814375fd4ebfa8ce9fe6191ce0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "62ced5483156cd55abfb48cf671bb01274f996a11a36bd9003035f304bb49cfd",
+        "spans": [
+          {
+            "start": 31,
+            "end": 41,
+            "text": "size() / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 110,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 123,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "725be60da37c7c0d4c05329c1a42a7c083dd7698b42336877c15ac3c6c22af3a",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 28,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 34,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 40,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 63,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 78,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "850a8148bb1fccc96531fc84fadf3dc5c8316232610521ec8e4f4a2e06b4706b",
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "aaf7acd8dbfddc94e0e13e3cbe732a1e795be65181689c5779a267a2df6db665",
+        "spans": [
+          {
+            "start": 7,
+            "end": 10,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 46,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "35fae5a1467be5ec1484afaee25eff455fc4d9f3dc7c4dd49197ca6bfc106252",
+        "spans": [
+          {
+            "start": 122,
+            "end": 126,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "e010d312c49cdb6e7eed2b3a873ccd800c9460045ec3b26944713192469d48fb",
+        "spans": [
+          {
+            "start": 36,
+            "end": 39,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "468c673a440c6755c32a8498c3fed90c84e1b83b53395c66a90c00c2756dee45",
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "806e7109818c9eb6de830740c2b3eb097853e4166962c473d375d42fb3095a80",
+        "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 91,
+            "text": "centro = size() / 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 120,
+            "text": "centro - 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 129,
+            "text": "centro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 156,
+            "text": "datos[centro]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 228,
+            "text": "{1, 4, 8, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 248,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "1f3fee4670310e20cc38434add8b2a64ceead9f1be8e8dd612b14af1299ef326",
+        "spans": [
+          {
+            "start": 36,
+            "end": 42,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 68,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "878e1294e186c7758cea1427488fca1345807f7011ed80a589d9b742d9e5655e",
+        "spans": [
+          {
+            "start": 24,
+            "end": 37,
+            "text": "{2, 3, 8, 12}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "643362cb570f4e1619e96d59b4fdd4dc731ca137e52f09184553a2aeabe85594",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 62,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "68bcb6a71e8cb13ddd7902801a397c636ffa92c8c87ffb676dcb5c6c98b83fbe",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 6,
+            "end": 10,
+            "text": "doce",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "24ba8eac89b7259f6530fd1524022e53ac7689d8185c240d1bda662012f38728",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 11,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "d1064ae9bb78bfe527e03ccb9ec2b6fd32e3edbdb34a58ba94a52cd11fa97b57",
+        "spans": [
+          {
+            "start": 5,
+            "end": 9,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "162d7a09f7fd0e5630f14bd13118545fa4d4037e31058bf97f078daa57358202",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/explanation",
+        "sourceSha256": "e3411c3a3c204601f786376b668b31a9a7d57238ab4aec9213ae5ff0ebb70ef4",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "64ed10dec542450c0e332715c892bd49fa861b27db6567ec2257ed7c5d0d1da6",
+        "spans": [
+          {
+            "start": 23,
+            "end": 29,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 107,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "2.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 169,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 266,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/question",
+        "sourceSha256": "95a67955be75b61d58ce484c7b67691336fc7d76aebb391835748763350a64c9",
+        "spans": [
+          {
+            "start": 68,
+            "end": 75,
+            "text": "mediana",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "891c5a060cea46b7a6e8de543d1fa0c01e9702827e07e10926b080b4717c4922",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "c51a5c369a114dbeaf09373c1db3e92dded4dc6eae7545502d3d14698bc840a6",
+        "spans": [
+          {
+            "start": 24,
+            "end": 30,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 46,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 63,
+            "text": "2.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 125,
+            "text": "size() % 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 152,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 252,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 268,
+            "text": "centro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 284,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 297,
+            "text": "centro - 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 325,
+            "text": "centro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "0cbed7a49f2981ac449bea74d659cadf6c1b0a049a695f6d9d919be6cf20c46c",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "6a0971f760d2eb8f7b7295b7a85ba40ed3f5f5b288b96e57d3bab638bc50f341",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/0",
+        "sourceSha256": "9fa2c4b1336b458bbf9d634b53a46bb89f10c1e360624b93b8db342bf8f94986",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/1",
+        "sourceSha256": "56d1d8bc9fb8c3db545f7ac1a5b602a223028055e45d9d1e5e820e76d70a37fd",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/2",
+        "sourceSha256": "a481bbb4e07246bbd9966507940596a9d70d63ea490926d61be0fe7058eac54e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "9175a15c4f42cbf5c11dee7ea6441cc17ba46b68a697e1bb201f0cbf4d72b03b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 6,
+            "end": 9,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/explanation",
+        "sourceSha256": "119135ee7c2808001464735f8cac540cb97b0c2b364c8dd42f010858a3286506",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 9,
+            "end": 13,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 32,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/explanation",
+        "sourceSha256": "b05c56fc578374cedc2d9f4bd9b285ab0550bf6c58d1fd74aeb5923e617e3a35",
+        "spans": [
+          {
+            "start": 38,
+            "end": 42,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "57a3ac0f17dfd3d5869ba1d8a39f5b97e3b9534224d659c9c5c2ab90a696bd56",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "41b60610a183828095ce3a01d282cbd58702c7bcbf715a584696f027078491d4",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "684861b05c3c957a16b30545092dd8cab7d2aaa5fb2558303a23fd8a8884ec28",
+        "spans": [
+          {
+            "start": 20,
+            "end": 24,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "ec38c91498dadcad832d984024fb2e92819a1778b24ed2ed3571a0e6f0fd500c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "085710bf934520ff9e5195fe690aaea0a70731949f5739cf4047d718b99bc57c",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "5f22e7b8eb6389e7b30abefc74f6795202dbf39ab7ad2882b6f9cc5d1143ca13",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/explanation",
+        "sourceSha256": "b01fa0602e8171be85034da43da310f1efbbf5a2afd98e4ba912d05a77befef0",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "quince",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 65,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 88,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/question",
+        "sourceSha256": "ac45dff6da14b225106ed99b0ba2af01b6e8dc8a4614cb24c71243b309497dc3",
+        "spans": [
+          {
+            "start": 29,
+            "end": 35,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/explanation",
+        "sourceSha256": "8ce1e848a3dc4d0aca1a72169576dd140a4b17aace89e449d00980be90c36293",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/0",
+        "sourceSha256": "61f371507f895b27a6176d04b14220166736c626f18c15a8cf8b43c50ce91091",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "sort",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/1",
+        "sourceSha256": "921e5e3556dc53d68da8b03ad3b4cd24da0af7349519bcb0e13b9ec03bfc25e1",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/2",
+        "sourceSha256": "c0d7289bed4ca4c538d36467447eea7e412f9b73f13ccb99beb64382c27e80c3",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "d757f31d423cbcb70f1afd8eaceb02c3656d0771b8e6cfa21053482ac37195cd",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "a7812fa46f3d4b7db0f98f891f1934906eac3e8e2c6f87001d072e9a37663ad4",
+        "spans": [
+          {
+            "start": 65,
+            "end": 74,
+            "text": "{6, 1, 4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 96,
+            "text": "Mediana: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 136,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 269,
+            "text": "Sin datos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "f84bdda8548ab26a774b732e5edb68977b79135db509add886bfad9491233b05",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "2bf97258920f8c62c574d947e1cd5d2da09d41275f4ed6c1635beb7323c25d96",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/question",
+        "sourceSha256": "be9fe5d986fd14633ca9ab6edb78ea29fb2dfbd616f4b0c391c7bf4671a6197f",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/explanation",
+        "sourceSha256": "796465aa879ac0c108f88d1c732f0dcf418ed9497aea556c15b6e77feaeb8b3e",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/options/0",
+        "sourceSha256": "ce28caf81e61c341e5b707600b49a72883bd51b7d87a24fc572287b05f041858",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/options/1",
+        "sourceSha256": "d0ef803cad746898969d4f508d2ef99a04d53f4cc41607c8e7e1ec81efb3490f",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/options/2",
+        "sourceSha256": "c0ed049c59f05739b821826fa8148d090c754fbc2633acc200fc81e4c7cdccbe",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "183c16010d7dda88ed948b83dc362e2b2b1dfca368afdacebd7b940df6f7fdd3",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/text",
+        "sourceSha256": "fcb4571e696b8df30e6e740c5f1a2e6effee1320c5035475d38276105a72be43",
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 68,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 324,
+            "text": "4 1 6 2 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 342,
+            "text": "{1, 6, 2, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 346,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 373,
+            "text": "1 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 382,
+            "text": "{5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 390,
+            "text": "2 2 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 402,
+            "text": "{2, 7}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 412,
+            "text": "2 -5 -1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 418,
+            "end": 426,
+            "text": "{-5, -1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 436,
+            "text": "3 3 3 8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 451,
+            "text": "{3, 3, 8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 463,
+            "text": "4 4 4 4 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 481,
+            "text": "{4, 4, 4, 4}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "92c26fbb36d7be154dbfd1661878341d6b66915107e726a660e61c456b1d5880",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/question",
+        "sourceSha256": "b039b0c1f891545096ac6a95ebe72a7f4fde5490d41ca5b7480e41893865b713",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/explanation",
+        "sourceSha256": "064a5f9dda8cc00a1eb5306321944c1cea39bd2eb69d3a74608b2a349841fea6",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0002",
+        "path": "/question",
+        "sourceSha256": "f77d8048fd73f1ab1965a93a1d34de603243d40380d5dbcfd50cddc339404a4e",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0002",
+        "path": "/explanation",
+        "sourceSha256": "d5606ff04953a855529b4cfa5ea31fa57af5f30520cd3018466667a13a4c64eb",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0002",
+        "path": "/options/0",
+        "sourceSha256": "28bf936e12c72c30aea4a8797ff44e7d7783765e96e555037f45ec2b1bcca429",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0002",
+        "path": "/options/1",
+        "sourceSha256": "5a564d32c36d938e4af45e11d565f400df6510639216d25e658eeb777834fad9",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0002",
+        "path": "/options/2",
+        "sourceSha256": "95d58d97cac3bc0503751d0aaf5f09dee852af7fde08849589907afc80de835f",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/text",
+        "sourceSha256": "1f4fd5aaad3169fba38405c30350ae97ada94087a6da81b1e85e43680d0dfc7b",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_titulo",
+        "path": "/text",
+        "sourceSha256": "05afeb106b35988f8688f254750225c1d95fad9409d7bbd461b05489b454ae7f",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_consigna",
+        "path": "/text",
+        "sourceSha256": "08d9ee1f06fc953b97ac486df6518f750492a54bc73fad4105638927518c5e80",
+        "spans": [
+          {
+            "start": 108,
+            "end": 112,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 121,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 166,
+            "text": "-50",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 171,
+            "text": "50",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 332,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 446,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 486,
+            "text": "Mediana:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 490,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 530,
+            "text": "Sin datos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 586,
+            "end": 595,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_0",
+        "path": "/text",
+        "sourceSha256": "b82e038d480520cc7049d47ebd79dd35d8db15b0a77e20c31bccc2947c2edafc",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 54,
+            "text": "Sin datos\nOriginal:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_1",
+        "path": "/text",
+        "sourceSha256": "9c39b57ba1f848bee06e4e9b3adcdf5931c952fae7b245bbf7e083798765671e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "1 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 65,
+            "text": "Mediana: 0\nOriginal:0;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_2",
+        "path": "/text",
+        "sourceSha256": "ea2aeb043ee416cc8bf2ca25fd428ca0ab0423fc7f427ab911a64a443a20859e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "1 -7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 71,
+            "text": "Mediana: -7\nOriginal:-7;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_3",
+        "path": "/text",
+        "sourceSha256": "bd652fcf5df4fc6393f8a6ed92b6d8842761c20c47a67a9d5fede6ab411b1aae",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 41,
+            "text": "2 2 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 76,
+            "text": "Mediana: 4.5\nOriginal:2;7;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_4",
+        "path": "/text",
+        "sourceSha256": "ed249b7b8b8a9ab0823da8fae0498ed924ca294e06b82778b70911be87895791",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "Cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 52,
+            "text": "4 9 1 6 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 89,
+            "text": "Mediana: 4\nOriginal:9;1;6;2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_5",
+        "path": "/text",
+        "sourceSha256": "3fb7152e2b64ac43d9ede31b9bb9a5e7926e19947864442cfb647312aca54424",
+        "spans": [
+          {
+            "start": 36,
+            "end": 44,
+            "text": "3 12 1 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 80,
+            "text": "Mediana: 2\nOriginal:12;1;2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_6",
+        "path": "/text",
+        "sourceSha256": "5dfb7019b8861330c9b1783394854ae463b0c29d00d79e7c1b1b1418d7c6d42e",
+        "spans": [
+          {
+            "start": 35,
+            "end": 46,
+            "text": "5 9 3 3 8 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 85,
+            "text": "Mediana: 3\nOriginal:9;3;3;8;3;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_caso_7",
+        "path": "/text",
+        "sourceSha256": "a76e4ed670e734df98d910daa5caf7f8536d494b5fd4d9c5ed79ff2394f348dd",
+        "spans": [
+          {
+            "start": 27,
+            "end": 34,
+            "text": "2 -5 -2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 72,
+            "text": "Mediana: -3.5\nOriginal:-5;-2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_accion",
+        "path": "/text",
+        "sourceSha256": "b6d3885dec4c598d7f3cc8a9fed4f9c6f31417f681086443d99dce0b90a1f19f",
+        "spans": [
+          {
+            "start": 155,
+            "end": 158,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "f726b68797c1d8600750ec97a706c96f8db65356b621c2072b4e3972b7e5368c",
+        "spans": [
+          {
+            "start": 54,
+            "end": 63,
+            "text": "Sin datos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 105,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "214854b6bcd41ea6e719244d7c7e39139f89e16426e75fc4ebc5825f030b0234",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "{0}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 91,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 103,
+            "text": "0;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 166,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "b058a964d91e3cabd491c234b164882e4e203f1a073cbddcca4ac01b9538de21",
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "{-7}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 54,
+            "text": "-7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 93,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "-7;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "0bbc3e8b8cf5caf553ebe57cc07cd4df71e75e28a8dcf2a560695c9cbb90ed5e",
+        "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "{2, 7}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 101,
+            "text": "4.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 121,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "2;7;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "6cf2d34275a6db3f6a4020623393be568df9659c15e9db13515cbb4e0ee0fefd",
+        "spans": [
+          {
+            "start": 26,
+            "end": 38,
+            "text": "{1, 2, 6, 9}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 47,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 125,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "9;1;6;2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "9a9d1ecf4e051f20660fa1e67f34ca3971d4762ec604f45ed10f1ff5f6a93b40",
+        "spans": [
+          {
+            "start": 26,
+            "end": 36,
+            "text": "{1, 2, 12}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 59,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 98,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 115,
+            "text": "12;1;2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/6/explanation",
+        "sourceSha256": "55e5a8bf91a68984523fb59e124af1b266018e524d98e0132357181997e124ad",
+        "spans": [
+          {
+            "start": 26,
+            "end": 41,
+            "text": "{3, 3, 3, 8, 9}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 103,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 123,
+            "text": "9;3;3;8;3;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/6/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/7/explanation",
+        "sourceSha256": "700d67b085cdd7f944eaf8c67a1ded6017e1287c8ba1064c9139f7d87ad40133",
+        "spans": [
+          {
+            "start": 26,
+            "end": 34,
+            "text": "{-5, -2}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 43,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 68,
+            "text": "-5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 73,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "-3.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 126,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "-5;-2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "mediana_general_propia_editor",
+        "path": "/outputCheck/cases/7/reviewFeedback/0/text",
+        "sourceSha256": "5f870dc4b056194261cc3148df261d3c2b14e66c1d09b70531ce44c425c1f970",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "fdf4885cf59c6d805d4c8b3871f7840341513a310da5e6c0de70c52e1142af41",
+        "spans": []
+      },
+      {
+        "block": "mediana_general_propia_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "9b7dba69079409dacec87600e765c17576afabeecc47ff69c957a621dcbb70c7",
+        "spans": [
+          {
+            "start": 21,
+            "end": 26,
+            "text": "datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 67,
+            "text": "ordenados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 89,
+            "text": "{2, 7}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 98,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "4.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 145,
+            "text": "Original:2;7;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 197,
+            "text": "{9, 3, 3, 8, 3}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 208,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 252,
+            "text": "{3, 3, 3, 8, 9}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 351,
+            "text": "Sin datos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 411,
+            "end": 416,
+            "text": "datos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "398d3ac637696d261e1a29b5f148b718d1dc624a994087b45fb30f82ffb050d0",
+        "spans": []
+      }
+    ]
+  }
 }

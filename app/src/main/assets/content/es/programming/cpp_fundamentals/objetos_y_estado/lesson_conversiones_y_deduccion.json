@@ -224,7 +224,7 @@
             ]
           ],
           "reviewFeedback": "El hueco indica el tipo destino de una conversión que forma parte de un operando. Revisa si esa representación conserva la fracción que necesita el cociente y en qué momento se obtiene. No confundas convertir un dato antes de dividir con convertir un cociente ya calculado.",
-          "explanation": "Una respuesta válida es double. static_cast<double>(total) obtiene el valor trece convertido a double antes de dividirlo entre dos. La división utiliza así un operando de coma flotante y produce 6.5. La variable total sigue siendo int y conserva trece: convertir el valor leído para una expresión no redefine el objeto (Köppe et al., 2023, sección 7.6.1.9, párr. 1; Stroustrup, 2024).\n\nEl momento de la conversión es decisivo. Si se dividieran primero los enteros trece y dos, el cociente sería seis. Convertir después ese seis a un tipo de coma flotante no reconstruiría la media unidad perdida (Stroustrup, 2024).\n\nPara este caso concreto también se admiten float y long double. Esos tipos permiten conservar el resultado propuesto, pero admitirlos aquí no significa que todos tengan el mismo rango o la misma precisión. La escritura double long nombra el mismo tipo que long double; el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023, sección 6.8.2, párr. 12; sección 9.2.9.3, párr. 4 y tabla 17)."
+          "explanation": "Una respuesta válida es double. static_cast<double>(total) obtiene el valor trece convertido a double antes de dividirlo entre dos. La división utiliza así un operando de coma flotante y produce 6.5. La variable total sigue siendo int y conserva trece: convertir el valor leído para una expresión no redefine el objeto (Köppe et al., 2023; Stroustrup, 2024).\n\nEl momento de la conversión es decisivo. Si se dividieran primero los enteros trece y dos, el cociente sería seis. Convertir después ese seis a un tipo de coma flotante no reconstruiría la media unidad perdida (Stroustrup, 2024).\n\nPara este caso concreto también se admiten float y long double. Esos tipos permiten conservar el resultado propuesto, pero admitirlos aquí no significa que todos tengan el mismo rango o la misma precisión. La escritura double long nombra el mismo tipo que long double; el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023)."
         }
       ]
     },
@@ -1602,6 +1602,212 @@
         "id": "block_0004_0001",
         "beforeSha256": "e9fa902fa0fd4b30e39d09ce6b1ee93bfa532ec29557c5e07fb1d8f7e8bf43b9",
         "afterSha256": "8b7f963ebda6332c7065cf2e8432a5c57a331256ec75d370e6a0bb54c8967c9f"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "d76bb4c0cb2dec3b68b81b4a7ea2fdab2845aeadf476e67b01d67ef23111ec3a",
+        "afterSha256": "1543a479cbbfc3c075ad9c2cd9b63fecaa986bd909885bea186cc49fd3655328",
+        "bibliography": {
+          "historySha256": "9b8db30091e45314dac47c3bd2b0ae1fdbe7293e36f85bdb79f2cadd6100f094",
+          "previousBlock": {
+            "type": "inline_fill_code",
+            "question": "Escribe sólo el tipo destino de la conversión para conservar 6.5 al dividir trece entre dos.",
+            "template": "#include <iostream>\n\nint main() {\n    int total = 13;\n    double mitad = static_cast<[]>(total) / 2;\n    std::cout << mitad;\n    return 0;\n}\n",
+            "answers": [
+              "double"
+            ],
+            "answerAlternatives": [
+              [
+                "double",
+                "float",
+                "long double",
+                "double long"
+              ]
+            ],
+            "reviewFeedback": "El hueco indica el tipo destino de una conversión que forma parte de un operando. Revisa si esa representación conserva la fracción que necesita el cociente y en qué momento se obtiene. No confundas convertir un dato antes de dividir con convertir un cociente ya calculado.",
+            "explanation": "Una respuesta válida es double. static_cast<double>(total) obtiene el valor trece convertido a double antes de dividirlo entre dos. La división utiliza así un operando de coma flotante y produce 6.5. La variable total sigue siendo int y conserva trece: convertir el valor leído para una expresión no redefine el objeto (Köppe et al., 2023, sección 7.6.1.9, párr. 1; Stroustrup, 2024).\n\nEl momento de la conversión es decisivo. Si se dividieran primero los enteros trece y dos, el cociente sería seis. Convertir después ese seis a un tipo de coma flotante no reconstruiría la media unidad perdida (Stroustrup, 2024).\n\nPara este caso concreto también se admiten float y long double. Esos tipos permiten conservar el resultado propuesto, pero admitirlos aquí no significa que todos tengan el mismo rango o la misma precisión. La escritura double long nombra el mismo tipo que long double; el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023, sección 6.8.2, párr. 12; sección 9.2.9.3, párr. 4 y tabla 17)."
+          },
+          "currentBlock": {
+            "type": "inline_fill_code",
+            "question": "Escribe sólo el tipo destino de la conversión para conservar 6.5 al dividir trece entre dos.",
+            "template": "#include <iostream>\n\nint main() {\n    int total = 13;\n    double mitad = static_cast<[]>(total) / 2;\n    std::cout << mitad;\n    return 0;\n}\n",
+            "answers": [
+              "double"
+            ],
+            "answerAlternatives": [
+              [
+                "double",
+                "float",
+                "long double",
+                "double long"
+              ]
+            ],
+            "reviewFeedback": "El hueco indica el tipo destino de una conversión que forma parte de un operando. Revisa si esa representación conserva la fracción que necesita el cociente y en qué momento se obtiene. No confundas convertir un dato antes de dividir con convertir un cociente ya calculado.",
+            "explanation": "Una respuesta válida es double. static_cast<double>(total) obtiene el valor trece convertido a double antes de dividirlo entre dos. La división utiliza así un operando de coma flotante y produce 6.5. La variable total sigue siendo int y conserva trece: convertir el valor leído para una expresión no redefine el objeto (Köppe et al., 2023; Stroustrup, 2024).\n\nEl momento de la conversión es decisivo. Si se dividieran primero los enteros trece y dos, el cociente sería seis. Convertir después ese seis a un tipo de coma flotante no reconstruiría la media unidad perdida (Stroustrup, 2024).\n\nPara este caso concreto también se admiten float y long double. Esos tipos permiten conservar el resultado propuesto, pero admitirlos aquí no significa que todos tengan el mismo rango o la misma precisión. La escritura double long nombra el mismo tipo que long double; el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023)."
+          },
+          "previousTextSemantics": null,
+          "currentTextSemantics": {
+            "block": "block_0003_0005",
+            "path": "/explanation",
+            "sourceSha256": "c81e74996094b06c5fdfc42c33504088a420fcc9d896f3c3250199780e183073",
+            "spans": [
+              {
+                "start": 24,
+                "end": 30,
+                "text": "double",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 32,
+                "end": 58,
+                "text": "static_cast<double>(total)",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 76,
+                "end": 81,
+                "text": "trece",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 95,
+                "end": 101,
+                "text": "double",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 127,
+                "end": 130,
+                "text": "dos",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 195,
+                "end": 198,
+                "text": "6.5",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 212,
+                "end": 217,
+                "text": "total",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 231,
+                "end": 234,
+                "text": "int",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 246,
+                "end": 251,
+                "text": "trece",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 319,
+                "end": 357,
+                "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+                "role": "citation",
+                "reading": "natural"
+              },
+              {
+                "start": 438,
+                "end": 443,
+                "text": "trece",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 446,
+                "end": 449,
+                "text": "dos",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 469,
+                "end": 473,
+                "text": "seis",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 497,
+                "end": 501,
+                "text": "seis",
+                "role": "output",
+                "reading": "natural"
+              },
+              {
+                "start": 549,
+                "end": 561,
+                "text": "media unidad",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 570,
+                "end": 588,
+                "text": "(Stroustrup, 2024)",
+                "role": "citation",
+                "reading": "natural"
+              },
+              {
+                "start": 634,
+                "end": 639,
+                "text": "float",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 642,
+                "end": 653,
+                "text": "long double",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 810,
+                "end": 821,
+                "text": "double long",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 847,
+                "end": 858,
+                "text": "long double",
+                "role": "cpp",
+                "reading": "technical"
+              },
+              {
+                "start": 877,
+                "end": 880,
+                "text": "dos",
+                "role": "data",
+                "reading": "natural"
+              },
+              {
+                "start": 908,
+                "end": 928,
+                "text": "(Köppe et al., 2023)",
+                "role": "citation",
+                "reading": "natural"
+              }
+            ]
+          }
+        }
       }
     ]
   },
@@ -2369,6 +2575,2258 @@
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "c81e74996094b06c5fdfc42c33504088a420fcc9d896f3c3250199780e183073",
+        "spans": [
+          {
+            "start": 24,
+            "end": 30,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 58,
+            "text": "static_cast<double>(total)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 81,
+            "text": "trece",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 101,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 130,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 198,
+            "text": "6.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 217,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 234,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 251,
+            "text": "trece",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 319,
+            "end": 357,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 443,
+            "text": "trece",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 446,
+            "end": 449,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 473,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 501,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 549,
+            "end": 561,
+            "text": "media unidad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 570,
+            "end": 588,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 639,
+            "text": "float",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 642,
+            "end": 653,
+            "text": "long double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 821,
+            "text": "double long",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 847,
+            "end": 858,
+            "text": "long double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 877,
+            "end": 880,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 908,
+            "end": 928,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "aa70e030c90164bd1039951ebf2ac0c7c9a00017f42da32e88268211c705c55c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "5b2e0bc6d666e9e12f92eddc84fe5a9d113451ffab5d651ccf501cf08e350829",
+        "spans": [
+          {
+            "start": 72,
+            "end": 92,
+            "text": "double longitud = 3;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 131,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 183,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 208,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 322,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 405,
+            "text": "medida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 427,
+            "end": 435,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 457,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 518,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 539,
+            "end": 542,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 595,
+            "end": 613,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "408c049c9e1a1a775783dc04c499e5a9f80dd58fe9cd74f03bc64ccadc4740ab",
+        "spans": [
+          {
+            "start": 18,
+            "end": 24,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 32,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 98,
+            "text": "double medida = 3.75;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 143,
+            "text": "int unidades = medida;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 155,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 166,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 243,
+            "end": 261,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 418,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 438,
+            "text": "medida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 454,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 472,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 501,
+            "end": 502,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 517,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 525,
+            "end": 526,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 552,
+            "end": 560,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 564,
+            "end": 570,
+            "text": "medida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 588,
+            "end": 592,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 594,
+            "end": 612,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "020beba107b519eb1a2458b9d84247f0916e9cb75ac0ebff3a834f5982b1070b",
+        "spans": [
+          {
+            "start": 16,
+            "end": 19,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 31,
+            "text": ".5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 44,
+            "text": "medida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "e755b42534d2588d326d48852afe7dfb587af279f34ccb2bdc6216e82c07edc5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "6b71363832a0340c15c5b5356613d549b04239f9326d74817a076e45347193c9",
+        "spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "3b2e83f6f71d5f5a211a8bacd1cdc36bb3bd6bca309e2e629c3784b294ee6b1e",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 51,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 69,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "bfa4602927eb6fdbcc19c718449c57faf4612d54bbbef921a50cebc40d3c651b",
+        "spans": [
+          {
+            "start": 105,
+            "end": 109,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "dbf96035aa9f3f5b2009b9acdca418576eed8005910422cbdd490f389175ce27",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "-4.8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 20,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "90b70206ffe868e8c6699394f9fe87c5d96b2aa9a96da86e0a4d7a0177156532",
+        "spans": [
+          {
+            "start": 30,
+            "end": 34,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "e5e0093f285a4fb94c3fcc2ad7fd04edd10d429ccda87a9aa5e4718efadf182e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "-4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "37aa1ccf80e481832b2db282d4d4f895ee1e31219b7d0f6aee8dc8968828341b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "-5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "993d273e43533c09f67ee5a76a97b14d7579d5df612eaf1b40e1b54930e233cc",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5bb8951562fd5f50892d5131a14606699855553aeef637b7cada1340f2b97b1d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0474ec2db104d8a7e4b8959a31c671c63c118ed25f0c7096c608e12a1b647a8d",
+        "spans": [
+          {
+            "start": 22,
+            "end": 26,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "dac67bdb1051b03f9e31e9d6362505ecd91227454280976ca478099619767b76",
+        "spans": [
+          {
+            "start": 39,
+            "end": 43,
+            "text": "2.75",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "8184a4ae0b7ba4ab097a6e03a5a89fb855d774bc26dcb9c2abfbc720110d839f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "6c14bff63eecf5ffc6245918f9cf97e484f26302e22406d3951cf09030cc3654",
+        "spans": [
+          {
+            "start": 21,
+            "end": 24,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 49,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "d7759ad3658b5aa0fe83fdca5ffb75e50a1ca8b3fe63a097223acadaee7ddf50",
+        "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "12811af5f7c51aa7435efaf5f8d5e31644fc3ecbc9710f8aa4df4b671ccd1bfb",
+        "spans": [
+          {
+            "start": 13,
+            "end": 14,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 24,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 65,
+            "text": ".75",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "0166e43650e551d698b9e0ffefb9d2c23a27013ee6152eeba70fd6bfe2e73973",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "c700988dfa3789c0dc4eddebd2be3048aff264981171ac89f038c1e288b29d2c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "75bc8f309764abd11ebd723ab0c45506266fdbc5d1f2cb87e6adf8b1a839f90b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "40fdaac171c6ba6e686d2405938976e67486c6c2410383d3303dfd6fb5b72b5b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "3bc523b0dc8aa05f316f1d449ce3a0c931fc3a24789a0bc7960c86c2d798dbfd",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "5fff3e0e33de800018588cf929050ed4c6edfa56492bf23ac17bd35a98deab0c",
+        "spans": [
+          {
+            "start": 18,
+            "end": 24,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "51a1bbddff3ce0f9f336c5ff9afde3665da4af3c82d8bc5c24ad80e6ef8d1891",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 45,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 54,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "7e9595f48ecb1675c1b1e8832caaf290cc5a583e1257f9668ed15b7a36eff3e3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 22,
+            "text": "double cantidad{3.75};",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "feaabfcff3731d10bf339c03e019a7f69cd91d507f7e7c41a7fd578140ee420f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "int cantidad{3};",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "8fd1ba41a20716afd680f44db7749daba5cf22aa06f97c919bae4413ed3185d6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "38e50e568319cd0cb3155c46fe7a31fdfc06c07f00f20ff08f5a44ac9f51e1fc",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "04e72733c1e2a9fff1bf7839ac55a11d023af429aa05b4afc02d614da49e4f81",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "4ecd42680be47bffafb8ead53d81f11c1224e78af6e6bfe6a390aaa97fa15e91",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 81,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "082e512b7fb52e02be3d340bf86ce67130e2e9716bd3328a6d5c4e1517a63fd6",
+        "spans": [
+          {
+            "start": 8,
+            "end": 14,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5e91d4940d5e82c33cf50c5c3211836a2f41653ff478a5eb22f6051fdf0428e0",
+        "spans": [
+          {
+            "start": 69,
+            "end": 72,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "8fdccd33deb26f746222d9fa9bc91a709eee628f29d6c9af689e2513360a13df",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "02a68106f086c9d39fb4f87951e519ee6738db86b92092ecabcfe44cbaddd5f4",
+        "spans": [
+          {
+            "start": 33,
+            "end": 39,
+            "text": "5.5 11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 138,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 153,
+            "text": "once",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 233,
+            "text": "static_cast<double>(total) / partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 307,
+            "text": "static_cast<double>(total / partes)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 402,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 409,
+            "end": 415,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 435,
+            "end": 447,
+            "text": "media unidad",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "2848546e4ad5110419390977fb8dbb963c78f8464d6f5e7a05eaed750bc9651b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "tarde",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 46,
+            "text": "antes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "3.25",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "26daa3f075293f3f2f3f4fbf999069d02a68c27adf5173a1ea22db8892a27218",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "a6e41c43ee3e75863d42385b457b81462edfa2004dde8fb75328543862596c82",
+        "spans": [
+          {
+            "start": 61,
+            "end": 64,
+            "text": "6.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 81,
+            "text": "trece",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 91,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "506ea3b87851b302aac4c0097d170460cc7fb665400572e1e61fba32d67b0047",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "3b1b974857c698de0ea6d5003c65cf861d59e0b1c64a1ffc149a43f84d76f0cb",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "660db540cb66f895e56360ffcca3a6586e43895012de535e4a5a782a2954a90c",
+        "spans": [
+          {
+            "start": 20,
+            "end": 24,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "261c4736fe2c3f8b4c2823e715a6476e1a1a4157bd0e35efdeb9737025f192ca",
+        "spans": [
+          {
+            "start": 74,
+            "end": 92,
+            "text": "auto cantidad = 6;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 151,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 199,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 216,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 246,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 271,
+            "text": "auto medida = 6.5;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 289,
+            "end": 295,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 341,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 349,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 611,
+            "end": 629,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/question",
+        "sourceSha256": "5b074cffa9806443568bc2e05fcb501f68074eba17f731da62b3a637858b2dda",
+        "spans": [
+          {
+            "start": 3,
+            "end": 21,
+            "text": "auto cantidad = 6;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 47,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/explanation",
+        "sourceSha256": "2ce1a50674442b18b298ee95e4a01fddb88cef87cccebf5a0e5a0039874841b0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/options/0",
+        "sourceSha256": "3cf485a46729f195c3eb4e3ff412e17d68a41c71cbf2c5d67ad5e7f6c6c24beb",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/options/1",
+        "sourceSha256": "03e407ba40a495888bfac14160e9dcb3ca83839cff36e9a033891553e01a3363",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/options/2",
+        "sourceSha256": "81231b958bf26890fdd1bbfffdaafa1de7bfeb65ceba52866f465e9e9ad4777f",
+        "spans": [
+          {
+            "start": 22,
+            "end": 26,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "39668f952f68121b2234de28c8079d3710c40a3d912fe29738f4fefdfbb9be1d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d950c995e21ac3b36654d7d3e4b7cf921fe36431ea41355d137c6a572f40a080",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "52a87af2ac73d964bf15c7b7b3991bd6ece84faeda08b73bfd453ba08b61eb83",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "fde5200f7f2b56feb33b87977494a78d56a437a7f05d69518220a3a15daf49e7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "9b93f603b89a06298bcd64784c05719ffbc8674af47cceafa995bf178ea898df",
+        "spans": [
+          {
+            "start": 55,
+            "end": 74,
+            "text": "auto mitad = 9 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 147,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 191,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 221,
+            "text": "mitad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 249,
+            "text": "auto mitad = 9.0 / 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 274,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 323,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 342,
+            "text": "mitad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 572,
+            "end": 590,
+            "text": "double medida = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 608,
+            "end": 614,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 653,
+            "end": 669,
+            "text": "auto medida = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 729,
+            "end": 733,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 913,
+            "end": 931,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 966,
+            "end": 977,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/explanation",
+        "sourceSha256": "e3da9a4e3a99d67e4b6e58c11c05c17e76d80a5da54021dca194d5b38e7e5471",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "77537acd380cfba38f994154f4e3959877452d4979f43231ed91458639bcbd26",
+        "spans": [
+          {
+            "start": 116,
+            "end": 120,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "7a081f13685b4790741157136caf6b5726260454299b75985de006f9ae91b280",
+        "spans": [
+          {
+            "start": 36,
+            "end": 42,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "4834ee259db9b96b9f492dc9ff6933538d4bd7f34d4d0534c1df1b84fa75e77a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 35,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 49,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "269a686094b389368bb8f9ebef5647edd320ede9146c2d3d69947c9767db012f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "double medida = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "ca3fe2394639516cc47c715ea2b6f86d11086ae49f563e115b5d95cd6033ae54",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "auto medida = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "35c06769e91bfd2a01a2e3734ddcb2b4dd717b52cc86f43e318daa26b83ca725",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "int medida = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d772d7066a6a9ab4fe065028f276eb90b02339cc7d2a063e461bbecf248b4d19",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "459a6908a4b14e750e2ecdc5af25fa93d52aeb1fcab6c936aa1805963f98f7d1",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6f43ab7ce75001e89e0192e1af2761f9f21c5a84ed7d2732eb609254223f407a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "fb0e867cc4bca508596917bf4c082dfc3e50024d09762aa8fe3670d34cd59f6a",
+        "spans": [
+          {
+            "start": 52,
+            "end": 56,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "6532c7de163eabcc9b366378f0b3eb77ce6321b43f5d026073041ffda93b88be",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "8.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 24,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 37,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "051cf6fe03970a81d9fcc3c1ecf0c4ca670b889bc1b047ea6894aab7bfde1cb5",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "6907a67d76fcf167cc2684d113b588826a716defecbde1f397ff0e171f260d99",
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "de2625bcc43be2a84276c023a731dbbf404cb701563d8df01b52c2c0994dd878",
+        "spans": [
+          {
+            "start": 40,
+            "end": 45,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 61,
+            "text": "quince",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 84,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 114,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 134,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 275,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 307,
+            "text": "Entero: 7\nDecimal: 7.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 631,
+            "end": 634,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "155d424db1f0c1ff9a1e63fb47ced229dd1793a38936427ee8039740477999e8",
+        "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "quince",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 13,
+            "end": 16,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "96b4137354212d2e5bbe8e8ef3658a23f3ddbc32825922f33b48978db4c93d26",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "f04ea9a322225b8420806b248724c084b53bebfc07e75bb99cbfabaee1167dfe",
+        "spans": [
+          {
+            "start": 39,
+            "end": 44,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 55,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 86,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 96,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 172,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 231,
+            "text": "Entero: 7\nDecimal: 7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "29f7002f401afa03ffac219872881acd95f3585427f80ff515affb054fff4d95",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "234a98cbd838fe630cc4d6f99224d2d835a65d74dcf0d85a52e358bfa219a00f",
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 265,
+            "end": 271,
+            "text": "quince",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 281,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 314,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "d0f4d249fc7c7c003e9cd6b940b13325752db34a99ec5132a834a79ef1ed2e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "be7ac1f2405b912a75e094212f4d5d5a20e2a636c0e83f515346086361231fe8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 84,
+            "text": "medida",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "fe57a5012204e20d01381b95b89dbc067c2d427856a8cfe3156422275bcc1c4d",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "8c18a4c7b7db9f8317c66d68308c39142800b50f235b82075fb8c072499b6099",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "96d85f8e535c67493cbaefe4d477570fae5a535a961b6be48d44fc23b964f838",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/0",
+        "sourceSha256": "5b4346c80f55f79a62c7f55851ec85dcdda920112c0c44b40e22e1f3d17c79da",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/1",
+        "sourceSha256": "82bf3689290a641444a07f48c98c19765f5111db9eacf7b2cce613df29cd3ca7",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/2",
+        "sourceSha256": "ceac204ced689b6e235ed78684eca449bf0f2272adc7b9c8ae3627c0176471d2",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "89d6ec54c2990be091a062a2039f27b744829cadd12a65da8babb3a536ff120b",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "b3ee13d81d5e63475fc93c2f1f112ea0ddb7f03c89c405bc88e9040ffbf7f294",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "66c276001afd6bbef5edadac934bec79c764010250fcdc77f2968db4db634a9e",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/question",
+        "sourceSha256": "d7c0738802e01064ab172e10146efd8ee89ce4554829dd02561f677163cf1685",
+        "spans": [
+          {
+            "start": 35,
+            "end": 40,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 57,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 72,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 140,
+            "text": "auto entero = total / partes;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 194,
+            "text": "double decimal = static_cast<double>(total) / partes;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 216,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/explanation",
+        "sourceSha256": "667c85515356ea131fa017212930b9852ae8efd716b372c1cc3eaf01570e11ae",
+        "spans": [
+          {
+            "start": 15,
+            "end": 18,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 22,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 42,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 70,
+            "text": "entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 146,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 163,
+            "text": "decimal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 190,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 198,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 211,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 233,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 282,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/options/0",
+        "sourceSha256": "68b99135e142374cf4af00ba66abc05b0d5d19ec1d13d6fa9e62610248e11ee9",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 82,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/options/1",
+        "sourceSha256": "16e5d9f6f799c1a7a93f4540cf0afca24fc6b567ee5ef06dc768f4fefe652c45",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 26,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 54,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/options/2",
+        "sourceSha256": "b6966bb5e15e9f8d5da2508dc2cd0a697e36c09da52dedea7892963b77f77f76",
+        "spans": [
+          {
+            "start": 74,
+            "end": 76,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "3426c8ba7863d01fe9b4154204cdcf26dfa7881c3ad151a7e4d95bd3921f2df7",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d4ec34081d38b9f7bad7fe68394e5f061e90dddbdb0c2fbc96679639456d75f5",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "9f52e8e906fa8f5c94a331d89177c9fc83943af60a1970c6469c5c0aed6cfca3",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "82382e599a8da092ef24e265d5b7305a2592ed22f98bee1f5cf9ae4f4f5a1deb",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "b1c8af07291323c5c004c96d6d7e66e6a1bb5151ef5cb9c7ca72191f0c4fb0b1",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/text",
+        "sourceSha256": "7fa18493c313113dca65877c42983263cf0823dc3e0ef9b9ba30ca5d6061ab2c",
+        "spans": [
+          {
+            "start": 23,
+            "end": 30,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 187,
+            "text": "auto entero = total / partes;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 241,
+            "text": "decimal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 253,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 338,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 352,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 358,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 389,
+            "end": 394,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 500,
+            "end": 503,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 636,
+            "end": 654,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 688,
+            "end": 691,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 748,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

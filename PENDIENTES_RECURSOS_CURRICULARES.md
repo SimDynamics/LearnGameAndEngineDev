@@ -36,6 +36,30 @@ Las representaciones de math_course_01 usan los componentes matemáticos existen
 - **INTEGRACIÓN CURRICULAR DE WORK:** completar el marcado explícito en los campos públicos restantes de Programación 1, incluidas preguntas, opciones, guías y explicaciones. Usar textSemantics y sus helpers existentes; los huecos de un campo declarado son prosa. Delimitar color, fondo e intención de lectura según el significado, sin encargar a Codex reglas por frase.
 - **DATOS / CRITERIOS:** salidas y resultados con tinta neutra; literales y referencias del código con su paleta; citas completas con función bibliográfica. Fondo neutro sin línea bajo el texto, sin invadir prosa y sin cambiar dimensiones al leerse; referencias pendientes grises. La puntuación de rótulos no se narra como operador salvo que se enseñe ese signo. Conservar textos, fuentes, identidades, mapas, respuestas, progreso, pausas y audios compatibles.
 
+### CPP_REVISION_EDITORIAL_RETROALIMENTACION_ORDINARIA
+
+- **PENDIENTE_ID / ESTADO:** CPP_REVISION_EDITORIAL_RETROALIMENTACION_ORDINARIA / PENDIENTE.
+- **OBJETIVO / EXPERIENCIA:** Work debe poder aclarar las explicaciones públicas de los puzzles ordinarios conservando sus preguntas, opciones, programas, respuestas, reglas de corrección, identidades y progreso. La cadena editorial v2 admite estos cambios, pero el validador curricular los bloquea salvo autorizaciones por frase; falta una capacidad general comprobada que evite ampliar esa lista con cada revisión.
+- **CAPACIDAD FALTANTE / TIPO:** revisión editorial de `/explanation` en actividades ordinarias, con procedencia completa antes/después y marcado explícito del mismo propietario. Conservar las guardas especiales y los contratos originales; no abrir permisos sobre preguntas, respuestas ni código para permitir cambiar una explicación. Codex implementa y prueba el mecanismo; Work integra las redacciones y sus marcas.
+- **UBICACIONES / CASOS ACTUALES DE WORK:** Programación 1. Los casos U5 están bajo `app/src/main/assets/content/es/programming/cpp_fundamentals/colecciones_y_recorridos/`; el caso U6 está bajo `app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/`. Los textos actuales permanecen en los JSON; las propuestas siguientes aún no están integradas:
+  - U5L1, `lesson_un_vector_para_una_coleccion.json`, `block_0002_0002`, `/explanation`.
+    - Actual: «cout muestra los bool como 1 y 0; el cero guardado en una cuenta como un elemento.»
+    - Redacción de Work pendiente: «En estas instrucciones, std::cout muestra los bool como 1 para true y 0 para false. El vector llamado ninguna no contiene elementos; el vector llamado una contiene el valor cero como un elemento. Por eso se muestran 0:1 y 1:0, respectivamente.»
+  - U5L3, `lesson_recorrer_valores_por_rango.json`, `block_0007_0002`, `/explanation`.
+    - Actual: «auto sin & deduce una variable por valor: el cambio afecta la copia.»
+    - Redacción de Work pendiente: «En for (auto valor : datos), auto deduce int y valor recibe una copia del elemento, cuyo valor es cuatro. La asignación valor = 9; cambia esa copia: dentro del bucle se muestra nueve. Después, datos.at(0) sigue proporcionando el cuatro original. Por eso la salida es 9 4.»
+  - U5L6, `lesson_acumular_contar_y_seleccionar.json`, `block_0002_0001`, `/explanation`.
+    - Actual: «Esta versión pierde las visitas anteriores y termina con el último valor; no calcula el total.»
+    - Redacción de Work pendiente: «En cada vuelta, suma = 0; borra lo acumulado. Al visitar dos, el total parcial es dos; al visitar ocho vuelve a cero y queda en ocho; al visitar tres vuelve a cero y queda en tres. Por eso imprime 3, en lugar del total 13.»
+  - U5L13, `lesson_contar_frecuencias_y_conservar_empates.json`, `recuperacion_empate_prediccion`, `/explanation`. Precisión adicional del mismo mecanismo: la mayúscula de inicio de oración no debe confundirse con una etiqueta distinta en una comparación sensible a mayúsculas.
+    - Actual: «Se ha retirado una aparición de patio, no toda la etiqueta. Patio queda con dos observaciones y sala conserva sus dos; faro tiene una. La frecuencia máxima actual es dos y ambos grupos deben figurar en Mayores: primero patio y después sala por el orden lexicográfico. N y Suma pasan a cinco, mientras Distintas sigue siendo tres. Conservar únicamente el candidato anterior perdería el empate actual.»
+    - Redacción de Work pendiente: «Se ha retirado una aparición de patio, no toda la etiqueta. La etiqueta patio queda con dos observaciones y sala conserva sus dos; faro tiene una. La frecuencia máxima actual es dos y ambos grupos deben figurar en Mayores: primero patio y después sala por el orden lexicográfico. N y Suma pasan a cinco, mientras Distintas sigue siendo tres. Conservar únicamente el candidato anterior perdería el empate actual.»
+  - U6L7, `lesson_contratos_y_casos_de_prueba.json`, `block_0004_0001`, `/explanation`.
+    - Actual: «Los casos -1/0 prueban el extremo inferior y 120/121 el superior. Los datos interiores no distinguen una frontera mal escrita.»
+    - Redacción de Work pendiente: «Con capacidad seis, las cantidades menos uno y cero comprueban el límite inferior: menos uno se rechaza y cero se acepta. Las cantidades ciento veinte y ciento veintiuno comprueban el superior: ciento veinte se acepta y ciento veintiuno se rechaza. Probar sólo cantidades interiores no permite detectar que un límite se haya incluido o excluido incorrectamente.»
+- **RESPUESTA / RETROALIMENTACIÓN:** mantener exactamente los resultados de las actividades: U5L1 `0:1 1:0`, U5L3 `9 4` y U5L6 `3`. Las aclaraciones distinguen la colección vacía de un cero guardado, la copia del elemento original y la reinicialización de una suma en cada visita. Son revisiones de enseñanza; no cambian qué respuesta es correcta. En U5L13 se conserva la alternativa correcta `Maxima:2; Mayores:[patio][sala].`, su índice y todas las otras opciones. En U6L7 se conserva la alternativa de cantidades `-1, 0, 120 y 121`, su índice correcto 1 y todas las otras opciones; la aclaración distingue pares de casos de una fracción.
+- **CRITERIOS DE VERIFICACIÓN:** validar la edición general sin autorizar frases individualmente; rechazar cambios colados en código, respuestas, opciones, reglas o propietario. Conservar respuestas, intentos, último rechazo, logros, borradores y marcadores al reabrir e importar desde sus fuentes auténticas. Una explicación modificada debe volver al pasaje pertinente sin atribuir escucha anterior ni reproducirse automáticamente; mantener audios y pausas realmente compatibles. Pruebas aisladas, sin datos personales. Work verificará e integrará el marcado cuando el mecanismo esté disponible; revisión visual y escucha rutinarias durante el estudio.
+
 ### WIN_IMPORTACION_DEL_ESTADO_EXISTENTE
 
 - **PENDIENTE_ID / ESTADO:** WIN_IMPORTACION_DEL_ESTADO_EXISTENTE / CREADO_PENDIENTE_DE_INTEGRACION, únicamente para las comprobaciones focales siguientes. No volver a implementar el importador ni repetir sus verificaciones generales concluidas.
@@ -60,24 +84,6 @@ Las representaciones de math_course_01 usan los componentes matemáticos existen
 - **DATOS Y CONDICIONES:** las siete prácticas usan entrada vacía, pero requieren dos salidas diferentes y terminación cero. `consultar_cajas` y `consultar_lotes` muestran `1:2`, sin salto final. `comprobar_cajas` conserva siete casos (0, 4, 8, 20, 1, 5, 17) y `verificar_lotes` conserva cuatro (0, 6, 7, 18), cada uno con su línea de comparación y un resumen final `Bateria: OK`, seguido de salto. Salidas completas y ubicaciones verificables: `.gradle/cpp-content-qa/secuencia-p2-gate-20261020/target-dependent-p2.json`. No cambiar fuentes, esperados ni objetivos para esconder la diferencia.
 - **TRABAJO / RESPUESTA:** incorporar outputCheck.cases[].target según docs/CPP_OUTPUT_CHECK.md a las siete prácticas, sin cambiar fuentes ni esperados. La salida del cliente no acredita la batería ni a la inversa. Conservar borradores, configuración, objetivo elegido y progreso.
 - **CRITERIOS:** comprobar ambos consumidores, una discrepancia que no pueda acreditarse con la salida del otro, edición, reejecución y reapertura. Los errores técnicos conservan su diagnóstico y no descuentan corazones. No adelantar Programación 2 para resolverlo.
-
-### CPP_RETORNO_EDITORIAL_VERIFICABLE
-
-- **PENDIENTE_ID / ESTADO:** CPP_RETORNO_EDITORIAL_VERIFICABLE / PENDIENTE únicamente para la revisión bibliográfica de las explicaciones siguientes. La entrega inicial de familias v2 ya está habilitada y comprobada con una lección nueva sin commit previo.
-- **PENDIENTE GENERAL — REVISIÓN SÓLO BIBLIOGRÁFICA:** el usuario pide abreviar las paráfrasis de Köppe. preserves_previous_exercise impide diez cambios de /explanation puramente bibliográficos (once citas); se comprobó en memoria y se conservan los campos originales. Habilitar una revisión editorial verificable que cambie sólo cada componente Köppe a autor-año, manteniendo otros autores, razonamiento, código, preguntas, opciones, respuestas y evaluación exactos. Work redacta y marca la cita; el motor no debe acortar textos automáticamente ni eliminar la guarda general. La transformación necesaria es Köppe et al., 2023 con sus localizadores opcionales → Köppe et al., 2023, dentro de su paréntesis original. Conservar aciertos, errores, respuestas, borradores y pausas compatibles, sin atribuir como escuchada la explicación corregida ni iniciar reproducción. Es una capacidad general de revisión bibliográfica, no un parche de color por frase.
-
-| Lección en objetos_y_estado | Posición | Identidad | Campo |
-| --- | --- | --- | --- |
-| lesson_caracteres_y_valores_logicos.json | p3b3 | block_0002_0002 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p3b4 | block_0002_0003 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p4b3 | block_0003_0002 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p6b2 | block_0005_0001 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p6b3 | block_0005_0002 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p6b4 | block_0005_0003 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p6b5 | block_0005_0004 | /explanation |
-| lesson_caracteres_y_valores_logicos.json | p8b5 | block_0007_0004 | /explanation |
-| lesson_conversiones_y_deduccion.json | p4b6 | block_0003_0005 | /explanation |
-| lesson_enteros_y_aproximaciones.json | p4b4 | block_0003_0003 | /explanation |
 
 ### REGRESIONES_ANDROID_HISTORICAS_SIN_CIERRE_ACREDITADO
 

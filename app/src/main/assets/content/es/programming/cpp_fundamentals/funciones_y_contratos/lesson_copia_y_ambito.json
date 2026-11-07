@@ -82,7 +82,7 @@
         },
         {
           "type": "note",
-          "text": "Aquí no hay variables globales modificables ni locales persistentes. Los datos necesarios entran por parámetros y los resultados salen por return."
+          "text": "En estos ejemplos, los datos necesarios entran por parámetros y los resultados se entregan mediante return. Una llamada posterior vuelve a inicializar sus parámetros y las variables locales de su cuerpo."
         }
       ]
     },
@@ -306,7 +306,7 @@
         },
         {
           "type": "paragraph",
-          "text": "siguiente recibe una copia y entrega la propuesta; calcularla no cambia estado. Cada instrucción estado = siguiente(estado); sí asigna el resultado a main y la siguiente llamada recibe ese estado actualizado. El resultado se conserva porque hay una asignación explícita, no porque un parámetro por valor permanezca enlazado al objeto del llamador."
+          "text": "siguiente recibe una copia del valor de estado y devuelve el valor aumentado en uno. Por ejemplo, con estado igual a 3, siguiente(estado) calcula 4 sin modificar ese objeto. La instrucción estado = siguiente(estado); asigna después el resultado 4 al objeto estado definido en main. La llamada posterior lee ese nuevo valor y calcula 5. El cambio de estado procede de la asignación explícita; no de que el parámetro por valor modifique el objeto del llamador."
         }
       ]
     }
@@ -1090,6 +1090,16 @@
         "id": "block_0005_0001",
         "beforeSha256": "f633fce6b2f7cd56628dafcb17213889a8b43efa9651ee8c6f5a294c45817682",
         "afterSha256": "d1e946469b5df2283073f4b6951066dacc576f1f861c5dfe13b810011f8a2f82"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5a58374ba4ec52bad3f5297e76a41086a25171a7eb088276571796d4c990a192",
+        "afterSha256": "f897f253f81be58a0e4a1cd99799635881296812fc1110975f37ed5d7ec52bc3"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "4c6247372d4df6be886a11e3b7b0ad2fe6c761c305787523f09f40aba66a6221",
+        "afterSha256": "b7aa2181d4de3db7ad829e4184bb05ede5b9f38b65166c34159ad33ef342cff4"
       }
     ],
     "orderRefinements": [
@@ -1127,5 +1137,1133 @@
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "d241d8405c5e37d4ee8fbb3c4441a8be04f83d261fe473aa2b1d971ac28f809b",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "9fbadfab0070f72a4fa63b45b4cc971c63f64f1e4e073a95e7e7f40dd66e4689",
+        "spans": [
+          {
+            "start": 3,
+            "end": 26,
+            "text": "int aumentar(int total)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 46,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 231,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "40c9c5e997b75a9b126b3e4b93712ae44e7b0f52a57dc0c91ee63e13ebc0a6bb",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "4 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 46,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 76,
+            "text": "aumentar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 110,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 170,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 219,
+            "text": "cantidad = aumentar(cantidad);",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "675c27b5f74972673ad6da4b826573f345de1007ca744215e8302566e6aa2d53",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "45f9fa04f2bdfa9112c2437af312cea634f9c2bcc81e6aeeb92bd4da09a60be3",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 59,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "f720d224385c0f98cba5a680f70d22cff5b2f39d0dcec255b436b8745efc5a14",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "20efc09683aaba1c9a3b8e0ac60dc794b2e950c84252532c781b362f86483b0c",
+        "spans": [
+          {
+            "start": 245,
+            "end": 248,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 308,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 377,
+            "text": "(Stroustrup, 2024, sección 7.4.3)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "a74e5d24ae89e755b3fb52ad6d003ac162c3074ee57bc532f018801a7cf8e6dc",
+        "spans": [
+          {
+            "start": 27,
+            "end": 28,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "ea45b0956d04ba978e90fa7b7acbe9259723e1c2150f1354140c8a5063510b53",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "cuenta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "3480a762861e9890f506d19d61959f410a9193da4556f3ac822cd3cf2ccf438f",
+        "spans": [
+          {
+            "start": 19,
+            "end": 31,
+            "text": "contar_pasos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "f358240f6ced90bd79fdd7d2a3b6b8b1bb6efea0d94f4796fb2b792ba61e1af8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "0e1fbc17b7201e6de6413cfac760efa18d898f10a4203bc4da2b7fa9d3b579ca",
+        "spans": [
+          {
+            "start": 24,
+            "end": 36,
+            "text": "repeticiones",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "ba04e8e0ddc7b55f30e6b8b16c3e7744bfa814ec91297f89eab024dfb9328aef",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "abeac387abaa04fb5c54ce55d29f52cb8bb8239f1a337bed85604f0ad9e4aa70",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "2b0c8d5d5509d4ab7caa9a046bce007c31d52fe765f062e9935c5c8eaf0ddd80",
+        "spans": [
+          {
+            "start": 100,
+            "end": 106,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "1892257440c351a132a9ccab0c8427f6f9e35e7ab35879784ed6c59be098aeec",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "715f6be1f4a5a97dae387623640076286d30af780bae389c72f6d566983b5767",
+        "spans": [
+          {
+            "start": 246,
+            "end": 264,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 301,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "c648d8ca76557a5d7451b41ed60caf472a96d8cef4dd29e5e355356652f5bb3d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "salida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 86,
+            "text": "parcial",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 170,
+            "text": "salida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 245,
+            "text": "parcial",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "8dfbabeb623df77b6270f62878acb415fa836d89f82c6af04a829675ddbcee25",
+        "spans": [
+          {
+            "start": 30,
+            "end": 37,
+            "text": "parcial",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "3cc1f59950178e4068250ca5a2937f9bfa3cae52430797fe7d18ad5aaea2b77b",
+        "spans": [
+          {
+            "start": 44,
+            "end": 46,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 52,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 88,
+            "text": "preparar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/0",
+        "sourceSha256": "cd7181a21ee25d254bc7b4c1a8181da3c1b99aaae1626447a8adfa6315daf577",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/1",
+        "sourceSha256": "542d415255ef4f15ccecd347c6460e0a73e68e31226beb0f28d80ed18f5625e8",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/2",
+        "sourceSha256": "2a7fca92718cf3432693e8689ebdfa820cfeb10fe722d9ea8212f6ebef75b362",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "92c4b10523285e9d86d202418d554f93dc4953224f42054bf4e7c85a74eba179",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "nivel",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "d1c15d0f95cc06595c4a1ec7d6adf149fcc00f967692f530f799097f9cabc309",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "ed982c2a920f1b434fd3cc275288a99621e1b1b856f7e45799c429ed25cd7b64",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "19c607cd4e5a1eed47acceaf21528a33ef110d96809a5a2c18321d731ac65563",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "a299bcb7cf4ac5ab100e609ad25fe1019d30cd61d21b80f5532b64e689cb8ab8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "0b4445e39dcdd5dd2be984f2d4276d2dd281674c55a0125bd55b4de81f0b1fcb",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "ad39d065a69e5384fd95fb681d55a3cb0a624a3b1ddda52582137edcd9ae71b4",
+        "spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 36,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 166,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 207,
+            "text": "3 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 230,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 370,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/question",
+        "sourceSha256": "37555fa14307c3ad337bc0e60bf3ed0efa03a56895d106a063c7ba02a809f4ab",
+        "spans": [
+          {
+            "start": 24,
+            "end": 30,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/explanation",
+        "sourceSha256": "7d77f59278fad29212420fd6cb8c96782d56454c53c1868e6dde27153c373378",
+        "spans": [
+          {
+            "start": 68,
+            "end": 74,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/options/0",
+        "sourceSha256": "eaf51d056c32ee8ab9688823c372d3ff9a1be6461681e84b8d6230e49a1f09a0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "return nuevo;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/options/1",
+        "sourceSha256": "3d7259fa7193eb1ea076278e0b27040e4424d76fd0e41b296fdf3fb2002f1350",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "estado = siguiente(estado);",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/options/2",
+        "sourceSha256": "012b5acc0a39ae98011c1eca3e7bf529f4da3291730017b2efee2f336669a7c8",
+        "spans": [
+          {
+            "start": 29,
+            "end": 35,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "d30fbf290802250873d4c61474ebbbf88a35fed5bc4e2aec18c7290c278c96d8",
+        "spans": [
+          {
+            "start": 79,
+            "end": 82,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "04f730b9610c09828d5fc30f97f93fcb05712c0dababcac35a36b1d732528a91",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "163549f389f395e46b947e5b77696ee2653d6bbab57137e69948e6ff95c93d88",
+        "spans": [
+          {
+            "start": 32,
+            "end": 36,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 45,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 59,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 81,
+            "text": "0 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 95,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 108,
+            "text": "8 9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "26ee0970ac66e58a8036b64bc86457666cc4aa659a9a9f87af0762a375d29c9d",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/text",
+        "sourceSha256": "39e8d3bd58d296849f07af5e7fe36feea79320a5133b51d559990bdf762dfa31",
+        "spans": [
+          {
+            "start": 54,
+            "end": 81,
+            "text": "estado = siguiente(estado);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 182,
+            "text": "3 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 196,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 205,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "0194916d189eff4d9c6771b42e6f1fedf190e0e720fb87ae793965486943af8d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "cc78a90f8a0881e0f03d67e792906b505ad30be8f91de49b60638656f94bd783",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "3da3087ee3bffd092a1d45a5bf458be6472bf4e7da72dbdc70450ec0b3e20000",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "elevar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 125,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "530090098a2f854d5b9ca28b394bc086e4aade5f3e4a4f274e2430dc3d4db10c",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 55,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "204746da3274034882fab1790f41bfb51173aca9f6404654cfc72dc519b92d40",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/0",
+        "sourceSha256": "a27de7d0a46a847eeb71130ee1c8f5e7066e30edd3b3ec0070f2d42604226ba4",
+        "spans": [
+          {
+            "start": 33,
+            "end": 39,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/1",
+        "sourceSha256": "b2e957dda72b8fdf8a17db8fd43c40dc0a4ed2332a437d695999d6e7f00c9f6d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/2",
+        "sourceSha256": "5a4449e3efc634ccd440ae81bb5f4e1467da61a5cafd9050b12b791d100b6f7b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "4769f03b805af21f6e7d9b6d95e59ca491059a65f8eac303e4816a677c4fd266",
+        "spans": [
+          {
+            "start": 139,
+            "end": 157,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "123c9e1f014590121e82441438d8a9d49d75adc094bc0c54e5e35546423d0c82",
+        "spans": [
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "f7633b44f893761ae8552622a40c04f4d24096ca942884fb818ee75071fcb50d",
+        "spans": [
+          {
+            "start": 40,
+            "end": 43,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "3fd3b1007c9fa5ab5ec9c10850e9d8a89c4b10ddcb09393eaefcdb1a000725a0",
+        "spans": [
+          {
+            "start": 52,
+            "end": 60,
+            "text": "estado=3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "3 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 223,
+            "text": "3 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 267,
+            "text": "0 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 273,
+            "text": "8 9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 297,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 301,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 311,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 329,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 334,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 357,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 362,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "441a9911460fabbf7b6c97a4ee8ffc4ef6665c632416297830d0b05b14f58e8c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "siguiente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 46,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 83,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 108,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 118,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 137,
+            "text": "siguiente(estado)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 216,
+            "text": "estado = siguiente(estado);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 263,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 280,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 333,
+            "end": 334,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 355,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "16cf8f66dbdd8075b281efc7418f210195a6744dc22bca57a33db89498c340f7",
+        "spans": []
+      }
+    ]
+  }
 }

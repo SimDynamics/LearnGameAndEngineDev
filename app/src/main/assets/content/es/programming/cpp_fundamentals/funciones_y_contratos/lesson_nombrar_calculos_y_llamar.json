@@ -35,7 +35,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En int doble(int cantidad), el primer int es el tipo del resultado y doble es el nombre. int cantidad declara un parámetro: el dato con el que trabajará el cuerpo en cada llamada. doble(fichas) es una llamada; fichas aporta el argumento, aquí 7 (Stroustrup, 2024, sección 3.5).\n\nCon ese argumento, return entrega el resultado 14 a quien llamó. main lo usa para inicializar resultado y después lo muestra. Calcular el número y mostrarlo son acciones distintas.",
+          "text": "En int doble(int cantidad), el primer int es el tipo del resultado y doble es el nombre. int cantidad declara el parámetro cantidad: en esta función, una variable que recibe el valor aportado por cada llamada. En doble(fichas), fichas es el argumento y aporta su valor actual, 7 (Stroustrup, 2024).\n\nAl comenzar esa llamada, cantidad vale 7. La expresión cantidad * 2 calcula 14 y return entrega ese resultado a main. Allí se inicializa resultado con 14 y std::cout muestra su valor. Calcular el número y mostrarlo son acciones distintas (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "parámetro",
@@ -304,6 +304,107 @@
         {
           "type": "paragraph",
           "text": "La referencia muestra el experimento de cambiar una regla común, con argumentos 3 y 5. Cada llamada aporta su propia cantidad y recibe un resultado calculado usando el cuerpo vigente. No se corrige la salida de cada llamada de forma independiente ni se conserva un resultado anterior al cambio de regla. Otras implementaciones son válidas si una sola función expresa el cálculo y las llamadas muestran los casos previstos."
+        },
+        {
+          "type": "heading",
+          "text": "Construir una función para lotes y fichas sueltas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada lote contiene 3 fichas. También hay fichas sueltas que se añaden una sola vez al total. Construye la función preparar, que recibe primero la cantidad de lotes y después la de fichas sueltas, mediante dos parámetros int, y devuelve el total como int. La función calcula; main lee los dos datos, llama a la función y muestra su resultado.\n\nDefine la función completa antes de main. Usa cantidades de lotes entre 0 y 6 y de fichas sueltas entre 0 y 2. El total máximo es 20. Por ejemplo, con Entrada 2 1, los lotes aportan 6 fichas y la suelta añade 1: debe aparecer Fichas: 7 y un salto de línea.\n\nComprueba también 0 0, 0 2, 1 0, 6 2 y 6 0 sin cambiar la regla entre casos. Pulsa «Compilar, ejecutar y comprobar» para cada entrada. Los resultados deben proceder del cálculo de la función, no de mensajes fijos escritos para cada caso.",
+          "emphasis": [
+            {
+              "text": "La función calcula",
+              "style": "bold"
+            },
+            {
+              "text": "sin cambiar la regla",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Define aqui preparar con sus dos parametros y su resultado int.\n\nint main() {\n    int lotes{0};\n    int extra{0};\n    std::cin >> lotes >> extra;\n    // Llama a preparar y muestra Fichas: seguido del resultado y un salto.\n    return 0;\n}\n",
+          "initialStandardInput": "2 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 1",
+                "outputs": [
+                  "Fichas: 7\n"
+                ],
+                "explanation": "Los 2 lotes aportan 6 fichas. La ficha suelta se añade una vez y el total es 7. Comprueba que ambos datos leídos llegan a la misma llamada."
+              },
+              {
+                "standardInput": "0 0",
+                "outputs": [
+                  "Fichas: 0\n"
+                ],
+                "explanation": "Sin lotes ni fichas sueltas, el total es 0. La función debe poder calcularlo sin depender de una llamada anterior."
+              },
+              {
+                "standardInput": "0 2",
+                "outputs": [
+                  "Fichas: 2\n"
+                ],
+                "explanation": "No hay lotes, pero sí 2 fichas sueltas: el total debe ser 2. Si obtienes 0, revisa si estás ignorando el segundo dato o multiplicándolo por la cantidad de lotes."
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Fichas: 3\n"
+                ],
+                "explanation": "Un lote aporta 3 fichas y no hay ninguna suelta. El total debe ser 3; no se añade una ficha fija en todas las llamadas."
+              },
+              {
+                "standardInput": "6 2",
+                "outputs": [
+                  "Fichas: 20\n"
+                ],
+                "explanation": "Los 6 lotes aportan 18 fichas y se añaden 2 sueltas. El total debe ser 20. Es el extremo superior del dominio de esta práctica."
+              },
+              {
+                "standardInput": "6 0",
+                "outputs": [
+                  "Fichas: 18\n"
+                ],
+                "explanation": "Los mismos 6 lotes, ahora sin fichas sueltas, dan 18. Este caso comprueba que la segunda entrada cambia el total sin cambiar la regla de la función."
+              }
+            ]
+          }
+        },
+        {
+          "type": "order_code",
+          "language": "cpp",
+          "question": "La batería comprueba el comportamiento para las entradas indicadas. Ahora ordena estos cuatro fragmentos de una implementación posible: inclusión, definición completa de preparar, comienzo de main con lectura de datos y, por último, llamada y presentación. Aquí se comprueba la organización del programa.",
+          "fragments": [
+            "    const int total = preparar(lotes, extra);\n    std::cout << \"Fichas: \" << total << '\\n';\n    return 0;\n}",
+            "#include <iostream>",
+            "int main() {\n    int lotes{0};\n    int extra{0};\n    std::cin >> lotes >> extra;",
+            "int preparar(int lotes, int extra) {\n    return lotes * 3 + extra;\n}"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            2,
+            0
+          ],
+          "explanation": "preparar queda definida antes de que main la llame. La lectura proporciona valores a lotes y extra antes de usarlos como argumentos. La función calcula y devuelve el total; la llamada inicializa total en main, y std::cout muestra ese valor. La función no imprime por su cuenta."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: calcular con dos argumentos y presentar el resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta implementación, preparar multiplica la cantidad de lotes por las 3 fichas de cada lote y después añade las fichas sueltas. Con 2 1, calcula 6 y luego 7. Con 0 2, los lotes no aportan fichas, pero las sueltas siguen dando 2. Por eso multiplicar juntos ambos datos no cumpliría el objetivo.\n\nEl cuerpo utiliza sus parámetros; no conserva una cantidad fija tomada de una prueba. main aporta los valores leídos y utiliza el resultado para la salida. Son válidos otros cálculos equivalentes que respeten la interfaz, el dominio y la separación entre calcular y mostrar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar(int lotes, int extra) {\n    return lotes * 3 + extra;\n}\n\nint main() {\n    int lotes{0};\n    int extra{0};\n    std::cin >> lotes >> extra;\n    const int total = preparar(lotes, extra);\n    std::cout << \"Fichas: \" << total << '\\n';\n    return 0;\n}\n"
         }
       ]
     }
@@ -541,7 +642,14 @@
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0003",
-          "block_0005_0004"
+          "block_0005_0004",
+          "construccion_lotes_y_sueltas_titulo",
+          "construccion_lotes_y_sueltas_consigna",
+          "construccion_lotes_y_sueltas_editor",
+          "construccion_lotes_y_sueltas_orden",
+          "construccion_lotes_y_sueltas_referencia_titulo",
+          "construccion_lotes_y_sueltas_referencia_explicacion",
+          "construccion_lotes_y_sueltas_referencia_codigo"
         ]
       }
     ],
@@ -1012,7 +1120,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "construccion_lotes_y_sueltas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "construccion_lotes_y_sueltas_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "construccion_lotes_y_sueltas_editor",
+        "sha256": "fa1da5fae87fb4ba98a28cc0b23f123a0151c263c94e39876db18b3a8f5e5e63",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "construccion_lotes_y_sueltas_orden",
+        "sha256": "de50975902285f3bcd0d947a2a7a14e0f8b6837bc4bf073e6047d574be034d12",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "construccion_lotes_y_sueltas_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "construccion_lotes_y_sueltas_referencia_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "construccion_lotes_y_sueltas_referencia_codigo",
+        "sha256": "79c540d575e058757028e50183a4031791c974f2a2c81069c51a694023df2f96",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1048,8 +1220,1716 @@
         "id": "block_0000_0003",
         "beforeSha256": "ecde4d9c1d21cf9b694061602c8e409805c43e0c0252f6e6b00a7f629a60e579",
         "afterSha256": "04da7632afbcde3e50827c18a4e140e428b8ca2dc34c7e3ff18e606711c5e802"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "04da7632afbcde3e50827c18a4e140e428b8ca2dc34c7e3ff18e606711c5e802",
+        "afterSha256": "4e61b3bf9bda75484d59d221efa30316789ad5a05182ffe466ca06e3b45e4d47"
       }
     ]
   },
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "08af0b27b5c40b1acdd732761640cd87e9bb6d4edaa24d3f04ac3cac04ebacc0",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "dec60989a8a6784b09a50d88f1dc92a7559ed5677b76078b28fb8d107323fa48",
+        "spans": [
+          {
+            "start": 382,
+            "end": 413,
+            "text": "(Stroustrup, 2024, sección 3.5)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "045e23250a11841588889d1f98063fca91b5d11b000dc8bb6e887e9b43908460",
+        "spans": [
+          {
+            "start": 3,
+            "end": 26,
+            "text": "int doble(int cantidad)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 74,
+            "text": "doble",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 101,
+            "text": "int cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 131,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 226,
+            "text": "doble(fichas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 234,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 278,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 297,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 333,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 339,
+            "end": 340,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 367,
+            "text": "cantidad * 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 378,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 387,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 416,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 437,
+            "end": 446,
+            "text": "resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 453,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 465,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 538,
+            "end": 556,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "1fc656032ce9a85d8a6a3ee287abe83bba361b97c686d0df2b206006c48f35c7",
+        "spans": [
+          {
+            "start": 14,
+            "end": 27,
+            "text": "doble(fichas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 53,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "0e2d6acf6692b620cdb4c15df2a6cb6c1f6cba955c6c0145fec83338ff2cd302",
+        "spans": [
+          {
+            "start": 50,
+            "end": 58,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "133c30bec950eaf6d385f5ff7f2c25d4fd6a2a4403162941b65d7b5bffc14095",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "2da0413944e9003ce78e4de052cea53cf55c891e112c09e9fc87d0a095d9f684",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "3db0d06a9a86c15e12d353cfb2137b89bc54d7658f19b93492ff6b062847bea2",
+        "spans": [
+          {
+            "start": 19,
+            "end": 25,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "1a2a01071028a09907336902218e057b0453f77480fbc916b4639e33c4c63352",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "799b7eaf84769d52b7c555972830a558f7ac3dc749e5d27da32c2e104188ec5c",
+        "spans": [
+          {
+            "start": 39,
+            "end": 42,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 88,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 295,
+            "text": "(Stroustrup, 2024, sección 3.5)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "1c25f13f03ae09bb36cf477c86857fc8efd1b7834629c10861ebcd82590c1624",
+        "spans": [
+          {
+            "start": 53,
+            "end": 54,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 59,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "f6d5e65d1b29411779f91f1caa80f13aa1078dd43cd2edcd3ac1e7764737c87f",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 40,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 85,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "2dbefb5175e2b48390cec48365ad6dcacff2b8f5d53fdba8fcc5cb199f5f6f2b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "ece4aadfab1e7d112f38ba35f54063a5910af4cdf7ce520d64cb9a3e591311e8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "por_tres(5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 62,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "5281919501f95cdd22f2b0119060ac73944f05781867d488208d7a6a8681d8a3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 30,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "bdd7e883c0aed1c2e5d574c3070ece6944fae53f356da6de9b4db7ab5f715acc",
+        "spans": [
+          {
+            "start": 146,
+            "end": 150,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 211,
+            "end": 244,
+            "text": "(Stroustrup, 2024, sección 7.4.1)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 274,
+            "text": "restantes(total, usados)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 285,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 324,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/question",
+        "sourceSha256": "bc0ac59d9a7c7872fdcd8d2f6adf498b2f6663026911c644e88dbca4cb452f01",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/explanation",
+        "sourceSha256": "4a93c875e8be0951e5f0a7777a4cafe02570783bcb9a50e5480ea6aee05ee045",
+        "spans": [
+          {
+            "start": 3,
+            "end": 9,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 36,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 56,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 63,
+            "text": "usados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 93,
+            "text": "14 - 5",
+            "role": "math"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "3dcbb90fb705e8701fbd846b19b1b7fac7c49a5699d571bc005eca0c36dd97eb",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 37,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 43,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "usados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 85,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "d15c188584c5cc7b670ffe21df8e7f31e0b201a74088fcac36b3e7ad256e179c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "d7974d100891979facf4c71f71d3468dd5433a07a11f5399ea0369636f5eec1a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "restantes(12)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "d811fbb014be3ace27289956ad481bc9d04063bb07499b8b68994757d0d82cfb",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "restantes(12, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "0effd5b9263add2690e0c0d314cb87cf79a1b68fc8dfc259afb9f9b07637c35a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "restantes(4, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "2445488a70f0d4ad686949b8f4c6a3467395bfaa68191e728fc200e257c8be7c",
+        "spans": [
+          {
+            "start": 117,
+            "end": 118,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 123,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 137,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 145,
+            "text": "usados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 167,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "f180d702c74bbe667c072f5dc968272991c0406ef6affdfd7579fcafdfe507c4",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "942b2b95ca73660d6b4826748752429208d9284fccf1a0e4f0f5aa17d1705e86",
+        "spans": [
+          {
+            "start": 45,
+            "end": 61,
+            "text": "cantidad * 2 + 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 111,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 129,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 137,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 157,
+            "text": "7 11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/question",
+        "sourceSha256": "9a9cebd77d6458f5f7789b19439477a388d31b40d6911d5c255b231a2fc7f869",
+        "spans": [
+          {
+            "start": 19,
+            "end": 26,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 51,
+            "text": "separadores(0)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/explanation",
+        "sourceSha256": "fed11cb1af96eb9eb0bcabbd7824c687f40c845584c003086e9d1dcd2cc003ce",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 36,
+            "text": "0 * 2 + 1",
+            "role": "math"
+          },
+          {
+            "start": 41,
+            "end": 48,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 72,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 85,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/options/0",
+        "sourceSha256": "1935be65d9b16ff28869b751f1485159ad833bf95a791b4350603ec048655dc5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "1 11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/options/1",
+        "sourceSha256": "ee3fc139cf9f1cd954b539f32ad8fb159ad06f391c906d59899e9faf0f05db7b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "0 11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/options/2",
+        "sourceSha256": "020a7c91e30725bb191818987340dec6040aff93923840de685e1e1d7b3d071a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "1 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "b03f47dd6565be311cdee517c0979c51f0df8dee6f9e61096552982471cd2f2d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "e6dae92f3b0c6f8d914e6533ff165dbd8597bd0c307a35e7afb93cf5393b15f7",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "bf0a9df1e7156034d69316bbf308f97b3835c7a63c0ab39efd534dce73a7ab1a",
+        "spans": [
+          {
+            "start": 21,
+            "end": 27,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 55,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 86,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 109,
+            "text": "1 11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 115,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 125,
+            "text": "17 11",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "3558bb892323b3811e775a28487fb4789e245329903350cf625c82df18f04d0f",
+        "spans": [
+          {
+            "start": 32,
+            "end": 35,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/text",
+        "sourceSha256": "a4569b1925e5fa98568e735c8ea211c576115544036e6ff367ff3696e54266ef",
+        "spans": [
+          {
+            "start": 36,
+            "end": 52,
+            "text": "cantidad * 2 + 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 96,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 104,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 180,
+            "text": "8 12",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "9a90b663f00dd6320d2206f0be7f9de681a9234906f26583029eed1d96738848",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "e89ef7869420e89b0657db84ede54a371658b8303d411fb485607a8a2fd42fa2",
+        "spans": [
+          {
+            "start": 63,
+            "end": 67,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "2b44063fde386531f949797ae72078bd1f1cf2bab3f000ff586c43c94d4aaa72",
+        "spans": [
+          {
+            "start": 20,
+            "end": 22,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 28,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "ef1a4a4c78a1918b8483aa331a37b1fc3bebdcb720cf743c8bc25cadcc5e9129",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "5738a55679003efdaf4bda1842ebfa5ef5b90bcfa2545a6fb7278e25d75e35d0",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/0",
+        "sourceSha256": "94e05de8a7de1d7eeaa8316350ae238ebdc08cd72ef02fe61f71796dde588ed3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/1",
+        "sourceSha256": "81a0d8fa9c3cd1546a223f28782f772a48aeded5a0a7cc73350e040c8d463db9",
+        "spans": [
+          {
+            "start": 50,
+            "end": 54,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/2",
+        "sourceSha256": "3b183a2618dd95bcfcb32dbf89e53db5cdc7b4942a6a46213f755df49d582d49",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "0fea7897d63cbf5df91c5e9d0405e154ac47cef0ba31e355aa0f6c888b0f2f72",
+        "spans": [
+          {
+            "start": 148,
+            "end": 152,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "6e4550954437061d6acc29b956839f30b6b1c3331f320f5d774e6e5ba24428f4",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "1178c25efb2d90e39d56827753b3c11de322b98c76acb88882bb98a6a4a2c114",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "04f56dcf515109704648c3a50cdcae9e96f47f6163b770d99e47b167b4c68744",
+        "spans": [
+          {
+            "start": 47,
+            "end": 49,
+            "text": "+1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 91,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 117,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 159,
+            "text": "1 11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 167,
+            "text": "17 11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 184,
+            "text": "+2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 211,
+            "end": 214,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 225,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "8 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 273,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 277,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 296,
+            "text": "18 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 305,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 406,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 409,
+            "end": 411,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "9ade09f6bdcb3d3d3a81639f7f26336766a4e0efc8aab309749e5137120b9fdd",
+        "spans": [
+          {
+            "start": 80,
+            "end": 81,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 85,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 350,
+            "text": "una sola",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_titulo",
+        "path": "/text",
+        "sourceSha256": "4fb5bc51ad2cda1c63a2f1e7ae14b0e8be84d7135f40abdfa9547967cb621f67",
+        "spans": []
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_consigna",
+        "path": "/text",
+        "sourceSha256": "bf11f08125578bff86983c9599c9441a9164650e7bceacdf0105d549e4238ae6",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 122,
+            "text": "preparar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 208,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 223,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 253,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 279,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 291,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 383,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 416,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 419,
+            "end": 420,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 447,
+            "end": 448,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 452,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 473,
+            "end": 475,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 502,
+            "end": 505,
+            "text": "2 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 526,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 552,
+            "end": 553,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 578,
+            "text": "Fichas: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 619,
+            "end": 622,
+            "text": "0 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 624,
+            "end": 627,
+            "text": "0 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 629,
+            "end": 632,
+            "text": "1 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 637,
+            "text": "6 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 640,
+            "end": 643,
+            "text": "6 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "4e066259eb9775c8e74124ff3f6b5d97e11a84c0cb6af107d705da298acb5de5",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 21,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "2d9bf2385c934e70133b922777af7a3f851a34c951f9a392545d97e04ef67f1c",
+        "spans": [
+          {
+            "start": 41,
+            "end": 42,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "ed1c1b5fc2f7168f052bf2d99d18429fe5a9062997c19157f35b3e830e706311",
+        "spans": [
+          {
+            "start": 22,
+            "end": 23,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 59,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "9dcd9bdb56f6effd9fab517934d96e2d66ab67c10b0f6cba538fb8745a1e9ef6",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "2751b758d9a33a68cc40fa3b42d0c5e4409334d59650c4581bdee99574914fe2",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 22,
+            "text": "18",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 73,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "119eda2093caffcf065493d21790bde73a055c330a3a53df5ef01a1982937441",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "text": "18",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_orden",
+        "path": "/question",
+        "sourceSha256": "dbaa7b6bfe253bab8917a912f344e0102d7e4b4fb0efe72780d5b876188f1973",
+        "spans": [
+          {
+            "start": 87,
+            "end": 93,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 178,
+            "text": "preparar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 196,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_orden",
+        "path": "/explanation",
+        "sourceSha256": "5c6117fadac44c1f1250404fc27741f58377f7c470a8e8f75350bece80ed233c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "preparar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 41,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 90,
+            "text": "lotes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "extra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 200,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 208,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 221,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "a12c89a0d68f52947d3c630f3201bb5d714980f1d33a320d187730d2d69435bf",
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "construccion_lotes_y_sueltas_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "bf18ed83ec4a82f76c1f7a5026c20f371730893a6b8278d647d5104bc2c123a6",
+        "spans": [
+          {
+            "start": 24,
+            "end": 32,
+            "text": "preparar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 138,
+            "text": "2 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 168,
+            "text": "0 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 388,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "4f22202d4151a16b469a803c7346fe03fdf01e1eff826762c825a34739f3d21a",
+        "spans": []
+      }
+    ]
+  },
+  "activityAfter": [
+    {
+      "activity": "construccion_lotes_y_sueltas_editor",
+      "requires": [
+        "block_0003_0010"
+      ]
+    },
+    {
+      "activity": "construccion_lotes_y_sueltas_orden",
+      "requires": [
+        "construccion_lotes_y_sueltas_editor"
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "construccion_lotes_y_sueltas_editor",
+      "blocks": [
+        "construccion_lotes_y_sueltas_referencia_titulo",
+        "construccion_lotes_y_sueltas_referencia_explicacion",
+        "construccion_lotes_y_sueltas_referencia_codigo"
+      ]
+    }
+  ]
 }

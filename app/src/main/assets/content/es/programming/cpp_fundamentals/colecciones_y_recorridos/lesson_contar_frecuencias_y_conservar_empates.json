@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La frecuencia de un valor es la cantidad de observaciones iguales a él en la colección completa. Con {4, -2, 4, 4, -2}, hay cinco observaciones, dos valores distintos, frecuencia tres para 4 y frecuencia dos para -2. No contamos sólo coincidencias entre vecinos del orden de llegada: las dos apariciones de -2 pertenecen al mismo valor aunque estén separadas."
+          "text": "La frecuencia de un valor es la cantidad de observaciones iguales a él en la colección completa (Stroustrup, 2024). Con {4, -2, 4, 4, -2}, hay cinco observaciones, dos valores distintos, frecuencia tres para 4 y frecuencia dos para -2. No contamos sólo coincidencias entre vecinos del orden de llegada: las dos apariciones de -2 pertenecen al mismo valor aunque estén separadas."
         },
         {
           "type": "paragraph",
@@ -79,7 +79,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para ampliar un grupo sólo puedes leer ordenados[fin] si fin < ordenados.size(). La condición fin < ordenados.size() && ordenados[fin] == ordenados[inicio] combina esa guarda con la igualdad; su orden importa. inicio también debe pertenecer a la colección. Si fin llega a size(), el último grupo está completo sin que exista un elemento en fin. Después de contar y publicar el grupo, el siguiente inicio es ese fin; así el recorrido avanza."
+          "text": "Para ampliar un grupo sólo puedes leer ordenados[fin] si fin < ordenados.size(). La condición fin < ordenados.size() && ordenados[fin] == ordenados[inicio] combina esa guarda con la igualdad. Primero se evalúa fin < ordenados.size(); si es falsa, && no evalúa la comparación de elementos y no se lee ordenados[fin] (Köppe et al., 2023). inicio también debe pertenecer a la colección. Si fin llega a size(), el último grupo está completo sin que exista un elemento en fin. Después de contar y publicar el grupo, el siguiente inicio es ese fin; así el recorrido avanza."
         },
         {
           "type": "multiple_choice",
@@ -95,7 +95,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Usaremos std::size_t para posiciones y cantidades que se obtienen de size(); su cabecera es <cstddef>, ya usada en recorridos anteriores. En vacío no comienza ningún grupo: no se lee el primer elemento y los resúmenes de cantidad quedan en cero. Con una observación sí hay un grupo de frecuencia uno."
+          "text": "Usaremos std::size_t para posiciones y cantidades que se obtienen de size(); su cabecera es <cstddef>, ya usada en recorridos anteriores (Köppe et al., 2023). En vacío no comienza ningún grupo: no se lee el primer elemento y los resúmenes de cantidad quedan en cero. Con una observación sí hay un grupo de frecuencia uno."
         }
       ]
     },
@@ -299,7 +299,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Además de la tabla, N, Distintas, Suma y Original, muestra Maxima y Mayores: todas las etiquetas cuya frecuencia alcanza la máxima, en el orden de la copia ordenada y una sola vez cada una. En vacío Maxima es cero y no hay candidatos. Si todos los valores aparecen una vez, todos alcanzan la máxima uno y deben figurar. Ésta es la convención de nuestro informe; esa decisión de empates no es la única definición estadística posible de moda."
+          "text": "Además de la tabla, N, Distintas, Suma y Original, muestra Maxima y Mayores: todas las etiquetas cuya frecuencia alcanza la máxima, en el orden de la copia ordenada y una sola vez cada una. En vacío Maxima es cero y no hay candidatos. Si todos los valores aparecen una vez, todos alcanzan la máxima uno y deben figurar. Un valor que alcanza la mayor frecuencia se denomina moda (Stroustrup, 2024). Ésta es la convención de nuestro informe; esa decisión de empates no es la única definición estadística posible de moda."
         },
         {
           "type": "paragraph",
@@ -327,6 +327,141 @@
         {
           "type": "paragraph",
           "text": "Pulsa «Compilar, ejecutar y comprobar» para el caso inicial. Cada etiqueta del original debe conservar su orden y sus repeticiones. La igualdad `Suma = N` comprueba el conteo de observaciones. Los casos con empate o etiqueta vacía aparecen después en un editor independiente del mismo procedimiento."
+        },
+        {
+          "type": "heading",
+          "text": "Construcción propia de frecuencias y candidatos con otras etiquetas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa este editor con tu propio informe de frecuencias de etiquetas. La lectura ya construye el vector original: el primer entero indica la cantidad de observaciones, de cero a veinte; después se leen esas etiquetas. El símbolo ~ en Entrada representa una etiqueta vacía y la lectura lo convierte en una cadena vacía antes de guardarla; ~ no es una etiqueta del informe. Usa etiquetas de letras minúsculas sin acentos, además de la vacía.\n\nAñade tu agrupación y la selección de todos los candidatos máximos después del bucle de lectura. Publica una fila por cada valor distinto, en orden lexicográfico; conserva el orden de llegada y las repeticiones en Original. Los casos siguientes fijan todas las líneas de salida; Mayores contiene una vez cada etiqueta que alcanza la frecuencia máxima."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin observaciones\nEntrada: `0`.\n\nSalida exacta:\n`Frecuencias:`\n`Maxima:0`\n`Mayores:`\n`N:0`\n`Distintas:0`\n`Suma:0`\n`Original:`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una observación con etiqueta vacía\nEntrada: `1 ~`.\n\nSalida exacta:\n`Frecuencias:`\n`[]=1`\n`Maxima:1`\n`Mayores:[]`\n`N:1`\n`Distintas:1`\n`Suma:1`\n`Original:[]`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una observación con texto\nEntrada: `1 roble`.\n\nSalida exacta:\n`Frecuencias:`\n`[roble]=1`\n`Maxima:1`\n`Mayores:[roble]`\n`N:1`\n`Distintas:1`\n`Suma:1`\n`Original:[roble]`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Todos los valores alcanzan la misma frecuencia\nEntrada: `3 valle ala rio`.\n\nSalida exacta:\n`Frecuencias:`\n`[ala]=1`\n`[rio]=1`\n`[valle]=1`\n`Maxima:1`\n`Mayores:[ala][rio][valle]`\n`N:3`\n`Distintas:3`\n`Suma:3`\n`Original:[valle][ala][rio]`"
+        },
+        {
+          "type": "paragraph",
+          "text": "El último grupo añade un candidato empatado\nEntrada: `5 rio faro torre rio torre`.\n\nSalida exacta:\n`Frecuencias:`\n`[faro]=1`\n`[rio]=2`\n`[torre]=2`\n`Maxima:2`\n`Mayores:[rio][torre]`\n`N:5`\n`Distintas:3`\n`Suma:5`\n`Original:[rio][faro][torre][rio][torre]`"
+        },
+        {
+          "type": "paragraph",
+          "text": "El último grupo supera a los candidatos anteriores\nEntrada: `7 faro faro patio patio valle valle valle`.\n\nSalida exacta:\n`Frecuencias:`\n`[faro]=2`\n`[patio]=2`\n`[valle]=3`\n`Maxima:3`\n`Mayores:[valle]`\n`N:7`\n`Distintas:3`\n`Suma:7`\n`Original:[faro][faro][patio][patio][valle][valle][valle]`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepara cada entrada en Entrada y pulsa «Compilar, ejecutar y comprobar». Mantén el mismo código para las seis pruebas. Cada línea, incluida la última, debe terminar con un salto de línea; no añadas líneas vacías, mensajes de petición ni espacios adicionales. En la entrada sin observaciones se muestran los rótulos y los resúmenes, aunque no haya filas de frecuencia. Puedes separar los datos de Entrada con espacios o saltos de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintas:0\nSuma:0\nOriginal:\n"
+                ],
+                "explanation": "No hay grupos ni candidatos. Maxima vale cero; N, Distintas y Suma también valen cero. Original no contiene observaciones. El informe conserva sus encabezados y rótulos, aunque no publique filas de frecuencia.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 ~",
+                "outputs": [
+                  "Frecuencias:\n[]=1\nMaxima:1\nMayores:[]\nN:1\nDistintas:1\nSuma:1\nOriginal:[]\n"
+                ],
+                "explanation": "La etiqueta vacía es una observación real. Su fila es []=1 y Mayores:[] contiene un candidato. N, Distintas y Suma valen uno; Original:[] conserva esa observación. Este caso distingue una etiqueta vacía de una colección sin observaciones.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 roble",
+                "outputs": [
+                  "Frecuencias:\n[roble]=1\nMaxima:1\nMayores:[roble]\nN:1\nDistintas:1\nSuma:1\nOriginal:[roble]\n"
+                ],
+                "explanation": "roble aparece una vez y alcanza la frecuencia máxima uno. Mayores:[roble] conserva ese único candidato; N, Distintas y Suma valen uno. El caso comprueba que el grupo con una sola observación también se publica.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 valle ala rio",
+                "outputs": [
+                  "Frecuencias:\n[ala]=1\n[rio]=1\n[valle]=1\nMaxima:1\nMayores:[ala][rio][valle]\nN:3\nDistintas:3\nSuma:3\nOriginal:[valle][ala][rio]\n"
+                ],
+                "explanation": "Las tres etiquetas aparecen una vez cada una. Todas alcanzan la máxima uno y deben figurar en Mayores:[ala][rio][valle], en orden lexicográfico. Original:[valle][ala][rio] conserva otro orden. No tener repeticiones no elimina los candidatos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "5 rio faro torre rio torre",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[rio]=2\n[torre]=2\nMaxima:2\nMayores:[rio][torre]\nN:5\nDistintas:3\nSuma:5\nOriginal:[rio][faro][torre][rio][torre]\n"
+                ],
+                "explanation": "faro tiene frecuencia uno; rio y torre tienen frecuencia dos. El último grupo, torre, empata con rio y debe incorporarse sin borrar ese candidato: Mayores:[rio][torre]. Publicar el último grupo conserva también N:5 y Suma:5.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7 faro faro patio patio valle valle valle",
+                "outputs": [
+                  "Frecuencias:\n[faro]=2\n[patio]=2\n[valle]=3\nMaxima:3\nMayores:[valle]\nN:7\nDistintas:3\nSuma:7\nOriginal:[faro][faro][patio][patio][valle][valle][valle]\n"
+                ],
+                "explanation": "faro y patio tienen frecuencia dos; valle tiene frecuencia tres. Los dos candidatos anteriores dejan de alcanzar la máxima actual y sólo debe quedar Mayores:[valle]. La tabla conserva los tres grupos y Original conserva todas las observaciones; reemplazar candidatos no borra datos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -689,6 +824,122 @@
             ]
           },
           "initialStandardInput": "6 4 1 4 2 1 2"
+        },
+        {
+          "type": "heading",
+          "text": "Construcción propia: reemplazar candidatos y conservar empates"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa este editor con tu propio informe numérico de frecuencias y candidatos. El código inicial sólo lee la cantidad, de cero a veinte, y prepara el vector original con esos enteros escritos válidamente. Añade tu agrupación y el informe después del bucle de lectura. Los valores se comparan y se cuentan; no se suman ni se usan como posiciones.\n\nCada grupo se publica en orden numérico. Mayores debe conservar todos los valores que alcanzan la frecuencia máxima actual, una sola vez cada uno. Cuando una frecuencia nueva supera la máxima anterior, los candidatos que ya no la alcanzan no deben permanecer en el informe. Original conserva el orden de llegada y cada valor seguido de punto y coma. Los casos siguientes fijan todas las líneas de salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un máximo nuevo reemplaza dos candidatos empatados\nEntrada: `7 1 1 2 2 4 4 4`.\n\nSalida exacta:\n`Frecuencias:`\n`[1]=2`\n`[2]=2`\n`[4]=3`\n`Maxima:3`\n`Mayores:[4]`\n`N:7`\n`Distintos:3`\n`Suma:7`\n`Original:1;1;2;2;4;4;4;`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Todos los grupos permanecen empatados\nEntrada: `6 4 1 4 2 1 2`.\n\nSalida exacta:\n`Frecuencias:`\n`[1]=2`\n`[2]=2`\n`[4]=2`\n`Maxima:2`\n`Mayores:[1][2][4]`\n`N:6`\n`Distintos:3`\n`Suma:6`\n`Original:4;1;4;2;1;2;`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores mayores no son los más frecuentes\nEntrada: `4 1 1 5 9`.\n\nSalida exacta:\n`Frecuencias:`\n`[1]=2`\n`[5]=1`\n`[9]=1`\n`Maxima:2`\n`Mayores:[1]`\n`N:4`\n`Distintos:3`\n`Suma:4`\n`Original:1;1;5;9;`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin observaciones ni candidatos\nEntrada: `0`.\n\nSalida exacta:\n`Frecuencias:`\n`Maxima:0`\n`Mayores:`\n`N:0`\n`Distintos:0`\n`Suma:0`\n`Original:`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una observación negativa\nEntrada: `1 -7`.\n\nSalida exacta:\n`Frecuencias:`\n`[-7]=1`\n`Maxima:1`\n`Mayores:[-7]`\n`N:1`\n`Distintos:1`\n`Suma:1`\n`Original:-7;`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba las cinco entradas con el mismo código, cambiando sólo Entrada y pulsando «Compilar, ejecutar y comprobar». La tabla, los candidatos y los resúmenes deben corresponder a cada colección. Termina cada línea, incluida la última, con un salto de línea. No añadas líneas vacías, mensajes de petición ni espacios adicionales. Puedes separar los datos de Entrada con espacios o saltos de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 1 1 2 2 4 4 4",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[2]=2\n[4]=3\nMaxima:3\nMayores:[4]\nN:7\nDistintos:3\nSuma:7\nOriginal:1;1;2;2;4;4;4;\n"
+                ],
+                "explanation": "Los grupos de uno y dos tienen frecuencia dos y empatan antes del grupo final. El valor cuatro aparece tres veces, establece una máxima mayor y deja como único candidato Mayores:[4]. Conservar [1][2] junto a [4] publicaría candidatos que ya no alcanzan esa máxima. N:7 y Suma:7 conservan todas las observaciones.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "6 4 1 4 2 1 2",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[2]=2\n[4]=2\nMaxima:2\nMayores:[1][2][4]\nN:6\nDistintos:3\nSuma:6\nOriginal:4;1;4;2;1;2;\n"
+                ],
+                "explanation": "Cada grupo tiene frecuencia dos: los tres valores alcanzan la misma máxima. Mayores:[1][2][4] conserva todos los empatados en orden numérico, mientras Original:4;1;4;2;1;2; conserva el orden de llegada. Una igualdad de frecuencias no elimina los candidatos anteriores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4 1 1 5 9",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[5]=1\n[9]=1\nMaxima:2\nMayores:[1]\nN:4\nDistintos:3\nSuma:4\nOriginal:1;1;5;9;\n"
+                ],
+                "explanation": "El valor uno aparece dos veces; cinco y nueve aparecen una vez cada uno. La máxima sigue siendo dos y el informe conserva Mayores:[1]. Comparar las magnitudes en lugar de sus frecuencias elegiría otro resultado y no respondería la consigna.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintos:0\nSuma:0\nOriginal:\n"
+                ],
+                "explanation": "La colección vacía no produce grupos ni candidatos. Maxima, N, Distintos y Suma valen cero; Original queda vacío. El encabezado y los rótulos se presentan sin inventar un valor ni consultar un elemento inexistente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -7",
+                "outputs": [
+                  "Frecuencias:\n[-7]=1\nMaxima:1\nMayores:[-7]\nN:1\nDistintos:1\nSuma:1\nOriginal:-7;\n"
+                ],
+                "explanation": "El único valor, -7, tiene frecuencia uno y es el candidato de Mayores:[-7]. Su signo no impide compararlo ni contar su aparición. N:1 y Suma:1 cuentan observaciones; no suman ni usan -7 como posición.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "heading",
@@ -1081,7 +1332,17 @@
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
-          "block_0005_0006"
+          "block_0005_0006",
+          "frecuencias_etiquetas_construccion_multicaso_titulo",
+          "frecuencias_etiquetas_construccion_multicaso_consigna",
+          "frecuencias_etiquetas_construccion_multicaso_caso_vacio",
+          "frecuencias_etiquetas_construccion_multicaso_caso_etiqueta_vacia",
+          "frecuencias_etiquetas_construccion_multicaso_caso_singleton",
+          "frecuencias_etiquetas_construccion_multicaso_caso_todos_empatados",
+          "frecuencias_etiquetas_construccion_multicaso_caso_empate_final",
+          "frecuencias_etiquetas_construccion_multicaso_caso_maximo_nuevo_final",
+          "frecuencias_etiquetas_construccion_multicaso_comprobacion",
+          "frecuencias_etiquetas_construccion_multicaso_editor"
         ]
       },
       {
@@ -1117,6 +1378,15 @@
           "block_0007_0008",
           "block_0007_0009",
           "block_0007_0010",
+          "maximos_numericos_construccion_multicaso_titulo",
+          "maximos_numericos_construccion_multicaso_consigna",
+          "maximos_numericos_construccion_multicaso_caso_maximo_nuevo_final",
+          "maximos_numericos_construccion_multicaso_caso_empate",
+          "maximos_numericos_construccion_multicaso_caso_maximo_inicial",
+          "maximos_numericos_construccion_multicaso_caso_vacio",
+          "maximos_numericos_construccion_multicaso_caso_singleton_negativo",
+          "maximos_numericos_construccion_multicaso_comprobacion",
+          "maximos_numericos_construccion_multicaso_editor",
           "frecuencias_numericas_referencia_titulo",
           "frecuencias_numericas_referencia_explicacion",
           "frecuencias_numericas_referencia_programa"
@@ -1999,6 +2269,177 @@
           "block": 2
         },
         "progressPage": "page_0007"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_caso_vacio",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_caso_etiqueta_vacia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_caso_singleton",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_caso_todos_empatados",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_caso_empate_final",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_caso_maximo_nuevo_final",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_comprobacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "sha256": "cd8e180dce5355a5e3139913a7f79147419c931fe718693db7693c24c74e63c8",
+        "storage": {
+          "page": 10,
+          "block": 9
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_caso_maximo_nuevo_final",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_caso_empate",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_caso_maximo_inicial",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_caso_vacio",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_caso_singleton_negativo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_comprobacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 7
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_editor",
+        "sha256": "a05e0bbdc7dbeaff54653a5e90169d4dc52196fc261460c76da53dd7fe1f2750",
+        "storage": {
+          "page": 11,
+          "block": 8
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -2051,6 +2492,26 @@
         "id": "block_0000_0005",
         "beforeSha256": "1cb0a86a52103ddf3b6ea9f4d51cde8c3a3d56f65ba817510f96518e844c694d",
         "afterSha256": "8c631285c95c9d3668a62804424cd711cb4eda191cb18c62e6159807a3b41f56"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "fa4e575845e3e729047aec0545d58be4064ee200cadc409b99b7d1add536ec30",
+        "afterSha256": "5965177ea1159f222c979bf192583893dc070c3540182ec1cb6ed753a65d0ea7"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "cbb448edb03341ac89c85a6ffabe3405eedacd9f8e7c8c5bea9589b31f156fac",
+        "afterSha256": "d0226b0d5de700ddcb878c76fb0a2796ff6c56283717bff636f8043e5815b555"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "62a38881fd458f8daf23ce7ee715e10a10f56d18cbfa9df8dbec9aafcf09c5be",
+        "afterSha256": "a7add5172b97ba390272ff16ca4d5a3471e9ca2ad4a5fff6119e282b68816487"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "aee6fdeae654cd73cd9899845a004b24ae112a69ba33162103344dd93bc89670",
+        "afterSha256": "2637f04d4c156488ce76231b5eccf1c67b2514cbc22b4173b07bd0f9ea71e204"
       }
     ]
   },
@@ -2065,7 +2526,7 @@
       ]
     },
     {
-      "activity": "block_0005_0005",
+      "activity": "frecuencias_etiquetas_construccion_multicaso_editor",
       "blocks": [
         "block_0006_0000",
         "block_0006_0001",
@@ -2074,7 +2535,7 @@
       ]
     },
     {
-      "activity": "block_0007_0010",
+      "activity": "maximos_numericos_construccion_multicaso_editor",
       "blocks": [
         "frecuencias_numericas_referencia_titulo",
         "frecuencias_numericas_referencia_explicacion",
@@ -2098,13 +2559,15 @@
     {
       "activity": "recuperacion_entrada_editor",
       "requires": [
-        "block_0005_0005"
+        "block_0005_0005",
+        "frecuencias_etiquetas_construccion_multicaso_editor"
       ]
     },
     {
       "activity": "block_0006_0009",
       "requires": [
-        "block_0005_0005"
+        "block_0005_0005",
+        "frecuencias_etiquetas_construccion_multicaso_editor"
       ]
     },
     {
@@ -2112,12 +2575,279 @@
       "requires": [
         "block_0005_0005"
       ]
+    },
+    {
+      "activity": "frecuencias_etiquetas_construccion_multicaso_editor",
+      "requires": [
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "maximos_numericos_construccion_multicaso_editor",
+      "requires": [
+        "block_0007_0010"
+      ]
     }
   ],
   "compilerPuzzlesRequired": true,
   "textSemantics": {
     "version": 1,
     "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "7297defc70f3f7d91daf3ae78f450147c75fae7e1acaf293f6f91bb195e2ec27",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "873ae51d8e6259474a964793bad20b0c9577fc0bf8e6fd7aee75714cade93a5a",
+        "spans": [
+          {
+            "start": 96,
+            "end": 114,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 137,
+            "text": "{4, -2, 4, 4, -2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 148,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 167,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 202,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 209,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 226,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 234,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 310,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 328,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "748f5f0eec51629d5cbaa2289a29d26c4975e5f1991b5d7a7c20c94966bc2700",
+        "spans": [
+          {
+            "start": 74,
+            "end": 78,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 182,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 266,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "be9eba921839c6e3e81dbd75beacc4208d62998ec5b694cc4f2af1b173caa5eb",
+        "spans": [
+          {
+            "start": 3,
+            "end": 18,
+            "text": "{5, 1, 5, 1, 5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "def6f8ba20aac4d0848425a9f6be9ba0d7e461b3e6b0690f14e70d9403dfb7a0",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "8914f7df77a6ba2fd6c9dbe8df418be4ff6c3b138018e955e15928943a4493ab",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 35,
+            "text": "cincos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 59,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "c81b6a673ccd4e93930d14df63c1dda0509b577135c14f994bdfa108e82895f5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "3f693f2b0b62258e9d102b02774947fd99b13e03e604aecb1c71162f23f765d5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 37,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "7f07bc0c2768cbfef642b350682d0f51681f460f60baf369d609885d0b0f75d7",
+        "spans": [
+          {
+            "start": 32,
+            "end": 34,
+            "text": "-7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "a72bfef01f694dc3e8547195cfb047900054defbee1b858e6ee2364bdb7f10bb",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "b32ae04225832a499b20698b77cf1004aeb65765da7f19540821c247ae73c8b6",
+        "spans": [
+          {
+            "start": 5,
+            "end": 7,
+            "text": "-7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "8dd1203f11e5c144e870b7f50efbeabfbc22f22316292b9df414aa69d5d81fec",
+        "spans": [
+          {
+            "start": 51,
+            "end": 53,
+            "text": "-7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "f28d620c4232d5a2d0c1a98ba5805b142a0ad5cfe7a7b63e570c40e719b47fbe",
+        "spans": []
+      },
       {
         "block": "block_0000_0005",
         "path": "/text",
@@ -2138,6 +2868,5414 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "582a79c425075c59fd9953fe813cd8fd3492a809874979dd51a300caa2a39da3",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "7597445002c1cc5a1710a2dd09a27b733c5d4bd60b2aca2140557ca8ca811ec5",
+        "spans": [
+          {
+            "start": 99,
+            "end": 112,
+            "text": "[inicio, fin)",
+            "role": "math"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 193,
+            "text": "{-4, -4, 2, 2, 2, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 212,
+            "text": "doses",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 225,
+            "text": "[2, 5)",
+            "role": "math"
+          },
+          {
+            "start": 244,
+            "end": 256,
+            "text": "fin - inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 272,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 277,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "d9789a87b49f346b8db5973ba29ea7bb8f6194d1059b646cd63806bfdae7b8c3",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 28,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "a335e842c73581fda36f0b61de5e58ecf069fe9e3ebf541aeea92f93f56c2f33",
+        "spans": [
+          {
+            "start": 29,
+            "end": 30,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "78d7d19cc6041b7bf4a8fc80d86c1a99dcb1b968122d7d555d43a3760322e3e8",
+        "spans": [
+          {
+            "start": 39,
+            "end": 53,
+            "text": "ordenados[fin]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 79,
+            "text": "fin < ordenados.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 155,
+            "text": "fin < ordenados.size() && ordenados[fin] == ordenados[inicio]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 232,
+            "text": "fin < ordenados.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 249,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 300,
+            "end": 314,
+            "text": "ordenados[fin]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 335,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 343,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 387,
+            "end": 390,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 405,
+            "text": "size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 467,
+            "end": 470,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 524,
+            "end": 530,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 538,
+            "end": 541,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "383285e6cac38d87fe9b54a8d6565b8ac49ddcc528bcb953894ab85c900ff46a",
+        "spans": [
+          {
+            "start": 22,
+            "end": 28,
+            "text": "[3, 6)",
+            "role": "math"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "1577624a077fc93a4fc642e761ce4eebd5997fdafd07544c616d60a6acd21121",
+        "spans": [
+          {
+            "start": 39,
+            "end": 45,
+            "text": "size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 77,
+            "text": "6 - 3",
+            "role": "math"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "8c977e01c8a0915c8b5a0c299863a8fc7a38cb7cd4533fb10fe5df78cb2f88fd",
+        "spans": [
+          {
+            "start": 5,
+            "end": 17,
+            "text": "ordenados[6]",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "49fede8114df5e15cebb6218f1071b9ed328e1bde81e5f91243fcf812a8e36d0",
+        "spans": [
+          {
+            "start": 23,
+            "end": 27,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "9c0e6ec32860b8096fe0f311ed418a2fdd2e486f10eab60b28f49eb06fac3e2b",
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 14,
+            "end": 19,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "b5e387e504cc0f06d5b57f5c8ad35e19125e2ee98f4181d6ab9b0c6fa752b1e3",
+        "spans": [
+          {
+            "start": 9,
+            "end": 20,
+            "text": "std::size_t",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 75,
+            "text": "size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 101,
+            "text": "<cstddef>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 157,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 265,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 274,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 296,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 320,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "7346a8155c44bf134c5a733588db542b31d3566246d28795bc5e21375f7a61eb",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "80a2257e31d5b1cb28986a6ffc96fbe12e6f45491b1474522fb7fcf118c036bc",
+        "spans": [
+          {
+            "start": 35,
+            "end": 84,
+            "text": "std::vector<int> original{-3, 8, -3, 0, 8, -3, 0}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 127,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 228,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 263,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 274,
+            "text": "Distintos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 280,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "120b3c0cc97055321150cc1ca03ddaebc00c06e0853a865422859b33144d7851",
+        "spans": [
+          {
+            "start": 23,
+            "end": 35,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "[-3]=3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 78,
+            "text": "[0]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 86,
+            "text": "[8]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 120,
+            "text": "N:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 133,
+            "text": "Distintos:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 141,
+            "text": "Suma:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 170,
+            "text": "Original:-3;8;-3;0;8;-3;0;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "90d61f16fe0cba1e4bac577d997e0bd54e3a03f502923aa04bd3b12e6fd980f6",
+        "spans": [
+          {
+            "start": 62,
+            "end": 64,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 88,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 162,
+            "text": "[inicio, fin)",
+            "role": "math"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "0b21cbc68aafb4c40f38652f0e7447abdd95599cc2df9dbdabadb3fb6e1ce7db",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/text",
+        "sourceSha256": "7e2f485e676fce52a174b8f5c2c6783afdb37dbfd51e9fcf1b9ea51ec385ed37",
+        "spans": [
+          {
+            "start": 32,
+            "end": 35,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 155,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "ad601034f6a808ec3c2c7444616152e9a9c0e0d82b3a5d281656507622dd4f12",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "f2748fe15d0afaa241495d706609a854477bd966d4c49d3f43b7439063349e30",
+        "spans": [
+          {
+            "start": 18,
+            "end": 38,
+            "text": "{6, -2, 6, 9, -2, 6}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "74a0ce6f10701d57cb124f24cae86a1edaf3dfdf003f300d2ecf2e08c4f91bfa",
+        "spans": [
+          {
+            "start": 35,
+            "end": 41,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 223,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 283,
+            "end": 295,
+            "text": "inicio = fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 309,
+            "end": 312,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "a5c000c0e36586a41ad5bd90a7ad84a838fae7fe1882f834969fb3fba0501085",
+        "spans": [
+          {
+            "start": 110,
+            "end": 111,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 147,
+            "text": "Distintos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 179,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "dc2984471d92b77f3d15f76acafc804f608fba7f4b88ac78f78cc48ae9fc68fd",
+        "spans": [
+          {
+            "start": 14,
+            "end": 26,
+            "text": "{0, 0, 0, 8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 67,
+            "text": "Distintos/Suma",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "ed4a1b9aa17d6ae22ccb8471939f16025a260697d43c4d1c9a840b343d8b2d82",
+        "spans": [
+          {
+            "start": 80,
+            "end": 83,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 104,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 110,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "163eeb0a2f67908efc03606ed87452ab2748f70c3216cbe7025307739d031eb5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Distintos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 20,
+            "text": "Suma:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "62dbfc2f2b62a3cf9819e5b7ddeb18447b43068b91589c50a1af809e4d7cad6e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Distintos:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 20,
+            "text": "Suma:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "a7804f520e9ac833cb52afe3b75e56ed50503c69f2a87d3dce8b4f352dacdf48",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Distintos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 20,
+            "text": "Suma:4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "d2123b928716aac6d74d8286251edb2f15f7b3cd3b84020571c56711408e815e",
+        "spans": [
+          {
+            "start": 44,
+            "end": 53,
+            "text": "{1, 1, 4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 70,
+            "text": "{1, 1, 4, 4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 82,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 183,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "183c16010d7dda88ed948b83dc362e2b2b1dfca368afdacebd7b940df6f7fdd3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "9b89ecf60c9b406e308104b5c75820e513c41d9a24f9b1a3b201341a465bfc42",
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 68,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 316,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 343,
+            "text": "1 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 352,
+            "text": "{7}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 365,
+            "text": "3 -1 -1 -1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 383,
+            "text": "{-1, -1, -1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 392,
+            "text": "2 4 -1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 405,
+            "text": "{4, -1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 419,
+            "text": "5 2 2 5 5 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 440,
+            "text": "{2, 2, 5, 5, 5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 461,
+            "text": "7 -3 8 -3 0 8 -3 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 491,
+            "text": "{-3, 8, -3, 0, 8, -3, 0}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "1a395cd0fd726aedfae2f50a141678cca7b055133f369d35af381df2a241bf29",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "868b5d37cbcd27310746ba7e0bb4939fa770b704dd6585d8e936c726d4dfff92",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "73240283bedf1c364422c1c5f5c65c3e47d732ef2ba859d653e294ca166937e3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "a837d519fbe29f875eae6b53eac8f2099dc185767b0c9ae6bb819a37bf674bae",
+        "spans": [
+          {
+            "start": 15,
+            "end": 19,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 50,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 57,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 101,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 110,
+            "text": "size()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "8d1b3ba613039d78a4bd6ab141cf15d64df7d4f35db8402bd1debdce5c9360b5",
+        "spans": [
+          {
+            "start": 32,
+            "end": 35,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "6bb47987f25d5ded86a1d173d8561186f5dcc32ab6f1118357224de6647b8bbd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/0",
+        "sourceSha256": "a4f31bc191df0a184832ff3039b20f572117bec00833b6891c57d9c90c8ee6de",
+        "spans": [
+          {
+            "start": 8,
+            "end": 30,
+            "text": "fin < ordenados.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 68,
+            "text": "ordenados[fin]",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/1",
+        "sourceSha256": "4d8060003d3377092189b5e226ba69c991e714f61b2ec513528152a2ca48204e",
+        "spans": [
+          {
+            "start": 17,
+            "end": 31,
+            "text": "ordenados[fin]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 57,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/options/2",
+        "sourceSha256": "5783f2c3b51d3b58db8e1c5a2b124a7459083163fa95b5fecc62197fba392de9",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "a18abaa0736081d4eba004b625d5a98d9d15b721428435b0ac533a191f39f2f4",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "175610547358e5c1bee98cba7bd94167dcc204bcd612ff6974f0337ac3839cf2",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 36,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 61,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 72,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 90,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "d1c43cab6d6ba35dd38bcabdf5940732543677b4e8cf5227bff3170568c8763c",
+        "spans": [
+          {
+            "start": 130,
+            "end": 131,
+            "text": "m",
+            "role": "math"
+          },
+          {
+            "start": 142,
+            "end": 147,
+            "text": "m - 1",
+            "role": "math"
+          },
+          {
+            "start": 272,
+            "end": 285,
+            "text": "[inicio, fin)",
+            "role": "math"
+          },
+          {
+            "start": 366,
+            "end": 369,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 416,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "e04c1a33de544ee3844a5fc5b046ee7a19bf12e57eae420aa9066862474850fb",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "f8bd39df0cf72da703d64b32266c01cb0ff78ddc6998781d7b6412f5ee9d529e",
+        "spans": [
+          {
+            "start": 38,
+            "end": 44,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 82,
+            "text": "std::vector<std::string>",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "130fff2978dc65e828244b98241a979603e6f362587d09837731c59742dc7be2",
+        "spans": [
+          {
+            "start": 20,
+            "end": 21,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 32,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 49,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 65,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 75,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 170,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 205,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 213,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 268,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 302,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 396,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "662ef9f3dcf74af341ec5794feadc956e18d56ccc1710585b7f2aa4b490f6b3b",
+        "spans": [
+          {
+            "start": 94,
+            "end": 97,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 351,
+            "text": "mayores = std::vector<std::string>{};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 395,
+            "text": "mayores",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "8ca64f49cb859eb3218ad542302b12f54dc7ddf0e04cd69772a0f7274295e903",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "Primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 65,
+            "text": "{\"patio\", \"sala\", \"patio\", \"faro\", \"sala\", \"patio\"}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 94,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "[faro]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "[patio]=3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 131,
+            "text": "[sala]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "Maxima:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 162,
+            "text": "Mayores:[patio]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 169,
+            "text": "N:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 184,
+            "text": "Distintas:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 194,
+            "text": "Suma:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 247,
+            "text": "Original:[patio][sala][patio][faro][sala][patio]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/text",
+        "sourceSha256": "3b5bdef7d8802a10cc211ba633c70ca0efdb875150c830ef1a858d570bf5249f",
+        "spans": [
+          {
+            "start": 145,
+            "end": 153,
+            "text": "Suma = N",
+            "role": "math"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "bee533651da6ead3b584cdaf49d2fcca1c2936eb3d3854376e9fb28692b01fe1",
+        "spans": [
+          {
+            "start": 15,
+            "end": 19,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "d2f2f409b774630e3857083a420f59adb522305fe0c34d0abc98220358b76dff",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "4b58c6c0ee8b1fa4bbf4672be497edb6ddc2fdc696b3928eb296d7fb13f2efd7",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 154,
+            "text": "mayores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 335,
+            "end": 343,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "a3e3792c5c00c2d12532c2e301c9e11404abad7d33c5a57dd8918b34f42ec6d3",
+        "spans": [
+          {
+            "start": 113,
+            "end": 114,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 122,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 195,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 254,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 351,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 446,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/question",
+        "sourceSha256": "2027bb69eb05930456dd93ec6e062555d2fc05e0ec7cdad07960ff1885e19852",
+        "spans": [
+          {
+            "start": 3,
+            "end": 40,
+            "text": "{\"ala\", \"ala\", \"ala\", \"zeta\", \"zeta\"}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 91,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/explanation",
+        "sourceSha256": "7b35209ebb31b0bfe7e2dae78fbbcff2879d61e4b165f397af4e8ecf40391428",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/options/0",
+        "sourceSha256": "d5be0f324906377ceb983f797ae1a13a61d56ab6870bfa1cb3f07e377c4dbc33",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "\"zeta\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 25,
+            "text": "\"ala\"",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/options/1",
+        "sourceSha256": "544170821cf2fd04b37efac6febfe3fe0f3ec72a710c6958d9a219cf25d94712",
+        "spans": [
+          {
+            "start": 25,
+            "end": 29,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 35,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 54,
+            "text": "\"ala\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/options/2",
+        "sourceSha256": "088874f28e302a74182379cdbb8171617bbf177a0b526975c3c92996787d9aed",
+        "spans": [
+          {
+            "start": 73,
+            "end": 79,
+            "text": "\"zeta\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "0280fa54952bba82fab95f576b47ade42e76b9b976522bea75148bb1a8a877eb",
+        "spans": [
+          {
+            "start": 81,
+            "end": 84,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 272,
+            "text": "{\"patio\", \"sala\", \"patio\", \"faro\", \"sala\", \"patio\"}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 328,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 353,
+            "text": "patio",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/question",
+        "sourceSha256": "c83de650bacfc87ab1441781f71fbad9d55797e88209d64891e375f25ab60f54",
+        "spans": [
+          {
+            "start": 13,
+            "end": 64,
+            "text": "{\"patio\", \"sala\", \"patio\", \"faro\", \"sala\", \"patio\"}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 132,
+            "text": "{\"sala\", \"patio\", \"faro\", \"patio\", \"sala\", \"patio\"}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/explanation",
+        "sourceSha256": "0a4bfc62da1e89eef3e7927727d3fb5ca5406d32f0bdf48f90d90ffb95150fe9",
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 53,
+            "text": "patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 62,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "faro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 167,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 175,
+            "text": "patio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 238,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 262,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 312,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 322,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/options/0",
+        "sourceSha256": "175175a036001698bb37d0bd7f824f25910d25b2b5c5441dd681228fccbe470e",
+        "spans": [
+          {
+            "start": 19,
+            "end": 26,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 34,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 48,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 54,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 65,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/options/1",
+        "sourceSha256": "304193f816e112eec0d4e07c6417587299ee10a638b3967a6b84d27a3703900d",
+        "spans": [
+          {
+            "start": 7,
+            "end": 15,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 33,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 42,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 56,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 63,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/options/2",
+        "sourceSha256": "5b20204069430456421a25f269219160f0db43030b5b154c07b629eba5064a9f",
+        "spans": [
+          {
+            "start": 8,
+            "end": 16,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 19,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 26,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 44,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 53,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 65,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "47cf82fa24fbce65ffa0fce96e0fea6855be337c6ec512cc77ffe9abf29a260a",
+        "spans": []
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "f767b05086299de870cb271859a7e5c0bf0646d197acf2665e6df8b5a4b2cd4a",
+        "spans": []
+      },
+      {
+        "block": "recuperacion_permutacion_prediccion",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0cb8b617fd2722320adad5822ceb3c3f3b0f764ef9e4bfedf746aa03228c20db",
+        "spans": [
+          {
+            "start": 94,
+            "end": 95,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 102,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/question",
+        "sourceSha256": "a8c834888e2f78294a5d00611f590a858fba91c1ee0416dac5cc7babdcfe8871",
+        "spans": [
+          {
+            "start": 16,
+            "end": 67,
+            "text": "{\"sala\", \"patio\", \"faro\", \"patio\", \"sala\", \"patio\"}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 111,
+            "text": "patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 161,
+            "text": "{\"sala\", \"patio\", \"faro\", \"patio\", \"sala\"}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 205,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 215,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 252,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 317,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/explanation",
+        "sourceSha256": "adab81b8914d81745597a31b88f8414a82dfbe379792030d44aeff5eedfb065a",
+        "spans": [
+          {
+            "start": 15,
+            "end": 18,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "text": "patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 79,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 100,
+            "text": "sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 117,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 123,
+            "text": "faro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 133,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 169,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 209,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 224,
+            "text": "patio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 239,
+            "text": "sala",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 269,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 276,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 290,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 310,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 328,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/options/0",
+        "sourceSha256": "0c714edda1392698fed2e33cb9b82db6f9f1c5df84f6539a1ff6270e5919d415",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "Maxima:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 10,
+            "end": 31,
+            "text": "Mayores:[patio][sala]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/options/1",
+        "sourceSha256": "3900f73693e9904704894340b47d1b40cb2d1740a845777dddeaa48dd2a28b6c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "Maxima:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 10,
+            "end": 25,
+            "text": "Mayores:[patio]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/options/2",
+        "sourceSha256": "693aace0781f153248dfdfafc4afd1b91cdbc4845aa05dacc86a0d9fb1396cd8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "Maxima:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 10,
+            "end": 31,
+            "text": "Mayores:[patio][sala]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "5149f6c5d22d7e06953b59d10bb2c5677fa9a9be65f3238984a282eb8267198c",
+        "spans": [
+          {
+            "start": 55,
+            "end": 58,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "03fd268bc91ba32a7a701fba5dc344c4801b038979990570fac76e5d2e11c6c1",
+        "spans": []
+      },
+      {
+        "block": "recuperacion_empate_prediccion",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c5b4c4e390acaaaa037d9f632d5ace538cf38631bc408735babfde384a246568",
+        "spans": []
+      },
+      {
+        "block": "recuperacion_entrada_consigna",
+        "path": "/text",
+        "sourceSha256": "e40b39260cf0ca7ce1352f46ca0650444ecf5d8c7c001a31f290de688c3c8bdb",
+        "spans": [
+          {
+            "start": 201,
+            "end": 205,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 233,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 269,
+            "text": "6 patio sala patio faro sala patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 307,
+            "text": "6 sala patio faro patio sala patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 309,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 339,
+            "text": "5 sala patio faro patio sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 351,
+            "text": "primera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 388,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 427,
+            "text": "tercera",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 438,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 725,
+            "end": 729,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0007",
+        "path": "/text",
+        "sourceSha256": "183c16010d7dda88ed948b83dc362e2b2b1dfca368afdacebd7b940df6f7fdd3",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0008",
+        "path": "/text",
+        "sourceSha256": "04506e9a8e177ba1ab957608553e5334f1c04b3cbd9fe6f9a3ef7fac09b389c6",
+        "spans": [
+          {
+            "start": 125,
+            "end": 129,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 138,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 353,
+            "text": "~",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 385,
+            "text": "\"\"",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 582,
+            "text": "4 rio torre torre rio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 588,
+            "end": 620,
+            "text": "{'rio', 'torre', 'torre', 'rio'}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 623,
+            "end": 641,
+            "text": "3 faro valle valle",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 647,
+            "end": 673,
+            "text": "{'faro', 'valle', 'valle'}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 676,
+            "end": 687,
+            "text": "2 roble ala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 693,
+            "end": 709,
+            "text": "{'roble', 'ala'}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 712,
+            "end": 713,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 737,
+            "end": 740,
+            "text": "1 ~",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 746,
+            "end": 750,
+            "text": "{''}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 760,
+            "text": "3 ~ a ~",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 766,
+            "end": 779,
+            "text": "{'', 'a', ''}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "abf2353e22d0d720694cc11ae53f73c417ea2a7b2efc3baf589e5acfc91e93bf",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "9e63e7eaa9c6faa302c771ae6cb6d6f2c38ea9247bcf6489a488f522065d824a",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/question",
+        "sourceSha256": "17c510eddf579fc0f4bd490703192ff880e907c2ea092efb22014dce119f6a18",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/explanation",
+        "sourceSha256": "c9f766c54fa823b13962dc405ef72e2e34523c14aaf54a6290ec9e122df54903",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 50,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "c7f1103433928014bdb00f75d218f1685d4e9ecc5e97b2af3e8152fa37a0c4c4",
+        "spans": [
+          {
+            "start": 22,
+            "end": 44,
+            "text": "{\"faro\", \"ala\", \"rio\"}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "75652b1382ae3b4941ac48dc16e8eadbbe4ca119860786c3e80c4ce1691146f1",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 50,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/0",
+        "sourceSha256": "466e561b09813ffe503f255754d7116f63700759edc1a4a03e256c8b432515f4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "Maxima:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 35,
+            "text": "Mayores:[ala][faro][rio]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/1",
+        "sourceSha256": "12089f9588c48eea47a9357e3521b283ed96a0d4465d4003d62e28bf951d3514",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "Maxima:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 19,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/2",
+        "sourceSha256": "97cee30110492be8c031c7db59a91de36384dfd013a7d17e24bf2b830ed87a2e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "Maxima:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 24,
+            "text": "Mayores:[ala]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "01ab1bb4c8bab319f21fde91ac161a65255e2a65c89cc4f74127fba1778128fb",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "3ee35997d1e9567771116d3d6f791e78ad00b034b65ab20feec3aed79d14707d",
+        "spans": [
+          {
+            "start": 20,
+            "end": 23,
+            "text": "eco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 87,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 92,
+            "text": "rio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 142,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "0984b8ee05d0d1a60b7309457beb383aa79413980ea0ecd616717d8579d56966",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/text",
+        "sourceSha256": "3edb4f5c4fe61764460fd61adf48aeec357396e83e942da2556458a623050d77",
+        "spans": [
+          {
+            "start": 58,
+            "end": 83,
+            "text": "(Stroustrup, 2024, p. 81)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 184,
+            "text": "{1, 1, 5, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 209,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 243,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 256,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 268,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 285,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/prompt",
+        "sourceSha256": "6546f4dc2951cb40b3f22ec8b5ac0d5461804522df176c3d7c6d2da2eba9574d",
+        "spans": [
+          {
+            "start": 27,
+            "end": 36,
+            "text": "ordenadas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 81,
+            "text": "inicio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 116,
+            "text": "fin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 148,
+            "text": "frecuencia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 182,
+            "text": "maxima",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 435,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/feedback/correct",
+        "sourceSha256": "fedb17103347ac51dd05a5e317996824cf08c2167434ee06238883da89b67864",
+        "spans": [
+          {
+            "start": 0,
+            "end": 22,
+            "text": "fin < ordenadas.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 67,
+            "text": "ordenadas[fin]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 194,
+            "text": "frecuencia > maxima",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 279,
+            "text": "frecuencia == maxima",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "dd5d38ad4539eae7677d323725124640d0398ba9110b770c17684a2bec4d80dd",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/label",
+        "sourceSha256": "d477bc61f7ccfddc5a4b500f8a5df4bdc14fb325fd0e0e4c16f37ced82ea77ac",
+        "spans": [
+          {
+            "start": 57,
+            "end": 60,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/sources/0/content/0/text",
+        "sourceSha256": "2f7309ca15557ad1cc1adc9f900335ea29dced94a538e435602fceb2d7d85fcd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 22,
+            "text": "fin < ordenadas.size()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/sources/1/content/0/text",
+        "sourceSha256": "0315187762191ab6158b03e7396b197bf1cc6347722b9dc02a98b449fa304017",
+        "spans": [
+          {
+            "start": 0,
+            "end": 35,
+            "text": "ordenadas[fin] == ordenadas[inicio]",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/sources/2/content/0/text",
+        "sourceSha256": "b09c7681bbba2b31eb88101ac7cc98e9697137f13d1d37952d0eb0bc2a9f4933",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "frecuencia > maxima",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/sources/3/content/0/text",
+        "sourceSha256": "7cd7fddefad7dbffdd2806f6c99e8344199b9d264ad76f797308f6ccaa9bff63",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "frecuencia == maxima",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "57c390e81ce9ae3097cf15396bcd2051a776bcd0a9fc4f748fc787274482292a",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "2e9ef320ef99964c0a98fc71c3c5375c3ab87aff6b816ee1b5a4231635f9d8b0",
+        "spans": [
+          {
+            "start": 11,
+            "end": 14,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "8b7fa478bd9bf379d5b1a4a7d149f1eb41cf79e06ed34b7c653d90e6dc3ec6ce",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "baca920d9d48483802d953ca36ef727d248e8f1bb218d5c99706c4779579d233",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/text",
+        "sourceSha256": "6d4fd5ec12c17914f4ea218404957c0e04bd31b1af1862c5d4818199f27d2e0e",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0009",
+        "path": "/text",
+        "sourceSha256": "25eb478b9977f5ae8227e2477e0d2e8b00af2c7b9e8eaabfd387764832469e72",
+        "spans": [
+          {
+            "start": 70,
+            "end": 76,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 88,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 178,
+            "text": "6 4 1 4 2 1 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 191,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 215,
+            "text": "[1][2][4]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 228,
+            "text": "4 1 1 5 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 241,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 258,
+            "text": "[1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 265,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 279,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_numericas_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "00ff886fafd6307b24b073149b120c6c505b9344f97c4a4becbec3bda00e63a2",
+        "spans": []
+      },
+      {
+        "block": "frecuencias_numericas_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "53d42206049885ee6c7f71492bd340f6143a197ccf6feff5fea39367fa1f7991",
+        "spans": [
+          {
+            "start": 46,
+            "end": 49,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 132,
+            "text": "{4, 1, 4, 2, 1, 2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 151,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 156,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 165,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 176,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 210,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 232,
+            "text": "mayores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 252,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 424,
+            "text": "{1, 1, 5, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 442,
+            "text": "unos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 454,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 489,
+            "end": 492,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 550,
+            "text": "maxima",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 560,
+            "end": 564,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 567,
+            "end": 574,
+            "text": "mayores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 588,
+            "end": 592,
+            "text": "suma",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_titulo",
+        "path": "/text",
+        "sourceSha256": "b050a4d7fddfa3da98fa514b315942c1d602b94e9d3d64684ddb75748de0382f",
+        "spans": []
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_consigna",
+        "path": "/text",
+        "sourceSha256": "94745425fe20667e56deb991d1cb1ef09ffd35d433b001063c2caef07ee4c59b",
+        "spans": [
+          {
+            "start": 106,
+            "end": 114,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 186,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 232,
+            "text": "~",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 340,
+            "end": 341,
+            "text": "~",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 548,
+            "end": 551,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 657,
+            "end": 665,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 722,
+            "end": 729,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 739,
+            "end": 742,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_caso_vacio",
+        "path": "/text",
+        "sourceSha256": "9018d1853e46735b2677402ed6510b48f0ebb87ef2af8cd9599b6ea61963ef8a",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 61,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 72,
+            "text": "Maxima:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 83,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "N:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 103,
+            "text": "Distintas:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 112,
+            "text": "Suma:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 124,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_caso_etiqueta_vacia",
+        "path": "/text",
+        "sourceSha256": "2fc4f2f0aa633419e20355aaaf083d9e4103d6c5e548d3f8ffb1564064df96b7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "1 ~",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 80,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "[]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 98,
+            "text": "Maxima:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 111,
+            "text": "Mayores:[]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 117,
+            "text": "N:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 131,
+            "text": "Distintas:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 140,
+            "text": "Suma:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 154,
+            "text": "Original:[]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_caso_singleton",
+        "path": "/text",
+        "sourceSha256": "699f7fe3f9ba94dfc61e9101b644aed5073a34baa51f95765b4928d873c2a9b1",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 43,
+            "text": "1 roble",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 75,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 87,
+            "text": "[roble]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 98,
+            "text": "Maxima:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 116,
+            "text": "Mayores:[roble]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 122,
+            "text": "N:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 136,
+            "text": "Distintas:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 145,
+            "text": "Suma:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 164,
+            "text": "Original:[roble]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_caso_todos_empatados",
+        "path": "/text",
+        "sourceSha256": "7671f60b8976851dd4acf8676cf46e407655d93715ee5cf68afeba5051f09225",
+        "spans": [
+          {
+            "start": 57,
+            "end": 72,
+            "text": "3 valle ala rio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 104,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 114,
+            "text": "[ala]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 124,
+            "text": "[rio]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 136,
+            "text": "[valle]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 147,
+            "text": "Maxima:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 175,
+            "text": "Mayores:[ala][rio][valle]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 181,
+            "text": "N:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 195,
+            "text": "Distintas:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 204,
+            "text": "Suma:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 233,
+            "text": "Original:[valle][ala][rio]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_caso_empate_final",
+        "path": "/text",
+        "sourceSha256": "d51ddc8f2861df0e6be858f2593199f37d7b7510ba3747c544b3eb6f90afb6b0",
+        "spans": [
+          {
+            "start": 54,
+            "end": 80,
+            "text": "5 rio faro torre rio torre",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 112,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 123,
+            "text": "[faro]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 133,
+            "text": "[rio]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 145,
+            "text": "[torre]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 156,
+            "text": "Maxima:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 179,
+            "text": "Mayores:[rio][torre]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 185,
+            "text": "N:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 199,
+            "text": "Distintas:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 208,
+            "text": "Suma:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 250,
+            "text": "Original:[rio][faro][torre][rio][torre]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_caso_maximo_nuevo_final",
+        "path": "/text",
+        "sourceSha256": "87af04377ed556a21042d6502c615950b38e2fb2d4d3c1b0d26364893ae59f4b",
+        "spans": [
+          {
+            "start": 61,
+            "end": 102,
+            "text": "7 faro faro patio patio valle valle valle",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 134,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "[faro]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 157,
+            "text": "[patio]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 169,
+            "text": "[valle]=3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 180,
+            "text": "Maxima:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 198,
+            "text": "Mayores:[valle]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 204,
+            "text": "N:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 218,
+            "text": "Distintas:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 227,
+            "text": "Suma:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 286,
+            "text": "Original:[faro][faro][patio][patio][valle][valle][valle]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_comprobacion",
+        "path": "/text",
+        "sourceSha256": "0bb13b09a5d577ec835a2f94cd7e571a17fc059e8b50295fde330caa63188aa6",
+        "spans": [
+          {
+            "start": 106,
+            "end": 110,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "a19679af6b05bd55e1c64af4e2dacb7bad2afdf494a7d65982a898361b67973a",
+        "spans": [
+          {
+            "start": 29,
+            "end": 35,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 59,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 66,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 85,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 95,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "078f3b138d532bcb035e9d291c0a546573ab63bc28ca20136f27635126ec60b2",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "a53a0d4f95d25a965a5651ce3a8866a441838b056fda6efa10030214c7d2ae7b",
+        "spans": [
+          {
+            "start": 21,
+            "end": 24,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "[]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 71,
+            "text": "Mayores:[]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 96,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 107,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 114,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 137,
+            "text": "Original:[]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "078f3b138d532bcb035e9d291c0a546573ab63bc28ca20136f27635126ec60b2",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "4a938cf5ac0b78104bce7a213c80b464f8154602dbcb488382dfa90f592e15c6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "roble",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 17,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 73,
+            "text": "Mayores:[roble]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 116,
+            "text": "Distintas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 123,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 133,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 173,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "078f3b138d532bcb035e9d291c0a546573ab63bc28ca20136f27635126ec60b2",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "9d5b246ea6b0b7cd62c6590cf88e9adc249970adb7195848dbb9d21a98505c9c",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 119,
+            "text": "Mayores:[ala][rio][valle]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 171,
+            "text": "Original:[valle][ala][rio]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "078f3b138d532bcb035e9d291c0a546573ab63bc28ca20136f27635126ec60b2",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "20bb5a8f862a7525d9c66d00d8247d0a5593bd440f35b75355139256887843de",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "faro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 25,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 30,
+            "text": "rio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "torre",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 84,
+            "text": "torre",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 100,
+            "text": "rio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 167,
+            "text": "Mayores:[rio][torre]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 214,
+            "text": "N:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 223,
+            "text": "Suma:5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "078f3b138d532bcb035e9d291c0a546573ab63bc28ca20136f27635126ec60b2",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "6d26004f814311113450eedee5c9c32b4b317c67dcea1cc68e1f41204daaa57c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "faro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 12,
+            "text": "patio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 41,
+            "text": "valle",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 63,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 72,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 164,
+            "text": "Mayores:[valle]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 192,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 210,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "078f3b138d532bcb035e9d291c0a546573ab63bc28ca20136f27635126ec60b2",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_titulo",
+        "path": "/text",
+        "sourceSha256": "2d31cfd07609f78ebb0ffc6f66493c43cdbe8495a6553fe187abbdf951c72cfe",
+        "spans": []
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_consigna",
+        "path": "/text",
+        "sourceSha256": "377476d83b76439ae73afe47dbb5c191af850f2d2ad818fb7df77a4e61cc8c09",
+        "spans": [
+          {
+            "start": 124,
+            "end": 128,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 167,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 390,
+            "end": 397,
+            "text": "Mayores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 473,
+            "end": 476,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 623,
+            "end": 631,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_caso_maximo_nuevo_final",
+        "path": "/text",
+        "sourceSha256": "bbd87c8f8052851f2fe2e3fc81c795058dfb7ea28e516c7ba41dab4a1f4d23c0",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 76,
+            "text": "7 1 1 2 2 4 4 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 108,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "[1]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 124,
+            "text": "[2]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 132,
+            "text": "[4]=3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "Maxima:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 157,
+            "text": "Mayores:[4]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "N:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 177,
+            "text": "Distintos:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 186,
+            "text": "Suma:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 212,
+            "text": "Original:1;1;2;2;4;4;4;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_caso_empate",
+        "path": "/text",
+        "sourceSha256": "8f2bbe915840eba8e89a7fafa0bdd29ef3e5f6e8a5c4c03bb1241bcf922b687e",
+        "spans": [
+          {
+            "start": 48,
+            "end": 61,
+            "text": "6 4 1 4 2 1 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 93,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 101,
+            "text": "[1]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 109,
+            "text": "[2]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 117,
+            "text": "[4]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 128,
+            "text": "Maxima:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 148,
+            "text": "Mayores:[1][2][4]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 154,
+            "text": "N:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 168,
+            "text": "Distintos:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 177,
+            "text": "Suma:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 201,
+            "text": "Original:4;1;4;2;1;2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_caso_maximo_inicial",
+        "path": "/text",
+        "sourceSha256": "94df3c3ab4e0f1b4f1ac2dc221c034cb2feba029c3e203308fd21acfcddc15d0",
+        "spans": [
+          {
+            "start": 56,
+            "end": 65,
+            "text": "4 1 1 5 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 97,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 105,
+            "text": "[1]=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 113,
+            "text": "[5]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 121,
+            "text": "[9]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 132,
+            "text": "Maxima:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 146,
+            "text": "Mayores:[1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 152,
+            "text": "N:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 166,
+            "text": "Distintos:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 175,
+            "text": "Suma:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 195,
+            "text": "Original:1;1;5;9;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_caso_vacio",
+        "path": "/text",
+        "sourceSha256": "634dea713b7a46a6b35e871d785bc959df4d96d052a73d8f198febe5731a1d70",
+        "spans": [
+          {
+            "start": 42,
+            "end": 43,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 75,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 86,
+            "text": "Maxima:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 97,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 103,
+            "text": "N:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 117,
+            "text": "Distintos:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 126,
+            "text": "Suma:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 138,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_caso_singleton_negativo",
+        "path": "/text",
+        "sourceSha256": "43a25e5277a6c9a925c92fee94ca90baa5bede1e9ec30bf5262f65263d00b3ea",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "text": "1 -7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 71,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 80,
+            "text": "[-7]=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 91,
+            "text": "Maxima:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 106,
+            "text": "Mayores:[-7]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 112,
+            "text": "N:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 126,
+            "text": "Distintos:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 135,
+            "text": "Suma:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 150,
+            "text": "Original:-7;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_comprobacion",
+        "path": "/text",
+        "sourceSha256": "9fc5ab4f5f016963b1ec91de56748ec1b8a5fd2c6104d460427bbcdadee7fe6a",
+        "spans": [
+          {
+            "start": 14,
+            "end": 19,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0adf052b83ea26d6acec4b5f07d5874691268dd2d3bcf2b361023564687ee579",
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 23,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 45,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 94,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 107,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 181,
+            "text": "Mayores:[4]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 199,
+            "text": "[1][2]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 211,
+            "text": "[4]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 268,
+            "text": "N:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 277,
+            "text": "Suma:7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "b9e027c919b9708f2d6200a4c90cfc6bcb32113d431becb3659a86d3868d80b5",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "6009d0e73ae0a32aaaa564e0ee043e8769c71d127ade1c1e6afcfcecb6383b86",
+        "spans": [
+          {
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 41,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 93,
+            "text": "Mayores:[1][2][4]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 172,
+            "text": "Original:4;1;4;2;1;2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "b9e027c919b9708f2d6200a4c90cfc6bcb32113d431becb3659a86d3868d80b5",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "9c61906d7666f54b8f34844bf428943b225f83678313606888f8e26ffd942062",
+        "spans": [
+          {
+            "start": 9,
+            "end": 12,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 24,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 45,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 58,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 99,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 133,
+            "text": "Mayores:[1]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "b9e027c919b9708f2d6200a4c90cfc6bcb32113d431becb3659a86d3868d80b5",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "d2081d788b3c9b94f48bc87573af724f6ccdaaff495368a87378ccc1287de657",
+        "spans": [
+          {
+            "start": 52,
+            "end": 58,
+            "text": "Maxima",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 72,
+            "text": "Distintos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "Suma",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 90,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 100,
+            "text": "Original",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "b9e027c919b9708f2d6200a4c90cfc6bcb32113d431becb3659a86d3868d80b5",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "1828d68da0f1ee3a0471ca8cddd5de563a4a5f6b105baa18da1132e2ddea672e",
+        "spans": [
+          {
+            "start": 16,
+            "end": 18,
+            "text": "-7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 40,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 74,
+            "text": "Mayores:[-7]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 133,
+            "text": "N:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "Suma:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 185,
+            "text": "-7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "maximos_numericos_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "b9e027c919b9708f2d6200a4c90cfc6bcb32113d431becb3659a86d3868d80b5",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "Frecuencias:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "Maxima:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "Mayores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "N:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Distintos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 129,
+            "text": "Suma:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "Original:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "a6db8f40d5f75dcd85a03004296200b25f977cfb3bcbbde38386940a93730827",
+        "spans": []
       }
     ]
   }

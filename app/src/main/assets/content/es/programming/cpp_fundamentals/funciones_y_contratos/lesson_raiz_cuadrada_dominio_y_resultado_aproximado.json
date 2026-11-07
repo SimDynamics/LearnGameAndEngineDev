@@ -177,7 +177,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En main empieza con area=25.0 y destino=-3.0. Guarda el bool y presenta Valida: B;Destino: D;Area: A. Después asigna -4.0 al objeto area y llama conservando el destino anterior: presenta Negativa: B;Destino: D;Area: A. Por último usa area=101.0 y presenta Exceso: B;Destino: D;Area: A. Usa las etiquetas y un salto entre las tres líneas; los números deben proceder de las llamadas y los objetos observados."
+          "text": "En main empieza con area=25.0 y destino=-3.0. Guarda el bool y presenta Valida: B;Destino: D;Area: A. En ese formato, B es el bool devuelto por la llamada, D es el valor de destino después de terminarla y A es el valor actual del objeto area. Después asigna -4.0 al objeto area y llama conservando el destino anterior: presenta Negativa: B;Destino: D;Area: A. Por último usa area=101.0 y presenta Exceso: B;Destino: D;Area: A. Usa las etiquetas y un salto entre las tres líneas; los números deben proceder de las llamadas y los objetos observados."
         },
         {
           "type": "paragraph",
@@ -380,7 +380,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Presenta cuatro líneas: `Validas: N`, `Rechazadas: N`, `Lados hasta 2.5: N` y `Datos conservados: B`. Los conteos deben proceder de las llamadas y B debe comparar tamaño, valores y orden con una copia inicial. Esa comparación conserva los valores finitos originales; no compara el cuadrado de una raíz aproximada con su área."
+          "text": "Presenta cuatro líneas: Validas: N, Rechazadas: N, Lados hasta 2.5: N y Datos conservados: B. Los conteos deben proceder de las llamadas. En cada rótulo de conteo, N es la cantidad indicada por su nombre: llamadas aceptadas, llamadas rechazadas o lados aceptados menores o iguales que 2.5. B es el bool de la comparación de conservación: true si tamaño, valores y orden coinciden con una copia inicial, y false si hay alguna diferencia. Esa comparación usa los valores finitos originales; no compara el cuadrado de una raíz aproximada con su área."
         },
         {
           "type": "paragraph",
@@ -404,7 +404,149 @@
         },
         {
           "type": "note",
-          "text": "Construye esta transferencia antes de la referencia siguiente. Puedes organizar los conteos y la comprobación de conservación de otra forma si respetas el contrato. Una salida escrita como constantes no demuestra que el programa responda a colecciones nuevas; cambia los datos y compara tus predicciones con la ejecución."
+          "text": "Construye esta transferencia. Puedes organizar los conteos y la comprobación de conservación de otra forma si respetas el contrato. Una salida escrita como constantes no demuestra que el programa responda a colecciones nuevas; cambia los datos y compara tus predicciones con la ejecución."
+        },
+        {
+          "type": "heading",
+          "text": "Construir el informe para áreas recibidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye de nuevo bool calcular_lado(double area, double& destino) y el programa que la utiliza. La función acepta sólo áreas finitas entre 0 y 100, incluidos ambos límites: calcula con std::sqrt, guarda el lado en destino y devuelve true. Ante un rechazo devuelve false y conserva el destino anterior; no imprime.\n\nEl cliente lee primero una cantidad entera entre 0 y 8, y después esa cantidad de áreas double finitas entre -2 y 102, escritas válidamente y separadas por espacios o saltos de línea. Construye el vector y conserva una copia inicial. Prepara un objeto double con -1.0 antes de cada llamada. Usa primero el bool devuelto para clasificarla: cuenta aceptadas y rechazadas; sólo entre las aceptadas cuenta los lados menores o iguales que 2.5. El lado cero es válido y pertenece a ese conteo. Un rechazo no aporta ningún lado al informe, aunque haya conservado un valor en el destino.\n\nNo cambies el tamaño, los valores ni el orden de la colección. Compara esas propiedades con la copia inicial para obtener el bool de conservación. Presenta cuatro líneas: Validas:, Rechazadas:, Lados hasta 2.5: y Datos conservados:, cada rótulo seguido de un espacio y su valor. Los tres primeros valores son los conteos indicados; el último muestra 1 si la colección se conserva y 0 si no. No añadas otros mensajes; el salto final es opcional."
+        },
+        {
+          "type": "paragraph",
+          "text": "Colección vacía\nEntrada: 0\nSalida:\nValidas: 0\nRechazadas: 0\nLados hasta 2.5: 0\nDatos conservados: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un área cero\nEntrada: 1 0.0\nSalida:\nValidas: 1\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Área negativa\nEntrada: 1 -1.0\nSalida:\nValidas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Exceso del límite del problema\nEntrada: 1 101.0\nSalida:\nValidas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Frontera incluida del lado\nEntrada: 3 100.0 6.25 9.0\nSalida:\nValidas: 3\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una aceptada y dos rechazos\nEntrada: 3 2.0 -2.0 102.0\nSalida:\nValidas: 1\nRechazadas: 2\nLados hasta 2.5: 1\nDatos conservados: 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva las mismas funciones y cambia sólo Entrada entre las seis pruebas. Pulsa «Compilar, ejecutar y comprobar» para cada caso y compara las cuatro líneas completas. Los resultados deben proceder de las llamadas y de la colección examinada."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la lectura, la clasificacion y la comprobacion de conservacion.\n    return 0;\n}\n",
+          "initialStandardInput": "0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Validas: 0\nRechazadas: 0\nLados hasta 2.5: 0\nDatos conservados: 1",
+                  "Validas: 0\nRechazadas: 0\nLados hasta 2.5: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "La colección está vacía: no se ejecuta ninguna llamada. Los tres conteos son 0. La colección y su copia vacías coinciden en tamaño, valores y orden, por lo que Datos conservados: 1 sigue siendo válido. No se consulta un lado inexistente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Incluso sin observaciones deben aparecer los cuatro rótulos: los conteos del vacío y la comparación con su copia también tienen un resultado."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Validas: 1\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1",
+                  "Validas: 1\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1\n"
+                ],
+                "explanation": "El área 0.0 se acepta y entrega el lado 0. Es una llamada válida y ese lado cumple el límite incluido 2.5: ambos conteos correspondientes valen 1. No hay rechazos y el vector conserva su único dato.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Distingue un área cero presente de una colección vacía; usa la aceptación de la llamada para decidir cómo contar su lado y muestra las cuatro líneas."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -1.0",
+                "outputs": [
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1",
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "El área -1.0 es finita, pero está por debajo de 0: se rechaza antes de calcular su raíz. Hay 0 válidas y 1 rechazada. El destino conservado no cuenta como lado aceptado, así que el conteo de lados permanece en 0. La observación original se conserva.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. El área negativa sigue siendo una observación del vector. Clasifica la llamada mediante su bool y conserva el dato sin contar como resultado el destino de un rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 101.0",
+                "outputs": [
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1",
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "El área 101.0 supera el límite 100 del contrato y se rechaza, aunque tenga raíz real. Hay 1 rechazo y 0 lados aceptados. Clasificarla no elimina ni modifica ese dato del vector.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Revisa el contrato 0..100 antes de calcular: la existencia matemática de una raíz no basta para aceptar esta observación. Presenta también la comparación de conservación."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 100.0 6.25 9.0",
+                "outputs": [
+                  "Validas: 3\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1",
+                  "Validas: 3\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1\n"
+                ],
+                "explanation": "Se aceptan las 3 áreas. Sus lados son 10, 2.5 y 3, respectivamente. Sólo el lado 2.5 cumple el límite incluido, de modo que Lados hasta 2.5: 1 es el conteo correcto. La igualdad con la frontera también pertenece al grupo; no hay rechazos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Sigue cada llamada por separado y aplica el límite 2.5 sólo a lados aceptados, incluida la igualdad. La comparación del vector necesita la copia de todas las observaciones."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 2.0 -2.0 102.0",
+                "outputs": [
+                  "Validas: 1\nRechazadas: 2\nLados hasta 2.5: 1\nDatos conservados: 1",
+                  "Validas: 1\nRechazadas: 2\nLados hasta 2.5: 1\nDatos conservados: 1\n"
+                ],
+                "explanation": "El área 2.0 se acepta; su lado está entre 1.4 y 1.5 y cumple el límite 2.5 sin necesitar una cadena decimal de la raíz. Las áreas -2.0 y 102.0 se rechazan por los límites del contrato. Por eso hay 1 válida, 2 rechazadas y 1 lado contado. Los tres datos originales permanecen intactos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Separa el área aceptada de las dos rechazadas. El dato aproximado se clasifica por su lado y el límite del grupo; no necesitas imprimir una escritura decimal concreta de la raíz."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -887,7 +1029,17 @@
           "block_0006_0003",
           "block_0006_0004",
           "block_0006_0005",
-          "block_0006_0006"
+          "block_0006_0006",
+          "raiz_coleccion_propia_titulo",
+          "raiz_coleccion_propia_consigna",
+          "raiz_coleccion_propia_caso_0",
+          "raiz_coleccion_propia_caso_1",
+          "raiz_coleccion_propia_caso_2",
+          "raiz_coleccion_propia_caso_3",
+          "raiz_coleccion_propia_caso_4",
+          "raiz_coleccion_propia_caso_5",
+          "raiz_coleccion_propia_accion",
+          "raiz_coleccion_propia_editor"
         ]
       },
       {
@@ -1702,7 +1854,98 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "raiz_coleccion_propia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_caso_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_caso_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_caso_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_caso_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_accion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "raiz_coleccion_propia_editor",
+        "sha256": "29d40a0527c0104f89f2646f7fb1518c70292e0fb9ad8b51a0643fa054c4c387",
+        "storage": {
+          "page": 8,
+          "block": 9
+        },
+        "progressPage": "page_0006"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0003",
@@ -1738,6 +1981,21 @@
         "id": "block_0004_0000",
         "beforeSha256": "f8ad6e54cd933da28d8a18e086b89185e2e64a97ebec0f39834dff4b25e023f0",
         "afterSha256": "82188fe783ac47ca3106cda6c8806ad105f618d192d1bf8d7cb11d69a944ee8d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "82c1bc9ea6696740450e75b4c2bbea1f965cee5fc5bcb81ce4abed9dc0a56f97",
+        "afterSha256": "76cedad89357e84ebe5b41c8b4c5a9edb01a22dec854bcb316759c6236b1be8c"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "3ef572d835bbe060cde2fdd1df501969d179b1baa7ebd28bfee2a36e311b33b5",
+        "afterSha256": "5bce520b4b03e9b980b584665a78aa69a91502e641be383455c05c542960057e"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "e5d8a26184ed812f4c85116e7c404df5b103390a80acdb492ca9024bc008b249",
+        "afterSha256": "cc4d50d3c5eeafa9bb23f16561ae93bcc34debe11b5a3b4c1cf0f4cc16f7733f"
       }
     ]
   },
@@ -1753,7 +2011,7 @@
       ]
     },
     {
-      "activity": "block_0006_0005",
+      "activity": "raiz_coleccion_propia_editor",
       "blocks": [
         "block_0007_0000",
         "block_0007_0001",
@@ -1784,9 +2042,3294 @@
     {
       "activity": "block_0007_0008",
       "requires": [
+        "raiz_coleccion_propia_editor"
+      ]
+    },
+    {
+      "activity": "raiz_coleccion_propia_editor",
+      "requires": [
         "block_0006_0005"
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "853940c2a712b16c71df83f86a6728f2e99bbc4f2728b6a0ee4b3c2af81b7510",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "b998aea7e0c5cf2ca088ed3bc1f0fb27330f13bec12645664a7bef629d808d68",
+        "spans": [
+          {
+            "start": 66,
+            "end": 67,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 94,
+            "text": "36",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 102,
+            "text": "C++",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 129,
+            "text": "numero * numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 150,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 162,
+            "text": "2 * numero",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "03808fc10aebd23764153d4c45d6bc7ac9cef131747ba4fcf5911e3bd2d4e126",
+        "spans": [
+          {
+            "start": 101,
+            "end": 103,
+            "text": "36",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 118,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "-6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 159,
+            "text": "36",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "4b80e32a9a368c8925474eaaf9aa1b40497e4aa03488f5b6675838e072fbc151",
+        "spans": [
+          {
+            "start": 21,
+            "end": 30,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 101,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 166,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 14, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 183,
+            "text": "<cmath>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 304,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 324,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 461,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "08851dad271d7dead055fc5f68b419537b25180d9956728eb149f396bfc1d914",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "6d0267e4abfe0703de66cb17a34d5237b65eb42c7da1d3a42cb4a565642efc08",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 6,
+            "end": 7,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 13,
+            "text": "81",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 88,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 98,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/question",
+        "sourceSha256": "d7bc8db49d71cf80b7ac5747a958a1c056228262de485a90a71cd1fc8da22a37",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 18,
+            "text": "-6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 37,
+            "text": "36",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 88,
+            "text": "36",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/explanation",
+        "sourceSha256": "4534ab1d0b98b5af33cff1466ba312e39966a2bb954b7d71f65194122a91c00b",
+        "spans": [
+          {
+            "start": 51,
+            "end": 54,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 75,
+            "text": "x*x=36",
+            "role": "math"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/options/0",
+        "sourceSha256": "96e32311d8ac53899727a68fea6bb76885eabe2fb9b0c9fa5f425442f4bb25fd",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/options/1",
+        "sourceSha256": "16810c9d9365b16614dc8b27c30b72884c808f0c4e1f6f682f1bc54f50dc16cf",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/options/2",
+        "sourceSha256": "355c688dc0ad09959be69708580ab8b375a51ebcb017d0f03eaaf2894bb1129a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 11,
+            "text": "-6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "b4ec824ea1658c174e87fa5a27d4b099183cc8ec9380e1af72514cc769dd0b5d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "d86b37e48c0ff9522d10e562737b1b1fb36b525f5e6bb452bcafd520998cebed",
+        "spans": [
+          {
+            "start": 44,
+            "end": 45,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 51,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 278,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "9a13992ba7ecef5bea24f4f8a4a8dfc0425358cd1501e8ecd75d2d7934084abc",
+        "spans": [
+          {
+            "start": 115,
+            "end": 118,
+            "text": "NaN",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 252,
+            "text": "std::isfinite(area)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 264,
+            "text": "<cmath>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 279,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 285,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 314,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 387,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 14, 2023; Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "6b53501b1f99e27cf341066cffaa93dafcfc4dddbbf273218ac6280bc162b309",
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "-4.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 112,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 188,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "828e5277b86e54e794b6909885c3a9acce99ba664b0ddedd66140254a23f3dc7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "121.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 77,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "2094ef199c00e0ce1e274048f2328c1a5511fc2d72cf503d12da417dca7a60d6",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "aeaa236beef5a566a5074f1b7fc634aee20a0c62244588c66437c38e68f90a71",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "24765e81b1befe5b77cd4f60c62d3b7c0dd934b7fbdc8d48ba2d0abecbee31c9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "8544f49868d24b23437c9539c8b717e2da3af32eadab13ae959e22da61ea05d1",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/question",
+        "sourceSha256": "1054e284c0c79ec134de7e0eeee5b311a1e48fe5875754ae5aff36e2a194e7be",
+        "spans": [
+          {
+            "start": 57,
+            "end": 64,
+            "text": "<cmath>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 85,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/explanation",
+        "sourceSha256": "8bb8cecb953381e40b3c35809775b812f67d17495b4a1a667f670d5bb18cc367",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "std::isfinite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 97,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "ed5570127578a11be5eac0e35d1c58db7d400e936da5d5499e831eef18039392",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "d624c9acd5b99e1e700d4d30d6b57d1ff4c4105dfd07aef2c66cd06929f629a5",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 40,
+            "text": "1*1",
+            "role": "math"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 51,
+            "text": "2*2",
+            "role": "math"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 86,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 92,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 134,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 232,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 291,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 14, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 297,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 429,
+            "text": "lado*lado == area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 442,
+            "end": 446,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "6c09d41320149a745f48d5c1f1ee0f98348080bb033344a7119c24db92fe36ae",
+        "spans": [
+          {
+            "start": 41,
+            "end": 44,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 75,
+            "text": "1.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 81,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "1.96",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "2.25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 173,
+            "text": "diferencia = lado*lado - area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 252,
+            "text": "-0.000001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 263,
+            "text": "0.000001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 390,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 418,
+            "text": "0..10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "6828b6d770589ea9a696d0561724227f90c14ce47944905a8741fedc3e433c7e",
+        "spans": [
+          {
+            "start": 54,
+            "end": 58,
+            "text": "1.45",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 73,
+            "text": "1.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 79,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 107,
+            "text": "2.1025",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 161,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 245,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "c268c7d115df3031aee447f5703d6f49a6b18a7b2a7dcf4aba937039bce99b7c",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "25966ca040b52a78a98571f21cab4ae514b58e01b1cca544be0a622e47d5d3ec",
+        "spans": [
+          {
+            "start": 23,
+            "end": 27,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 42,
+            "text": "1.7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "1.8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "77b55ece8b5d399ff1c0e67127826032460e65e1637c2595db8c6037bb30f0ce",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 40,
+            "text": "1.45",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 64,
+            "text": "1.4..1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 92,
+            "text": "2.1025",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "825697a50ffd9369b0115b272187234ec8189d2255228c9599ca2fad5e08c848",
+        "spans": [
+          {
+            "start": 14,
+            "end": 20,
+            "text": "0.1025",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 48,
+            "text": "0.000001",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/0",
+        "sourceSha256": "d46b88f4a6c6051aac79021ec406e80a9085d49a7ae02122b6e1f1061ee38f34",
+        "spans": [
+          {
+            "start": 41,
+            "end": 47,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/1",
+        "sourceSha256": "dead3be7068719ac4938bb892468e501c081db53f324c8d53757f2f68c6d2105",
+        "spans": [
+          {
+            "start": 48,
+            "end": 52,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/2",
+        "sourceSha256": "fbfd0e3d97d3f0759353e5f900a89e28b3984c1b82b30382f84108ead37a51f3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "8f1db54754081a7dd0a01ce94285f26641443824f065f412b364de001d28b70c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "1dbce83f366721e1eca8555a7a02a2c9da8862ee980e798643e6ba226f624b00",
+        "spans": [
+          {
+            "start": 10,
+            "end": 58,
+            "text": "bool calcular_lado(double area, double& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 95,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 129,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 156,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 200,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 223,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 252,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 284,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "ec5fecc66264c87b97ef3fadb12577c3eae864726452208b28c66cba0745f969",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 44,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 76,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 353,
+            "end": 360,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "85581f03b0c503ff08207372633fb872b31defde05822bcf5cf041ef5e67644a",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 20,
+            "end": 29,
+            "text": "area=25.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 44,
+            "text": "destino=-3.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 60,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 100,
+            "text": "Valida: B;Destino: D;Area: A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 119,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 130,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 157,
+            "text": "D",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 180,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 262,
+            "text": "-4.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 277,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 358,
+            "text": "Negativa: B;Destino: D;Area: A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 385,
+            "text": "area=101.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 425,
+            "text": "Exceso: B;Destino: D;Area: A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 470,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "b32044f2e588c36272a92c593d4434e7ff552961f5a20b8890572ab8755723d7",
+        "spans": [
+          {
+            "start": 48,
+            "end": 52,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 115,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 126,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 212,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "14c8b66c0ac252d02a641f0bf18818b153adc2288d419bef9724911d62d698e5",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "da26d21f07cbe8eb14a718f782a4d073f9e3156d9740cccde929f26848a711f2",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "262e869c7ae636efeb9d144624e1e09f1f141e4079e8aeff3b01ddd21b11db8d",
+        "spans": [
+          {
+            "start": 34,
+            "end": 36,
+            "text": "36",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 46,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 49,
+            "text": "-3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 95,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 102,
+            "text": "100.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 109,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 157,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 191,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 204,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "cc9a121e4a563e0b0097ac8201dc71371d51fb7164070d0eb6ce3028e271582c",
+        "spans": [
+          {
+            "start": 15,
+            "end": 44,
+            "text": "Valida: 1;Destino: 6;Area: 36",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 77,
+            "text": "Negativa: 0;Destino: 6;Area: -2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 111,
+            "text": "Exceso: 0;Destino: 6;Area: 100.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 140,
+            "text": "Cero: 1;Destino: 0;Area: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 249,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 279,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 286,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 301,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "125d0bee846cc8ac64b38d7a947ec7c3fcbc2f3bb6223b4553e0aa95552ccca1",
+        "spans": [
+          {
+            "start": 122,
+            "end": 131,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 163,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 294,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 319,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 334,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "3c6c85d3714a396b2e4b2b0da251809e5a48fd01ed0bf0b48dec0a3f59ff138f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "767006b5dff97a86ea68d2fccadda6ef91a938bf29655a899518792f57044f37",
+        "spans": [
+          {
+            "start": 51,
+            "end": 61,
+            "text": "menos tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "1:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "text": "100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 103,
+            "text": "1:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "16.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 119,
+            "text": "1:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 127,
+            "text": "0.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 137,
+            "text": "1:0.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 145,
+            "text": "-1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 155,
+            "text": "100.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 164,
+            "text": "0:-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/text",
+        "sourceSha256": "aaf600a865dc26b3190487cd05d20abace93876998b99276304525e496020817",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/text",
+        "sourceSha256": "a69df8dc000912d18257b253d5b75e30426c6b6c37c3cffbdff6d150dfc60499",
+        "spans": [
+          {
+            "start": 32,
+            "end": 35,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 118,
+            "text": "1.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 126,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 174,
+            "text": "0.000001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 209,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 246,
+            "text": "Aceptada: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 264,
+            "text": "No negativo: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 279,
+            "text": "En banda: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 303,
+            "text": "Cuadrado cercano: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 314,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "39cb2c3c2d61fb08bf4162eaf25baff8e2275d4a36b39bf59a7fe2d164f6bc1d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "763ce2793a4c74bafa03798e11931e8928f42e97e3d2815993c0b612f4ed8f96",
+        "spans": [
+          {
+            "start": 105,
+            "end": 111,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 159,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 201,
+            "text": "double&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 288,
+            "text": "area",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 341,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/question",
+        "sourceSha256": "e6a1c5e82eb3302cb4e0ae51e16139b569f22850647c9142aba4428b1b4df41b",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/explanation",
+        "sourceSha256": "addfcc085704e15523a355cc02d41c2a68a67e408d2a40a1d8b8e404ad76434b",
+        "spans": [
+          {
+            "start": 35,
+            "end": 44,
+            "text": "dieciséis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 68,
+            "text": "dato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 102,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 115,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 121,
+            "text": "foto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 166,
+            "text": "-4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "88f1a2bcb0de5511f31c6250e002fbb734b57968e6156a30dd8b351bdb2a4317",
+        "spans": [
+          {
+            "start": 51,
+            "end": 64,
+            "text": "calcular_lado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "6dcd1938c2b805f8b0acbdd7e7a3f8036071418b084299263713d09f493dafc5",
+        "spans": [
+          {
+            "start": 110,
+            "end": 115,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 133,
+            "text": "double&",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "5dd98b8563f689689de4bc87281d546cfb7d013bd39ecb0f4e30c25603c04c33",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": "calcular_lado(9.0, lado)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 41,
+            "text": "double lado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "f26b396ba5cebfdddebcb300a09d2399c6983390e9c79377ceaaf999c25edce4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": "calcular_lado(lado, 9.0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 34,
+            "text": "lado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "3349387100b26b37f800d346a1f88005c629653740e06088b16a79186139c0c7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": "calcular_lado(9.0, fijo)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 47,
+            "text": "const double fijo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "9caac3f06e6623f3a33978bbdcfa1829e33be7ac73b2764fe37218a015d1efa8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "8e46979ea7e13e192a7a7ba0b9b69add9c52b25e366b9315372dcea5b0f4e44f",
+        "spans": [
+          {
+            "start": 20,
+            "end": 25,
+            "text": "nueve",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "base",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 107,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "b310a26ddd57e31adc29913744e7e79faf39421934dff6b53229d39ff5497b4a",
+        "spans": [
+          {
+            "start": 192,
+            "end": 199,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 214,
+            "text": "dato",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "b8b89240339a51f6a4392bfd2a34c546b66225d72af609815c0c17a41b7e78b4",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "562ac0132350e821dd8956c37942e9015a974800e92053c9f897acc3ed8734cc",
+        "spans": [
+          {
+            "start": 36,
+            "end": 49,
+            "text": "calcular_lado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 147,
+            "text": "std::vector<double>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 190,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 206,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 306,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 331,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 337,
+            "text": "102",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 386,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 403,
+            "text": "calcular_lado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "75b3f22d445535473a241bfd26e30199d645ffc575ca07408fe7d32c114f7d3a",
+        "spans": [
+          {
+            "start": 23,
+            "end": 26,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "text": "4.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 37,
+            "text": "6.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 42,
+            "text": "9.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 47,
+            "text": "2.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "text": "-1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 60,
+            "text": "101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 207,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 220,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 376,
+            "text": "calcular_lado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "06575d160b894deed55cead710471aea267a5878eadb61498b8f5e594e454c46",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 34,
+            "text": "Validas: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 49,
+            "text": "Rechazadas: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 69,
+            "text": "Lados hasta 2.5: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 92,
+            "text": "Datos conservados: B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 165,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 288,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 302,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 338,
+            "end": 342,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 410,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "a250c639fc0750552a9e85f57e340ccba495046d64cf225064a1405acc0a790b",
+        "spans": [
+          {
+            "start": 96,
+            "end": 101,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 114,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 133,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 150,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 176,
+            "text": "verdadera",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "e0df16c4557b7ed26f7f528b84b17aaf410cc28bf59c2e704734e931d04d1b13",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "8fb937597dfe264881324cc73b02a56ac6ef4298fdcd679852bc3a5270983d41",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "dbbbc098b231bacd5b0745e008a3b6806219d73c7fd99d7612eb2caab5355149",
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "16.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 28,
+            "text": "1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 34,
+            "text": "6.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 41,
+            "text": "100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "text": "-0.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 54,
+            "text": "100.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 252,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 297,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 344,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 361,
+            "text": "cantidad-1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 392,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 400,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "33b24ebc66acb48f312f8d9d7045e95d926ea4ec15e2b8b7c8cf9097bc1310ef",
+        "spans": [
+          {
+            "start": 32,
+            "end": 38,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 53,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 70,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 86,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 131,
+            "text": "6.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 206,
+            "text": "calcular_lado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 232,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 260,
+            "end": 264,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 392,
+            "text": "lado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "5d43888eed2102706e622e12549b9a57ffe18fbbf0fa0e15a6f9eb7e26773d1a",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "cd3f6678c8ab922744e4dc4cea6a38916d820bb2f7bb41d40289d28a094f4af9",
+        "spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 27,
+            "text": "6.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 35,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 57,
+            "text": "menos uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 81,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "6.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "36f8d12622f82d1cf142c971a802e14f508acf887c1f176141710a9f38300697",
+        "spans": [
+          {
+            "start": 182,
+            "end": 186,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/text",
+        "sourceSha256": "2773e26fc5f9e501c821cca567a7927d53fdb1328f0a98b3316a9b98035a5c51",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/text",
+        "sourceSha256": "bb6373a94aff0f747533c1948d5121b0ff4c1ee87b73d3b0f1cf6f41201f62a1",
+        "spans": [
+          {
+            "start": 320,
+            "end": 321,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 330,
+            "text": "1 0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 340,
+            "text": "1 -1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 351,
+            "text": "1 101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 371,
+            "text": "3 100.0 6.25 9.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 391,
+            "text": "3 2.0 -2.0 102.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 409,
+            "end": 413,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 440,
+            "text": "menos dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 453,
+            "text": "ciento dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 535,
+            "text": "seis con veinticinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_titulo",
+        "path": "/text",
+        "sourceSha256": "29dd27c3acb73e578514a2a239b6c34f4252fed8db33bcbdcaa4b8fca4bef51b",
+        "spans": []
+      },
+      {
+        "block": "raiz_coleccion_propia_consigna",
+        "path": "/text",
+        "sourceSha256": "5f877efd13177a7b3a138951f4e23e247c54cad9c161951eed0117b22dc150a8",
+        "spans": [
+          {
+            "start": 19,
+            "end": 67,
+            "text": "bool calcular_lado(double area, double& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 148,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 196,
+            "text": "std::sqrt",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 223,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 239,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 271,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 367,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 411,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 426,
+            "end": 428,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 434,
+            "text": "102",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 575,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 580,
+            "end": 584,
+            "text": "-1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 623,
+            "end": 627,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 751,
+            "end": 754,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 764,
+            "end": 768,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1023,
+            "end": 1027,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1054,
+            "end": 1060,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1069,
+            "end": 1077,
+            "text": "Validas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1079,
+            "end": 1090,
+            "text": "Rechazadas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1092,
+            "end": 1108,
+            "text": "Lados hasta 2.5:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1111,
+            "end": 1129,
+            "text": "Datos conservados:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1181,
+            "end": 1185,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1248,
+            "end": 1249,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1280,
+            "end": 1281,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "e608acb9335ee6721b2dfd014a46ae3fd83a5550876b3e4706aa158727ac3bcc",
+        "spans": [
+          {
+            "start": 60,
+            "end": 64,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 180,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "7f2ddf2406ca77054e78d0fa7c615d26e917fa372fe10e0bf755140c14b2124a",
+        "spans": [
+          {
+            "start": 82,
+            "end": 88,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_caso_0",
+        "path": "/text",
+        "sourceSha256": "c50333f3570442e11c97340a36e822c02768db54132dc5d701a6a2a05560f2d9",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 99,
+            "text": "Validas: 0\nRechazadas: 0\nLados hasta 2.5: 0\nDatos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "c0571da3834e6f66d95c64733038c67605b5e90ea59527295d96b5965d7a7915",
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "6fa714fcef069b93e7bdc3c6175f5ac742f57a217a79a28f88702d3fe8e933b8",
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 178,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_caso_1",
+        "path": "/text",
+        "sourceSha256": "34fa65001c57074051feb6f1ee992190f76fd4cf7efc65b8d7452d46ecdb66ee",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 27,
+            "text": "1 0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 100,
+            "text": "Validas: 1\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "3dc550d149bbd3aa6a5f56f543667895c7b30707c62d2176c8ec2032cd21da7e",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "-1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 211,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "55549f889aff1f24648750694afd8770c6e37cf0f53566e25fdfa61a0999b5d6",
+        "spans": [
+          {
+            "start": 128,
+            "end": 132,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_caso_2",
+        "path": "/text",
+        "sourceSha256": "c42517a21caef6cc8248d2e71f439d2e7a898f1bd1b50740dd535a2fdc15e564",
+        "spans": [
+          {
+            "start": 23,
+            "end": 29,
+            "text": "1 -1.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 102,
+            "text": "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "82d6d74f408ba844a436be011dbfec4a6d7843899630311d774eeb413621513e",
+        "spans": [
+          {
+            "start": 8,
+            "end": 13,
+            "text": "101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "db08e37e25428c316938f6106e58a61e905a01381e484a41754c6d60f35aa73e",
+        "spans": [
+          {
+            "start": 56,
+            "end": 62,
+            "text": "0..100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_caso_3",
+        "path": "/text",
+        "sourceSha256": "61c0f0831e42c7c3beeb08b032789f6fe7f1c0be87b53439fa39d3f54fb98d80",
+        "spans": [
+          {
+            "start": 40,
+            "end": 47,
+            "text": "1 101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 120,
+            "text": "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "40cc7489fd90ee5ec24aa8a1da0b9b3b1a5eee796fdf7304b35d13f436af38d8",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 40,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 45,
+            "text": "2.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 84,
+            "text": "2.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 142,
+            "text": "Lados hasta 2.5: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "ae2007d6a393154dc9df92d00802c6ad141f466d9768ebab07a45b23d23e6bd8",
+        "spans": [
+          {
+            "start": 88,
+            "end": 91,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_caso_4",
+        "path": "/text",
+        "sourceSha256": "2f5e2f345ed0da342c54c41f7b62e417383c0de1caecdcf5d8eb8c778c9ddfa5",
+        "spans": [
+          {
+            "start": 36,
+            "end": 52,
+            "text": "3 100.0 6.25 9.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 125,
+            "text": "Validas: 3\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "9bf3c6b1e2cbd4a6a2567aeb95544dc2c00d3463b5373ee4b19964a538d1cba3",
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "2.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 45,
+            "text": "1.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 51,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": "-2.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 142,
+            "text": "102.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 198,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 208,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 223,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 246,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "0bd72fd62b222f0341b034d749550cf23bc9d8539afdc2a982a0056678ad7252",
+        "spans": [
+          {
+            "start": 68,
+            "end": 71,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_caso_5",
+        "path": "/text",
+        "sourceSha256": "91f097a1e676019cf5092adbfb529244c4e9cafdd69a38ceb94462dd6af79e3c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
+            "end": 18,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 53,
+            "text": "3 2.0 -2.0 102.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 126,
+            "text": "Validas: 1\nRechazadas: 2\nLados hasta 2.5: 1\nDatos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "raiz_coleccion_propia_accion",
+        "path": "/text",
+        "sourceSha256": "eea251b41528b8f0ba0c467ca2ed1444eceb835651201e9c2dc4d9e550b33f38",
+        "spans": [
+          {
+            "start": 62,
+            "end": 66,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 150,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "e86d0bdb70cfffd059837d45c77a4d3d63cf46bbfc18023a2f436d8762ddb7da",
+        "spans": []
+      }
+    ]
+  }
 }

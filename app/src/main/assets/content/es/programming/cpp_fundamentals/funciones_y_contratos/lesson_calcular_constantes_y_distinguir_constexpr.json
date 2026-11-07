@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "constexpr en una función permite usarla en una expresión constante cuando sus operaciones y argumentos cumplen las reglas de evaluación constante. No obliga a que todas sus llamadas se evalúen de ese modo (Stroustrup, 2024).\n\nUn objeto declarado constexpr añade una exigencia: su inicialización debe ser una expresión constante válida. No basta con que el compilador pueda optimizar un cálculo ordinario. La función ofrece esa posibilidad; el contexto de la llamada determina cuándo es obligatoria.",
+          "text": "constexpr en una función permite usarla en una expresión constante cuando sus operaciones y argumentos cumplen las reglas de evaluación constante. No obliga a que todas sus llamadas se evalúen de ese modo (Stroustrup, 2024).\n\nUn objeto declarado constexpr añade una exigencia: su inicialización debe ser una expresión constante válida. No basta con que el compilador pueda optimizar un cálculo ordinario. La función ofrece esa posibilidad; el contexto de la llamada determina cuándo es obligatoria (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "expresión constante",
@@ -204,7 +204,252 @@
         },
         {
           "type": "note",
-          "text": "La referencia aparece en la página siguiente. Una fórmula cerrada también puede cumplir el contrato, pero aquí la práctica solicita el bucle para comprobar que la evaluación constante puede incluir variables locales y repetición finita."
+          "text": "Una fórmula cerrada también puede cumplir el contrato, pero aquí la práctica solicita el bucle para comprobar que la evaluación constante puede incluir variables locales y repetición finita."
+        },
+        {
+          "type": "heading",
+          "text": "Reconstruir la función y la lectura para todo el dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye de nuevo suma_hasta desde el editor mínimo. Recibe ultimo de tipo int por valor, con precondición entre cero y diez incluidos, y devuelve int con la suma de los enteros desde uno hasta ultimo. Con cero devuelve cero. Usa un acumulador local y un bucle; la función no imprime ni modifica objetos del llamador. Declárala constexpr para poder utilizar el mismo cálculo en los dos contextos solicitados.\n\nAntes de main, añade static_assert para comprobar que suma_hasta(0) vale cero y suma_hasta(4) vale diez. En main inicializa un objeto constexpr con suma_hasta(5). Después lee desde Entrada otro argumento entero del dominio, guárdalo en una variable ordinaria y llama también a suma_hasta con esa variable. El dato está escrito válidamente y pertenece al dominio; esta actividad no solicita interpretar ni rechazar entradas diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestra los dos resultados en una sola línea, separados por dos puntos y sin espacios. El formato es 15:S: el primer valor procede del objeto constante y S es la suma devuelta para el argumento leído. El salto de línea final es opcional. Estas son las entradas y salidas exactas de los once casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento cero\nEntrada: `0`.\n\nSalida exacta:\n`15:0`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento uno\nEntrada: `1`.\n\nSalida exacta:\n`15:1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento dos\nEntrada: `2`.\n\nSalida exacta:\n`15:3`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento tres\nEntrada: `3`.\n\nSalida exacta:\n`15:6`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento cuatro\nEntrada: `4`.\n\nSalida exacta:\n`15:10`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento cinco\nEntrada: `5`.\n\nSalida exacta:\n`15:15`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento seis\nEntrada: `6`.\n\nSalida exacta:\n`15:21`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento siete\nEntrada: `7`.\n\nSalida exacta:\n`15:28`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento ocho\nEntrada: `8`.\n\nSalida exacta:\n`15:36`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento nueve\nEntrada: `9`.\n\nSalida exacta:\n`15:45`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Argumento diez\nEntrada: `10`.\n\nSalida exacta:\n`15:55`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Conserva la misma función y la misma lectura al cambiar Entrada entre los once argumentos. Mantén el bucle, las variables locales, las aserciones y el objeto constexpr solicitados; los resultados deben proceder de las llamadas y no de una lista de respuestas constantes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion, las comprobaciones constantes y la lectura.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "15:0",
+                  "15:0\n"
+                ],
+                "explanation": "Con argumento cero, el bucle no incorpora ningún sumando y devuelve cero. El objeto constante mantiene quince, calculado con cinco. Por eso la línea es 15:0: el resultado de esta llamada no arrastra una suma anterior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. El argumento cero es válido y su suma es cero; comprueba que la inicialización local permite ese caso y que main muestra también el resultado del objeto constante."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "15:1",
+                  "15:1\n"
+                ],
+                "explanation": "Con argumento uno, se incorpora únicamente el sumando uno y se devuelve uno. El primer resultado sigue siendo quince y la línea completa es 15:1. El límite incluido debe permitir esa primera vuelta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Para este argumento el bucle debe incorporar el primer entero y terminar. Comprueba la condición de entrada, la actualización y la presentación de ambos resultados."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "15:3",
+                  "15:3\n"
+                ],
+                "explanation": "Con argumento dos, la suma es 1 + 2 = 3. La llamada ordinaria entrega tres y el objeto constante conserva quince, de modo que aparece 15:3. Se incluyen ambos extremos del intervalo de sumandos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Comprueba que el recorrido incluye tanto el primer entero como el argumento final y que el acumulador guarda la suma, no sólo el último número visitado."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "15:6",
+                  "15:6\n"
+                ],
+                "explanation": "El argumento tres requiere 1 + 2 + 3 = 6. La línea es 15:6: el primer valor no depende de Entrada y el segundo sí procede de la variable ordinaria leída. El resultado coincide con el intento fijo por el dato usado, no porque deba imprimirse como constante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Este caso coincide con el dato del intento fijo, pero debe obtenerse leyendo Entrada y llamando a la función. Comprueba que la presentación utiliza ambos resultados calculados."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "15:10",
+                  "15:10\n"
+                ],
+                "explanation": "Para cuatro se cumple 1 + 2 + 3 + 4 = 10, así que se muestra 15:10. Es el mismo valor que debe comprobar la aserción para ese argumento; la llamada ordinaria debe conservar la regla de suma aunque no sea un contexto constante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Este argumento permite contrastar la llamada ordinaria con una de las condiciones constantes solicitadas. Comprueba que ambas utilizan la misma función y que main presenta su valor."
+                  }
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "15:15",
+                  "15:15\n"
+                ],
+                "explanation": "Con cinco, la suma de los enteros incluidos es quince. Ambas llamadas reciben ahora ese argumento, aunque sus contextos son diferentes: el objeto constante y el resultado ordinario valen quince. La línea es 15:15.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Aunque los valores coincidan, conserva las dos formas solicitadas: la inicialización del objeto constante y la llamada con el argumento que se leyó durante la ejecución."
+                  }
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "15:21",
+                  "15:21\n"
+                ],
+                "explanation": "La suma hasta cinco es quince; al añadir seis se obtiene 15 + 6 = 21. Para el argumento seis, la segunda cantidad es veintiuno y la línea es 15:21. La función calcula desde su propia inicialización local en cada llamada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Comprueba que el último sumando también se acumula y que la función no conserva el total de la llamada usada para inicializar el objeto constante."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "15:28",
+                  "15:28\n"
+                ],
+                "explanation": "La suma hasta seis es veintiuno. Incorporar siete da 21 + 7 = 28, por lo que la llamada de Entrada entrega veintiocho y la línea es 15:28. El avance del argumento no significa aumentar siempre uno el resultado.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Revisa la diferencia entre avanzar el contador y acumular su valor. La función debe sumar todos los enteros del intervalo, mientras main conserva el formato de ambos resultados."
+                  }
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "15:36",
+                  "15:36\n"
+                ],
+                "explanation": "Hasta siete se obtienen veintiocho. Añadir ocho da 28 + 8 = 36 y produce la línea 15:36. El resultado pertenece a esta llamada; no se le añade el valor calculado para el objeto constante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Comprueba que cada llamada empieza con su acumulador local y que la presentación no mezcla el valor constante con la suma del argumento leído."
+                  }
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "15:45",
+                  "15:45\n"
+                ],
+                "explanation": "La suma hasta ocho es treinta y seis. Añadir nueve da 36 + 9 = 45, así que la línea es 15:45. Se conserva el mismo bucle para los argumentos pequeños y para éste, sin elegir resultados escritos por caso.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. Revisa el recorrido completo hasta el argumento incluido y comprueba que se devuelve el acumulador final. La misma función debe servir para todos los casos del dominio."
+                  }
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "15:55",
+                  "15:55\n"
+                ],
+                "explanation": "Diez es el extremo superior admitido. La suma anterior es cuarenta y cinco y 45 + 10 = 55. Por eso la línea es 15:55. La condición debe incluir el último sumando sin ampliar el contrato más allá de ese extremo.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió la línea de resultados. El extremo superior pertenece al dominio. Comprueba que la condición lo incluye, que el avance termina el recorrido y que la función devuelve la suma obtenida."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -242,6 +487,19 @@
               "style": "bold"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la lectura con la misma función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta versión conserva suma_hasta y sus comprobaciones constantes. modelo recibe quince a partir del argumento cinco; caso se lee durante la ejecución y calculado recibe la suma correspondiente a ese argumento. La línea 15:S presenta ambos valores, sin convertir la lectura en una expresión constante."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{0};\n    std::cin >> caso;\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -624,7 +882,23 @@
           "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
-          "block_0003_0004"
+          "block_0003_0004",
+          "suma_constante_construccion_multicaso_titulo",
+          "suma_constante_construccion_multicaso_consigna",
+          "suma_constante_construccion_multicaso_formato",
+          "suma_constante_construccion_multicaso_caso_1",
+          "suma_constante_construccion_multicaso_caso_2",
+          "suma_constante_construccion_multicaso_caso_3",
+          "suma_constante_construccion_multicaso_caso_4",
+          "suma_constante_construccion_multicaso_caso_5",
+          "suma_constante_construccion_multicaso_caso_6",
+          "suma_constante_construccion_multicaso_caso_7",
+          "suma_constante_construccion_multicaso_caso_8",
+          "suma_constante_construccion_multicaso_caso_9",
+          "suma_constante_construccion_multicaso_caso_10",
+          "suma_constante_construccion_multicaso_caso_11",
+          "suma_constante_construccion_multicaso_comprobacion",
+          "suma_constante_construccion_multicaso_editor"
         ]
       },
       {
@@ -634,6 +908,9 @@
           "block_0004_0001",
           "block_0004_0002",
           "block_0004_0003",
+          "suma_constante_lectura_referencia_titulo",
+          "suma_constante_lectura_referencia_explicacion",
+          "suma_constante_lectura_referencia_codigo",
           "block_0004_0004",
           "block_0004_0005",
           "block_0004_0006",
@@ -1188,6 +1465,177 @@
           "block": 6
         },
         "progressPage": "page_0004"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_formato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_6",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_7",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_8",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_9",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 11
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_10",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 12
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_caso_11",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 13
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_comprobacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 14
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_editor",
+        "sha256": "5dc83ac2a72d0732e160a5bd66535d89d913c7d5ab59e9c3fc8c7e4084b73ea7",
+        "storage": {
+          "page": 7,
+          "block": 15
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "suma_constante_lectura_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "suma_constante_lectura_referencia_explicacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "suma_constante_lectura_referencia_codigo",
+        "sha256": "edd587710e77e8bd860f78b515cfb6f6d246839aa79a0509943e3b9868b5d9de",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0004"
       }
     ],
     "editorial": [
@@ -1265,17 +1713,30 @@
         "id": "block_0002_0002",
         "beforeSha256": "33e125069b25759ec6ca083ede6e63ac6ca10cd0a26c6381b1b934c02aef4456",
         "afterSha256": "3cf45c4cab0b46dfcec5df97a963db3235f0dfb9e541d149d2fef2389a6499ed"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "253d5dfb89eb21157f7f13938c7ec6275cb9d0e79904d7cd8e67548f8a585cf7",
+        "afterSha256": "3385934b2a304e89c016c6c4a50d94de70401d56bf68ce2806685bf229c4c3bb"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "3aac46b35776cf00f4bb3e005543e19f8d1153bc3bd5d5b6554fc79d7d6d1910",
+        "afterSha256": "ce43817e8787800a488d215e82622c0c472a8e6f08aea3737e17c6ac957e93a7"
       }
     ]
   },
   "referenceAfter": [
     {
-      "activity": "block_0003_0003",
+      "activity": "suma_constante_construccion_multicaso_editor",
       "blocks": [
         "block_0004_0000",
         "block_0004_0001",
         "block_0004_0002",
-        "block_0004_0003"
+        "block_0004_0003",
+        "suma_constante_lectura_referencia_titulo",
+        "suma_constante_lectura_referencia_explicacion",
+        "suma_constante_lectura_referencia_codigo"
       ]
     },
     {
@@ -1291,11 +1752,19 @@
     {
       "activity": "block_0004_0006",
       "requires": [
-        "block_0003_0003"
+        "block_0003_0003",
+        "suma_constante_construccion_multicaso_editor"
       ]
     },
     {
       "activity": "dominio_once_editor",
+      "requires": [
+        "block_0003_0003",
+        "suma_constante_construccion_multicaso_editor"
+      ]
+    },
+    {
+      "activity": "suma_constante_construccion_multicaso_editor",
       "requires": [
         "block_0003_0003"
       ]
@@ -1321,15 +1790,15 @@
             "start": 91,
             "end": 96,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 128,
             "end": 132,
             "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 185,
@@ -1351,6 +1820,2468 @@
             "text": "Programa aceptado",
             "role": "output",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "3eff17c2fc71493d27fa580d80cfc51435b96a16a4f1a00cfc590dbaa64fcb02",
+        "spans": [
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "f25ae0e274a0a865edca1748a8f1ade93debc5e63c5586bf21b371929f8f74be",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 223,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 255,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 498,
+            "end": 516,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "7227ed545fa239b8eb8bf36f5e099ec219eb4c7f98afaa2d12180050fb56982c",
+        "spans": [
+          {
+            "start": 13,
+            "end": 18,
+            "text": "12:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 26,
+            "text": "modelo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 103,
+            "text": "total_fichas(3, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 138,
+            "text": "bloques",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 390,
+            "end": 408,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "3ad025f6c61fb829cf8e517c649233694b93dab5676c99761ddb4c20b7065826",
+        "spans": [
+          {
+            "start": 22,
+            "end": 31,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "text": "modelo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "c0fd7da52f16f223f1cba79182380087fc9391c3eaf57952a3f3fb1a77909087",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "757fb403d2fdafa8e403762de9b113d98e664c814b94fcfa25b7e36e9cc1e604",
+        "spans": [
+          {
+            "start": 20,
+            "end": 32,
+            "text": "total_fichas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "c7d4a3c56b2f815ddc6ebdf6b519e412314499ac4ce4423224bde4944c725054",
+        "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "modelo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "fc6f7103473b33d56ceeef168427e006356af340d3fb71acebfebc1c92dfd8c0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "4960e7ecfd6aa5defb61e843b5936124fe8eb5ef2c73ab79ec654650af120458",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "307b50de819bf8e5c5cd139fd034a7045ca1d9c12385a81ab71c1b624e278395",
+        "spans": [
+          {
+            "start": 22,
+            "end": 23,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 30,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 56,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 104,
+            "text": "obtener_cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 120,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 194,
+            "text": "constexpr int cantidad = obtener_cantidad();",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 349,
+            "end": 367,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "6e0ace631f3c51bd71d6e9a5532b4df70f47c987347e3baa243e29ee81a4196d",
+        "spans": [
+          {
+            "start": 33,
+            "end": 38,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 94,
+            "text": "const int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 163,
+            "text": "const int limite = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 243,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 311,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "5f4e2d0a68a453b73d15c47fdef5e591acc3305c03c8c5d690faff68d5c3f114",
+        "spans": [
+          {
+            "start": 40,
+            "end": 45,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 59,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "a704c196ca2d34d1216a18903aa4e87e8b3f5530107a84dcde70b69b84c93e8f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 126,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "b59670109f14feeb295cdd985d992e10aab4f8b89bb81f13480e6556e2fcbcd1",
+        "spans": [
+          {
+            "start": 63,
+            "end": 72,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "8755bc517224d4691b045204d584583e1555fd68916576de76cb984176cdee4b",
+        "spans": [
+          {
+            "start": 37,
+            "end": 53,
+            "text": "obtener_cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "12927c03a793d217ff3e60b328b5b7ffbed59ebbba71e4068e98895d35e46c30",
+        "spans": [
+          {
+            "start": 13,
+            "end": 21,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "24f6dd2a089ab095a659529d7c0ef3af319d0177f3d9a5e4607221fceb222be0",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "2ac6348968c81bcba4a01e3fd2469d5f6bb729326b4913b2adaf81a5aa571aaf",
+        "spans": [
+          {
+            "start": 13,
+            "end": 41,
+            "text": "static_assert(doble(3) == 6)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 72,
+            "text": "static_assert(doble(3) == 7)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "0ff5619fa662a8f825d6af0d5867c33ffc1f4acabae5818849a7f70a647374d0",
+        "spans": [
+          {
+            "start": 109,
+            "end": 113,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "9b774f60c73edf372f0026e28f19bda0d8a882e84ff9db641d101f277e40f4df",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 13,
+            "end": 18,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 51,
+            "text": "Programa aceptado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "4aedd020c2918e1ec0679b9a254f039fccf05ba0e35ad1ba6b9256ccf9bea221",
+        "spans": [
+          {
+            "start": 58,
+            "end": 62,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "ed701717adba0294b8a1da244f9f2001b14ae3a126607dd841ba74918e2364f1",
+        "spans": [
+          {
+            "start": 21,
+            "end": 26,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "c56cb94e786f75517e9dedce2b5e97223c9d629f0ccacd1f9639e8cbcd30edf3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "740c76079858341ce556ca06415d12510f9ec4563643221576ce69099fd5bad8",
+        "spans": [
+          {
+            "start": 10,
+            "end": 20,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 35,
+            "text": "ultimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 48,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 103,
+            "text": "ultimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 122,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 246,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "ca538b6fc63d85e41709c4e711f8da9fa68c094dc67142322b56b7a8e4b47550",
+        "spans": [
+          {
+            "start": 6,
+            "end": 19,
+            "text": "static_assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 55,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 71,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 103,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 121,
+            "text": "suma_hasta(5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 199,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "15:6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "a26e1066c042874ff1e911b595cd860eb5f0d6a078195b8828ee94b41ceda7fc",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "eb3572ab77b2423a8d6b16c8e74a8b48baaf88f782147fa3a2879ead1b8b4c29",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "2195216e675c29e96f120039f8964009ccad7deb787416493a5b01877944b7d9",
+        "spans": [
+          {
+            "start": 61,
+            "end": 66,
+            "text": "0..10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 130,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 172,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 351,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 425,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "fcf27718d5be7e7c7fb395438e728d9f1b25e309824347aba417ee6f9345e2b1",
+        "spans": [
+          {
+            "start": 4,
+            "end": 17,
+            "text": "static_assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 176,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 181,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 223,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 302,
+            "text": "0..10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 345,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "03b66581e7e8170235ce4405837e85901e52de615bb0a2df76a34285790b5562",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "6645b512efe5851378274075b5f4aca05980fd51f5f1da6bbdce2d71e9f7334e",
+        "spans": [
+          {
+            "start": 55,
+            "end": 60,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "15:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 132,
+            "text": "15:55",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 336,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_titulo",
+        "path": "/text",
+        "sourceSha256": "946248a308a91c4af43f1cff595bc7a3a6b93ede0fd6875b2a65fe08ea16bf9f",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_consigna",
+        "path": "/text",
+        "sourceSha256": "6b6719337e4b281ea3f29453327acb8e7cd148927e8c6d060c6bf528f2fdb358",
+        "spans": [
+          {
+            "start": 11,
+            "end": 21,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 114,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 152,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 288,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 345,
+            "text": "0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 363,
+            "text": "10:55",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "541b329a6f6f0fa806db792d185db5f173d0c2675dccfb3a672878f61403c042",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 117,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/question",
+        "sourceSha256": "382261d2e23ae4210c2f5e407b796aa2bc5b8d35f162d50f3648f2663468914f",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 35,
+            "text": "7:28",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 42,
+            "text": "8:36",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/explanation",
+        "sourceSha256": "e43ef1770044128ac901efed57660670053e2b725102a33db0d0f6c0b40cd2c2",
+        "spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 41,
+            "text": "1 + 2 + … + 7",
+            "role": "math"
+          },
+          {
+            "start": 53,
+            "end": 57,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 78,
+            "text": "36 − 28 = 8",
+            "role": "math"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/options/0",
+        "sourceSha256": "f369d36217d1088a4d653908c7c2498504cbd1fb8da19e79a55adb9b278ee243",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 58,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/options/1",
+        "sourceSha256": "81335890c74cfbb3924fdfb79ab887d891773b99c69cef05c4a515a69305d471",
+        "spans": []
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/options/2",
+        "sourceSha256": "6ec007301b1d100d6ef9ba8b7e81452ceb66f38ba61e305ed42a4103f00a2a26",
+        "spans": [
+          {
+            "start": 51,
+            "end": 52,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "8422c9c82a3b642351f4843ac00b331cd3ae74c59e93da1a60c74b83e38f21bd",
+        "spans": []
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "7a02dbcffff30c00ba4c62524417cf48edd729fd8d80cafe058710f00310e2af",
+        "spans": []
+      },
+      {
+        "block": "dominio_once_diferencias",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c8109b4b1d8600f84f4718d2d1c0d35e309f9f662c864068ffb3cd40a3bd96ec",
+        "spans": [
+          {
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "dominio_once_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "89a3383ab7a3c07e19e31b89a23a9b269db78ca0f2a9b5b6ad382daf7811b014",
+        "spans": []
+      },
+      {
+        "block": "dominio_once_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "987ede677f1a46963a26b62d31695b160a2690440411d2b86acf5fb4ffcfd447",
+        "spans": [
+          {
+            "start": 91,
+            "end": 101,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 346,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 357,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 422,
+            "end": 426,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "a3ccd83e55eb5d76bbbf00178975781b84518b47de1670dc0a737f231b99cd19",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "consteval",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "e68b296355dc089ba3036f4693d197b65c24b1e11bceaa195a2b5016e12c5f0a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "consteval",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 161,
+            "text": "resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 227,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 263,
+            "text": "int dato = 4;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 314,
+            "text": "int resultado = doble_obligatorio(dato);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 329,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 348,
+            "end": 352,
+            "text": "dato",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "e701502a2bd9d815779b195cfa4ea858fd7f79caf9a180f645e8bf49d12d9b17",
+        "spans": [
+          {
+            "start": 19,
+            "end": 55,
+            "text": "int resultado = doble_obligatorio(4)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "dd85b5be14546e688b9027ede556d7d4a3fd776bb9ac3310ff73eef27022a408",
+        "spans": [
+          {
+            "start": 100,
+            "end": 109,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "c9c733176474abfa40ca7e4f39b9884153c669dc1a5c59759d9f7428dc7518eb",
+        "spans": [
+          {
+            "start": 21,
+            "end": 24,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "98b749a845fefc80310d029c08a26fcd77db2ffa443403c753af4146a5479e1c",
+        "spans": [
+          {
+            "start": 7,
+            "end": 16,
+            "text": "consteval",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "8024e75ffe4d87ff26e248c4d5fd35124cec4e84dc46f9182be47af9497eea6f",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "f7c3dd5404bd4af9ac3cc3455d114ae7e0ca2a6283e425de8b345f0fb1ac3859",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 28,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "consteval",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 271,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 352,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "de437558eb1d2daa2c90cd0dad456f090667fd906699ec311858ce65c94e854e",
+        "spans": [
+          {
+            "start": 108,
+            "end": 117,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 352,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_titulo",
+        "path": "/text",
+        "sourceSha256": "ab49523a03a7576253535faf69cc8b77b590251bb287aea09669bc12b7593599",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_consigna",
+        "path": "/text",
+        "sourceSha256": "b8366916da8a060f02726122aa3bfff33e3a43898f24b5fb69579a3886814b02",
+        "spans": [
+          {
+            "start": 19,
+            "end": 29,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 67,
+            "text": "ultimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 79,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 118,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 125,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 151,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 188,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 201,
+            "text": "ultimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 211,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 225,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 338,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 383,
+            "end": 386,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 424,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 445,
+            "text": "static_assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 465,
+            "end": 478,
+            "text": "suma_hasta(0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 484,
+            "end": 488,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 491,
+            "end": 504,
+            "text": "suma_hasta(4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 514,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 523,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 545,
+            "end": 554,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 559,
+            "end": 572,
+            "text": "suma_hasta(5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 688,
+            "end": 698,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_formato",
+        "path": "/text",
+        "sourceSha256": "c26dd91adfdd5578c1ce999d87656685c67ff251a904739d9ad62b5202c8d580",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 105,
+            "text": "15:S",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "S",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 290,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_1",
+        "path": "/text",
+        "sourceSha256": "b136d4546d5bd35a94816b716ee2e4ebd5f02c1ef992464fb38df6daa62c034b",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "15:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_2",
+        "path": "/text",
+        "sourceSha256": "b63627a90b5a0e2eada556b2a46c3bfc996bde8d71431960d88dfddbf485f2ec",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 25,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "text": "15:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_3",
+        "path": "/text",
+        "sourceSha256": "11bb6b98bd150f9781def360f195ae4db6f9a451fb549c2b61991989a63466fc",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 25,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "text": "15:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_4",
+        "path": "/text",
+        "sourceSha256": "687f256d3e358c91500cf73ec8c4a5f944fa028d2d820ab8c305362ec03fd13a",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "15:6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_5",
+        "path": "/text",
+        "sourceSha256": "8cceffbe520a81b5468e96f9755302210c95e49cda280ae16889c0f77a514831",
+        "spans": [
+          {
+            "start": 10,
+            "end": 16,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 53,
+            "text": "15:10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_6",
+        "path": "/text",
+        "sourceSha256": "47fc8646ab509afd7b854a8019cfe64a2ec05654afac7dbad3a6d3de1ff60e10",
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "15:15",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_7",
+        "path": "/text",
+        "sourceSha256": "93aabf72d3ab9aa5deb63d15f73d13772d869a5cf5ed9a5adac6d4f4dd2d0e4f",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "15:21",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_8",
+        "path": "/text",
+        "sourceSha256": "13343ffdd1820a95307e9655f0e2fb71187e1dbb83a44afd7a9b219a4322a818",
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "15:28",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_9",
+        "path": "/text",
+        "sourceSha256": "7ad603426067268d5eb7e6262f9a4f44b8a01bec57788ee3004930edea785dbf",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "15:36",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_10",
+        "path": "/text",
+        "sourceSha256": "02d519f7cd150b5ed93f93eaa6ceded8f69accd7e06b102ef99ccf2b23500a5e",
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "15:45",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_caso_11",
+        "path": "/text",
+        "sourceSha256": "bf46545b25e7adf692afdf5d735768b8b53157b4e9429c72a74c39575ef98ba9",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 27,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 52,
+            "text": "15:55",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_comprobacion",
+        "path": "/text",
+        "sourceSha256": "2f910992fea259f78fc141c762ed904b937c5869df4db0245c9569b608fcc701",
+        "spans": [
+          {
+            "start": 114,
+            "end": 118,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 207,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "a1da514556de8d931d90298f59bab36d0990b0b7fdc825060a938a58a88748c7",
+        "spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 72,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 109,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 130,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 156,
+            "text": "15:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "07177313978c399f7c51ab2ffe3cca0d48297e57d39fc650c02134a303e6224e",
+        "spans": [
+          {
+            "start": 51,
+            "end": 55,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 150,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "6a52d571544aa589bc0fda4af46760c7745dc43d6ea831daeeb0688052565d0e",
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 57,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 75,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 116,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 144,
+            "text": "15:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "10e0bddd12771c122c1791976351e4eb4cd1afb49ea22d2db886c839f71e0caa",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "cc8f2246289ac094c4264e732ab89a301a1329b1102a572fb006dc11f18bafce",
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 39,
+            "text": "1 + 2 = 3",
+            "role": "math"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 112,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 138,
+            "text": "15:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "8dba59ce3719038c6a4c8311dcdbdc35a6e9944a944e33c34916e8016089efbd",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "3c06873deed7000d8afb0fd847777e1fcc5793554d61c782adae527be85b94cd",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 40,
+            "text": "1 + 2 + 3 = 6",
+            "role": "math"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "15:6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "2d6a6a278ffd61701274d4f0278f821e5a7547e6f9bab957335621b4e5e5b4fd",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "de3a5de760930b240b556553bfceb37ab4ad699dd8557870e3d11121709e8700",
+        "spans": [
+          {
+            "start": 5,
+            "end": 11,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 40,
+            "text": "1 + 2 + 3 + 4 = 10",
+            "role": "math"
+          },
+          {
+            "start": 61,
+            "end": 66,
+            "text": "15:10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "175d0cef03a7f0646e7d28aa0f5909a4cb77de9c5e70f2f096d078c14b087e5e",
+        "spans": [
+          {
+            "start": 196,
+            "end": 200,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "206042ce03f7ae7ffb4a8d8e942449f110dba37db96d3af681620fb0977ebca0",
+        "spans": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 53,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 193,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 212,
+            "text": "15:15",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "cfb693334c168371038850d0bb863ca6fefe20336200bbd1a4e45cf2893e35b8",
+        "spans": [
+          {
+            "start": 81,
+            "end": 84,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/6/explanation",
+        "sourceSha256": "5f7378abb3761fe6fbaddd4fe8bfa6267a53e9d7954d08e7947f8c168d29cafb",
+        "spans": [
+          {
+            "start": 14,
+            "end": 19,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 29,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 45,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 68,
+            "text": "15 + 6 = 21",
+            "role": "math"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 126,
+            "text": "veintiuno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 146,
+            "text": "15:21",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/6/reviewFeedback/0/text",
+        "sourceSha256": "63fe74f0f507bab086e878a43c118f3e12d4bb9d51c2c0eea9ffb7e098375093",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/7/explanation",
+        "sourceSha256": "98abdb85181d5e4fd48a388481fd96022a0b31bf9dfa169eb26ed5cb9f363458",
+        "spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 31,
+            "text": "veintiuno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 49,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 64,
+            "text": "21 + 7 = 28",
+            "role": "math"
+          },
+          {
+            "start": 107,
+            "end": 117,
+            "text": "veintiocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 137,
+            "text": "15:28",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 196,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/7/reviewFeedback/0/text",
+        "sourceSha256": "61d03b6ed00a31252b1cfd1d4a5935cd713383a1fad95bb6b4a23df38a35f002",
+        "spans": [
+          {
+            "start": 170,
+            "end": 174,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/8/explanation",
+        "sourceSha256": "a2ea668a71303324ff8bfabe07a1cac0d69aba0ad7ad1be0222fab0eac92bf95",
+        "spans": [
+          {
+            "start": 6,
+            "end": 11,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 34,
+            "text": "veintiocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 62,
+            "text": "28 + 8 = 36",
+            "role": "math"
+          },
+          {
+            "start": 82,
+            "end": 87,
+            "text": "15:36",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/8/reviewFeedback/0/text",
+        "sourceSha256": "0b5b8d1bca3f06dee017c87b1f43665325871b18b1e0e54a4510785fbdfe98bf",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/9/explanation",
+        "sourceSha256": "810a6d3ce331a4a2257f154f6d27463d6145b0cb054242839041c98c4e2666b3",
+        "spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 36,
+            "text": "treinta y seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 50,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 65,
+            "text": "36 + 9 = 45",
+            "role": "math"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "15:45",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/9/reviewFeedback/0/text",
+        "sourceSha256": "18cc03ef0c9e8bdfacab9c29ea198ad81756ba6184b8e989d389989861abbe52",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/10/explanation",
+        "sourceSha256": "9f0bd2997c8ec75fc78dd034c436f2e8cf9dfadbc41d1df6de45557d07cf34e9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 74,
+            "text": "cuarenta y cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 89,
+            "text": "45 + 10 = 55",
+            "role": "math"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "15:55",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "suma_constante_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/10/reviewFeedback/0/text",
+        "sourceSha256": "f09370aba93bd3f7dcf359b9f8956a59c21c5d12e2aeef953a087503b481069d",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_lectura_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "5c1c6e66662ed6975fc30761999c0a9f49c7c7700f1cb62a9210dc3e8bb06850",
+        "spans": []
+      },
+      {
+        "block": "suma_constante_lectura_referencia_explicacion",
+        "path": "/text",
+        "sourceSha256": "29c58588461539618fa107ce7b968e732a240bc6c19c7ba8f48244a96a3d43f3",
+        "spans": [
+          {
+            "start": 22,
+            "end": 32,
+            "text": "suma_hasta",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 72,
+            "text": "modelo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 115,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 121,
+            "text": "caso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 161,
+            "text": "calculado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 223,
+            "text": "15:S",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "d045f792dac8b5350e29f6652ee259efeee2e8834f7e6b55026daeb29a5f5687",
+        "spans": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

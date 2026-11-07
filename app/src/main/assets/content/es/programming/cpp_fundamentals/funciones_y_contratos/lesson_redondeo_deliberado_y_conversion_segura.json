@@ -350,6 +350,151 @@
         {
           "type": "note",
           "text": "Construye desde este editor. No basta imprimir un resumen constante: contrasta el vector original completo, el orden de primeras apariciones y cada contador. La clasificación puede aceptar datos fraccionarios; la conversión exacta de piezas no sería una sustitución equivalente."
+        },
+        {
+          "type": "heading",
+          "text": "Construir la lectura y la clasificación con colecciones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa nuevo desde este editor mínimo. La Entrada contiene primero una cantidad entre cero y ocho y, después, esa cantidad de valores double finitos entre -102 y 102. Todos están escritos válidamente. El programa debe leer la cantidad y los valores; la entrada vacía de observaciones se representa con 0.\n\nDefine bool redondear_entero(double origen, int& destino): acepta sólo un origen finito entre -100 y 100, incluidos los extremos. Si acepta, devuelve true y asigna el entero más cercano, con empates alejándose de cero; si rechaza, devuelve false sin modificar destino. No imprime. Valida el origen antes de calcular y convertir el candidato; en ese dominio el entero obtenido cabe en int.\n\nRecorre la colección en su orden original y construye marcas int únicas en el orden de su primera aparición. Cada aceptado repetido suma una colisión, aunque proceda de otro valor double. Un rechazo suma un rechazado y no participa en la búsqueda ni aporta marca. Usa el bool de la llamada para distinguir una marca cero aceptada de un rechazo. Conserva la colección completa y su orden, y compárala con una copia tomada antes del recorrido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestra cuatro líneas. La primera empieza por Marcas: y añade cada marca precedida de un espacio; si no hay marcas, no añade ningún espacio. Las siguientes son Colisiones: C, Rechazados: R y Datos conservados: B. C representa las colisiones, R los rechazos y B muestra 1 si la colección conserva tamaño, valores y orden, o 0 en caso contrario. No añadas mensajes distintos. El salto de línea final es opcional. Las entradas y salidas de todos los casos aparecen a continuación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin observaciones\nEntrada: `0`.\n\nSalida exacta:\n`Marcas:`\n`Colisiones: 0`\n`Rechazados: 0`\n`Datos conservados: 1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cero aceptado\nEntrada: `1 0.0`.\n\nSalida exacta:\n`Marcas: 0`\n`Colisiones: 0`\n`Rechazados: 0`\n`Datos conservados: 1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ambos argumentos fuera del dominio\nEntrada: `2 101.0 -101.0`.\n\nSalida exacta:\n`Marcas:`\n`Colisiones: 0`\n`Rechazados: 2`\n`Datos conservados: 1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fracciones distintas con una misma marca\nEntrada: `2 0.25 -0.25`.\n\nSalida exacta:\n`Marcas: 0`\n`Colisiones: 1`\n`Rechazados: 0`\n`Datos conservados: 1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repetir una observación ya aceptada\nEntrada: `3 3.0 3.0 3.0`.\n\nSalida exacta:\n`Marcas: 3`\n`Colisiones: 2`\n`Rechazados: 0`\n`Datos conservados: 1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Extremos y mitades cercanas a ellos\nEntrada: `4 -100.0 100.0 99.5 -99.5`.\n\nSalida exacta:\n`Marcas: -100 100`\n`Colisiones: 2`\n`Rechazados: 0`\n`Datos conservados: 1`"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe también la lectura de Entrada, las llamadas y la presentación. Pulsa «Compilar, ejecutar y comprobar» y conserva las mismas funciones y el mismo recorrido al cambiar Entrada entre los seis casos. Si un caso difiere, comprueba primero qué observaciones se aceptan, qué marcas ya estaban presentes y qué elementos deben conservarse."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nint main() {\n    // Construye la lectura, la funcion y la clasificacion de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "La cantidad cero no aporta valores al recorrido. No se construye ninguna marca; Colisiones: 0 y Rechazados: 0 reflejan que no se procesó ninguna observación. Datos conservados: 1 confirma que la colección vacía sigue intacta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Esta entrada contiene sólo la cantidad cero: el recorrido no tiene observaciones, pero el programa debe imprimir los cuatro rótulos, ambos contadores en cero y la conservación de la colección."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "La observación 0.0 pertenece al dominio y genera la marca cero. Es la primera marca: Marcas: 0, Colisiones: 0 y Rechazados: 0. Datos conservados: 1 confirma que la observación original no se modificó. El bool devuelto permite aceptar cero.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. La observación 0.0 es válida: debe aparecer su marca cero, sin colisiones ni rechazos. Comprueba que usas el bool devuelto y que no interpretas el destino cero como un rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 101.0 -101.0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1\n"
+                ],
+                "explanation": "101.0 y -101.0 están fuera del intervalo admitido. Ambas llamadas rechazan antes del redondeo; sus destinos conservados no se convierten en marcas. Por eso Marcas: no lleva valores, Colisiones: 0, Rechazados: 2 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Ambos valores están fuera del dominio de redondear_entero. Deben contarse dos rechazos y ninguna marca ni colisión; comprueba que un rechazo no hace consumir el destino conservado."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 0.25 -0.25",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "0.25 y -0.25 se aceptan y ambas generan la marca cero. La primera la añade; la segunda encuentra esa misma marca y cuenta una colisión. El informe es Marcas: 0, Colisiones: 1, Rechazados: 0 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Estas fracciones tienen signos distintos, pero ambas redondean a cero. Comprueba la búsqueda de la marca ya obtenida: debe conservarse una sola marca y contarse la repetición."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 3.0 3.0 3.0",
+                "outputs": [
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "Las tres observaciones 3.0 son válidas y generan tres. La primera añade la marca; las otras dos cuentan colisiones por separado. Se obtienen Marcas: 3, Colisiones: 2, Rechazados: 0 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. La misma observación aparece tres veces: la primera genera la marca y cada repetición posterior suma una colisión. Comprueba que no cuentas sólo si existe alguna repetición, sino cada aparición repetida."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4 -100.0 100.0 99.5 -99.5",
+                "outputs": [
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "-100.0 y 100.0 se aceptan y añaden las marcas -100 y 100, en ese orden. 99.5 redondea a 100 y -99.5 a -100, por lo que ambas colisionan. El informe conserva Marcas: -100 100, Colisiones: 2, Rechazados: 0 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Los extremos son válidos y aparecen antes que las mitades; las marcas de estas últimas ya existen. Comprueba que mantienes ese orden, aceptas los extremos y cuentas dos colisiones."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -849,7 +994,18 @@
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
-          "block_0005_0006"
+          "block_0005_0006",
+          "marcas_redondeadas_construccion_multicaso_titulo",
+          "marcas_redondeadas_construccion_multicaso_consigna",
+          "marcas_redondeadas_construccion_multicaso_formato",
+          "marcas_redondeadas_construccion_multicaso_caso_1",
+          "marcas_redondeadas_construccion_multicaso_caso_2",
+          "marcas_redondeadas_construccion_multicaso_caso_3",
+          "marcas_redondeadas_construccion_multicaso_caso_4",
+          "marcas_redondeadas_construccion_multicaso_caso_5",
+          "marcas_redondeadas_construccion_multicaso_caso_6",
+          "marcas_redondeadas_construccion_multicaso_comprobacion",
+          "marcas_redondeadas_construccion_multicaso_editor"
         ]
       },
       {
@@ -1676,7 +1832,107 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_formato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_caso_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_caso_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_caso_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_caso_6",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_comprobacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 9
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_editor",
+        "sha256": "6288df68441d8866a2b1e1cd653f87186a82e5018464f6d060432b041e3f47f8",
+        "storage": {
+          "page": 8,
+          "block": 10
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0007_0002",
@@ -1737,7 +1993,7 @@
       ]
     },
     {
-      "activity": "block_0005_0005",
+      "activity": "marcas_redondeadas_construccion_multicaso_editor",
       "blocks": [
         "block_0006_0000",
         "block_0006_0001",
@@ -1764,6 +2020,13 @@
     },
     {
       "activity": "block_0006_0009",
+      "requires": [
+        "block_0005_0005",
+        "marcas_redondeadas_construccion_multicaso_editor"
+      ]
+    },
+    {
+      "activity": "marcas_redondeadas_construccion_multicaso_editor",
       "requires": [
         "block_0005_0005"
       ]
@@ -1821,6 +2084,3395 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "53c59b8db34a4e94e6b28103e288e254542b6ce04ddc2140d3b3eeb871c0418f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "33ec95604172a7f8001eb7a8f991503b462e976448c4677abfa092b186d6dbd0",
+        "spans": [
+          {
+            "start": 90,
+            "end": 96,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 102,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 185,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "16dc226944985297adf23d1eb2c373a30036f54197f1aa4374c5a215e843612c",
+        "spans": [
+          {
+            "start": 82,
+            "end": 95,
+            "text": "Seis y cuarto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 112,
+            "text": "un cuarto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 120,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 137,
+            "text": "tres cuartos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 146,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 161,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 188,
+            "text": "Menos seis y tres cuartos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 205,
+            "text": "un cuarto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 220,
+            "text": "menos siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 237,
+            "text": "tres cuartos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 251,
+            "text": "menos seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 273,
+            "text": "menos siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 336,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "44c58ca77d7708123b95d5fe06ba1ef134d03a80e4f92ebd8c3e98b9d9e81f32",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 101,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 115,
+            "text": "tres y medio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 138,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 160,
+            "text": "menos tres y medio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 176,
+            "text": "menos cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "d3c5eac6fd59f833b8fff75c86e55b92a40ac413b02de03d2c27263b2d32980c",
+        "spans": [
+          {
+            "start": 51,
+            "end": 55,
+            "text": "-7.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "c8fb85dbf75346996844e855ce72109d61b1d1782d8628f814d87b056a7dc3e9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "Menos siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 24,
+            "text": "menos ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "media",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 90,
+            "text": "menos ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "811f786f2e190a69cb78ae8d6a283cf08d108b264a1f3be7607a24fbb691490b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "-7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "692ef56d193df751bf800cc8f66bed8331bbb38997fd8aee2945da9bed1026d3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
+            "end": 18,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "2a0904156d9628ebd46fa9bc3a01f15bfea20ecb57a302c2f2d4b70d3175db1c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "-7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "9d167ed039f8a6552a962cac908dfb55dadf166f850487cc22a1001b1ec9753c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "2ed1bdd508b10859487cc3ecfb513df95d8613eb7e88a8e85c520c34f51fabb4",
+        "spans": [
+          {
+            "start": 56,
+            "end": 60,
+            "text": "4.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "4.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 128,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/0",
+        "sourceSha256": "80d66cee04173065bb077aa02e8599451ecf20ab60eaacef3382590da3d998b8",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/1",
+        "sourceSha256": "ce1e54963a1ddb74898f8f758804e8ee83b1e5e792714bc5363408608c47d7a5",
+        "spans": [
+          {
+            "start": 54,
+            "end": 57,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/2",
+        "sourceSha256": "d19d05af96cc93708c76b084ccd85e8c234a67bfc5e41660b83afea40263eaa9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "b0a9b33544fb52342b0e7ceca86868c84629b0a1c6176e6f0a40d56d2516818c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "std::round",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 52,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "828d34edeb4c37ba13940c131b89cda77486b50e1f94235370b7727f2c51d7c7",
+        "spans": [
+          {
+            "start": 12,
+            "end": 19,
+            "text": "<cmath>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 38,
+            "text": "std::round",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 63,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 157,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 211,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 14, 2023; Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 278,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 322,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "90ed56fb0cff884b1fc5f4651cc0cc22047da7fa39f9f7f3e97f6b02266b614a",
+        "spans": [
+          {
+            "start": 42,
+            "end": 46,
+            "text": "6.25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 78,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 105,
+            "text": "seis y cuarto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 117,
+            "text": "redondeado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 148,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 163,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 188,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "e5ab6e44cf116f1e4f74836f03b8b3fa060b088e28084d0faca307efd2057754",
+        "spans": [
+          {
+            "start": 103,
+            "end": 106,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "cc31f1cc9e4e11783d692f6ab16370f0875b9383707ded45d7b24af168a24243",
+        "spans": [
+          {
+            "start": 35,
+            "end": 39,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 59,
+            "text": "menos dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 71,
+            "text": "Menos tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 114,
+            "text": "menos dos y tres cuartos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 121,
+            "text": "round",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "ef9addb0cfea070cdd223a26b54745c4c9376302a699ad71e5e188fd78450904",
+        "spans": [
+          {
+            "start": 19,
+            "end": 25,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 38,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 46,
+            "text": "100.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 64,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "abf6cb29a2eebd1f595ac0ab11328f0d1560cd68f6e65b216e895522facc043a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "cca26f2a4f8eae599574499a9c56e90b0a4cf879bf4df166f929075470e481de",
+        "spans": [
+          {
+            "start": 52,
+            "end": 56,
+            "text": "cien",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "eefb7c30aba3f84755e5f63ab9e9481519c412ce48f97617b3c8dbcaef54fd6b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "ec1346fa4499603668d33a8a6efcc67ea34bc39e3cd8c65c10e3ebf9a6238c07",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "cien",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 29,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "a4b882f70ab11f3719f978a7ab3192ecde8825ad6ba76beb477a05eef579cf4a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 22,
+            "text": "std::isfinite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 89,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 101,
+            "text": "std::round",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 154,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 249,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 280,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 291,
+            "text": "ceros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 332,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "9aa7d908bc0320e903384dcce66c7973aaaa9c2137288a13db2dc56ee0081faf",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "f8bfabf22e99629563456152af0c746a4aadd7ae18d6601140042933004ee34a",
+        "spans": [
+          {
+            "start": 10,
+            "end": 60,
+            "text": "bool redondear_entero(double origen, int& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 103,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 159,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 226,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 260,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 282,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 302,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 327,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "4028200dbc9a5c6036d5f2f4827850e210e01f7e7b10683744c071f67fee27c6",
+        "spans": [
+          {
+            "start": 74,
+            "end": 77,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 119,
+            "text": "std::round",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 175,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "2c15b801ccce45bb358dd553b9977bbf548dc84fdbd17969a9a62dbda278bf83",
+        "spans": [
+          {
+            "start": 48,
+            "end": 63,
+            "text": "treinta y siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 85,
+            "text": "1.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "text": "-1.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 101,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 109,
+            "text": "-2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 119,
+            "text": "-100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 130,
+            "text": "-100.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 138,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 209,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 229,
+            "text": "B:D",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 284,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "cd4f9044024e48c03bfdbc206ba881176f99e6bdf09371df930507302a454090",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/text",
+        "sourceSha256": "a1dac6a757ca50bd61ec68cadd5f02475082964b29d5851a9143a50a71dad20c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "b96ff2a905355dad4f0c9bf14bdf4fb25612c535dc43fb9ba043136152cdf08f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "42bb27ebd1091d4a956a44fb8e773aa09af14dfbc904f140550f2738fe196711",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "495e8aa42e7b465ddc0816e4366fd94df1f59b28831efc3f252bc198256cc92c",
+        "spans": [
+          {
+            "start": 31,
+            "end": 32,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 36,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "text": "-5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 53,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "Fuera",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "1.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 140,
+            "text": "-1.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 145,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 151,
+            "text": "-2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 159,
+            "text": "-100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 168,
+            "text": "-100.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 174,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 192,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 198,
+            "text": "1:-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 203,
+            "text": "1:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 209,
+            "text": "1:-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 217,
+            "text": "1:-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 225,
+            "text": "0:-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 231,
+            "text": "1:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "a1f2b6bffca332f30da322618a507e717c4414087b0881a29c418a5ca45cc7f6",
+        "spans": [
+          {
+            "start": 143,
+            "end": 148,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 183,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 214,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 220,
+            "text": "99.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 228,
+            "text": "-99.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 241,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 248,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 318,
+            "end": 324,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "a781084ff64242b2b78dcac598fd3ff15c21d8c55dad10866013712f58181edc",
+        "spans": [
+          {
+            "start": 18,
+            "end": 25,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 35,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 66,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 110,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "16f582adc72508ba5b158b4bccf6951a89b2576578505c884a739209e3de4d8d",
+        "spans": [
+          {
+            "start": 77,
+            "end": 81,
+            "text": "0.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 103,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 168,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "7c6291981aef87d15c781e0bcdef75203d575cdb4667b9645c8af32481a1e1d3",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "752fac8b3dfe7bed6fd3120344bea1b85fc79772852e8072c20deb6b8046bb1d",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "2f6e558de0bafc9a3267d66c14271d0b15d7d4f4c063919d820ec781effad649",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "e7e3178a79d06089b0cbad5f6eb662fdb010557b388c7b7e7861bdab842e7007",
+        "spans": [
+          {
+            "start": 189,
+            "end": 195,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "2d28f6727dcb8cd27e640d82c7f7a7e0f5d7f75ff88d71acf316ea472a1495a5",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "f1b11287fc04f1705c3ea33db19bb109a6781f01401fc0bec5095d21ada4c542",
+        "spans": [
+          {
+            "start": 16,
+            "end": 22,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 39,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 72,
+            "text": "0.5 37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 83,
+            "text": "-0.5 37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 94,
+            "text": "99.5 37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 106,
+            "text": "-99.5 37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 118,
+            "text": "100.0 37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 131,
+            "text": "100.25 37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 146,
+            "text": "-100.25 -8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 171,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 181,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 200,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "532505a7b561d09663dac0e30d1e64dca11399ded7227b59d56cce705385105f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "b6fc4e4230ab3a10120279d29ec40fc00be7bd5d4bc08542741cc20a9dc88a34",
+        "spans": [
+          {
+            "start": 118,
+            "end": 134,
+            "text": "convertir_entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 178,
+            "text": "redondear_entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 381,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "5a24689b478019c21476add316beae6d17ccfa8bf47470d31a1e0498ee1275d7",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "524165de3f2b2a7f79b22c21654d8911fa6b8270cdf65a77067c504b70abdfe2",
+        "spans": [
+          {
+            "start": 51,
+            "end": 56,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 90,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 126,
+            "text": "menos cien y cuarto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 163,
+            "text": "ceros",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "b641a74135c36a1a960e9d3c6b0f85aced250b8741d8a090ca9276bcb867dd15",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "dbce4d2e0ab61b0b110f3238010883b90a5543c96c8c870cfc905c70bf15a95f",
+        "spans": [
+          {
+            "start": 6,
+            "end": 11,
+            "text": "media",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 46,
+            "text": "menos uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 62,
+            "text": "Menos dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 105,
+            "text": "menos uno y tres cuartos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "40c5466a952102f6e9728b2dc819539cec6de4dfcc32eb6c3a9e1c2c614fa6b0",
+        "spans": [
+          {
+            "start": 28,
+            "end": 31,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "881c555d022903c4ed3cec861b611f4fb49e04dfafd22a73449bcee921fb498e",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "1c130e2941391c607b6745ab711cb5e835680c8373f3d9fabacb0931319c5486",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "b14716b3a7acd9963bab0def986b87ae258c53254d210177fa09874676048867",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "de31f1700635f2dfed00474b4eac62001addfce4e0d843d646c406a6cb750635",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "478f6fd2b40fc5e07b9d262ba6bff87f2800b6114c65af796c05202c70fe5c93",
+        "spans": [
+          {
+            "start": 143,
+            "end": 147,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 202,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "970f0ad113a0a7b04a38189835e1437592a20d6e5a61e92e82145a9d4c269d18",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "630aac6e914346d1bd7718e33366b02b62c53ec809f04e9e60cdaa2a344740a4",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 54,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 85,
+            "text": "-102..102",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 166,
+            "text": "redondear_entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 225,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "39197c8c15d5394a28eddfa2a0ed078d303aca0c0391347b4df48bd6eb117c43",
+        "spans": [
+          {
+            "start": 30,
+            "end": 33,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 289,
+            "end": 292,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 299,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 340,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 413,
+            "end": 417,
+            "text": "Cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "50db9fe77b32a11506de3497a4b05df68278f4234a824dc2d76b8b9faeba5c47",
+        "spans": [
+          {
+            "start": 13,
+            "end": 54,
+            "text": "{0.25,0.4,-0.25,2.5,2.75,-2.5,100.25,2.5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 127,
+            "text": "Marcas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 186,
+            "text": "Colisiones: C",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 203,
+            "text": "Rechazados: R",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 228,
+            "text": "Datos conservados: B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 240,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 260,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 292,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 406,
+            "end": 407,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "ac55d8433772e691ecca0db756356ce6a565597c9e577c33d9d25b9d51b796b8",
+        "spans": [
+          {
+            "start": 103,
+            "end": 107,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 126,
+            "text": "menos tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 151,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 167,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/text",
+        "sourceSha256": "61c3224dfc3a895aac818dc094707533c2db8d414550127a84726d37ad0c2056",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "a6b30a0cc7ff0f983adfab6ded281ac400545961f15f125408ae699590b1f805",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "1d1d753b26fd8452e035a6c840783b060948643c74336622c8aa567709129b4f",
+        "spans": [
+          {
+            "start": 93,
+            "end": 97,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "da826754b81379774c036af09b9bcf91912158f43a247284d49a02811b710531",
+        "spans": [
+          {
+            "start": 22,
+            "end": 38,
+            "text": "Marcas: 1 2 -2 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 53,
+            "text": "Colisiones: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 68,
+            "text": "Rechazados: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 91,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "1.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 125,
+            "text": "2.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 148,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 153,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 160,
+            "text": "-0.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 175,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 189,
+            "text": "1.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 219,
+            "text": "101",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "2ec4e49d8871c39ee5334f95f2ee3ffcef358090a089bdfd53e57d8b21d05262",
+        "spans": [
+          {
+            "start": 27,
+            "end": 41,
+            "text": "Marcas: 0 3 -3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 56,
+            "text": "Colisiones: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 71,
+            "text": "Rechazados: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 94,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 294,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "288e81c9b7217e78b9df822d542edc1862dba66d9f355d186ed97218f8c3806c",
+        "spans": [
+          {
+            "start": 35,
+            "end": 114,
+            "text": "cantidad de observaciones = cantidad de marcas únicas + colisiones + rechazados",
+            "role": "math"
+          },
+          {
+            "start": 357,
+            "end": 361,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "58bab2ba4d65369d5bdc16f4c105bc8cc1d63291d351cc53cba048505da4bd0d",
+        "spans": [
+          {
+            "start": 119,
+            "end": 123,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 140,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 182,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0007",
+        "path": "/text",
+        "sourceSha256": "28e9361c1c354e8ff4df2f6b9701c6d973c5dca0547c0b9011f4df5a820265d5",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0008",
+        "path": "/text",
+        "sourceSha256": "ab091497f0935bbb2cd5b7b6da5073ae0cd76b65024e30f1dd0bacd455e9cc14",
+        "spans": [
+          {
+            "start": 320,
+            "end": 321,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 330,
+            "text": "1 0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 348,
+            "text": "2 101.0 -101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 364,
+            "text": "2 0.25 -0.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 368,
+            "end": 381,
+            "text": "3 3.0 3.0 3.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 410,
+            "text": "4 -100.0 100.0 99.5 -99.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 458,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 494,
+            "text": "menos ciento dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 507,
+            "text": "ciento dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "b55d8937aca767b0385e409600272ef0a150f5758b6cacf7cf05535f11691b08",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/question",
+        "sourceSha256": "f08c76ec7b6b9a4084d5f2e0d0fee014259e796542cf67d945c262553870c573",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/explanation",
+        "sourceSha256": "2679b26f56374c34dff949414254c2c2b4463a732328ceb6fcc327fd1eead0fc",
+        "spans": [
+          {
+            "start": 21,
+            "end": 24,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 30,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 41,
+            "text": "menos dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 54,
+            "text": "menos tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "2.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "-2.4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 109,
+            "text": "menos dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "100.1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 147,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "4b02714069ef28d5046cba0b74c3aa841c611a87dab3d028fe99337f9829d620",
+        "spans": [
+          {
+            "start": 128,
+            "end": 133,
+            "text": "{0.0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 153,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 180,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 196,
+            "text": "{101.0,-101.0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 225,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 248,
+            "text": "{0.25,-0.25}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 271,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 292,
+            "text": "Tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 311,
+            "text": "3.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 331,
+            "end": 335,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 341,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 379,
+            "text": "{-100.0,100.0,99.5,-99.5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 400,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 406,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 428,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "5a236a72bd182d1610f2351e3e867888a5998e1989d78f81a221bdc16e14113d",
+        "spans": [
+          {
+            "start": 102,
+            "end": 111,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "e515e8c34f60e405a6895133f21c8ece1641e741177f6dcef6c4c56574e27173",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/0",
+        "sourceSha256": "6459b2e93ec4653b50db4bb08dd644cc4bb6ff665b7bd0966a6627eea84f9c3e",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/1",
+        "sourceSha256": "89d85bea6eebfda414d7b5a8542304ff873939ac4d2a9e166211d6fdb49830a1",
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "round",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 70,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/2",
+        "sourceSha256": "b74b5131e2c31d9cc9e515aa02ff7aa3beb21e6bbdd1d6b3c0b50dcb1c656713",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "60946e0fe3505ad1b14a0a38a2015a51efbb22454a65c03529dcc6b4b7b40548",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "6da3c6619c9503cdb21ded6f6e5e485146aba14160f20afbf6c30d819ab470a3",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 51,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 96,
+            "text": "Menos media",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 121,
+            "text": "menos uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 130,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_titulo",
+        "path": "/text",
+        "sourceSha256": "e5bcfb151da11d98063f90fe089dbe034072f5e7170188facd0b74feef7b038f",
+        "spans": []
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_consigna",
+        "path": "/text",
+        "sourceSha256": "d618d6bb1f6834bc569848f533677c9eeca87fb193a0b6b418f9e75232fba623",
+        "spans": [
+          {
+            "start": 101,
+            "end": 105,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 112,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 155,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "-102",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "102",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 318,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 378,
+            "text": "bool redondear_entero(double origen, int& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 419,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 422,
+            "end": 425,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 475,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 534,
+            "end": 538,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 566,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 581,
+            "end": 588,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 705,
+            "end": 708,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 772,
+            "end": 775,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 891,
+            "end": 897,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 982,
+            "end": 986,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1027,
+            "end": 1031,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_formato",
+        "path": "/text",
+        "sourceSha256": "571dcb58d9151ffb79ba9c8845211ecf55c305a7740b2c2a24c5cf729e3d6542",
+        "spans": [
+          {
+            "start": 8,
+            "end": 14,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 53,
+            "text": "Marcas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 173,
+            "text": "Colisiones: C",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 188,
+            "text": "Rechazados: R",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 211,
+            "text": "Datos conservados: B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 214,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 243,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 260,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 324,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_caso_1",
+        "path": "/text",
+        "sourceSha256": "9dc07907e666d89c5987b8ba564afbe9a531080930dccdd11da0ebb3849b0f58",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 56,
+            "text": "Marcas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 72,
+            "text": "Colisiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 88,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 111,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_caso_2",
+        "path": "/text",
+        "sourceSha256": "8da5e20d8d26f0d25735a897cc55792ac7ffe95bc5e82f43ee2adec506d495af",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 29,
+            "text": "1 0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 58,
+            "text": "Marcas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 74,
+            "text": "Colisiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 90,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 113,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_caso_3",
+        "path": "/text",
+        "sourceSha256": "517d088fbb8c61227a564ab7bd5b8c5d15b9da50f3d4d63846055b5b54386c37",
+        "spans": [
+          {
+            "start": 45,
+            "end": 59,
+            "text": "2 101.0 -101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 86,
+            "text": "Marcas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 102,
+            "text": "Colisiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 118,
+            "text": "Rechazados: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 141,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_caso_4",
+        "path": "/text",
+        "sourceSha256": "015cd99de4dd4d2250c93630773c2df740e1f300c08f8ccc1533804774d085af",
+        "spans": [
+          {
+            "start": 51,
+            "end": 63,
+            "text": "2 0.25 -0.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 92,
+            "text": "Marcas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 108,
+            "text": "Colisiones: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 124,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 147,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_caso_5",
+        "path": "/text",
+        "sourceSha256": "d93d3434aaf4fe7f9ebccf0e0e7b5f03f192557607f8f6214d93df2cb15b77b0",
+        "spans": [
+          {
+            "start": 46,
+            "end": 59,
+            "text": "3 3.0 3.0 3.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 88,
+            "text": "Marcas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 104,
+            "text": "Colisiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 120,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 143,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_caso_6",
+        "path": "/text",
+        "sourceSha256": "23c2381d107e38df54c7831b959eff197b8d2d18b2f2ad0ad2be162e38b38f56",
+        "spans": [
+          {
+            "start": 46,
+            "end": 71,
+            "text": "4 -100.0 100.0 99.5 -99.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 107,
+            "text": "Marcas: -100 100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 123,
+            "text": "Colisiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 139,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 162,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_comprobacion",
+        "path": "/text",
+        "sourceSha256": "ca052b3835de81d7a094088e95f290dae293127a948698c729e59f0acad0d9cc",
+        "spans": [
+          {
+            "start": 192,
+            "end": 196,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "7f5b6097c6cc1c60a566edb13d4f4eeeae4e654f43a1a2bf4d82c8776d1f07ab",
+        "spans": [
+          {
+            "start": 12,
+            "end": 16,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 93,
+            "text": "Colisiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 109,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 178,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "f1f4b26cd091184a6770ebc0342a321f2c5caba85b2bb27c5e4bdcb11a027b82",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 149,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 183,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "a82a7b5a8f4f2d8dc1fa6d27dd10ace227649abd836170c127d9180553497d26",
+        "spans": [
+          {
+            "start": 15,
+            "end": 18,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 94,
+            "text": "Marcas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 109,
+            "text": "Colisiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 125,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 147,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 208,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 238,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "f904d5c1588b2c68398f38653f09e35b87d702060d65cc580a9dda8e4bae3304",
+        "spans": [
+          {
+            "start": 41,
+            "end": 44,
+            "text": "0.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 139,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 185,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "28f8835baa8d17b106a1e9f6fbb12d0697452098fbdff7149231a01d50074439",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 14,
+            "text": "-101.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 163,
+            "text": "Marcas:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 195,
+            "text": "Colisiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 210,
+            "text": "Rechazados: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 233,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "aa4e717134ac30299ab12607f54803382a8b03d560970b7e83507cf77256fca4",
+        "spans": [
+          {
+            "start": 67,
+            "end": 83,
+            "text": "redondear_entero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 103,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "8cdbdaa1f790252b313ac6d867f01f49516a5000ec4dfc24a3af4f090a52c940",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "0.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 12,
+            "text": "-0.25",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 125,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 159,
+            "text": "Marcas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 174,
+            "text": "Colisiones: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 189,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 212,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "3923f89d2cabe3b1856734c5d3ccbce9da2f49cb28e5395460f6feacff913dec",
+        "spans": [
+          {
+            "start": 91,
+            "end": 95,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "05a669bd203c8d460102eab3f693a4d993aab36070120a3c7b5f159dce6b2f06",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 26,
+            "text": "3.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 95,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 150,
+            "text": "Marcas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 165,
+            "text": "Colisiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 180,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 203,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "9e7674431a928bc67c49d7d726925631607dd3e0f387e20ef08b9c932cf363e7",
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "1836be6f8d06c7290ee5d7e97050b9025875a4b4c202b5f930f780c4754db5b8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "-100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 9,
+            "end": 14,
+            "text": "100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "99.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 91,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 99,
+            "text": "-99.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 173,
+            "text": "Marcas: -100 100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 188,
+            "text": "Colisiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 203,
+            "text": "Rechazados: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 226,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "marcas_redondeadas_construccion_multicaso_editor",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "425540cb82beac71b784fd9537597ea39d1f5fa0bb47115a3d898dd3ef2ba405",
+        "spans": [
+          {
+            "start": 191,
+            "end": 194,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "de0cd03279513ee66ffa9770fcfa61b01c013b1ed75d277e92b98c1b8997f2b3",
+        "spans": []
       }
     ]
   }
