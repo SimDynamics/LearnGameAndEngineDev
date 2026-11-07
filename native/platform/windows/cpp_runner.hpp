@@ -113,6 +113,10 @@ struct CppProjectAvailability {
 // Reparse the captured compiler streams and verify both phases and the exact
 // request/revision; a cached summary boolean is never execution evidence.
 [[nodiscard]] bool expected_compile_diagnostic(const CppRunRequest&, const CppRunResult&);
+// The same compilation-only capture can prove that the requested rejection
+// was not obtained. Both control and candidate must have fully succeeded in
+// the requested compile/link phase; technical/incomplete results have no grade.
+[[nodiscard]] bool accepted_compile_diagnostic(const CppRunRequest&, const CppRunResult&);
 // Reconstruct the closed lesson objective from this exact visible snapshot.
 // Unrelated edits retain diagnostics but leave the accreditation fields empty.
 [[nodiscard]] CppDiagnosticRequest prepare_cpp_diagnostic_request(const curriculum::Block&, const CppRunRequest&);

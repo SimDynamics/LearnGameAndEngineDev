@@ -296,8 +296,18 @@ constexpr std::string_view crt_output_lesson="cpp_fundamentals__archivos_y_progr
 constexpr std::string_view crt_output_identity="block_0005_0004";
 constexpr std::string_view crt_output_before="b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35";
 constexpr std::string_view crt_output_after="53648380e15d1148a779de47c0f94dc08f63e2319f79bdc08e72d25a6992ed31";
+JsonObject without_compiler_guidance(const JsonObject& block) {
+    const auto result=JsonObject::Parse(block.Stringify());
+    if(result.HasKey(L"outputCheck")&&result.GetNamedValue(L"outputCheck").ValueType()==JsonValueType::Object){
+        const auto config=result.GetNamedObject(L"outputCheck");
+        if(config.HasKey(L"cases")&&config.GetNamedValue(L"cases").ValueType()==JsonValueType::Array)
+            for(const auto& value:config.GetNamedArray(L"cases"))if(value.ValueType()==JsonValueType::Object){const auto item=value.GetObject();
+                if(item.HasKey(L"explanation"))item.Remove(L"explanation");if(item.HasKey(L"reviewFeedback"))item.Remove(L"reviewFeedback");}
+    }
+    return result;
+}
 std::optional<std::string> reviewed_crt_output_original(const JsonObject& block) {
-    if(text(block,"type")!="cpp_compiler"||fingerprint(block)!=crt_output_after)return {};
+    if(text(block,"type")!="cpp_compiler"||fingerprint(without_compiler_guidance(block))!=crt_output_after)return {};
     const auto cases=array(block.GetNamedObject(L"outputCheck"),"cases");
     require(cases.Size()==1,"The reviewed CRT spelling needs its original single case");
     const auto item=cases.GetObjectAt(0);const auto outputs=strings(array(item,"outputs"),true);
@@ -319,7 +329,7 @@ std::string state_fingerprint(const JsonObject& original) {
     if(reviewed_intentional_exit_goal(value))value.Remove(L"outputCheck");
     if(reviewed_crt_output_original(value)) {
         value.GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetObjectAt(0).GetNamedArray(L"outputs").RemoveAtEnd();
-        require(fingerprint(value)==crt_output_before,"The reviewed CRT spelling lost its exact complete original block");
+        require(fingerprint(without_compiler_guidance(value))==crt_output_before,"The reviewed CRT spelling lost its exact complete original block");
     }
     if (type == "heading" || type == "paragraph" || type == "note") {
         value.Remove(L"text"); if (value.HasKey(L"emphasis")) value.Remove(L"emphasis");

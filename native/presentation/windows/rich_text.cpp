@@ -1186,6 +1186,14 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         std::vector<std::size_t> unit_mapping(original_source.size()+1);
         for(std::size_t unit=0;unit<unit_mapping.size();++unit){const auto byte=byte_boundaries[unit];
             unit_mapping[unit]=byte==std::string_view::npos?unit_mapping[unit-1]:display_units[mapping[byte]];}
+        std::vector<std::pair<std::size_t,std::size_t>> trusted_display;
+        for(const auto& [first,last]:fragments)trusted_display.emplace_back(display_units[first],display_units[last]);
+        const auto runs=semantic_display_runs(*semantics,unit_mapping,source.size());
+        for(const auto& [first,last]:semantic_inline_font_ranges(runs,trusted_display)) {
+            select(edit,first,last);CHARFORMAT2W face{};face.cbSize=sizeof(face);face.dwMask=CFM_FACE;
+            wcscpy_s(face.szFaceName,reader_theme::code_font_face());
+            SendMessageW(edit,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&face));
+        }
         apply_rich_text_semantics(edit,*semantics,unit_mapping,role);return;
     }
     // A language name in curriculum prose is emphasis, not C++ source ink.

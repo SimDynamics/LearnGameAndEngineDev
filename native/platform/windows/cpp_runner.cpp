@@ -754,6 +754,52 @@ bool expected_compile_diagnostic(const CppRunRequest& request,const CppRunResult
         item.line>=objective.first_line&&item.line<=objective.last_line&&same_diagnostic_source(item.source,source);});
 }catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}
 
+bool accepted_compile_diagnostic(const CppRunRequest& request,const CppRunResult& result) try {
+    if(!request.diagnostic||!result.diagnostic||!request.stdin_utf8.empty()||request.cmake||
+        request.action!=CppRunRequest::Action::compile_run||request.request_id!=result.request_id||request.revision!=result.revision||
+        !result.error_utf8.empty()||result.run_directory.empty()||!result.artifact.empty()||result.executable||!result.target_type.empty()||
+        !unused_phase(result.execution)||!unused_phase(result.configuration)||!result.compilation.succeeded())return false;
+    const auto& objective=*request.diagnostic;const auto& evidence=*result.diagnostic;
+    const auto complete=[&](const CppPhaseResult& phase){return phase.succeeded()&&
+        phase.stdout_bytes.size()<=request.output_limit_bytes&&phase.stderr_bytes.size()<=request.output_limit_bytes;};
+    if(!complete(evidence.control)||!complete(result.compilation)||!evidence.errors.empty()||
+        !compilation_errors(evidence.control,result.run_directory/L"control").empty()||
+        !compilation_errors(result.compilation,result.run_directory/L"candidate").empty())return false;
+    if(!objective.project)return request.project_files.empty()&&request.source_files.empty()&&
+        evidence.control_units.empty()&&evidence.candidate_units.empty()&&unused_phase(evidence.control_link)&&unused_phase(evidence.candidate_link)&&
+        evidence.source_sha256==state::sha256(request.source_utf8)&&evidence.control_sha256==state::sha256(objective.control_source_utf8);
+    const auto& project=*objective.project;
+    if(request.project_files.empty()||!objective.control_source_utf8.empty()||!objective.expected_error_code.empty()||
+        objective.first_line||objective.last_line)return false;
+    curriculum::validate_cpp_project(request.project_files,request.source_files);
+    curriculum::validate_cpp_project(project.control_files,project.control_sources);
+    if(evidence.source_sha256!=diagnostic_project_hash(request.project_files,request.source_files)||
+        evidence.control_sha256!=diagnostic_project_hash(project.control_files,project.control_sources))return false;
+    const auto units_complete=[&](const auto& units,const auto& sources){
+        if(units.empty()||units.size()!=sources.size())return false;
+        for(std::size_t n=0;n<units.size();++n)if(units[n].source!=sources[n]||!complete(units[n].phase))return false;
+        return true;
+    };
+    if(!units_complete(evidence.control_units,project.control_sources)||!units_complete(evidence.candidate_units,request.source_files))return false;
+    if(project.link){if(!complete(evidence.control_link)||!complete(evidence.candidate_link))return false;}
+    else if(!unused_phase(evidence.control_link)||!unused_phase(evidence.candidate_link))return false;
+    // An aggregate may end with a successful empty phase after an earlier
+    // phase overflowed its remaining stream budget. Count the full capture
+    // before comparing that aggregate; truncated output is never a verdict.
+    const auto streams_fit=[&](const auto& units,const CppPhaseResult& link){
+        std::size_t stdout_left=request.output_limit_bytes,stderr_left=request.output_limit_bytes;
+        const auto consume=[&](const CppPhaseResult& phase){
+            if(phase.stdout_bytes.size()>stdout_left||phase.stderr_bytes.size()>stderr_left)return false;
+            stdout_left-=phase.stdout_bytes.size();stderr_left-=phase.stderr_bytes.size();return true;
+        };
+        for(const auto& unit:units)if(!consume(unit.phase))return false;
+        return unused_phase(link)||consume(link);
+    };
+    if(!streams_fit(evidence.control_units,evidence.control_link)||!streams_fit(evidence.candidate_units,evidence.candidate_link))return false;
+    return evidence.control==diagnostic_aggregate(evidence.control_units,evidence.control_link,request.output_limit_bytes)&&
+        result.compilation==diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes);
+}catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}
+
 curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,const CppRunResult& result) {
     curriculum::FreshExecution fresh;
     if(request.request_id!=result.request_id||request.revision!=result.revision||request.diagnostic

@@ -3652,11 +3652,14 @@ struct LessonView {
                         if(has_references(block(index)))data.preferences["native_windows"][reference_key(block(index))]=reference_seal(block(index));
                         mark_dirty();flush();refresh_references();
                     }
-                }else if(control_valid&&result->compilation.succeeded()){
-                    feedback(index,verdict_text(false)+"\n"+ui("Esta compilación fue aceptada; aún falta obtener el rechazo solicitado.",
+                }else if(windows::accepted_compile_diagnostic(running_program,*result)){
+                    const auto text=verdict_text(false)+"\n"+ui("Esta compilación fue aceptada; aún falta obtener el rechazo solicitado.",
                         "This compilation was accepted; the requested rejection is still pending.",
-                        "Cette compilation a été acceptée ; le rejet demandé reste à obtenir."),false,true);
-                    if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
+                        "Cette compilation a été acceptée ; le rejet demandé reste à obtenir.");
+                    if(windows::record_compiler_diagnostic_review(data,lesson,block(index),running_program,*result,text)){
+                        feedback(index,text,false,true);if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
+                        mark_dirty();flush();
+                    }
                 }
             }
             reflow();return;

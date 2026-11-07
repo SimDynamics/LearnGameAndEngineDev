@@ -87,4 +87,27 @@ inline std::vector<SemanticDisplayRun> semantic_display_runs(const curriculum::T
     if(cursor<display_size)result.push_back({cursor,display_size});
     return result;
 }
+// Inline delimiters already selected this existing code face before semantic
+// authoring existed. Preserve it only where the author also declares reference
+// content. Prose/citations never inherit it; mathematics owns its native face.
+inline std::vector<std::pair<std::size_t,std::size_t>> semantic_inline_font_ranges(
+        std::span<const SemanticDisplayRun> runs,
+        std::span<const std::pair<std::size_t,std::size_t>> trusted_inline) {
+    std::vector<std::pair<std::size_t,std::size_t>> result;
+    for(const auto& [first,last]:trusted_inline) {
+        if(first>=last)continue;
+        for(const auto& run:runs) {
+            using Role=curriculum::SemanticRole;
+            if(run.role!=Role::cpp&&run.role!=Role::string&&run.role!=Role::data&&run.role!=Role::output)continue;
+            const auto start=std::max(first,run.start),end=std::min(last,run.end);
+            if(start<end)result.emplace_back(start,end);
+        }
+    }
+    std::ranges::sort(result);std::vector<std::pair<std::size_t,std::size_t>> merged;
+    for(const auto& range:result) {
+        if(!merged.empty()&&range.first<=merged.back().second)merged.back().second=std::max(merged.back().second,range.second);
+        else merged.push_back(range);
+    }
+    return merged;
+}
 } // namespace lgaed::presentation

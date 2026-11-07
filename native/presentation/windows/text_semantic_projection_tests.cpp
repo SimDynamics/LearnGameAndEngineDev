@@ -19,6 +19,25 @@ int main()try{
             "Code background escaped its exact source range into prose punctuation or lost internal spaces");++groups;
     }
     {
+        const TextSemantics text{"A `int x;`. B",{{3,6,"int",SemanticRole::cpp},{6,9," x;",SemanticRole::prose}}};
+        const auto untouched=text;
+        const std::vector<std::size_t> map{0,1,2,2,3,4,5,6,7,8,8,9,10,11};
+        const auto runs=semantic_display_runs(text,map,11);
+        const std::vector<std::pair<std::size_t,std::size_t>> trusted{{2,8}};
+        check(semantic_inline_font_ranges(runs,trusted)==std::vector<std::pair<std::size_t,std::size_t>>{{2,5}},
+            "An authored code fragment lost its prior inline face or expanded it into declared prose");
+        check(semantic_inline_font_ranges(runs,{}).empty(),"Authoring activated an inline face without an existing trusted fragment");
+        for(const auto role:{SemanticRole::cpp,SemanticRole::string,SemanticRole::data,SemanticRole::output})
+            check(semantic_inline_font_ranges(std::vector<SemanticDisplayRun>{{2,8,role}},trusted)==trusted,
+                "A compatible authored inline reference lost its existing typography");
+        for(const auto role:{SemanticRole::prose,SemanticRole::citation,SemanticRole::math})
+            check(semantic_inline_font_ranges(std::vector<SemanticDisplayRun>{{2,8,role}},trusted).empty(),
+                "The code face displaced prose, bibliography or the native mathematical face");
+        check(text==untouched&&semantic_display_runs(text,map,11)==runs,
+            "The typography plan mutated original semantics, source owners or reference ranges");
+        ++groups;
+    }
+    {
         const TextSemantics text{"7\r\n8",{{0,1,"7",SemanticRole::data},{3,4,"8",SemanticRole::output}}};
         const std::vector<std::size_t> map{0,1,1,2,3};
         check(semantic_display_runs(text,map,3)==std::vector<SemanticDisplayRun>{{0,1,SemanticRole::data},{1,2},{2,3,SemanticRole::output}},

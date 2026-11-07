@@ -49,4 +49,32 @@ inline curriculum::Lesson with_crt_output_variant(const curriculum::Lesson& orig
     auto result=windows::parse_lesson_json(crt_output_json(original),original.locale);
     result.source_path=original.source_path;return result;
 }
+// QA authoring of ordinary supported guidance. The complete reviewed execution
+// payload and original adoption edge remain unchanged; only one honest full
+// editorial before/after edge is appended for the supplied current wording.
+inline std::string crt_output_guidance_json(const curriculum::Lesson& variant,std::string_view explanation,
+        std::span<const curriculum::OutputReviewFeedback> reviews) {
+    using namespace winrt::Windows::Data::Json;
+    const auto position=curriculum::stable_block_position(variant,crt_output_editor_id);
+    if(variant.id!=crt_output_lesson_id||variant.locale!="es"||variant.state_layout.version!=2||!position||
+        !variant.pages[position->page].blocks[position->block].crt_output_original)
+        throw std::runtime_error("Guidance QA requires the exact reviewed CRT variant");
+    const auto root=JsonObject::Parse(winrt::to_hstring(variant.raw_json));
+    const auto block=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page)).GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(position->block));
+    const auto before=compile_check_test_fingerprint(block);const auto item=block.GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetObjectAt(0);
+    if(explanation.empty()){if(item.HasKey(L"explanation"))item.Remove(L"explanation");}
+    else item.Insert(L"explanation",JsonValue::CreateStringValue(winrt::to_hstring(explanation)));
+    JsonArray rules;for(const auto& review:reviews){JsonArray outputs;for(const auto& output:review.outputs)outputs.Append(JsonValue::CreateStringValue(winrt::to_hstring(output)));
+        JsonObject rule;rule.Insert(L"outputs",outputs);rule.Insert(L"text",JsonValue::CreateStringValue(winrt::to_hstring(review.text)));rules.Append(rule);}
+    item.Insert(L"reviewFeedback",rules);const auto after=compile_check_test_fingerprint(block);
+    if(before!=after){JsonObject edge;edge.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(crt_output_editor_id)));
+        edge.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(before)));edge.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(after)));
+        root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").Append(edge);}
+    return winrt::to_string(root.Stringify());
+}
+inline curriculum::Lesson with_crt_output_guidance(const curriculum::Lesson& variant,std::string_view explanation,
+        std::span<const curriculum::OutputReviewFeedback> reviews) {
+    auto result=windows::parse_lesson_json(crt_output_guidance_json(variant,explanation,reviews),variant.locale);
+    result.source_path=variant.source_path;return result;
+}
 } // namespace lgaed::test

@@ -50,7 +50,9 @@ void seed_private_state(state::StateData& data,const Lesson& lesson,const Block&
 struct Capture {CppRunRequest request;CppRunResult result;FreshExecution execution;};
 }
 
-int main() try {
+int main(int argc,char** argv) try {
+    const bool contracts_only=argc==2&&std::string_view(argv[1])=="--contracts-only";
+    require(argc==1||contracts_only,"Unknown CRT QA selector");
     const auto before=test::load_pre_crt_output_lesson();
     const auto after=test::with_crt_output_variant(before);
     const auto metadata=parse_lesson_progress_metadata(after.raw_json);
@@ -164,7 +166,46 @@ int main() try {
         }
     });
 
-    test_case("a synthetic valid old receipt survives alias adoption and exact reopen without new credit",[&] {
+    test_case("editorial CRT guidance retains exact execution payload and native full/progress ownership",[&] {
+        const std::vector<OutputReviewFeedback> reviews{{{""},"QA empty output guidance"},{{"partial"},"QA partial report guidance"}};
+        const auto guided=test::with_crt_output_guidance(after,"QA complete report explanation",reviews);
+        const auto progressed=parse_lesson_progress_metadata(guided.raw_json);
+        const auto& editor=at(guided,test::crt_output_editor_id);const auto& progress=at(progressed,test::crt_output_editor_id);
+        require(editor.crt_output_original==current.crt_output_original&&progress.crt_output_original==current.crt_output_original&&
+            editor.output_check->cases.front().outputs==current.output_check->cases.front().outputs&&editor.initial_code==current.initial_code&&
+            guided.state_layout.lineage==after.state_layout.lineage&&guided.state_layout.signatures==after.state_layout.signatures&&
+            reference_objective_frame(guided,editor)==reference_objective_frame(before,old)&&
+            reference_objective_frame(progressed,progress)==reference_objective_frame(before,old),
+            "Adding CRT guidance changed an output/control byte, source, state or execution proof identity");
+        require(editor.output_check->cases.front().explanation=="QA complete report explanation"&&
+            progress.output_check->cases.front().explanation==editor.output_check->cases.front().explanation&&
+            editor.output_check->cases.front().review_feedback.size()==2&&progress.output_check->cases.front().review_feedback.size()==2&&
+            progress.output_check->cases.front().review_feedback[1].outputs==reviews[1].outputs&&
+            progress.output_check->cases.front().review_feedback[1].text==reviews[1].text,
+            "Full/progress loading discarded or normalized the ordinary authored guidance");
+        const auto updated=test::with_crt_output_guidance(guided,"QA another explanation",std::vector<OutputReviewFeedback>{{{""},"QA changed wording"}});
+        const auto& revised=at(updated,test::crt_output_editor_id);
+        require(revised.crt_output_original==current.crt_output_original&&revised.output_check->cases.front().review_feedback.front().text=="QA changed wording"&&
+            updated.state_layout.lineage==after.state_layout.lineage&&reference_objective_frame(updated,revised)==reference_objective_frame(before,old),
+            "A later arbitrary editorial wording required another execution alias or receipt");
+        for(const auto mode:{"source","input","output","case","unknown","guide_shape","lost_edge"}){
+            const auto root=JsonObject::Parse(winrt::to_hstring(guided.raw_json));const auto block=root.GetNamedArray(L"pages").GetObjectAt(static_cast<unsigned>(position->page))
+                .GetNamedArray(L"blocks").GetObjectAt(static_cast<unsigned>(position->block));const auto config=block.GetNamedObject(L"outputCheck");const auto item=config.GetNamedArray(L"cases").GetObjectAt(0);
+            if(std::string_view(mode)=="source")block.Insert(L"initialCode",JsonValue::CreateStringValue(winrt::to_hstring(old.initial_code+"\n// changed")));
+            if(std::string_view(mode)=="input")item.Insert(L"standardInput",JsonValue::CreateStringValue(L"other"));
+            if(std::string_view(mode)=="output")item.GetNamedArray(L"outputs").SetAt(1,JsonValue::CreateStringValue(winrt::to_hstring(variant+" ")));
+            if(std::string_view(mode)=="case")config.GetNamedArray(L"cases").Append(item);
+            if(std::string_view(mode)=="unknown")item.Insert(L"unknown",JsonValue::CreateBooleanValue(true));
+            if(std::string_view(mode)=="guide_shape")item.Insert(L"reviewFeedback",JsonValue::CreateStringValue(L"not a list"));
+            const auto history=root.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+            history.GetObjectAt(history.Size()-1).Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(test::compile_check_test_fingerprint(block))));
+            if(std::string_view(mode)=="lost_edge")history.RemoveAtEnd();
+            const auto source=winrt::to_string(root.Stringify());rejects([&]{(void)parse_lesson_json(source);},"CRT guidance hid a protected payload or provenance change");
+            rejects([&]{(void)parse_lesson_progress_metadata(source);},"CRT metadata guidance hid a protected payload or provenance change");
+        }
+    });
+
+    if(!contracts_only)test_case("a synthetic valid old receipt survives alias adoption and exact reopen without new credit",[&] {
         state::StateStore store(environment.paths.root/L"synthetic-prior");auto data=store.load();seed_private_state(data,before,old);
         data.preferences["crt-qa-unrelated"]["provenance"]=std::string("Synthetic historical receipt fixture; no prior execution or listening claimed.");
         state::put_response(data,before,old,state::Response{"old opaque compiler correct flag",true});
@@ -190,7 +231,7 @@ int main() try {
         store.save(fresh);require(reopen(store)==expected,"The explicitly reset CRT requirement changed on reopen");
     });
 
-    test_case("three real CRT programs reject starter/partial and accept the full 844-byte raw reference",[&] {
+    if(!contracts_only)test_case("three real CRT programs reject starter/partial and accept the full 844-byte raw reference",[&] {
         state::StateStore store(environment.paths.root/L"actual-runs");auto data=store.load();seed_private_state(data,after,current);
         require(!compiler_puzzle_completed(data,after,current),"A fresh CRT run profile inherited an old model receipt");
         const auto protected_state=data;
@@ -227,8 +268,8 @@ int main() try {
         require(!record_compiler_puzzle_case(data,after,current,capture.request,incorrect,"wrong")&&data==earned,
             "An existing CRT achievement overrode meaningful wrong raw output");
     });
-    test_case("active curriculum unchanged and only three real compiler programs executed",[&] {
-        require(runs==3,"The focused CRT test omitted or repeated a real program");
+    test_case("active curriculum unchanged and only the requested real compiler programs executed",[&] {
+        require(runs==(contracts_only?0u:3u),"The focused CRT test omitted or repeated a real program");
         require(state::sha256(read(active_path))==active_hash,"CRT integration QA changed the active curricular asset");
     });
     std::cout<<"Headless CRT output: "<<passed<<" groups passed, "<<failed<<" failed; "<<runs<<" real programs; no UI or audio.\n";

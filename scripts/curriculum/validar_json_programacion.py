@@ -1218,11 +1218,15 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     if ((relative, pn, bn) == (
             'app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json', 5, 4)
             and old_lesson.get('id') == _state_layout.CRT_OUTPUT_REVISION['lesson']
-            and (_state_layout.fingerprint(old), _state_layout.fingerprint(current))
-            == (_state_layout.CRT_OUTPUT_REVISION['before'], _state_layout.CRT_OUTPUT_REVISION['after'])):
-        # One complete reviewed block gains only the exact raw CRT spelling.
-        # No other source, input, guide or output is exempted from preservation.
-        base = _state_layout.historical_crt_output_payload(current)
+            and _state_layout.fingerprint(_state_layout.without_compiler_guidance(old)) in (
+                _state_layout.CRT_OUTPUT_REVISION['before'], _state_layout.CRT_OUTPUT_REVISION['after'])
+            and _state_layout.reviewed_crt_output_variant(current)):
+        # Case guidance is editorial for this same closed CRT execution goal.
+        # Its text is not a new output alias, code/source permission or receipt.
+        base = (_state_layout.historical_crt_output_payload(current)
+                if _state_layout.fingerprint(_state_layout.without_compiler_guidance(old)) == _state_layout.CRT_OUTPUT_REVISION['before']
+                else current)
+        return _state_layout.without_compiler_guidance(base) == _state_layout.without_compiler_guidance(old)
     if ((relative, pn, bn) == U12_COMPOSED_FEEDBACK_REVISION[:3]
             and old_lesson.get('id') == 'cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla'
             and old.get('type') == current.get('type') == 'cpp_compiler'

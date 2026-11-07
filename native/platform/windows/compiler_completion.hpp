@@ -27,6 +27,9 @@ struct CompilerFeedback { std::string text; bool correct = false; std::string so
 [[nodiscard]] bool record_compiler_puzzle_review(state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest& captured, const curriculum::FreshExecution&,
     std::string_view feedback);
+[[nodiscard]] bool record_compiler_diagnostic_review(state::StateData&, const curriculum::Lesson&,
+    const curriculum::Block&, const CppRunRequest& captured, const CppRunResult&,
+    std::string_view feedback);
 void clear_compiler_puzzle_review(state::StateData&, const curriculum::Lesson&, const curriculum::Block&);
 [[nodiscard]] std::size_t compiler_puzzle_case_count(const state::StateData&, const curriculum::Lesson&,
                                                   const curriculum::Block&);

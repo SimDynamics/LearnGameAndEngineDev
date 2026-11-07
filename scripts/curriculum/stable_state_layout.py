@@ -286,14 +286,33 @@ CRT_OUTPUT_REVISION = {
 }
 
 
+def without_compiler_guidance(block: dict) -> dict:
+    """Project only existing case guidance, retaining every executable byte.
+
+    These two fields already have editorial semantics in _compiler_payload.
+    The CRT review must use that same boundary before recognizing its exact
+    output alias; presentation cannot unreview or replace the execution goal.
+    Content validators still check each guide's supported structure.
+    """
+    result = deepcopy(block)
+    config = result.get("outputCheck")
+    if type(config) is dict and type(config.get("cases")) is list:
+        for case in config["cases"]:
+            if type(case) is dict:
+                case.pop("explanation", None)
+                case.pop("reviewFeedback", None)
+    return result
+
+
 def reviewed_crt_output_variant(block: dict) -> bool:
-    return block.get("type") == "cpp_compiler" and fingerprint(block) == CRT_OUTPUT_REVISION["after"]
+    return block.get("type") == "cpp_compiler" and fingerprint(without_compiler_guidance(block)) == CRT_OUTPUT_REVISION["after"]
 
 
 def historical_crt_output_payload(block: dict) -> dict:
     """Project one reviewed extra Windows spelling onto its complete old block.
 
-    Every authored byte is pinned, including the three deliberate CR controls.
+    Every execution byte is pinned, including the three deliberate CR controls.
+    Current case guidance is retained in the projected historical payload.
     This neither normalizes an output nor permits arbitrary new alternatives.
     """
     if not reviewed_crt_output_variant(block):
@@ -307,7 +326,7 @@ def historical_crt_output_payload(block: dict) -> dict:
             and variant == original.replace("\n", "\r\n") and len(variant.encode("utf-8")) == 844,
             "The reviewed CRT variant must expand LF only and retain every original control")
     cases[0]["outputs"] = [original]
-    require(fingerprint(result) == CRT_OUTPUT_REVISION["before"], "The CRT variant lost its exact complete original block")
+    require(fingerprint(without_compiler_guidance(result)) == CRT_OUTPUT_REVISION["before"], "The CRT variant lost its exact complete original block")
     return result
 
 

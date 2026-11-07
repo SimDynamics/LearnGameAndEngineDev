@@ -38,6 +38,64 @@ def proposal():
 
 
 class CrtOutputVariantTest(unittest.TestCase):
+    def test_editorial_guidance_can_evolve_without_unreviewing_the_crt_execution_goal(self):
+        _, variant = proposal()
+        current = variant
+        for count, text in enumerate(("QA empty report guide", "QA revised guidance with N=1", "QA another editorial wording"), 1):
+            candidate = deepcopy(current)
+            case = editor(candidate)["outputCheck"]["cases"][0]
+            case["explanation"] = "QA successful complete report explanation " + str(count)
+            case["reviewFeedback"] = [{"outputs": [""], "text": text},
+                                      {"outputs": ["partial"], "text": "QA partial report guidance " + str(count)}]
+            revised = layout.prepare_v2(candidate, "es", {"es": current, "en": published("en"), "fr": published("fr")}, current)
+            layout.validate_transition(current, revised)
+            self.assertTrue(layout.reviewed_crt_output_variant(editor(revised)))
+            self.assertEqual(layout.without_compiler_guidance(editor(variant)), layout.without_compiler_guidance(editor(revised)))
+            self.assertEqual(layout.state_fingerprint(editor(variant)), layout.state_fingerprint(editor(revised)))
+            for field in ("origin", "family", "current", "additions", "retired", "retirementHistory", "orderRefinements"):
+                self.assertEqual(variant["stateLayout"].get(field), revised["stateLayout"].get(field), field)
+            self.assertEqual(current["stateLayout"]["editorial"], revised["stateLayout"]["editorial"][:-1])
+            self.assertEqual({"id": SPEC["identity"], "beforeSha256": layout.fingerprint(editor(current)),
+                              "afterSha256": layout.fingerprint(editor(revised))}, revised["stateLayout"]["editorial"][-1])
+            self.assertTrue(contract.preserves_previous_compiler(RELATIVE, 5, 4, editor(current), editor(revised), current))
+            contract.ERRORS.clear()
+            contract.validate_cpp_compiler(editor(revised), "CRT current arbitrary guidance")
+            contract.validate_lesson_state_contract(revised, "CRT current arbitrary guidance")
+            self.assertEqual([], contract.ERRORS)
+            current = revised
+
+    def test_editorial_guidance_never_authorizes_other_execution_or_provenance_changes(self):
+        _, variant = proposal()
+        for mode in ("source", "input", "first", "second", "extra", "case", "comparison", "stderr", "exit", "identity", "owner", "lost_edge"):
+            candidate = deepcopy(variant)
+            case = editor(candidate)["outputCheck"]["cases"][0]
+            case["reviewFeedback"] = [{"outputs": [""], "text": "QA arbitrary guidance"}]
+            if mode == "source": editor(candidate)["initialCode"] += "\n// altered"
+            if mode == "input": case["standardInput"] = "new input"
+            if mode == "first": case["outputs"][0] += " "
+            if mode == "second": case["outputs"][1] += " "
+            if mode == "extra": case["outputs"].append("new output")
+            if mode == "case": editor(candidate)["outputCheck"]["cases"].append(deepcopy(case))
+            if mode == "comparison": editor(candidate)["outputCheck"]["inputComparison"] = "tokens"
+            if mode == "stderr": case["standardError"] = "nonBlank"
+            if mode == "exit": case["exitCode"] = 1
+            if mode == "identity":
+                ids = candidate["stateLayout"]["current"][5]["blocks"]
+                ids[3], ids[4] = ids[4], ids[3]
+            if mode == "owner": candidate["id"] += "_other"
+            if mode == "lost_edge": candidate["stateLayout"]["editorial"].pop()
+            with self.subTest(mode=mode), self.assertRaises(layout.LayoutError):
+                layout.prepare_v2(candidate, "es", {"es": variant, "en": published("en"), "fr": published("fr")}, variant)
+
+    def test_guidance_still_uses_the_existing_supported_content_schema(self):
+        _, variant = proposal()
+        for review in ("not a list", [{"outputs": [""], "text": ""}], [{"outputs": [""], "text": "QA", "unknown": True}],
+                       [{"outputs": editor(variant)["outputCheck"]["cases"][0]["outputs"], "text": "QA"}],
+                       [{"outputs": ["", ""], "text": "QA"}]):
+            block = deepcopy(editor(variant));block["outputCheck"]["cases"][0]["reviewFeedback"] = review
+            contract.ERRORS.clear();contract.validate_cpp_compiler(block, "invalid CRT guidance")
+            self.assertTrue(contract.ERRORS)
+
     def test_complete_reviewed_pair_has_exact_raw_controls_and_no_other_change(self):
         before, after = proposal()
         old, current = editor(before), editor(after)

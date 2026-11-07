@@ -123,6 +123,40 @@ std::string review_seal(std::string_view key,std::string_view program,std::strin
                         std::string_view target,std::string_view rules,std::string_view feedback) {
     return state::sha256("compiler-review-v1/"+token(key)+token(program)+token(input)+token(target)+token(rules)+token(feedback));
 }
+std::string diagnostic_review_phase(const CppRunRequest& request) {
+    return request.diagnostic&&request.diagnostic->project&&request.diagnostic->project->link?"link":"compile";
+}
+std::string diagnostic_review_rules(const curriculum::Block& block,const CppRunRequest& request) {
+    const auto& objective=*request.diagnostic;
+    auto frame="compiler-diagnostic-review-rules-v1/"+token(block.compile_check->diagnostic)
+        +token(block.compile_check->explanation)+token(diagnostic_review_phase(request))
+        +token(objective.control_source_utf8)+token(objective.expected_error_code)
+        +token(std::to_string(objective.first_line))+token(std::to_string(objective.last_line));
+    if(objective.project){const auto& project=*objective.project;
+        frame+=token(curriculum::cpp_project_frame(project.control_files,project.control_sources,std::nullopt))
+            +token(project.expected_file)+token(std::to_string(project.first_line))+token(std::to_string(project.last_line));
+        frame+=token(std::to_string(project.error_codes.size()));for(const auto& code:project.error_codes)frame+=token(code);
+        frame+=token(std::to_string(project.symbols.size()));for(const auto& symbol:project.symbols)frame+=token(symbol);
+    }
+    return state::sha256(frame);
+}
+std::string diagnostic_review_seal(std::string_view key,std::string_view program,std::string_view input,
+        std::string_view target,std::string_view rules,std::string_view feedback,const std::vector<std::string>& capture) {
+    auto frame="compiler-diagnostic-review-v1/"+token(review_seal(key,program,input,target,rules,feedback));
+    for(const auto& field:capture)frame+=token(field);
+    return state::sha256(frame);
+}
+bool diagnostic_review_capture_matches(const std::vector<std::string>& capture,
+        const curriculum::Block& block,const CppRunRequest& current) {
+    if(capture.size()!=5||capture[0]!="diagnostic-review/v1"||capture[3]!=diagnostic_review_phase(current)||
+        capture[4]!=block.compile_check->diagnostic)return false;
+    for(const auto n:{1,2}){const auto& text=capture[n];std::uint64_t number=0;
+        if(text.empty()||(text.size()>1&&text.front()=='0'))return false;
+        const auto parsed=std::from_chars(text.data(),text.data()+text.size(),number);
+        if(parsed.ec!=std::errc{}||parsed.ptr!=text.data()+text.size())return false;
+    }
+    return true;
+}
 std::string diagnostic_proof(const std::string& key,std::string_view program,const curriculum::Block& block) {
     return state::sha256("compiler-diagnostic-v1/"+token(key)+token(program)+token(block.compile_check->diagnostic));
 }
@@ -189,7 +223,7 @@ std::string compiler_puzzle_feedback(const state::StateData& data,const curricul
 }
 std::string compiler_puzzle_review(const state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& current) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check)return {};
+    if(block.type!=curriculum::BlockType::cpp_compiler||!curriculum::has_compiler_objective(block))return {};
     const auto key=base(lesson,block)+"review/";
     const auto text=[&](std::string_view suffix)->const std::string*{
         const auto value=state::find(data,"native_windows",key+std::string(suffix));
@@ -197,8 +231,14 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
     };
     const auto program=text("program"),input=text("input"),target=text("target"),rules=text("rules"),feedback=text("feedback"),seal=text("seal");
     if(!program||!input||!target||!rules||!feedback||!seal||feedback->empty()
-        ||*program!=compiler_program_frame(current)||*input!=current.stdin_utf8||*target!=review_target(current)
-        ||*rules!=review_rules(block)||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
+        ||*program!=compiler_program_frame(current)||*input!=current.stdin_utf8||*target!=review_target(current))return {};
+    if(block.compile_check){
+        if(!current.diagnostic||*current.diagnostic!=prepare_cpp_diagnostic_request(block,current))return {};
+        const auto stored=state::find(data,"native_windows",key+"capture");
+        const auto capture=stored?std::get_if<std::vector<std::string>>(stored):nullptr;
+        if(!capture||!diagnostic_review_capture_matches(*capture,block,current)||*rules!=diagnostic_review_rules(block,current)||
+            *seal!=diagnostic_review_seal(key,*program,*input,*target,*rules,*feedback,*capture))return {};
+    }else if(*rules!=review_rules(block)||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
     return *feedback;
 }
 std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData& data,
@@ -227,6 +267,24 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
     values[key+"rules"]=rules;values[key+"feedback"]=std::string(feedback);
     values[key+"seal"]=review_seal(key,program,captured.stdin_utf8,target,rules,feedback);
     record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,std::get<std::string>(values.at(key+"seal")));
+    return true;
+}
+bool record_compiler_diagnostic_review(state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& block,const CppRunRequest& captured,const CppRunResult& result,
+        std::string_view feedback) {
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.compile_check||block.output_check||feedback.empty()||
+        !captured.diagnostic||*captured.diagnostic!=prepare_cpp_diagnostic_request(block,captured)||
+        !accepted_compile_diagnostic(captured,result))return false;
+    const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),
+        rules=diagnostic_review_rules(block,captured);
+    const std::vector<std::string> capture{"diagnostic-review/v1",std::to_string(result.request_id),std::to_string(result.revision),
+        diagnostic_review_phase(captured),block.compile_check->diagnostic};
+    auto& values=data.preferences["native_windows"];
+    values[key+"program"]=program;values[key+"input"]=captured.stdin_utf8;values[key+"target"]=target;
+    values[key+"rules"]=rules;values[key+"feedback"]=std::string(feedback);values[key+"capture"]=capture;
+    values[key+"seal"]=diagnostic_review_seal(key,program,captured.stdin_utf8,target,rules,feedback,capture);
+    // This is generated failure guidance, not the authored success explanation.
+    record_feedback_origin(data,key,block,{},feedback,std::get<std::string>(values.at(key+"seal")));
     return true;
 }
 void clear_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
