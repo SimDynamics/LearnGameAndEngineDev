@@ -1,0 +1,1098 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows",
+  "title": "Del Laboratorio al proyecto de Windows",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una necesidad concreta para el proyecto"
+        },
+        {
+          "type": "paragraph",
+          "text": "InspectionLog será un programa de consola para una estación que reúne cantidades de inspecciones aceptadas y rechazadas por grupos. La persona que lo utilice necesitará recuperar una muestra guardada, consultar sus resultados y volver a guardarla sin perder la información. El proyecto reunirá los componentes que ya construiste y comprobaste en las lecciones anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato de los datos sigue siendo el conocido: grupos rojo, verde y azul, cada uno presente como máximo una vez; identificadores de registro de cero a nueve, únicos dentro de su grupo; y cantidades de cero a diez. El orden de los grupos y el de sus registros forman parte de la información. Un grupo vacío sigue presente, y un registro con cantidades cero no se elimina."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al cargar una muestra completa válida, el programa podrá sustituir el estado anterior. Si la muestra se rechaza, deberá conservar ese estado y evitar abrir la salida para escribir. El informe calculará los totales y el grupo con mayor suma de aceptados, conservando el primero en orden de entrada ante un empate. Al guardar y recuperar, comparará todos los datos, no sólo el informe numérico."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows__conservacion",
+          "question": "InspectionLog acepta una muestra válida y presenta los totales previstos, pero al guardarla invierte el orden de los grupos. ¿Qué conclusión está justificada?",
+          "options": [
+            "Cumple el guardado: las sumas coinciden y la muestra sigue siendo válida.",
+            "Incumple el guardado: cambió el orden definido en el contrato.",
+            "Cumple si conserva los mismos grupos, aunque cambien sus posiciones."
+          ],
+          "correctIndex": 1,
+          "explanation": "La muestra era válida y sus cantidades pueden seguir coincidiendo. El defecto aparece al cambiar un orden que el contrato exige conservar. Comparar el conjunto anterior con el recuperado debe incluir las posiciones de sus grupos.",
+          "reviewFeedback": [
+            "Comprueba qué información conserva el contrato además de las cantidades. Un informe de totales no muestra el orden de los grupos.",
+            "Distingue los valores del informe de los datos completos. La comparación también debe observar las posiciones de los grupos.",
+            "Tener los mismos grupos no conserva necesariamente sus posiciones. Revisa por qué el orden del vector forma parte del dato que debe recuperarse."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Del texto que editas al programa que ejecutas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código fuente es el texto de C++ que escribes y modificas con un editor. El compilador analiza ese texto y lo traduce; en el entorno Windows que prepararemos puede producir un archivo objeto con extensión .obj. Aquí archivo objeto significa un fichero con código traducido, no uno de los objetos que tu programa utiliza al ejecutarse. El enlazador combina las partes necesarias, incluidas las de las bibliotecas, para formar el ejecutable, habitualmente con extensión .exe (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "código fuente",
+              "style": "bold"
+            },
+            {
+              "text": "archivo objeto",
+              "style": "bold"
+            },
+            {
+              "text": "ejecutable",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Guardar una modificación del archivo fuente no actualiza por sí solo un ejecutable anterior. Por ejemplo, puedes corregir el cálculo de un total y seguir viendo el resultado viejo si ejecutas la construcción anterior. Para relacionar una observación con tu cambio, necesitarás construir la versión actual y ejecutar el resultado que le corresponde. Esa relación entre fuente, construcción y ejecución seguirá siendo necesaria aunque una herramienta coordine las etapas con un botón (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un entorno de desarrollo integrado, o IDE, reúne herramientas para editar, construir, ejecutar y depurar. No convierte esas acciones en una sola. La consola permite introducir órdenes y observar mensajes; el editor modifica el texto, el compilador lo traduce y el enlazador construye el ejecutable a partir de las partes necesarias (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "entorno de desarrollo integrado",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows__herramientas",
+          "prompt": "Relaciona cada acción con la herramienta cuya función se describe. Una misma aplicación puede reunir varias de estas herramientas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "herramientas",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "editar",
+                  "label": "Modificar y guardar el texto del programa."
+                },
+                {
+                  "id": "traducir",
+                  "label": "Analizar el código fuente y producir el código traducido correspondiente."
+                },
+                {
+                  "id": "enlazar",
+                  "label": "Combinar las partes necesarias para formar el ejecutable."
+                },
+                {
+                  "id": "ordenes",
+                  "label": "Introducir órdenes y observar los mensajes de los programas que se ejecutan."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "consola",
+                  "label": "Consola"
+                },
+                {
+                  "id": "enlazador",
+                  "label": "Enlazador"
+                },
+                {
+                  "id": "editor",
+                  "label": "Editor"
+                },
+                {
+                  "id": "compilador",
+                  "label": "Compilador"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "editar": "editor",
+                  "traducir": "compilador",
+                  "enlazar": "enlazador",
+                  "ordenes": "consola"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Editar cambia el texto; compilar lo traduce; enlazar reúne las partes para obtener el ejecutable. La consola es el medio para introducir órdenes y observar mensajes. Que un IDE reúna esas herramientas no elimina la diferencia entre sus funciones.",
+            "incorrect": "Sigue lo que recibe y produce cada herramienta. Distingue cambiar el texto, traducirlo, combinar partes e introducir una orden."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar herramientas y observar los fallos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tener un editor abierto no demuestra que estén instaladas y preparadas todas las herramientas de C++. En el recorrido externo utilizaremos Visual Studio Community y comprobaremos su soporte para desarrollo de escritorio con C++, junto con el entorno para construir desde la consola. La instalación y configuración se enseñarán con sus acciones y comprobaciones. Abrir el editor y construir desde una consola comprueban condiciones distintas (Microsoft, 2026a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "SDK abrevia la expresión inglesa software development kit, que traducimos como kit de desarrollo de software. En este recorrido con las herramientas de Microsoft, el SDK de Windows aporta cabeceras, bibliotecas y herramientas de la plataforma Windows. No es el editor ni sustituye al compilador. Los recursos de la biblioteca estándar de C++ y los recursos de la plataforma tienen funciones propias dentro de la preparación del entorno; usar este SDK forma parte de nuestra elección de herramientas para Windows, no de una obligación universal del lenguaje C++ (Microsoft, 2026b).",
+          "emphasis": [
+            {
+              "text": "SDK de Windows",
+              "style": "bold"
+            },
+            {
+              "text": "software development kit",
+              "style": "italic"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows__preparacion",
+          "question": "En un equipo se abre el editor de Visual Studio. Sin otra comprobación, ¿qué permite afirmar esa observación?",
+          "options": [
+            "Se comprobó la apertura del editor; la construcción necesita sus propias comprobaciones.",
+            "Se comprobó que el compilador y el enlazador pueden construir el programa desde la consola.",
+            "Se comprobó que el ejecutable quedó actualizado y listo para probar la versión editada."
+          ],
+          "correctIndex": 0,
+          "explanation": "La observación acredita la apertura del editor. Para construir hacen falta los componentes correspondientes y un entorno que encuentre las herramientas; estas condiciones todavía no se han comprobado.",
+          "reviewFeedback": [
+            "Relaciona cada requisito con su comprobación concreta. Abrir el editor es una observación distinta de construir o ejecutar el programa.",
+            "Editor, compilador y enlazador realizan funciones distintas. Revisa qué se ejecutó realmente al abrir la aplicación.",
+            "Un ejecutable anterior no queda actualizado por abrir el editor. Necesitas comprobar la construcción de las fuentes actuales y qué programa se va a ejecutar."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Un depurador permite observar el programa mientras se ejecuta: puede detenerlo en un punto elegido y mostrar los valores pertinentes. Lo utilizaremos para comprobar hipótesis sobre un fallo. Por ejemplo, si sospechamos que una suma se reinicia dentro de un recorrido, necesitamos observar cómo cambia el acumulador al pasar por esas iteraciones. El depurador aporta observaciones; interpretar su causa y comprobar la corrección siguen siendo tareas de programación (Microsoft, 2025).",
+          "emphasis": [
+            {
+              "text": "depurador",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows__hipotesis",
+          "question": "El programa construido calcula mal un total. Quieres comprobar la hipótesis de que el acumulador se reinicia en cada registro. ¿Qué observación responde directamente a esa hipótesis?",
+          "options": [
+            "Que el programa termina con un código de retorno de éxito.",
+            "Que dos ejecuciones repiten el mismo total.",
+            "Cómo cambia el acumulador al pasar por las iteraciones pertinentes."
+          ],
+          "correctIndex": 2,
+          "explanation": "La hipótesis trata de cuándo cambia el acumulador. Observar sus valores durante el recorrido permite contrastar ese momento con lo esperado. Terminar correctamente o repetir un resultado no demuestra que el cálculo sea correcto.",
+          "reviewFeedback": [
+            "El código de retorno informa de la terminación que comunica el programa; no muestra por qué una suma tomó un valor incorrecto.",
+            "Un defecto puede repetirse de manera estable. Para comprobar esta hipótesis necesitas observar el cambio del acumulador, no sólo que el total se repita.",
+            "Relaciona la observación con la causa propuesta: el momento en que se reinicia o modifica el acumulador."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué deberá demostrar la entrega"
+        },
+        {
+          "type": "paragraph",
+          "text": "El Laboratorio ya ha creado y leído archivos reales. Al pasar al proyecto externo habrá que controlar también dónde están las fuentes, desde qué carpeta se construye y ejecuta, y qué archivos recibe o produce cada ejecución. La ruta relativa se interpreta desde el directorio de trabajo correspondiente; no basta con que dos archivos tengan el mismo nombre para afirmar que son el mismo archivo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrega reunirá el programa, las instrucciones para preparar sus herramientas y reproducir su construcción, las pruebas con sus entradas y resultados, y la explicación de las decisiones que afectan al contrato. Una prueba de rechazo deberá mostrar qué permaneció intacto; una prueba de guardado deberá comparar los datos completos recuperados. El registro de construcción debe corresponder a las fuentes y al ejecutable de la versión que se está comprobando."
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica final incluirá una variante propia. Por ejemplo, un informe adicional podría contar cuántos registros contiene cada grupo y seguir mostrando los grupos presentes sin registros. Para incorporarlo tendrás que precisar su resultado, programarlo y añadir casos que detecten omisiones o cambios indebidos. Elegir una variante y explicar sus decisiones formará parte de la construcción guiada y de su comprobación posterior; la referencia del autor no sustituye tu implementación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows__evidencias",
+          "prompt": "Relaciona cada evidencia con la conclusión que permite. El alcance de la evidencia forma parte de la comprobación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "evidencias",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "construccion",
+                  "label": "Un registro de construcción identifica las fuentes actuales, termina sin error y corresponde al ejecutable nuevo que se va a ejecutar."
+                },
+                {
+                  "id": "rechazo",
+                  "label": "Antes de la prueba, la salida contiene MARCA. Al leer una muestra inválida, el programa informa Entrada rechazada; la comparación completa confirma que el estado previo no cambió y la lectura completa de la salida recupera sólo MARCA."
+                },
+                {
+                  "id": "repeticion",
+                  "label": "Otra persona sigue las instrucciones de preparación, construcción y pruebas y reproduce los resultados indicados en el entorno descrito."
+                },
+                {
+                  "id": "conceptos",
+                  "label": "Resuelves las preguntas sobre herramientas dentro de la app sin instalar, configurar ni ejecutar el proyecto externo."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "conceptual",
+                  "label": "Hay una respuesta conceptual; todavía no hay evidencia de la preparación ni de la ejecución externa."
+                },
+                {
+                  "id": "caso_rechazo",
+                  "label": "Ese caso comprobó el rechazo sin cambiar el estado ni el contenido del archivo de salida observado."
+                },
+                {
+                  "id": "construido",
+                  "label": "La construcción actual terminó; aún corresponde ejecutar y comprobar los casos del programa."
+                },
+                {
+                  "id": "reproducido",
+                  "label": "Las instrucciones permitieron reproducir los pasos y resultados ensayados en ese entorno."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "construccion": "construido",
+                  "rechazo": "caso_rechazo",
+                  "repeticion": "reproducido",
+                  "conceptos": "conceptual"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La construcción, la ejecución, el rechazo conservador y la reproducción por otra persona aportan evidencias diferentes. Resolver una actividad conceptual no realiza por sí solo una instalación ni ejecuta el proyecto. Cada afirmación de la entrega debe apoyarse en la comprobación que le corresponde.",
+            "incorrect": "Identifica qué operación se realizó realmente y qué quedó observado. No atribuyas a una evidencia una instalación, una ejecución o una conservación que no se comprobó."
+          }
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "bdd633589163910b3e3bbf9f228adb5df72054c9e2e3c62a68a1105ab2fa40db"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "6216eb8075e6626d11b2749b52a86229d17915e2f96901349a3f1af702e6360b"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "9aaa1f71d986e68e91bbc854eaaccb02e291f03ff48ebc1b266a584e720febf7"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "bea86e4356d839070c41d3adb132a079ed569705594aa865a91b91ad94a562f0"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "404179121ec519447dcf1ebbff7e4068da0c1175bce6ff4706b2a8c10cec186e"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "7fbf156e5db41c355667d2826dda3c94898a423b8a1955d7250b9cb01306201b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "bdd633589163910b3e3bbf9f228adb5df72054c9e2e3c62a68a1105ab2fa40db"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "6216eb8075e6626d11b2749b52a86229d17915e2f96901349a3f1af702e6360b"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "9aaa1f71d986e68e91bbc854eaaccb02e291f03ff48ebc1b266a584e720febf7"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "bea86e4356d839070c41d3adb132a079ed569705594aa865a91b91ad94a562f0"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "404179121ec519447dcf1ebbff7e4068da0c1175bce6ff4706b2a8c10cec186e"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "37303368cac557489e51aeaf8c1dd033e1720eaafbf8542864efcc06575613d4",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "8018a2f2166cb0116341f206c5c37af95226455968261d4befa31a25bfb9ff6d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "6d8943513e5884d60bb9a84a915073932804396caa513e427d4d29467125c194",
+        "spans": [
+          {
+            "start": 58,
+            "end": 62,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 111,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 152,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 160,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 209,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 359,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "656ee481ab4bac39742d072d6f458e92f6dac596903e384ce8648ed374499e32",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "7c32ede3eafbfea162f976f0b3655c0d7282b7f40f9e219e6f44c7290fc5dff6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "eb312f402a8f4ec7823e54b3a81ded3f82517ead183920a89cc39bf687f0664b",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "4c2ba7a9c2451cfaf1cce2e6438c9a9faed1f980879ad6e8ef8a826dcf80f3aa",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "a0960bfd8aaf590112d46bb486b7d4e6c6b62a3f59a59027dd5d52ef6865f88c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "392c9d49c6a0cc1b4d295f48963406ca2f28d0c7024c8253a77f2a96e0049291",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6da99412465683d520250d172ecf1aef8eaa7300b9af3a4715584fd5cda1d79d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "cf41dde5432920f32346fcd5ee3a7a6c5da7d4d66bb2f4c9c8783eb0c871d530",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "817c0846b4bb492acffd8248a4a05d0b8598f8e09e6eb228345d0d8f0ee2bf23",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "e182b0191cd67d2c9dd19498e272b56ac633d02b926b76b97337e81c2e9ae8fa",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "d41fb683cc6728809a7c6ff600f50a53d257e34f5d65db50f9fe0197191cde10",
+        "spans": [
+          {
+            "start": 208,
+            "end": 212,
+            "text": ".obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 475,
+            "text": ".exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 476,
+            "end": 494,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "cb900d1687cd2607adb17a158d923d1ee49655fadf5f8a88cb94432a9e3b93b0",
+        "spans": [
+          {
+            "start": 482,
+            "end": 500,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "ebc95e826e1ae3f9ae394b6ebd9c90fa2d63cdbc5a3eec579bc761fdab4ce506",
+        "spans": [
+          {
+            "start": 332,
+            "end": 350,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/prompt",
+        "sourceSha256": "1923489ff3c6e331586fff3169f0e822ed5a230144f896e82073222dc40ec513",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "d5ce36a7833b57e95f8dbb15dab0eea88bd66e226ec69e661250cf57aa77dac0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "9fc05dff8264f891af9b501bf4f3eae40f4e7855fd463a16f2abfdc87902d695",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "30274691a8ec956efe584f4ef6a7e9d1594e78bf3f7a458109e464889457580c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "d79c7024515a51ecc9e41d993a4ecd000ec717a54d7d2a5f9fc832b207c50d60",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "481fd988b2e407b47bb0e59c9ff237ca0a3468913e71ee959006049cd8a8a972",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "0d42ad20f31aa6e47949132ca7353355c35a607daaffb1d27b52a2b4f33fe86d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "e0236ea3bcedad458a906539ff1abb18afee8e3cc08e2553b0a5fe1ed6179933",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "0b6342a3613bc23ec3d606a592f04cd435f2ca9d60dff5af52452e958484a910",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "936a161c39314b0540fe7415d2ad16cadb631568c4ebc57d6cff60f14edc099d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "f05458a48138688f92c2e98fb41f95a00cee24e1c0054c179481613c17d78aea",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "68c6eb5a7cbcd23f207de8fba7df50dbb591e7adbb7d0d7c87f72a3ac49c7398",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "b2cee8347bd52b02b7e796cfe641a0121e24809e83265d52d30d54e4da3418b3",
+        "spans": [
+          {
+            "start": 441,
+            "end": 459,
+            "text": "(Microsoft, 2026a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "598c26137c6fe78fdfa1200bd4f8e70cb4d6ca75a92cc46aeaf96b1f90889ae6",
+        "spans": [
+          {
+            "start": 561,
+            "end": 579,
+            "text": "(Microsoft, 2026b)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "3f376d1b5ba77f735e45bbb32421eedb2754f7dea4ab3c4059f2ece35089067a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "1b9d443e8f778810c355a4feb719d062d764ad83040649a3b51256c44c057775",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "30d5d02e2d3d47df029e1ef8068e0c1b73b203ff12bf6cf7ee6267938dc9dc64",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "6b1e2a88b56d7e1f1ee45df60aa6d464c3222360ec94b17b1f2193483fce02a4",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "68d4864cbfa5ad3f302916db06cfabbfafe0985be0dcb29ffef55d98c331103e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "310c9cbd8af9bb28f9b0bde859f8b97c778e3ccef74a35fbfc22248a0c352671",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "da795c775a5461083336da33a513e062c7360974212546bd1de1acdbfe4e7710",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "11d9c8b9489f8dae0d53b2ca9bbe015ba9092d65963dd0ceacf92dbe7d4dbe25",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "c6a45705068a88eef1dfcbe694d664020aef4c59eeecd4070d36ceea992a0ac0",
+        "spans": [
+          {
+            "start": 465,
+            "end": 482,
+            "text": "(Microsoft, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "237f0dc2df54f4829957ee36dd622b14c26eb3f67b098811cc02b752ccbd38a6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "89d655b5fbe1c9af7c4fcc7ad00073a196d993fe94f59853e4fa6206fb6d1eab",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "0c13c353159288e1ade4d9e281d88fe7ecabdcc31cff6b89710db53b659c0381",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "f7cd98ec8e3c44c5d0ba33381d08b68fb81a23c99b5d0a46ae9c41d3a76b7be5",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "9cd3ea0fad061c482fb0d1f8f6d443f26550ed429b6121ee9eae4ff16c3982cf",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "adfa14d17d5571362b1964aca089a5e30d5d152f2e1fc1a903c0e467193d22ae",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9cada7857b7e9f6cffef993002dc3b436a9214efa83cfa946a98d9a03c4859b3",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "9ba6162ba6fd6626798c9ccae620306506902e5a7b3a2523ed5a427965e9a092",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "f03ce8a704906adee03e30e38ebf5886d2ca6f3e92c0d07cf648a1a347e2a5b3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "c2e6752fed4add494c22273e3fbb50ec2dcbb2eec7984c1969b66978ef951dc6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "c1b47ce772e06907fe0075651dfb4f564c5c62981d045ea09948bcc344880ac6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "2ebea7a3cd32ef1ae222d347aee1946450e3b3c6f3c49695f600518d5d173475",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/prompt",
+        "sourceSha256": "439b78f84c7c36ca2dff59197b4ecf2edaddb99deb4c9c55c379a3266f4d5b5e",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "c31cd105ac3a3f05d5c5015de6d9149040cb07ed665fd88dfdf073026879324f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "728c323c8507e0748eed5df3c3b044263bc721a25d4c34891a7d37a6666a5be3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "89c1de6715ab7aad8c67f15a706576b98c6984650417dbb0c0bdd03bb59cfb51",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "473968c125a9f39423df2fcd0da4c178061881fe40ac3543d1d8622e2c23456c",
+        "spans": [
+          {
+            "start": 39,
+            "end": 44,
+            "text": "MARCA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 113,
+            "text": "Entrada rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 233,
+            "text": "MARCA",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "5c4e4c1340f0492626ba4cca79b8aecbedd0bd685120687e8de151c1d89ff93e",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "768e45cf2890bac674acd884927ae9ccde8d3337ce748090ea9f0a63990cfb04",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "7b9c5933d9c5aa753cedb243f6f5a62e8dc52c9a502eb047190de5b8e0cb6ff9",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "e0b1358e0739bedb51e72d37408312b32bf4ddc02c740bd6e9ec2ef58744e444",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "3421c76024645c72326368b08cf56f6c44f525f3d1279d4b3cd0a9f159a678cf",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "e537ab38a22dd15f3b366ae06d6872b465f0bcdba19b417ed696caf8bbfe8c92",
+        "spans": []
+      }
+    ]
+  }
+}
