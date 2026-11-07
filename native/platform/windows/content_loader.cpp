@@ -1,4 +1,5 @@
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/bibliography_revision.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -695,6 +696,34 @@ private:
     }
 };
 Block read_block(const JsonObject& value,std::string_view original);
+std::string bibliography_string(const winrt::hstring& value){
+    for(decltype(value.size()) at=0;at<value.size();++at){const auto c=value[at];
+        if(c>=0xd800&&c<=0xdbff){require(at+1<value.size()&&value[at+1]>=0xdc00&&value[at+1]<=0xdfff,
+            "Bibliographic source contains an invalid Unicode scalar");++at;}
+        else require(c<0xdc00||c>0xdfff,"Bibliographic source contains an invalid Unicode scalar");}
+    return utf8(value);
+}
+std::optional<TextSemantics> bibliography_semantics(const IJsonValue& value,std::string_view owner,const JsonObject& block){
+    if(value.ValueType()==JsonValueType::Null)return {};
+    const auto field=value.GetObject();allowed_keys(field,{"block","path","sourceSha256","spans"},true);
+    require(text(field,"block")==owner&&text(field,"path")=="/explanation","Bibliographic semantics has a different field owner");
+    TextSemantics result;result.source=bibliography_string(block.GetNamedString(L"explanation"));
+    const auto digest=text(field,"sourceSha256");require(valid_hash(digest)&&sha256(result.source)==digest,"Stale bibliographic source semantics");
+    const auto spans=array(field,"spans");require(spans.Size()<=100000,"Too many bibliographic semantic spans");
+    for(const auto& item:spans){const auto span=item.GetObject();allowed_keys(span,{"start","end","text","role","reading"});
+        SemanticSpan selected;selected.start=integer(span.GetNamedValue(L"start"),16*1024*1024);selected.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
+        selected.text=bibliography_string(span.GetNamedString(L"text"));selected.role=parse_semantic_role(text(span,"role"));
+        if(span.HasKey(L"reading"))selected.reading=parse_semantic_reading(text(span,"reading"));result.spans.push_back(std::move(selected));}
+    validate_text_semantics(result);return result;
+}
+bool bibliography_pair(const JsonObject& before,const JsonObject& after){
+    static const std::set<std::string> types{"multiple_choice","output_prediction","fill_code","order_code","drag_fill_code","inline_fill_code"};
+    if(!types.contains(text(before,"type"))||!before.HasKey(L"explanation")||!after.HasKey(L"explanation"))return false;
+    auto old=JsonObject::Parse(before.Stringify()),now=JsonObject::Parse(after.Stringify());
+    const auto old_text=bibliography_string(old.GetNamedString(L"explanation")),new_text=bibliography_string(now.GetNamedString(L"explanation"));
+    old.Remove(L"explanation");now.Remove(L"explanation");
+    return fingerprint(old)==fingerprint(now)&&bibliography::only_parenthetical_locator_removal(old_text,new_text);
+}
 std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject& metadata,const JsonArray& pages,
         const StateLayout& layout,std::string_view lesson_id) {
     constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada";
@@ -979,7 +1008,7 @@ std::optional<StateReadingRevision> composed_feedback_reading_revision(const Jso
     result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }
-StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id) {
+StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id,const JsonObject& root) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
     result.version = static_cast<int>(integer(metadata.GetNamedValue(L"version"), 2));
@@ -1141,17 +1170,48 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     std::map<std::string, std::set<std::string>> seen;
     std::map<std::string,std::vector<std::string>> editorial_nodes;
     std::map<std::string,JsonObject> return_actual_blocks;
+    struct BibliographyEdge {
+        std::size_t ordinal=0;std::string id,before,after;JsonObject previous,current;
+        std::optional<TextSemantics> previous_semantics,current_semantics;
+    };
+    std::vector<BibliographyEdge> bibliography_edges;
+    const auto collect_actual=[&]{
+        if(!return_actual_blocks.empty())return;
+        for(std::size_t p=0;p<result.current.size();++p){const auto blocks=array(pages.GetObjectAt(static_cast<unsigned>(p)),"blocks");
+            for(std::size_t b=0;b<result.current[p].blocks.size();++b)
+                return_actual_blocks.emplace(result.current[p].blocks[b],blocks.GetObjectAt(static_cast<unsigned>(b)));}
+        for(const auto& retired:result.retired)return_actual_blocks.emplace(retired.id,JsonObject::Parse(key(retired.raw_json)));
+    };
     if (result.version == 2) {
         JsonArray prefix;const auto revisions=array(metadata,"editorial");
         require(revisions.Size()<=100000,"Too many editorial proofs");
         for (const auto& value : revisions) {
             const auto change = value.GetObject();
-            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo"});
+            allowed_keys(change, {"id", "beforeSha256", "afterSha256", "returnTo", "bibliography"});
             for(const auto field:{L"id",L"beforeSha256",L"afterSha256"})require(change.HasKey(field),"Incomplete editorial record");
             const auto id = text(change, "id"), before = text(change, "beforeSha256"), after = text(change, "afterSha256");
             require(result.signatures.contains(id) && valid_hash(before) && valid_hash(after) && before != after, "Invalid editorial record");
             if (!seen.contains(id)){seen[id].insert(before);editorial_nodes[id].push_back(before);}
             require(!editorial.contains(id) || editorial.at(id) == before,"Broken editorial chain");
+            if(change.HasKey(L"bibliography")){
+                require(!change.HasKey(L"returnTo"),"A bibliographic revision cannot claim an editorial return");
+                const auto archive=change.GetNamedObject(L"bibliography");
+                allowed_keys(archive,{"historySha256","previousBlock","currentBlock","previousTextSemantics","currentTextSemantics"},true);
+                JsonObject provenance;provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                provenance.Insert(L"locale",JsonValue::CreateStringValue(key(result.locale)));provenance.Insert(L"editorial",prefix);
+                const auto history=text(archive,"historySha256");require(valid_hash(history)&&history==fingerprint(provenance),
+                    "Bibliographic history differs from its complete ordered prefix");
+                const auto previous=archive.GetNamedObject(L"previousBlock"),current=archive.GetNamedObject(L"currentBlock");
+                require(fingerprint(previous)==before&&fingerprint(current)==after,"Bibliographic archive hashes do not match its exact block pair");
+                require(bibliography_pair(previous,current),"Bibliographic archive changed more than optional citation locators");
+                collect_actual();const auto actual=return_actual_blocks.find(id);
+                require(actual!=return_actual_blocks.end()&&state_fingerprint(previous)==state_fingerprint(actual->second),
+                    "Bibliographic archive changed the protected owner contract");
+                (void)read_block(previous,utf8(previous.Stringify()));(void)read_block(current,utf8(current.Stringify()));
+                bibliography_edges.push_back({prefix.Size(),id,before,after,previous,current,
+                    bibliography_semantics(archive.GetNamedValue(L"previousTextSemantics"),id,previous),
+                    bibliography_semantics(archive.GetNamedValue(L"currentTextSemantics"),id,current)});
+            }
             if(change.HasKey(L"returnTo")){
                 const auto target=change.GetNamedObject(L"returnTo");allowed_keys(target,{"revision","historySha256","previousBlock"},true);
                 const auto revision=integer(target.GetNamedValue(L"revision"),100000);
@@ -1166,15 +1226,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(valid_hash(history)&&history==fingerprint(provenance),"Editorial return history differs from its complete ordered prefix");
                 const auto previous=target.GetNamedObject(L"previousBlock");
                 require(fingerprint(previous)==before,"Editorial return must archive its complete preceding block");
-                if(return_actual_blocks.empty()){
-                    for(std::size_t p=0;p<result.current.size();++p){
-                        const auto blocks=array(pages.GetObjectAt(static_cast<unsigned>(p)),"blocks");
-                        for(std::size_t b=0;b<result.current[p].blocks.size();++b)
-                            return_actual_blocks.emplace(result.current[p].blocks[b],blocks.GetObjectAt(static_cast<unsigned>(b)));
-                    }
-                    for(const auto& retired:result.retired)
-                        return_actual_blocks.emplace(retired.id,JsonObject::Parse(key(retired.raw_json)));
-                }
+                collect_actual();
                 const auto active=return_actual_blocks.find(id);
                 require(active!=return_actual_blocks.end()&&text(previous,"type")==text(active->second,"type")
                     &&state_fingerprint(previous)==state_fingerprint(active->second),
@@ -1344,6 +1396,33 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=composed_feedback_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
+    if(!bibliography_edges.empty()){
+        collect_actual();auto actual=return_actual_blocks;
+        std::map<std::string,std::optional<TextSemantics>> semantics;
+        const auto current_semantics=[&](const std::string& id,const JsonObject& block){
+            std::optional<TextSemantics> found;
+            if(root.HasKey(L"textSemantics"))for(const auto& value:array(root.GetNamedObject(L"textSemantics"),"fields")){
+                const auto field=value.GetObject();if(text(field,"block")!=id||text(field,"path")!="/explanation")continue;
+                require(!found,"Duplicate current bibliographic source semantics");found=bibliography_semantics(field.as<IJsonValue>(),id,block);
+            }
+            return found;
+        };
+        StateReadingRevision prior;prior.bibliography_only=true;
+        auto edge=bibliography_edges.rbegin();auto count=array(metadata,"editorial").Size();
+        while(count&&edge!=bibliography_edges.rend()){
+            if(edge->ordinal!=count-1)break;
+            const auto owner=actual.find(edge->id);if(owner==actual.end()||fingerprint(owner->second)!=edge->after)break;
+            auto stored=semantics.find(edge->id);
+            if(stored==semantics.end())stored=semantics.emplace(edge->id,current_semantics(edge->id,owner->second)).first;
+            // A later metadata-only revision is valid, but does not justify
+            // manufacturing a historical page that used a different overlay.
+            if(stored->second!=edge->current_semantics)break;
+            owner->second=edge->previous;stored->second=edge->previous_semantics;
+            prior.editorial_prefix=--count;prior.previous_blocks[edge->id]=utf8(edge->previous.Stringify());
+            prior.previous_explanation_semantics[edge->id]=edge->previous_semantics;
+            result.reading_revisions.push_back(prior);++edge;
+        }
+    }
     return result;
 }
 TextComparison comparison(std::string_view mode, bool input = false) {
@@ -1534,7 +1613,7 @@ Block read_block(const JsonObject& value,std::string_view original) {
 struct SemanticPublicFields {
     std::map<std::string,std::string> fields;
     static std::string strict_string(const winrt::hstring& value) {
-        for(std::size_t n=0;n<value.size();++n){const auto unit=static_cast<unsigned>(value[n]);
+        for(decltype(value.size()) n=0;n<value.size();++n){const auto unit=static_cast<unsigned>(value[n]);
             if(unit>=0xd800&&unit<=0xdbff){require(n+1<value.size()&&value[n+1]>=0xdc00&&value[n+1]<=0xdfff,
                 "Text semantic source contains an invalid Unicode scalar");++n;}
             else require(unit<0xdc00||unit>0xdfff,"Text semantic source contains an invalid Unicode scalar");}
@@ -1867,9 +1946,9 @@ void resolve_addresses(Lesson& lesson) {
                 }
                 if(reviewed_intentional_exit_goal(source)) {
                     const auto active=stable_block_position(lesson,block.stable_id);
-                    const auto archived=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
+                    const auto archived_goal=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
                     const auto* current=active?&lesson.pages[active->page].blocks[active->block]:
-                        archived!=lesson.retired_blocks.end()?&*archived:nullptr;
+                        archived_goal!=lesson.retired_blocks.end()?&*archived_goal:nullptr;
                     require(current&&reviewed_intentional_exit_goal(JsonObject::Parse(key(current->raw_json))),
                         "A historical intentional-exit objective must retain its current archived or active goal");
                 }
@@ -1878,9 +1957,9 @@ void resolve_addresses(Lesson& lesson) {
                     require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
                         "A historical compilation diagnostic belongs to its original Spanish v2 editor");
                     const auto position=stable_block_position(lesson,block.stable_id);
-                    const auto archived=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
+                    const auto archived_objective=std::ranges::find(lesson.retired_blocks,block.stable_id,&Block::stable_id);
                     const auto current=position?&lesson.pages[position->page].blocks[position->block]:
-                        archived!=lesson.retired_blocks.end()?&*archived:nullptr;
+                        archived_objective!=lesson.retired_blocks.end()?&*archived_objective:nullptr;
                     require(current&&current->compile_check&&current->compile_check->diagnostic==block.compile_check->diagnostic,
                         "A historical compilation diagnostic must retain its current archived or active objective");
                 }
@@ -1929,7 +2008,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         const auto pages = array(root, "pages"); require(pages.Size() > 0 && pages.Size() <= 2048, "Invalid page count");
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
-            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id);
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id,root);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
         const OriginalJson original(source);
@@ -1979,7 +2058,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         require(pages.Size() > 0 && pages.Size() <= 2048,"Invalid page count");
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
-            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id);
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id,root);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
         // Every explicit curricular compiler objective participates in linear

@@ -107,6 +107,7 @@ add_library(lgaed_platform_windows STATIC
     native/platform/windows/environment.cpp
     native/platform/windows/profile_migration.cpp
     native/platform/windows/content_loader.cpp
+    native/platform/windows/bibliography_revision.cpp
     native/platform/windows/narration_preferences.cpp
     native/platform/windows/catalog_loader.cpp
     native/platform/windows/audio_generation.cpp
@@ -238,6 +239,42 @@ if(BUILD_TESTING)
     add_test(NAME native.initial_v2_family_contract COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_initial_v2_family.py)
     set_tests_properties(native.initial_v2_family_contract PROPERTIES TIMEOUT 30)
+    add_test(NAME curriculum.bibliography_archive COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_bibliography_archive.py)
+    set_tests_properties(curriculum.bibliography_archive PROPERTIES TIMEOUT 30)
+    add_test(NAME curriculum.bibliography_revision COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_bibliography_revision.py)
+    set_tests_properties(curriculum.bibliography_revision PROPERTIES TIMEOUT 30)
+    set(LGAED_BIBLIOGRAPHY_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/bibliography-06d31ba-v2")
+    set(LGAED_BIBLIOGRAPHY_FIXTURES "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}/manifest.json"
+        "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}/predicate-cases.json")
+    foreach(_lesson IN ITEMS caracteres_y_valores_logicos conversiones_y_deduccion enteros_y_aproximaciones)
+        list(APPEND LGAED_BIBLIOGRAPHY_FIXTURES
+            "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}/before-lesson_${_lesson}.json"
+            "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}/after-lesson_${_lesson}.json")
+    endforeach()
+    add_custom_command(OUTPUT ${LGAED_BIBLIOGRAPHY_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_fixture_source.py"
+            --output-dir "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_bibliography_revision.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMENT "Authenticating isolated bibliography revision proposals from local Git"
+        VERBATIM)
+    add_custom_target(lgaed_bibliography_fixtures DEPENDS ${LGAED_BIBLIOGRAPHY_FIXTURES})
+    add_executable(lgaed_bibliography_revision_tests native/platform/windows/bibliography_revision_tests.cpp)
+    target_link_libraries(lgaed_bibliography_revision_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_bibliography_revision_tests lgaed_bibliography_fixtures)
+    add_test(NAME native.bibliography_revision COMMAND lgaed_bibliography_revision_tests "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}")
+    set_tests_properties(native.bibliography_revision PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_bibliography_view_tests native/presentation/windows/bibliography_view_tests.cpp)
+    target_link_libraries(lgaed_bibliography_view_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_bibliography_view_tests lgaed_bibliography_fixtures)
+    add_test(NAME native.bibliography_view COMMAND lgaed_bibliography_view_tests "${LGAED_BIBLIOGRAPHY_FIXTURE_DIR}")
+    set_tests_properties(native.bibliography_view PROPERTIES TIMEOUT 60)
     add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
     target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)

@@ -188,6 +188,10 @@ struct StateReadingRevision {
     // Only a closed, authenticated first adoption can bridge the original
     // positional page identity. Ordinary editorial archives keep stable IDs.
     bool positional_page_identity = false;
+    // A bibliography archive retains authoritative authoring separately from
+    // the block payload; null means that field really was unmarked.
+    std::map<std::string,std::optional<TextSemantics>> previous_explanation_semantics;
+    bool bibliography_only = false;
 };
 struct StateLayout {
     int version = 0;

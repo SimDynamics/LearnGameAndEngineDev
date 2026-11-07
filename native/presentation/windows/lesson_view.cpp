@@ -884,6 +884,7 @@ struct LessonView {
         for(const auto& revision:lesson.state_layout.reading_revisions){
             LessonReadingArchive archived;archived.page_identity=identity;archived.regions=reading_regions();
             archived.positional_page_identity=revision.positional_page_identity;
+            archived.bibliography_only=revision.bibliography_only;
             if(revision.positional_page_identity)archived.page_identity=route+'/'+lesson.id+'/'+std::to_string(page);
             for(const auto& [id,raw]:revision.previous_blocks){
                 const auto at=curriculum::stable_block_position(lesson,id);if(!at||at->page!=page)continue;
@@ -904,8 +905,11 @@ struct LessonView {
                     auto source=region.source_text;
                     if(!region.feedback&&region.target==question)source=
                         original.type==BlockType::paragraph||original.type==BlockType::heading||original.type==BlockType::note?old_text:old_question;
-                    else if(region.feedback&&region.correct&&region.solved)
-                        source="✓ "+verdict_text(true)+(old_explanation.empty()?"":"\n\n"+old_explanation);
+                    else if(region.feedback&&region.correct&&region.solved){
+                        auto body=old_explanation;
+                        if(revision.bibliography_only){const auto first=body.find_first_not_of("\r\n");body=first==std::string::npos?"":body.substr(first);}
+                        source="✓ "+verdict_text(true)+(body.empty()?"":"\n\n"+body);
+                    }
                     else if(revision.positional_page_identity&&region.feedback&&response&&state::response_reviewed(*response,original)){
                         auto review=original.type==BlockType::multiple_choice?state::choice_incorrect_feedback(*response,original)
                             :curriculum::incorrect_feedback(original,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
@@ -914,6 +918,14 @@ struct LessonView {
                     }
                     if(source==region.source_text)continue;
                     archived.revised_regions.push_back(region.key);region.source_text=std::move(source);region.text_semantics.reset();
+                    if(revision.bibliography_only&&region.feedback&&region.correct&&region.solved){
+                        const auto previous_descriptor=revision.previous_explanation_semantics.find(id);
+                        if(previous_descriptor==revision.previous_explanation_semantics.end())throw std::invalid_argument("A bibliographic reading archive lost its source descriptor");
+                        if(previous_descriptor->second){
+                            region.text_semantics=verdict_text_semantics(region.source_text,"✓ "+verdict_text(true),&*previous_descriptor->second);
+                            if(!region.text_semantics)throw std::invalid_argument("A bibliographic feedback archive has a different source");
+                        }
+                    }
                 }
             }
             if(!archived.revised_regions.empty())archives.push_back(std::move(archived));

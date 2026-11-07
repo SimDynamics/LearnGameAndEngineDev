@@ -59,6 +59,9 @@ struct LessonReadingArchive {
     // Closed first-adoption provenance maps a positional pause into its own
     // revised passage, rather than replaying every earlier editorial change.
     bool positional_page_identity = false;
+    // Revisit only the changed sentence of an authenticated bibliography
+    // archive, retaining a real compatible pause earlier in that same guide.
+    bool bibliography_only = false;
 };
 struct LessonViewHooks {
     std::string lesson_label = "Lección";

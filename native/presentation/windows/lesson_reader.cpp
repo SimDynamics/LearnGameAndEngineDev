@@ -4,6 +4,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/narration_legacy_policy.hpp"
+#include "presentation/windows/bibliography_resume_policy.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/ui_language.hpp"
@@ -74,7 +75,7 @@ public:
 struct LessonReader::Impl {
     struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;std::shared_ptr<void> cache_guard;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;};
-    struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false;};
+    struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false,bibliography_only=false;};
     struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
         bool playback_validation=false,recording_changed=false;std::uint64_t validation_serial=0;std::shared_ptr<AudioReadLease> playback_lease;};
     // Android's answered-block priority is playback permission, not listening
@@ -439,7 +440,7 @@ struct LessonReader::Impl {
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                 Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;
                 if(!history.entries.empty()&&std::ranges::none_of(history.entries,[&](const auto& entry){return entry.key==resume_key;})){
-                    const auto register_legacy=[&](std::vector<Part> old,const std::string& old_page,bool editorial_formatting,bool previous_context_policy,const std::vector<std::string>& revised_regions,bool positional_page_identity,bool semantic_policy=false,bool component_mode_policy=false){
+                    const auto register_legacy=[&](std::vector<Part> old,const std::string& old_page,bool editorial_formatting,bool previous_context_policy,const std::vector<std::string>& revised_regions,bool positional_page_identity,bool semantic_policy=false,bool component_mode_policy=false,bool bibliography_only=false){
                         std::vector<windows::NarrationSegment> script;for(const auto& part:old)script.push_back(part.sentence);
                         const auto old_key=backend->identity(old_page,lang,selected_voice,script,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                         if(old_key!=resume_key&&std::ranges::none_of(plan.legacy,[&](const auto& legacy){return legacy.key==old_key;})
@@ -447,12 +448,12 @@ struct LessonReader::Impl {
                         {
                             if(semantic_policy)for(auto& part:old)part.region.reading_context=std::string(narration_legacy::semantic_prefix)+part.region.reading_context;
                             if(component_mode_policy)for(auto& part:old)part.region.reading_context=std::string(narration_legacy::component_mode_prefix)+part.region.reading_context;
-                            plan.legacy.push_back({old_key,std::move(old),editorial_formatting,previous_context_policy||semantic_policy||component_mode_policy,revised_regions,positional_page_identity});
+                            plan.legacy.push_back({old_key,std::move(old),editorial_formatting,previous_context_policy||semantic_policy||component_mode_policy,revised_regions,positional_page_identity,bibliography_only});
                         }
                     };
                     std::map<std::string,std::vector<windows::NarrationSegment>> previous_context_plans;
-                    const auto add_legacy=[&](const std::vector<Part>& old,const std::string& old_page,bool editorial_formatting=false,const std::vector<std::string>& revised_regions=std::vector<std::string>{},bool positional_page_identity=false,bool semantic_policy=false,bool component_mode_policy=false){
-                        register_legacy(old,old_page,editorial_formatting,false,revised_regions,positional_page_identity,semantic_policy,component_mode_policy);
+                    const auto add_legacy=[&](const std::vector<Part>& old,const std::string& old_page,bool editorial_formatting=false,const std::vector<std::string>& revised_regions=std::vector<std::string>{},bool positional_page_identity=false,bool semantic_policy=false,bool component_mode_policy=false,bool bibliography_only=false){
+                        register_legacy(old,old_page,editorial_formatting,false,revised_regions,positional_page_identity,semantic_policy,component_mode_policy,bibliography_only);
                         const bool cpp_context=std::ranges::any_of(old,[](const auto& part){return part.region.reading_context=="cpp"&&part.region.math_mode=="auto";});
                         // Output and prose inference are independent. B42 and
                         // original already include the old prose reader; only
@@ -484,7 +485,7 @@ struct LessonReader::Impl {
                                     const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
                                 do{++i;}while(i<old.size()&&old[i].region.key==part.region.key&&old[i].region.source_text==part.region.source_text);
                             }
-                            register_legacy(std::move(previous),old_page,editorial_formatting,true,revised_regions,positional_page_identity,semantic_policy,component_mode_policy);
+                            register_legacy(std::move(previous),old_page,editorial_formatting,true,revised_regions,positional_page_identity,semantic_policy,component_mode_policy,bibliography_only);
                         }
                     };
                     add_legacy(planned,current_page);
@@ -555,7 +556,7 @@ struct LessonReader::Impl {
                             else{std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop,region.reading_context,region.math_mode,windows::NarrationOutputDataPolicy::current,region.text_semantics)){
                                 const auto occurrence=occurrences[sentence.prepared]++;old.push_back({region,std::move(sentence),{},occurrence});}}
                         }
-                        add_legacy(old,prior.page_identity,prior_index>=first_editorial,prior.revised_regions,prior.positional_page_identity);if(!prefix.empty()){auto with_title=prefix;with_title.insert(with_title.end(),old.begin(),old.end());add_legacy(std::move(with_title),prior.page_identity,prior_index>=first_editorial,prior.revised_regions,prior.positional_page_identity);}
+                        add_legacy(old,prior.page_identity,prior_index>=first_editorial,prior.revised_regions,prior.positional_page_identity,false,false,prior.bibliography_only);if(!prefix.empty()){auto with_title=prefix;with_title.insert(with_title.end(),old.begin(),old.end());add_legacy(std::move(with_title),prior.page_identity,prior_index>=first_editorial,prior.revised_regions,prior.positional_page_identity,false,false,prior.bibliography_only);}
                     }
                     }
                 }
@@ -631,6 +632,12 @@ struct LessonReader::Impl {
                 // passed that exact region. Earlier compatible offsets remain.
                 std::optional<std::size_t> revised_boundary;
                 for(const auto& region:legacy.revised_regions){
+                    if(legacy.bibliography_only){
+                        const auto boundary=bibliography_resume::first_changed_segment<Part>(legacy.parts,parts,region,old_at,legacy_saved->finished,
+                            [](const Part& before,const Part& after){return bibliography_resume::same_recording_sentence(before,after);});
+                        if(boundary&&(!revised_boundary||*boundary<*revised_boundary))revised_boundary=boundary;
+                        continue;
+                    }
                     const auto before=std::ranges::find_if(legacy.parts,[&](const auto& part){return part.region.key==region;});
                     if(before==legacy.parts.end()||static_cast<std::size_t>(before-legacy.parts.begin())>old_at)continue;
                     if(legacy.positional_page_identity&&legacy.parts[old_at].region.key!=region)continue;

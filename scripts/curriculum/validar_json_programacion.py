@@ -22,6 +22,11 @@ _state_spec = import_util.spec_from_file_location(
 _state_layout = import_util.module_from_spec(_state_spec)
 _state_spec.loader.exec_module(_state_layout)
 
+_bibliography_spec = import_util.spec_from_file_location(
+    "lgp_bibliography_revision", Path(__file__).with_name("bibliography_revision.py"))
+_bibliography_revision = import_util.module_from_spec(_bibliography_spec)
+_bibliography_spec.loader.exec_module(_bibliography_revision)
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
@@ -1335,6 +1340,10 @@ def previous_exercise_difference(old, current):
 
 
 def preserves_previous_exercise(relative, pn, bn, old, current):
+    # A bibliographic revision is proved on the complete original block,
+    # before any older guide/representation projection can hide another edit.
+    if _bibliography_revision.is_bibliography_only_revision(old, current):
+        return True
     old = without_review_feedback(old)
     current = without_review_feedback(current)
     # La explicación opcional nueva de inline no reemplaza ningún dato anterior.

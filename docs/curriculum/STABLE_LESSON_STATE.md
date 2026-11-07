@@ -170,6 +170,82 @@ y contrasta el resultado con el archivo publicado. La firma de estado del bloque
 debe permanecer igual. El validador curricular sigue autorizando las revisiones:
 no se flexibilizan respuestas ni código.
 
+### Revisión exclusivamente bibliográfica de una explicación
+
+`scripts/curriculum/bibliography_revision.py` reconoce una revisión conservadora
+en `/explanation` de `multiple_choice`, `output_prediction`, `fill_code`,
+`order_code`, `drag_fill_code` o `inline_fill_code`. Sólo permite retirar por
+completo los localizadores opcionales de uno o varios componentes autor-año de
+una cita parentética. Por ejemplo, una referencia con páginas o secciones puede
+quedar en autor-año; no se cambia ese autor, año, orden ni el resto de la cita.
+Las continuaciones `; sección…` siguen perteneciendo al mismo autor hasta que
+aparece otro componente autor-año. Los separadores entre autores, los otros
+componentes y todo el texto exterior deben permanecer exactos.
+
+El reconocimiento exige paréntesis equilibrados y una gramática acotada de
+autores, años y localizadores etiquetados con números o rangos. No autoriza
+retocar sus valores, añadir localizadores ni retirarlos parcialmente. Las formas
+ambiguas o no admitidas permanecen protegidas; no es un corrector automático de
+APA. No se permiten estas retiradas dentro de cadenas, comillas, código
+delimitado, comentarios o paréntesis anidados, ni inmediatamente después de una
+cita textual entre comillas. La presencia de código o cadenas anteriores no
+autoriza cambiarlos y tampoco convierte una paráfrasis posterior en una cita
+textual.
+
+La forma admitida conserva un autor con letras Unicode, marcas diacríticas y
+puntuación de nombre, al menos una mayúscula, seguido de coma y año de cuatro
+cifras con sufijo minúsculo opcional. Los localizadores admiten las etiquetas
+de página (`p.`, `pp.`, `page/pages`), párrafo, sección, capítulo, tabla, figura,
+apéndice, anexo y artículo, con sus abreviaturas reconocidas, variantes inglesas
+incluidas en el parser y `§`/`§§`. Sus valores son números enteros o jerárquicos,
+con sufijo de letra opcional, o numerales romanos, y rangos con guion o raya.
+Cada elemento debe conservar su etiqueta; no se interpreta una sucesión de años
+o números sin etiqueta como una lista de localizadores. Los espacios, comas,
+conjunciones y separadores se conservan exactamente, salvo los que pertenecen a
+la secuencia completa retirada.
+
+El paréntesis debe estar separado de la prosa anterior; el contexto de una
+llamada o expresión ambigua permanece protegido, también con un espacio antes
+del paréntesis. La comprobación excluye prefijos que sólo nombran una función,
+operadores o asignaciones sin prosa, declaraciones/control con palabras del
+léxico C++23 y sus operadores alternativos. No pretende distinguir un tipo
+definido por el usuario de dos palabras de prosa ni interpretar cualquier
+pseudocódigo sin marcas. El código explícitamente delimitado permanece protegido;
+los campos de programa, respuestas y evaluación se comparan íntegramente.
+Esto es una restricción de conservación bibliográfica, no una clasificación
+automática de color o narración. Las grafías no admitidas, años sin fecha,
+localizadores sin etiqueta y contextos ambiguos necesitan otra revisión
+editorial verificable; el mecanismo no los normaliza para hacerlos pasar.
+
+`only_parenthetical_locator_removal(antes, después)` comprueba los textos;
+`is_bibliography_only_revision(bloque_antes, bloque_después)` exige además que
+todos los otros campos sean exactos, incluidas preguntas, opciones, respuestas,
+código y guías. No depende de autores concretos, ubicaciones ni listas de
+huellas. Work redacta el texto y actualiza su marcado; el mecanismo no abrevia
+contenido. Las guardas generales y las pruebas editoriales siguen vigentes.
+
+Cuando `prepare_v2` reconoce esa revisión redactada por Work, su arista
+editorial conserva `beforeSha256` y `afterSha256` y añade `bibliography` con
+cinco claves obligatorias: `historySha256`, `previousBlock`, `currentBlock`,
+`previousTextSemantics` y `currentTextSemantics`. Los bloques son las dos fuentes
+completas reales. El sello enlaza el propietario, idioma y prefijo editorial
+anterior; sus hashes y contratos se verifican contra ambos documentos. Cada
+campo semántico es `null` si no existía descriptor, o el descriptor completo
+`{block, path, sourceSha256, spans}` del mismo propietario para `/explanation`.
+`null` y un descriptor presente con `spans: []` conservan significados distintos.
+Esto archiva procedencia de lectura; no crea otra actividad ni modifica el
+origen, la familia o las direcciones de respuesta.
+Una transición bibliográfica nueva exige ese archivo completo; retirar el
+archivo y conservar sólo los hashes no autoriza la revisión. Las aristas
+históricas ordinarias sin archivo mantienen su formato anterior.
+
+La autorización editorial no acredita por sí sola la recuperación de una pausa.
+El lector necesita contrastar ese archivo con el guion y el marcador auténticos,
+sin aplicar semejanza textual, inventar escucha ni reproducir automáticamente.
+La conservación de posiciones y audios sólo puede afirmarse tras la comprobación
+nativa correspondiente; una explicación distinta no hereda por esta regla un
+certificado de escucha anterior.
+
 ### Retorno editorial explícito en Windows
 
 Una revisión puede recuperar exactamente la presentación de una revisión anterior

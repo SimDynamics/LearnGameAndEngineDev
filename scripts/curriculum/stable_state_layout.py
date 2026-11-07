@@ -24,6 +24,9 @@ _semantics_spec.loader.exec_module(text_semantics)
 _images_spec = import_util.spec_from_file_location("lgaed_image_resources", Path(__file__).with_name("image_resources.py"))
 image_resources = import_util.module_from_spec(_images_spec)
 _images_spec.loader.exec_module(image_resources)
+_bibliography_spec = import_util.spec_from_file_location("lgaed_bibliography_revision", Path(__file__).with_name("bibliography_revision.py"))
+bibliography_revision = import_util.module_from_spec(_bibliography_spec)
+_bibliography_spec.loader.exec_module(bibliography_revision)
 
 
 class LayoutError(ValueError):
@@ -1115,7 +1118,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     chains = {}
     for ordinal, proof in enumerate(editorial):
         fields = {"id", "beforeSha256", "afterSha256"}
-        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo"},
+        require(type(proof) is dict and fields <= set(proof) <= fields | {"returnTo", "bibliography"}
+                and not {"returnTo", "bibliography"} <= set(proof),
                 "Malformed editorial proof")
         identity = _identity(proof["id"])
         require(identity in storage, "Unknown editorial identity")
@@ -1149,6 +1153,25 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         "A published compiler diagnostic cannot be removed or replaced by an editorial return")
         else:
             require("returnTo" not in proof, "A new editorial payload cannot claim a return")
+        if "bibliography" in proof:
+            archive = proof["bibliography"]
+            require(type(archive) is dict and set(archive) == {
+                "historySha256", "previousBlock", "currentBlock", "previousTextSemantics", "currentTextSemantics"},
+                "Malformed bibliography revision archive")
+            require(_digest(archive["historySha256"]) == fingerprint({
+                "lessonId": document["id"], "locale": meta["locale"], "editorial": editorial[:ordinal]}),
+                "Bibliography archive differs from its complete ordered editorial prefix")
+            old_block, new_block = archive["previousBlock"], archive["currentBlock"]
+            require(type(old_block) is dict and type(new_block) is dict
+                    and fingerprint(old_block) == before and fingerprint(new_block) == after,
+                    "Bibliography archive must retain both exact complete block versions")
+            require(bibliography_revision.is_bibliography_only_revision(old_block, new_block),
+                    "A bibliography archive may only remove optional citation locators from an explanation")
+            require(state_fingerprint(old_block) == state_fingerprint(new_block)
+                    == state_fingerprint(actual[identity]),
+                    "A bibliography archive changed its owner's protected exercise contract")
+            _validate_bibliography_semantics(archive["previousTextSemantics"], identity, old_block)
+            _validate_bibliography_semantics(archive["currentTextSemantics"], identity, new_block)
         chains[identity].append(after)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
@@ -1177,6 +1200,37 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(chains.get(identity) == [reviewed_math["before"], reviewed_math["after"]],
                     "The reviewed mathematical label needs its exact published editorial proof")
     return mapping
+
+
+def _explanation_semantics(document: dict, identity: str):
+    """Keep absence distinct from an explicitly authored prose-only field."""
+    return next((deepcopy(field) for field in document.get("textSemantics", {}).get("fields", [])
+                 if field.get("block") == identity and field.get("path") == "/explanation"), None)
+
+
+def _validate_bibliography_semantics(descriptor, identity: str, block: dict) -> None:
+    if descriptor is None:
+        return
+    require(type(descriptor) is dict and set(descriptor) == {"block", "path", "sourceSha256", "spans"}
+            and descriptor["block"] == identity and descriptor["path"] == "/explanation",
+            "A bibliography archive must own its exact explanation descriptor or explicit absence")
+    try:
+        text_semantics._descriptor(descriptor, block["explanation"])
+    except (ValueError, KeyError, TypeError) as error:
+        raise LayoutError("Invalid archived bibliography semantics: " + str(error)) from error
+
+
+def _editorial_proof(document: dict, previous: dict, locale: str, identity: str,
+                     before: dict, after: dict, *, archive_bibliography: bool = True) -> dict:
+    proof = {"id": identity, "beforeSha256": fingerprint(before), "afterSha256": fingerprint(after)}
+    if archive_bibliography and bibliography_revision.is_bibliography_only_revision(before, after):
+        proof["bibliography"] = {
+            "historySha256": fingerprint({"lessonId": document["id"], "locale": locale,
+                                          "editorial": document["stateLayout"]["editorial"]}),
+            "previousBlock": deepcopy(before), "currentBlock": deepcopy(after),
+            "previousTextSemantics": _explanation_semantics(previous, identity),
+            "currentTextSemantics": _explanation_semantics(document, identity)}
+    return proof
 
 
 def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
@@ -1220,9 +1274,8 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
             for identity, block in before.items():
                 require(identity in after, "An existing activity was removed")
                 if fingerprint(block) != fingerprint(after[identity]):
-                    proof = {
-                        "id": identity, "beforeSha256": fingerprint(block),
-                        "afterSha256": fingerprint(after[identity])}
+                    proof = _editorial_proof(result, previous, locale, identity, block, after[identity],
+                                            archive_bibliography=identity not in requested_returns)
                     if identity in requested_returns:
                         prior = [edge for edge in previous["stateLayout"]["editorial"] if edge["id"] == identity]
                         nodes = ([prior[0]["beforeSha256"]] + [edge["afterSha256"] for edge in prior]) if prior else []
@@ -1251,9 +1304,10 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
         "additions": [], "editorial": [],
     }
     before, after = _blocks(baseline), _blocks(result)
-    result["stateLayout"]["editorial"] = [
-        {"id": identity, "beforeSha256": fingerprint(block), "afterSha256": fingerprint(after[identity])}
-        for identity, block in before.items() if fingerprint(block) != fingerprint(after[identity])]
+    for identity, block in before.items():
+        if fingerprint(block) != fingerprint(after[identity]):
+            result["stateLayout"]["editorial"].append(
+                _editorial_proof(result, previous, locale, identity, block, after[identity]))
     validate_transition(previous, result)
     return result
 
@@ -1917,11 +1971,29 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for proof in meta["editorial"][len(old_editorial):]:
         require(proof["id"] in before, "New activities cannot claim historical editorial provenance")
         appended.setdefault(proof["id"], []).append(proof)
+    for identity, proofs in appended.items():
+        if not any("bibliography" in proof for proof in proofs):
+            continue
+        require(all("bibliography" in proof for proof in proofs),
+                "New bibliography archives cannot mix unarchived revisions of the same owner")
+        archives = [proof["bibliography"] for proof in proofs]
+        require(archives[0]["previousBlock"] == before[identity]
+                and archives[-1]["currentBlock"] == after[identity]
+                and archives[0]["previousTextSemantics"] == _explanation_semantics(previous, identity)
+                and archives[-1]["currentTextSemantics"] == _explanation_semantics(current, identity),
+                "New bibliography archives must match both actual published and delivered sources and semantics")
+        require(all(left["currentBlock"] == right["previousBlock"]
+                    and left["currentTextSemantics"] == right["previousTextSemantics"]
+                    for left, right in zip(archives, archives[1:])),
+                "Consecutive bibliography archives must retain their exact intermediate source and semantics")
     owners = {}
     for identity, block in before.items():
         owners.setdefault(fingerprint(block), set()).add(identity)
     for identity, block in before.items():
         actual = after[identity]
+        if bibliography_revision.is_bibliography_only_revision(block, actual):
+            require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
+                    "A new bibliography-only revision requires its exact authored reading archive")
         require(state_fingerprint(_historical_order_contract(baseline, identity, block))
                 == state_fingerprint(_historical_order_contract(current, identity, actual)),
                 "An existing response/code contract changed")

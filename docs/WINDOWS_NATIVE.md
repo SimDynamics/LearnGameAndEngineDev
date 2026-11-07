@@ -1,7 +1,7 @@
 # Base nativa Windows
 
 La raíz contiene el proyecto CMake `LearnGameAndEngineDev`. El objetivo gráfico
-`LearnGameAndEngineDev.exe` utiliza C++20, Win32 Unicode y destino x64. El código
+`LearnGameAndEngineDev.exe` utiliza C++23, Win32 Unicode y destino x64. El código
 importado de Android y sus recursos permanecen en sus ubicaciones originales.
 
 ## Compilar y probar
