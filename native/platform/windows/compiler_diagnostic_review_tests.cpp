@@ -292,13 +292,108 @@ void rejection_aggregate_models(){
     std::cout<<"PASS rejection budgets: "<<exact_limits<<" complete exact-limit models; "<<rejected
         <<" truncated models rejected without grading or state changes\n";
 }
+void interrupted_attempt_models(const WindowsEnvironment& environment){
+    // Model captures only. These tests exercise the real preflight, grading
+    // and persistence APIs without compiling, creating windows or using audio.
+    unsigned preserved_attempts=0;
+    for(const bool diagnostic:{false,true}){
+        const auto lesson=diagnostic?single_lesson():load_lesson(content()/"programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        const Block* goal=nullptr;
+        if(diagnostic)goal=&editor(lesson,"block_0006_0006");
+        else for(const auto& page:lesson.pages)for(const auto& block:page.blocks)if(!goal&&block.output_check)goal=&block;
+        require(goal&&has_compiler_objective(*goal),"The interruption model lost its current curricular objective");const auto& block=*goal;
+        state::StateStore store(environment.paths.root/(diagnostic?L"interrupted-diagnostic":L"interrupted-stdout"));
+        auto data=store.load();seed_independent_state(data);auto markers=narration::read_history(data);
+        markers.entries[0].semantic_plan=narration::SemanticPlanProof{"windows-semantic-v1",{{"qa-old-owner","Antes conserva.","auto","auto",{}}}};
+        markers.entries[1].semantic_plan=narration::SemanticPlanProof{"windows-semantic-v2",{{"qa-current-owner","Literal**.","auto","auto",TextSemantics{"Literal**.",{}}}}};
+        narration::write_history(data,markers);
+        auto good=diagnostic?single_request(block,true):CppRunRequest{};good.request_id=11;good.revision=37;
+        if(!diagnostic)good.source_utf8=block.initial_code;
+        const auto correct_diagnostic=diagnostic?correct_capture(good):CppRunResult{};
+        const auto record_success=[&](state::StateData& destination){
+            if(diagnostic)return record_compiler_diagnostic_case(destination,lesson,block,good,correct_diagnostic,"Correcto\nOriginal success.");
+            bool complete=false;
+            for(const auto& item:block.output_check->cases){auto request=good;request.stdin_utf8=item.standard_input;
+                CppRunResult result;result.request_id=request.request_id;result.revision=request.revision;
+                result.compilation={CppPhaseStatus::completed,0};result.execution={CppPhaseStatus::completed,static_cast<std::uint32_t>(item.exit_code),item.outputs.front()};
+                if(item.standard_error==StandardErrorExpectation::non_blank)result.execution.stderr_bytes="QA runtime diagnostic";
+                result.executable=item.executable;
+                complete=record_compiler_puzzle_case(destination,lesson,block,request,capture_cpp_execution(request,result),"Correcto\nOriginal success.");
+            }
+            return complete;
+        };
+        require(record_success(data),"The interruption fixture failed to establish its original objective receipt");
+        const auto achievement=data;auto current=diagnostic?single_request(block,false):good;
+        current.request_id=12;current.revision=38;
+        if(!diagnostic){current.source_utf8+="\n// QA model: current rejected draft";current.stdin_utf8=block.output_check->cases.front().standard_input;}
+        state::Draft draft;draft.source=current.source_utf8;draft.input=current.stdin_utf8;draft.selection_start=1;draft.selection_end=3;
+        const auto draft_identity=draft_key("programming",lesson,block);state::put_draft(data,draft_identity,draft);
+        auto wrong=diagnostic?accepted_capture(current):CppRunResult{};
+        if(!diagnostic){wrong.request_id=current.request_id;wrong.revision=current.revision;wrong.compilation={CppPhaseStatus::completed,0};
+            wrong.execution={CppPhaseStatus::completed,0,"QA deliberately wrong output"};}
+        constexpr auto review="Incorrecto\nLast evaluated attempt.";
+        require(diagnostic?record_compiler_diagnostic_review(data,lesson,block,current,wrong,review):
+            record_compiler_puzzle_review(data,lesson,block,current,capture_cpp_execution(current,wrong),review),
+            "The model did not establish the exact current rejected attempt");
+        const auto rejected=data;const auto saved_draft=state::get_draft(data,draft_identity);
+        // Reproduce the discarded startup operation directly. With no new
+        // verdict it erases the review and exposes the historical Correcto.
+        auto legacy=data;clear_compiler_puzzle_review(legacy,lesson,block);
+        const auto mistaken=compiler_puzzle_current_feedback(legacy,lesson,block,current);
+        require(mistaken&&mistaken->correct&&compiler_puzzle_review(legacy,lesson,block,current).empty(),
+            "The contrast no longer reproduces why unconditional startup clearing lost the latest rejection");
+        for(const std::string_view interruption:{"cancelled","compile_timeout","runtime_timeout","stale_request","stale_revision","navigation","launch_error"}){
+            if(diagnostic&&interruption=="runtime_timeout")continue;
+            data=rejected;auto attempt=current;attempt.request_id+=100;attempt.revision+=100;
+            // Production run() now uses this exact existing preflight against
+            // its captured snapshot, instead of deleting a matching review.
+            invalidate_compiler_puzzle_attempt(data,lesson,block,attempt);
+            require(data==rejected,"A same-draft run preflight erased the last verdict or its achievement");
+            auto result=wrong;result.request_id=attempt.request_id;result.revision=attempt.revision;
+            if(interruption=="cancelled"){result.compilation.status=CppPhaseStatus::cancelled;result.execution={};}
+            else if(interruption=="compile_timeout"){result.compilation.status=CppPhaseStatus::timed_out;result.execution={};}
+            else if(interruption=="runtime_timeout")result.execution.status=CppPhaseStatus::timed_out;
+            else if(interruption=="stale_request")--result.request_id;
+            else if(interruption=="stale_revision")--result.revision;
+            else if(interruption=="navigation")result={};
+            else result.error_utf8="QA technical launch failure";
+            if(diagnostic){require(!record_compiler_diagnostic_case(data,lesson,block,attempt,result,"Wrong new success")&&
+                !record_compiler_diagnostic_review(data,lesson,block,attempt,result,"Wrong new rejection"),"An interrupted diagnostic produced a verdict");}
+            else{const auto fresh=capture_cpp_execution(attempt,result);
+                require(evaluate_cpp_output_check(*block.output_check,fresh,attempt.revision).verdict==OutputVerdict::unavailable&&
+                    !record_compiler_puzzle_case(data,lesson,block,attempt,fresh,"Wrong new success")&&
+                    !record_compiler_puzzle_review(data,lesson,block,attempt,fresh,"Wrong new rejection"),"An interrupted stdout run produced a verdict");}
+            require(data==rejected,"An unevaluable interruption changed the last review or independent state");
+            store.save(data);state::StateStore reopen(store.root().parent_path());const auto restored=reopen.load();
+            const auto feedback=compiler_puzzle_current_feedback(restored,lesson,block,attempt);
+            const auto resumed_draft=state::get_draft(restored,draft_identity);
+            require(restored==rejected&&feedback&&!feedback->correct&&feedback->text==review&&compiler_puzzle_completed(restored,lesson,block)&&
+                narration::read_history(restored)==markers&&resumed_draft.source==saved_draft.source&&resumed_draft.input==saved_draft.input&&
+                resumed_draft.selection_start==saved_draft.selection_start&&resumed_draft.selection_end==saved_draft.selection_end&&
+                resumed_draft.indentation_json==saved_draft.indentation_json&&resumed_draft.has_saved==saved_draft.has_saved,
+                "Reopening after an interruption lost the current rejection, exact draft, original achievement or one of three pauses");
+            ++preserved_attempts;
+        }
+        data=rejected;require(record_success(data)&&compiler_puzzle_review(data,lesson,block,current).empty(),
+            "A later valid success did not replace the last rejected attempt");
+        auto expected=achievement;state::put_draft(expected,draft_identity,draft);
+        require(data==expected,"A valid later recheck rewrote original achievements or independent state");
+        data=rejected;auto edited=current;edited.source_utf8+="\n// QA incompatible edit";
+        if(diagnostic)edited.diagnostic=prepare_cpp_diagnostic_request(block,edited);
+        invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
+        require(data==expected&&compiler_puzzle_completed(data,lesson,block),
+            "The preflight retained an incompatible rejection or revoked the original achievement");
+    }
+    std::cout<<"PASS "<<preserved_attempts<<" interrupted stdout/diagnostic models: legacy loss reproduced; last evaluated rejection, achievement, draft and three pauses survive reopen\n";
+}
 }
 int main(int argc,char** argv) try {
     const bool real=argc==2&&std::string_view(argv[1])=="--real";
     const bool aggregate_model=argc==2&&std::string_view(argv[1])=="--rejection-model";
-    require(argc==1||real||aggregate_model,"Usage: compiler_diagnostic_review_tests [--real|--rejection-model]");
+    const bool interruptions=argc==2&&std::string_view(argv[1])=="--interrupted";
+    require(argc==1||real||aggregate_model||interruptions,"Usage: compiler_diagnostic_review_tests [--real|--rejection-model|--interrupted]");
     if(aggregate_model){rejection_aggregate_models();return 0;}
     const LaunchOptions options{ProfileId::Codex,L"diagnostic-review-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
-    if(real)real_tests(environment);else model_tests(environment);return 0;
+    if(real)real_tests(environment);else if(interruptions)interrupted_attempt_models(environment);else model_tests(environment);return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}

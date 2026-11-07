@@ -3565,10 +3565,12 @@ struct LessonView {
     }
     void run(std::size_t index,windows::CppRunRequest::Action action=windows::CppRunRequest::Action::compile_run) {
         cancel_run(); capture_draft(index); clear_reference_completion(index);
-        windows::clear_compiler_puzzle_review(data,lesson,block(index));mark_dirty(); flush();
+        auto request=program_snapshot(index);
+        // Starting or abandoning a job is not another evaluated answer. Keep
+        // its exact latest review until a real verdict or incompatible edit.
+        windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),request);mark_dirty();flush();
         auto& vm = controls.at(index);
         vm.console_channels = {};
-        auto request=program_snapshot(index);
         request.request_id = ++request_id; request.revision = vm.revision;
         if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&!block(index).output_check)action=windows::CppRunRequest::Action::execute;
         request.action=action;running_action=action;
