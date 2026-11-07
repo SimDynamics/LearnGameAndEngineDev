@@ -31,7 +31,12 @@
             "Aceptar y cerrar implícitamente el conjunto al ver EOF."
           ],
           "correctIndex": 1,
-          "explanation": "El cierre reconocido por leer_grupo pertenece a ese grupo. EOF no proporciona el cierre que falta al llamador."
+          "explanation": "El cierre reconocido por leer_grupo pertenece a ese grupo. EOF no proporciona el cierre que falta al llamador.",
+          "reviewFeedback": [
+            "El grupo verde está completo, pero todavía queda el nivel que lo contiene. Comprueba si aparece un segundo cierre después del cierre de ese grupo.",
+            "Identifica qué lector consume cada cierre y comprueba por separado que el grupo y el conjunto estén completos.",
+            "El final de la entrada no añade signos al texto. Revisa qué cierre ya se consumió y cuál seguía esperando el lector exterior."
+          ]
         }
       ]
     },
@@ -50,11 +55,12 @@
           "answers": [
             "1:1"
           ],
-          "explanation": "El segundo candidato conserva el registro del primero. Copiarlo guarda también ese dato, aunque queríamos un grupo azul vacío."
+          "explanation": "El segundo candidato conserva el registro del primero. Copiarlo guarda también ese dato, aunque queríamos un grupo azul vacío.",
+          "reviewFeedback": "Sigue el contenido de candidato.registros después de cada instrucción. push_back guarda una copia del grupo; cambiar candidato.id no ejecuta ninguna operación sobre sus registros. Comprueba el tamaño de cada copia, no sólo su ID."
         },
         {
           "type": "paragraph",
-          "text": "En el lector del conjunto declaramos Grupo grupo{0,{}} dentro de cada vuelta y leemos en él un grupo completo. Así cada candidato comienza limpio. Nuestro leer_grupo también reemplaza su destino al aceptar, en vez de añadir sobre el contenido anterior; no dependemos de una acumulación implícita."
+          "text": "El contraejemplo reutiliza una sola variable candidato. grupos.push_back(candidato) guarda una copia de su estado actual; después, candidato.id = 2; cambia el identificador de la variable original, pero no vacía candidato.registros ni modifica la copia ya guardada. La siguiente llamada a push_back vuelve a copiar el estado que conserva esa misma variable.\n\nEn el lector del conjunto declaramos Grupo grupo{0,{}} dentro de cada vuelta y leemos en él un grupo completo. Así cada candidato comienza limpio. Nuestro leer_grupo también reemplaza su destino al aceptar, en vez de añadir sobre el contenido anterior; no dependemos de una acumulación implícita."
         },
         {
           "type": "multiple_choice",
@@ -66,7 +72,12 @@
             "Sí: sólo se prohíben los ID de registros repetidos."
           ],
           "correctIndex": 0,
-          "explanation": "La presencia del grupo se representa por una entrada en grupos, independiente de que sus registros estén vacíos."
+          "explanation": "La presencia del grupo se representa por una entrada en grupos, independiente de que sus registros estén vacíos.",
+          "reviewFeedback": [
+            "Distingue la presencia del grupo de la cantidad de registros que contiene. Comprueba si el nombre ya aparece en la colección del conjunto.",
+            "Aunque no tenga registros, el primer grupo rojo ya fue recibido. Revisa qué condición se comprueba al intentar añadir el segundo grupo con ese nombre.",
+            "Hay dos comprobaciones distintas: los grupos no pueden repetirse dentro del conjunto y los ID de registros no pueden repetirse dentro de un mismo grupo. Decide cuál afecta a este caso."
+          ]
         },
         {
           "type": "paragraph",
@@ -82,7 +93,12 @@
             "El primero termina el archivo y el segundo crea un grupo vacío."
           ],
           "correctIndex": 0,
-          "explanation": "Cada nivel consume su propio terminador. Que un grupo esté vacío no elimina su cierre ni el cierre exterior; sólo la capa de muestra completa exige después EOF."
+          "explanation": "Cada nivel consume su propio terminador. Que un grupo esté vacío no elimina su cierre ni el cierre exterior; sólo la capa de muestra completa exige después EOF.",
+          "reviewFeedback": [
+            "Sigue primero la llamada que lee el grupo interior y después la llamada que completa el conjunto exterior.",
+            "Un lector no consume los cierres de todos los niveles a la vez. Identifica el nivel al que pertenece cada uno de los dos signos.",
+            "El primer cierre termina un grupo que ya se abrió. Un cierre no abre otro grupo ni implica por sí mismo que terminó el archivo."
+          ]
         }
       ]
     },
@@ -102,7 +118,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería de leer_muestra_completa.\n\nCada prueba reinicia el destino como un conjunto azul que contiene 9[1;1]. main usa \"{ conjunto { grupo rojo 7[0;0] } { grupo azul } }\", \"{ conjunto { grupo rojo } { grupo rojo } }\", \"{ conjunto { grupo rojo 7[0;0] } { grupo azul 2[3;1]\", \"{ conjunto }\", \"{ conjunto { grupo gris } }\", \"{ conjunto { grupo rojo +4[1;0] 004[0;1] } }\", \"{ conjunto } }\", \"{ conjunto } aviso\", \"{ conjunto { grupo rojo 1[1;1] }\", \"{ conjunto { grupo rojo 1[1;1]\", \"{ conjunto { grupo rojo 1[1;1] } { grupo azul 2[3;11] } }\", \"{ conjunto\\n{ grupo rojo\\t4[1;0] }\\n{ grupo azul 4[0;2] }\\n}\", \"\", \" { conjunto { grupo rojo } { grupo verde } { grupo azul } } \", en ese orden.\n\nCada prueba empieza con Caso N, numerado desde 1; después muestra bool:cantidad_de_grupos y cada grupo en una línea ID:cantidad_de_registros seguido de sus registros como espacio e ID[aceptados;rechazados].\n\nCada línea termina con salto, sin líneas vacías añadidas.\n\nLa presentación recorre el destino completo incluso ante false, para observar su conservación.\n\nResuelve el puzzle previo y usa Compilar, ejecutar y comprobar con todos los casos del mismo programa.",
+          "text": "Construye una sola batería de leer_muestra_completa. Antes de cada prueba, prepara de nuevo un conjunto que contenga un solo grupo azul; ese grupo contiene el registro 9[1;1].\n\nEn main, usa estos literales de cadena para las pruebas, en este orden:\n1. \"{ conjunto { grupo rojo 7[0;0] } { grupo azul } }\"\n2. \"{ conjunto { grupo rojo } { grupo rojo } }\"\n3. \"{ conjunto { grupo rojo 7[0;0] } { grupo azul 2[3;1]\"\n4. \"{ conjunto }\"\n5. \"{ conjunto { grupo gris } }\"\n6. \"{ conjunto { grupo rojo +4[1;0] 004[0;1] } }\"\n7. \"{ conjunto } }\"\n8. \"{ conjunto } aviso\"\n9. \"{ conjunto { grupo rojo 1[1;1] }\"\n10. \"{ conjunto { grupo rojo 1[1;1]\"\n11. \"{ conjunto { grupo rojo 1[1;1] } { grupo azul 2[3;11] } }\"\n12. \"{ conjunto\\n{ grupo rojo\\t4[1;0] }\\n{ grupo azul 4[0;2] }\\n}\"\n13. \"\"\n14. \" { conjunto { grupo rojo } { grupo verde } { grupo azul } } \"\n\nEn el literal del caso 12, \\n representa un salto de línea y \\t una tabulación del texto recibido. El caso 13 usa una cadena vacía.\n\nCada prueba empieza con Caso N, numerado desde 1; después muestra bool:cantidad_de_grupos y cada grupo en una línea ID:cantidad_de_registros seguido de sus registros como espacio e ID[aceptados;rechazados]. Cada línea termina con salto, sin líneas vacías añadidas.\n\nLa presentación recorre el destino completo incluso ante false, para observar su conservación. Usa Compilar, ejecutar y comprobar con todos los casos del mismo programa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -119,6 +135,15 @@
                 "standardInput": "",
                 "outputs": [
                   "Caso 1\n1:2\n0:1 7[0;0]\n2:0\nCaso 2\n0:1\n2:1 9[1;1]\nCaso 3\n0:1\n2:1 9[1;1]\nCaso 4\n1:0\nCaso 5\n0:1\n2:1 9[1;1]\nCaso 6\n0:1\n2:1 9[1;1]\nCaso 7\n0:1\n2:1 9[1;1]\nCaso 8\n0:1\n2:1 9[1;1]\nCaso 9\n0:1\n2:1 9[1;1]\nCaso 10\n0:1\n2:1 9[1;1]\nCaso 11\n0:1\n2:1 9[1;1]\nCaso 12\n1:2\n0:1 4[1;0]\n2:1 4[0;2]\nCaso 13\n0:1\n2:1 9[1;1]\nCaso 14\n1:3\n0:0\n1:0\n2:0\n"
+                ],
+                "explanation": "La salida coincide con los catorce casos solicitados. En Caso 1 aparecen el registro del grupo rojo y el grupo azul vacío; Caso 12 mantiene el ID 4 en dos grupos distintos, y Caso 14 muestra los tres grupos vacíos. Los informes de rechazo conservan el conjunto inicial con 9[1;1]. En el código de referencia, los datos se incorporan primero a los candidatos; destino sólo se cambia al aceptar el nivel correspondiente. Así, leer un grupo válido no obliga a publicar una muestra cuyo cierre exterior o sufijo sea incorrecto.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "El programa inicial no muestra ningún informe. Completa leer_conjunto y leer_muestra_completa, construye las catorce pruebas en main y muestra el contenido del destino después de cada llamada, también cuando el resultado sea false. Conserva los rótulos y los saltos de línea solicitados."
+                  }
                 ]
               }
             ]
@@ -147,11 +172,11 @@
         },
         {
           "type": "paragraph",
-          "text": "leer_muestra_completa sólo consulta el final después de leer_conjunto=true. En ese punto ws puede marcar EOF al agotar los blancos; eso es el final permitido. Un EOF encontrado dentro de un grupo o del conjunto ya provocó false, y nunca pasa a esta etapa de aceptación."
+          "text": "leer_muestra_completa sólo comprueba el final después de que leer_conjunto haya devuelto true. En ese punto, ws puede alcanzar EOF al descartar los blancos restantes: ese final está permitido porque el conjunto y sus grupos ya tienen sus cierres. En cambio, si EOF aparece antes del cierre de un grupo o del conjunto, leer_conjunto devuelve false. leer_muestra_completa devuelve entonces false sin pasar a la comprobación final ni modificar su destino."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: cada cierre tiene un dueño, ningún candidato hereda datos del anterior, grupos y registros respetan sus distintas reglas de duplicados, todos los niveles protegen destino y se conserva el orden de cada vector. Llegar a EOF no significa que todos los objetos empezados estén completos."
+          "text": "En { conjunto { grupo rojo } }, leer_grupo consume el primer } y devuelve el grupo rojo vacío. leer_conjunto añade ese grupo a su candidato y consume el segundo }, que cierra el conjunto. Sólo entonces leer_muestra_completa comprueba que no quede texto distinto de blancos antes de confirmar destino.\n\nUn grupo nuevo se lee en un Grupo recién inicializado. Se rechaza otro grupo rojo en ese mismo conjunto, aunque el primero esté vacío; en cambio, el registro 4 puede existir en rojo y en azul porque cada grupo comprueba sus propios ID. Las incorporaciones se hacen al candidato en el orden de entrada. Si falla una comprobación antes de aceptar el nivel correspondiente, su destino conserva el valor previo. Que un grupo sea válido no permite confirmar la muestra si falta el cierre exterior."
         }
       ]
     },
@@ -171,7 +196,12 @@
             "Aceptar uno y fusionar sus recuentos por tener el mismo ID."
           ],
           "correctIndex": 1,
-          "explanation": "La unicidad del registro es local al grupo. Fusionar por ID numérico perdería esa asociación."
+          "explanation": "La unicidad del registro es local al grupo. Fusionar por ID numérico perdería esa asociación.",
+          "reviewFeedback": [
+            "Compara la identidad completa de los registros: además del ID, importa el grupo al que pertenece cada uno. Revisa si ambos ID se buscan en una misma colección.",
+            "Comprueba las asociaciones de cada registro con su grupo y conserva los recuentos por separado.",
+            "Fusionar los recuentos por ID descartaría la distinción entre rojo y azul. Comprueba qué información debe conservar el conjunto."
+          ]
         },
         {
           "type": "paragraph",
@@ -179,7 +209,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Todos los rechazos empiezan con un conjunto previo no vacío distinto de la entrada. La presentación completa permite comprobar identidad y cantidades, además del tamaño. La primera prueba y la de tres grupos vacíos distinguen presencia, vacío e independencia; la prueba con ID 4 en rojo y azul conserva los dos ámbitos locales."
+          "text": "En el caso 1, rojo contiene 7[0;0] y azul está presente sin registros: el informe incluye 0:1 7[0;0] y 2:0. En el caso 14 se conservan tres grupos vacíos, representados por las líneas 0:0, 1:0 y 2:0. Cada línea identifica un grupo presente; su cantidad de registros es cero.\n\nEn el caso 12, los registros 4[1;0] de rojo y 4[0;2] de azul deben conservarse separados. Aunque ambos tienen ID 4, pertenecen a grupos distintos; no se fusionan ni se rechazan por compartir ese número.\n\nLos casos de rechazo parten de un conjunto que contiene el grupo azul con 9[1;1]. Después de false, el informe debe seguir mostrando 0:1 y 2:1 9[1;1]: no se sustituye el destino por los datos leídos antes del error. Comprobar el contenido completo permite detectar cambios que una comparación de tamaños no mostraría."
         },
         {
           "type": "note",
@@ -845,8 +875,1883 @@
         "id": "block_0002_0005",
         "beforeSha256": "8e1d30a468968f6f0f0c028dce96315a0700c32fa47cb8339b971d07a7ce2e2b",
         "afterSha256": "34dc4eb13a2458debcaa61f8c816c83a2ee8f3ed29a4bba8a32bd7723d5f8fd2"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "3797234248067d2caebc2a493040dc7b5ab5c9a9a0fbe67b277e12dd4e1d8f76",
+        "afterSha256": "9b9ba22ded6f9fb7dadef489a42f0eecd06f5762082f431b1a4b2969cea5698c"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f03e04064dddaacad948dd30e38efe1552f526463a76c7179e151cb2740c83ef",
+        "afterSha256": "f88ea9d82b05bc8f1617f234100e8287d1ea0bb316cf6317334c7eb5ce393e49"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "aced2372c69b3e0f7891a7cf44f113549e38d812bde9726025a08bb917326539",
+        "afterSha256": "f1cbc7fb34de500be7b7ad5fc535fe00679fe8e471eb71181fa935dd5fc00485"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "46d9a97f5626a04a24a2c4b4ccfc958445ae335b29eb414d15a5b31def706554",
+        "afterSha256": "acab52e274cc721c98f979084d0008e7ede05afb416b0cdb33ed2bc428b59bd8"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "a4f429ad358c4942631d09b4eaea10656c69262619d080da30f73b780a727e1d",
+        "afterSha256": "9d82136080d4572ac55dd1e1e645816ac7f6a62fb994c9404b6b4d72ad0f5782"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1ec804dc89e7230be63b5ff5491215581282e27618f9d334a98dd1dc0529b564",
+        "afterSha256": "baecb352dd7be8bd09f117f07387bba7e6d2ea96ea240549e93a73713cff71da"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "8d231807cd86bb18829d388af44e8221f6c80ca31426f78fb1f1b80b4091e70d",
+        "afterSha256": "d8638ca6921a941377738f737a4e882e9d04a1bbcc57566a2e8a6e8b41009022"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "932495495e2b576a17e5e7fcbd1b95010fbf7bf8ce7bf10d353eabd0d0e39c96",
+        "afterSha256": "b3e9a7fec199baa5324f1fdf04b0310f108ecff1d84321a0eac4311a49c3ce47"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "01e76f658e0c7f810dd1c9dd8b7168d51f77038a0cfec28374c7a4a5761b111a",
+        "afterSha256": "10e0234abb61692fa598297c3806202c66ea67c20a5161b03ef368f813112881"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1626b438edad301acaa90a6064a8d868c334421bb893515d6bba0851d2327111",
+        "afterSha256": "118c6985679e3975904bc128823ee8ab9ab3e14700da1799fac97129217e4149"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "4e066c0df96c7e22b515c139269503bd45b10e9847acb033aa600ea3d1e2fe1f",
+        "afterSha256": "a2fce92318d33e7beae7dcd61a2471f6913caf1a31bc38383824e31360a15ac9"
       }
     ]
   },
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "832d7a12646d57f6df05e289ca46f1a0c958d39d79c98c4db7035efcbc8d6ff2",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "7d1161279672985b9c568e6ca8ee05180ee9c78ecd01a627999f39c178e40665",
+        "spans": [
+          {
+            "start": 42,
+            "end": 44,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "{",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 69,
+            "end": 84,
+            "text": "conjunto GRUPOS",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 92,
+            "end": 96,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 295,
+            "text": "{ conjunto { grupo rojo } }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 308,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 318,
+            "end": 321,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 345,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "22b6ecf2b438681fd00745d864559b8fdfd14ddccefa7f1b4628275622a79eb2",
+        "spans": [
+          {
+            "start": 11,
+            "end": 19,
+            "text": "conjunto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 161,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 175,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 191,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "8f8f0b6238b8a3b3691f9b231a9c4242520798113c9ce2fc4128f4b7d04440d7",
+        "spans": [
+          {
+            "start": 14,
+            "end": 40,
+            "text": "{ conjunto { grupo verde }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "único",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "7839a7083baf85202513ba698f277d79bb1f5990b3a088fb7b4feb7a30c1251f",
+        "spans": [
+          {
+            "start": 25,
+            "end": 35,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "241d9d8c46a159b834eab37b1e9a102fe9be3b61d9c94abf91934c31c28d0e0a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "5b97a927450b3bf47f6c9854cebae892b06e931eb26b33c354e5a34c3c84f99a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "3fdb74f9d9ff2b398e8c643c4f23c3420ab6760d036ecdf037239b09ae5da695",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "4b06ad3942d3a41e59d9e3b6b8af49dcf4a73dfed6f4bb9bee437ad5a682a5ec",
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 106,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "b5e3464c7139378d792fdf0a44269f339219e5c242854a4ea0f2f206ac0b1d96",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d42c387a9e0245f0b835c026207a88fc8fd10592111f4d25cfc7d3c452af28eb",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "04fdde39652548ae3be528d4f5e62974c25ac2232371da310da200d56769380a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/question",
+        "sourceSha256": "4c53597830808fc5501e71ab0fb87b02933b1cb70730a7748de0a0525307016e",
+        "spans": [
+          {
+            "start": 30,
+            "end": 37,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/explanation",
+        "sourceSha256": "c47da23262466c307129f8a4c69703ace84deff67fb442b260c8941e9709c75b",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 53,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/reviewFeedback",
+        "sourceSha256": "96b22144befbdc390b8ed177c465603a37232c284306bf048e54704af8e9c382",
+        "spans": [
+          {
+            "start": 22,
+            "end": 41,
+            "text": "candidato.registros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 80,
+            "text": "push_back",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 129,
+            "text": "candidato.id",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "fac623d741082c3dcdfb240b93339b8ec6e7f0c4ed830101fd2e8ee23d1c455d",
+        "spans": [
+          {
+            "start": 27,
+            "end": 30,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 54,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 83,
+            "text": "grupos.push_back(candidato)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 148,
+            "text": "candidato.id = 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 231,
+            "text": "candidato.registros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 289,
+            "end": 298,
+            "text": "push_back",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 413,
+            "text": "Grupo grupo{0,{}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 514,
+            "end": 524,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 546,
+            "end": 553,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "4985dd1bfc116411df7efacede2684f6cac61139f45459b945d4d63a981bd0e3",
+        "spans": [
+          {
+            "start": 17,
+            "end": 31,
+            "text": "{ grupo rojo }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 63,
+            "text": "{ grupo rojo 2[3;1] }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 86,
+            "text": "segunda",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "9d9bbc70472f4ae9983bc1ddc9e343a5ad9c97e1a702597d7044768a6bab36b5",
+        "spans": [
+          {
+            "start": 56,
+            "end": 62,
+            "text": "grupos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "903c27a741a53b1ccf40d2980351b6377cbc16d3d38e4829a837974b6fe96e19",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "cf068168a7972771267663c613711315e4630f85260b41a377db8328b4578434",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "901e879005decec505a523a8d979690cea77e07795210c236a3a7f10f7dbf809",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "e57c03bd5be02c0dc391ee436e25903a84d5b35db321902e3fd40c548c3dfa81",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "39cc98c89291cc68b6d36a84d1c2d4165d62ae3550d5d55d2163f841b8d0a642",
+        "spans": [
+          {
+            "start": 30,
+            "end": 36,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 128,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "8932ec4a46db0e965f17f26ed3663e419fea9070c076fa90876e159da800fd95",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "21a7ef1afea6dd6b8cc1ab540b90887b2ea180c181b4a049cea52da1f136a724",
+        "spans": [
+          {
+            "start": 6,
+            "end": 12,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 41,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 78,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 88,
+            "text": "eofbit",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "81b724d6c76d495de704d3d857157d2385267c6859451916b3a7a2ba3be3c509",
+        "spans": [
+          {
+            "start": 3,
+            "end": 30,
+            "text": "{ conjunto { grupo rojo } }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "84b22b2eed4b17ed50e99c78767761410831921688e0c0d45dd17993fe2d366f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "c6d4384efe655ea9bc085bff4d4448f5aaac83b9142cefea414dbc87fe9c568c",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 39,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "cb28549cb45e4d4bdac6bc6ddf3c1d1a46ea439801c8918ea3e5d78823c49b80",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 23,
+            "text": "ambos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 43,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "54eb58216dd15706d991ef5756b198f0b9933d3921910965ac6b1fc4a99313c0",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 42,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "f1d8a14c3f0c1d9ec5c61b35519ee7fe23c913b76e9828c437b2d16122059785",
+        "spans": [
+          {
+            "start": 6,
+            "end": 13,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1aa5b359a05c1419bc79738be012dcfb06fc830e1e9bb93d4a2509e1f9a3b58f",
+        "spans": [
+          {
+            "start": 117,
+            "end": 120,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "7f71941061cb27e329e66773a420f1defd69004479b820ca2a8098255149fd92",
+        "spans": [
+          {
+            "start": 3,
+            "end": 9,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "7a6eb709134b3a18cf49d091198e3a909b9c4ed775216db22fb3548e5bf8b08a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "37ae367fefa4b256df91d9ba440d53327e14f844a00275071f4a746ceb3db918",
+        "spans": [
+          {
+            "start": 7,
+            "end": 20,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 54,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 65,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 174,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 263,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "4e8408fd7ac6a3bbc16af206a7366a57df039a31a9a23572d8284e3918cf06f9",
+        "spans": [
+          {
+            "start": 7,
+            "end": 28,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 71,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 148,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 232,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 261,
+            "end": 267,
+            "text": "eofbit",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 359,
+            "text": "{ conjunto }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "f625080b907f008027d6242a245723bf1e26d72ab7392edde4ff9977b069246f",
+        "spans": [
+          {
+            "start": 30,
+            "end": 51,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 117,
+            "end": 119,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 174,
+            "text": "9[1;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 184,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 251,
+            "text": "1.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 303,
+            "text": "\"{ conjunto { grupo rojo 7[0;0] } { grupo azul } }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 306,
+            "text": "2.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 351,
+            "text": "\"{ conjunto { grupo rojo } { grupo rojo } }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 354,
+            "text": "3.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 409,
+            "text": "\"{ conjunto { grupo rojo 7[0;0] } { grupo azul 2[3;1]\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 410,
+            "end": 412,
+            "text": "4.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 427,
+            "text": "\"{ conjunto }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 428,
+            "end": 430,
+            "text": "5.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 460,
+            "text": "\"{ conjunto { grupo gris } }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 461,
+            "end": 463,
+            "text": "6.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 464,
+            "end": 510,
+            "text": "\"{ conjunto { grupo rojo +4[1;0] 004[0;1] } }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 511,
+            "end": 513,
+            "text": "7.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 530,
+            "text": "\"{ conjunto } }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 531,
+            "end": 533,
+            "text": "8.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 534,
+            "end": 554,
+            "text": "\"{ conjunto } aviso\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 555,
+            "end": 557,
+            "text": "9.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 558,
+            "end": 592,
+            "text": "\"{ conjunto { grupo rojo 1[1;1] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 593,
+            "end": 596,
+            "text": "10.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 597,
+            "end": 629,
+            "text": "\"{ conjunto { grupo rojo 1[1;1]\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 630,
+            "end": 633,
+            "text": "11.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 693,
+            "text": "\"{ conjunto { grupo rojo 1[1;1] } { grupo azul 2[3;11] } }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 694,
+            "end": 697,
+            "text": "12.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 698,
+            "end": 760,
+            "text": "\"{ conjunto\\n{ grupo rojo\\t4[1;0] }\\n{ grupo azul 4[0;2] }\\n}\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 761,
+            "end": 764,
+            "text": "13.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 765,
+            "end": 767,
+            "text": "\"\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 768,
+            "end": 771,
+            "text": "14.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 772,
+            "end": 834,
+            "text": "\" { conjunto { grupo rojo } { grupo verde } { grupo azul } } \"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 859,
+            "end": 861,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 863,
+            "end": 865,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 897,
+            "end": 899,
+            "text": "\\t",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 943,
+            "end": 945,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 993,
+            "end": 999,
+            "text": "Caso N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1016,
+            "end": 1017,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1035,
+            "end": 1058,
+            "text": "bool:cantidad_de_grupos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1085,
+            "end": 1109,
+            "text": "ID:cantidad_de_registros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1150,
+            "end": 1174,
+            "text": "ID[aceptados;rechazados]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1292,
+            "end": 1297,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "f14a3723fae9faf15ba12836a47108d3d0e6a9c70027ad959a39c24d1bc7c379",
+        "spans": [
+          {
+            "start": 27,
+            "end": 34,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 63,
+            "text": "Caso 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 115,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 130,
+            "text": "Caso 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 154,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 182,
+            "text": "Caso 14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 279,
+            "text": "9[1;1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 366,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "c8c1acbae857bde2df6cf7106278628c56ffab7185c687f9e81ebb0fdb6191d7",
+        "spans": [
+          {
+            "start": 56,
+            "end": 69,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 93,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 116,
+            "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 132,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 225,
+            "end": 230,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "a1353274e2763fc8bb2c543e5f6b6ffd4cea27c7fb889ecd08d06e8dabc42162",
+        "spans": [
+          {
+            "start": 56,
+            "end": 59,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "85a6bcf9e0d84c8769fcabc456116562073de71387fc32c84e2a97f6e8875adf",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "8cc0848240051d91f08da8dcc178cde7a8c62b9c42d235fe788f5ed54492b4ae",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 37,
+            "text": "0:1 7[0;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 43,
+            "text": "2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 64,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 101,
+            "text": "0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 114,
+            "text": "2:1 9[1;1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 151,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 186,
+            "text": "1:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 197,
+            "text": "ceros",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "ba96def728b584e01bcc711616eae8655e00888eb73fcf71771911602e59f77c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 74,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 331,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 346,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 348,
+            "end": 369,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 393,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 444,
+            "end": 451,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "b0219eebac55d1a233d75b2b500f37c016fab398b5531573a3d0df57bccbda77",
+        "spans": [
+          {
+            "start": 3,
+            "end": 30,
+            "text": "{ conjunto { grupo rojo } }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 42,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 108,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 160,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 162,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 202,
+            "end": 223,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 299,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 379,
+            "end": 383,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 417,
+            "end": 424,
+            "text": "primero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 461,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 479,
+            "end": 483,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 489,
+            "end": 493,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 570,
+            "end": 579,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 676,
+            "end": 683,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "08a31bd9b8c4cf58f27921753b07de07319cfdd67c073b1edd493eeebc35b49e",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "fb11706ee710524eac2a18eb3b9c02988ce67d53140d5b697e8a0c801b49420d",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "4[1;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 31,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 40,
+            "text": "4[0;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 48,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "f2a7c2bb6b1e21afa6102e6cb2a5706c1ba906cd53304a5ee6d6ca78d64a9278",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/options/0",
+        "sourceSha256": "6cadb28fee90a9d6d91342fb7bddd62152566070d7e81d7a6f1133fe550df564",
+        "spans": [
+          {
+            "start": 12,
+            "end": 19,
+            "text": "segundo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 24,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/options/1",
+        "sourceSha256": "e3ce50ae593ac7f3a26d145e2cf116f38762947ae484161458f4ef2fa4ebe84e",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/options/2",
+        "sourceSha256": "43334e6504720f8a9397cf35929787261d9da95a55e384cbb498b81994812bbb",
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "810f01633482ae10fb1ef6a2b47b618ee047aac16ba28ec934cbeffc0dd0f446",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9778ff8b6ec696220a31c49b06076d6ba4c5c4ac8801f4a9c5c19147b27705ad",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e79e11d9ac988b6ebc2a1762f43bdad570f0deb752f79bca8ffac052591d4fed",
+        "spans": [
+          {
+            "start": 62,
+            "end": 66,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 73,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "66ba511cf835996390c5dd74fc222919e7d0e5a271e0008ceb1394d678049e9a",
+        "spans": [
+          {
+            "start": 84,
+            "end": 86,
+            "text": "+4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 89,
+            "end": 92,
+            "text": "004",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 195,
+            "end": 197,
+            "text": "+4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 200,
+            "end": 203,
+            "text": "004",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "588ef165fe2a4e98921e875747e1c825f8678b4620c87b42173ff3d04eb19d9b",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 18,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 34,
+            "text": "7[0;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 41,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 100,
+            "text": "0:1 7[0;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 121,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 139,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 187,
+            "text": "0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 192,
+            "text": "1:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 198,
+            "text": "2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 273,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 289,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 311,
+            "text": "4[1;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 319,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 328,
+            "text": "4[0;2]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 336,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 389,
+            "end": 390,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 545,
+            "end": 549,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 554,
+            "end": 560,
+            "text": "9[1;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 573,
+            "end": 578,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 613,
+            "end": 616,
+            "text": "0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 619,
+            "end": 629,
+            "text": "2:1 9[1;1]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "f92da1f47a066616f73ac043ff3d9751d5e2b3cdcfc5d1e7e047ec9f534bb09f",
+        "spans": [
+          {
+            "start": 249,
+            "end": 295,
+            "text": "(Stroustrup, 2024, sección 9.9.2, pp. 271–274)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "533e8da82dd979db710a20ab44f9bebae78affc3cbb1e55ca22b91483b0bfafa",
+        "spans": []
+      }
+    ]
+  }
 }
