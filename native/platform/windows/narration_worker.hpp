@@ -86,7 +86,7 @@ public:
         std::string_view reading_context,std::string_view math_mode,bool previous_output_data);
     [[nodiscard]] std::string curriculum_plan(std::string_view raw_lesson,std::size_t page,
         std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={},
-        std::string_view reading_context="auto");
+        std::string_view reading_context="auto",std::string_view content_language={});
     [[nodiscard]] NarrationAudio prepare(const NarrationSegment&,std::string_view language,std::string_view voice,
         const std::filesystem::path& output,unsigned threads,std::stop_token={},
         NarrationCpuClass work=NarrationCpuClass::current_page);

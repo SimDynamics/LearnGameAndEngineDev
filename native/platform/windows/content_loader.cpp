@@ -1615,49 +1615,6 @@ struct SemanticPublicFields {
     }
     static std::string trimmed(const std::string& source){const auto wide=key(source);std::wstring_view value(wide.c_str(),wide.size());
         while(!value.empty()&&narration_space(value.front()))value.remove_prefix(1);while(!value.empty()&&narration_space(value.back()))value.remove_suffix(1);return utf8(winrt::hstring(value));}
-    bool nonblank(const std::string& path)const {const auto at=fields.find(path);return at!=fields.end()&&!trimmed(at->second).empty();}
-    using Groups=std::vector<std::set<std::string>>;
-    void joined_group(Groups& groups,std::set<std::string> paths)const {
-        std::erase_if(paths,[&](const auto& path){return !nonblank(path);});if(paths.size()>1)groups.push_back(std::move(paths));
-    }
-    void strings_group(Groups& groups,const JsonArray& values,const std::string& path)const {
-        std::set<std::string> paths;for(unsigned n=0;n<values.Size();++n)paths.insert(path+'/'+std::to_string(n));joined_group(groups,std::move(paths));
-    }
-    void content_groups(Groups& groups,const JsonArray& values,const std::string& path,unsigned depth)const {
-        require(depth<=32,"Semantic rich content is too deeply nested");for(unsigned n=0;n<values.Size();++n)
-            if(values.GetAt(n).ValueType()==JsonValueType::Object)representation_groups(groups,values.GetObjectAt(n),path+'/'+std::to_string(n),depth+1);
-    }
-    void representation_groups(Groups& groups,const JsonObject& spec,const std::string& path,unsigned depth=0)const {
-        const auto config=spec.HasKey(L"config")?object(spec,"config"):spec;const auto location=path+(spec.HasKey(L"config")?"/config":"");
-        if(kind(spec)=="math_table"){
-            strings_group(groups,values(config,"headers"),location+"/headers");const auto rows=values(config,"rows");
-            for(unsigned n=0;n<rows.Size();++n)if(rows.GetAt(n).ValueType()==JsonValueType::Array)strings_group(groups,rows.GetArrayAt(n),location+"/rows/"+std::to_string(n));
-        }else if(kind(spec)=="rich_answer_option")content_groups(groups,values(config,"content"),location+"/content",depth);
-    }
-    Groups presentation_groups(const JsonObject& block)const {
-        Groups groups;if(!kind(block).starts_with("math_"))return groups;
-        for(const auto name:{"representations","tools"}){const auto entries=values(block,name);for(unsigned n=0;n<entries.Size();++n)
-            if(entries.GetAt(n).ValueType()==JsonValueType::Object)representation_groups(groups,entries.GetObjectAt(n),'/'+std::string(name)+'/'+std::to_string(n));}
-        const auto response=[&](const JsonObject& source,const std::string& path){
-            std::map<std::string,std::pair<unsigned,JsonObject>> definitions;const auto fields=values(source,"fields");
-            for(unsigned n=0;n<fields.Size();++n)if(fields.GetAt(n).ValueType()==JsonValueType::Object){const auto field=fields.GetObjectAt(n);definitions.insert_or_assign(optional_text(field,"id"),std::pair{n,field});}
-            const bool inline_fields=source.HasKey(L"segments");
-            const auto components=[&](const std::string& id){std::set<std::string> paths;const auto at=definitions.find(id);if(at==definitions.end())return paths;
-                const auto& [index,field]=at->second;const auto location=path+"/fields/"+std::to_string(index);
-                if(kind(field,"numeric")!="fixed"||!inline_fields)paths.insert(location+"/label");if(kind(field)=="fixed")paths.insert(location+"/text");paths.insert(location+"/unit");
-                std::erase_if(paths,[&](const auto& path){return !nonblank(path);});joined_group(groups,paths);return paths;};
-            for(const auto& [id,field]:definitions)(void)components(id);
-            if(inline_fields){std::set<std::string> paths;const auto segments=values(source,"segments");for(unsigned n=0;n<segments.Size();++n)if(segments.GetAt(n).ValueType()==JsonValueType::Object){
-                const auto segment=segments.GetObjectAt(n);if(segment.HasKey(L"field")){const auto origin=components(text(segment,"field"));paths.insert(origin.begin(),origin.end());}
-                else paths.insert(path+"/segments/"+std::to_string(n)+"/text");}joined_group(groups,std::move(paths));
-            }else if(source.HasKey(L"layout")&&source.GetNamedValue(L"layout").ValueType()==JsonValueType::String&&text(source,"layout")=="table")strings_group(groups,values(source,"headers"),path+"/headers");
-            for(const auto name:{"options","items","sources","targets"}){const auto entries=values(source,name);for(unsigned n=0;n<entries.Size();++n)
-                if(entries.GetAt(n).ValueType()==JsonValueType::Object)content_groups(groups,values(entries.GetObjectAt(n),"content"),path+'/'+std::string(name)+'/'+std::to_string(n)+"/content",0);}
-        };
-        if(kind(block)=="math_puzzle"){const auto responses=values(block,"responses");for(unsigned n=0;n<responses.Size();++n)
-            if(responses.GetAt(n).ValueType()==JsonValueType::Object)response(responses.GetObjectAt(n),"/responses/"+std::to_string(n));}
-        else response(block,"");return groups;
-    }
     std::set<std::string> feedback_origins(const JsonObject& block) const {
         if(!kind(block).starts_with("math_"))return {};
         std::set<std::string> result;
@@ -1700,9 +1657,7 @@ void read_text_semantics(const JsonObject& root,Lesson& lesson) {
         const auto group=SemanticPublicFields(raw).feedback_origins(raw);const bool annotated=std::ranges::any_of(group,[&](const auto& path){return block.text_semantics.contains(path);});
         if(annotated)require(std::ranges::all_of(group,[&](const auto& path){return block.text_semantics.contains(path);}),
             "Annotating mathematical feedback requires every possible authored feedback origin in that block");
-        for(const auto& joined:SemanticPublicFields(raw).presentation_groups(raw))if(std::ranges::any_of(joined,[&](const auto& path){return block.text_semantics.contains(path);}))
-            require(std::ranges::all_of(joined,[&](const auto& path){return block.text_semantics.contains(path);}),
-                "Annotating a joined mathematical passage requires all its authored source fields");}
+    }
 }
 void read_relationships(const JsonObject& root, Lesson& lesson) {
     if (root.HasKey(L"referenceAfter")) {

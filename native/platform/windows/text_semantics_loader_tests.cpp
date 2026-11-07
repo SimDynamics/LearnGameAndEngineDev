@@ -1,14 +1,17 @@
 #include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include <initializer_list>
 #include <iostream>
+#include <string_view>
+#include <utility>
 
 namespace {
 using namespace lgaed;
 using namespace winrt::Windows::Data::Json;
 void require(bool condition,const char* message){if(!condition)throw std::runtime_error(message);}
 JsonValue string(std::string_view value){return JsonValue::CreateStringValue(winrt::to_hstring(value));}
-JsonObject fixture(){
+JsonObject fixture(const JsonObject* mathematical=nullptr){
     auto root=JsonObject::Parse(LR"({"id":"qa_semantics","title":"QA","pages":[{"blocks":[
         {"type":"paragraph","text":"\ud83d\ude00 Usa `int p;`. Salida: N=1a|1b.","emphasis":[{"text":"Usa","style":"bold"}]},
         {"type":"multiple_choice","id":"choice","question":"Elige N=1.","options":["N=1","N=2"],"correctIndex":0,"explanation":"Resultado: N=1.","reviewFeedback":["Bien: N=1","Revisa: N=2"]},
@@ -16,6 +19,7 @@ JsonObject fixture(){
         {"type":"cpp_compiler","initialCode":"int main() {}","outputCheck":{"cases":[{"standardInput":"","outputs":["N=1"],"explanation":"Salida: N=1.","reviewFeedback":[{"outputs":["N=2"],"text":"Revisa N=2."}]}]}}
     ]}]})");
     const auto blocks=root.GetNamedArray(L"pages").GetObjectAt(0).GetNamedArray(L"blocks");
+    if(mathematical)blocks.SetAt(2,*mathematical);
     JsonArray origin_blocks,current_blocks;
     for(unsigned n=0;n<blocks.Size();++n){
         auto protected_block=JsonObject::Parse(blocks.GetObjectAt(n).Stringify());
@@ -47,6 +51,44 @@ void rejected(const JsonObject& root){const auto source=winrt::to_string(root.St
     try{(void)windows::parse_lesson_progress_metadata(source);}catch(const std::exception&){metadata=true;}
     require(full&&metadata,"Malformed text semantics passed a full or progress loader");
 }
+void independent_region(const JsonObject& mathematical,std::string_view path,std::string_view source){
+    auto root=fixture(&mathematical);const auto before=windows::parse_lesson_json(winrt::to_string(root.Stringify()));
+    annotate(root,2,path,source,0,winrt::to_hstring(source).size(),source,"output");
+    const auto current=winrt::to_string(root.Stringify());
+    const auto after=windows::parse_lesson_json(current),progress=windows::parse_lesson_progress_metadata(current);
+    const auto& block=after.pages[0].blocks[2];
+    require(block.text_semantics.size()==1&&block.text_semantics.at(std::string(path)).source==source&&
+        progress.pages[0].blocks[2].text_semantics==block.text_semantics,
+        "An independent native region required annotations on its unmarked siblings or lost full/progress parity");
+    require(before.state_layout.raw_json==after.state_layout.raw_json&&
+        before.pages[0].blocks[2].raw_json==block.raw_json&&before.pages[0].blocks[2].stable_id==block.stable_id,
+        "An independent annotation rewrote the original payload, identity or stable state layout");
+}
+void independent_regions(){
+    const auto inline_fields=JsonObject::Parse(LR"({"type":"math_puzzle","schemaVersion":1,"prompt":"Completa","representations":[{"type":"math_table","headers":["Salida","Nombre"],"rows":[["N=1","texto"]]}],"responses":[{"id":"r","type":"math_structured_answer","fields":[{"id":"x","type":"fixed","label":"Cantidad","text":"N=1","unit":"m"}],"segments":[{"text":"Vale"},{"field":"x"},{"text":"fin"}],"validator":{"type":"fields","fields":{}}}]})");
+    for(const auto& [path,source]:std::initializer_list<std::pair<std::string_view,std::string_view>>{
+        {"/representations/0/headers/0","Salida"},{"/representations/0/rows/0/0","N=1"},
+        {"/responses/0/segments/0/text","Vale"},{"/responses/0/fields/0/text","N=1"},
+        {"/responses/0/fields/0/unit","m"},{"/responses/0/fields/0/label","Cantidad"}})
+        independent_region(inline_fields,path,source);
+    auto table=JsonObject::Parse(inline_fields.Stringify());auto response=table.GetNamedArray(L"responses").GetObjectAt(0);
+    response.Remove(L"segments");response.Insert(L"layout",string("table"));response.Insert(L"headers",JsonArray::Parse(LR"(["Dato","Unidad"])"));
+    response.Insert(L"rows",JsonArray::Parse(LR"([[{"field":"x"},"otra celda"]])"));
+    for(const auto& [path,source]:std::initializer_list<std::pair<std::string_view,std::string_view>>{
+        {"/responses/0/headers/0","Dato"},{"/responses/0/rows/0/1","otra celda"},
+        {"/responses/0/fields/0/text","N=1"},{"/responses/0/fields/0/label","Cantidad"},
+        {"/responses/0/fields/0/unit","m"}})independent_region(table,path,source);
+    auto ordinary=JsonObject::Parse(table.Stringify());response=ordinary.GetNamedArray(L"responses").GetObjectAt(0);
+    for(const auto property:{L"layout",L"headers",L"rows"})response.Remove(property);
+    independent_region(ordinary,"/responses/0/fields/0/label","Cantidad");
+    independent_region(ordinary,"/responses/0/fields/0/text","N=1");
+    independent_region(ordinary,"/responses/0/fields/0/unit","m");
+    auto nested=JsonObject::Parse(inline_fields.Stringify());const auto table_spec=nested.GetNamedArray(L"representations").GetObjectAt(0);
+    JsonObject card;card.Insert(L"type",string("rich_answer_option"));JsonArray content;content.Append(table_spec);card.Insert(L"content",content);
+    nested.GetNamedArray(L"representations").SetAt(0,card);
+    independent_region(nested,"/representations/0/content/0/headers/0","Salida");
+    independent_region(nested,"/representations/0/content/0/rows/0/0","N=1");
+}
 }
 int main() try {
     winrt::init_apartment(winrt::apartment_type::multi_threaded);
@@ -77,7 +119,15 @@ int main() try {
     require(after.pages[0].blocks[1].text_semantics.at("/reviewFeedback/1").spans.empty(),"Explicit prose-only field disappeared");
     auto partial=JsonObject::Parse(current.Stringify());const auto partial_fields=partial.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
     for(unsigned n=0;n<partial_fields.Size();++n)if(partial_fields.GetObjectAt(n).GetNamedString(L"path")==L"/representations/0/rows/0/1"){partial_fields.RemoveAt(n);break;}
-    rejected(partial);
+    const auto partial_source=winrt::to_string(partial.Stringify());
+    const auto partial_full=windows::parse_lesson_json(partial_source),partial_progress=windows::parse_lesson_progress_metadata(partial_source);
+    require(partial_full.pages[0].blocks[2].text_semantics.contains("/representations/0/rows/0/0")&&
+        !partial_full.pages[0].blocks[2].text_semantics.contains("/representations/0/rows/0/1")&&
+        partial_full.pages[0].blocks[2].text_semantics==partial_progress.pages[0].blocks[2].text_semantics,
+        "A native table cell could not keep its own annotation with an unmarked neighbor");
+    independent_regions();
+    auto partial_feedback=JsonObject::Parse(original.Stringify());
+    annotate(partial_feedback,2,"/feedback/correct","Correcto N=1",0,0,"","prose");rejected(partial_feedback);
     for(const auto path:{"/answers/0","/initialCode","/outputCheck/cases/0/outputs/0","/outputCheck/cases/0/standardInput"}){
         auto bad=JsonObject::Parse(original.Stringify());annotate(bad,3,path,"N=1",0,3,"N=1","output");rejected(bad);}
     for(const auto path:{"/responses/0/validator/expected/a","/responses/00/targets/0/content/0/text","/id"}){

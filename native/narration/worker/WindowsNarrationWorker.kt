@@ -252,6 +252,10 @@ private class Backend(private val resources: File, private val englishResources:
         // This parsed request-local projection changes no authored or stored
         // metadata. Only public block type/language/mode select C++ reading.
         val lesson = JSONObject(request.getString("lessonJson"))
+        require(!request.has("contentLanguage") || request.opt("contentLanguage") is String) { "Invalid content language owner" }
+        val contentLanguage = if (request.has("contentLanguage")) request.getString("contentLanguage")
+            else lesson.optJSONObject("stateLayout")?.optString("locale")?.takeIf(String::isNotEmpty) ?: lang.tag
+        require(contentLanguage in setOf("es","fr","en","en-US","en-GB")) { "Unsupported content language owner" }
         run {
             val types = setOf("multiple_choice","fill_code","inline_fill_code","output_prediction","order_code","drag_fill_code")
             val pages = lesson.optJSONArray("pages")
@@ -267,12 +271,14 @@ private class Backend(private val resources: File, private val englishResources:
             }
         }
         val texts = WindowsTextSemantics.withCurriculum(lesson) {
-            val script = WindowsNarrationSpeechRules.withWholeReadingRegions {
-                LessonNarrationScript.page(lesson,request.getInt("page"),
-                    lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
-            }
-            script.texts + WindowsTextSemantics.compilerGuides(lesson,request.getInt("page"),uiLanguage).flatMap { field ->
-                planned(field.source,lang,"auto",field).map { it.second.prepared }
+            WindowsTextSemantics.withNativeFeedback(uiLanguage,contentLanguage) {
+                val script = WindowsNarrationSpeechRules.withWholeReadingRegions {
+                    LessonNarrationScript.page(lesson,request.getInt("page"),
+                        lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
+                }
+                script.texts + WindowsTextSemantics.compilerGuides(lesson,request.getInt("page"),uiLanguage).flatMap { field ->
+                    planned(field.source,lang,"auto",field).map { it.second.prepared }
+                }
             }
         }
         val segments = NarrationSegments.sentences(texts).map { prepared ->

@@ -318,10 +318,13 @@ NarrationAudio NarrationWorker::prepare_system(const NarrationSegment& segment,s
     try{return impl_->system_speech.prepare(segment,language,voice,output,operation.get_token(),impl_->storage_budget.load()).audio;}
     catch(...){if(background.stop.stop_requested()&&!stop.stop_requested())throw NarrationPreempted{};throw;}
 }
-std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop,std::string_view reading_context){
+std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop,std::string_view reading_context,std::string_view content_language){
     if(reading_context!="auto"&&reading_context!="cpp")throw std::invalid_argument("Invalid curriculum narration reading context");
     ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);
     put(request,L"readingContext",reading_context);
+    // Catalog callers use the asset's language for both content and speech;
+    // retain a distinct source language when planning another selected voice.
+    put(request,L"contentLanguage",content_language.empty()?language:content_language);
     request.Insert(L"page",JsonValue::CreateNumberValue(static_cast<double>(page)));put(request,L"language",language);put(request,L"voice",voice);put(request,L"uiLanguage",ui_language);
     std::string reply;(void)impl_->call(request,stop,&reply,false,NarrationCpuClass::background);return reply;
 }

@@ -160,26 +160,56 @@ class TextSemanticsTests(unittest.TestCase):
         self.assertNotIn("/responses/0/feedback/correct", paths)
         self.assertEqual(semantics.feedback_origins(block), {"/responses/0/label", "/responses/0/options/0/reviewFeedback"})
 
-    def test_joined_source_groups_are_atomic_and_empty_card_fallback_is_not_public(self):
-        block = {"type": "math_puzzle", "schemaVersion": 1, "id": "joined", "prompt": "Completa",
+    def test_native_regions_allow_independent_field_annotations_without_rewriting_state(self):
+        block = {"type": "math_puzzle", "schemaVersion": 1, "id": "regions", "prompt": "Completa",
                  "representations": [{"type": "math_table", "headers": ["Salida", "Nombre"], "rows": [["N=1", "letras y palabras"]]}],
                  "responses": [{"id": "r", "type": "math_structured_answer", "fields": [
                      {"id": "x", "type": "fixed", "label": "Cantidad", "text": "N=1", "unit": "m"}],
                      "segments": [{"text": "Vale"}, {"field": "x"}, {"text": "fin"}], "validator": {"type": "fields", "fields": {}}}]}
-        raw = {"id": "qa_joined", "title": "QA", "pages": [{"blocks": [block]}]}
+        table = deepcopy(block)
+        table["responses"][0].pop("segments")
+        table["responses"][0].update(layout="table", headers=["Dato", "Unidad"], rows=[[{"field": "x"}, "otra celda"]])
+        ordinary = deepcopy(block)
+        ordinary["responses"][0].pop("segments")
+        nested = deepcopy(block)
+        nested["representations"] = [{"type": "rich_answer_option", "content": [block["representations"][0]]}]
+        for variant in (block, table, ordinary, nested):
+            raw = {"id": "qa_regions", "title": "QA", "pages": [{"blocks": [variant]}]}
+            document = layout.prepare_v2(raw, "es", {"es": raw})
+            paths = semantics.public_text_fields(variant)
+            for selected, source in paths.items():
+                if not source or selected == "/prompt":
+                    continue
+                with self.subTest(selected=selected, variant=variant):
+                    candidate = deepcopy(document)
+                    annotate(candidate, 0, selected, source)
+                    resolved = semantics.validate(candidate)
+                    owner = candidate["stateLayout"]["current"][0]["blocks"][0]
+                    self.assertEqual(set(resolved[owner]), {selected})
+                    self.assertEqual(resolved[owner][selected]["source"], source)
+                    layout.validate(candidate)
+                    layout.validate_transition(document, candidate)
+                    self.assertEqual(document["pages"], candidate["pages"])
+                    self.assertEqual(document["stateLayout"], candidate["stateLayout"])
+
+    def test_independent_field_units_do_not_relax_shared_feedback_origins(self):
+        block = {"type": "math_puzzle", "schemaVersion": 1, "prompt": "Completa",
+                 "feedback": {"correct": "Bien", "incorrect": "Revisa"}, "responses": [
+                     {"id": "r", "type": "math_multi_input", "fields": [
+                         {"id": "x", "label": "Cantidad", "unit": "m"}], "validator": {"type": "fields", "fields": {}}}]}
+        raw = {"id": "qa_feedback_regions", "title": "QA", "pages": [{"blocks": [block]}]}
         document = layout.prepare_v2(raw, "es", {"es": raw})
-        for selected, companions in (
-            ("/representations/0/headers/0", ["/representations/0/headers/1"]),
-            ("/representations/0/rows/0/0", ["/representations/0/rows/0/1"]),
-            ("/responses/0/segments/0/text", ["/responses/0/segments/2/text", "/responses/0/fields/0/text", "/responses/0/fields/0/unit"]),
-        ):
-            candidate = deepcopy(document)
-            annotate(candidate, 0, selected)
-            with self.subTest(selected=selected), self.assertRaises(ValueError):
-                semantics.validate(candidate)
-            for path in companions:
-                annotate(candidate, 0, path)
+        candidate = deepcopy(document)
+        annotate(candidate, 0, "/responses/0/fields/0/unit", "m")
+        semantics.validate(candidate)
+        annotate(candidate, 0, "/responses/0/fields/0/label", "Cantidad")
+        with self.assertRaisesRegex(ValueError, "feedback"):
             semantics.validate(candidate)
+        annotate(candidate, 0, "/feedback/correct")
+        annotate(candidate, 0, "/feedback/incorrect")
+        semantics.validate(candidate)
+
+    def test_empty_card_fallback_is_not_public_and_standalone_label_has_its_real_owner(self):
         hidden = {"type": "math_puzzle", "prompt": "Elige", "responses": [{"id": "r", "type": "math_matching_drag",
             "sources": [{"id": "a", "label": "", "text": "Unused"}], "targets": []}]}
         self.assertNotIn("/responses/0/sources/0/label", semantics.public_text_fields(hidden))
