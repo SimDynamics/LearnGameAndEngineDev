@@ -307,6 +307,44 @@ void choice_revision_reset_keeps_exact_scope_and_provenance(){
     check(!state::get_response(data,revised,block),"Catalog reset restored a historical choice achievement");
     std::cout<<"PASS choice revision catalog reset: current/original/locales removed, exact scope, archive pins, drafts and unknown keys retained\n";
 }
+void reached_page_reset_removes_only_selected_legacy_frontiers(){
+    using namespace lgaed;
+    state::StateData data;
+    curriculum::CatalogScope scope;scope.lessons={"qa_reach","qa_other_selected"};
+    std::vector<std::string> removed;
+    for(const auto& id:scope.lessons)for(const auto locale:{"es","en","fr"}){
+        const auto key="lesson_"+id+"_reached_page_v1_"+locale;
+        data.preferences["learning_progress"][key]=std::int64_t{4};removed.push_back(key);
+    }
+    for(const auto& key:std::vector<std::string>{
+        "lesson_qa_reach_extra_reached_page_v1_es",
+        "lesson_unselected_reached_page_v1_en",
+        "lesson_unselected_reached_page_v1_fr",
+        "lesson_qa_reach_reached_page_v1_de",
+        "lesson_qa_reach_reached_page_v1_es_extra"})
+        data.preferences["learning_progress"][key]=std::int64_t{7};
+    data.preferences["learning_progress"]["lesson_qa_reach_state_lineage_v1"]=std::string("historical ownership");
+    data.preferences["learning_progress"]["lesson_qa_reach_state_lineage_v2_es"]=std::string("current ownership");
+    data.preferences["learning_progress"]["lesson_qa_reach_state_v1_owner_locale"]=std::string("es");
+    data.preferences["learning_progress"]["lesson_qa_reach_state_additions_v2_es"]=std::string("[]");
+    data.preferences["learning_progress"]["lesson_qa_reach_state_editorial_returns_v1_es"]=std::string("preserved provenance");
+    data.preferences["native_windows"][removed.front()]=std::int64_t{8};
+    data.preferences["cpp_lesson_drafts"]["programming/qa_reach/0/0/source"]=std::string("keep draft\r\n");
+    data.preferences["narration_settings"]["voice"]=std::string("ef_dora");
+    const auto before=data;
+    check(curriculum::reset_catalog_progress(data,scope)==removed.size(),
+        "Catalog reset did not remove exactly the selected lessons' three-language legacy frontiers");
+    for(const auto& key:removed)check(!state::find(data,"learning_progress",key),
+        "Catalog reset retained a selected legacy reached-page frontier");
+    for(const auto& [domain,values]:before.preferences)for(const auto& [key,value]:values)
+        if(domain!="learning_progress"||std::ranges::find(removed,key)==removed.end())
+            check(state::find(data,domain,key)&&*state::find(data,domain,key)==value,
+                "Legacy frontier reset crossed its exact scope or altered ownership, provenance, draft or settings");
+    const auto reset=data;
+    check(curriculum::reset_catalog_progress(data,scope)==0&&data==reset,
+        "Repeating a legacy frontier reset changed preserved data");
+    std::cout<<"PASS reached-page catalog reset: selected es/en/fr frontiers removed, unrelated lessons/locales/domains and provenance retained\n";
+}
 }
 int main() {
     using namespace lgaed;
@@ -321,6 +359,7 @@ int main() {
         unit_percentage_weights_lessons_like_android_and_keeps_completion_counts();
         catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads();
         choice_revision_reset_keeps_exact_scope_and_provenance();
+        reached_page_reset_removes_only_selected_legacy_frontiers();
         const auto root = std::filesystem::path(build::source_root) / "app/src/main/assets/content";
         CatalogLocation location;
         const auto routes = windows::load_catalog(root,location);

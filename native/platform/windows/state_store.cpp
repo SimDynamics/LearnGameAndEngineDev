@@ -819,17 +819,23 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
     std::vector<std::string> pages, blocks;
     const bool started = bool_value(data, base + "_started");
-    if (started) {
-        const auto saved = saved_page(data, lesson.id);
-        for (std::size_t index = 0; index <= (std::min)(saved, layout.origin.size() - 1); ++index) {
+    const bool adopt = layout.version == 2 && has_old_pin && old_pin == layout.legacy_lineage;
+    auto reached = legacy_page_frontier(data,lesson,!adopt);
+    if(started&&!reached&&!adopt)reached=0;
+    if (reached) {
+        for (std::size_t index = 0; index <= *reached; ++index) {
             pages.push_back(layout.origin[index].id);
             blocks.insert(blocks.end(), layout.origin[index].blocks.begin(), layout.origin[index].blocks.end());
         }
     }
-    const bool adopt = layout.version == 2 && has_old_pin && old_pin == layout.legacy_lineage;
     if (adopt) {
-        pages = set_value(data, base + "_read_pages_v1"); blocks = set_value(data, base + "_read_blocks_v1");
-        check_coverage(layout, pages, blocks);
+        const auto previous_pages=set_value(data,base+"_read_pages_v1"),previous_blocks=set_value(data,base+"_read_blocks_v1");
+        check_coverage(layout,previous_pages,previous_blocks);
+        // Union the preserved legacy arrival prefix with actual mapped visits;
+        // adopting v2 cannot discard a later page merely because review moved
+        // the current bookmark backwards before the migration.
+        for(const auto& id:previous_pages)if(std::find(pages.begin(),pages.end(),id)==pages.end())pages.push_back(id);
+        for(const auto& id:previous_blocks)if(std::find(blocks.begin(),blocks.end(),id)==blocks.end())blocks.push_back(id);
     }
     auto& prefs = data.preferences["learning_progress"];
     prefs[pin_key] = layout.lineage; prefs[pages_key] = pages; prefs[blocks_key] = blocks;
@@ -936,19 +942,8 @@ void validate_lesson_state(const StateData& data, const curriculum::Lesson& less
 }
 void save_current_page(StateData& data, const curriculum::Lesson& lesson, std::size_t page) {
     prepare_lesson_state(data, lesson);
+    (void)mark_page_reached(data,lesson,page);
     set_saved_page(data, lesson.id, curriculum::storage_page(lesson, page));
-    const auto& layout = lesson.state_layout;
-    if (!layout.version) return;
-    const auto suffix = layout.version == 2 ? "v2_" + layout.locale : "v1";
-    const auto base = "lesson_" + lesson.id;
-    auto pages = set_value(data, base + "_read_pages_" + suffix);
-    auto blocks = set_value(data, base + "_read_blocks_" + suffix);
-    const auto& current = layout.current.at(page);
-    if (std::find(pages.begin(), pages.end(), current.id) == pages.end()) pages.push_back(current.id);
-    for (const auto& block : current.blocks)
-        if (std::find(blocks.begin(), blocks.end(), block) == blocks.end()) blocks.push_back(block);
-    auto& prefs = data.preferences["learning_progress"];
-    prefs[base + "_read_pages_" + suffix] = pages; prefs[base + "_read_blocks_" + suffix] = blocks;
 }
 std::size_t current_page(const StateData& data, const curriculum::Lesson& lesson) {
     if (!find(data, "learning_progress", "lesson_" + lesson.id + "_page")) return 0;

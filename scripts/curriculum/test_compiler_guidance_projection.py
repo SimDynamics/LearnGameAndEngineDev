@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 import stable_state_layout as layout
+import text_semantics
 import validar_json_programacion as contract
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +33,21 @@ def guided(block):
     return candidate
 
 
+def reauthor_changed_public_fields(before, after, identity):
+    """Author the synthetic QA prose without retaining stale published ranges."""
+    previous = text_semantics.public_text_fields(layout._blocks(before)[identity])
+    current = text_semantics.public_text_fields(layout._blocks(after)[identity])
+    changed = {path for path in previous.keys() | current.keys() if previous.get(path) != current.get(path)}
+    metadata = after.setdefault("textSemantics", {"version": 1, "fields": []})
+    # Retain every untouched descriptor, including the rest of this owner.
+    # Removed review rules lose only their no-longer-public descriptors.
+    metadata["fields"] = [field for field in metadata["fields"]
+                          if field["block"] != identity or field["path"] not in changed]
+    metadata["fields"].extend(text_semantics.make_field(after, identity, path, [])
+                              for path in sorted(changed & current.keys()))
+    return changed
+
+
 class CompilerGuidanceProjectionTest(unittest.TestCase):
     def schema_errors(self, block):
         with patch.object(contract, "ERRORS", []):
@@ -51,6 +67,18 @@ class CompilerGuidanceProjectionTest(unittest.TestCase):
         old = layout._blocks(original)[identity]
         target = layout._blocks(source)[identity]
         target.update(guided(target))
+        changed_fields = reauthor_changed_public_fields(original, source, identity)
+        descriptors = {(field["block"], field["path"]): field for field in source["textSemantics"]["fields"]}
+        for field in original.get("textSemantics", {}).get("fields", []):
+            if field["block"] != identity or field["path"] not in changed_fields:
+                self.assertEqual(field, descriptors[field["block"], field["path"]])
+        text_semantics.validate(source)
+        stale = deepcopy(source)
+        field = next(field for field in stale["textSemantics"]["fields"]
+                     if field["block"] == identity and field["path"] in changed_fields)
+        field["sourceSha256"] = "0" * 64
+        with self.assertRaisesRegex(layout.LayoutError, "source fingerprint is stale"):
+            layout.prepare_v2(stale, "es", family, original)
         prepared = layout.prepare_v2(source, "es", family, original)
         layout.validate_transition(original, prepared)
         new = layout._blocks(prepared)[identity]

@@ -1152,7 +1152,15 @@ void u11_names_preserves_historical_and_added_prediction_state(const std::filesy
     const auto progress=[&](const StateData& value,const Lesson& lesson){return catalog_lesson_page_progress(value,lesson,[&](const Block& block){
         if(block.type==BlockType::cpp_compiler)return windows::compiler_puzzle_completed(value,lesson,block);
         const auto response=get_response(value,lesson,block);return response&&response->correct;});};
-    require(progress(historical,before).completed==8,"The historical U11 names sample does not cover all eight previous pages");
+    // The historical bookmark reaches all eight pages, but its opaque Android
+    // compiler answer is not a Windows execution receipt. Every compiler is
+    // required now, including editors from a publication without the old flag.
+    const auto historical_progress=progress(historical,before);
+    require(all_pages_reached(historical,before)&&historical_progress.total==8&&historical_progress.completed==7
+        &&!windows::compiler_puzzle_completed(historical,before,old_owner)
+        &&windows::compiler_puzzle_case_count(historical,before,old_owner)==0
+        &&string_value(historical,"learning_progress",exercise_key(before,old_owner))==historical_compiler_json,
+        "Historical U11 names arrival or opaque Android achievement was confused with native compiler execution credit");
     const auto verify=[&](const StateData& value,bool solved){
         for(const auto& [domain,values]:historical.preferences)for(const auto& [key,item]:values)
             require(find(value,domain,key)&&*find(value,domain,key)==item,"U11 names adoption/import changed an original answer, opaque receipt, draft, attempts or typed setting");

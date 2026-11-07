@@ -22,6 +22,7 @@
 #include "core/learning_flow.hpp"
 #include "core/compiler_flow.hpp"
 #include "core/lesson_entry_policy.hpp"
+#include "core/lesson_page_reach.hpp"
 #include "core/catalog.hpp"
 #include "core/view_preferences.hpp"
 #include "core/attempts.hpp"
@@ -1158,11 +1159,12 @@ struct LessonView {
                 requirements.push_back({prior,completion});
             }
         }
-        return curriculum::lesson_entry_decision(requested,lesson.pages.size(),requirements);
+        return curriculum::lesson_entry_decision(state::clamp_reachable_page(data,lesson,requested),lesson.pages.size(),requirements);
     }
     void begin_entry(std::size_t requested) {
         deferred_entry.cancel();const auto decision=entry_decision(requested);page=decision.page;
         if(decision.pending_math)deferred_entry.defer(requested);
+        else (void)state::mark_page_reached(data,lesson,page);
     }
     bool finish_entry(std::uint64_t generation) {
         const auto requested=deferred_entry.requested(generation);
@@ -1170,6 +1172,7 @@ struct LessonView {
         const auto decision=entry_decision(*requested);
         if(decision.pending_math)return false;
         deferred_entry.cancel();page=decision.page;
+        (void)state::mark_page_reached(data,lesson,page);
         if(!import_open)render_page();
         return true;
     }
@@ -2011,7 +2014,9 @@ struct LessonView {
             const auto identity=curriculum::exercise_key(lesson,current);const auto response=state::get_response(data,lesson,current);
             return response&&response->correct&&!verified_math.contains(identity);
         });});
-        if(!pending_math)data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=complete.total>0&&complete.completed==complete.total;
+        const bool reached_all=state::all_pages_reached(data,lesson);
+        if(!reached_all||!pending_math)data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=
+            reached_all&&complete.total>0&&complete.completed==complete.total;
         store.save(data); dirty = false;
     }
     void flush_selection() {
@@ -2458,6 +2463,11 @@ struct LessonView {
             return true;
         });
     }
+    bool can_finish_lesson() const {
+        if(!hooks.lesson_completed||!state::all_pages_reached(data,lesson))return false;
+        for(std::size_t required=0;required<lesson.pages.size();++required)if(!can_advance(required))return false;
+        return true;
+    }
     void update_navigation() {
         if(reader)EnableWindow(reader,!deferred_entry.waiting());
         if (page_status && title) {
@@ -2486,12 +2496,13 @@ struct LessonView {
         }
         if(const auto next=find_item(continue_id)){
             SetWindowTextW(next,wide(page+1==lesson.pages.size()?ui("Finalizar lección","Finish lesson","Terminer la leçon"):ui("Continuar","Continue","Continuer")).c_str());
-            EnableWindow(next,can_advance(page));
+            EnableWindow(next,page+1==lesson.pages.size()?can_finish_lesson():can_visit(page+1));
         }
     }
     bool can_visit(std::size_t value) const {
         if(deferred_entry.waiting())return false;
         if (value >= lesson.pages.size()) return false;
+        if (!state::can_reach_page(data,lesson,value)) return false;
         if (value <= page) return true;
         for (std::size_t required = page; required <= value; ++required)
             if (!can_enter(required)) return false;
@@ -2519,9 +2530,7 @@ struct LessonView {
         if(!import_open)for(std::size_t index=0;index<lesson.pages.size();++index)
             if(can_visit(index))result.available_pages.push_back(index);
         result.finish_visible=page+1==lesson.pages.size()&&static_cast<bool>(hooks.lesson_completed);
-        result.finish_enabled=result.finish_visible&&!import_open;
-        if(result.finish_enabled)for(std::size_t required=0;required<lesson.pages.size();++required)
-            if(!can_advance(required)){result.finish_enabled=false;break;}
+        result.finish_enabled=result.finish_visible&&!import_open&&can_finish_lesson();
         return result;
     }
     bool invoke_option(LessonOptionAction action){
@@ -3436,8 +3445,7 @@ struct LessonView {
         return std::ranges::any_of(controls,[&](const auto& vm){return vm.rendered;});
     }
     bool finish_lesson(){
-        if(!hooks.lesson_completed)return false;
-        for(std::size_t required=0;required<lesson.pages.size();++required)if(!can_advance(required))return false;
+        if(!can_finish_lesson())return false;
         data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=true;
         mark_dirty();flush();PostMessageW(window,finish_lesson_message,0,0);return true;
     }

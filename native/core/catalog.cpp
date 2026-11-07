@@ -204,6 +204,8 @@ std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& sc
                 for (const auto& id : scope.lessons) {
                     const auto base = "lesson_" + id;
                     if (key == base + "_page" || key == base + "_started" || key == base + "_completed") matches = true;
+                    for (const auto locale : {"es","en","fr"})
+                        if (key == base + "_reached_page_v1_" + locale) matches = true;
                     for (const auto suffix : {"v1","v2_es","v2_en","v2_fr"})
                         if (key == base + "_read_pages_" + suffix || key == base + "_read_blocks_" + suffix) {
                             auto* coverage = std::get_if<std::vector<std::string>>(&item->second);

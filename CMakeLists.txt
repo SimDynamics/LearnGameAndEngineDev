@@ -90,7 +90,7 @@ endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS "smo_hlsl_compile=${LGAED_SHADER_COMPILE_JOBS}")
 message(STATUS "Optimized HLSL compiler jobs: ${LGAED_SHADER_COMPILE_JOBS}")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
@@ -266,6 +266,10 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_lesson_entry_policy_tests PRIVATE lgaed_host_options)
     add_test(NAME native.lesson_entry_policy COMMAND lgaed_lesson_entry_policy_tests)
     set_tests_properties(native.lesson_entry_policy PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_lesson_page_reach_tests native/core/lesson_page_reach_tests.cpp)
+    target_link_libraries(lgaed_lesson_page_reach_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.lesson_page_reach COMMAND lgaed_lesson_page_reach_tests)
+    set_tests_properties(native.lesson_page_reach PROPERTIES TIMEOUT 30)
     set(LGAED_COMPILER_CONTRACT_FIXTURES
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/crt-b9e32b9/lesson_clasificar_caracteres_y_normalizar_una_copia.json"
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-585cef9/lesson_compartir_flujos_sin_acoplar_el_calculo.json"

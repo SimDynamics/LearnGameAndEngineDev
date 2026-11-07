@@ -676,6 +676,23 @@ ejecución de esta extensión en Android.
 
 ## Lectura y alcance de la recuperación
 
+El acceso Windows también conserva qué páginas se han alcanzado, sin confundir
+esa llegada con resolver una actividad o escucharla. En mapas v1/v2 se reutilizan
+los conjuntos `_read_pages_...` y `_read_blocks_...`, autenticados por la misma
+familia: una página está alcanzada cuando constan su identidad y sus bloques
+visibles actuales. La revisión de una página ya alcanzada permanece disponible;
+una primera llegada sólo se admite hasta la primera página aún no recorrida y
+con las puertas de ejercicios satisfechas. Un hueco teórico no permite finalizar
+la lección aunque una página posterior tenga datos históricos.
+
+Para lecciones sin mapa se guarda únicamente la frontera máxima de llegada en
+`learning_progress/lesson_<id>_reached_page_v1_<locale>`. Volver atrás no reduce
+esa frontera. Al adoptar un mapa, el marcador posicional histórico válido y esa
+frontera se proyectan mediante `origin`, conservando los conjuntos ya existentes.
+No se usan respuestas, porcentajes, `completed` ni marcadores de audio para
+fabricar visitas nuevas. Los marcadores futuros se conservan aunque el acceso
+se acote; no se borran para imponer la secuencia ni se exige reproducir audio.
+
 El lector sigue usando tres posiciones recientes, incluidas las finalizadas,
 y pausa liberando `MediaPlayer`. El orden nuevo no cambia el audio ni su caché.
 Un bloque añadido no hereda lectura ni crédito de retroalimentación antigua.
@@ -729,15 +746,17 @@ separadas esas evidencias y declarar cualquier prueba en dispositivo pendiente.
 
 ## Objetivos de diagnóstico intencional en Windows
 
-`cpp_compiler.compileCheck` incorpora un objetivo nuevo a los cinco editores
-españoles de `CPP_ACREDITACION_DIAGNOSTICO_INTENCIONAL`; sus ubicaciones y valores
-de `diagnostic` figuran en `docs/CPP_OUTPUT_CHECK.md`. No autoriza cambios
+`cpp_compiler.compileCheck` incorpora un objetivo a los cinco editores de fuente
+única de U9 y a los doce multifichero de U6. Sus ubicaciones y valores de
+`diagnostic` figuran en `docs/CPP_OUTPUT_CHECK.md`. No autoriza cambios
 generales de fuentes, respuestas, propietarios o mapas.
 
 El bloque inicial completo conserva `type` e `initialCode` exactamente como se
-publicaron. Cinco fingerprints anteriores y sus parejas lección/identidad
+publicaron. Los diecisiete fingerprints anteriores y sus parejas lección/identidad
 forman el contrato cerrado. `compileCheck` declara `diagnostic` y opcionalmente
-`explanation` no vacía. No se combina con salida, entrada estándar o proyectos.
+`explanation` no vacía. No se combina con `outputCheck`, `initialStandardInput`
+o `cmake`. Los cinco de U9 no admiten `projectFiles`/`sourceFiles`; los doce de
+U6 exigen sus archivos y selección originales, incluidos los fallos de enlace.
 Origen, familia, coordenadas, IDs, respuestas, borradores y traducciones no se
 regeneran ni trasladan.
 
@@ -745,7 +764,9 @@ regeneran ni trasladan.
 `scripts/curriculum/stable_state_layout.py` devuelve una propuesta independiente
 con el objetivo revisado y una prueba editorial completa del bloque anterior
 al actual. No escribe assets; exige el mapa v2 español existente y el editor
-activo exacto. Es idempotente y no sobrescribe una explicación publicada. Work
+activo exacto. Es idempotente y no sobrescribe una explicación publicada. Para
+revisar después una guía se usa la revisión editorial general, no se vuelve a
+incorporar el diagnóstico. Work
 también puede añadir el contrato al documento y usar `prepare_v2` con la lección
 y la familia publicadas; la explicación puede entrar en esa misma transición,
 sin un paso intermedio artificial. Validar transición y traducciones antes de
@@ -760,7 +781,9 @@ el objetivo con las mismas reglas de orden de los objetivos de stdout; no se
 crean relaciones nuevas automáticamente.
 
 Las transiciones no pueden retirar, sustituir o debilitar un `compileCheck`
-publicado. Un retiro explícito conserva el bloque completo. Incorporar después
+publicado. Su `explanation` sí admite la revisión editorial pública descrita
+abajo, sin cambiar `diagnostic` ni la fuente. Un retiro explícito conserva el
+bloque completo. Incorporar después
 el objetivo no reescribe una presentación histórica anterior a él.
 
 Windows mantiene en `learning_progress` el pin
@@ -776,3 +799,166 @@ nueva. Un acierto antiguo o importado desde Android no prueba el rechazo
 semántico; se conservan los datos y código sin fabricar recibos Windows.
 Reiniciar actúa sólo sobre esa actividad. La integración y aceptación visual,
 interactiva y de escucha de Work siguen siendo verificaciones independientes.
+
+## Guías del compilador y contrato ejecutable en Windows
+
+Las guías `outputCheck.cases[i].explanation`,
+`outputCheck.cases[i].reviewFeedback` y `compileCheck.explanation` pertenecen a
+la presentación editorial. `prepare_v2` y la validación de transición permiten
+añadirlas o revisarlas mediante las aristas completas antes/después, conservando
+familia, propietario, origen y direcciones. No hay una autorización por frase ni
+una lista de hashes de redacciones permitidas.
+
+`without_compiler_guidance` retira únicamente las dos propiedades de guía de cada
+caso y la explicación de `compileCheck` para comparar el contrato ejecutable.
+Conserva `diagnostic`, fuentes, selección, configuración, entradas, casos y su
+orden, esperados, objetivos CMake, stderr y retorno. Los permisos cerrados de
+ampliación de casos o de representación CRT siguen validándose por separado;
+la revisión de guías no los sustituye ni amplía.
+
+La proyección de estado mantiene compatible un recibo válido cuando cambia sólo
+la explicación. El getter nativo de guía actual autentica ese recibo y el
+propietario v2 antes de seleccionar el campo tipado de un objetivo de un solo
+caso o de diagnóstico. Los objetivos de varios casos y los datos anteriores sin
+esa procedencia conservan su tratamiento previo. Una última revisión incorrecta
+no se oculta con el acierto histórico. No se reescribe el recibo ni se simula una
+ejecución nueva para actualizar una guía.
+
+En los archivos históricos de diagnóstico se conserva además la procedencia del
+bloque completo en su cadena editorial, para su mismo propietario. La igualdad
+del contrato ejecutable no autoriza inventar una presentación histórica. Los
+retornos y archivos de retiro conservan los objetivos existentes y las guardas
+de identidad; no deben eliminar `compileCheck` al comparar sólo sus guías.
+
+La recuperación del lector autentica el guion anterior completo y sus campos de
+origen. Si cambia una guía acreditada, vuelve a su inicio sin conceder una
+escucha ni conservar un desplazamiento sobre palabras diferentes. Los pasajes
+compatibles conservan sus posiciones dentro de los tres marcadores existentes;
+no se crea una cuarta entrada ni se inventa texto histórico a partir de un hash.
+
+Los retornos intencionales U12L13 y U12L26 y la representación CRT revisada de
+U12L20 se describen en [CPP_OUTPUT_CHECK.md](../CPP_OUTPUT_CHECK.md). Sus objetivos
+nuevos requieren recibos de ejecución propios; un logro de stdout anterior no
+prueba un código de salida distinto ni una condición nueva.
+
+## Autoría explícita de texto público en Windows
+
+`textSemantics` es un objeto opcional **en la raíz de la lección**. Requiere su
+`stateLayout` v2 válido y sólo admite `version: 1` y `fields`. Cada entrada de
+`fields` declara exactamente:
+
+| Campo | Contrato |
+| --- | --- |
+| `block` | Identidad estable del bloque visible en `stateLayout.current`; no una posición ni un ID nuevo. |
+| `path` | JSON Pointer canónico, relativo al bloque original, de un texto público admitido. |
+| `sourceSha256` | SHA-256 hexadecimal minúsculo de los bytes UTF-8 exactos de ese campo. |
+| `spans` | Fragmentos ordenados, sin solaparse: `start`, `end`, `text`, `role` y opcionalmente `reading`. |
+
+`start` es inclusivo y `end` exclusivo, contados en unidades UTF-16 del texto
+original, antes de ocultar delimitadores, convertir CRLF o añadir un veredicto.
+`text` debe coincidir exactamente con esa selección; un rango no puede partir
+un carácter representado por un par sustituto. No se recortan espacios, cambian
+escapes ni normalizan acentos al obtener el hash. Se rechazan campos repetidos,
+propietarios ajenos, rutas internas, hashes obsoletos, rangos desordenados y
+propiedades desconocidas. El límite es 8 MiB por fuente y 100000 campos o
+fragmentos por lista.
+
+Un descriptor hace **explícito todo su campo**: los huecos son prosa natural,
+también con `spans: []`. No reciben clasificación técnica por proximidad. Un
+campo sin descriptor mantiene la compatibilidad anterior. El autor decide los
+límites y el significado; el motor usa las paletas y fondos existentes.
+
+| `role` | Presentación e intención predeterminada (`reading: "auto"`) |
+| --- | --- |
+| `prose` | Prosa, sin fondo de referencia; lectura natural. |
+| `cpp` | Sintaxis y paleta C++; fondo de referencia y lectura técnica. |
+| `string` | Tinta vigente de cadena C++; fondo de referencia y lectura técnica. |
+| `data` | Dato literal con tinta neutra y fondo de referencia; lectura natural. |
+| `output` | Salida o resultado con tinta neutra y fondo de referencia; lectura natural. |
+| `math` | Expresión matemática con su proyección y lectura matemáticas. |
+| `citation` | Cita bibliográfica, sin fondo técnico ni clasificación C++ de sus números; lectura natural. |
+
+`reading` cambia la intención de voz, no el rol visual:
+
+- `auto` usa la regla de la tabla.
+- `natural` conserva prosa y puntuación natural. Un rótulo `Total: 7` no añade la
+  locución «dos puntos» por estar marcado como salida.
+- `technical` utiliza la lectura de código; es apropiada cuando se analiza la
+  notación técnica, no para convertir toda salida en operadores.
+- `characters` nombra cada carácter literalmente, incluidas mayúsculas/minúsculas,
+  espacios, controles y signos, manteniendo los rangos de origen. Sirve también
+  para signos de un formato de datos sin darles tinta de operador. Los caracteres
+  sin nombre disponible usan su código Unicode; no es un campo de transcripción
+  fonética libre.
+
+Por ejemplo, una cadena citada del código puede ser `string`; la misma palabra
+citada como salida es `output`. Una conjunción de la prosa sigue siendo prosa.
+La puntuación que queda fuera del fragmento no hereda su tinta, fondo ni lectura
+técnica. El estado leído atenúa la tinta sin cambiar los límites ni el color del
+fondo neutro. Las citas completas deben delimitarse como `citation`, incluidos
+sus localizadores; no se marcan sus años como datos del programa.
+
+### Campos admitidos
+
+La lista exacta está centralizada en
+`scripts/curriculum/text_semantics.py::public_text_fields` y se contrasta en los
+cargadores nativo y JVM. Entre los campos disponibles están:
+
+- `heading`, `paragraph`, `note`: `/text`.
+- Actividades ordinarias: `/question`, `/explanation`, opciones de selección
+  `/options/i` y las formas públicas existentes de `/reviewFeedback`.
+- Compiladores: `/compileCheck/explanation`,
+  `/outputCheck/cases/i/explanation` y
+  `/outputCheck/cases/i/reviewFeedback/j/text`.
+- Actividades matemáticas: pregunta, feedback, textos/fórmulas y celdas de texto
+  de representaciones compatibles, instrucciones, tarjetas ricas, etiquetas,
+  unidades y segmentos fijos de los campos compatibles. Los paths conservan
+  sus índices reales de representación, respuesta y componente; no se aplanan.
+
+No son campos públicos anotables los programas editables, respuestas correctas,
+esperados de stdout, entradas de prueba, IDs, configuraciones internas, etiquetas
+Canvas/GDI ni las opciones del desplegable. Las guías de esas opciones sí pueden
+ser públicas por su ruta admitida. No añadir etiquetas o paths porque se parezcan
+a los de otra interacción; consultar el inventario real.
+
+La retroalimentación matemática se compone de varios orígenes posibles. Si se
+marca uno, se deben declarar todos los orígenes públicos de su grupo que devuelve
+`feedback_origins`, incluidos los vacíos de marcas cuando sean prosa. Esta regla
+no obliga a marcar toda la lección ni a igualar las frases de distintos campos.
+
+### Preparación de marcas y conservación
+
+Los helpers no escriben los assets ni alteran mapas. Desde la raíz del proyecto,
+con una lección v2 ya cargada en `document`, se prepara la selección desde su
+fuente exacta:
+
+```python
+from scripts.curriculum.text_semantics import make_field, public_text_fields, select, validate
+
+owner = "block_0000_0001"  # identidad ya existente del bloque elegido
+block = document["pages"][0]["blocks"][1]
+source = public_text_fields(block)["/text"]
+span = select(source, "Total: 7", "output", reading="natural")
+field = make_field(document, owner, "/text", [span])
+```
+
+El fragmento debe existir en ese campo. Si se repite, `select` exige `occurrence`
+desde uno, sin escoger silenciosamente una coincidencia. Work incorpora el
+descriptor a `document["textSemantics"] = {"version": 1, "fields": [...]}`,
+conservando los otros descriptores existentes, y ejecuta `validate(document)`
+además de la transición y el validador curricular habituales. El ejemplo prepara
+una entrada; no autoriza sustituir la lista completa ni regenerar el origen.
+
+Las marcas son presentación; no cambian respuestas, programas o huellas de
+estado. Si cambia el texto público, se conserva la cadena editorial del bloque
+y se actualizan su fuente, hash y rangos. La lectura inmediata y la anticipada
+consumen la misma proyección y el modo efectivo del componente. Las guías
+marcadas del compilador se anticipan con el veredicto/separador de la revisión,
+sin extraer oráculos ni mostrarlas antes de responder.
+
+La identidad de fuente sigue siendo propietario y path, no la igualdad de
+frases. Al recuperar lectura anterior, el motor comprueba la prueba del guion
+completo antes de reutilizar audio o posición. Una pronunciación distinta no
+hereda desplazamiento ni escucha de la anterior. La validación de estas marcas
+acredita estructura, límites y fuentes; no sustituye la revisión de significado
+de Work ni la observación visual y escucha durante el estudio del usuario.

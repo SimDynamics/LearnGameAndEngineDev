@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/lesson_state.hpp"
+#include "core/lesson_page_reach.hpp"
 #include <filesystem>
 #include <optional>
 
