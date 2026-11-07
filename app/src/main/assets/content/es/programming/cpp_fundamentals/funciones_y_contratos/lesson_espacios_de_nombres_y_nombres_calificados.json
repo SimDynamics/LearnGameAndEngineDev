@@ -244,15 +244,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es 5 1. La directiva no copia los miembros de Camino ni los convierte en declaraciones nuevas de main. Tampoco garantiza que un nombre corto identifique una única función (Working Draft: Programming Languages — C++, s. f.).\n\nEn el contraejemplo siguiente, ambas funciones f(int) son igualmente viables para f(3). El programa se rechaza por ambigüedad: no tiene una salida numérica correcta que predecir.",
+          "text": "La salida es 5 1. La directiva no copia los miembros de Camino ni los convierte en declaraciones nuevas de main. Tampoco garantiza que un nombre corto identifique una única función (Köppe et al., 2023).\n\nEn el contraejemplo siguiente, ambas funciones f(int) son igualmente viables para f(3). El programa se rechaza por ambigüedad: no tiene una salida numérica correcta que predecir.",
           "emphasis": [
             {
               "text": "ambigüedad",
               "style": "bold"
-            },
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
             }
           ]
         },
@@ -286,15 +282,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Una directiva no obliga a que toda búsqueda elija el miembro de su espacio. En este ejemplo se encuentra el nombre local limite en el bloque de main; Lectura::limite identifica explícitamente el otro objeto (Working Draft: Programming Languages — C++, s. f.).\n\nLos dos son objetos de sólo lectura, pero sus nombres cualificados y valores permiten distinguirlos.",
+          "text": "Una directiva no obliga a que toda búsqueda elija el miembro de su espacio. En este ejemplo se encuentra el nombre local limite en el bloque de main; Lectura::limite identifica explícitamente el otro objeto (Köppe et al., 2023).\n\nLos dos son objetos de sólo lectura, pero sus nombres cualificados y valores permiten distinguirlos.",
           "emphasis": [
             {
               "text": "el nombre local limite",
               "style": "bold"
-            },
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
             }
           ]
         },
@@ -305,15 +297,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Se obtiene 2:6. Cambiar la directiva por using Lectura::limite y conservar const int limite = 2; en ese mismo bloque crea un conflicto entre declaraciones (Working Draft: Programming Languages — C++, s. f.).\n\nNo se trata de elegir un valor durante la ejecución. Las dos formas de using participan de manera distinta en la búsqueda y declaración de los nombres.",
+          "text": "Se obtiene 2:6. Cambiar la directiva por using Lectura::limite y conservar const int limite = 2; en ese mismo bloque crea un conflicto entre declaraciones (Köppe et al., 2023).\n\nNo se trata de elegir un valor durante la ejecución. Las dos formas de using participan de manera distinta en la búsqueda y declaración de los nombres.",
           "emphasis": [
             {
               "text": "conflicto entre declaraciones",
               "style": "bold"
-            },
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
             }
           ]
         },
@@ -330,15 +318,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Seleccionar miembros concretos reduce lo que participa en la búsqueda, pero no hace imposibles todos los conflictos (Working Draft: Programming Languages — C++, s. f.).\n\nPor ejemplo, using Norte::f y using Sur::f todavía dejan ambigua f(3) si ambas funciones reciben int. Comprueba el nombre, el ámbito y los parámetros; using no elige automáticamente una política por ti.",
+          "text": "Seleccionar miembros concretos reduce lo que participa en la búsqueda, pero no hace imposibles todos los conflictos (Köppe et al., 2023).\n\nPor ejemplo, using Norte::f y using Sur::f todavía dejan ambigua f(3) si ambas funciones reciben int. Comprueba el nombre, el ámbito y los parámetros; using no elige automáticamente una política por ti.",
           "emphasis": [
             {
               "text": "el nombre, el ámbito y los parámetros",
               "style": "bold"
-            },
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
             }
           ]
         },
@@ -362,15 +346,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En la unidad ya se construyeron funciones con el mismo nombre y parámetros distintos. Si Ajuste contiene dos declaraciones visibles de proponer, using Ajuste::proponer permite utilizar ese nombre para ambas. Los tipos de los argumentos eligen después la sobrecarga (Working Draft: Programming Languages — C++, s. f.).\n\nLa declaración using no especifica un tipo de parámetro para seleccionar sólo una de esas funciones.",
+          "text": "En la unidad ya se construyeron funciones con el mismo nombre y parámetros distintos. Si Ajuste contiene dos declaraciones visibles de proponer, using Ajuste::proponer permite utilizar ese nombre para ambas. Los tipos de los argumentos eligen después la sobrecarga (Köppe et al., 2023).\n\nLa declaración using no especifica un tipo de parámetro para seleccionar sólo una de esas funciones.",
           "emphasis": [
             {
               "text": "eligen después la sobrecarga",
               "style": "bold"
-            },
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
             }
           ]
         },
@@ -386,15 +366,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Una declaración using designa lo que encuentra en ese punto; no incorpora automáticamente sobrecargas añadidas después al espacio. Una directiva puede permitir encontrar miembros posteriores una vez que sus declaraciones son visibles (Working Draft: Programming Languages — C++, s. f.).\n\nMantén visibles las interfaces necesarias antes de la llamada. Ningún atajo permite ignorar una declaración que todavía no está disponible.",
+          "text": "Una declaración using designa lo que encuentra en ese punto; no incorpora automáticamente sobrecargas añadidas después al espacio. Una directiva puede permitir encontrar miembros posteriores una vez que sus declaraciones son visibles (Köppe et al., 2023).\n\nMantén visibles las interfaces necesarias antes de la llamada. Ningún atajo permite ignorar una declaración que todavía no está disponible.",
           "emphasis": [
             {
               "text": "en ese punto",
               "style": "bold"
-            },
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
             }
           ]
         },
@@ -751,13 +727,7 @@
         },
         {
           "type": "note",
-          "text": "La cualificación identifica el espacio de nombres consultado; una declaración using designa un nombre y una directiva using namespace amplía la búsqueda sin modificar los cuerpos de las funciones (Stroustrup, 2024; Working Draft: Programming Languages — C++, s. f.).",
-          "emphasis": [
-            {
-              "text": "Working Draft: Programming Languages — C++",
-              "style": "italic"
-            }
-          ]
+          "text": "La cualificación identifica el espacio de nombres consultado; una declaración using designa un nombre y una directiva using namespace amplía la búsqueda sin modificar los cuerpos de las funciones (Köppe et al., 2023; Stroustrup, 2024)."
         },
         {
           "type": "multiple_choice",
@@ -2405,6 +2375,41 @@
         "id": "block_0008_0000",
         "beforeSha256": "d9a3598334ab544688c444c1814474a1e750a861502e0b88104450ed41887dbb",
         "afterSha256": "e4897feeb8d4bb5db973d18bd82ecbe98533e8181b5c6dc9278d4adc7345ddfa"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "831c773484a918000800e827894d00944e4455bfd20b6e67bca9a43ad6f161de",
+        "afterSha256": "f8935c364788b93ba4ce4188608b617a9e30a52557b4170521054579b6fc1b92"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "88b1e56a5407a82b794f76a6ea7ffad4146e830f0f09852fce72d0ec1503c029",
+        "afterSha256": "2296199f6e266b755d7f5fb3914871384d48ad7a8a8a13802d7c46217a966b62"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "7f1401c011d7ff777f1338028cedfa7317bdce132cfee38c82d1275952418878",
+        "afterSha256": "e5f39164d0ff961a52b2604a615ad8039c047579bfdbc0fcd9fd1b1fe9e608fa"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "e117c89cc74f05adc568183a199f4c042ef4e5d380d753b7ffbf903cdc7ac15a",
+        "afterSha256": "7ef8936bf70ad02cfc4cc8e2ecbc00fbcd47f7fdba009f5e6c5bdca15715c713"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "2eb9748a818adaeb497a9e91beb3af3d4ff83e7d9bd093073fe9f65c838ef736",
+        "afterSha256": "27e68c68daa65ba1380de1a574a51c7b95a8a8df09297972a481c307aaa4a614"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "07b44345247160e8545502c7d1f21f3e9cd9d234d2a64e41ee7ad0fec229ecc0",
+        "afterSha256": "967432fe19707845cdd9ff3c8a84cb868453058f4ecda39cf86b5a31598cadfd"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "7f8ce857f1122b4f0687ffa717f5f44a6d2f84fe72f35584ce3aef20d918e2ba",
+        "afterSha256": "855cb6e8b716c76deab46bd75a5d84402362c0406665a04310a35ff4e079f649"
       }
     ]
   },
@@ -2441,5 +2446,290 @@
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "2a4dfdfabb95c54d727a4a278c41b963e02ffb8295ff0fdd599c58c586b47d2b",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "5 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 62,
+            "text": "Camino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 201,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 257,
+            "text": "f(int)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 290,
+            "text": "f(3)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "b28f687586ba36a827d5c4d33d1113530987ef7f17094c3b9f69ec97c6901fd8",
+        "spans": [
+          {
+            "start": 121,
+            "end": 127,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 148,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 165,
+            "text": "Lectura::limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 227,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 237,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "03c6ee433bf81cea905387178f5821b6b0e122ee03469e2a968a5a1ff5d4fea1",
+        "spans": [
+          {
+            "start": 11,
+            "end": 14,
+            "text": "2:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 62,
+            "text": "using Lectura::limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 96,
+            "text": "const int limite = 2;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 175,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 254,
+            "text": "using",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "98efce31619d044602309477ff035b2e1865d8c34e380ada4388589227d3ad52",
+        "spans": [
+          {
+            "start": 116,
+            "end": 136,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 166,
+            "text": "using Norte::f",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 181,
+            "text": "using Sur::f",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 208,
+            "text": "f(3)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 239,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 295,
+            "text": "using",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "9717acd828ec8ba5446a80b9a8edf81d7609280a5f26ec2f66a3b2d0b1fb2f05",
+        "spans": [
+          {
+            "start": 89,
+            "end": 95,
+            "text": "Ajuste",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 108,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "proponer",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 167,
+            "text": "using Ajuste::proponer",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 265,
+            "end": 285,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 308,
+            "text": "using",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "f94fd375713f31c5b63b76b7d544ba605bf85b42e43b741e6373c6174078cc0a",
+        "spans": [
+          {
+            "start": 16,
+            "end": 21,
+            "text": "using",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 254,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/text",
+        "sourceSha256": "ff544105c61b1e0a723ed5f941560f579b02f2e6c7dda9e5132657019d87e46c",
+        "spans": [
+          {
+            "start": 78,
+            "end": 83,
+            "text": "using",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 133,
+            "text": "using namespace",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 234,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }

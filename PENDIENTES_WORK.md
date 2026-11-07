@@ -1,8 +1,8 @@
 # Notas internas de continuidad de Work
 
-Uso interno de Work. Los encargos y criterios están únicamente en `PENDIENTES_RECURSOS_CURRICULARES.md`.
+Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar Programación 1 en Work/main; no cerrar ni pasar a P2. Leer íntegro el maestro Windows de Playground y su copia en Work (SHA `529c7b31…`). U12L27, «Del Laboratorio al proyecto de Windows», queda creada con cuatro páginas y cinco actividades; las referencias conservan su ID y pasan a L28. Comprobaciones focales aprobadas; validación general contra `e7d26cd` bloqueada por la primera entrega de una familia v2. Encargo en la ficha de retorno editorial: verificar tras integrar la capacidad de Codex, sin inventar historia ni quitar metadatos. Seguir después con los pasos externos del proyecto y sus capturas reales; la carpeta del proyecto 01 sigue vacía. Conservar las 46 fichas y los pendientes de prosa, títulos y diez explicaciones bibliográficas protegidas. El usuario revisa imagen y escucha durante el estudio. Sin cambios al motor, pruebas o Codex, ni instalación, commits o publicaciones del principal.
+Continuar Programación 1 en Work/main. Leer íntegro el maestro Windows de Playground y su copia de Work (SHA b6c03e7bdf7b…). Preparación de InspectionLog U12L27 creada; el proyecto externo espera la capacidad de capturas y sus pasos reales en paralelo. Completado el marcado de U2L1/L9/L10; continuar los campos pendientes. Las 16 citas HTML móviles se sustituyeron por N4950 contrastado; referencia HTML retirada con historia conservada y ficha bibliográfica eliminada. Quedan 11 fichas reales, incluidas diez explicaciones protegidas y las capacidades generales todavía ausentes. Validación c394316 aprobada: 153 lecciones/6164 bloques; planes del lector comprobados sin audio. Usuario revisa imagen y escucha durante el estudio. Sin motor/Codex, instalaciones, commits ni publicaciones del principal.
 
 ## Base conservada
 
