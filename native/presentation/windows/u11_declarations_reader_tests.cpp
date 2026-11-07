@@ -211,7 +211,7 @@ struct Harness {
     HWND host = nullptr, view = nullptr;
     std::unique_ptr<LessonReader> reader;
     state::Preferences unrelated;
-    test::AssignmentEntrySetup entry_setup;
+    test::CompilerReaderEntrySetup entry_setup;
     struct Recording { std::string sha; std::filesystem::file_time_type modified; };
     std::map<std::filesystem::path, Recording> recordings;
 
@@ -231,8 +231,7 @@ struct Harness {
         state::StateStore store(environment.paths.root); auto initial = store.load();
         require(initial.preferences.empty(), "The new declarations reader QA already contains student data");
         state::prepare_lesson_state(initial, lesson);
-        if(spec.token==assignments.token)entry_setup=test::prepare_assignment_entry(initial,lesson,spec.compiler_page);
-        else state::save_current_page(initial, lesson, spec.compiler_page);
+        entry_setup=test::prepare_compiler_reader_entry(initial,lesson,spec.compiler_page);
         auto& preferences = initial.preferences["lesson_narration_settings"];
         preferences["engine"] = std::string("KOKORO"); preferences["language"] = std::string("es");
         preferences["kokoro_voice:es"] = std::string("ef_dora"); preferences["rate"] = 3.;
@@ -288,9 +287,9 @@ struct Harness {
     }
     void navigate(std::size_t page) {
         reader->pause();
-        if(spec.token==assignments.token)while(lesson_page_state(view).index<page){
+        while(lesson_page_state(view).index<page){
             const auto next=lesson_page_state(view).index+1;
-            require(navigate_lesson_view(view,next),"A sequential assignment page remains locked");ready();
+            require(navigate_lesson_view(view,next),"A sequential compiler-reader page remains locked");ready();
             if(next<page)std::cout<<"QA TRANSIT p"<<next+1<<": admitted arrival only; no playback or human-study claim\n";
         }
         require(navigate_lesson_view(view, page), "The actual current compiler dependent page remains locked"); ready();
@@ -444,7 +443,7 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend, const Re
         && (spec.following_note ? following.type == curriculum::BlockType::note && !following.text.empty() : following.type == curriculum::BlockType::code),
         "The current compiler owners, no-question objective or independent output oracles changed");
     for (const auto& page : f.lesson.pages) for (const auto& block : page.blocks)
-        require(test::assignment_response_unchanged(f.saved(),f.lesson,block,f.entry_setup),
+        require(test::compiler_reader_response_unchanged(f.saved(),f.lesson,block,f.entry_setup),
             "The fresh compiler QA contains an undisclosed response or changed synthetic prerequisite");
     require(!windows::compiler_puzzle_completed(f.saved(), f.lesson, compiler), "The untouched real compiler already has a success receipt");
     std::cout << "SCOPE current " << spec.label << "; fresh p" << spec.compiler_page + 1
@@ -573,19 +572,20 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend, const Re
     const auto final_state = f.saved();
     for (const auto& page : f.lesson.pages) for (const auto& block : page.blocks)
         if (block.stable_id != compiler.stable_id && block.stable_id != prediction.stable_id)
-            require(test::assignment_response_unchanged(final_state,f.lesson,block,f.entry_setup),
+            require(test::compiler_reader_response_unchanged(final_state,f.lesson,block,f.entry_setup),
                 "The focal reader changed an exact synthetic prerequisite or fabricated a response for another untouched activity");
     std::cout << "PASS current " << spec.label << " reader: fresh p" << spec.compiler_page + 1
         << " QA; three preceding criteria fully planned with prepared source-bound PCM/timings (not full paragraph playback); actual no-question required gate and seek; two real educational runs; Incorrecto retry stop; manual pause and explicit Correcto playback; actual recovery wait/rejected guide/full explanation playback before "
         << (spec.following_note ? "the following note body (also fully planned, not fully played)" : "reference")
         << "; silent rejected/accepted reopens; non-silent 24 kHz PCM, original asset and recordings retained. Earlier pages, imports, human listening and full curricular traversal are outside this focal regression.\n";
 }
-int entry_setup_only(){
+int entry_setup_case(const ReaderSpec& spec){
     const auto asset=std::filesystem::path(build::source_root)/
-        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/assignments.filename;
-    const auto original=state::read_bytes(asset);require(state::sha256(original)==assignments.asset_sha,"The current assignment snapshot differs from its audited revision");
-    const auto lesson=windows::load_lesson(asset);const auto compiler=position(lesson,assignments.compiler),prediction=position(lesson,assignments.prediction);
-    require(compiler.page==5&&prediction.page==7,"The reported U11L20 compiler/recovery destinations changed");
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/spec.filename;
+    const auto original=state::read_bytes(asset);require(state::sha256(original)==spec.asset_sha,"The current compiler-reader snapshot differs from its audited revision");
+    const auto lesson=windows::load_lesson(asset);const auto compiler=position(lesson,spec.compiler),prediction=position(lesson,spec.prediction);
+    require(compiler.page==spec.compiler_page&&prediction.page==spec.prediction_page,"The audited compiler/recovery destinations changed");
+    if(spec.token==assignments.token){
     struct Field {std::string_view id;bool question;std::string_view sha;};
     constexpr std::array fields{
         Field{"block_0002_0003",true,"1d09b90cd8682b1e179b1692dadf126e35e14600ee1ebddbb531646f1dc4056f"},
@@ -596,6 +596,7 @@ int entry_setup_only(){
         Field{"block_0007_0001",false,"f04c1e07e1c7deab38360970dd91b9f1aa0949debe7944bf85e7242bb10884e0"}};
     for(const auto& field:fields){const auto at=position(lesson,field.id);const auto& block=lesson.pages[at.page].blocks[at.block];
         require(state::sha256(field.question?block.question:block.explanation)==field.sha,"One of the six current editorial fields changed");}
+    }
     state::StateData initial;state::prepare_lesson_state(initial,lesson);
     state::Draft draft;draft.source=lesson.pages[compiler.page].blocks[compiler.block].initial_code+"\n// isolated QA target draft";
     draft.input="exact\tinput\r\n";draft.selection_start=3;draft.selection_end=9;
@@ -603,35 +604,39 @@ int entry_setup_only(){
     state::put_draft(initial,draft_key,draft);initial.preferences["assignment-entry-headless-qa"]["opaque"]=std::string(" preserve\t\r\n");
     const auto history=narration::read_history(initial);
     auto old_setup=initial;state::save_current_page(old_setup,lesson,compiler.page);
-    const auto old_entry=test::assignment_entry_decision(old_setup,lesson,compiler.page);
+    const auto old_entry=test::compiler_reader_entry_decision(old_setup,lesson,compiler.page);
     require(old_entry.page==0&&!old_entry.pending_math,"The old address-only setup did not reproduce the real earlier-puzzle gate");
-    auto prepared=initial;const auto setup=test::prepare_assignment_entry(prepared,lesson,compiler.page);
-    require(!setup.ordinary_responses.empty()&&test::assignment_entry_decision(prepared,lesson,compiler.page).page==compiler.page&&
-        state::current_page(prepared,lesson)==compiler.page,"The shared evaluated prerequisite setup did not admit p6");
+    auto prepared=initial;const auto setup=test::prepare_compiler_reader_entry(prepared,lesson,compiler.page);
+    require(!setup.ordinary_responses.empty()&&test::compiler_reader_entry_decision(prepared,lesson,compiler.page).page==compiler.page&&
+        state::current_page(prepared,lesson)==compiler.page,"The shared evaluated prerequisite setup did not admit the focal compiler page");
     state::validate_lesson_state(prepared,lesson);
     require(narration::read_history(prepared)==history&&history.entries.empty(),"The setup fabricated listening or a bookmark");
     for(const auto& [domain,values]:initial.preferences)if(domain!="learning_progress")for(const auto& [key,value]:values)
         require(state::find(prepared,domain,key)&&*state::find(prepared,domain,key)==value,"The setup changed a target draft or unrelated data");
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks){
         require(!windows::compiler_puzzle_completed(prepared,lesson,block),"An ordinary prerequisite created a compiler achievement");
-        require(test::assignment_response_unchanged(prepared,lesson,block,setup),"The shared setup created a response outside its disclosed prefix");}
-    require(state::can_reach_page(prepared,lesson,6)&&!state::can_reach_page(prepared,lesson,7)&&
-        state::clamp_reachable_page(prepared,lesson,7)==6,"The new arrival frontier skipped the unvisited intermediate p7");
-    auto later_data=prepared;state::Response later;later.answer=std::string(assignments.answer);
+        require(test::compiler_reader_response_unchanged(prepared,lesson,block,setup),"The shared setup created a response outside its disclosed prefix");}
+    require(state::can_reach_page(prepared,lesson,compiler.page+1),"The first next page lost its arrival permission");
+    if(prediction.page>compiler.page+1)require(!state::can_reach_page(prepared,lesson,prediction.page)&&
+        state::clamp_reachable_page(prepared,lesson,prediction.page)==compiler.page+1,
+        "The arrival frontier skipped an unvisited intermediate page");
+    auto later_data=prepared;state::Response later;later.answer=std::string(spec.answer);
     require(curriculum::evaluate_text_answer(lesson.pages[prediction.page].blocks[prediction.block],later.answer).correct,
         "The explicit later-answer model is incompatible with the current recovery contract");
     later.correct=true;state::put_response(later_data,lesson,lesson.pages[prediction.page].blocks[prediction.block],later);
     later_data.preferences["learning_progress"]["lesson_"+lesson.id+"_completed"]=true;
-    require(!state::can_reach_page(later_data,lesson,7)&&test::assignment_entry_decision(later_data,lesson,7).page==compiler.page,
-        "A later answer or old completed flag bypassed p7 arrival or the real p6 compiler receipt");
+    require(test::compiler_reader_entry_decision(later_data,lesson,prediction.page).page==compiler.page,
+        "A later answer or old completed flag bypassed the real compiler receipt");
+    if(prediction.page>compiler.page+1)require(!state::can_reach_page(later_data,lesson,prediction.page),
+        "Later data fabricated a visit to the intermediate page");
     const auto before_p8=initial;bool rejected=false;
-    try{(void)test::prepare_assignment_entry(initial,lesson,7);}catch(const std::exception& error){
+    try{(void)test::prepare_compiler_reader_entry(initial,lesson,prediction.page);}catch(const std::exception& error){
         rejected=std::string_view(error.what()).find("compiler receipt")!=std::string_view::npos;}
-    require(rejected&&initial==before_p8,"Preparing p8 fabricated a compiler receipt or partially wrote failed setup");
+    require(rejected&&initial==before_p8,"Preparing the recovery page fabricated a compiler receipt or partially wrote failed setup");
     for(const auto& [id,raw]:setup.ordinary_responses){(void)raw;const auto at=position(lesson,id);const auto& block=lesson.pages[at.page].blocks[at.block];
         auto missing=prepared;missing.preferences["learning_progress"].erase(state::response_storage_key(lesson,block));
         state::validate_lesson_state(missing,lesson);const auto missing_before=missing;
-        require(test::assignment_entry_decision(missing,lesson,compiler.page).page==at.page&&missing==missing_before,
+        require(test::compiler_reader_entry_decision(missing,lesson,compiler.page).page==at.page&&missing==missing_before,
             "A missing ordinary prerequisite was admitted or the entry query mutated it");
         auto wrong=prepared;auto response=*state::get_response(wrong,lesson,block);response.correct=false;
         if(block.type==curriculum::BlockType::multiple_choice){response.selected=static_cast<std::int64_t>((*block.correct_index+1)%block.options.size());
@@ -643,14 +648,18 @@ int entry_setup_only(){
         else{response.answer="QA incorrect ordinary answer";
             require(!curriculum::evaluate_text_answer(block,response.answer).correct,"The rejected-text fixture accidentally matched its contract");}
         state::clear_response_review(response);state::put_response(wrong,lesson,block,response);state::validate_lesson_state(wrong,lesson);const auto wrong_before=wrong;
-        require(test::assignment_entry_decision(wrong,lesson,compiler.page).page==at.page&&wrong==wrong_before,
+        require(test::compiler_reader_entry_decision(wrong,lesson,compiler.page).page==at.page&&wrong==wrong_before,
             "A rejected ordinary prerequisite was admitted or changed by the entry query");
     }
     require(state::read_bytes(asset)==original,"The headless setup test changed the curricular asset");
-    std::cout<<"PASS headless U11L20 entry setup: six current editorial fields, "<<setup.ordinary_responses.size()
-        <<" evaluated synthetic ordinary prerequisites, sequential arrival to p6, absent/rejected predecessors blocked, unvisited p7 and unproved p6 block p8; target draft and empty history intact. No UI, Worker, playback, native compilation or real learner achievement.\n";
+    std::cout<<"PASS headless "<<spec.label<<" entry setup: "<<setup.ordinary_responses.size()
+        <<" evaluated synthetic ordinary prerequisites, sequential arrival to p"<<compiler.page+1
+        <<", absent/rejected predecessors blocked; unproved compiler blocks p"<<prediction.page+1
+        <<"; target draft and empty history intact"<<(spec.token==assignments.token?"; six current editorial fields and intermediate p7 checked":"")
+        <<". No UI, Worker, playback, native compilation or real learner achievement.\n";
     return 0;
 }
+int entry_setup_only(){for(const auto* spec:{&declarations,&assignments,&constants})(void)entry_setup_case(*spec);return 0;}
 } // namespace
 
 int main(int argc, char** argv) {

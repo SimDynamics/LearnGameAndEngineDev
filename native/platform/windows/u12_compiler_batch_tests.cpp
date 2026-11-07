@@ -125,12 +125,18 @@ void preserve_values(const state::StateData& before,const state::StateData& afte
             "A compiler result rewrote an unrelated response, draft, marker or previous achievement");
 }
 struct Capture {CppRunRequest request;CppRunResult result;FreshExecution execution;};
-
-void ordinary_guides(const Asset& asset,state::StateStore& store,state::StateData& data,std::size_t expected,bool guided) {
+struct OrdinarySelection {std::optional<BlockType> type;std::string_view id;};
+bool ordinary_selected(const Block& block,OrdinarySelection selection={}) {
+    const auto kind=block.type;
+    return (kind==BlockType::multiple_choice||kind==BlockType::output_prediction||kind==BlockType::fill_code||kind==BlockType::order_code)
+        &&(!selection.type||*selection.type==kind)
+        &&(selection.id.empty()||block.id==selection.id||block.stable_id==selection.id);
+}
+void ordinary_guides(const Asset& asset,state::StateStore& store,state::StateData& data,std::size_t expected,bool guided,OrdinarySelection selection={}) {
     using namespace winrt::Windows::Data::Json;
     std::size_t count=0;
     for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks) {
-        if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::output_prediction&&block.type!=BlockType::fill_code&&block.type!=BlockType::order_code)continue;
+        if(!ordinary_selected(block,selection))continue;
         const auto raw=JsonObject::Parse(winrt::to_hstring(block.raw_json));
         const auto explanation=winrt::to_string(raw.GetNamedString(L"explanation"));
         const auto expected_guide=[&](std::optional<std::size_t> selected=std::nullopt){
@@ -221,16 +227,23 @@ void export_preferences(const std::filesystem::path& root,const state::StateData
         output.write(xml.data(),static_cast<std::streamsize>(xml.size()));require(bool(output),"Could not export isolated ordinary-guide QA preferences");
     }
 }
-int ordinary_guides_only() {
-    struct GuidePlan {const char* file;std::size_t count;};
-    constexpr std::array<GuidePlan,9> plans{{
+int ordinary_guides_only(bool late=false) {
+    struct GuidePlan {const char* file;std::size_t count;bool guided=true;OrdinarySelection selection={};};
+    constexpr std::array<GuidePlan,9> formatting{{
         {"representar_enteros_en_distintas_bases",11},{"estado_del_formato_y_flujos_independientes",12},
         {"precision_y_presentacion_de_double",12},{"ancho_relleno_y_alineacion_de_campos",13},
         {"componer_informes_sin_cambiar_los_datos",4},{"texto_con_campos_y_patrones_literales",17},
         {"bases_y_anchuras_en_cada_campo",20},{"precision_por_campo_y_resumenes_formateados",18},
         {"compartir_flujos_sin_acoplar_el_calculo",7}
     }};
-    const LaunchOptions options{ProfileId::Codex,L"u12-ordinary-guides-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
+    constexpr std::array<GuidePlan,5> late_plans{{
+        {"clasificar_caracteres_y_normalizar_una_copia",15},
+        {"etiquetas_y_alcance_de_los_identificadores",6,false},
+        {"leer_un_grupo_con_cierre_propio",6},{"componer_grupos_sin_mezclar_sus_datos",5},
+        {"extraer_un_tipo_sin_cambiarlo_en_fallo",1,true,{BlockType::order_code,"orden_para_conservar_el_destino"}}
+    }};
+    const std::span<const GuidePlan> plans=late?std::span<const GuidePlan>(late_plans):std::span<const GuidePlan>(formatting);
+    const LaunchOptions options{ProfileId::Codex,(late?L"u12-late-ordinary-guides-":L"u12-ordinary-guides-")+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
     state::StateStore store(environment.paths.root);auto data=store.load();require(data.preferences.empty(),"The private ordinary-guide profile contains old state");
     data.preferences["u12-batch-unrelated"]["opaque"]=std::string(" Preserve\t\r\n保存 ");
@@ -240,12 +253,20 @@ int ordinary_guides_only() {
         "storage-only source; no recording or listening evidence","qa-storage-page-"+std::to_string(index));
     narration::write_history(data,history);
     const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo";
-    std::vector<Asset> assets;std::size_t choices=0,predictions=0,fills=0,total=0;
+    std::vector<Asset> assets;std::size_t choices=0,predictions=0,fills=0,orders=0,total=0;
     for(const auto& plan:plans){Asset asset;asset.path=root/(std::string("lesson_")+plan.file+".json");const auto bytes=read(asset.path);
         asset.hash=state::sha256(bytes);asset.lesson=parse_lesson_json(bytes);asset.metadata=parse_lesson_progress_metadata(bytes);
         state::prepare_lesson_state(data,asset.lesson);
         for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks){
-            choices+=block.type==BlockType::multiple_choice;predictions+=block.type==BlockType::output_prediction;fills+=block.type==BlockType::fill_code;
+            if(ordinary_selected(block,plan.selection)){
+                choices+=block.type==BlockType::multiple_choice;predictions+=block.type==BlockType::output_prediction;
+                fills+=block.type==BlockType::fill_code;orders+=block.type==BlockType::order_code;
+                if(!plan.guided)require(!winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(block.raw_json)).HasKey(L"reviewFeedback"),
+                    "The current U12L21 no-guide controls acquired an unreviewed authored guide");
+                const auto position=stable_block_position(asset.metadata,block.stable_id);
+                require(position&&asset.metadata.pages[position->page].blocks[position->block].text_semantics==block.text_semantics,
+                    "Runtime and progress metadata disagree about the selected ordinary field's exact semantic owners");
+            }
             if(block.type==BlockType::cpp_compiler){state::Draft draft;draft.source=block.initial_code+"\n// isolated uncompiled guide-preservation draft\r\n";
                 draft.input=" \t preserved QA input\r\n";draft.selection_start=2;draft.selection_end=7;
                 draft.indentation_json=state::make_indentation_metadata(draft.source,{});
@@ -253,30 +274,43 @@ int ordinary_guides_only() {
         }
         assets.push_back(std::move(asset));total+=plan.count;
     }
-    require(total==114&&choices==48&&predictions==59&&fills==7,"The ordinary-guide fixture lost its independent nine-lesson/type inventory");
+    require(late?(total==33&&choices==20&&predictions==10&&fills==2&&orders==1):
+        (total==114&&choices==48&&predictions==59&&fills==7&&orders==0),
+        "The ordinary-guide fixture lost its independently selected lesson/type inventory");
     const auto untouched=data;store.save(data);
-    for(std::size_t index=0;index<plans.size();++index){ordinary_guides(assets[index],store,data,plans[index].count,true);
-        std::cout<<"PASS "<<plans[index].file<<": "<<plans[index].count<<" authored ordinary guides and exact state reopen\n";}
+    for(std::size_t index=0;index<plans.size();++index){ordinary_guides(assets[index],store,data,plans[index].count,plans[index].guided,plans[index].selection);
+        std::cout<<"PASS "<<plans[index].file<<": "<<plans[index].count<<" ordinary activities ("
+            <<(plans[index].guided?"authored retry guides":"no authored retry guide")<<") and exact state reopen\n";}
     preserve_values(untouched,data);require(narration::read_history(data)==history,"An ordinary answer altered one of the three storage-only pauses");
     const auto exported=environment.paths.root/L"ordinary-guide-export";export_preferences(exported,data);
     const auto preview=state::inspect_android_export(exported);require(preview.data==data,"Android XML inspection changed ordinary answers, drafts, attempts or typed metadata");
     const auto destination=environment.paths.root/L"ordinary-guide-import";state::commit_android_import(preview,destination);
     state::StateStore imported_store(destination);auto imported=imported_store.load();require(imported==data,"The isolated Android XML transaction changed ordinary guide state");
-    for(const auto& asset:assets){state::prepare_lesson_state(imported,asset.lesson);state::validate_lesson_state(imported,asset.lesson);
+    std::size_t imported_answers=0,excluded_answers=0;
+    for(std::size_t index=0;index<assets.size();++index){const auto& asset=assets[index];
+        state::prepare_lesson_state(imported,asset.lesson);state::validate_lesson_state(imported,asset.lesson);
         for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks){
             if(block.type==BlockType::cpp_compiler)require(!compiler_puzzle_completed(imported,asset.lesson,block),"Ordinary guide QA manufactured compiler execution credit");
-            if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::output_prediction&&block.type!=BlockType::fill_code)continue;
+            if(!ordinary_selected(block,plans[index].selection)){
+                if(ordinary_selected(block)){
+                    require(!state::get_response(imported,asset.lesson,block),"The filtered guide fixture manufactured an answer outside its selected activity IDs");
+                    ++excluded_answers;
+                }
+                continue;
+            }
             const auto response=state::get_response(imported,asset.lesson,block);
             const auto authored=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(block.raw_json));
             require(response&&response->correct&&state::choice_correct_feedback(*response,block)==winrt::to_string(authored.GetNamedString(L"explanation")),
-                "An imported ordinary achievement lost its exact authored explanation");}
+                "An imported ordinary achievement lost its exact authored explanation");++imported_answers;}
         require(state::sha256(read(asset.path))==asset.hash,"Ordinary guide QA rewrote an active curricular asset");}
+    require(imported_answers==total&&excluded_answers==(late?8u:0u),"The XML round trip verified the wrong selected/excluded ordinary activity set");
     require(imported==data&&narration::read_history(imported)==history,"Revalidating imported ordinary state modified unrelated progress or pause metadata");
     imported_store.save(imported);require(reopen_state(imported_store)==data,"Imported ordinary guide state changed on Windows reopening");
     for(const auto& file:preview.files)require(state::sha256(state::read_bytes(exported/file.relative_path))==file.sha256&&
         state::sha256(state::read_bytes(destination/L"state"/L"active"/L"android"/file.relative_path))==file.sha256,
         "The isolated XML transaction modified its source or archived original files");
-    std::cout<<"PASS 114 ordinary U12L5-L13 activities: per-option rejection, raw authored guides/explanations, exact StateStore/XML import, drafts and three storage-only pauses; 0 compiler programs, no UI/audio.\n";
+    std::cout<<"PASS "<<(late?"32 ordinary U12L20-L23 activities plus only the one U12L15 order control (eight neighboring answers untouched)":
+        "114 ordinary U12L5-L13 activities")<<": per-option rejection, raw authored guides/explanations, exact StateStore/XML import, drafts and three storage-only pauses; 0 compiler programs, no UI/audio.\n";
     return 0;
 }
 }
@@ -284,8 +318,9 @@ int ordinary_guides_only() {
 int main(int argc,char** argv) try {
     const bool loading_state=argc==2&&std::string_view(argv[1])=="--loading-state";
     const bool guides_only=argc==2&&std::string_view(argv[1])=="--ordinary-guides";
-    require(argc==1||loading_state||guides_only,"Usage: u12_compiler_batch_tests [--loading-state|--ordinary-guides]");
-    if(guides_only)return ordinary_guides_only();
+    const bool late_guides=argc==2&&std::string_view(argv[1])=="--late-ordinary-guides";
+    require(argc==1||loading_state||guides_only||late_guides,"Usage: u12_compiler_batch_tests [--loading-state|--ordinary-guides|--late-ordinary-guides]");
+    if(guides_only||late_guides)return ordinary_guides_only(late_guides);
     const std::span<const Plan> plans=loading_state?std::span<const Plan>(loading_state_plans):std::span<const Plan>(formatting_plans);
     const LaunchOptions options{ProfileId::Codex,(loading_state?L"u12-loading-batch-":L"u12-batch-")+
         std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
