@@ -45,6 +45,10 @@ struct LessonReadingRegion {
     // An authored mathematical mode takes precedence over the technical domain.
     std::string reading_context = "auto", math_mode = "auto";
     std::optional<curriculum::TextSemantics> text_semantics;
+    // Private reconstruction of the preceding reader, which used the root
+    // mode even when the rendered component declared another mode.
+    std::optional<std::string> previous_math_mode;
+    bool compiler_guidance = false;
 };
 struct LessonReadingArchive {
     std::string page_identity;

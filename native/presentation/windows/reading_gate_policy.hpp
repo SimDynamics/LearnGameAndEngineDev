@@ -10,6 +10,7 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <utility>
 
 namespace lgaed::presentation::reading_gate {
 // Narration shares the mandatory curricular-editor policy with navigation.
@@ -18,6 +19,8 @@ inline bool compiler_objective(const curriculum::Block& block) {
     return curriculum::compiler_requires_completion(block);
 }
 struct FeedbackPriority { std::size_t block=0,allowed_through=0; };
+enum class BlockerReason { answer, correct_feedback };
+struct PrefixBlocker { std::size_t index=0,block=0;BlockerReason reason=BlockerReason::answer; };
 
 inline bool same_script_region(const LessonReadingRegion& planned,const LessonReadingRegion& live) {
     return planned.key==live.key&&planned.source_text==live.source_text&&
@@ -68,7 +71,7 @@ std::optional<std::size_t> compiler_rewind_target(const Parts& parts,std::size_t
 }
 
 template<std::ranges::random_access_range Parts,class Projection=std::identity>
-bool prefix_admitted(const Parts& parts,std::size_t destination,std::int64_t heard_through,
+std::optional<PrefixBlocker> prefix_blocker(const Parts& parts,std::size_t destination,std::int64_t heard_through,
         std::optional<FeedbackPriority> priority={},bool manual_forward=false,Projection region={}) {
     const auto count=std::ranges::size(parts);
     std::optional<std::size_t> feedback_start;
@@ -87,14 +90,19 @@ bool prefix_admitted(const Parts& parts,std::size_t destination,std::int64_t hea
         // that exception gives no permission to leave across those same gates.
         if(!(within_feedback&&last<*feedback_start))for(auto n=first;n<=last;++n){
             const auto& item=std::invoke(region,parts[n]);
-            if(item.is_exercise&&!item.solved)return false;
+            if(item.is_exercise&&!item.solved)return PrefixBlocker{first,item.block_index,BlockerReason::answer};
             const bool own_feedback=feedback_start&&item.block_index==priority->block;
             const auto permitted=own_feedback?static_cast<std::int64_t>(priority->allowed_through):heard_through;
             if(item.is_exercise&&item.feedback&&item.correct&&permitted<=static_cast<std::int64_t>(n)&&
-                    !(own_feedback&&manual_forward))return false;
+                    !(own_feedback&&manual_forward))return PrefixBlocker{n,item.block_index,BlockerReason::correct_feedback};
         }
         first=last+1;
     }
-    return true;
+    return {};
+}
+template<std::ranges::random_access_range Parts,class Projection=std::identity>
+bool prefix_admitted(const Parts& parts,std::size_t destination,std::int64_t heard_through,
+        std::optional<FeedbackPriority> priority={},bool manual_forward=false,Projection region={}) {
+    return !prefix_blocker(parts,destination,heard_through,priority,manual_forward,std::move(region));
 }
 } // namespace lgaed::presentation::reading_gate

@@ -1774,6 +1774,8 @@ std::string MathPuzzleView::answer_identity_json() const {
 }
 std::vector<MathReadingRegion> MathPuzzleView::reading_regions() const {
     auto result = impl_->regions;
+    for(auto& region:result)if(const auto format=impl_->label_formats.find(region.target);format!=impl_->label_formats.end())
+        region.math_mode=format->second.first;
     std::ranges::stable_sort(result,[](const auto& left,const auto& right) { RECT a{},b{}; GetWindowRect(left.target,&a); GetWindowRect(right.target,&b);
         return a.top != b.top ? a.top < b.top : a.left < b.left; });
     return result;

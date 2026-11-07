@@ -74,6 +74,53 @@ class CurriculumRegionIdentityTest(unittest.TestCase):
             validator=dict(type="fields", fields=dict(a=dict(type="numeric", expected="1"))))])
         self.assert_native_regions(block, [], [("Resultado", None), ("Valor", None), ("Registro", None), ("Cantidad", None)])
 
+    def test_current_nested_component_modes_keep_their_real_programming_recording_keys(self):
+        base = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
+        cases = [
+            ("archivos_y_programa_completo/lesson_precision_y_presentacion_de_double.json", 1, 2,
+             "/responses/0/targets/1/content/0"),
+            ("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json", 5, 4,
+             "/responses/0/sources/0/content/0"),
+            ("archivos_y_programa_completo/lesson_aceptar_registros_y_detectar_duplicados.json", 2, 4,
+             "/responses/1/options/0/content/0"),
+        ]
+        for relative, page_index, block_index, path in cases:
+            with self.subTest(asset=relative, path=path):
+                asset = base / relative
+                original = asset.read_bytes(); lesson = json.loads(original.decode("utf-8-sig"))
+                block = lesson["pages"][page_index]["blocks"][block_index]
+                component = block
+                for token in path.split("/")[1:]:
+                    component = component[int(token)] if isinstance(component, list) else component[token]
+                config = component.get("config", component)
+                source = config["text"]
+                # This is the mode retained by MathPuzzleView's label_formats;
+                # the containing block has a distinct, default auto mode.
+                mode = config.get("mathMode", "auto")
+                self.assertEqual("text", mode)
+                self.assertEqual("auto", block.get("mathMode", "auto"))
+                owner = lesson["stateLayout"]["current"][page_index]["blocks"][block_index]
+                field_path = path + ("/config" if "config" in component else "") + "/text"
+                field = next((item for item in lesson.get("textSemantics", {}).get("fields", [])
+                              if item["block"] == owner and item["path"] == field_path), None)
+                direct = dict(text=source, language="es", voice="ef_dora", readingContext="auto", mathMode=mode)
+                if field is not None:
+                    direct["textSemantics"] = dict(spans=field["spans"])
+                expected = self.worker.ask("plan", **direct)["segments"]
+                background = self.worker.ask("curriculum_plan", lessonJson=original.decode("utf-8-sig"), page=page_index,
+                    language="es", voice="ef_dora", uiLanguage="es", contentLanguage="es", readingContext="cpp")["segments"]
+                keys = {item["key"] for item in background}
+                for item in expected:
+                    self.assertIn(item["key"], keys)
+                old = self.worker.ask("plan", **dict(direct, mathMode="auto"))["segments"]
+                if field is None and source == "3.125":
+                    self.assertEqual(["3.125"], [item["spokenText"] for item in expected])
+                    self.assertEqual(["tres coma uno dos cinco"], [item["spokenText"] for item in old])
+                    self.assertNotEqual([item["key"] for item in old], [item["key"] for item in expected])
+                else:
+                    self.assertEqual([item["key"] for item in old], [item["key"] for item in expected])
+                self.assertEqual(original, asset.read_bytes())
+
     def test_field_caption_and_unit_keep_their_separate_native_source_owners(self):
         block = dict(type="math_puzzle", schemaVersion=1, prompt="Completa.", responses=[dict(id="q",
             type="math_multi_input", fields=[dict(id="a", type="numeric", label="x", unit="y")],

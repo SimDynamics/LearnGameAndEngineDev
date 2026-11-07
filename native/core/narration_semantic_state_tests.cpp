@@ -27,6 +27,28 @@ History three(){
 }
 int main()try{
     unsigned passed=0;
+    {
+        struct Region {
+            std::string key="guide",anchor="compiler/guide",source_text="Correcto. Guía actual.",reading_context="auto",math_mode="auto";
+            std::optional<std::string> previous_math_mode;
+            bool compiler_guidance=true,feedback=true,correct=true,required_compiler=true;
+        } current;
+        const SemanticRegionProof previous{current.anchor,"Correcto. Guía anterior.","auto","auto",{}};
+        check(matches_saved_semantic_region(previous,current),"An earned single-case guide could not authenticate its saved former source");
+        for(unsigned n=0;n<7;++n){auto wrong=current;
+            if(n==0)wrong.compiler_guidance=false;
+            if(n==1)wrong.feedback=false;
+            if(n==2)wrong.correct=false;
+            if(n==3)wrong.required_compiler=false;
+            if(n==4)wrong.anchor="another/guide";
+            if(n==5)wrong.reading_context="cpp";
+            if(n==6)wrong.math_mode="text";
+            check(!matches_saved_semantic_region(previous,wrong),"An unrelated or unevaluated region borrowed a saved compiler guide");
+        }
+        auto ordinary=current;ordinary.compiler_guidance=false;ordinary.source_text=previous.source;
+        check(matches_saved_semantic_region(previous,ordinary),"Exact unchanged ordinary source lost its existing history policy");
+        ++passed;
+    }
     check(SemanticPlanProof{}.policy=="windows-semantic-v2","New semantic provenance still declares the old frontend");
     for(const unsigned slot:{0u,1u,2u}){
         auto history=three();auto current=plan(true,SemanticRole::data);current.policy="windows-semantic-v2";
