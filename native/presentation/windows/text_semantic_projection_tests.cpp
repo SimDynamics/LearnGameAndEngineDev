@@ -12,6 +12,15 @@ std::vector<std::size_t> identity(std::size_t size){std::vector<std::size_t> res
 int main()try{
     unsigned groups=0;
     {
+        const TextSemantics text{"Dato: LaGo!.",{{6,11,"LaGo!",SemanticRole::data,SemanticReading::characters}}};
+        const auto original=text;
+        const auto runs=semantic_display_runs(text,identity(12),12);
+        check(runs==std::vector<SemanticDisplayRun>{{0,6},{6,11,SemanticRole::data,SemanticReading::characters},{11,12}}&&
+            semantic_reference(runs[1].role)&&text==original,
+            "Literal-character speech changed its data role, exact reference background or visible punctuation");
+        ++groups;
+    }
+    {
         const TextSemantics text{"A `int x;`. B",{{3,9,"int x;",SemanticRole::cpp}}};
         const std::vector<std::size_t> map{0,1,2,2,3,4,5,6,7,8,8,9,10,11};
         const auto runs=semantic_display_runs(text,map,11);

@@ -14,6 +14,7 @@
 #include "platform/windows/system_speech.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/narration_preferences.hpp"
+#include "platform/windows/narration_file_access.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 #include "core/narration_state.hpp"
@@ -71,7 +72,7 @@ public:
 };
 }
 struct LessonReader::Impl {
-    struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
+    struct AudioReadLease{HANDLE file=INVALID_HANDLE_VALUE;std::shared_ptr<void> cache_guard;~AudioReadLease(){if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);}};
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;std::string audio_fingerprint;std::shared_ptr<AudioReadLease> playback_lease;};
     struct LegacyPlan{std::string key;std::vector<Part> parts;bool editorial_formatting=false,previous_context_policy=false;std::vector<std::string> revised_regions;bool positional_page_identity=false;};
     struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error,audio_fingerprint;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;
@@ -276,7 +277,7 @@ struct LessonReader::Impl {
                     if(code==ERROR_FILE_NOT_FOUND||code==ERROR_PATH_NOT_FOUND)result.recording_changed=true;
                     else throw std::runtime_error("No se pudo abrir la grabación para comprobarla.");
                 }else{
-                    state::require_unredirected_handle(lease->file,candidate.audio->wav);
+                    lease->cache_guard=windows::require_narration_recording_handle(lease->file,candidate.audio->wav,environment);
                     const auto hash=locked_recording_hash(lease->file,stop);if(stop.stop_requested())return;
                     result.recording_changed=recording_fingerprint(page_key,candidate,*candidate.audio,hash)!=candidate.audio_fingerprint;
                     if(!result.recording_changed)result.playback_lease=std::move(lease);

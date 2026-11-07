@@ -6,7 +6,7 @@
 
 namespace lgaed::curriculum {
 enum class SemanticRole { prose,cpp,string,data,math,output,citation };
-enum class SemanticReading { automatic,natural,technical };
+enum class SemanticReading { automatic,natural,technical,characters };
 struct SemanticSpan {
     std::size_t start=0,end=0;
     std::string text;

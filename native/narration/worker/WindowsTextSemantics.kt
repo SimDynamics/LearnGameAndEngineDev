@@ -11,7 +11,7 @@ internal object WindowsTextSemantics {
     data class Span(val start: Int, val end: Int, val text: String, val role: String, val reading: String)
     data class Field(val source: String, val spans: List<Span>)
     private val roles = setOf("prose","cpp","string","data","math","output","citation")
-    private val readings = setOf("auto","natural","technical")
+    private val readings = setOf("auto","natural","technical","characters")
     private val bound = ThreadLocal<IdentityHashMap<String,Field>?>()
     private val authored = ThreadLocal<IdentityHashMap<String,Boolean>?>()
 
@@ -265,6 +265,7 @@ internal object WindowsTextSemantics {
         val inputs = mutableListOf<Input>()
         fun appendSource(start: Int, end: Int, role: String, reading: String, gap: Boolean = false) {
             val mode = when {
+                reading == "characters" -> 3
                 reading == "technical" || reading == "auto" && role in setOf("cpp","string") -> 1
                 reading == "auto" && role == "math" -> 2
                 else -> 0
@@ -296,6 +297,8 @@ internal object WindowsTextSemantics {
         appendSource(cursor,field.source.length,"prose","natural",gap=true)
         val output = StringBuilder().append(ManualEnglishSpeech.PREPARED)
         val owners = mutableListOf(ReadingTextRange(0,0))
+        val boundedCharacters = field.spans.any { it.reading == "characters" }
+        var preparedBytes = 3 // The existing prepared sentinel is one UTF-8 scalar.
         var previousMode = 0
         fun wordStart(char: Char) = char.isLetterOrDigit() || char.isSurrogate() || char == '_' || char == ManualEnglishSpeech.START
         fun wordEnd(char: Char) = char.isLetterOrDigit() || char.isSurrogate() || char == '_' || char == ManualEnglishSpeech.END
@@ -304,6 +307,7 @@ internal object WindowsTextSemantics {
             val piece = when (input.mode) {
                 1 -> NarrationSourceProjection.semanticCode(source,language)
                 2 -> NarrationSourceProjection.forLanguage(source,"inline",language) ?: error("Unprojectable mathematical semantic span")
+                3 -> WindowsCharacterSpeech.projection(source,language)
                 else -> NarrationSourceProjection.Projection(source,input.owners)
             }
             val prefix = if (piece.text.startsWith(ManualEnglishSpeech.PREPARED)) 1 else 0
@@ -311,7 +315,13 @@ internal object WindowsTextSemantics {
             if (body.isEmpty()) continue
             // Separate spoken words introduced at a mixed semantic boundary;
             // unchanged prose and its punctuation keep their exact spelling.
-            if (output.length > 1 && (previousMode != 0 || input.mode != 0) && wordEnd(output.last()) && wordStart(body.first())) {
+            val separate = output.length > 1 && (previousMode != 0 || input.mode != 0) && wordEnd(output.last()) && wordStart(body.first())
+            if (boundedCharacters) {
+                val extra = body.toByteArray(Charsets.UTF_8).size + if (separate) 1 else 0
+                require(preparedBytes <= 8 * 1024 * 1024 - extra) { "Character reading exceeds the bounded prepared-text size" }
+                preparedBytes += extra
+            }
+            if (separate) {
                 output.append(' '); owners += ReadingTextRange(0,0)
             }
             output.append(body)

@@ -19,6 +19,9 @@ void validate_semantic_plan(const SemanticPlanProof& value) {
         if(region.semantics){
             curriculum::validate_text_semantics(*region.semantics);
             if(region.semantics->source!=region.source)throw std::invalid_argument("Stale semantic narration source");
+            if(value.policy=="windows-semantic-v1"&&std::ranges::any_of(region.semantics->spans,[](const auto& span){
+                return span.reading==curriculum::SemanticReading::characters;}))
+                throw std::invalid_argument("Literal-character reading did not exist in the V1 narration frontend");
             spans+=region.semantics->spans.size();for(const auto& span:region.semantics->spans)bytes+=span.text.size()+64;
         }
         if(bytes>4*1024*1024||spans>100000)throw std::invalid_argument("Semantic narration provenance exceeds its bound");

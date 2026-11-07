@@ -1,8 +1,13 @@
 #include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "native_build_config.hpp"
+#include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
+#include <iterator>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -89,6 +94,56 @@ void independent_regions(){
     independent_region(nested,"/representations/0/content/0/headers/0","Salida");
     independent_region(nested,"/representations/0/content/0/rows/0/0","N=1");
 }
+void current_character_intent(){
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json";
+    const auto read_asset=[&]{std::ifstream input(path,std::ios::binary);require(bool(input),"Missing current character-option curriculum");
+        return std::string{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};};
+    const auto raw=read_asset();const auto root=JsonObject::Parse(winrt::to_hstring(raw));
+    const auto before=windows::parse_lesson_json(winrt::to_string(root.Stringify()));
+    const auto position=curriculum::stable_block_position(before,"block_0007_0004");
+    require(position.has_value(),"The current character option lost its stable owner");
+    const auto& original=before.pages[position->page].blocks[position->block];
+    std::optional<unsigned> selected;
+    const auto fields=root.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");
+    for(const auto& value:fields){const auto field=value.GetObject();
+        if(field.GetNamedString(L"block")!=L"block_0007_0004"||field.GetNamedString(L"path")!=L"/options/0")continue;
+        const auto spans=field.GetNamedArray(L"spans");
+        for(unsigned n=0;n<spans.Size();++n){const auto span=spans.GetObjectAt(n);if(span.GetNamedString(L"text")!=L"!")continue;
+            require(!selected&&span.GetNamedString(L"role")==L"data"&&span.GetNamedString(L"reading")==L"natural",
+                "The current punctuation intent no longer has its reviewed source/data role");
+            span.Insert(L"reading",string("characters"));selected=n;}
+    }
+    require(selected.has_value(),"The current character option lost its exact authored punctuation span");
+    const auto source=winrt::to_string(root.Stringify());const auto after=windows::parse_lesson_json(source),progress=windows::parse_lesson_progress_metadata(source);
+    auto expected=original.text_semantics;expected.at("/options/0").spans[*selected].reading=curriculum::SemanticReading::characters;
+    require(after.pages[position->page].blocks[position->block].text_semantics==expected&&
+        progress.pages[position->page].blocks[position->block].text_semantics==expected,
+        "Characters intent changed the existing role/source/spans or diverged between full and progress loaders");
+    require(after.state_layout.raw_json==before.state_layout.raw_json&&read_asset()==raw,
+        "Characters intent rewrote the historical state layout or authored asset");
+    for(std::size_t p=0;p<before.pages.size();++p)for(std::size_t b=0;b<before.pages[p].blocks.size();++b){
+        const auto& old=before.pages[p].blocks[b];const auto& current=after.pages[p].blocks[b];
+        require(old.raw_json==current.raw_json&&old.stable_id==current.stable_id&&old.address.page==current.address.page&&old.address.block==current.address.block,
+            "Characters authoring changed curriculum, an answer payload or its historical address");}
+    for(const auto reading:{"auto","natural","technical","characters"}){
+        auto synthetic=fixture();const auto field=annotate(synthetic,1,"/options/1","N=2",0,3,"N=2","data");
+        field.GetNamedArray(L"spans").GetObjectAt(0).Insert(L"reading",string(reading));
+        const auto text=winrt::to_string(synthetic.Stringify());const auto full=windows::parse_lesson_json(text),metadata=windows::parse_lesson_progress_metadata(text);
+        const auto& descriptor=full.pages[0].blocks[1].text_semantics.at("/options/1");
+        require(curriculum::semantic_reading_name(descriptor.spans.front().reading)==reading&&descriptor.source=="N=2"&&
+            descriptor.spans.front().role==curriculum::SemanticRole::data&&metadata.pages[0].blocks[1].text_semantics==full.pages[0].blocks[1].text_semantics,
+            "An existing reading intent or its data role changed while loading characters support");
+    }
+    for(const auto reading:{"character","Characters","characters ","phonetic",""}){
+        auto bad=fixture();const auto field=annotate(bad,1,"/options/1","N=2",0,3,"N=2","data");
+        field.GetNamedArray(L"spans").GetObjectAt(0).Insert(L"reading",string(reading));rejected(bad);
+    }
+    for(const auto* json:{L"null",L"true",L"1",L"[]",L"{}"}){
+        auto bad=fixture();const auto field=annotate(bad,1,"/options/1","N=2",0,3,"N=2","data");
+        field.GetNamedArray(L"spans").GetObjectAt(0).Insert(L"reading",JsonValue::Parse(json));rejected(bad);
+    }
+}
 }
 int main() try {
     winrt::init_apartment(winrt::apartment_type::multi_threaded);
@@ -126,6 +181,7 @@ int main() try {
         partial_full.pages[0].blocks[2].text_semantics==partial_progress.pages[0].blocks[2].text_semantics,
         "A native table cell could not keep its own annotation with an unmarked neighbor");
     independent_regions();
+    current_character_intent();
     auto partial_feedback=JsonObject::Parse(original.Stringify());
     annotate(partial_feedback,2,"/feedback/correct","Correcto N=1",0,0,"","prose");rejected(partial_feedback);
     for(const auto path:{"/answers/0","/initialCode","/outputCheck/cases/0/outputs/0","/outputCheck/cases/0/standardInput"}){

@@ -133,6 +133,51 @@ class TextSemanticsTests(unittest.TestCase):
         self.assertEqual(source.encode("utf-16-le")[second["start"]*2:second["end"]*2].decode("utf-16-le"), "p;")
         self.assertNotIn("reading", first)
 
+    def test_characters_is_an_exact_intent_independent_of_the_existing_role(self):
+        for role in semantics.ROLES:
+            for reading in ("auto", "natural", "technical", "characters"):
+                with self.subTest(role=role, reading=reading):
+                    document = lesson()
+                    source = document["pages"][0]["blocks"][0]["text"]
+                    span = semantics.select(source, "😀", role, reading=reading)
+                    self.assertEqual((span["start"], span["end"]), (0, 2))
+                    self.assertEqual(span["role"], role)
+                    if reading == "auto":
+                        self.assertNotIn("reading", span)
+                    else:
+                        self.assertEqual(span["reading"], reading)
+                    owner = document["stateLayout"]["current"][0]["blocks"][0]
+                    document["textSemantics"] = dict(version=1, fields=[semantics.make_field(document, owner, "/text", [span])])
+                    resolved = semantics.validate(document)[owner]["/text"]["spans"][0]
+                    self.assertEqual(resolved, span)
+
+    def test_characters_authoring_on_the_current_character_option_preserves_curriculum_and_state(self):
+        path = ROOT.parents[1] / "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json"
+        raw = path.read_bytes()
+        original = json.loads(raw.decode("utf-8-sig"))
+        candidate = deepcopy(original)
+        owner, pointer = "block_0007_0004", "/options/0"
+        field = next(item for item in candidate["textSemantics"]["fields"] if item["block"] == owner and item["path"] == pointer)
+        index = next(i for i, span in enumerate(field["spans"]) if span["text"] == "!")
+        before = deepcopy(field["spans"][index])
+        self.assertEqual((before["role"], before["reading"]), ("data", "natural"))
+        field["spans"][index]["reading"] = "characters"
+        resolved = semantics.validate(candidate)[owner][pointer]
+        self.assertEqual(resolved["spans"][index], dict(before, reading="characters"))
+        layout.validate(candidate)
+        layout.validate_transition(original, candidate)
+        self.assertEqual(candidate["pages"], original["pages"])
+        self.assertEqual(candidate["stateLayout"], original["stateLayout"])
+        self.assertEqual(path.read_bytes(), raw)
+
+    def test_character_intent_rejects_unknown_spellings_and_non_string_values(self):
+        for reading in ("character", "Characters", "characters ", "phonetic", "", None, True, 1, [], {}):
+            document = lesson()
+            field = annotate(document, 0, "/text", "int p;", "cpp")
+            field["spans"][0]["reading"] = reading
+            with self.subTest(reading=reading), self.assertRaises(ValueError):
+                semantics.validate(document)
+
     def test_rejects_unsupported_canvas_and_dropdown_but_accepts_fixed_table_fields(self):
         block = {"type": "math_puzzle", "prompt": "Completa", "representations": [
             {"type": "geometry_2d_diagram", "label": "Figura"}], "responses": [

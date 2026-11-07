@@ -14,7 +14,7 @@ std::string_view semantic_role_name(SemanticRole role) {
     throw std::invalid_argument("Unknown semantic role");
 }
 std::string_view semantic_reading_name(SemanticReading reading) {
-    switch(reading){case SemanticReading::automatic:return "auto";case SemanticReading::natural:return "natural";case SemanticReading::technical:return "technical";}
+    switch(reading){case SemanticReading::automatic:return "auto";case SemanticReading::natural:return "natural";case SemanticReading::technical:return "technical";case SemanticReading::characters:return "characters";}
     throw std::invalid_argument("Unknown semantic reading intent");
 }
 SemanticRole parse_semantic_role(std::string_view role) {
@@ -23,7 +23,7 @@ SemanticRole parse_semantic_role(std::string_view role) {
     throw std::invalid_argument("Unknown semantic role");
 }
 SemanticReading parse_semantic_reading(std::string_view reading) {
-    for(const auto value:{SemanticReading::automatic,SemanticReading::natural,SemanticReading::technical})if(semantic_reading_name(value)==reading)return value;
+    for(const auto value:{SemanticReading::automatic,SemanticReading::natural,SemanticReading::technical,SemanticReading::characters})if(semantic_reading_name(value)==reading)return value;
     throw std::invalid_argument("Unknown semantic reading intent");
 }
 namespace {

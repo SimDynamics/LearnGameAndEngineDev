@@ -224,6 +224,9 @@ private class Backend(private val resources: File, private val englishResources:
             val source = request.getString("text")
             val explicit = if (request.has("textSemantics"))
                 WindowsTextSemantics.parse(source,request.getJSONObject("textSemantics")) else null
+            require(!request.has("semanticProjectionPolicy") || explicit!!.spans.none { it.reading == "characters" }) {
+                "The original semantic projection never supported character reading"
+            }
             planned(source,language(request),readingMode(request),explicit,request.has("semanticProjectionPolicy"))
         }
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->

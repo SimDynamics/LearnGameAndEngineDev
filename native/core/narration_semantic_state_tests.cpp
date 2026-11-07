@@ -28,6 +28,21 @@ History three(){
 int main()try{
     unsigned passed=0;
     check(SemanticPlanProof{}.policy=="windows-semantic-v2","New semantic provenance still declares the old frontend");
+    for(const unsigned slot:{0u,1u,2u}){
+        auto history=three();auto current=plan(true,SemanticRole::data);current.policy="windows-semantic-v2";
+        current.regions.front().semantics->spans.front().reading=SemanticReading::characters;
+        history.entries[slot].semantic_plan=current;state::StateData data;write_history(data,history);
+        check(read_history(data)==history&&read_history(data).entries.size()==3,
+            "Literal-character intent lost its exact data owner or one of the three paused bookmarks");
+        auto fabricated=history;fabricated.entries[slot].semantic_plan->policy="windows-semantic-v1";
+        const auto unchanged=data;rejects([&]{write_history(data,fabricated);},"A new intent was attributed to the historical V1 frontend");
+        check(data==unchanged,"Rejecting an impossible historical intent modified its three bookmarks");
+        auto corrupt=data;
+        auto& encoded=std::get<std::vector<std::string>>(corrupt.preferences[resume_domain]["semantic_plan_v1_"+std::to_string(slot)]);
+        encoded[0]="windows-semantic-v1";
+        rejects([&]{(void)read_history(corrupt);},"A forged historical character intent was read as genuine V1 provenance");
+        ++passed;
+    }
     for(const std::string policy:{"windows-semantic-v1","windows-semantic-v2"})
     for(const bool marked:{false,true})for(const unsigned slot:{0u,1u,2u}){
         auto history=three();history.entries[slot].semantic_plan=plan(marked);history.entries[slot].semantic_plan->policy=policy;state::StateData data;
