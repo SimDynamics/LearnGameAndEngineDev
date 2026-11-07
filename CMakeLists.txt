@@ -379,6 +379,8 @@ if(BUILD_TESTING)
     set_tests_properties(native.u12_final_ordinary_guides PROPERTIES TIMEOUT 45)
     add_test(NAME native.u12_loading_compiler_batch COMMAND lgaed_u12_compiler_batch_tests --loading-state)
     set_tests_properties(native.u12_loading_compiler_batch PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    add_test(NAME native.u12_final_compiler_batch COMMAND lgaed_u12_compiler_batch_tests --final-compiler-batch)
+    set_tests_properties(native.u12_final_compiler_batch PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     add_test(NAME native.u12_output_speech COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_u12_output_speech.py)
     add_test(NAME native.output_data_policy_versions COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
