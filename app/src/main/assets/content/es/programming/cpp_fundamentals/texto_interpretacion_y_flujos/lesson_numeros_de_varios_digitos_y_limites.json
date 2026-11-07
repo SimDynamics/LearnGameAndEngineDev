@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El límite 99 pertenece al lenguaje de este ejercicio. Se comprueba después de cada incorporación y se rechaza en cuanto el nuevo valor lo supera. Antes de incorporar una cifra, el valor aceptado es como máximo 99; multiplicarlo por 10 y añadir como máximo 9 produce, a lo sumo, 999.\n\nEse cálculo cabe incluso en el rango mínimo que C++ garantiza para `int`, que alcanza al menos 32767 (Köppe et al., 2023, § 6.8.2). Por tanto, la comparación con 99 se realiza con un candidato representable. La seguridad depende de rechazar inmediatamente el candidato fuera de dominio; no se sigue acumulando hasta desbordar el tipo.",
+          "text": "El límite 99 pertenece al lenguaje de este ejercicio. Se comprueba después de cada incorporación y se rechaza en cuanto el nuevo valor lo supera. Antes de incorporar una cifra, el valor aceptado es como máximo 99; multiplicarlo por 10 y añadir como máximo 9 produce, a lo sumo, 999.\n\nEse cálculo cabe incluso en el rango mínimo que C++ garantiza para `int`, que alcanza al menos 32767 (Köppe et al., 2023). Por tanto, la comparación con 99 se realiza con un candidato representable. La seguridad depende de rechazar inmediatamente el candidato fuera de dominio; no se sigue acumulando hasta desbordar el tipo.",
           "emphasis": [
             {
               "text": "después de cada incorporación",
@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para saber dónde termina una secuencia, el lector intenta obtener otro carácter con `get`. Si obtiene un signo, ese carácter ya salió del flujo, aunque no pertenezca al número. `putback(actual)` permite devolver el carácter recién obtenido para que otra lectura vuelva a encontrarlo. La devolución de un carácter al flujo también permite coordinar reconocimiento numérico y lectura de tokens (Stroustrup, 2024, pp. 145–146).\n\nEn este programa, `putback` sólo se llama después de un `get` que obtuvo un carácter y con ese mismo carácter. Después se comprueba el estado del flujo: si la devolución falla, se lanza una excepción con el diagnóstico correspondiente en lugar de afirmar que la frontera se conservó (Köppe et al., 2023, p. 1649).",
+          "text": "Para saber dónde termina una secuencia, el lector intenta obtener otro carácter con `get`. Si obtiene un signo, ese carácter ya salió del flujo, aunque no pertenezca al número. `putback(actual)` permite devolver el carácter recién obtenido para que otra lectura vuelva a encontrarlo. La devolución de un carácter al flujo también permite coordinar reconocimiento numérico y lectura de tokens (Stroustrup, 2024, pp. 145–146).\n\nEn este programa, `putback` sólo se llama después de un `get` que obtuvo un carácter y con ese mismo carácter. Después se comprueba el estado del flujo: si la devolución falla, se lanza una excepción con el diagnóstico correspondiente en lugar de afirmar que la frontera se conservó (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "devolver el carácter recién obtenido",
@@ -127,7 +127,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de reunir los dígitos, llegar al final es una frontera válida. En ese caso, el último `get` no obtuvo un carácter y no hay nada que devolver con `putback`. La función puede entregar el número ya reconocido.\n\nEse intento fallido activa los estados de final y fallo del flujo interno. La comprobación distingue esa situación de `bad()` o de un fallo sin final: estos últimos producen `Fallo del flujo`. La llamada siguiente vuelve a encontrar el final y entrega el token `'f'`. El estado de la entrada y el resultado de reconocer un token no son la misma pregunta: un cliente no debe descartar un token numérico válido sólo porque el flujo ya no tenga `good()` activo (Köppe et al., 2023, § 31.7.5.4).",
+          "text": "Después de reunir los dígitos, llegar al final es una frontera válida. En ese caso, el último `get` no obtuvo un carácter y no hay nada que devolver con `putback`. La función puede entregar el número ya reconocido.\n\nEse intento fallido activa los estados de final y fallo del flujo interno. La comprobación distingue esa situación de `bad()` o de un fallo sin final: estos últimos producen `Fallo del flujo`. La llamada siguiente vuelve a encontrar el final y entrega el token `'f'`. El estado de la entrada y el resultado de reconocer un token no son la misma pregunta: un cliente no debe descartar un token numérico válido sólo porque el flujo ya no tenga `good()` activo (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "no hay nada que devolver",
@@ -1369,6 +1369,21 @@
         "id": "block_0005_0000",
         "beforeSha256": "8ba242f7f0d536c856dd87e10f22e09012004dc59c59c78b5ad87f6d82d1fef6",
         "afterSha256": "d07c5fef7fd2d4a667727f5c6246fbec920d23c7788fbf2d1e292586a7305f57"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "921d29e1f427cc78a4d13a6dc31fb24d010af52075dc127a4be760901996482a",
+        "afterSha256": "f6b535fcd594e09f8c167320e8fd579f04e10c011effce7b12f56c10f207b90e"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "268e81dfd8af94e0c40f8bd8edff6bde7676e00c4d4417ae7f3612565ef8d877",
+        "afterSha256": "ceddcfb69232dc8bf5e43b6e489bfc94633deefe9b5710af389eced24e8abc98"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "f9c7f2997252923934de2b8bf0da4c5dfa63395c745adfcde86ee9456e01033a",
+        "afterSha256": "eb63a460b6d5a2846b195af9f5013fd5849e79418e3fc861a770cd0d3bea80de"
       }
     ],
     "compilerRevisions": [
@@ -1396,6 +1411,186 @@
               "language": "cpp",
               "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nvoid trazar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    trazar(\"34+5;\");\n    trazar(\"99+0;\");\n    trazar(\"007+2;\");\n    trazar(\"100+1;\");\n    Lector_tokens final{\"99\"};\n    std::cout << \"Numero final: \" << final.leer().valor << \"\\n\";\n    std::cout << \"Fin: \" << final.leer().clase << \"\\n\";\n    Lector_tokens separados{\"1 2\"};\n    const Token primero = separados.leer();\n    const Token segundo = separados.leer();\n    std::cout << \"Separados: \" << primero.valor << \":\" << segundo.valor << \"\\n\";\n    return 0;\n}\n"
             }
+          }
+        ]
+      }
+    ]
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "c733c4ab609f6291c57eb80d1fb4b59dd02460e7caa198d2ed7fd926cbcdb8b7",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 212,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 234,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 257,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 281,
+            "text": "999",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 355,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 379,
+            "end": 384,
+            "text": "32767",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 405,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 437,
+            "end": 439,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "186aa8dc62b59ec1c213bd0207ee7104088c21422e6fca84de37e2f750e68746",
+        "spans": [
+          {
+            "start": 85,
+            "end": 88,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 193,
+            "text": "putback(actual)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 423,
+            "text": "(Stroustrup, 2024, pp. 145–146)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 452,
+            "text": "putback",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 483,
+            "end": 486,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 709,
+            "end": 729,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "0a979a0b58cb802cf1c10b0072d260fbb2ff78c2f933cad1890c1c5d161b13ec",
+        "spans": [
+          {
+            "start": 95,
+            "end": 98,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 161,
+            "text": "putback",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 335,
+            "end": 340,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 406,
+            "text": "Fallo del flujo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 481,
+            "text": "'f'",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 659,
+            "end": 665,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 674,
+            "end": 694,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       }

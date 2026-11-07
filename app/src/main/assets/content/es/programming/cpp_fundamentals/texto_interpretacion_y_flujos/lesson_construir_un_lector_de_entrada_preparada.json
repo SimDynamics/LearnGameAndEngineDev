@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada operación ocupa una línea con el formato entran:salen. El analizador obtiene los dos valores como `int` mediante `>>` y exige que el separador sea el carácter `':'`. La extracción formateada omite el espacio en blanco inicial de cada campo (Köppe et al., 2023, pp. 1643–1646).\n\nPor ejemplo, las líneas 2:1, +2 : 01 y 2 : 1 representan los mismos valores. El contrato permite los signos y los espacios que reconoce esa extracción; no exige que toda la línea sea una secuencia continua de dígitos.",
+          "text": "Cada operación ocupa una línea con el formato entran:salen. El analizador obtiene los dos valores como `int` mediante `>>` y exige que el separador sea el carácter `':'`. La extracción formateada omite el espacio en blanco inicial de cada campo (Köppe et al., 2023).\n\nPor ejemplo, las líneas 2:1, +2 : 01 y 2 : 1 representan los mismos valores. El contrato permite los signos y los espacios que reconoce esa extracción; no exige que toda la línea sea una secuencia continua de dígitos.",
           "emphasis": [
             {
               "text": "Cada operación ocupa una línea",
@@ -134,7 +134,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`getline` puede obtener la última línea aunque no termine con un salto. Si obtiene caracteres antes de encontrar EOF, esa línea debe analizarse. Un intento posterior que no obtiene nada nuevo termina la lectura y no inventa otra operación (Köppe et al., 2023, pp. 865–866).\n\nEn cambio, un salto disponible puede delimitar una línea sin caracteres. Esa línea sí se obtuvo y debe recibir el diagnóstico que establece el contrato.",
+          "text": "`getline` puede obtener la última línea aunque no termine con un salto. Si obtiene caracteres antes de encontrar EOF, esa línea debe analizarse. Un intento posterior que no obtiene nada nuevo termina la lectura y no inventa otra operación (Köppe et al., 2023).\n\nEn cambio, un salto disponible puede delimitar una línea sin caracteres. Esa línea sí se obtuvo y debe recibir el diagnóstico que establece el contrato.",
           "emphasis": [
             {
               "text": "esa línea debe analizarse",
@@ -148,7 +148,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Encontrar EOF no demuestra que los campos de una operación estén completos. El programa siguiente usa un texto local pequeño para distinguir la lectura de una línea del análisis de sus tres campos; el programa de construcción leerá desde `std::cin`.\n\nLa conversión `static_cast<bool>(...)` obtiene el resultado lógico de cada lectura para guardarlo y mostrarlo. Consulta si el flujo permite considerar satisfactoria la operación, igual que al usarlo como condición; no sustituye esa pregunta por `good()` (Köppe et al., 2023, p. 1628).",
+          "text": "Encontrar EOF no demuestra que los campos de una operación estén completos. El programa siguiente usa un texto local pequeño para distinguir la lectura de una línea del análisis de sus tres campos; el programa de construcción leerá desde `std::cin`.\n\nLa conversión `static_cast<bool>(...)` obtiene el resultado lógico de cada lectura para guardarlo y mostrarlo. Consulta si el flujo permite considerar satisfactoria la operación, igual que al usarlo como condición; no sustituye esa pregunta por `good()` (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "no demuestra que los campos de una operación estén completos",
@@ -170,7 +170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando termina el bucle exterior, `bad()` o un fallo sin EOF indican un problema del origen. Ese problema es distinto de una línea cuyos datos incumplen el formato. El final normal de la entrada termina la sesión, aunque el último intento de `getline` también marque fallo por no obtener nada nuevo.\n\nPrimero se decide si se obtuvo una línea y después se valida su contenido. Usar `while (!std::cin.eof())` preguntaría por un estado anterior al intento siguiente y podría crear un procesamiento sin una línea nueva (Köppe et al., 2023, pp. 865–866, 1628).",
+          "text": "Cuando termina el bucle exterior, `bad()` o un fallo sin EOF indican un problema del origen. Ese problema es distinto de una línea cuyos datos incumplen el formato. El final normal de la entrada termina la sesión, aunque el último intento de `getline` también marque fallo por no obtener nada nuevo.\n\nPrimero se decide si se obtuvo una línea y después se valida su contenido. Usar `while (!std::cin.eof())` preguntaría por un estado anterior al intento siguiente y podría crear un procesamiento sin una línea nueva (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "Primero se decide si se obtuvo una línea y después se valida su contenido",
@@ -574,7 +574,7 @@
         },
         {
           "type": "note",
-          "text": "`getline` obtiene los caracteres hasta el delimitador y consume también ese delimitador, sin guardarlo en la cadena. Una línea vacía terminada por su delimitador y un intento que no obtiene caracteres al final del origen tienen resultados distintos (Köppe et al., 2023, pp. 865–866).\n\nObtener una línea no valida el movimiento que describe. La decisión de aceptación y la conservación del estado corresponden al programa; las pruebas de esta actividad suministran texto real mediante el campo Entrada.",
+          "text": "`getline` obtiene los caracteres hasta el delimitador y consume también ese delimitador, sin guardarlo en la cadena. Una línea vacía terminada por su delimitador y un intento que no obtiene caracteres al final del origen tienen resultados distintos (Köppe et al., 2023).\n\nObtener una línea no valida el movimiento que describe. La decisión de aceptación y la conservación del estado corresponden al programa; las pruebas de esta actividad suministran texto real mediante el campo Entrada.",
           "emphasis": [
             {
               "text": "Obtener una línea no valida el movimiento que describe",
@@ -1724,6 +1724,31 @@
         "id": "block_0007_0001",
         "beforeSha256": "65319e272405c1544fd8abb47b57537aa1827f30dcd0bcc4e53f7b8d887fa1d9",
         "afterSha256": "3c24c5d55bf01230d382fa32ce986b7e5e58419a5ec77e5fa9fd028836454709"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "216ad42f12e4e8cb01c008a6896a5b6923afe555e2f88dc3fb7b09fb6b131187",
+        "afterSha256": "a25df5e7194fceef1e0242d935649aba2a382bdb69e84f522b72596efae44fe2"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3bfb8d2d2e61b0093a480ae0925186678f2511bc21f0d5e9d92ffc188e81ebdf",
+        "afterSha256": "ff1d2815f2a68c6673225f401d75ee378d3e07486322ed57d10044a002da30e1"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "0850a75f803fdfb0cb8e3fd72288d081fd301a585b19f444795a2595e5c8e203",
+        "afterSha256": "41069ed93ca25243879095a9213af546716e7788b8050b4ce5b7b821cedbb5e0"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "88792ae57c96a33f5601d145ce4d236ceb2078f9a93449c314ab7868375992dd",
+        "afterSha256": "bf6bdc56a00360dc20c98eb2a3e673ac0fc2bd1e95a74182f3f20d0510cc466a"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "4763a51f9b9c7a803f08885cdac901411d0667e79b25a7ac343d7d960817901d",
+        "afterSha256": "2fe463c538dbfe363e858ee9e9c3807bec8b76e0e46bc9e7fa5dae62cd14f652"
       }
     ],
     "choiceRevisions": [
@@ -1898,5 +1923,220 @@
         "block_0006_0004"
       ]
     }
-  ]
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "19cb1c4eae8df9266a9e6aaf3f4370db9ea26f51ef3f30955c5f4d8be04fe553",
+        "spans": [
+          {
+            "start": 46,
+            "end": 58,
+            "text": "entran:salen",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 121,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 168,
+            "text": "':'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 265,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 295,
+            "text": "2:1",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 297,
+            "end": 304,
+            "text": "+2 : 01",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 307,
+            "end": 312,
+            "text": "2 : 1",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "b4775b6348f00581def27373c5a8afa8da7ee9eccaee9ec9714ebc0e1a4a651e",
+        "spans": [
+          {
+            "start": 1,
+            "end": 8,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 116,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 259,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "716465b841c495e4470ddd07025483d137c5cbaa9d4a649557c6465a2445785f",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 189,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 247,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 288,
+            "text": "static_cast<bool>(...)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 497,
+            "end": 503,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 505,
+            "end": 525,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "f29b4fe6c848555c604433b7510426e81da0a9137a86fd08a0eff2479fc9fa47",
+        "spans": [
+          {
+            "start": 35,
+            "end": 40,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 250,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 382,
+            "end": 405,
+            "text": "while (!std::cin.eof())",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 515,
+            "end": 535,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "e68f069b2249fd5976a6cfb71dfe017379ca455ae075e03ae013fdfba61085f7",
+        "spans": [
+          {
+            "start": 1,
+            "end": 8,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 269,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }

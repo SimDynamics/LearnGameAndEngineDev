@@ -58,7 +58,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Truncar hacia cero significa descartar la parte fraccionaria y conservar la parte entera con su signo. Así, `3.75` pasa a `3` y `-3.75` pasa a `-3`. En el caso negativo, elegir siempre un entero menor produciría `-4`, que es otra operación. Tampoco estamos redondeando al entero más cercano (Stroustrup, 2024).\n\nEsta conversión sólo tiene un resultado válido si el entero obtenido al descartar la fracción cabe en el tipo destino. Fuera de ese rango, no se puede suponer que el programa devolverá un entero útil ni que corregirá por sí solo el problema (Köppe et al., 2023, sección 7.3.11, párr. 1). Los valores propuestos en las actividades están dentro del rango de `int`.\n\nPara seguir cada caso, conserva el dato inicial, elimina su fracción y comprueba qué variable recibe ese resultado. No confundas esa operación con la presentación del número en la consola.",
+          "text": "Truncar hacia cero significa descartar la parte fraccionaria y conservar la parte entera con su signo. Así, `3.75` pasa a `3` y `-3.75` pasa a `-3`. En el caso negativo, elegir siempre un entero menor produciría `-4`, que es otra operación. Tampoco estamos redondeando al entero más cercano (Stroustrup, 2024).\n\nEsta conversión sólo tiene un resultado válido si el entero obtenido al descartar la fracción cabe en el tipo destino. Fuera de ese rango, no se puede suponer que el programa devolverá un entero útil ni que corregirá por sí solo el problema (Köppe et al., 2023). Los valores propuestos en las actividades están dentro del rango de `int`.\n\nPara seguir cada caso, conserva el dato inicial, elimina su fracción y comprueba qué variable recibe ese resultado. No confundas esa operación con la presentación del número en la consola.",
           "emphasis": [
             {
               "text": "Truncar hacia cero"
@@ -121,7 +121,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un estrechamiento es una conversión que puede perder información. Convertir `double` a `int` es un caso importante: el tipo entero no conserva las partes fraccionarias del dato (Stroustrup, 2024).\n\nLa inicialización con llaves añade una protección frente a conversiones implícitas de estrechamiento. Por eso `int cantidad{3.75};` debe producir un diagnóstico y ser rechazado. En cambio, `int cantidad = 3.75;` puede compilar y guardar sólo `3`, aunque el compilador avise de la pérdida (Stroustrup, 2024).\n\nLa regla de las llaves se aplica a la conversión entre esos tipos, no sólo a comprobar si el ejemplo tiene una fracción visible. Incluso `int cantidad{3.0};` se rechaza por convertir de coma flotante a entero (Köppe et al., 2023, sección 9.4.5, párr. 7.1). Si necesitamos guardar tres como entero con llaves, podemos escribir el literal entero `3`; si necesitamos conservar `3.75`, el tipo debe admitir esa fracción.\n\nEl siguiente programa contiene el error intencional. Su resultado esperado es un diagnóstico de compilación, no una salida de consola. Al reparar un caso así, conserva el dato que pide el problema; conseguir que compile cambiando la cantidad no basta.",
+          "text": "Un estrechamiento es una conversión que puede perder información. Convertir `double` a `int` es un caso importante: el tipo entero no conserva las partes fraccionarias del dato (Stroustrup, 2024).\n\nLa inicialización con llaves añade una protección frente a conversiones implícitas de estrechamiento. Por eso `int cantidad{3.75};` debe producir un diagnóstico y ser rechazado. En cambio, `int cantidad = 3.75;` puede compilar y guardar sólo `3`, aunque el compilador avise de la pérdida (Stroustrup, 2024).\n\nLa regla de las llaves se aplica a la conversión entre esos tipos, no sólo a comprobar si el ejemplo tiene una fracción visible. Incluso `int cantidad{3.0};` se rechaza por convertir de coma flotante a entero (Köppe et al., 2023). Si necesitamos guardar tres como entero con llaves, podemos escribir el literal entero `3`; si necesitamos conservar `3.75`, el tipo debe admitir esa fracción.\n\nEl siguiente programa contiene el error intencional. Su resultado esperado es un diagnóstico de compilación, no una salida de consola. Al reparar un caso así, conserva el dato que pide el problema; conseguir que compile cambiando la cantidad no basta.",
           "emphasis": [
             {
               "text": "protección frente a conversiones implícitas de estrechamiento"
@@ -173,7 +173,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la lección anterior podías elegir un literal como `11.0` para que la división utilizara un `double`. Ahora partimos de variables que ya son enteras y queremos conservarlas así. Podemos convertir el valor de una de ellas para el cálculo que lo necesita.\n\nLa notación `static_cast<double>(total)` obtiene el valor de `total` convertido a `double`. Dentro de `<double>` se indica el tipo destino; entre paréntesis se escribe la expresión que se convierte (Köppe et al., 2023, sección 7.6.1.9, párr. 1). Aquí no hay una asignación a `total`: su tipo y su contenido se conservan.\n\nEn `static_cast<double>(total) / partes`, la conversión forma parte de un operando antes de realizar la división. El cálculo puede producir una parte fraccionaria aunque `total` y `partes` continúen siendo variables enteras. Convertir un operando antes de dividir permite conservar esa parte del resultado (Stroustrup, 2024).",
+          "text": "En la lección anterior podías elegir un literal como `11.0` para que la división utilizara un `double`. Ahora partimos de variables que ya son enteras y queremos conservarlas así. Podemos convertir el valor de una de ellas para el cálculo que lo necesita.\n\nLa notación `static_cast<double>(total)` obtiene el valor de `total` convertido a `double`. Dentro de `<double>` se indica el tipo destino; entre paréntesis se escribe la expresión que se convierte (Köppe et al., 2023). Aquí no hay una asignación a `total`: su tipo y su contenido se conservan.\n\nEn `static_cast<double>(total) / partes`, la conversión forma parte de un operando antes de realizar la división. El cálculo puede producir una parte fraccionaria aunque `total` y `partes` continúen siendo variables enteras. Convertir un operando antes de dividir permite conservar esa parte del resultado (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "antes de realizar la división"
@@ -236,7 +236,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una respuesta válida en el relleno anterior es `double`. `static_cast<double>(total)` aporta trece como valor de coma flotante a la división, y dividirlo entre dos produce `6.5`. La variable `total` sigue siendo de tipo `int`; convertir su valor para una expresión no redefine la variable.\n\nPara el valor concreto `6.5`, también son válidos los nombres `float` y `long double`. Aceptar esas respuestas no supone que todos esos tipos tengan el mismo rango o la misma precisión (Köppe et al., 2023, sección 6.8.2, párr. 12). La escritura `double long` también nombra el tipo `long double`; cambiar el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023, sección 9.2.9.3, párr. 4 y tabla 17). Puedes continuar utilizando `double`, el tipo con el que venimos trabajando.\n\nUna conversión explícita hace visible qué representación estamos pidiendo. No garantiza que la elección conserve la información necesaria: los límites de la conversión siguen existiendo. Por ejemplo, convertir de `double` a `int` descarta la fracción y exige que el entero resultante quepa en el destino (Köppe et al., 2023, sección 7.3.11, párr. 1).\n\nLa decisión depende del objetivo. Para medir una parte de una longitud puede ser necesario conservar una fracción; para otra tarea podría interesar sólo la cantidad de unidades completas. Hay que distinguir esas intenciones antes de aceptar que la pérdida sea adecuada.",
+          "text": "Una respuesta válida en el relleno anterior es `double`. `static_cast<double>(total)` aporta trece como valor de coma flotante a la división, y dividirlo entre dos produce `6.5`. La variable `total` sigue siendo de tipo `int`; convertir su valor para una expresión no redefine la variable.\n\nPara el valor concreto `6.5`, también son válidos los nombres `float` y `long double`. Aceptar esas respuestas no supone que todos esos tipos tengan el mismo rango o la misma precisión (Köppe et al., 2023). La escritura `double long` también nombra el tipo `long double`; cambiar el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023). Puedes continuar utilizando `double`, el tipo con el que venimos trabajando.\n\nUna conversión explícita hace visible qué representación estamos pidiendo. No garantiza que la elección conserve la información necesaria: los límites de la conversión siguen existiendo. Por ejemplo, convertir de `double` a `int` descarta la fracción y exige que el entero resultante quepa en el destino (Köppe et al., 2023).\n\nLa decisión depende del objetivo. Para medir una parte de una longitud puede ser necesario conservar una fracción; para otra tarea podría interesar sólo la cantidad de unidades completas. Hay que distinguir esas intenciones antes de aceptar que la pérdida sea adecuada.",
           "emphasis": [
             {
               "text": "Una conversión explícita hace visible qué representación estamos pidiendo"
@@ -1582,6 +1582,26 @@
         "id": "block_0008_0002",
         "beforeSha256": "6e73b8eeebdb7f9698a79ea4413b97b1cee12725884ca80b18155c3d3672e4c4",
         "afterSha256": "ec4ebbb00a33cbbbfd595d25061f83101c414125fb74f0a2f2b5e801dbce0ec9"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "393a291241da2d8c9a0abd993eaed358f9a0c76e365e0883df68d163e3a4441a",
+        "afterSha256": "083f35913fc72a755dbed06fcbb48108ecf32bb7d03dc0ced060b87d69beaaa9"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3257a9e82cc4a1cb526c63f07af35460b0772af6d456f6a350fe1cc9d0741ceb",
+        "afterSha256": "a6f25b3948599371fdadbf4d9ba88ac28ad71878bf44fab59447aec2a8b8d3a2"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8c283d8b69127afdaf12076b3fc9781dc696e5b3e0cdb3e787e3b97667bcf4a4",
+        "afterSha256": "9aef390705c1595b99a027ae8ebd31d60e55085d5ad29dd8937dd70ee8caf173"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e9fa902fa0fd4b30e39d09ce6b1ee93bfa532ec29557c5e07fb1d8f7e8bf43b9",
+        "afterSha256": "8b7f963ebda6332c7065cf2e8432a5c57a331256ec75d370e6a0bb54c8967c9f"
       }
     ]
   },
@@ -1963,6 +1983,391 @@
             "end": 1773,
             "text": "siete",
             "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "994e6a3fda0c8334b5d55a480f0f64bcbd9aded1717565c50cd248f46024111d",
+        "spans": [
+          {
+            "start": 109,
+            "end": 113,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 134,
+            "text": "-3.75",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 146,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 215,
+            "text": "-4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 309,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 553,
+            "end": 573,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 644,
+            "end": 647,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "6bf05ac0c8f0c096b860c0c996b7a97c433158becd50d4780a0b63b3cda51aa6",
+        "spans": [
+          {
+            "start": 77,
+            "end": 83,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 91,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 195,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 328,
+            "text": "int cantidad{3.75};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 408,
+            "text": "int cantidad = 3.75;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 442,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 486,
+            "end": 504,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 663,
+            "text": "int cantidad{3.0};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 716,
+            "end": 736,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 761,
+            "end": 765,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 826,
+            "end": 827,
+            "text": "3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 856,
+            "end": 860,
+            "text": "3.75",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "146ad849e1b0282d574339be99f6f0617a6a1edac28a954b99282d9abe5dd7e1",
+        "spans": [
+          {
+            "start": 54,
+            "end": 58,
+            "text": "11.0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 101,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 296,
+            "text": "static_cast<double>(total)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 324,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 346,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 360,
+            "end": 368,
+            "text": "<double>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 455,
+            "end": 475,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 507,
+            "end": 512,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 557,
+            "end": 592,
+            "text": "static_cast<double>(total) / partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 724,
+            "end": 729,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 734,
+            "end": 740,
+            "text": "partes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 859,
+            "end": 877,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "a3d03eda73e430bee42e32ad6d67bd0d7e00f16d5962c881b7e761e2df0ae74c",
+        "spans": [
+          {
+            "start": 48,
+            "end": 54,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 84,
+            "text": "static_cast<double>(total)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "trece",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 176,
+            "text": "6.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 197,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 224,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 318,
+            "text": "6.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 359,
+            "text": "float",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 375,
+            "text": "long double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 476,
+            "end": 496,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 512,
+            "end": 523,
+            "text": "double long",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 549,
+            "end": 560,
+            "text": "long double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 588,
+            "end": 591,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 619,
+            "end": 639,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 670,
+            "end": 676,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 933,
+            "end": 939,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 944,
+            "end": 947,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1023,
+            "end": 1043,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]

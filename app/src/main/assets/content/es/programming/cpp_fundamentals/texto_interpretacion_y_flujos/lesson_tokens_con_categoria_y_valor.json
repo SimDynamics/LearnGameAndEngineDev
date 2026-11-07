@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`leer_token` recibe el flujo por referencia modificable: consumir un carácter cambia la posición de ese mismo objeto. Al devolver un token termina una llamada, no se descarta el resto del texto. La llamada siguiente parte de la posición que quedó.\n\nLa operación `get(actual)` obtiene un carácter, incluidos los espacios. Devuelve el flujo y permite comprobar si la extracción tuvo éxito; por eso puede usarse como condición del bucle. Es la función la que decide omitir exactamente el espacio, el tabulador y el salto de línea (Köppe et al., 2023, pp. 1646–1647).\n\nSi el carácter está entre `'0'` y `'9'`, la expresión `actual - '0'` obtiene su valor numérico. Por ejemplo, el carácter `'4'` se convierte en el entero 4. Los códigos de los dígitos decimales son consecutivos y están ordenados; no hace falta memorizar el código concreto de `'0'` para realizar esa resta (Köppe et al., 2023, p. 16).",
+          "text": "`leer_token` recibe el flujo por referencia modificable: consumir un carácter cambia la posición de ese mismo objeto. Al devolver un token termina una llamada, no se descarta el resto del texto. La llamada siguiente parte de la posición que quedó.\n\nLa operación `get(actual)` obtiene un carácter, incluidos los espacios. Devuelve el flujo y permite comprobar si la extracción tuvo éxito; por eso puede usarse como condición del bucle. Es la función la que decide omitir exactamente el espacio, el tabulador y el salto de línea (Köppe et al., 2023).\n\nSi el carácter está entre `'0'` y `'9'`, la expresión `actual - '0'` obtiene su valor numérico. Por ejemplo, el carácter `'4'` se convierte en el entero 4. Los códigos de los dígitos decimales son consecutivos y están ordenados; no hace falta memorizar el código concreto de `'0'` para realizar esa resta (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "termina una llamada",
@@ -83,7 +83,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La unidad de excepciones ya distinguió `throw` y `catch`. Aquí se utiliza `std::runtime_error`, un tipo estándar declarado en `<stdexcept>`. Se construye con un texto de diagnóstico y permite consultarlo mediante `what()` al capturar la excepción (Köppe et al., 2023, pp. 572, 574).\n\nEl lector lanza una excepción `std::runtime_error` con el diagnóstico `\"Caracter no admitido\"` si obtiene un carácter que no pertenece al repertorio. Si no puede obtener otro carácter, distingue el final normal de un fallo del flujo: el primero produce un token final y el segundo lanza una excepción de ese mismo tipo con el diagnóstico `\"Fallo del flujo\"`. El código no presenta un token válido para ocultar ninguno de esos fallos.",
+          "text": "La unidad de excepciones ya distinguió `throw` y `catch`. Aquí se utiliza `std::runtime_error`, un tipo estándar declarado en `<stdexcept>`. Se construye con un texto de diagnóstico y permite consultarlo mediante `what()` al capturar la excepción (Köppe et al., 2023).\n\nEl lector lanza una excepción `std::runtime_error` con el diagnóstico `\"Caracter no admitido\"` si obtiene un carácter que no pertenece al repertorio. Si no puede obtener otro carácter, distingue el final normal de un fallo del flujo: el primero produce un token final y el segundo lanza una excepción de ese mismo tipo con el diagnóstico `\"Fallo del flujo\"`. El código no presenta un token válido para ocultar ninguno de esos fallos.",
           "emphasis": [
             {
               "text": "texto de diagnóstico",
@@ -1289,6 +1289,16 @@
         "id": "block_0004_0005",
         "beforeSha256": "f67356278395cfa03fa6bf7317fa471d6b5eebcb21fdeff2128b1f61440d61db",
         "afterSha256": "8fd285fe168e4b8ce9482e5d0d747d055b031464141221ba9e1a428046b2fa37"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "0089a7667bdfd571331ba1db761b7b7d0b57697ac329289e67b9039865250c84",
+        "afterSha256": "9b1bb5077dcb78258c7746b6d5a8e5792ddeea07627e624843c19b896d469ac1"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "00bca0403e9f1571d23aae539ff7f80dc310ae8136551868de19a497df5d1ca2",
+        "afterSha256": "bf732a4662a344e37731e098c7d196cea4ab3a92c61ab81ad05a5498d09bae6a"
       }
     ],
     "choiceRevisions": [
@@ -1383,5 +1393,157 @@
         "block_0004_0004"
       ]
     }
-  ]
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "008d6166903ec853abd12247b60077e740e3c220175f54ce81d4a35055f6b8e9",
+        "spans": [
+          {
+            "start": 1,
+            "end": 11,
+            "text": "leer_token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 274,
+            "text": "get(actual)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 527,
+            "end": 547,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 577,
+            "end": 580,
+            "text": "'0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 585,
+            "end": 588,
+            "text": "'9'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 605,
+            "end": 617,
+            "text": "actual - '0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 672,
+            "end": 675,
+            "text": "'4'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 703,
+            "end": 704,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 826,
+            "end": 829,
+            "text": "'0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 855,
+            "end": 875,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "643f6805cc438a433d88a0e898809470412cf3ed18d19b37c40085770acf8ffa",
+        "spans": [
+          {
+            "start": 40,
+            "end": 45,
+            "text": "throw",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 55,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 93,
+            "text": "std::runtime_error",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 138,
+            "text": "<stdexcept>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 220,
+            "text": "what()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 267,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 319,
+            "text": "std::runtime_error",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 363,
+            "text": "\"Caracter no admitido\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 609,
+            "end": 626,
+            "text": "\"Fallo del flujo\"",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }

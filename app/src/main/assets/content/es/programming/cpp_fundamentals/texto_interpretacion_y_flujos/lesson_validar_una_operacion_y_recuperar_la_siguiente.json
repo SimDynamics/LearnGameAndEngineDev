@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de un fallo de formato, el flujo necesita volver a un estado que permita intentar otra lectura. En los flujos de cadena de estos ejemplos, `clear()` sin argumentos restablece los indicadores al estado sin error (Köppe et al., 2023, p. 1628).\n\nEsa operación no vuelve al principio del texto ni descarta sus caracteres. Tampoco repara por sí sola un problema grave del origen. Recuperar un error exige decidir también qué parte de la entrada se abandona y desde dónde se podrá continuar (Stroustrup, 2024, pp. 259–260).",
+          "text": "Después de un fallo de formato, el flujo necesita volver a un estado que permita intentar otra lectura. En los flujos de cadena de estos ejemplos, `clear()` sin argumentos restablece los indicadores al estado sin error (Köppe et al., 2023).\n\nEsa operación no vuelve al principio del texto ni descarta sus caracteres. Tampoco repara por sí sola un problema grave del origen. Recuperar un error exige decidir también qué parte de la entrada se abandona y desde dónde se podrá continuar (Stroustrup, 2024, pp. 259–260).",
           "emphasis": [
             {
               "text": "no vuelve al principio del texto ni descarta sus caracteres",
@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el formato establece una operación por línea, se puede abandonar el resto de la línea incorrecta y conservar las posteriores. Primero hay que distinguir un fallo de formato de un problema grave del flujo; el ejemplo comprueba `bad()` antes de intentar la recuperación.\n\nDespués del fallo de formato, `clear()` permite operar de nuevo y `std::getline` obtiene el resto de la línea. Esta lectura consume también el salto que la delimita, aunque no lo guarda en el texto obtenido (Köppe et al., 2023, pp. 865–866). Son dos responsabilidades distintas: habilitar la lectura y consumir la entrada rechazada.",
+          "text": "Si el formato establece una operación por línea, se puede abandonar el resto de la línea incorrecta y conservar las posteriores. Primero hay que distinguir un fallo de formato de un problema grave del flujo; el ejemplo comprueba `bad()` antes de intentar la recuperación.\n\nDespués del fallo de formato, `clear()` permite operar de nuevo y `std::getline` obtiene el resto de la línea. Esta lectura consume también el salto que la delimita, aunque no lo guarda en el texto obtenido (Köppe et al., 2023). Son dos responsabilidades distintas: habilitar la lectura y consumir la entrada rechazada.",
           "emphasis": [
             {
               "text": "habilitar la lectura y consumir la entrada rechazada",
@@ -147,7 +147,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de obtener `cantidad`, el programa intenta extraer una palabra en `extra`. Si la obtiene, queda un residuo y rechaza la línea. Si no la obtiene, comprueba que se haya llegado al final y que no exista un problema grave del flujo. La extracción de palabras omite el espacio inicial y falla si no obtiene ningún carácter (Köppe et al., 2023, p. 865).\n\nEn `\" 8 \"`, el intento de obtener `extra` omite el espacio final y llega al final. En `\"8\"`, la extracción del entero ya puede haber observado ese final. En ambos casos, el fallo esperado del intento de obtener otra palabra no invalida el entero reconocido: se consulta el estado final para distinguir la ausencia de residuo de otro problema (Köppe et al., 2023, pp. 1591, 1628).",
+          "text": "Después de obtener `cantidad`, el programa intenta extraer una palabra en `extra`. Si la obtiene, queda un residuo y rechaza la línea. Si no la obtiene, comprueba que se haya llegado al final y que no exista un problema grave del flujo. La extracción de palabras omite el espacio inicial y falla si no obtiene ningún carácter (Köppe et al., 2023).\n\nEn `\" 8 \"`, el intento de obtener `extra` omite el espacio final y llega al final. En `\"8\"`, la extracción del entero ya puede haber observado ese final. En ambos casos, el fallo esperado del intento de obtener otra palabra no invalida el entero reconocido: se consulta el estado final para distinguir la ausencia de residuo de otro problema (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "el fallo esperado del intento de obtener otra palabra no invalida el entero reconocido",
@@ -282,7 +282,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El lector exterior obtiene la línea; la función convierte y valida su contenido; `main` elige qué mensaje presentar. Son responsabilidades distintas. El rechazo de un análisis local no implica que el lector exterior deba abandonar las siguientes líneas.\n\nUna línea vacía es una lectura exterior válida que después no proporciona ningún entero al analizador. En cambio, llegar al final sin obtener una nueva línea termina el bucle y no crea una operación ficticia. `getline` distingue esos casos según si pudo extraer caracteres, incluido el delimitador que no almacena (Köppe et al., 2023, pp. 865–866).",
+          "text": "El lector exterior obtiene la línea; la función convierte y valida su contenido; `main` elige qué mensaje presentar. Son responsabilidades distintas. El rechazo de un análisis local no implica que el lector exterior deba abandonar las siguientes líneas.\n\nUna línea vacía es una lectura exterior válida que después no proporciona ningún entero al analizador. En cambio, llegar al final sin obtener una nueva línea termina el bucle y no crea una operación ficticia. `getline` distingue esos casos según si pudo extraer caracteres, incluido el delimitador que no almacena (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "Una línea vacía es una lectura exterior válida",
@@ -1393,6 +1393,26 @@
         "id": "block_0005_0000",
         "beforeSha256": "02bd15119f7aea2832a92b64f54231ed54dfe548a6e08835832f233fd996e235",
         "afterSha256": "6fbd1b58a4886882dd3f7ceababdb3dbb443d456985ad21aad47d6dcab5e565e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "834d83cc708913de0d1095169bc5aea2f7d64cbb355b1bc4d9fdc69fb998e1e2",
+        "afterSha256": "a396e97b76066754f5461047a2661da9153f45ff1845859474ddcbe0368d2a56"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "31dd72205fa71b7858746a7690450adea69c186506ce040d649d8122c0c202fc",
+        "afterSha256": "eb6e857006477329f8d41e5ffa365bb7b16e0f5465cfc532a3369d863e9222cf"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9d11f9b092ea88031999ac7dbc0b975e04bbce03d95846a1ed3c8fe882feeb59",
+        "afterSha256": "458888b47c3a41b709f0c21a14e69d9df3ab6c835e72c61a9fb7c8c3a5903d5d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "24bf89ae2e4598b99bda22d380074779972445625306b1551dd4ad4cc557026a",
+        "afterSha256": "4f8114853b3148f1f0f219558bf51f594bde294ac1ddf0fdebec14ffcb7a891b"
       }
     ],
     "choiceRevisions": [
@@ -1439,5 +1459,164 @@
         "block_0004_0004"
       ]
     }
-  ]
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "13701126c7ded562c28d601f4e40cd8ef9cbbfa8769f73799660be19180ac621",
+        "spans": [
+          {
+            "start": 148,
+            "end": 155,
+            "text": "clear()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 239,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 515,
+            "text": "(Stroustrup, 2024, pp. 259–260)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "574d4598b5cf47cee523ae6aa9b31ca9a6cbf889d5032038f06c94b2575f10f3",
+        "spans": [
+          {
+            "start": 230,
+            "end": 235,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 311,
+            "text": "clear()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 352,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 500,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 509,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "542854b36b86e727d40c767b48b5920767f8c636bf8608a2583be67605d9b420",
+        "spans": [
+          {
+            "start": 20,
+            "end": 28,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 80,
+            "text": "extra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 346,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 358,
+            "text": "\" 8 \"",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 384,
+            "end": 389,
+            "text": "extra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 439,
+            "text": "\"8\"",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 691,
+            "end": 711,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "7c221899864da55d119c8fbd8989c05e87a4f5eaa0eb711bb09560f5068a1f23",
+        "spans": [
+          {
+            "start": 82,
+            "end": 86,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 465,
+            "end": 472,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 569,
+            "end": 589,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }

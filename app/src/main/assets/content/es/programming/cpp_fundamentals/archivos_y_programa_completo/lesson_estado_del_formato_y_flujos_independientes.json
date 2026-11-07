@@ -59,7 +59,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada objeto flujo conserva su propia configuración. Un `std::ostringstream` nuevo comienza con base decimal; seleccionar una base en otro flujo no modifica esa configuración (Köppe et al., 2023, sección 31.5.4.2).\n\nEn el programa de esta página, `a`, `b` y `std::cout` son tres objetos distintos. Las inserciones dirigidas a `a` cambian su contenido o sus opciones; no configuran por esa vía los otros dos flujos. Obtener una cadena con `a.str()` comunica los caracteres que ya se formaron, sin transferir las opciones de formato.\n\nUna función puede aprovechar un flujo local nuevo para componer una cadena con sus propias opciones y devolverla al programa que la llamó. El destino que recibe la cadena conserva su configuración para las inserciones de enteros que haga después.",
+          "text": "Cada objeto flujo conserva su propia configuración. Un `std::ostringstream` nuevo comienza con base decimal; seleccionar una base en otro flujo no modifica esa configuración (Köppe et al., 2023).\n\nEn el programa de esta página, `a`, `b` y `std::cout` son tres objetos distintos. Las inserciones dirigidas a `a` cambian su contenido o sus opciones; no configuran por esa vía los otros dos flujos. Obtener una cadena con `a.str()` comunica los caracteres que ya se formaron, sin transferir las opciones de formato.\n\nUna función puede aprovechar un flujo local nuevo para componer una cadena con sus propias opciones y devolverla al programa que la llamó. El destino que recibe la cadena conserva su configuración para las inserciones de enteros que haga después.",
           "emphasis": [
             {
               "text": "Cada objeto flujo conserva su propia configuración",
@@ -149,7 +149,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Además de la base, podemos elegir si se indica mediante un prefijo. `std::showbase` activa esa petición; `std::noshowbase` la desactiva. Con los enteros no negativos de esta lección, hexadecimal utiliza el prefijo 0x y octal un cero inicial; decimal no añade un prefijo. El cero se escribe 0 también con `std::showbase` en estas bases.\n\nOtro ajuste controla las letras generadas al presentar el entero hexadecimal: `std::uppercase` selecciona mayúsculas tanto para sus dígitos como para la X del prefijo; `std::nouppercase` selecciona minúsculas. Estos manipuladores no cambian las letras de las cadenas que insertamos como texto.\n\nSon opciones independientes y persistentes: cambiar la base no retira por sí solo la petición de prefijos; retirar los prefijos no cambia la base; elegir minúsculas o mayúsculas tampoco selecciona otra base (Köppe et al., 2023, secciones 31.5.5.1 y 31.5.5.3). El ejemplo siguiente produce 0x1a|0X1A|032|26, sin salto final.",
+          "text": "Además de la base, podemos elegir si se indica mediante un prefijo. `std::showbase` activa esa petición; `std::noshowbase` la desactiva. Con los enteros no negativos de esta lección, hexadecimal utiliza el prefijo 0x y octal un cero inicial; decimal no añade un prefijo. El cero se escribe 0 también con `std::showbase` en estas bases.\n\nOtro ajuste controla las letras generadas al presentar el entero hexadecimal: `std::uppercase` selecciona mayúsculas tanto para sus dígitos como para la X del prefijo; `std::nouppercase` selecciona minúsculas. Estos manipuladores no cambian las letras de las cadenas que insertamos como texto.\n\nSon opciones independientes y persistentes: cambiar la base no retira por sí solo la petición de prefijos; retirar los prefijos no cambia la base; elegir minúsculas o mayúsculas tampoco selecciona otra base (Köppe et al., 2023). El ejemplo siguiente produce 0x1a|0X1A|032|26, sin salto final.",
           "emphasis": [
             {
               "text": "opciones independientes y persistentes",
@@ -1466,6 +1466,16 @@
         "id": "block_0007_0004",
         "beforeSha256": "48bc54a6907017b9acd70ec083f2052f34167dd67fae4801df5f15f39a950f34",
         "afterSha256": "67440059de5bb53d32621038b2ecd83a2ff3617c23d933431d24476057cc5099"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "c84f620e63a0e0bbed200d51783b1f8e96a5e8f23df489e50c75a1afed862747",
+        "afterSha256": "a252232275087676fa33d78f5ca2fb52406b8bf117fa40f56212342d3044b23b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9996c09f4b9a4e72742c442b3487314545e5e9e24cbd8c492e2d26bedb385b49",
+        "afterSha256": "27fe6ecef62810feeead445041526bbe7e2e899beed18cbab4b056603457cbc8"
       }
     ]
   },
@@ -1490,5 +1500,171 @@
         "block_0006_0002"
       ]
     }
-  ]
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "adaeb464e9edb8b4b40c647154448e081a521a7cd7858c300823fdd5a9f076b7",
+        "spans": [
+          {
+            "start": 56,
+            "end": 74,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 194,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 249,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 259,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 309,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 387,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 427,
+            "text": "a.str()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "aef9d0615fc515b24e16e4caefbd3c10b7cf567c26fddb9af13f137d03ec1673",
+        "spans": [
+          {
+            "start": 69,
+            "end": 82,
+            "text": "std::showbase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 121,
+            "text": "std::noshowbase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 216,
+            "text": "0x",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 232,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 278,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 318,
+            "text": "std::showbase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 430,
+            "text": "std::uppercase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 490,
+            "end": 491,
+            "text": "X",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 522,
+            "text": "std::nouppercase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 839,
+            "end": 859,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 890,
+            "end": 906,
+            "text": "0x1a|0X1A|032|26",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }

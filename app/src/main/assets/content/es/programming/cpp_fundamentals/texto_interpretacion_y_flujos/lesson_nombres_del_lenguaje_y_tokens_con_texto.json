@@ -130,7 +130,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa sólo inspecciona tokens: presenta su categoría y los datos que utiliza. Reconoce `crea` y `=`, pero todavía no ejecuta declaraciones ni asignaciones. Leer los caracteres de una entrada y aceptar una frase con significado son responsabilidades diferentes.\n\nAl comenzar un nombre, `std::string palabra(1, actual)` define `palabra` con una copia del carácter guardado en `actual`. El primer argumento, `1`, indica la cantidad de copias; el segundo aporta el carácter. Si `actual` contiene `'s'`, la cadena comienza siendo `\"s\"`. Esta forma de construcción utiliza los paréntesis mostrados (Köppe et al., 2023, sección [string.cons]).\n\nLa operación `palabra += actual`, ya utilizada al reunir caracteres, añade cada carácter nuevo al final. `palabra.size()` devuelve cuántos caracteres contiene la cadena; en estas entradas ASCII coincide con la longitud del nombre. Por eso la comparación con `12` detecta el primer carácter que supera nuestro límite. `empty()` consulta si la cadena está vacía (Köppe et al., 2023, sección [string.capacity]).\n\n`nombre_valido` utiliza esas consultas antes de acceder a `texto[0]`, el primer carácter. Rechaza primero una cadena vacía: `||` evalúa de izquierda a derecha y deja de evaluar al encontrar una condición `true`. Por eso no intenta consultar ese carácter cuando la cadena está vacía."
+          "text": "Este programa sólo inspecciona tokens: presenta su categoría y los datos que utiliza. Reconoce `crea` y `=`, pero todavía no ejecuta declaraciones ni asignaciones. Leer los caracteres de una entrada y aceptar una frase con significado son responsabilidades diferentes.\n\nAl comenzar un nombre, `std::string palabra(1, actual)` define `palabra` con una copia del carácter guardado en `actual`. El primer argumento, `1`, indica la cantidad de copias; el segundo aporta el carácter. Si `actual` contiene `'s'`, la cadena comienza siendo `\"s\"`. Esta forma de construcción utiliza los paréntesis mostrados (Köppe et al., 2023).\n\nLa operación `palabra += actual`, ya utilizada al reunir caracteres, añade cada carácter nuevo al final. `palabra.size()` devuelve cuántos caracteres contiene la cadena; en estas entradas ASCII coincide con la longitud del nombre. Por eso la comparación con `12` detecta el primer carácter que supera nuestro límite. `empty()` consulta si la cadena está vacía (Köppe et al., 2023).\n\n`nombre_valido` utiliza esas consultas antes de acceder a `texto[0]`, el primer carácter. Rechaza primero una cadena vacía: `||` evalúa de izquierda a derecha y deja de evaluar al encontrar una condición `true`. Por eso no intenta consultar ese carácter cuando la cadena está vacía."
         },
         {
           "type": "code",
@@ -1181,6 +1181,11 @@
         "id": "block_0006_0003",
         "beforeSha256": "247f9244e94fda91cdaf237cb4547d45991ed4eba77792370f9c2281b1658ef5",
         "afterSha256": "ad8b86b27e9f5055a941ea34c488975fad987afe8e3943f255839397e0f047ce"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "4c0807ba339541ae920b6ca5cfb4308c4aec246a09688e7250f9b446e531174f",
+        "afterSha256": "243af028daa08eae45c32b7228f665f5fda6ea1d51bd4f053efa00f2af97f79f"
       }
     ]
   },
@@ -1205,5 +1210,150 @@
         "block_0005_0003"
       ]
     }
-  ]
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "b2a56dd4bb830d94a1bd10cd1f8a236c6de48df2535908fe2093c24f1f1d9d55",
+        "spans": [
+          {
+            "start": 96,
+            "end": 100,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 294,
+            "end": 324,
+            "text": "std::string palabra(1, actual)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 341,
+            "text": "palabra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 383,
+            "end": 389,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 414,
+            "end": 415,
+            "text": "1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 483,
+            "end": 489,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 501,
+            "end": 504,
+            "text": "'s'",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 534,
+            "end": 537,
+            "text": "\"s\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 600,
+            "end": 620,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 637,
+            "end": 654,
+            "text": "palabra += actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 729,
+            "end": 743,
+            "text": "palabra.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 882,
+            "end": 884,
+            "text": "12",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 941,
+            "end": 948,
+            "text": "empty()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 983,
+            "end": 1003,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 1007,
+            "end": 1020,
+            "text": "nombre_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1065,
+            "end": 1073,
+            "text": "texto[0]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1131,
+            "end": 1133,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1211,
+            "end": 1215,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      }
+    ]
+  }
 }

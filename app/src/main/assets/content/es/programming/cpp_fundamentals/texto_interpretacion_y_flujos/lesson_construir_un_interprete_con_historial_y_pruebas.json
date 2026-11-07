@@ -28,7 +28,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La banda de -100..100 limita los resultados parciales de cada operación; la suma del historial reúne resultados de operaciones ya aceptadas y tiene otro dominio.\n\nEl límite de 120 caracteres permite usar una cota conservadora de 120 operaciones o intentos que consumen una frontera o un carácter. Cada resultado aceptado tiene magnitud máxima 100; por tanto, la suma del historial tiene magnitud como máximo 12000. Los contadores y esa suma son representables en `int` conforme al rango mínimo exigido por C++ (Köppe et al., 2023, sección [basic.fundamental]). Conserva ese límite de texto en tus pruebas.",
+          "text": "La banda de -100..100 limita los resultados parciales de cada operación; la suma del historial reúne resultados de operaciones ya aceptadas y tiene otro dominio.\n\nEl límite de 120 caracteres permite usar una cota conservadora de 120 operaciones o intentos que consumen una frontera o un carácter. Cada resultado aceptado tiene magnitud máxima 100; por tanto, la suma del historial tiene magnitud como máximo 12000. Los contadores y esa suma son representables en `int` conforme al rango mínimo exigido por C++ (Köppe et al., 2023). Conserva ese límite de texto en tus pruebas.",
           "emphasis": [
             {
               "text": "tiene otro dominio",
@@ -1603,6 +1603,11 @@
         "id": "block_0007_0000",
         "beforeSha256": "2bec9a7f0d89b8ef8c621c3d1a641875fcf6bd3bf4631fcae2dadc8ad62c5692",
         "afterSha256": "6e274263825213dbaf8eb0ebe1f1ffcf46e906619cf2c20526c2f2a335eeae04"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4c7a9c02931a492bed7861f73d386d4a007424ac04cdfbddcdae86d1a3ffe610",
+        "afterSha256": "0405b44359cd69cec23b708ecf1686b734d1fda5a3cfed66d2d1556e0ba4f40d"
       }
     ],
     "compilerRevisions": [
@@ -1657,6 +1662,67 @@
               "language": "cpp",
               "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    std::cout << \"\\n\";\n    int positivos = 0;\n    int negativos = 0;\n    for (int valor : aceptados) {\n        if (valor > 0) ++positivos;\n        else if (valor < 0) ++negativos;\n    }\n    std::cout << \"Positivos: \" << positivos << \"\\nNegativos: \" << negativos << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"3;-4;0;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"-1;-2;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"5+;2;\");\n    return 0;\n}\n"
             }
+          }
+        ]
+      }
+    ]
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "b8b5e31ed54e2b762b997b652e69ffd0c9e9b917e524cd34a7b29df73ef14209",
+        "spans": [
+          {
+            "start": 12,
+            "end": 21,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 232,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 346,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 413,
+            "text": "12000",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 464,
+            "end": 467,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 530,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       }

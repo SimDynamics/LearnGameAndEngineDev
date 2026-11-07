@@ -59,7 +59,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un flujo conserva indicadores de lo ocurrido durante sus operaciones. `eof()` consulta si se ha encontrado el final de la entrada; no anuncia de antemano si queda un próximo dato. `fail()` consulta si hay un fallo que impide tratar la operación como satisfactoria; también incluye el estado grave que consulta `bad()` (Köppe et al., 2023, p. 1628).\n\n`bad()` corresponde a un problema grave de la operación del flujo, distinto de un simple formato inesperado. `good()` es más estricto: sólo devuelve verdadero cuando no hay ningún indicador de error ni de final activado (Köppe et al., 2023, pp. 1628–1629; Stroustrup, 2024, pp. 258–259).",
+          "text": "Un flujo conserva indicadores de lo ocurrido durante sus operaciones. `eof()` consulta si se ha encontrado el final de la entrada; no anuncia de antemano si queda un próximo dato. `fail()` consulta si hay un fallo que impide tratar la operación como satisfactoria; también incluye el estado grave que consulta `bad()` (Köppe et al., 2023).\n\n`bad()` corresponde a un problema grave de la operación del flujo, distinto de un simple formato inesperado. `good()` es más estricto: sólo devuelve verdadero cuando no hay ningún indicador de error ni de final activado (Köppe et al., 2023; Stroustrup, 2024, pp. 258–259).",
           "emphasis": [
             {
               "text": "no anuncia de antemano si queda un próximo dato",
@@ -73,7 +73,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los indicadores pueden coexistir; no son cuatro alternativas excluyentes. Al usar el flujo como condición, la conversión devuelve verdadero mientras `fail()` sea falso. Por tanto, `eof()` por sí solo no impide que esa condición sea verdadera: alcanzar el final y completar una extracción pueden ocurrir juntos (Köppe et al., 2023, p. 1628).\n\nTambién pueden coincidir `eof()` y `fail()` después de una representación incompleta al final, como un signo menos sin dígitos. Esa coincidencia no demuestra, por sí sola, si faltaba otro dato o si había comenzado una representación inválida. Para distinguir esos casos hará falta examinar algo más que los indicadores (Köppe et al., 2023, pp. 1591, 1628).",
+          "text": "Los indicadores pueden coexistir; no son cuatro alternativas excluyentes. Al usar el flujo como condición, la conversión devuelve verdadero mientras `fail()` sea falso. Por tanto, `eof()` por sí solo no impide que esa condición sea verdadera: alcanzar el final y completar una extracción pueden ocurrir juntos (Köppe et al., 2023).\n\nTambién pueden coincidir `eof()` y `fail()` después de una representación incompleta al final, como un signo menos sin dígitos. Esa coincidencia no demuestra, por sí sola, si faltaba otro dato o si había comenzado una representación inválida. Para distinguir esos casos hará falta examinar algo más que los indicadores (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "Los indicadores pueden coexistir",
@@ -160,7 +160,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La extracción obtiene el entero `12` y deja `'x'` disponible para la lectura posterior con `get`. Una extracción hacia `int` puede reconocer un prefijo numérico sin exigir que todo el texto sea exclusivamente ese entero (Köppe et al., 2023, pp. 1590–1591).\n\nSi el formato exige un único número por línea, todavía hay que comprobar si quedaron caracteres que el contrato no admite. Obtener un dato y consumir una operación completa son requisitos diferentes.",
+          "text": "La extracción obtiene el entero `12` y deja `'x'` disponible para la lectura posterior con `get`. Una extracción hacia `int` puede reconocer un prefijo numérico sin exigir que todo el texto sea exclusivamente ese entero (Köppe et al., 2023).\n\nSi el formato exige un único número por línea, todavía hay que comprobar si quedaron caracteres que el contrato no admite. Obtener un dato y consumir una operación completa son requisitos diferentes.",
           "emphasis": [
             {
               "text": "Obtener un dato y consumir una operación completa son requisitos diferentes",
@@ -189,7 +189,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los ejemplos usan texto almacenado en memoria; no necesitan provocar una avería física. Para observar el estado grave de forma controlada, el programa llama a `setstate`, que añade el indicador solicitado a los que ya tenía el flujo. `std::ios::badbit` identifica ese indicador de problema grave (Köppe et al., 2023, p. 1628).\n\nLa prueba permite observar las consultas del estado. No reproduce la causa de una avería ni enseña a reparar un origen dañado.",
+          "text": "Los ejemplos usan texto almacenado en memoria; no necesitan provocar una avería física. Para observar el estado grave de forma controlada, el programa llama a `setstate`, que añade el indicador solicitado a los que ya tenía el flujo. `std::ios::badbit` identifica ese indicador de problema grave (Köppe et al., 2023).\n\nLa prueba permite observar las consultas del estado. No reproduce la causa de una avería ni enseña a reparar un origen dañado.",
           "emphasis": [
             {
               "text": "No reproduce la causa de una avería",
@@ -204,7 +204,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida ocupa una línea:\n\nbad: 1 fail: 1 eof: 0\n\nEl estado que detecta `bad()` también hace verdadero `fail()`. Por eso, si se necesita distinguir un problema grave de otras causas de terminación, hay que considerar ese indicador antes de decidir que sólo hubo un formato inesperado o un final de entrada (Köppe et al., 2023, p. 1628).",
+          "text": "La salida ocupa una línea:\n\nbad: 1 fail: 1 eof: 0\n\nEl estado que detecta `bad()` también hace verdadero `fail()`. Por eso, si se necesita distinguir un problema grave de otras causas de terminación, hay que considerar ese indicador antes de decidir que sólo hubo un formato inesperado o un final de entrada (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "también hace verdadero",
@@ -376,7 +376,7 @@
         },
         {
           "type": "note",
-          "text": "En estos programas no se ha configurado el flujo para lanzar excepciones por sus indicadores. Un formato incorrecto se comunica mediante el estado y la condición de la lectura; no hay que suponer que cada resultado verdadero de `fail()` lanza automáticamente una excepción. La configuración de qué estados provocan excepciones es una decisión adicional, distinta de consultar el estado (Köppe et al., 2023, pp. 1626, 1629).",
+          "text": "En estos programas no se ha configurado el flujo para lanzar excepciones por sus indicadores. Un formato incorrecto se comunica mediante el estado y la condición de la lectura; no hay que suponer que cada resultado verdadero de `fail()` lanza automáticamente una excepción. La configuración de qué estados provocan excepciones es una decisión adicional, distinta de consultar el estado (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "una decisión adicional, distinta de consultar el estado",
@@ -1405,6 +1405,36 @@
         "id": "block_0006_0004",
         "beforeSha256": "ccba0a5461601602d2c74520a20b3b800156e23c4156c6f9edb613908d4c3a5f",
         "afterSha256": "0853764d61cd61df3f1ab10f310ff237a8ee4b057151d5c37e99490963589d3d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "56db8aa0eb70e0f01858966ff469a843ab8527281cb187ed0fd361e0d3ecd931",
+        "afterSha256": "a3a634a53de92c74f079fb09a513d9a64a2fc5f7666cdf9dbacbd15b8af1c065"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "81476ef616b9ede2edb4029cd079c9a23c9002c3b5388ed4c2e688050fb21c32",
+        "afterSha256": "6dda14c59a5d29dd86c1fb4a4a5cefdcf1119632b5aabd6560867f66cb0ab1ff"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "59a160424312cfe6876d89e922423d4d504321a9d88e7dbdd6b72dd1081451d3",
+        "afterSha256": "49d2a0b446c7b13edd327fc3989800c361562bf3f435263d7f43d62c33b48c6e"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2cc1cb38556ec59ba3f498d555b5a680e5159c66894151063183cdbc26e0fbea",
+        "afterSha256": "63a851b1c8ad3fbe1b59e6367707f5bef3a609aef4aa15dbb1e8988adadb2797"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "5076b377f56047cfca67b76c0ad4056e623c8d8320f7e31d3430280dd342fa9a",
+        "afterSha256": "75ef764ca1fa86bb439e05912be29ff473ab5db8cf504f9cd7ec0d8374f4a5bc"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "3ea39cb025d610b3c3f275fd357b937cb52c5694a9fef3b364120bc07fc82d45",
+        "afterSha256": "a85e0fee88feb6f62ca3f2dfce31b0d152a69db7a5da26500513357ae73e4823"
       }
     ],
     "choiceRevisions": [
@@ -1451,5 +1481,290 @@
         "block_0005_0003"
       ]
     }
-  ]
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "c4108075c5556ee6a18bc89b84fd6111171f2e3e5ef3be140d89b7563effadde",
+        "spans": [
+          {
+            "start": 71,
+            "end": 76,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 187,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 316,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 338,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 347,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 457,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 490,
+            "end": 499,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 612,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024, pp. 258–259)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "9c598f716fc99d79b5af6fff98f4e52b686beb2dab5e77bcf88dcea5ae30c8e7",
+        "spans": [
+          {
+            "start": 41,
+            "end": 47,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 139,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 156,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 167,
+            "text": "falso",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 186,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 241,
+            "text": "verdadera",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 330,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 364,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 375,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 447,
+            "text": "signo menos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 652,
+            "end": 672,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "6dfc702d53b37770fcf8c4108c7b3fc7a6174d9bfbd0c1bc8086768cc416ec31",
+        "spans": [
+          {
+            "start": 33,
+            "end": 35,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "'x'",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 95,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 123,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 240,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "f649980c8f4f9b62dd9284a70b0ca639f6babb8b1c26581a9668e368bdba4084",
+        "spans": [
+          {
+            "start": 160,
+            "end": 168,
+            "text": "setstate",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 251,
+            "text": "std::ios::badbit",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 316,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "a2f64ab377c4d3da950d77264d687c2751a739cf95a40f29e90ef1379d5bfa2e",
+        "spans": [
+          {
+            "start": 28,
+            "end": 49,
+            "text": "bad: 1 fail: 1 eof: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 79,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 103,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 111,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 327,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "bbdbf3dcfc78cdafd242edcd3bb577ee14d76ec7f09936e166e2baafbdf61aad",
+        "spans": [
+          {
+            "start": 229,
+            "end": 235,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 406,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }

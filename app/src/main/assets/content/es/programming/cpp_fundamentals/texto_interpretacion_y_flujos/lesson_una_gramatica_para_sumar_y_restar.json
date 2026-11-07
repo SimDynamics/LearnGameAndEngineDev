@@ -107,7 +107,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`resultado_en_dominio` comprueba el candidato antes de aceptarlo como acumulado. En la etapa ampliada, un acumulado entre −100 y 100 y un número entre 0 y 99 producen, al sumarse o restarse, un candidato entre −199 y 199. Esos valores caben incluso en el rango mínimo garantizado para `int` (Köppe et al., 2023, § 6.8.2).\n\nDespués se aplica el límite del intérprete: sólo se conserva el candidato si está entre −100 y 100. Cada resultado parcial cuenta. Por ejemplo, `99+2-2;` se rechaza al alcanzar 101; no se espera a que una resta posterior vuelva a reducirlo. La guarda mantiene la cota necesaria para que el cálculo siguiente también sea seguro.",
+          "text": "`resultado_en_dominio` comprueba el candidato antes de aceptarlo como acumulado. En la etapa ampliada, un acumulado entre −100 y 100 y un número entre 0 y 99 producen, al sumarse o restarse, un candidato entre −199 y 199. Esos valores caben incluso en el rango mínimo garantizado para `int` (Köppe et al., 2023).\n\nDespués se aplica el límite del intérprete: sólo se conserva el candidato si está entre −100 y 100. Cada resultado parcial cuenta. Por ejemplo, `99+2-2;` se rechaza al alcanzar 101; no se espera a que una resta posterior vuelva a reducirlo. La guarda mantiene la cota necesaria para que el cálculo siguiente también sea seguro.",
           "emphasis": [
             {
               "text": "Cada resultado parcial cuenta.",
@@ -1461,6 +1461,11 @@
         "id": "block_0005_0000",
         "beforeSha256": "8ba242f7f0d536c856dd87e10f22e09012004dc59c59c78b5ad87f6d82d1fef6",
         "afterSha256": "d07c5fef7fd2d4a667727f5c6246fbec920d23c7788fbf2d1e292586a7305f57"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d5d533a2afb239ad76f3d2a443b61bf325379f1717f33d0049c642845e94ab6b",
+        "afterSha256": "9607553ae5a852e6f35e1c5cd4be701b523b1f2691d880bf0dc3cef2dfb6ff9a"
       }
     ],
     "compilerRevisions": [
@@ -1488,6 +1493,109 @@
               "language": "cpp",
               "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texto extra tras la operacion\");\n        }\n        std::cout << \"Resultado: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"17-6+4;\");\n    probar(\"20-6-3;\");\n    probar(\"0;\");\n    probar(\"2-5;\");\n    probar(\"4+;\");\n    probar(\"4 2;\");\n    probar(\"4+2\");\n    probar(\"99+2;\");\n    probar(\"\");\n    probar(\"2;3;\");\n    return 0;\n}\n"
             }
+          }
+        ]
+      }
+    ]
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "3a2aaceb47ea5dfa0f5a45f7c2ebc31daedd961ea46074ab0e35b3713d059d67",
+        "spans": [
+          {
+            "start": 1,
+            "end": 21,
+            "text": "resultado_en_dominio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "−100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 214,
+            "text": "−199",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 220,
+            "text": "199",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 289,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 311,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 406,
+            "text": "−100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 409,
+            "end": 412,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 459,
+            "end": 466,
+            "text": "99+2-2;",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 491,
+            "end": 494,
+            "text": "101",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       }

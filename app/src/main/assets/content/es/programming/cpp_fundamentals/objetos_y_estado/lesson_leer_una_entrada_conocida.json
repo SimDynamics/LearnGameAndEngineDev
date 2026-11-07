@@ -199,7 +199,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Podemos encadenar las lecturas: en `std::cin >> zona >> cantidad;`, primero se extrae el texto hacia `zona` y después el entero hacia `cantidad`. El segundo paso continúa desde donde quedó la entrada tras el primero. Para los datos separados de nuestros ejemplos, un espacio y un salto de línea permiten la misma separación (Stroustrup, 2024).\n\nUna extracción hacia `char` recibe una unidad de carácter. En el formato habitual de estos programas también omite los espacios en blanco iniciales. Si se proporciona una letra sencilla, como las que acabamos de estudiar, esa letra queda guardada en el destino (Köppe et al., 2023, sección 31.7.5.3.3, párr. 12; sección 31.7.5.2.4, párr. 2).\n\nNo todas las lecturas separan los datos del mismo modo. En una entrada como `6C`, la extracción de un entero puede leer el seis y detenerse antes de la letra; una extracción posterior hacia `char` puede recoger esa letra. No hace falta un espacio entre ambos en ese caso. En cambio, una extracción hacia `std::string` recogería todo el fragmento `6C` (Köppe et al., 2023, sección 30.4.3.2.3, párr. 3; sección 23.4.4.4, párr. 1). El tipo y el orden de cada destino importan tanto como los caracteres entregados.",
+          "text": "Podemos encadenar las lecturas: en `std::cin >> zona >> cantidad;`, primero se extrae el texto hacia `zona` y después el entero hacia `cantidad`. El segundo paso continúa desde donde quedó la entrada tras el primero. Para los datos separados de nuestros ejemplos, un espacio y un salto de línea permiten la misma separación (Stroustrup, 2024).\n\nUna extracción hacia `char` recibe una unidad de carácter. En el formato habitual de estos programas también omite los espacios en blanco iniciales. Si se proporciona una letra sencilla, como las que acabamos de estudiar, esa letra queda guardada en el destino (Köppe et al., 2023).\n\nNo todas las lecturas separan los datos del mismo modo. En una entrada como `6C`, la extracción de un entero puede leer el seis y detenerse antes de la letra; una extracción posterior hacia `char` puede recoger esa letra. No hace falta un espacio entre ambos en ese caso. En cambio, una extracción hacia `std::string` recogería todo el fragmento `6C` (Köppe et al., 2023). El tipo y el orden de cada destino importan tanto como los caracteres entregados.",
           "emphasis": [
             {
               "text": "el texto hacia `zona` y después el entero hacia `cantidad`"
@@ -241,7 +241,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los programas de esta lección presuponen entradas con los datos y los tipos indicados. Si una extracción hacia `int` encuentra la palabra `muchos`, no obtiene el entero que necesita la tarea. Que el programa haya compilado no convierte esa palabra en una cantidad.\n\nUna extracción fallida tampoco permite suponer que la variable conserva siempre su valor inicial. El flujo registra el fallo y una conversión numérica que no obtiene el dato solicitado puede modificar el valor del destino. Por eso el inicializador no sustituye comprobar el resultado de la lectura (Köppe et al., 2023, sección 31.7.5.3.2, párr. 3; sección 30.4.3.2.3, párr. 3).\n\nMás adelante aprenderemos a comprobar ese estado y a elegir cómo responder. Aquí distinguimos el límite y trabajamos en el editor de código con las entradas válidas propuestas; todavía no se pide escribir un verificador ni recuperar un flujo después de un error.",
+          "text": "Los programas de esta lección presuponen entradas con los datos y los tipos indicados. Si una extracción hacia `int` encuentra la palabra `muchos`, no obtiene el entero que necesita la tarea. Que el programa haya compilado no convierte esa palabra en una cantidad.\n\nUna extracción fallida tampoco permite suponer que la variable conserva siempre su valor inicial. El flujo registra el fallo y una conversión numérica que no obtiene el dato solicitado puede modificar el valor del destino. Por eso el inicializador no sustituye comprobar el resultado de la lectura (Köppe et al., 2023).\n\nMás adelante aprenderemos a comprobar ese estado y a elegir cómo responder. Aquí distinguimos el límite y trabajamos en el editor de código con las entradas válidas propuestas; todavía no se pide escribir un verificador ni recuperar un flujo después de un error.",
           "emphasis": [
             {
               "text": "el inicializador no sustituye comprobar el resultado de la lectura"
@@ -250,7 +250,7 @@
         },
         {
           "type": "paragraph",
-          "text": "También hay que distinguir leer un valor de aceptar toda la entrada. Con `8.5`, una extracción hacia `int` puede obtener el prefijo `8` y dejar `.5` disponible. Eso no significa que haya conservado la medida ocho y medio ni que haya consumido todos los caracteres (Köppe et al., 2023, sección 30.4.3.2.3, párr. 3).\n\nUn prefijo es aquí la parte inicial de la entrada que se pudo interpretar. Si la tarea exige exactamente un entero y ningún dato adicional, falta comprobar esa exigencia. El formato completo y sus comprobaciones se estudiarán cuando dispongamos de las instrucciones necesarias.",
+          "text": "También hay que distinguir leer un valor de aceptar toda la entrada. Con `8.5`, una extracción hacia `int` puede obtener el prefijo `8` y dejar `.5` disponible. Eso no significa que haya conservado la medida ocho y medio ni que haya consumido todos los caracteres (Köppe et al., 2023).\n\nUn prefijo es aquí la parte inicial de la entrada que se pudo interpretar. Si la tarea exige exactamente un entero y ningún dato adicional, falta comprobar esa exigencia. El formato completo y sus comprobaciones se estudiarán cuando dispongamos de las instrucciones necesarias.",
           "emphasis": [
             {
               "text": "leer un valor de aceptar toda la entrada"
@@ -2218,6 +2218,21 @@
         "id": "block_0009_0005",
         "beforeSha256": "2d10a73745b9ef935aac4ba1a6b67463eb13e304ffbd29359004663fdc61962b",
         "afterSha256": "e96bba8b3e5dc725699640ee53c2038fedbab34d668028adc1f58c41d0d02d84"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "b323bc0aa5eb2ced6f1e3acc650af03608d862ec8a289aa01807434112169609",
+        "afterSha256": "7d8939601c46ca67bfd6d6a663d97bed8693fb8d3c597fffac66385c13397c29"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "0bfdf8fa9aa6a188fa668ecf0506c16c20b7e477b3bb794c687e8d2158f45fd3",
+        "afterSha256": "a91d38bd54c883e1d7838531d8f8408ae2b029c243befef137dd78644c3557fc"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ac60d36c6a97812b073c5c9068405f34679395ced9167e3e611c227b9d9db9da",
+        "afterSha256": "e91238b01b4a03fceb0f9a419e71a4f2527484bb2472286225c419cf66fcbde4"
       }
     ]
   },
@@ -2240,5 +2255,178 @@
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "8da328f4260ff29f3c3fc1d1a3aa9052a56984952c8da66eaf447192ff4a4457",
+        "spans": [
+          {
+            "start": 36,
+            "end": 65,
+            "text": "std::cin >> zona >> cantidad;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "zona",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 342,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 367,
+            "end": 371,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 606,
+            "end": 626,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 706,
+            "end": 708,
+            "text": "6C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 752,
+            "end": 756,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 820,
+            "end": 824,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 934,
+            "end": 945,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 976,
+            "end": 978,
+            "text": "6C",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 980,
+            "end": 1000,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "3ffe7c800ec8a27a2182c506d25ba232f3f5ac6c59bf67f8c061520e2758c6a5",
+        "spans": [
+          {
+            "start": 112,
+            "end": 115,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 145,
+            "text": "muchos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 584,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "bef1f64e3cd3ac8169a47ce2566cdf95ebd1a4c7014cc6296fb9a7089af19e0d",
+        "spans": [
+          {
+            "start": 74,
+            "end": 77,
+            "text": "8.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 147,
+            "text": ".5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 220,
+            "text": "ocho y medio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 284,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
 }
