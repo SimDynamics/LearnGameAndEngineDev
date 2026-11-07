@@ -1,4 +1,6 @@
 #include "core/compiler_flow.hpp"
+#include "core/narration_state.hpp"
+#include "platform/windows/android_import.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/cpp_runner.hpp"
@@ -8,6 +10,8 @@
 
 #include <windows.h>
 #include <winrt/base.h>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <algorithm>
 #include <array>
@@ -24,6 +28,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -122,59 +127,165 @@ void preserve_values(const state::StateData& before,const state::StateData& afte
 struct Capture {CppRunRequest request;CppRunResult result;FreshExecution execution;};
 
 void ordinary_guides(const Asset& asset,state::StateStore& store,state::StateData& data,std::size_t expected,bool guided) {
+    using namespace winrt::Windows::Data::Json;
     std::size_t count=0;
     for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks) {
-        if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::output_prediction&&block.type!=BlockType::order_code)continue;
+        if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::output_prediction&&block.type!=BlockType::fill_code&&block.type!=BlockType::order_code)continue;
+        const auto raw=JsonObject::Parse(winrt::to_hstring(block.raw_json));
+        const auto explanation=winrt::to_string(raw.GetNamedString(L"explanation"));
+        const auto expected_guide=[&](std::optional<std::size_t> selected=std::nullopt){
+            if(!raw.HasKey(L"reviewFeedback"))return std::string{};
+            const auto value=raw.GetNamedValue(L"reviewFeedback");
+            if(value.ValueType()==JsonValueType::String)return winrt::to_string(value.GetString());
+            require(selected.has_value(),"A raw option guide needs its actual selected option");
+            return winrt::to_string(value.GetArray().GetStringAt(static_cast<unsigned>(*selected)));
+        };
+        const auto preserve_other_answers=[&](const state::StateData& before,const state::StateData& after){
+            auto protected_data=before;
+            if(auto domain=protected_data.preferences.find("learning_progress");domain!=protected_data.preferences.end())
+                domain->second.erase(state::response_storage_key(asset.lesson,block));
+            preserve_values(protected_data,after);
+        };
+        const auto persist_rejection=[&](state::Response response,const AnswerEvaluation& evaluation,std::string_view guide){
+            require(!evaluation.correct&&(!guided||!guide.empty()),"A wrong ordinary U12 answer succeeded or lost its authored guide");
+            require(evaluation.feedback==guide,"A wrong U12 answer selected another raw authored guide");
+            response.correct=false;response.raw_json=R"({"incorrectAttempts":2,"qaMetadata":"retained ordinary retry"})";
+            state::mark_response_reviewed(response,block);const auto before=data;
+            state::put_response(data,asset.lesson,block,response);preserve_other_answers(before,data);store.save(data);
+            const auto saved=reopen_state(store);require(saved==data,"An ordinary rejected U12 answer changed while reopening");
+            const auto restored=state::get_response(saved,asset.lesson,block);
+            require(restored&&!restored->correct&&state::response_reviewed(*restored,block)
+                &&restored->selected==response.selected&&restored->answer==response.answer&&restored->order==response.order
+                &&state::choice_incorrect_feedback(*restored,block)==guide,
+                "A U12 ordinary rejection lost its answer, review ownership or exact authored guide on reopen");
+        };
         AnswerEvaluation correct,wrong;state::Response rejected,accepted;
         if(block.type==BlockType::multiple_choice) {
-            require(block.correct_index.has_value(),"A U12 choice lost its correct index");
-            correct=evaluate_choice(block,*block.correct_index);accepted.selected=static_cast<std::int64_t>(*block.correct_index);
-            for(std::size_t option=0;option<block.options.size();++option)if(option!=*block.correct_index) {
+            const auto index=static_cast<std::size_t>(raw.GetNamedNumber(L"correctIndex"));
+            require(block.correct_index==index&&raw.GetNamedArray(L"options").Size()==block.options.size(),"A U12 choice lost its raw authored options or correct index");
+            correct=evaluate_choice(block,index);accepted.selected=static_cast<std::int64_t>(index);
+            for(std::size_t option=0;option<block.options.size();++option)if(option!=index) {
                 const auto verdict=evaluate_choice(block,option);
-                require(!verdict.correct&&verdict.feedback==incorrect_feedback(block,option)&&(!guided||!verdict.feedback.empty()),
-                    "An ordinary U12 wrong option lost its exact new guide or exposed success feedback");
-                if(rejected.selected<0){wrong=verdict;rejected.selected=static_cast<std::int64_t>(option);}
+                state::Response selected;selected.selected=static_cast<std::int64_t>(option);
+                persist_rejection(selected,verdict,expected_guide(option));
             }
-        } else if(block.type==BlockType::output_prediction) {
-            require(!block.answers.empty(),"A U12 prediction lost its canonical answer");
-            accepted.answer=block.answers.front();correct=evaluate_text_answer(block,accepted.answer);
+        } else if(block.type==BlockType::output_prediction||block.type==BlockType::fill_code) {
+            accepted.answer=winrt::to_string(raw.GetNamedArray(L"answers").GetStringAt(0));correct=evaluate_text_answer(block,accepted.answer);
             rejected.answer="__not_the_requested_U12_output__";wrong=evaluate_text_answer(block,rejected.answer);
+            require(!evaluate_text_answer(block,"").correct,"An empty ordinary U12 answer succeeded");
+            persist_rejection(rejected,wrong,expected_guide());
         } else {
-            correct=evaluate_order(block,block.correct_order);
-            accepted.order.assign(block.correct_order.begin(),block.correct_order.end());
-            auto candidate=block.correct_order;bool found=false;
+            std::vector<std::size_t> order;for(const auto& value:raw.GetNamedArray(L"correctOrder"))order.push_back(static_cast<std::size_t>(value.GetNumber()));
+            require(order==block.correct_order,"The native U12 order differs from the raw authored permutation");
+            correct=evaluate_order(block,order);accepted.order.assign(order.begin(),order.end());
+            auto candidate=order;bool found=false;
             for(std::size_t first=0;first<candidate.size()&&!found;++first)for(std::size_t second=first+1;second<candidate.size();++second) {
                 std::swap(candidate[first],candidate[second]);const auto verdict=evaluate_order(block,candidate);
                 if(!verdict.correct){wrong=verdict;rejected.order.assign(candidate.begin(),candidate.end());found=true;break;}
                 std::swap(candidate[first],candidate[second]);
             }
             require(found,"The U12 order fixture lacks a genuinely incorrect full permutation");
+            persist_rejection(rejected,wrong,expected_guide());
         }
-        require(correct.correct&&correct.feedback==block.explanation&&!correct.feedback.empty()
-            &&!wrong.correct&&wrong.feedback==incorrect_feedback(block,rejected.selected<0?std::nullopt:
-                std::optional<std::size_t>{static_cast<std::size_t>(rejected.selected)})&&(!guided||!wrong.feedback.empty()),
-            "A U12 ordinary exercise lost its exact answer, rejection guide or complete success explanation");
-        rejected.correct=false;state::mark_response_reviewed(rejected,block);
-        state::put_response(data,asset.lesson,block,rejected);store.save(data);
-        const auto saved=reopen_state(store);
-        require(saved==data,"An ordinary rejected U12 answer changed while reopening");
-        const auto restored=state::get_response(saved,asset.lesson,block);
-        require(restored&&!restored->correct&&state::response_reviewed(*restored,block)
-            &&restored->selected==rejected.selected&&restored->answer==rejected.answer&&restored->order==rejected.order,
-            "A U12 ordinary rejection was lost or transformed into a success on reopen");
-        accepted.correct=true;state::put_response(data,asset.lesson,block,accepted);store.save(data);
+        require(correct.correct&&correct.feedback==explanation&&!explanation.empty(),"A correct U12 answer lost its raw complete success explanation");
+        const auto before=data;accepted.correct=true;accepted.raw_json=R"({"incorrectAttempts":2,"qaMetadata":"retained ordinary retry"})";
+        state::put_response(data,asset.lesson,block,accepted);preserve_other_answers(before,data);store.save(data);
         const auto accepted_saved=reopen_state(store);
         const auto response=state::get_response(accepted_saved,asset.lesson,block);
-        require(accepted_saved==data&&response&&response->correct,"A correct U12 ordinary answer was not preserved on reopen");
+        require(accepted_saved==data&&response&&response->correct&&state::choice_correct_feedback(*response,block)==explanation,
+            "A correct U12 ordinary answer or its exact authored explanation was not preserved on reopen");
         ++count;
     }
     require(count==expected,"The focused ordinary U12 guide batch omitted or silently added an exercise");
+}
+std::string xml_text(std::string_view value) {
+    std::string result;for(const auto character:value)switch(character){
+        case '&':result+="&amp;";break;case '<':result+="&lt;";break;case '>':result+="&gt;";break;case '"':result+="&quot;";break;
+        case '\r':result+="&#13;";break;case '\n':result+="&#10;";break;case '\t':result+="&#9;";break;default:result+=character;}
+    return result;
+}
+void export_preferences(const std::filesystem::path& root,const state::StateData& data) {
+    const auto directory=root/L"shared_prefs";std::filesystem::create_directories(state::native_io_path(directory));
+    for(const auto& [domain,values]:data.preferences){
+        std::string xml="<?xml version=\"1.0\" encoding=\"utf-8\"?><map>";
+        for(const auto& [key,value]:values)std::visit([&](const auto& item){
+            using T=std::decay_t<decltype(item)>;const auto name=" name=\""+xml_text(key)+"\"";
+            if constexpr(std::is_same_v<T,std::string>)xml+="<string"+name+">"+xml_text(item)+"</string>";
+            else if constexpr(std::is_same_v<T,bool>)xml+="<boolean"+name+" value=\""+(item?"true":"false")+"\"/>";
+            else if constexpr(std::is_same_v<T,std::int64_t>)xml+="<long"+name+" value=\""+std::to_string(item)+"\"/>";
+            else if constexpr(std::is_same_v<T,std::vector<std::string>>){xml+="<set"+name+">";
+                for(const auto& entry:item)xml+="<string>"+xml_text(entry)+"</string>";xml+="</set>";}
+            else throw std::runtime_error("Unexpected floating QA preference in the ordinary-guide fixture");
+        },value);
+        xml+="</map>";std::ofstream output(state::native_io_path(directory/(domain+".xml")),std::ios::binary|std::ios::trunc);
+        output.write(xml.data(),static_cast<std::streamsize>(xml.size()));require(bool(output),"Could not export isolated ordinary-guide QA preferences");
+    }
+}
+int ordinary_guides_only() {
+    struct GuidePlan {const char* file;std::size_t count;};
+    constexpr std::array<GuidePlan,9> plans{{
+        {"representar_enteros_en_distintas_bases",11},{"estado_del_formato_y_flujos_independientes",12},
+        {"precision_y_presentacion_de_double",12},{"ancho_relleno_y_alineacion_de_campos",13},
+        {"componer_informes_sin_cambiar_los_datos",4},{"texto_con_campos_y_patrones_literales",17},
+        {"bases_y_anchuras_en_cada_campo",20},{"precision_por_campo_y_resumenes_formateados",18},
+        {"compartir_flujos_sin_acoplar_el_calculo",7}
+    }};
+    const LaunchOptions options{ProfileId::Codex,L"u12-ordinary-guides-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
+    const auto environment=resolve_windows_environment(options);initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);auto data=store.load();require(data.preferences.empty(),"The private ordinary-guide profile contains old state");
+    data.preferences["u12-batch-unrelated"]["opaque"]=std::string(" Preserve\t\r\n保存 ");
+    narration::History history;
+    for(unsigned index=0;index<3;++index)history=narration::begin(std::move(history),"qa-storage-pause-"+std::to_string(index),
+        "qa-storage-owner-"+std::to_string(index),{0,static_cast<std::int64_t>(117+index),0,false},
+        "storage-only source; no recording or listening evidence","qa-storage-page-"+std::to_string(index));
+    narration::write_history(data,history);
+    const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo";
+    std::vector<Asset> assets;std::size_t choices=0,predictions=0,fills=0,total=0;
+    for(const auto& plan:plans){Asset asset;asset.path=root/(std::string("lesson_")+plan.file+".json");const auto bytes=read(asset.path);
+        asset.hash=state::sha256(bytes);asset.lesson=parse_lesson_json(bytes);asset.metadata=parse_lesson_progress_metadata(bytes);
+        state::prepare_lesson_state(data,asset.lesson);
+        for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks){
+            choices+=block.type==BlockType::multiple_choice;predictions+=block.type==BlockType::output_prediction;fills+=block.type==BlockType::fill_code;
+            if(block.type==BlockType::cpp_compiler){state::Draft draft;draft.source=block.initial_code+"\n// isolated uncompiled guide-preservation draft\r\n";
+                draft.input=" \t preserved QA input\r\n";draft.selection_start=2;draft.selection_end=7;
+                draft.indentation_json=state::make_indentation_metadata(draft.source,{});
+                state::put_draft(data,draft_key("programming",asset.lesson,block),draft);}
+        }
+        assets.push_back(std::move(asset));total+=plan.count;
+    }
+    require(total==114&&choices==48&&predictions==59&&fills==7,"The ordinary-guide fixture lost its independent nine-lesson/type inventory");
+    const auto untouched=data;store.save(data);
+    for(std::size_t index=0;index<plans.size();++index){ordinary_guides(assets[index],store,data,plans[index].count,true);
+        std::cout<<"PASS "<<plans[index].file<<": "<<plans[index].count<<" authored ordinary guides and exact state reopen\n";}
+    preserve_values(untouched,data);require(narration::read_history(data)==history,"An ordinary answer altered one of the three storage-only pauses");
+    const auto exported=environment.paths.root/L"ordinary-guide-export";export_preferences(exported,data);
+    const auto preview=state::inspect_android_export(exported);require(preview.data==data,"Android XML inspection changed ordinary answers, drafts, attempts or typed metadata");
+    const auto destination=environment.paths.root/L"ordinary-guide-import";state::commit_android_import(preview,destination);
+    state::StateStore imported_store(destination);auto imported=imported_store.load();require(imported==data,"The isolated Android XML transaction changed ordinary guide state");
+    for(const auto& asset:assets){state::prepare_lesson_state(imported,asset.lesson);state::validate_lesson_state(imported,asset.lesson);
+        for(const auto& page:asset.lesson.pages)for(const auto& block:page.blocks){
+            if(block.type==BlockType::cpp_compiler)require(!compiler_puzzle_completed(imported,asset.lesson,block),"Ordinary guide QA manufactured compiler execution credit");
+            if(block.type!=BlockType::multiple_choice&&block.type!=BlockType::output_prediction&&block.type!=BlockType::fill_code)continue;
+            const auto response=state::get_response(imported,asset.lesson,block);
+            const auto authored=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(block.raw_json));
+            require(response&&response->correct&&state::choice_correct_feedback(*response,block)==winrt::to_string(authored.GetNamedString(L"explanation")),
+                "An imported ordinary achievement lost its exact authored explanation");}
+        require(state::sha256(read(asset.path))==asset.hash,"Ordinary guide QA rewrote an active curricular asset");}
+    require(imported==data&&narration::read_history(imported)==history,"Revalidating imported ordinary state modified unrelated progress or pause metadata");
+    imported_store.save(imported);require(reopen_state(imported_store)==data,"Imported ordinary guide state changed on Windows reopening");
+    for(const auto& file:preview.files)require(state::sha256(state::read_bytes(exported/file.relative_path))==file.sha256&&
+        state::sha256(state::read_bytes(destination/L"state"/L"active"/L"android"/file.relative_path))==file.sha256,
+        "The isolated XML transaction modified its source or archived original files");
+    std::cout<<"PASS 114 ordinary U12L5-L13 activities: per-option rejection, raw authored guides/explanations, exact StateStore/XML import, drafts and three storage-only pauses; 0 compiler programs, no UI/audio.\n";
+    return 0;
 }
 }
 
 int main(int argc,char** argv) try {
     const bool loading_state=argc==2&&std::string_view(argv[1])=="--loading-state";
-    require(argc==1||loading_state,"Usage: u12_compiler_batch_tests [--loading-state]");
+    const bool guides_only=argc==2&&std::string_view(argv[1])=="--ordinary-guides";
+    require(argc==1||loading_state||guides_only,"Usage: u12_compiler_batch_tests [--loading-state|--ordinary-guides]");
+    if(guides_only)return ordinary_guides_only();
     const std::span<const Plan> plans=loading_state?std::span<const Plan>(loading_state_plans):std::span<const Plan>(formatting_plans);
     const LaunchOptions options{ProfileId::Codex,(loading_state?L"u12-loading-batch-":L"u12-batch-")+
         std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
