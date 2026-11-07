@@ -391,6 +391,10 @@ if(BUILD_TESTING)
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py
         -k ProgrammingLoadingStateMathBridgeTest)
     set_tests_properties(native.u12_loading_state_math PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.u12_final_integrator_matching COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_programming_math_bridge.py
+        -k ProgrammingFinalIntegratorMatchingBridgeTest)
+    set_tests_properties(native.u12_final_integrator_matching PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     set_tests_properties(native.u12_output_speech native.u12_insertion_extraction_math PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME native.intentional_exit_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_output_exit_code_contract.py)

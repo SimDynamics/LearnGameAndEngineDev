@@ -691,5 +691,149 @@ class ProgrammingLoadingStateMathBridgeTest(unittest.TestCase):
         ProgrammingFormattingMathBridgeTest.test_08_curated_puzzle_text_and_data_remain_byte_exact)
 
 
+class ProgrammingFinalIntegratorMatchingBridgeTest(unittest.TestCase):
+    """Only U12L26's eight public winner cases, with no compiler or UI."""
+
+    @classmethod
+    def setUpClass(cls):
+        path = UNIT / "lesson_construir_un_programa_de_carga_y_guardado.json"
+        raw = path.read_bytes()
+        lesson = json.loads(raw.decode("utf-8-sig"))
+        cls.sources = {path: (raw, path.stat().st_mtime_ns)}
+        cls.lessons = {path: lesson}
+        cls.before = copy.deepcopy(cls.lessons)
+        cls.block = lesson["pages"][7]["blocks"][5]
+        if (lesson["stateLayout"]["current"][7]["blocks"][5] != "block_0007_0005" or
+                cls.block.get("id") != PREFIX + "carga_guardado__ganador_antes_de_ejecutar"):
+            raise AssertionError("The final integrator matching changed its published owner")
+
+        # Independent public examples: each record is (id, accepted, rejected).
+        # Rejected counts and record ids are deliberately not the group score.
+        cls.groups = {
+            "c0": (("verde", ((2, 5, 1),)), ("rojo", ((4, 3, 0), (8, 3, 2))), ("azul", ())),
+            "c1": (),
+            "c2": (("verde", ()),),
+            "c3": (("verde", ((8, 4, 0),)), ("rojo", ((1, 4, 3),)), ("azul", ((0, 1, 0),))),
+            "c4": (("rojo", ((1, 4, 3),)), ("verde", ((8, 4, 0),)), ("azul", ((0, 1, 0),))),
+            "c5": (("azul", ()), ("verde", ((7, 0, 2),)), ("rojo", ((1, 0, 0),))),
+            "c6": (("rojo", ()), ("verde", ((1, 2, 0),))),
+            "c7": (("rojo", tuple((identity, 10, 0) for identity in range(10))),),
+        }
+        cls.target_values = {
+            "r100": ("rojo", 100), "v0": ("verde", 0), "v4": ("verde", 4),
+            "ausencia": (None, 0), "r6": ("rojo", 6), "a0": ("azul", 0),
+            "v2": ("verde", 2), "r4": ("rojo", 4),
+        }
+        targets = {value: identity for identity, value in cls.target_values.items()}
+        cls.winners, pairs = {}, {}
+        for identity, groups in cls.groups.items():
+            # max keeps the first group on equal totals; absence is distinct
+            # from an existing group with zero accepted records.
+            winner = max(((name, sum(record[1] for record in records)) for name, records in groups),
+                         key=lambda item: item[1], default=(None, 0))
+            cls.winners[identity] = winner
+            pairs[identity] = targets[winner]
+        cls.answers = {"ganadores": matching(**pairs)}
+        cls.cases = [(path, cls.block, cls.answers)]
+        cls.worker = Worker(missing_resources=True)
+
+    tearDownClass = classmethod(ProgrammingFormattingMathBridgeTest.tearDownClass.__func__)
+    evaluate = ProgrammingFormattingMathBridgeTest.evaluate
+    assert_correct = ProgrammingFormattingMathBridgeTest.assert_correct
+    assert_rejected = ProgrammingFormattingMathBridgeTest.assert_rejected
+
+    def test_01_eight_public_cases_preserve_sums_first_ties_presence_and_absence(self):
+        response, = self.block["responses"]
+        self.assertEqual(("ganadores", "math_matching_drag"), (response["id"], response["type"]))
+        self.assertEqual(set(self.groups), {item["id"] for item in response["sources"]})
+        self.assertEqual(set(self.target_values), {item["id"] for item in response["targets"]})
+        labels = [
+            "Base: verde tiene 2[5;1], rojo tiene 4[3;0] 8[3;2], azul est\u00e1 vac\u00edo.",
+            "Vacio: el conjunto no tiene grupos.",
+            "Presente vacio: s\u00f3lo est\u00e1 presente verde y no tiene registros.",
+            "Empate: verde con 8[4;0], rojo con 1[4;3] y azul con 0[1;0], en ese orden.",
+            "Empate invertido: rojo con 1[4;3], verde con 8[4;0] y azul con 0[1;0], en ese orden.",
+            "Ceros: azul vac\u00edo, verde con 7[0;2] y rojo con 1[0;0], en ese orden.",
+            "Vacio antes de positivo: rojo vac\u00edo seguido de verde con 1[2;0].",
+            "Maximo: s\u00f3lo rojo, con los diez ID 0..9, diez aceptados y cero rechazados por registro.",
+        ]
+        self.assertEqual(list(self.groups), [item["id"] for item in response["sources"]])
+        self.assertEqual(labels, [item["label"] for item in response["sources"]])
+        for target in response["targets"]:
+            name, total = self.target_values[target["id"]]
+            self.assertEqual(f"{name or 'ninguno'}, suma {total}", target["label"])
+        self.assertEqual({"c0": ("rojo", 6), "c1": (None, 0), "c2": ("verde", 0),
+                          "c3": ("verde", 4), "c4": ("rojo", 4), "c5": ("azul", 0),
+                          "c6": ("verde", 2), "c7": ("rojo", 100)}, self.winners)
+        self.assertEqual(self.answers["ganadores"], known_answer(response["validator"]),
+                         "The authored matching contract differs from the independent public-case oracle")
+
+    def test_02_description_preserves_public_cards_without_solution_or_preselection(self):
+        ProgrammingFormattingMathBridgeTest.test_02_public_description_has_no_solution_or_preselected_answer(self)
+        described = self.worker.ask("describe_math", block=self.block, language="es")
+        response, = described["responses"]
+        for name in ("sources", "targets"):
+            self.assertEqual(self.block["responses"][0][name], response["config"][name])
+        for hidden in ("answer", "pairs", "initial", "initialPairs", "selected", "value"):
+            self.assertNotIn(hidden, response)
+            self.assertNotIn(hidden, response["config"])
+
+    def test_03_correct_and_every_seven_of_eight_draft_keep_distinct_verdicts(self):
+        correct = self.assert_correct(self.block, self.answers)
+        self.assertEqual(1, len(correct["results"]))
+        self.assertTrue(correct["contentFingerprint"])
+        self.assert_rejected(self.block, {}, evaluable=False)
+        self.assert_rejected(self.block, {"ganadores": matching()}, evaluable=False)
+        self.assert_rejected(self.block, {"ganadores": {"type": "text", "value": "rojo, suma 6"}}, evaluable=False)
+        for omitted in self.groups:
+            with self.subTest(omitted=omitted):
+                attempt = copy.deepcopy(self.answers)
+                del attempt["ganadores"]["pairs"][omitted]
+                self.assertEqual(7, len(attempt["ganadores"]["pairs"]))
+                reply = self.assert_rejected(self.block, attempt, evaluable=False)
+                self.assertEqual(correct["contentFingerprint"], reply["contentFingerprint"])
+
+    def test_04_all_twenty_eight_pair_swaps_reject_with_the_complete_error_guide(self):
+        checked = 0
+        for first, second in itertools.combinations(self.groups, 2):
+            with self.subTest(first=first, second=second):
+                attempt = copy.deepcopy(self.answers)
+                pairs = attempt["ganadores"]["pairs"]
+                pairs[first], pairs[second] = pairs[second], pairs[first]
+                reply = self.assert_rejected(self.block, attempt, evaluable=True)
+                self.assertIn(self.block["feedback"]["incorrect"], reply["feedback"])
+                self.assertFalse(reply["results"][0]["correct"])
+                checked += 1
+        self.assertEqual(28, checked)
+
+    def test_05_duplicate_and_unknown_cards_never_become_evaluable_successes(self):
+        keys = list(self.groups)
+        for index, identity in enumerate(keys):
+            with self.subTest(source=identity):
+                duplicate = copy.deepcopy(self.answers)
+                duplicate["ganadores"]["pairs"][identity] = duplicate["ganadores"]["pairs"][keys[(index + 1) % 8]]
+                self.assert_rejected(self.block, duplicate, evaluable=False)
+                unknown_target = copy.deepcopy(self.answers)
+                unknown_target["ganadores"]["pairs"][identity] = "not_a_published_target"
+                self.assert_rejected(self.block, unknown_target)
+        unknown_source = copy.deepcopy(self.answers)
+        unknown_source["ganadores"]["pairs"]["not_a_published_source"] = "r6"
+        self.assert_rejected(self.block, unknown_source, evaluable=False)
+        replacement = copy.deepcopy(self.answers)
+        replacement["ganadores"]["pairs"]["not_a_published_source"] = replacement["ganadores"]["pairs"].pop("c0")
+        self.assert_rejected(self.block, replacement, evaluable=False)
+
+    def test_06_serialized_answer_order_does_not_change_fingerprint_or_feedback(self):
+        correct = self.assert_correct(self.block, self.answers)
+        reversed_pairs = dict(reversed(list(self.answers["ganadores"]["pairs"].items())))
+        saved = json.dumps({"ganadores": matching(**reversed_pairs)}, ensure_ascii=False)
+        restored = self.assert_correct(self.block, json.loads(saved))
+        for field in ("contentFingerprint", "feedback", "feedbackKind", "results"):
+            self.assertEqual(correct[field], restored[field])
+
+    test_07_original_curriculum_and_callers_remain_byte_exact = (
+        ProgrammingFormattingMathBridgeTest.test_08_curated_puzzle_text_and_data_remain_byte_exact)
+
+
 if __name__ == "__main__":
     unittest.main()
