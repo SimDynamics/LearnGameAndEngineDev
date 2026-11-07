@@ -26,7 +26,12 @@
             "Inválido: falta cerrar el grupo que ya comenzó."
           ],
           "correctIndex": 2,
-          "explanation": "EOF termina la fuente de caracteres. No completa un objeto al que aún le falta su cierre."
+          "explanation": "EOF termina la fuente de caracteres. No completa un objeto al que aún le falta su cierre.",
+          "reviewFeedback": [
+            "Comprueba qué objeto quedó completo: el registro y el grupo tienen cierres distintos. Revisa si el texto contiene el cierre del grupo después del último registro.",
+            "eofbit informa que se alcanzó el final de la entrada; no añade al texto el signo de cierre que falta. Separa el estado del flujo de los requisitos del formato.",
+            "Comprueba el cierre del grupo antes de decidir si la lectura consiguió un objeto completo."
+          ]
         },
         {
           "type": "paragraph",
@@ -53,7 +58,8 @@
           "answers": [
             "1:}:fin"
           ],
-          "explanation": "peek observó }, pero get lo extrajo. La cadena posterior sigue disponible."
+          "explanation": "peek observó }, pero get lo extrajo. La cadena posterior sigue disponible.",
+          "reviewFeedback": "Sigue por separado la posición del flujo y lo que se imprime: std::ws descarta los blancos, peek() observa sin consumir y get() sí extrae. Después se extrae siguiente. Conserva los separadores de la consola en tu respuesta."
         },
         {
           "type": "paragraph",
@@ -69,7 +75,12 @@
             "Borrar el estado y guardar un registro con ID inicial 0."
           ],
           "correctIndex": 0,
-          "explanation": "Sólo } es el cierre permitido. Una extracción inválida no crea un registro ni justifica aceptar el grupo."
+          "explanation": "Sólo } es el cierre permitido. Una extracción inválida no crea un registro ni justifica aceptar el grupo.",
+          "reviewFeedback": [
+            "Comprueba que primero se obtiene un ID y que sólo después se aceptan los campos de un Registro.",
+            "El carácter [ no coincide con el cierre del grupo. Un fallo al extraer un ID no sustituye [ por }.",
+            "El valor inicial 0 no procede de la entrada. Antes de añadir un Registro, la extracción debe conseguir su ID y el recuento; borrar el estado del flujo no los proporciona."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -81,7 +92,12 @@
             "Rechazar siempre porque el grupo está vacío."
           ],
           "correctIndex": 0,
-          "explanation": "El cierre pertenece a ese grupo. La función no exige que se agote todo el texto y un grupo vacío sigue siendo un grupo presente válido."
+          "explanation": "El cierre pertenece a ese grupo. La función no exige que se agote todo el texto y un grupo vacío sigue siendo un grupo presente válido.",
+          "reviewFeedback": [
+            "Distingue el cierre de un grupo de la terminación de toda la fuente de entrada.",
+            "El contrato pide consumir un solo grupo. Después de su cierre todavía puede haber caracteres del llamador, como aviso; no confundas leer_grupo con un lector de archivo completo.",
+            "Un grupo sin registros puede estar completo si contiene la apertura, la etiqueta, un nombre admitido y el cierre. Comprueba esos elementos en el origen propuesto."
+          ]
         }
       ]
     },
@@ -97,7 +113,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería con un destino inicial azul que contiene 9[1;1], reiniciado antes de cada prueba. main llama a probar(texto) con \"{ grupo rojo 7[0;0] 2[3;1] }\", \"{ grupo verde }\", \"{ grupo rojo 7[0;0] 7[3;1] }\", \"{ grupo rojo 7[0;0]\", \"{ grupo rojo 0[-1;0] }\", \"{ grupo rojo 0[0;11] }\", \"{ grupo rojo -1[1;1] }\", \"{ grupo rojo 10[1;1] }\", \"{ grupo gris }\", \"{ equipo rojo }\", \"{ grupo rojo 7\", \"{ grupo rojo 7[\", \"{ grupo rojo 7[1\", \"{ grupo rojo 7[1;\", \"{ grupo rojo 7[1;2\", \"{ grupo rojo 7[1;2]\", \"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\", en ese orden. Cada llamada muestra bool:ID_del_grupo:cantidad_de_registros y después cada registro como un espacio seguido de ID[aceptados;rechazados]. Cada informe termina con salto. El último caso confirma que los saltos entre registros conservan los datos. Después, en otra lectura del mismo último texto, consume un grupo completo y extrae la palabra que quedó; muestra Sufijo:aviso. Resuelve el puzzle previo y usa Compilar, ejecutar y comprobar con todo el programa.",
+          "text": "Construye una sola batería con un destino inicial azul que contiene 9[1;1]. Cada llamada a probar(texto) debe crear de nuevo ese estado inicial antes de llamar a leer_grupo.\n\nEn main, llama a probar con estos literales de cadena, en este orden:\n1. \"{ grupo rojo 7[0;0] 2[3;1] }\"\n2. \"{ grupo verde }\"\n3. \"{ grupo rojo 7[0;0] 7[3;1] }\"\n4. \"{ grupo rojo 7[0;0]\"\n5. \"{ grupo rojo 0[-1;0] }\"\n6. \"{ grupo rojo 0[0;11] }\"\n7. \"{ grupo rojo -1[1;1] }\"\n8. \"{ grupo rojo 10[1;1] }\"\n9. \"{ grupo gris }\"\n10. \"{ equipo rojo }\"\n11. \"{ grupo rojo 7\"\n12. \"{ grupo rojo 7[\"\n13. \"{ grupo rojo 7[1\"\n14. \"{ grupo rojo 7[1;\"\n15. \"{ grupo rojo 7[1;2\"\n16. \"{ grupo rojo 7[1;2]\"\n17. \"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\"\n\nEn el último literal, cada \\n del código representa un salto de línea del texto recibido. Cada llamada muestra bool:ID_del_grupo:cantidad_de_registros y después cada registro como un espacio seguido de ID[aceptados;rechazados]. Cada informe termina con salto.\n\nDespués, en otra lectura del mismo último texto, consume un grupo completo y extrae la palabra que quedó; muestra Sufijo:aviso. Usa Compilar, ejecutar y comprobar con todo el programa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -121,7 +137,7 @@
         },
         {
           "type": "note",
-          "text": "La siguiente página contiene la referencia. La práctica es construir el control del lector, no copiar un cuerpo completo. El modelo mantiene cero como valor válido y vacío como grupo presente."
+          "text": "El modelo mantiene cero como cantidad válida. Un grupo sin registros es un grupo presente y válido: al aceptarlo, el destino se sustituye por ese grupo vacío."
         }
       ]
     },
@@ -146,7 +162,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La vuelta válida consume un registro; el cierre termina; un fallo rechaza. Además, sólo existen diez ID distintos admisibles en un grupo. Este límite no sustituye los límites del entorno sobre tiempo, memoria o tamaño de los caracteres que recibe un programa."
+          "text": "En cada vuelta se descartan primero los blancos. Si el flujo falla o alcanza EOF antes de un cierre, leer_grupo devuelve false y conserva destino. Si el carácter próximo es }, get() lo consume; si esa extracción tiene éxito, se copia candidato en destino y se devuelve true.\n\nSi el carácter próximo no es }, se intenta leer un Registro. Sólo se añade a candidato.registros después de comprobar sus campos, el intervalo del ID y que ese ID no aparezca ya en el candidato. Por ejemplo, tras leer 7[0;0], encontrar } confirma ese grupo; encontrar otro registro con ID 7 lo rechaza y conserva el destino anterior.\n\nLos ID admitidos son 0..9, por lo que un candidato puede contener como máximo diez registros distintos. Este límite no sustituye los límites del entorno sobre tiempo, memoria o cantidad de caracteres de entrada."
         }
       ]
     },
@@ -165,7 +181,8 @@
           "answers": [
             "1:2:0:resto"
           ],
-          "explanation": "El grupo azul vacío es válido; resto sigue disponible. La validación de toda la muestra debe decidir si ese sufijo está permitido."
+          "explanation": "El grupo azul vacío es válido; resto sigue disponible. La validación de toda la muestra debe decidir si ese sufijo está permitido.",
+          "reviewFeedback": "Comprueba el ID asignado a azul en la tabla, la cantidad de registros que hay entre las llaves y el valor devuelto por leer_grupo. Después de aceptar el grupo, sigue la extracción de siguiente: ese texto aún pertenece al flujo."
         },
         {
           "type": "multiple_choice",
@@ -177,11 +194,16 @@
             "Buscar el ID dentro del candidato azul actual."
           ],
           "correctIndex": 2,
-          "explanation": "La identidad de un registro incluye su grupo. La colección superior comprobará que el grupo no esté repetido."
+          "explanation": "La identidad de un registro incluye su grupo. La colección superior comprobará que el grupo no esté repetido.",
+          "reviewFeedback": [
+            "Compara las identidades completas: el registro 7 de rojo y el registro 7 de azul pertenecen a grupos distintos. La búsqueda de repetidos debe usar la colección del grupo que se está construyendo.",
+            "Aceptar el nombre del grupo no comprueba los ID de sus registros. Revisa también si el ID recién leído ya aparece entre los registros del candidato.",
+            "Identifica la colección de registros del candidato actual y decide si el ID que acaba de llegar ya aparece en ella."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "El último texto añade saltos de línea entre registros y un sufijo tras }. Los saltos conservan los datos; el grupo deja aviso pendiente. El caso sin } se rechaza aunque sus campos anteriores sean válidos. El llamador de una jerarquía tendrá otro cierre que reconocer."
+          "text": "El último caso de la batería de construcción utiliza el literal \"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\". En ese literal, \\n representa un salto de línea: los registros siguen siendo 7[0;0] y 2[3;1]. leer_grupo acepta el grupo y deja aviso sin consumir para que lo lea el llamador.\n\nEn cambio, la entrada \"{ grupo rojo 7[0;0]\" no contiene }; leer_grupo devuelve false y conserva el destino aunque ese registro sí se haya leído por completo. En la siguiente lección, el llamador tendrá además que reconocer el cierre de la estructura que reúne los grupos."
         },
         {
           "type": "note",
@@ -203,5 +225,2324 @@
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "47130c2048324a1e084e359529929834650ed007f203be72d9be2c54ff43d229",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "94557149e55bc00fc4bb69187db71a5258add90aafedd74d29241903c7116526",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "{",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 38,
+            "end": 50,
+            "text": "grupo NOMBRE",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 65,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 149,
+            "text": "Recuento",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 151,
+            "end": 160,
+            "text": "aceptados",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 161,
+            "end": 171,
+            "text": "rechazados",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 189,
+            "end": 194,
+            "text": "0..10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 224,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 231,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 238,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 277,
+            "text": "{ grupo rojo 7[0;0] 2[3;1] }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "e00df415f084f265e550d5b93154fbbb6f7ea5f7a942bdd7245ad09477a82ca2",
+        "spans": [
+          {
+            "start": 53,
+            "end": 55,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 135,
+            "text": "{ grupo rojo }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 177,
+            "text": "{ grupo rojo}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 228,
+            "text": "rojo}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 329,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 422,
+            "end": 423,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 426,
+            "end": 431,
+            "text": "ceros",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "f4020bd1ac6f5109562b2dba00bd8a421f2b4f3c9d5a84a2a42b6257a10e0217",
+        "spans": [
+          {
+            "start": 23,
+            "end": 35,
+            "text": "{ grupo rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 67,
+            "text": "7[2;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "5f229c5b7a54ba63624dcf62bcab26742e01ac19acc7edabe2e7a0114440a69d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "9161c968feaf571a96811c497f6c278bfd0cdbbda9539cb1dbccb1f86193ca00",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "05cbecdd3aa3d620ee449af00244bd9228c7d476d46c6266cf1dfa4c9d8c4c2a",
+        "spans": [
+          {
+            "start": 25,
+            "end": 31,
+            "text": "eofbit",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "422457b60e296edab2d544a555ecbd6c754c8e8582131076f93e2dd8cfedd807",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "63820ec3cd3b0ca435a84eca86fbb6330951d9e1d276907d6b5503d274c620b6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 46,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 54,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 69,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 168,
+            "end": 173,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 193,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 327,
+            "text": "failbit",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 343,
+            "end": 347,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "7fcd3d4900ce2602cf586316f623c7a9cc77e6b1818de7ed781242e6f026dd08",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "f2e1dd9a9da64bbbbf33892b7a925f00418411c08cde18172cb8646f0cec7cb3",
+        "spans": [
+          {
+            "start": 86,
+            "end": 94,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 154,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 169,
+            "end": 179,
+            "text": "operator>>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 191,
+            "text": "Recuento",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 283,
+            "text": "ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 324,
+            "text": "peek()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 332,
+            "text": "peek()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 368,
+            "text": "get()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "50193ce6bc504a875b4462988b49f2791ebb4e53e88dede2d83eb8c248de769e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "844d52ce167297185f1e1bed3d0dde4913502542b4975dae09446cda072c236b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "peek",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 13,
+            "end": 14,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 21,
+            "end": 24,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "ebcda3ba1266a539183da7f7b05d02c9bb0c9a3480886f261d66e41562c8285f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "peek",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 48,
+            "text": "!entrada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 64,
+            "text": "entrada.eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 78,
+            "text": "ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "f7a1f29069f6432730515f9d6cfc48f406348b7b930d569c80339fb5c7a53f8f",
+        "spans": [
+          {
+            "start": 52,
+            "end": 53,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 86,
+            "end": 94,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "76e1ba36ed51af66de2dac840704e479b0e9f57e9fb9e89727c47c2474cece93",
+        "spans": [
+          {
+            "start": 5,
+            "end": 6,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "2216efe9badc3f3328fd6af0945e0e7f99d22d21a8adc38debf15a5aab6eb09c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "871b615c79460cc34b5d36e779727fd3a41edc1ce98eae90ab1e1d063c14efde",
+        "spans": [
+          {
+            "start": 50,
+            "end": 51,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "0a39662de4b357351b74b5fe4216a5b84852e4ae6a3ba57139c6525cffcdbcdd",
+        "spans": [
+          {
+            "start": 54,
+            "end": 55,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "899c3d05b47b883ec6427b24f521f29a0ae4711ffbbee2f01ed9ece766992379",
+        "spans": [
+          {
+            "start": 19,
+            "end": 42,
+            "text": "\"{ grupo verde } aviso\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 67,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "1e3149de26e5e0ba1b295e716e0f72dc66127ce2e270f8e34d13eb899a1e9706",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "c973489718891c9b78cb1450acdce822c5d03c28ce35717baf30c453720bcad8",
+        "spans": [
+          {
+            "start": 26,
+            "end": 31,
+            "text": "aviso",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "ff38855f4882c9e3f62013e45a78876749fd5fa295f2cfaa0b4ee923e3d50ed7",
+        "spans": [
+          {
+            "start": 31,
+            "end": 36,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "05ef5c2ebb368f013bb66ad5934b77f710ab6d85a9d0986eed42a4826c1ef58e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "44a5de661535b53ca09c6dbe65a1569acb0cb869aefb69d9540067f47d0419e0",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "5895c19e04e37275fbbd603bf28e099f0616d1e7a042ea04ec02b4808e9490de",
+        "spans": [
+          {
+            "start": 7,
+            "end": 17,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 88,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 98,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 217,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 230,
+            "end": 239,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 302,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 349,
+            "end": 358,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 391,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "b540752a54175adabe78b1e35c68f02a8c81774bbd94e67d1e848302e29611c1",
+        "spans": [
+          {
+            "start": 50,
+            "end": 54,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 74,
+            "text": "9[1;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 104,
+            "text": "probar(texto)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 172,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 198,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 247,
+            "text": "1.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 278,
+            "text": "\"{ grupo rojo 7[0;0] 2[3;1] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 281,
+            "text": "2.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 299,
+            "text": "\"{ grupo verde }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 300,
+            "end": 302,
+            "text": "3.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 333,
+            "text": "\"{ grupo rojo 7[0;0] 7[3;1] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 336,
+            "text": "4.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 358,
+            "text": "\"{ grupo rojo 7[0;0]\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 359,
+            "end": 361,
+            "text": "5.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 386,
+            "text": "\"{ grupo rojo 0[-1;0] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 387,
+            "end": 389,
+            "text": "6.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 414,
+            "text": "\"{ grupo rojo 0[0;11] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 417,
+            "text": "7.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 418,
+            "end": 442,
+            "text": "\"{ grupo rojo -1[1;1] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 443,
+            "end": 445,
+            "text": "8.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 446,
+            "end": 470,
+            "text": "\"{ grupo rojo 10[1;1] }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 473,
+            "text": "9.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 474,
+            "end": 490,
+            "text": "\"{ grupo gris }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 491,
+            "end": 494,
+            "text": "10.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 512,
+            "text": "\"{ equipo rojo }\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 513,
+            "end": 516,
+            "text": "11.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 533,
+            "text": "\"{ grupo rojo 7\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 534,
+            "end": 537,
+            "text": "12.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 555,
+            "text": "\"{ grupo rojo 7[\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 556,
+            "end": 559,
+            "text": "13.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 560,
+            "end": 578,
+            "text": "\"{ grupo rojo 7[1\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 579,
+            "end": 582,
+            "text": "14.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 583,
+            "end": 602,
+            "text": "\"{ grupo rojo 7[1;\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 603,
+            "end": 606,
+            "text": "15.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 607,
+            "end": 627,
+            "text": "\"{ grupo rojo 7[1;2\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 628,
+            "end": 631,
+            "text": "16.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 632,
+            "end": 653,
+            "text": "\"{ grupo rojo 7[1;2]\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 654,
+            "end": 657,
+            "text": "17.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 658,
+            "end": 697,
+            "text": "\"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 726,
+            "end": 728,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 849,
+            "text": "bool:ID_del_grupo:cantidad_de_registros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 901,
+            "end": 925,
+            "text": "ID[aceptados;rechazados]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1074,
+            "end": 1086,
+            "text": "Sufijo:aviso",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "eb6e7779c9c02559a8aacb232bd28d4213413f7a344381ca90fc9a461afae4ac",
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "7f9fec9f4fee17ea8b91898ea2adeb7fbf0414bc0e3dcd8e994c1ef98994f3bc",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "4dbf19649cadd1c68bf9f8fe59d2a14c3a51444e20bd11e407ea4b3b2dfafe46",
+        "spans": [
+          {
+            "start": 25,
+            "end": 44,
+            "text": "1:0:2 7[0;0] 2[3;1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "1:1:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 65,
+            "text": "0:2:1 9[1;1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 80,
+            "text": "0:2:1 9[1;1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 247,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "75c94a855f9aebda6008a2942fdd6fb0fde962e400b48a97738deb472504d2bf",
+        "spans": [
+          {
+            "start": 115,
+            "end": 121,
+            "text": "primer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 222,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 313,
+            "text": "failbit",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "e5e285598e88788671fa347d5f9efd9ecc53bae7bfbeaff0a50ce38b4402468f",
+        "spans": [
+          {
+            "start": 101,
+            "end": 111,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 126,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 145,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 176,
+            "end": 181,
+            "text": "get()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 243,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 254,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 273,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 306,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 327,
+            "end": 335,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 353,
+            "end": 372,
+            "text": "candidato.registros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 460,
+            "end": 469,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 494,
+            "end": 500,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 512,
+            "end": 513,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 565,
+            "end": 566,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 592,
+            "end": 599,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 632,
+            "end": 636,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 689,
+            "end": 693,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "f771c2a14db42277f3261f6701dce77173889c8874d890662ba6133ba44c9a19",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/question",
+        "sourceSha256": "ab3c151887c1a905b07a085f556189680299d4e5c4317df9b6dadd4ca3edaaa3",
+        "spans": [
+          {
+            "start": 19,
+            "end": 29,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/explanation",
+        "sourceSha256": "02a41cfeb05d9e15a5a9591d170631f5897d4881c0728fb38bb56b755d504a94",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 36,
+            "text": "resto",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/question",
+        "sourceSha256": "bf9f16a0b95fab933867efd994787ad8236d2e43099c9ad39ca75e5da93ca200",
+        "spans": [
+          {
+            "start": 22,
+            "end": 28,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 36,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 59,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 78,
+            "text": "7[3;1]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/explanation",
+        "sourceSha256": "729ef9ddc4d7eeced80b7775440c1d83f71cd2d6530a75c249da68f4c1ab2b41",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/0",
+        "sourceSha256": "f6232e575aa30c5ee2dc9bb5e895afdd08d298f4f6e85db14867d624bac8c343",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/1",
+        "sourceSha256": "2582953b92576d5f0d86351c6f8b75970cc6bb8690a330d9c16a804e685c493f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/options/2",
+        "sourceSha256": "c0ad168cff7867ee286567008970c42486abc8666a28aa55dbadc86488377845",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "13559ef7c7a8d1b590f0f496a603a9e20fb1cf7d926761000f9e78c3aec5d4e8",
+        "spans": [
+          {
+            "start": 64,
+            "end": 103,
+            "text": "\"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 123,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 182,
+            "end": 188,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 197,
+            "text": "2[3;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 209,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 238,
+            "text": "aviso",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 325,
+            "text": "\"{ grupo rojo 7[0;0]\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 339,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 341,
+            "end": 351,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 361,
+            "end": 366,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "633071619dd7c1638cae0869e972d120f17c04f78ca0f8b5e5b4c7867474bb95",
+        "spans": [
+          {
+            "start": 235,
+            "end": 287,
+            "text": "(Stroustrup, 2024, secciones 9.8–9.9.2, pp. 267–274)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2a3b2245996f431dc621fdcd926242660a97d9ccafb123d88f0d17c2bdb28bbb",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "8f571ed977a11d46ba2aa828032f2a3180dc8c66fcf419e9c3423a21f5248de6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "eofbit",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c23167273eaabb28d3265f09514e4787c6bdbe67faf256fdf613e05a589ae171",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback",
+        "sourceSha256": "fc5c58066c41bdb5aec0de9a802620d62252edfbdd47e50d3959c3b3dffb43d9",
+        "spans": [
+          {
+            "start": 62,
+            "end": 69,
+            "text": "std::ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 98,
+            "text": "peek()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 127,
+            "text": "get()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 166,
+            "text": "siguiente",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d1c471ee50199f0e796c9d175d6805deef6583e4c420b5dcf3281b1bcd1438a1",
+        "spans": [
+          {
+            "start": 86,
+            "end": 94,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "72859a19be8b7af434d201115bd5ced0f771e6ed8010141191499f85a3d7df20",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "fe5c7cc9b158784eabe83e21764a435217e995feef87da2367d6caaf48434852",
+        "spans": [
+          {
+            "start": 17,
+            "end": 18,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 72,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "0b83dddfcb6045b50337d2e20c4835875e124073e3b79d953e0f3f80fe6f268f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "fe5569fcdaf3f1c55c6c9c175262b2733e55ad03676a09ecdf6c61ca1cca08cc",
+        "spans": [
+          {
+            "start": 112,
+            "end": 117,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 142,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "62190169341dae8eb84342b372ab3f86e7f05ec2ddb07e2c742181e33a54744f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/reviewFeedback",
+        "sourceSha256": "d73912b065cbc76afe4c1bde7361097992e56dd5465ebb28cb6acdb85a0ce5da",
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 129,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 192,
+            "text": "siguiente",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "28c70d0c8d757c3a851108335a8ac071a4fef0473d3a3ece89f46bd9d8c82b38",
+        "spans": [
+          {
+            "start": 47,
+            "end": 48,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 56,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 72,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "f962040707f33e194bbab9f69a76ce3c9e52eb5c17f8c596314c86c092113930",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "b2fcbe5dfc3e65c5ddd93cee15c59c2c09f1bf95f23389cbcd7a8308c6d40027",
+        "spans": []
+      }
+    ]
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "657fb7037bfb9f892d9cd437f1395e1aeb06b3d232db4b9f6188b69dee76a774"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "b19beb139ea9530209ab7eed15082a3d553b9c10421b34d7222feab3e095d02d"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "241d9874d6c37d8c7a1374b31a062744e4a2fef167cf8d2abf3b0df3bd98b087"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "debe253b42b6c0bb6c14bb75469400f034a1c54d9c1fd811753556b4b41a85b8"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "fbd1afa4ebdf538c7872c5103484620e61386b741f81eaf00945a374e446d8af"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "478f4d55f5141746320ef5cb5a2ff313210d6a7fe8f4c28ea527bfb884b7a24e"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "8c395b8ce40da082d2d57b4e4d52f2d1f9646e96e8c87c6134add10016fa6703"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "4196e7caca90b051804902042aac743c747e0cdd360c76b186334fd45552a769"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "caaeb0112fd19a9fd19bff7476435a42339cf124b905af4c04ee1529e210495e"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "c2089cb928e082a9c0a4e145ed88365887528234e5447ca39881cad57c3d7a6e",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "d4ad7fab3de610b1bf0db04eea969a86f61409c02bd9eef9917fa4ef9596c508"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "aac2c6996d0d936cab5392423fa4fa5e9ba8d6d0a8e907cc378897e8bfca5627"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "8d4983a86d7c40ae4cef33255ca3c72d99072ce65b393c8bc8a97cb28a178cdd"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "52fdb78bd735714e6148c4ac4f0fbf7bc028ffea0004bc9e0caad9088d0bcb0d"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "c0aed9e5b7edaf91b2644e6aec9536714c60515027dacad9bb22bbc3f20cc866"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "beb172ab5fb6c47d73fa836b9f7596b7d48a442a5dc4267424e3367bf5fa7a93"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ee9ee8dd5b0954850e3502d592dd4daf3dbbaa88269bfa7f6c6736e777b882cb"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "ceeb225c2f90895a07e9790c057c7a2962ff4d0e7958aa1aabcaab9d37b065e2",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "657fb7037bfb9f892d9cd437f1395e1aeb06b3d232db4b9f6188b69dee76a774"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "b19beb139ea9530209ab7eed15082a3d553b9c10421b34d7222feab3e095d02d"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "241d9874d6c37d8c7a1374b31a062744e4a2fef167cf8d2abf3b0df3bd98b087"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "debe253b42b6c0bb6c14bb75469400f034a1c54d9c1fd811753556b4b41a85b8"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "fbd1afa4ebdf538c7872c5103484620e61386b741f81eaf00945a374e446d8af"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "478f4d55f5141746320ef5cb5a2ff313210d6a7fe8f4c28ea527bfb884b7a24e"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "8c395b8ce40da082d2d57b4e4d52f2d1f9646e96e8c87c6134add10016fa6703"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "4196e7caca90b051804902042aac743c747e0cdd360c76b186334fd45552a769"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "caaeb0112fd19a9fd19bff7476435a42339cf124b905af4c04ee1529e210495e"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "371ca19e0d3a9c2ae03f9c80a48014bd84d2e3e8c406f26359f9d7578c25d431",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "0256b4b1365beb2bf76d0aa42f8e408eb4ddefdfe4594f6e67d621a499efb238"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "dc623654e445dd837172e036302826af9fa935182662ce14c137c820067b1657"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "b9fd51d597b5c0c426b287c4b9890e0e1288eda7e5a55d5b7592d456c4c2024c"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "fa7f289b3ccfad8147d01a2a1e88645c44101815a56124f94d6d781e5b619671"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "8977448b5c34011f7b9e1577677dd527616adf2fce5b456d417c060b7ae4c608"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "b7a821e5e1e2db2a7f50ec13aa7c0e1962f66a820f7e9752c22180707bcd944b"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "118b468d9f44009525c73b35b18fb0fda740f4dc2111d3f57c9ca2545538c290"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8a6d2fb219dd06e4d343cfc9c7e4c46ede21ae03468329b93afa3af54848e5a3",
+        "afterSha256": "b4d3a57b4a1daf1f3b5bd3ab0dbfbb6c3be44d61e7d05ac0012798c04f8d5fc3"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "cb36bfbeae7992923fc4ebfad8ae2a32a42a1492bddf02a4411e1a46dd99daea",
+        "afterSha256": "72f4373329ebcb3edd42d71776b432a96f911c944e63a555479c70c4c8e3760e"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "c1693d1794aff4e7246060aeb31892832b18923e77849693980e9413f9c2621e",
+        "afterSha256": "8d08360769ea58e05e6a65b15b943df0367010dd8f594ebd75f8270dce498d0c"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "64cd3e295f4a0f73680e904bf21d5fe2343f97dc3fb42362ee98e3739b76f123",
+        "afterSha256": "a7dbbf851d64da70c2b67f2213dc86422b742b0c4dff7ddb4fe37e3710502086"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a4e42ed335ae9569a6cff007080619449cdd5e7b7a0b441884e7c3e650b92efd",
+        "afterSha256": "bd64182c208c4ab1f1cb21b9095a610dbed6efada3794418bfe644fc2a9caa8f"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "84eacdb97ffa9d8ca4ad54ac7b7a6ec51ed6514dbf00a5417e21373669703cd5",
+        "afterSha256": "9ac394d9a12d2285040e8e9b0e7d313ea2ab18b6cc4de9dcbc90a465ec9fff2b"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "3602e8f5e208b42d55f400145aa6ed35d6f9eda94288284538850ab580bd29ac",
+        "afterSha256": "d0a3b1c7a88fd018926f0ff8774a5af14adf30afee5a0e7f0322fe24dcf6dd38"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "f5707acd9c30cf64907944fd678ba1501dd1b801e366dab61c098b45e4993b46",
+        "afterSha256": "2c92bd2c9e8af1df62d4cfb95b100ed3fe0ca750069fad79cd8ae03299ff4cfd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "70a5bfe2dbe3a88ea1e78c426691cea30994687ec08abbe9126e2fc416efd8be",
+        "afterSha256": "777fd88d5c1f03c24a2bb8dc9048d355c6afe8e6cc94affd4d75a4f3241f3685"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "d68edef9149978f29a1f0ab366a46e520cbe6193dbd237aaf8c43f34e723cdfc",
+        "afterSha256": "1556192d37b7e011f93d75e302cae4f72fb7b7e04a9c342384f02c34ec3a8ca2"
+      }
+    ]
+  }
 }
