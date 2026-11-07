@@ -454,27 +454,31 @@ struct LessonReader::Impl {
                     const auto add_legacy=[&](const std::vector<Part>& old,const std::string& old_page,bool editorial_formatting=false,const std::vector<std::string>& revised_regions=std::vector<std::string>{},bool positional_page_identity=false,bool semantic_policy=false,bool component_mode_policy=false){
                         register_legacy(old,old_page,editorial_formatting,false,revised_regions,positional_page_identity,semantic_policy,component_mode_policy);
                         const bool cpp_context=std::ranges::any_of(old,[](const auto& part){return part.region.reading_context=="cpp"&&part.region.math_mode=="auto";});
-                        // Historical output policy is independent of C++ math
-                        // context, including explicit mathMode:text. Compose
-                        // it with both existing context migrations when needed.
+                        // Output and prose inference are independent. B42 and
+                        // original already include the old prose reader; only
+                        // old-current needs its additional plan-only selector.
                         using OutputPolicy=windows::NarrationOutputDataPolicy;
-                        for(const auto output_policy:{OutputPolicy::current,OutputPolicy::b42,OutputPolicy::original})for(const std::string_view context:{"","cpp_previous_parentheses","auto"}){
+                        for(const auto output_policy:{OutputPolicy::current,OutputPolicy::b42,OutputPolicy::original})
+                        for(const bool previous_prose:{false,true})for(const std::string_view context:{"","cpp_previous_parentheses","auto"}){
                             const bool previous_output=output_policy!=OutputPolicy::current;
-                            if((!previous_output&&context.empty())||(!cpp_context&&!context.empty()))continue;
+                            if((previous_prose&&previous_output)||(!previous_output&&!previous_prose&&context.empty())||(!cpp_context&&!context.empty()))continue;
                             std::vector<Part> previous;
                             for(std::size_t i=0;i<old.size();){const auto& part=old[i];
                                 const bool change_context=!context.empty()&&part.region.reading_context=="cpp"&&part.region.math_mode=="auto";
-                                // The new output refinements apply only inside
-                                // backticks. Unaffected regions retain their
-                                // exact historical segments without more RPCs.
-                                const bool change_output=previous_output&&part.region.source_text.find('`')!=std::string::npos;
-                                if(!change_context&&!change_output){previous.push_back(part);++i;continue;}
+                                // Unmarked natural prose can change without a
+                                // backtick. Explicit metadata never used the
+                                // ambiguous prose-token inference.
+                                const bool change_prose=previous_prose&&!part.region.text_semantics;
+                                const bool change_output=previous_output&&(!part.region.text_semantics||part.region.source_text.find('`')!=std::string::npos);
+                                if(!change_context&&!change_output&&!change_prose){previous.push_back(part);++i;continue;}
                                 auto origin=part.region;const std::string source_context=change_context?std::string(context):origin.reading_context;
                                 const auto output_prefix=output_policy==OutputPolicy::b42?narration_legacy::b42_output_prefix:narration_legacy::previous_output_prefix;
                                 origin.reading_context=previous_output?std::string(output_prefix)+source_context:source_context;
-                                const auto cache_key=origin.reading_context+'\0'+origin.math_mode+'\0'+origin.source_text;
+                                if(change_prose)origin.reading_context=std::string(narration_legacy::prose_inference_prefix)+origin.reading_context;
+                                const auto cache_key=origin.reading_context+'\0'+origin.math_mode+'\0'+origin.source_text+semantic_signature(origin.text_semantics);
                                 auto [cached,inserted]=previous_context_plans.try_emplace(cache_key);
-                                if(inserted)cached->second=backend->plan(origin.source_text,lang,stop,source_context,origin.math_mode,output_policy);
+                                if(inserted)cached->second=backend->plan(origin.source_text,lang,stop,source_context,origin.math_mode,output_policy,
+                                    origin.text_semantics,windows::NarrationSemanticPolicy::current,change_prose);
                                 std::map<std::string,std::size_t> occurrences;
                                 for(auto sentence:cached->second){
                                     const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
@@ -505,7 +509,9 @@ struct LessonReader::Impl {
                                 const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}}
                         add_legacy(previous,current_page,false,{},false,true);
                     }
-                    for(const auto& entry:history.entries)if(entry.page==current_page&&entry.semantic_plan){
+                    for(const auto& entry:history.entries)if(entry.page==current_page&&entry.semantic_plan)
+                    for(const bool previous_prose:{false,true}){
+                        if(previous_prose&&std::ranges::all_of(entry.semantic_plan->regions,[](const auto& proof){return proof.semantics.has_value();}))continue;
                         std::vector<Part> previous;bool exact=true,component_mode_policy=false;std::vector<std::string> revised_guides;
                         const auto semantic_policy=entry.semantic_plan->policy=="windows-semantic-v1"
                             ?windows::NarrationSemanticPolicy::original:windows::NarrationSemanticPolicy::current;
@@ -515,7 +521,11 @@ struct LessonReader::Impl {
                             component_mode_policy=component_mode_policy||found->math_mode!=proof.math_mode;
                             if(found->source_text!=proof.source)revised_guides.push_back(found->key);
                             auto origin=*found;origin.source_text=proof.source;origin.math_mode=proof.math_mode;origin.text_semantics=proof.semantics;std::map<std::string,std::size_t> occurrences;
-                            for(auto sentence:backend->plan(origin.source_text,lang,stop,origin.reading_context,origin.math_mode,windows::NarrationOutputDataPolicy::current,origin.text_semantics,semantic_policy)){
+                            const bool change_prose=previous_prose&&!origin.text_semantics;
+                            const auto source_context=origin.reading_context;
+                            if(change_prose)origin.reading_context=std::string(narration_legacy::prose_inference_prefix)+source_context;
+                            for(auto sentence:backend->plan(origin.source_text,lang,stop,source_context,origin.math_mode,windows::NarrationOutputDataPolicy::current,
+                                origin.text_semantics,semantic_policy,change_prose)){
                                 const auto occurrence=occurrences[sentence.prepared]++;previous.push_back({origin,std::move(sentence),{},occurrence});}
                         }
                         if(exact){std::vector<windows::NarrationSegment> planned_previous_sentences;for(const auto& part:previous)planned_previous_sentences.push_back(part.sentence);

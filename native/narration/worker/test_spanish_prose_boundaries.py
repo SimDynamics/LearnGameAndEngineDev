@@ -73,8 +73,9 @@ class SpanishProseBoundariesTest(unittest.TestCase):
         if U11_ASSET.read_bytes() != cls.u11_bytes:
             raise AssertionError("Narration QA changed the current U11L14 asset")
 
-    def checked_plan(self, source, voice, context="auto"):
-        plan = self.worker.ask("plan", text=source, readingContext=context, language="es", voice=voice)
+    def checked_plan(self, source, voice, context="auto", previous_prose_inference=False):
+        previous = {"previousProseInference": True} if previous_prose_inference else {}
+        plan = self.worker.ask("plan", text=source, readingContext=context, language="es", voice=voice, **previous)
         self.assertTrue(plan["segments"])
         cursor = 0
         for segment in plan["segments"]:
@@ -185,9 +186,10 @@ class SpanishProseBoundariesTest(unittest.TestCase):
                     "El carácter y la línea permanecen.", "Cada carácter y un intento cuentan.",
                     "Cada letra y las palabras permanecen.", "Letras y palabras.",
                     "El texto contiene letras y palabras.", "La letra y la palabra permanecen.")
-        # Explicit code/math reaches the established canonical readers before
-        # this Windows-only prose rule. Bare named letters retain that reading,
-        # including a second y that really is the conjunction after their name.
+        # Preserve the exact preceding frontend for bookmark authentication.
+        # Its inferred bare letters are historical pronunciations, rather than
+        # requirements for newly authored unmarked prose. Explicit code/math
+        # still reaches the canonical readers unchanged in either policy.
         negatives = {
             "La letra y es una consonante.": "La letra i griega es una consonante.",
             "La letra y la puedes escribir en minúscula.": "La letra i griega la puedes escribir en minúscula.",
@@ -224,7 +226,7 @@ class SpanishProseBoundariesTest(unittest.TestCase):
                                      language="es", voice=voice)["segments"])
             for source, expected in negatives.items():
                 with self.subTest(voice=voice, negative=source):
-                    plan = self.checked_plan(source, voice)
+                    plan = self.checked_plan(source, voice, previous_prose_inference=True)
                     self.assertEqual(expected, " ".join(part["spokenText"] for part in plan["segments"]))
 
     def test_04_current_u11_conjunction_real_pcm_timings_and_cache_in_three_voices(self):

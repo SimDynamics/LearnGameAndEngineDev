@@ -37,6 +37,7 @@ FIELDS = {
     "paragraph": {"type", "text", "emphasis"},
     "note": {"type", "text", "emphasis"},
     "code": {"type", "language", "code"},
+    "image": set(_state_layout.image_resources.FIELDS),
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation", "reviewFeedback"},
     "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison", "reviewFeedback"},
     "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison", "reviewFeedback"},
@@ -48,7 +49,7 @@ FIELDS = {
     # Contenedor compartido ya admitido por MathPuzzleParser en ambas rutas.
     "math_puzzle": {"type", "schemaVersion", "version", "id", "prompt", "question", "representations", "tools", "responses", "feedback"},
 }
-EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
+EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler", "image"}
 COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck", "compileCheck"}
 REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
@@ -796,6 +797,16 @@ def validate_paragraph_emphasis_contract(block, where):
             require(len(starts) == 1, where, "un fragmento de énfasis repetido requiere occurrence explícito")
 
 
+def validate_image_contract(block, where, content_root=None):
+    try:
+        if content_root is None:
+            _state_layout.image_resources.validate_contract(block)
+        else:
+            _state_layout.image_resources.validate_resource(block, content_root)
+    except (ValueError, OSError) as error:
+        require(False, where, f"imagen curricular no válida: {error}")
+
+
 def validate_code_presentation_contract(block, where):
     """Optional presentation does not evaluate a response or infer its solution."""
     if block.get("type") == "order_code" and "language" in block:
@@ -1482,6 +1493,8 @@ def main(argv=None):
                     validate_math_puzzle_contract(block, where)
                 if kind == "cpp_compiler":
                     validate_cpp_compiler(block, where)
+                if kind == "image":
+                    validate_image_contract(block, where, ROOT / "app/src/main/assets/content")
                 if kind in {"heading", "paragraph", "note"}:
                     require(bool(block.get("text", "").strip()), where, "texto vacío")
                 if kind == "multiple_choice":

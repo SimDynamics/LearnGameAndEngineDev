@@ -56,6 +56,64 @@ void rejected(const JsonObject& root){const auto source=winrt::to_string(root.St
     try{(void)windows::parse_lesson_progress_metadata(source);}catch(const std::exception&){metadata=true;}
     require(full&&metadata,"Malformed text semantics passed a full or progress loader");
 }
+JsonObject annotate_root(JsonObject root,std::string_view source){
+    JsonObject span;span.Insert(L"start",JsonValue::CreateNumberValue(4));span.Insert(L"end",JsonValue::CreateNumberValue(7));
+    span.Insert(L"text",string("int"));span.Insert(L"role",string("cpp"));span.Insert(L"reading",string("technical"));JsonArray spans;spans.Append(span);
+    JsonObject field;field.Insert(L"path",string("/title"));field.Insert(L"sourceSha256",string(state::sha256(source)));field.Insert(L"spans",spans);
+    if(!root.HasKey(L"textSemantics")){JsonObject metadata;metadata.Insert(L"version",JsonValue::CreateNumberValue(1));metadata.Insert(L"fields",JsonArray{});root.Insert(L"textSemantics",metadata);}
+    const auto metadata=root.GetNamedObject(L"textSemantics");if(!metadata.HasKey(L"rootFields"))metadata.Insert(L"rootFields",JsonArray{});
+    metadata.GetNamedArray(L"rootFields").Append(field);return field;
+}
+void root_semantics(){
+    const auto legacy=JsonObject::Parse(LR"({"id":"qa_root_semantics","title":"\ud83d\ude00 `int` y 2: !\r\ne\u0301","pages":[{"blocks":[]}]})");
+    const auto source=winrt::to_string(legacy.GetNamedString(L"title"));
+    const auto before=windows::parse_lesson_json(winrt::to_string(legacy.Stringify()));
+    auto root=JsonObject::Parse(legacy.Stringify());annotate_root(root,source);
+    const auto load=[&](const JsonObject& candidate){return windows::parse_lesson_json(winrt::to_string(candidate.Stringify()));};
+    const auto after=load(root),progress=windows::parse_lesson_progress_metadata(winrt::to_string(root.Stringify()));
+    const curriculum::TextSemantics expected{source,{{4,7,"int",curriculum::SemanticRole::cpp,curriculum::SemanticReading::technical}}};
+    require(after.text_semantics.size()==1&&after.text_semantics.at("/title")==expected&&progress.text_semantics==after.text_semantics&&
+        after.title==before.title&&after.id==before.id&&after.pages[0].blocks.empty()&&after.state_layout.version==0,
+        "A root-only descriptor required a fabricated block/layout, normalized its source, or lost full/progress parity");
+    for(const auto role:{"prose","cpp","string","data","math","output","citation"})for(const auto reading:{"auto","natural","technical","characters"}){
+        auto candidate=JsonObject::Parse(root.Stringify());const auto span=candidate.GetNamedObject(L"textSemantics").GetNamedArray(L"rootFields").GetObjectAt(0).GetNamedArray(L"spans").GetObjectAt(0);
+        span.Insert(L"role",string(role));span.Insert(L"reading",string(reading));const auto current=load(candidate);
+        const auto& descriptor=current.text_semantics.at("/title");
+        require(descriptor.source==source&&descriptor.spans[0].role==curriculum::parse_semantic_role(role)&&
+            descriptor.spans[0].reading==curriculum::parse_semantic_reading(reading),"A root title lost its explicit palette or independent reading intent");
+    }
+    auto prose=JsonObject::Parse(root.Stringify());prose.GetNamedObject(L"textSemantics").GetNamedArray(L"rootFields").GetObjectAt(0).Insert(L"spans",JsonArray{});
+    require(load(prose).text_semantics.at("/title").spans.empty(),"Explicit prose-only root annotation disappeared");
+    auto mapped=fixture();mapped.Insert(L"title",string(source));const auto mapped_before=load(mapped);
+    annotate_root(mapped,source);annotate(mapped,0,"/text","\xf0\x9f\x98\x80 Usa `int p;`. Salida: N=1a|1b.",8,14,"int p;","cpp");
+    const auto mapped_after=load(mapped),mapped_progress=windows::parse_lesson_progress_metadata(winrt::to_string(mapped.Stringify()));
+    require(mapped_after.text_semantics==after.text_semantics&&mapped_progress.text_semantics==mapped_after.text_semantics&&
+        mapped_after.state_layout.raw_json==mapped_before.state_layout.raw_json,"Root authoring changed the immutable layout or block/root descriptor ownership");
+    for(std::size_t n=0;n<mapped_before.pages[0].blocks.size();++n){const auto& a=mapped_before.pages[0].blocks[n];const auto& b=mapped_after.pages[0].blocks[n];
+        require(a.raw_json==b.raw_json&&a.stable_id==b.stable_id&&a.address.page==b.address.page&&a.address.block==b.address.block,
+            "Root semantics changed an original block, response contract or saved address");}
+    for(unsigned mode=0;mode<16;++mode){auto bad=JsonObject::Parse(root.Stringify());const auto metadata=bad.GetNamedObject(L"textSemantics");
+        const auto field=metadata.GetNamedArray(L"rootFields").GetObjectAt(0);const auto span=field.GetNamedArray(L"spans").GetObjectAt(0);
+        if(mode==0)field.Insert(L"sourceSha256",string(std::string(64,'0')));
+        if(mode==1)field.Insert(L"path",string("/id"));
+        if(mode==2)field.Insert(L"block",string(""));
+        if(mode==3){span.Insert(L"start",JsonValue::CreateNumberValue(0));span.Insert(L"end",JsonValue::CreateNumberValue(1));span.Insert(L"text",string("\xf0\x9f\x98\x80"));}
+        if(mode==4)span.Insert(L"text",string("INT"));
+        if(mode==5)span.Insert(L"reading",string("character"));
+        if(mode==6)span.Insert(L"role",string("keyword"));
+        if(mode==7)metadata.GetNamedArray(L"rootFields").Append(field);
+        if(mode==8)metadata.Remove(L"fields");
+        if(mode==9)metadata.Insert(L"rootFields",JsonObject{});
+        if(mode==10)field.GetNamedArray(L"spans").Append(span);
+        if(mode==11)field.Insert(L"path",string("/title/"));
+        if(mode==12)span.Insert(L"start",JsonValue::CreateBooleanValue(true));
+        if(mode==13)field.Insert(L"spans",JsonValue::CreateNullValue());
+        if(mode==14)field.Remove(L"path");
+        if(mode==15)bad.Insert(L"title",string(source+" "));
+        rejected(bad);
+    }
+    auto block_without_layout=JsonObject::Parse(legacy.Stringify());annotate(block_without_layout,0,"/title",source,4,7,"int","cpp");rejected(block_without_layout);
+}
 void independent_region(const JsonObject& mathematical,std::string_view path,std::string_view source){
     auto root=fixture(&mathematical);const auto before=windows::parse_lesson_json(winrt::to_string(root.Stringify()));
     annotate(root,2,path,source,0,winrt::to_hstring(source).size(),source,"output");
@@ -143,6 +201,28 @@ void current_character_intent(){
         rejected(with_reading(JsonValue::Parse(json)));
     }
 }
+void current_initial_v2_delivery(){
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_preparar_el_proyecto_windows.json";
+    const auto read=[&]{std::ifstream input(path,std::ios::binary);require(bool(input),"Missing current Windows-project introductory lesson");
+        return std::string{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};};
+    const auto source=read();const auto full=windows::parse_lesson_json(source),progress=windows::parse_lesson_progress_metadata(source);
+    require(full.id=="cpp_fundamentals__archivos_y_programa_completo__preparar_el_proyecto_windows"&&progress.id==full.id&&
+        full.title==progress.title&&full.locale==progress.locale&&full.raw_json==source&&progress.raw_json==source&&
+        full.state_layout.version==2&&full.state_layout.raw_json==progress.state_layout.raw_json&&
+        full.state_layout.lineage==progress.state_layout.lineage&&full.pages.size()==progress.pages.size(),
+        "The initial curricular v2 delivery did not retain one identity and family in the full/progress loaders");
+    std::size_t blocks=0,activities=0,fields=0;
+    for(std::size_t p=0;p<full.pages.size();++p){require(full.pages[p].blocks.size()==progress.pages[p].blocks.size(),"Initial delivery lost a progress block");
+        for(std::size_t b=0;b<full.pages[p].blocks.size();++b){const auto& item=full.pages[p].blocks[b];const auto& metadata=progress.pages[p].blocks[b];++blocks;fields+=item.text_semantics.size();
+            require(item.raw_json==metadata.raw_json&&item.stable_id==metadata.stable_id&&item.address.page==metadata.address.page&&
+                item.address.block==metadata.address.block&&item.address.progress_page==metadata.address.progress_page&&item.text_semantics==metadata.text_semantics,
+                "Initial delivery changed a response, source owner, annotation or immutable storage address");
+            if(item.type==curriculum::BlockType::multiple_choice||item.type==curriculum::BlockType::math_puzzle){++activities;
+                require(curriculum::exercise_key(full,item)==curriculum::exercise_key(progress,metadata),"The progress loader gave an initial activity a different state key");}
+        }}
+    require(blocks>0&&activities>0&&fields>0&&read()==source,"Initial delivery lost its public annotations or rewrote the current curricular source");
+}
 }
 int main() try {
     winrt::init_apartment(winrt::apartment_type::multi_threaded);
@@ -180,7 +260,9 @@ int main() try {
         partial_full.pages[0].blocks[2].text_semantics==partial_progress.pages[0].blocks[2].text_semantics,
         "A native table cell could not keep its own annotation with an unmarked neighbor");
     independent_regions();
+    root_semantics();
     current_character_intent();
+    current_initial_v2_delivery();
     auto partial_feedback=JsonObject::Parse(original.Stringify());
     annotate(partial_feedback,2,"/feedback/correct","Correcto N=1",0,0,"","prose");rejected(partial_feedback);
     for(const auto path:{"/answers/0","/initialCode","/outputCheck/cases/0/outputs/0","/outputCheck/cases/0/standardInput"}){

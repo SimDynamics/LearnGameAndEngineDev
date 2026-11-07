@@ -21,6 +21,9 @@ from importlib import util as import_util
 _semantics_spec = import_util.spec_from_file_location("lgaed_text_semantics", Path(__file__).with_name("text_semantics.py"))
 text_semantics = import_util.module_from_spec(_semantics_spec)
 _semantics_spec.loader.exec_module(text_semantics)
+_images_spec = import_util.spec_from_file_location("lgaed_image_resources", Path(__file__).with_name("image_resources.py"))
+image_resources = import_util.module_from_spec(_images_spec)
+_images_spec.loader.exec_module(image_resources)
 
 
 class LayoutError(ValueError):
@@ -30,7 +33,7 @@ class LayoutError(ValueError):
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
-RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler"})
+RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
@@ -698,6 +701,8 @@ def state_payload(block: dict) -> dict:
     if kind in {"heading", "paragraph", "note"}:
         # Reading coverage belongs to an authored block identity, not its wording.
         return {key: value for key, value in block.items() if key not in {"text", "emphasis"}}
+    if kind == "image":
+        return {key: value for key, value in block.items() if key not in {"alt", "caption"}}
     if kind in {"multiple_choice", "fill_code", "output_prediction", "order_code",
                 "drag_fill_code", "inline_fill_code"}:
         payload = _choice_payload(block)
@@ -1373,7 +1378,7 @@ def _validate_presentation_relationships(document: dict) -> None:
                 if field == "referenceAfter":
                     require(identity not in references, "Duplicate reference presentation block")
                     references.add(identity)
-                    require(block.get("type") in {"heading", "paragraph", "note", "code"},
+                    require(block.get("type") in {"heading", "paragraph", "note", "code", "image"},
                             "An exercise or editor cannot be hidden as a reference")
                     require(positions[identity] > positions[activity],
                             "A reference must follow its activity in visual order")
@@ -1585,6 +1590,13 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compile_checks(document)
     _validate_intentional_exit_goals(document)
     _validate_crt_output_variants(document)
+    try:
+        for page in _pages(document):
+            for block in page["blocks"]:
+                if block.get("type") == "image":
+                    image_resources.validate_contract(block)
+    except (ValueError, KeyError, TypeError) as error:
+        raise LayoutError(f"Invalid curricular image: {error}") from error
     try:
         text_semantics.validate(document)
     except (ValueError, KeyError, TypeError) as error:
@@ -2158,6 +2170,61 @@ def _mapped_paths_at(repository: Path, commit: str) -> set[str]:
             and PurePosixPath(item).name.startswith("lesson_")}
 
 
+def _validate_family_baseline(repository: Path, commit: str, family: str, members: list,
+                              prior_paths: set[str], prior_documents: dict, identity_families: dict) -> None:
+    """Authenticate published histories, or one literal first delivery of a new family."""
+    locales = [PurePosixPath(path).relative_to(CONTENT_DIRECTORY).parts[0] for path, _ in members]
+    check_localized_family([document for _, document in members], locales)
+    v2 = [document for _, document in members
+          if type(document.get("stateLayout")) is dict and document["stateLayout"].get("version") == 2]
+    if not v2:
+        return
+    manifest = v2[0]["stateLayout"]["family"]
+    historical_paths = {f"{CONTENT_DIRECTORY}/{locale}/{family}" for locale in LOCALES} & prior_paths
+    if not historical_paths:
+        # Only this branch has no historical student slots. An unchanged,
+        # literal first layout is proved from the delivered sources themselves;
+        # no unpublished earlier wording, move, revision or addition is inferred.
+        identity = v2[0]["id"]
+        require(identity_families.get(identity) == {family},
+                "A new language family cannot share its lesson identity with another current family")
+        for path in sorted(prior_paths):
+            if path not in prior_documents:
+                prior_documents[path] = _git_document(repository, commit, path)
+            require(prior_documents[path].get("id") != identity,
+                    "A new language family cannot reuse a published lesson identity from another path")
+        for (path, document), locale in zip(members, locales):
+            require(path == f"{CONTENT_DIRECTORY}/{locale}/{family}" and path not in prior_paths,
+                    "A first language delivery must contain genuinely new lesson files")
+            meta = document.get("stateLayout")
+            require(type(meta) is dict and meta.get("version") == 2,
+                    "Every initial language source must carry its own complete v2 map")
+            require(meta["additions"] == [] and meta["editorial"] == [] and
+                    all(meta.get(field, []) == [] for field in V2_OPTIONAL_FIELDS),
+                    "A first language delivery cannot claim earlier additions, retirements or revisions")
+            source = {key: value for key, value in document.items()
+                      if key != "stateLayout" and key not in TEXT_PRESENTATION_FIELDS}
+            literal = prepare(source)["stateLayout"]
+            require(meta["origin"] == literal["origin"] and meta["current"] == literal["current"],
+                    "A first language delivery must retain its literal original page and block identities")
+            require(manifest[locale] == {"sha256": fingerprint(source), "origin": literal["origin"]},
+                    "An initial language source is not anchored to its exact delivered source")
+        return
+    for locale, source in manifest.items():
+        relative = f"{CONTENT_DIRECTORY}/{locale}/{family}"
+        require(relative in prior_paths, "A historical language source is absent from the published baseline")
+        if relative not in prior_documents:
+            prior_documents[relative] = _git_document(repository, commit, relative)
+        previous = prior_documents[relative]
+        old_meta = previous.get("stateLayout")
+        if type(old_meta) is dict and old_meta.get("version") == 2:
+            require(source == old_meta["family"][locale], "The published language provenance was replaced")
+        else:
+            require(source["sha256"] == fingerprint(_without_layout(previous))
+                    and source["origin"] == prepare(previous)["stateLayout"]["origin"],
+                    "A historical language source is not anchored to the published baseline")
+
+
 def check_repository(repository: Path, base_ref: str | None) -> dict:
     """Check every route and shipped locale against a pinned published tree.
 
@@ -2194,6 +2261,7 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
         previous = _git_document(repository, commit, path)
         if "stateLayout" in previous:
             prior_mapped[path] = previous
+    prior_documents = dict(prior_mapped)
     for path in mapped | prior_mapped.keys():
         require(path in documents, "A mapped lesson was removed: " + path)
         current = documents[path]
@@ -2202,40 +2270,27 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
                 previous = prior_mapped.get(path)
                 if previous is None:
                     previous = _git_document(repository, commit, path)
+                    prior_documents[path] = previous
                 validate_transition(previous, current)
             else:
                 # A new lesson has no positional state in the published app.
                 validate(current)
         except (ValueError, KeyError, TypeError) as exc:
             raise LayoutError(path + ": " + str(exc)) from exc
-    families = {}
+    families, identity_families = {}, {}
     for path, document in documents.items():
         relative = PurePosixPath(path).relative_to(CONTENT_DIRECTORY)
         require(len(relative.parts) >= 2, "A lesson must belong to a locale: " + path)
         family = PurePosixPath(*relative.parts[1:]).as_posix()
         families.setdefault(family, []).append((path, document))
+        if type(document.get("id")) is str:
+            identity_families.setdefault(document["id"], set()).add(family)
     checked_families = 0
     for family, members in families.items():
         if not any(path in mapped for path, _ in members):
             continue
         try:
-            locales = [PurePosixPath(path).relative_to(CONTENT_DIRECTORY).parts[0] for path, _ in members]
-            check_localized_family([document for _, document in members], locales)
-            v2 = [document for _, document in members
-                  if type(document.get("stateLayout")) is dict and document["stateLayout"].get("version") == 2]
-            if v2:
-                manifest = v2[0]["stateLayout"]["family"]
-                for locale, source in manifest.items():
-                    relative = f"{CONTENT_DIRECTORY}/{locale}/{family}"
-                    require(relative in prior_paths, "A historical language source is absent from the published baseline")
-                    previous = prior_mapped.get(relative) or _git_document(repository, commit, relative)
-                    old_meta = previous.get("stateLayout")
-                    if type(old_meta) is dict and old_meta.get("version") == 2:
-                        require(source == old_meta["family"][locale], "The published language provenance was replaced")
-                    else:
-                        require(source["sha256"] == fingerprint(_without_layout(previous))
-                                and source["origin"] == prepare(previous)["stateLayout"]["origin"],
-                                "A historical language source is not anchored to the published baseline")
+            _validate_family_baseline(repository, commit, family, members, prior_paths, prior_documents, identity_families)
         except (ValueError, KeyError, TypeError) as exc:
             raise LayoutError(family + ": " + str(exc)) from exc
         checked_families += 1

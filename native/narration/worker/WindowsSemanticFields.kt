@@ -5,6 +5,10 @@ import org.json.JSONObject
 
 /** Mirrors the presentation inventory, not a recursive walk through validators. */
 internal object WindowsSemanticFields {
+    /** Root fields have their own source owner, never a synthetic block ID. */
+    fun lesson(lesson: JSONObject): Map<String,String> = linkedMapOf<String,String>().also { fields ->
+        (lesson.opt("title") as? String)?.let { fields["/title"] = it }
+    }
     /** Match the native card's winner, retaining the parsed source object. */
     fun visibleCardSource(item: JSONObject): String {
         val source = listOf("label","text","value").firstOrNull(item::has)?.let(item::getString).orEmpty()
@@ -87,6 +91,7 @@ internal object WindowsSemanticFields {
             val kind = block.opt("type") as? String ?: return
             when {
                 kind in setOf("heading","paragraph","note") -> text(block,"text","")
+                kind=="image" -> for (name in listOf("alt","caption")) text(block,name,"")
                 kind in setOf("multiple_choice","fill_code","output_prediction","order_code","drag_fill_code","inline_fill_code") -> {
                     for (name in listOf("question","explanation")) text(block,name,"")
                     if (kind=="multiple_choice") strings(block.optJSONArray("options"),"/options")

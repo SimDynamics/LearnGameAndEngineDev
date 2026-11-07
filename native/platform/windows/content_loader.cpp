@@ -334,7 +334,9 @@ std::string state_fingerprint(const JsonObject& original) {
         value.GetNamedObject(L"outputCheck").GetNamedArray(L"cases").GetObjectAt(0).GetNamedArray(L"outputs").RemoveAtEnd();
         require(fingerprint(without_compiler_guidance(value))==crt_output_before,"The reviewed CRT spelling lost its exact complete original block");
     }
-    if (type == "heading" || type == "paragraph" || type == "note") {
+    if(type=="image"){
+        value.Remove(L"alt");if(value.HasKey(L"caption"))value.Remove(L"caption");
+    } else if (type == "heading" || type == "paragraph" || type == "note") {
         value.Remove(L"text"); if (value.HasKey(L"emphasis")) value.Remove(L"emphasis");
     } else if (type == "multiple_choice" || type == "fill_code" || type == "output_prediction" || type == "order_code" ||
                type == "drag_fill_code" || type == "inline_fill_code") {
@@ -1118,7 +1120,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require((retired.next.empty() || (valid_id(retired.next) && result.signatures.contains(retired.next))) &&
                     retired.next != retired.id,"Invalid retired activity successor");
             const auto block = item.GetNamedObject(L"block"); const auto type = text(block,"type");
-            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler",
+            require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image",
                     "Only compiler activities and their presentation blocks can be retired");
             require(state_fingerprint(block) == result.signatures.at(retired.id),"A retired response/code contract changed");
             retired.raw_json = utf8(block.Stringify()); retired.sha256 = fingerprint(block);
@@ -1403,12 +1405,22 @@ Block read_block(const JsonObject& value,std::string_view original) {
     const std::map<std::string, BlockType> types{{"heading", BlockType::heading}, {"paragraph", BlockType::paragraph}, {"note", BlockType::note}, {"code", BlockType::code},
         {"multiple_choice", BlockType::multiple_choice}, {"output_prediction", BlockType::output_prediction}, {"fill_code", BlockType::fill_code},
         {"order_code", BlockType::order_code}, {"cpp_compiler", BlockType::cpp_compiler},
-        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}};
+        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}, {"image",BlockType::image}};
     const std::set<std::string> mathematics{"math_puzzle","math_multiple_choice_single","math_multiple_choice_multi","math_numeric_input",
         "math_multi_input","math_expression_input","math_structured_answer","math_equation_fill_blanks","math_ordering_drag","math_number_line",
         "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy","math_segment_transport"};
     require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
+    if(result.type==BlockType::image){
+        allowed_keys(value,{"type","id","imageId","src","alt","caption"});
+        result.image=ImageResource{text(value,"imageId"),text(value,"src"),text(value,"alt"),optional_text(value,"caption")};
+        if(value.HasKey(L"id")){
+            const auto id=value.GetNamedString(L"id");const std::wstring_view visible(id.c_str(),id.size());
+            require(visible.find(L'\0')==visible.npos&&std::ranges::any_of(visible,[](wchar_t c){return !narration_space(c);}),"A present image block id must not be blank");
+        }
+        if(value.HasKey(L"caption"))require(!result.image->caption.empty(),"A present image caption must not be empty");
+        validate_image_resource(*result.image);
+    }
     if(value.HasKey(L"compileCheck"))validate_compile_check_payload(value);
     result.id = optional_text(value, "id"); result.text = optional_text(value, "text"); result.question = optional_text(value, "question");
     result.code = optional_text(value, "code"); result.initial_code = optional_text(value, "initialCode"); result.language = optional_text(value, "language");
@@ -1600,6 +1612,7 @@ struct SemanticPublicFields {
     explicit SemanticPublicFields(const JsonObject& source) {
         const auto type=kind(source);
         if(type=="heading"||type=="paragraph"||type=="note")string_field(source,"text","");
+        else if(type=="image")for(const auto name:{"alt","caption"})string_field(source,name,"");
         else if(type=="multiple_choice"||type=="fill_code"||type=="output_prediction"||type=="order_code"||type=="drag_fill_code"||type=="inline_fill_code"){
             for(const auto name:{"question","explanation"})string_field(source,name,"");
             if(type=="multiple_choice")strings(values(source,"options"),"/options");
@@ -1642,10 +1655,20 @@ void read_text_semantics(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"textSemantics"))return;
     const OriginalJson original(lesson.raw_json);
     require_integer_json_numbers(original.text(original.member(original.root(),"textSemantics")));
-    const auto metadata=root.GetNamedObject(L"textSemantics");allowed_keys(metadata,{"version","fields"},true);
+    const auto metadata=root.GetNamedObject(L"textSemantics");allowed_keys(metadata,{"version","fields","rootFields"});
     require(integer(metadata.GetNamedValue(L"version"),1)==1,"Unknown textSemantics version");const auto fields=array(metadata,"fields");
-    require(fields.Size()<=100000,"Too many text semantic fields");if(!fields.Size())return;
-    require(lesson.state_layout.version==2,"Text semantics requires the existing stable stateLayout v2");
+    const auto root_fields=metadata.HasKey(L"rootFields")?array(metadata,"rootFields"):JsonArray{};
+    require(fields.Size()<=100000&&root_fields.Size()<=100000-fields.Size(),"Too many text semantic fields");
+    if(fields.Size())require(lesson.state_layout.version==2,"Text semantics requires the existing stable stateLayout v2");
+    const auto descriptor_for=[&](const JsonObject& field,const std::string& source){
+        const auto digest=text(field,"sourceSha256");require(valid_hash(digest)&&digest==sha256(source),"Text semantic source fingerprint is stale");
+        TextSemantics descriptor;descriptor.source=source;const auto spans=array(field,"spans");require(spans.Size()<=100000,"Too many text semantic spans");
+        for(const auto& entry:spans){const auto span=entry.GetObject();allowed_keys(span,{"start","end","text","role","reading"});
+            SemanticSpan result;result.start=integer(span.GetNamedValue(L"start"),16*1024*1024);result.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
+            result.text=SemanticPublicFields::strict_string(span.GetNamedString(L"text"));result.role=parse_semantic_role(text(span,"role"));
+            if(span.HasKey(L"reading"))result.reading=parse_semantic_reading(text(span,"reading"));descriptor.spans.push_back(std::move(result));}
+        validate_text_semantics(descriptor);return descriptor;
+    };
     std::map<std::string,Block*> owners;for(auto& page:lesson.pages)for(auto& block:page.blocks)owners.emplace(block.stable_id,&block);
     std::map<std::string,std::map<std::string,std::string>> public_fields;
     for(const auto& value:fields){const auto field=value.GetObject();allowed_keys(field,{"block","path","sourceSha256","spans"},true);
@@ -1653,18 +1676,18 @@ void read_text_semantics(const JsonObject& root,Lesson& lesson) {
         auto inventory=public_fields.find(owner);if(inventory==public_fields.end())inventory=public_fields.emplace(owner,
             SemanticPublicFields(JsonObject::Parse(key(at->second->raw_json))).fields).first;
         const auto selected=inventory->second.find(path);require(selected!=inventory->second.end(),"Text semantic path is not a supported public string");
-        const auto digest=text(field,"sourceSha256");require(valid_hash(digest)&&digest==sha256(selected->second),"Text semantic source fingerprint is stale");
-        TextSemantics descriptor;descriptor.source=selected->second;const auto spans=array(field,"spans");require(spans.Size()<=100000,"Too many text semantic spans");
-        for(const auto& entry:spans){const auto span=entry.GetObject();allowed_keys(span,{"start","end","text","role","reading"});
-            SemanticSpan result;result.start=integer(span.GetNamedValue(L"start"),16*1024*1024);result.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
-            result.text=SemanticPublicFields::strict_string(span.GetNamedString(L"text"));result.role=parse_semantic_role(text(span,"role"));
-            if(span.HasKey(L"reading"))result.reading=parse_semantic_reading(text(span,"reading"));descriptor.spans.push_back(std::move(result));}
-        validate_text_semantics(descriptor);require(at->second->text_semantics.emplace(path,std::move(descriptor)).second,"Duplicate text semantic field");
+        require(at->second->text_semantics.emplace(path,descriptor_for(field,selected->second)).second,"Duplicate text semantic field");
     }
     for(const auto& [identity,inventory]:public_fields){const auto& block=*owners.at(identity);const auto raw=JsonObject::Parse(key(block.raw_json));
         const auto group=SemanticPublicFields(raw).feedback_origins(raw);const bool annotated=std::ranges::any_of(group,[&](const auto& path){return block.text_semantics.contains(path);});
         if(annotated)require(std::ranges::all_of(group,[&](const auto& path){return block.text_semantics.contains(path);}),
             "Annotating mathematical feedback requires every possible authored feedback origin in that block");
+    }
+    for(const auto& value:root_fields){const auto field=value.GetObject();allowed_keys(field,{"path","sourceSha256","spans"},true);
+        const auto path=text(field,"path");require(path=="/title"&&root.HasKey(L"title")&&root.GetNamedValue(L"title").ValueType()==JsonValueType::String,
+            "Root text semantic path is not a supported public string");
+        const auto source=SemanticPublicFields::strict_string(root.GetNamedString(L"title"));
+        require(lesson.text_semantics.emplace(path,descriptor_for(field,source)).second,"Duplicate root text semantic field");
     }
 }
 void read_relationships(const JsonObject& root, Lesson& lesson) {

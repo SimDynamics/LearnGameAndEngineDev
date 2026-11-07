@@ -1,6 +1,7 @@
 #pragma once
 #include "core/text_semantics.hpp"
 #include "core/cpp_project.hpp"
+#include "core/image_resource.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -15,7 +16,7 @@
 namespace lgaed::curriculum {
 
 enum class BlockType { heading, paragraph, note, code, multiple_choice, output_prediction,
-                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle };
+                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image };
 enum class TextComparison { trimmed, exact, tokens };
 enum class AnswerComparison { code, cpp_decimal_literal_value };
 
@@ -121,6 +122,7 @@ struct Block {
     std::string stable_id, id, text, question, code, initial_code, language;
     std::string explanation, review_feedback, raw_json;
     std::string code_template, prompt, math_type;
+    std::optional<ImageResource> image;
     std::vector<Emphasis> emphasis;
     std::map<std::string,TextSemantics> text_semantics;
     std::vector<std::string> options, answers, fragments;
@@ -216,6 +218,9 @@ struct Lesson {
     std::optional<std::string> narration_language;
     std::vector<Block> retired_blocks;
     bool compiler_puzzles_required = false;
+    // Exact lesson-owned public strings; paths are rooted at the lesson and
+    // have no invented block identity or effect on stored exercise addresses.
+    std::map<std::string,TextSemantics> text_semantics;
 };
 
 // Preserves the identities of existing stdout objectives while allowing the

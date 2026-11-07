@@ -20,18 +20,6 @@ inline void merge(std::vector<Range>& ranges) {
 inline bool contained(Range item,std::span<const Range> ranges) {
     return std::ranges::any_of(ranges,[&](Range value){return value.first<=item.first&&value.second>=item.second;});
 }
-inline std::set<std::wstring> names(std::wstring_view source) {
-    std::set<std::wstring> result;
-    for(std::size_t at=0;at<source.size();){
-        if(source.substr(at).starts_with(L"//")){auto end=source.find_first_of(L"\r\n",at+2);at=end==source.npos?source.size():end;continue;}
-        if(source.substr(at).starts_with(L"/*")){auto end=source.find(L"*/",at+2);at=end==source.npos?source.size():end+2;continue;}
-        if(source[at]==L'\''||source[at]==L'"'){at=quoted_end(source,at,source.size());continue;}
-        if(!letter(source[at])&&source[at]!=L'_'){++at;continue;}
-        const auto first=at++;while(at<source.size()&&identifier(source[at]))++at;
-        result.emplace(source.substr(first,at-first));
-    }
-    return result;
-}
 inline bool capital(wchar_t value) {
     WORD kind=0;return GetStringTypeW(CT_CTYPE1,&value,1,&kind)&&(kind&C1_UPPER);
 }
@@ -266,33 +254,10 @@ inline void data_references(CurricularRoles& roles,std::wstring_view text,std::s
     },true);
     merge(roles.outputs);merge(roles.strings);subtract(roles.strings,roles.outputs);
 }
-// A complete integer remainder expression has operands on both sides of %.
-// A percentage, decimal, identifier suffix or incomplete group supplies no
-// such evidence. Bound work/depth independently of the lesson's input length.
-inline std::size_t remainder_expression_end(std::wstring_view text,std::size_t first) {
-    if(first>=text.size()||(!digit(text[first])&&text[first]!=L'(')||
-        (first&&(identifier(text[first-1])||text[first-1]==L'.'||text[first-1]==L'%'||text[first-1]==L'(')))return first;
-    const auto limit=std::min(text.size(),first+256);bool remainder=false;
-    const auto expression=[&](auto& self,std::size_t& cursor,unsigned depth)->bool{
-        if(depth>16)return false;
-        const auto atom=[&]()->bool{
-            if(cursor>=limit)return false;
-            if(text[cursor]==L'('){++cursor;if(!self(self,cursor,depth+1)||cursor>=limit||text[cursor]!=L')')return false;++cursor;return true;}
-            const auto start=cursor;while(cursor<limit&&digit(text[cursor]))++cursor;return cursor>start;
-        };
-        if(!atom())return false;
-        while(cursor<limit&&text[cursor]==L'%'){remainder=true;++cursor;if(!atom())return false;}
-        return true;
-    };
-    auto end=first;
-    if(!expression(expression,end,0)||!remainder)return first;
-    if(end<text.size()&&(identifier(text[end])||text[end]==L'.'||text[end]==L'%'||text[end]==L'('))return first;
-    return end;
-}
 }
 
-inline CurricularRoles curricular_roles(std::wstring_view text,std::string_view locale,const Analysis& semantic,
-    std::wstring_view visible_prose={},std::wstring_view visible_code={},std::span<const Range> explicit_code={}) {
+inline CurricularRoles curricular_roles(std::wstring_view text,const Analysis& semantic,
+    std::span<const Range> explicit_code={}) {
     using namespace curricular_role_detail;
     CurricularRoles result;
     const auto authored=inline_code_spans(text);
@@ -316,45 +281,8 @@ inline CurricularRoles curricular_roles(std::wstring_view text,std::string_view 
     const auto add_code=[&](std::size_t first,std::size_t last){
         if(first<last&&last<=text.size()&&!overlaps({first,last},semantic.protected_ranges))result.code.emplace_back(first,last);
     };
-    std::set<std::wstring> local_names;
-    for(const auto range:result.code){const auto found=names(text.substr(range.first,range.second-range.first));local_names.insert(found.begin(),found.end());}
-    auto known=names(visible_code);known.insert(local_names.begin(),local_names.end());
-    if(!visible_prose.empty()){
-        const auto context=analyze(visible_prose,locale);
-        for(const auto range:context.fragments){const auto found=names(visible_prose.substr(range.first,range.second-range.first));known.insert(found.begin(),found.end());}
-    }
-    // A bounded assumption explicitly binds two already visible code names.
-    // Seeing the same words in source alone never colors ordinary directions.
-    matches(text,LR"(\b(?:sup[oó]n|supongamos)\s+([A-Za-z_][A-Za-z_0-9]*)\s+y\s+([A-Za-z_][A-Za-z_0-9]*)\s+en\s+[+-]?[0-9]+\s*\.\.\s*[+-]?[0-9]+)",[&](const auto& match){
-        if(!known.contains(match[1].str())||!known.contains(match[2].str()))return;
-        for(const auto group:{1,2})add_code(static_cast<std::size_t>(match.position(group)),static_cast<std::size_t>(match.position(group)+match.length(group)));
-    },true);
-    // Context is supplied only for public, unlocked programming controls. Do
-    // not promote bare mathematical text or fetch a hidden model/answer.
-    if(!visible_prose.empty()||!visible_code.empty())for(std::size_t at=0;at<text.size();++at){
-        const auto end=remainder_expression_end(text,at);if(end>at){add_code(at,end);at=end-1;}
-    }
-    for(std::size_t at=0;at<text.size();){
-        if(!letter(text[at])&&text[at]!=L'_'){++at;continue;}
-        const auto first=at++;while(at<text.size()&&identifier(text[at]))++at;
-        if(first&&identifier(text[first-1]))continue;
-        const auto word=text.substr(first,at-first),prefix=tail(text,first,96),suffix=text.substr(at,std::min<std::size_t>(80,text.size()-at));
-        const bool role=has(prefix,LR"(\b(?:variable|objeto|entero|identificador|miembro|función|método|tipo|variable|object|integer|identifier|member|function|method|type|entier|identificateur|membre|fonction|méthode)\s+(?:(?:llamad[oa]|denominad[oa]|named|called|nommée?|appelée?)\s+)?$)",true);
-        const bool stored_value=has(prefix,
-            LR"(\bvalor\s+[+−-]?(?:[0-9]+(?:[.,][0-9]+)?|\.[0-9]+)\s+en\s+$)",true);
-        // A type/name merely present in another visible source is not evidence
-        // that ordinary prose is tracing a variable. This relation needs its
-        // own local technical occurrence; explicit noun cues use known below.
-        const bool value=local_names.contains(std::wstring(word))&&begins(suffix,
-            LR"(\s+(?:vale|valen|conserva|recibe|pasa|contiene|guarda|counts?|holds?|contains?|vaut|contient)\b)",true);
-        if(((role||stored_value)&&known.contains(std::wstring(word)))||value)add_code(first,at);
-        // Complete prefix/postfix updates include their operand, not just ++.
-        if(first>=2&&(text.substr(first-2,2)==L"++"||text.substr(first-2,2)==L"--")&&
-            (first==2||!identifier(text[first-3]))){auto end=skip_spaces(text,at);if(technical_prose::at(text,end,L';'))++end;else end=at;add_code(first-2,end);}
-        if(text.substr(at).starts_with(L"++")||text.substr(at).starts_with(L"--")){
-            auto end=skip_spaces(text,at+2);if(technical_prose::at(text,end,L';'))++end;else end=at+2;add_code(first,end);
-        }
-    }
+    // Plain words do not acquire code roles from neighboring source, noun
+    // cues or a homonymous authored reference. Only supplied ranges own code.
     merge(result.code);
     data_references(result,text,trusted,semantic.protected_ranges);
     result.code.insert(result.code.end(),result.outputs.begin(),result.outputs.end());

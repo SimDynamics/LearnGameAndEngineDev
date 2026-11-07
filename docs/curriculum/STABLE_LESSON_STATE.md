@@ -112,6 +112,19 @@ No se reconstruyen traducciones ni se rellenan sus orígenes para hacerlos coinc
 La primera familia se ancla al SHA publicado; al adoptar después otro idioma se
 reutiliza esa misma familia, sin cambiar la referencia histórica.
 
+Una familia realmente nueva puede entregarse directamente en v2, con su marcado
+de texto, sin publicar antes una lección artificial sin mapa. El control contra
+`--base-ref` debe demostrar que ningún idioma de esa familia existía y que su ID
+no pertenecía a otra lección publicada. Cada idioma incluido lleva un mapa v2
+completo: origen e identidades corresponden exactamente a las páginas y bloques
+entregados, sin movimientos, adiciones, retiros ni revisiones anteriores. El SHA
+inicial autentica el documento literal sin `stateLayout` ni el overlay validado
+`textSemantics`; no se quitan programas, respuestas, relaciones ni otros datos.
+Las marcas se validan aparte contra sus fuentes exactas. Una vez publicada esa
+primera entrega, su manifiesto v2 pasa a ser la referencia inmutable habitual.
+Esta regla no permite regenerar familias anteriores ni añadir un idioma a una
+familia existente sin acreditar su procedencia.
+
 El objeto `stateLayout` v2 contiene estos campos obligatorios y admite los archivos
 opcionales `retired`, `retirementHistory`, `orderRefinements`,
 `choiceRevisions` y `compilerRevisions` descritos más abajo:
@@ -843,9 +856,10 @@ prueba un código de salida distinto ni una condición nueva.
 
 ## Autoría explícita de texto público en Windows
 
-`textSemantics` es un objeto opcional **en la raíz de la lección**. Requiere su
-`stateLayout` v2 válido y sólo admite `version: 1` y `fields`. Cada entrada de
-`fields` declara exactamente:
+`textSemantics` es un objeto opcional **en la raíz de la lección**. Admite
+`version: 1`, `fields` obligatorio y `rootFields` opcional. Las entradas de
+`fields` requieren el `stateLayout` v2 existente y válido; cada una declara
+exactamente:
 
 | Campo | Contrato |
 | --- | --- |
@@ -853,6 +867,14 @@ prueba un código de salida distinto ni una condición nueva.
 | `path` | JSON Pointer canónico, relativo al bloque original, de un texto público admitido. |
 | `sourceSha256` | SHA-256 hexadecimal minúsculo de los bytes UTF-8 exactos de ese campo. |
 | `spans` | Fragmentos ordenados, sin solaparse: `start`, `end`, `text`, `role` y opcionalmente `reading`. |
+
+`rootFields` permite anotar los textos propios de la lección, sin inventar un
+bloque. Cada entrada contiene exactamente `path`, `sourceSha256` y `spans`, con
+las mismas reglas de fuente, límites, roles e intención. La ruta admitida es
+`/title`, relativa a la raíz. Un descriptor del título no cambia la cadena,
+su identidad ni las direcciones de los ejercicios. Una lección anterior sin
+`stateLayout` puede usar `fields: []` y `rootFields`; esto no crea un mapa de
+estado ni permite declarar propietarios de bloques inexistentes.
 
 `start` es inclusivo y `end` exclusivo, contados en unidades UTF-16 del texto
 original, antes de ocultar delimitadores, convertir CRLF o añadir un veredicto.
@@ -907,6 +929,8 @@ La lista exacta está centralizada en
 cargadores nativo y JVM. Entre los campos disponibles están:
 
 - `heading`, `paragraph`, `note`: `/text`.
+- `image`: `/alt` y `/caption` si está presente. Son regiones independientes,
+  aunque sus textos coincidan; `/src` e `/imageId` no son texto anotable.
 - Actividades ordinarias: `/question`, `/explanation`, opciones de selección
   `/options/i` y las formas públicas existentes de `/reviewFeedback`.
 - Compiladores: `/compileCheck/explanation`,
@@ -950,6 +974,15 @@ descriptor a `document["textSemantics"] = {"version": 1, "fields": [...]}`,
 conservando los otros descriptores existentes, y ejecuta `validate(document)`
 además de la transición y el validador curricular habituales. El ejemplo prepara
 una entrada; no autoriza sustituir la lista completa ni regenerar el origen.
+
+Para el título, `make_root_field(document, "/title", spans)` prepara la misma
+forma exacta sin propiedad `block`. Work incorpora esa entrada en
+`textSemantics.rootFields`, conservando `fields` y los demás descriptores.
+`validate` comprueba el conjunto completo y conserva su resultado histórico de
+propietarios de bloques; `validate_root_fields` devuelve por separado los
+descriptores de la raíz. `public_lesson_text_fields` enumera sus rutas admitidas.
+Los preparadores y validadores de transición conservan estas marcas como
+presentación, sin regenerar las huellas o la familia histórica.
 
 Las marcas son presentación; no cambian respuestas, programas o huellas de
 estado. Si cambia el texto público, se conserva la cadena editorial del bloque

@@ -631,8 +631,63 @@ def windows_reading_source(name: str, code: str) -> str:
     Only generated Windows sources change. Exact anchors fail closed if Android's
     implementation moves, rather than silently leaving one preparation path stale.
     """
-    if name == "SpanishTechnicalSpeech":
+    if name == "ManualEnglishTerms":
+        code = exact(code, 'object ManualEnglishTerms {', '''object ManualEnglishTerms {
+    // Keep the historical dictionary/parser exact, but require actual code
+    // syntax or closed authored delimiters before applying its English voice.
+    // Nominal prose cues and a spelling's PROSE permission are not authorship.
+    private fun currentSelection(source: String, selected: List<Match>, mathMode: String): List<Match> {
+        if (WindowsNarrationSpeechRules.keepPreviousProseInference() || selected.isEmpty()) return selected
+        val code = SpanishTechnicalSpeech.syntacticCodeRanges(source, mathMode)
+        return selected.filter { match ->
+            code.any { match.start >= it.first && match.endExclusive <= it.last + 1 } ||
+                templateContext(match.entry, source.substring((match.start - 100).coerceAtLeast(0), match.start),
+                    source.substring(match.endExclusive, (match.endExclusive + 100).coerceAtMost(source.length)))
+        }
+    }
+    fun select(source: String, mathMode: String = "auto"): List<Match> =
+        currentSelection(source, selectPrevious(source, mathMode), mathMode)
+    fun selectFrench(source: String, mathMode: String = "auto"): List<Match> =
+        currentSelection(source, selectFrenchPrevious(source, mathMode), mathMode)
+''')
+        code = exact(code, '    fun select(source: String, mathMode: String = "auto"): List<Match> {',
+                     '    private fun selectPrevious(source: String, mathMode: String = "auto"): List<Match> {')
+        code = exact(code, '    fun selectFrench(source: String, mathMode: String = "auto"): List<Match> {',
+                     '    private fun selectFrenchPrevious(source: String, mathMode: String = "auto"): List<Match> {')
+    elif name == "SpanishTechnicalSpeech":
         code = exact(code, 'object SpanishTechnicalSpeech {', '''object SpanishTechnicalSpeech {
+    // Reuse the canonical syntax parser for the current lexical voice filter.
+    // Prose-only names, known-word lists and open backticks supply no code range.
+    internal fun syntacticCodeRanges(source: String, mathMode: String): List<IntRange> {
+        val ranges = mutableListOf<IntRange>()
+        var index = 0
+        while (index < source.length) {
+            if (source[index] == '`') {
+                val delimiter = if (source.startsWith("```", index)) "```" else "`"
+                val end = source.indexOf(delimiter, index + delimiter.length)
+                if (end >= 0) {
+                    ranges += index + delimiter.length until end
+                    index = end + delimiter.length
+                    continue
+                }
+            }
+            val math = mathEnd(source, index)
+            if (math != null) { index = math; continue }
+            val address = url.matchAt(source, index)
+            if (address != null) { index = address.range.last + 1; continue }
+            if (source[index] == '\\'' || source[index] == '"') {
+                val end = quotedEnd(source, index)
+                if (end != null) { index = end; continue }
+            }
+            // A data record's braces alone do not make every word inside it
+            // source code. Declarations/calls inside a real body still match.
+            if (source[index] == '{' || source[index] == '[') { index++; continue }
+            val end = codeEnd(source, index, mathMode) ?: WindowsNarrationSpeechRules.keywordStatementEnd(source, index)
+            if (end != null && end > index) { ranges += index until end; index = end }
+            else index++
+        }
+        return ranges
+    }
     internal fun semanticCode(source: String, onPiece: (Int, Int, String) -> Unit): String {
         val selected = ManualEnglishTerms.select("`" + source + "`", "cpp")
             .map { it.copy(start = it.start - 1, endExclusive = it.endExclusive - 1) }.associateBy { it.start }
@@ -640,6 +695,11 @@ def windows_reading_source(name: str, code: str) -> str:
         return ManualEnglishSpeech.PREPARED + readCode(source, 0, selected, onPiece)
     }
 ''')
+        code = exact(code, '        val identifier = technicalIdentifier.matchAt(text, index)',
+                     '        val identifier = if (WindowsNarrationSpeechRules.keepPreviousProseInference())\n'
+                     '            technicalIdentifier.matchAt(text, index) else null')
+        code = exact(code, '                \'_\' -> "guion bajo"',
+                     '                \'_\' -> if (WindowsNarrationSpeechRules.keepPreviousProseInference()) "guion bajo" else null')
         # Bound only implicit source detection. Explicit code, identifier speech
         # and onPiece source ownership continue through the canonical reader.
         declaration = '    private val declaration = Regex("(?:(?:const|unsigned|signed|long|short)\\\\s+)*(?:int|double|float|bool|char|auto|void|long|short)(?:\\\\s*[*&]+(?:\\\\s*[A-Za-z_][A-Za-z_0-9]*)?|\\\\s+[A-Za-z_][A-Za-z_0-9]*(?=\\\\s*[({=;]))")'
@@ -758,6 +818,12 @@ def windows_reading_source(name: str, code: str) -> str:
         code = exact(code, 'listOf("auto", "text", "inline", "block")',
                      'listOf("auto", "text", "inline", "block", "cpp", "cpp_previous_parentheses")')
     elif name == "LessonNarrationText":
+        code = exact(code, '            "heading", "paragraph" -> append(output, block.string("text"), block.mode())',
+                     '            "image" -> if (WindowsNarrationSpeechRules.keepWholeReadingRegions()) {\n'
+                     '                append(output,block.string("alt"))\n'
+                     '                append(output,block.string("caption"))\n'
+                     '            }\n'
+                     '            "heading", "paragraph" -> append(output, block.string("text"), block.mode())')
         # Only current Windows anticipation selects the exact sources shown by
         # native controls. Historical export keeps its preceding extractor.
         code = exact(code, '''        when {
@@ -885,7 +951,7 @@ def host_sources() -> list[Path]:
     sources = []
     for name in PURE_NARRATION:
         path = APP / "narration" / f"{name}.kt"
-        if name in {"SpanishTechnicalSpeech", "NarrationSegments", "NarrationWordMappings"}:
+        if name in {"ManualEnglishTerms", "SpanishTechnicalSpeech", "NarrationSegments", "NarrationWordMappings"}:
             sources.append(generated(f"{name}.kt", windows_reading_source(name, path.read_text(encoding="utf-8-sig"))))
         else:
             sources.append(path)

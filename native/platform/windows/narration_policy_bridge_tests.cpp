@@ -94,12 +94,102 @@ ComponentSource current_component_source(std::string_view relative,std::size_t p
 }
 }
 
-int main() try {
+namespace {
+int prose_inference_bridge(const WindowsEnvironment& environment){
+    using namespace winrt::Windows::Data::Json;
+    using Output=NarrationOutputDataPolicy;using Semantic=NarrationSemanticPolicy;
+    const auto original=std::filesystem::path(build::source_root)/"out/narration/runtime.json";
+    std::ifstream input(original,std::ios::binary);require(bool(input),"Missing existing narration runtime");
+    const std::string bytes{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
+    const auto config=JsonObject::Parse(winrt::to_hstring(bytes));const auto arguments=config.GetNamedArray(L"arguments");
+    JsonArray isolated;unsigned resources=0;
+    const auto missing=environment.paths.root/L"missing-model-resources";
+    require(!std::filesystem::exists(missing),"Plan-only QA unexpectedly has voice models installed");
+    for(unsigned i=0;i<arguments.Size();++i){const auto arg=arguments.GetStringAt(i);
+        if(arg==L"--original-wavs"){require(i+1<arguments.Size(),"Invalid original recording argument");++i;continue;}
+        isolated.Append(JsonValue::CreateStringValue(arg));
+        if(arg==L"--resources"||arg==L"--english-resources"){
+            require(i+1<arguments.Size(),"Invalid model resources argument");++i;
+            isolated.Append(JsonValue::CreateStringValue(missing.native()));++resources;
+        }
+    }
+    require(resources==2,"Plan-only QA did not isolate both model locations");config.Insert(L"arguments",isolated);
+    const auto runtime=environment.paths.root/L"prose-plan-runtime.json";
+    {std::ofstream output(runtime,std::ios::binary|std::ios::trunc);const auto text=winrt::to_string(config.Stringify());
+        output.write(text.data(),static_cast<std::streamsize>(text.size()));require(bool(output),"Cannot write isolated plan-only runtime");}
+    NarrationWorker worker(runtime);unsigned groups=0;
+    const std::string source="El carácter y cualquier emoji forman texto.";
+    const std::string old_spoken="El carácter i griega cualquier emoji forman texto.";
+    for(const std::string_view context:{"auto","cpp"})for(const std::string_view mode:{"auto","text"}){
+        const auto current=worker.plan(source,"es",{},context,mode);
+        const auto old=worker.plan(source,"es",{},context,mode,Output::current,{},Semantic::current,true);
+        const auto after=worker.plan(source,"es",{},context,mode,Output::current,{},Semantic::current,false);
+        owners(source,current);owners(source,old);owners(source,after);
+        require(current.size()==1&&old.size()==1&&spoken(current)==source&&spoken(old)==old_spoken&&
+            old.front().prepared==std::string("\uE002")+old_spoken,
+            "Native plan-only prose policy failed to reconstruct the exact measured previous speech");
+        require(same(current,after)&&same(current,worker.plan(source,"es",{},context,mode)),
+            "The scoped historical prose flag escaped into a following current request");
+        for(const auto policy:{Output::b42,Output::original})require(same(old,worker.plan(source,"es",{},context,mode,policy)),
+            "An existing historical output policy lost its exact original prose behavior");
+        const auto current_key=worker.identity("qa-prose-policy","es","ef_dora",current);
+        const auto old_key=worker.identity("qa-prose-policy","es","ef_dora",old);
+        require(current_key!=old_key&&current_key==worker.identity("qa-prose-policy","es","ef_dora",after),
+            "The native prose selector changed an unaffected current identity or failed to distinguish historical speech");
+        const curriculum::TextSemantics authored_prose{source,{}};
+        const auto authored_now=worker.plan(source,"es",{},context,mode,Output::current,authored_prose);
+        require(spoken(authored_now)==source&&same(authored_now,
+                worker.plan(source,"es",{},context,mode,Output::current,authored_prose,Semantic::current,true)),
+            "Historical inference overrode an explicitly authored prose field");
+        const auto at=wide(source).find(L" y ")+1;
+        const curriculum::TextSemantics authored_letter{source,{{at,at+1,"y",curriculum::SemanticRole::cpp}}};
+        const auto explicit_now=worker.plan(source,"es",{},context,mode,Output::current,authored_letter);
+        require(same(explicit_now,worker.plan(source,"es",{},context,mode,Output::current,authored_letter,Semantic::current,true))&&
+            spoken(explicit_now).find("griega")!=std::string::npos,"Historical inference changed an explicit code-letter role");
+        ++groups;
+    }
+    {
+        // The previous production term selector used this lexical frame;
+        // this assertion is a compatibility oracle, not a recording capture.
+        const std::string source_type="El tipo int conserva una unidad.";
+        const auto now=worker.plan(source_type,"es",{},"cpp","text");
+        const auto previous=worker.plan(source_type,"es",{},"cpp","text",Output::current,{},Semantic::current,true);
+        owners(source_type,now);owners(source_type,previous);
+        require(now.size()==1&&previous.size()==1&&spoken(now)==source_type&&spoken(previous)==source_type&&
+            now.front().prepared==std::string("\uE002")+source_type&&
+            previous.front().prepared=="\uE002El tipo \uE000int~p\uE001 conserva una unidad.",
+            "Native historical prose reconstruction lost the previous nominal term frame");
+        ++groups;
+    }
+    const std::string sequence="Antes conserva el dato. "+source+" Después comprueba el resultado.";
+    const auto current=worker.plan(sequence,"es",{},"cpp","text");
+    const auto old=worker.plan(sequence,"es",{},"cpp","text",Output::current,{},Semantic::current,true);
+    owners(sequence,current);owners(sequence,old);
+    require(current.size()==3&&old.size()==3&&same(current.front(),old.front())&&same(current.back(),old.back())&&
+        !same(current[1],old[1]),"Prose migration invalidated an unchanged neighboring source sentence");
+    using presentation::narration_legacy::Passage;
+    const std::string previous_context=std::string(presentation::narration_legacy::prose_inference_prefix)+"cpp";
+    const Passage before{"qa-owner",sequence,previous_context,"text",old[1].prepared,old[1].start,old[1].end};
+    const Passage after{"qa-owner",sequence,"cpp","text",current[1].prepared,current[1].start,current[1].end};
+    require(presentation::narration_legacy::same_previous_passage(before,after),"The real native plan lost its bounded historical prose passage");
+    auto foreign=after;foreign.source=source;
+    require(!presentation::narration_legacy::same_previous_passage(before,foreign),"A prose alias recognized another source");
+    worker.shutdown();
+    require(!std::filesystem::exists(missing),"Plan-only QA installed or synthesized model resources");
+    std::cout<<"PASS "<<groups<<" native prose-policy IPC groups plus exact neighboring passage ownership; current/previous/current, explicit semantics and independent old output policies. Models absent; no synthesis, playback or UI.\n";
+    return 0;
+}
+}
+
+int main(int argc,char** argv) try {
+    const bool prose_only=argc==2&&std::string_view(argv[1])=="--prose-inference";
+    require(argc==1||prose_only,"Unknown native narration policy test selector");
     ensure_winrt_apartment();
     const LaunchOptions options{ProfileId::Codex,L"narration-policy-"+
         std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false};
     const auto environment=resolve_windows_environment(options);
     initialize_profile_directories(environment.paths);
+    if(prose_only)return prose_inference_bridge(environment);
     NarrationWorker worker(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
     using Policy=NarrationOutputDataPolicy;
     const auto l17=current_l17_report();

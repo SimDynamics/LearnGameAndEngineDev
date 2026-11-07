@@ -10,6 +10,7 @@ inline constexpr std::string_view previous_output_prefix="previous_output_data/"
 inline constexpr std::string_view b42_output_prefix="previous_output_b42/";
 inline constexpr std::string_view semantic_prefix="previous_text_semantics/";
 inline constexpr std::string_view component_mode_prefix="previous_component_math_mode/";
+inline constexpr std::string_view prose_inference_prefix="previous_prose_inference/";
 struct Passage {
     std::string_view owner,source,context,math_mode,prepared;
     std::size_t start=0,end=0;
@@ -31,6 +32,8 @@ inline bool same_previous_passage(const Passage& before,const Passage& after) {
     if(previous_component_mode)context.remove_prefix(component_mode_prefix.size());
     const bool previous_semantics=context.starts_with(semantic_prefix);
     if(previous_semantics)context.remove_prefix(semantic_prefix.size());
+    const bool previous_prose=context.starts_with(prose_inference_prefix);
+    if(previous_prose)context.remove_prefix(prose_inference_prefix.size());
     const bool original=context.starts_with(previous_output_prefix);
     const bool b42=context.starts_with(b42_output_prefix);
     const bool previous_output=original||b42;
@@ -38,7 +41,7 @@ inline bool same_previous_passage(const Passage& before,const Passage& after) {
     else if(b42)context.remove_prefix(b42_output_prefix.size());
     const bool previous_cpp=(context=="auto"||context=="cpp_previous_parentheses")
         &&after.context=="cpp"&&before.math_mode=="auto"&&after.math_mode=="auto";
-    const bool same_context=(previous_output||previous_semantics||previous_component_mode)&&context==after.context;
+    const bool same_context=(previous_output||previous_semantics||previous_component_mode||previous_prose)&&context==after.context;
     return (same_context||previous_cpp)&&(before.math_mode==after.math_mode||previous_component_mode)
         &&before.owner==after.owner&&before.source==after.source
         &&before.start==after.start&&before.end==after.end&&before.prepared!=after.prepared;

@@ -465,12 +465,18 @@ void curricular_role_formatting(){
                 set_rich_text(target.value,question,{},false,RichTextRole::body,"es",{},RichTextContext{supplied?std::string_view(visible_fragment):std::string_view{}, {}});
                 const auto first=wide(question).find(L"anterior");check(first!=std::wstring::npos&&edit_text(target.value)==question,"Visible context changed the actual ordering question");
                 for(std::size_t offset=0;offset<std::wstring_view(L"anterior").size();++offset){const auto style=character(target.value,static_cast<LONG>(first+offset));
-                    check(style.crTextColor==(supplied?code_ink(L"anterior"):reader_theme::foreground(target.value))&&!(style.dwEffects&CFE_UNDERLINE),
-                        "The ordering identifier ignored visible fragment context or invented a code role without that reference");}
-                for(std::size_t offset=0;offset<std::wstring_view(L"anterior").size();++offset){const auto style=character(target.value,static_cast<LONG>(first+offset));
-                    if(supplied)neutral_reference_background(target.value,style);
-                    else check((style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target.value,first+offset),"An ordering name without visible context acquired a technical background");}
+                    check(style.crTextColor==reader_theme::foreground(target.value)&&!(style.dwEffects&CFE_UNDERLINE)&&
+                        (style.dwEffects&CFE_AUTOBACKCOLOR)&&!reference_at(target.value,first+offset),
+                        "A name in unmarked ordering prose acquired code ink/background from a neighboring fragment");}
             }
+            const auto name_at=wide(question).find(L"anterior");
+            const lgaed::curriculum::TextSemantics marked_question{question,{{name_at,name_at+8,"anterior",lgaed::curriculum::SemanticRole::cpp}}};
+            set_rich_text(target.value,question,{},false,RichTextRole::body,"es",{},RichTextContext{visible_fragment,{}},&marked_question);
+            check(edit_text(target.value)==question,"Explicit ordering semantics changed its exact source");
+            for(std::size_t offset=0;offset<8;++offset){const auto style=character(target.value,static_cast<LONG>(name_at+offset));
+                check(style.crTextColor==code_ink(L"anterior")&&!(style.dwEffects&CFE_UNDERLINE),
+                    "An explicitly authored ordering identifier lost the native code palette");
+                neutral_reference_background(target.value,style);}
             // set_rich_text loads a whole document via EM_STREAMIN; it is not
             // an in-place edit transaction. The editor's syntax-only refresh
             // owns the existing selection-preservation contract.
@@ -497,7 +503,7 @@ void curricular_role_formatting(){
         const auto version_text=wide(version);const auto name=version_text.find(L"C++20");
         check(name!=version_text.npos,"The current curricular C++ version fixture lost its language name");
         const auto analyzed=technical_prose::analyze(version_text,"es");
-        const auto roles=technical_prose::curricular_roles(version_text,"es",analyzed);
+        const auto roles=technical_prose::curricular_roles(version_text,analyzed);
         check(std::ranges::find(roles.numbers,std::pair{name+3,name+5})!=roles.numbers.end(),"The existing numeric classifier omitted the real C++20 version digits");
         set_rich_text(target.value,version);const auto expected_ink=reader_theme::foreground(target.value);
         check(edit_text(target.value)==version,"Highlighting a curricular language version rewrote its source");
@@ -517,13 +523,14 @@ void curricular_role_formatting(){
             "Technical-sample context must use the public naming exercise, not validity or arbitrary option text");
         for(const auto& option:candidates){
             const auto sample=wide(option);
-            set_rich_text(mathematics.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{naming_question,{}});
+            set_rich_text(mathematics.value,option,{},true);
             std::vector<CHARFORMAT2W> previous;for(std::size_t at=0;at<sample.size();++at)previous.push_back(character(mathematics.value,static_cast<LONG>(at)));
-            set_rich_text(target.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{naming_question,{},true});
+            const lgaed::curriculum::TextSemantics marked_sample{option,{{0,sample.size(),option,lgaed::curriculum::SemanticRole::cpp}}};
+            set_rich_text(target.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{naming_question,{},true},&marked_sample);
             check(edit_text(target.value)==option,"Invalid-name highlighting repaired or rewrote the authored option");
             for(std::size_t at=0;at<sample.size();++at){const auto style=character(target.value,static_cast<LONG>(at));
-                check(style.crTextColor==previous[at].crTextColor&&(style.dwEffects&(CFE_BOLD|CFE_ITALIC))==(previous[at].dwEffects&(CFE_BOLD|CFE_ITALIC)),
-                    "An invalid option acquired identifier ink or lost its existing emphasis merely to add a backdrop");
+                check(sample[at]==L' '||style.crTextColor==previous[at].crTextColor,
+                    "An explicitly authored name sample differs from the same native code palette");
                 neutral_reference_background(target.value,style);
                 if(sample[at]!=L' '&&!reader_theme::palette(target.value).high_contrast)check(reference_at(target.value,at),"An incorrect technical sample lacks its own native reading range");
             }
@@ -536,11 +543,74 @@ void curricular_role_formatting(){
     std::cout<<"PASS curricular roles: native C++ palette, active mathematics neutral, neutral background without underlines/red accents, citations/homonyms, Unicode/CRLF, emphasis, lesson chrome and four zooms; actual contrast mode only\n";
 }
 }
+void unmarked_prose_keeps_its_role() {
+    using namespace lgaed::presentation;
+    Window parent{CreateWindowExW(WS_EX_NOACTIVATE,L"STATIC",L"Hidden prose role QA",WS_OVERLAPPEDWINDOW,
+        0,0,680,420,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    check(parent.value!=nullptr,"Create the isolated nonactivating prose host");
+    Window target{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|ES_MULTILINE|ES_READONLY,
+        0,0,640,380,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+    check(target.value!=nullptr,"Create the isolated prose control");
+    reader_theme::apply(target.value,reader_theme::Surface::card);
+    const RichTextContext public_code{"La variable anterior conserva su valor.","int a, o, y, anterior, izquierda, derecha;"};
+    const std::wstring linked_source=L"std::string url = \"https://example.org/12\";";
+    const std::array<technical_prose::Range,1> declared_source{{{0,linked_source.size()}}};
+    check(technical_prose::authored_analysis(linked_source,declared_source).fragments==std::vector<technical_prose::Range>(declared_source.begin(),declared_source.end()),
+        "An explicitly authored source lost its range because a string contains a URL");
+    check(technical_prose::authored_analysis(linked_source).fragments.empty(),"A URL in unmarked prose inferred surrounding source code");
+    const auto plain=[&](std::string_view text,RichTextRole role,std::string_view locale="es"){
+        set_rich_text(target.value,text,{},false,role,locale,{},public_code);
+        check(edit_text(target.value)==text,"Plain prose changed its original text");
+        const auto expected=role==RichTextRole::body||reader_theme::palette(target.value).high_contrast
+            ?reader_theme::foreground(target.value):RGB(255,255,255);
+        for(std::size_t at=0;at<wide(text).size();++at){const auto style=character(target.value,static_cast<LONG>(at));
+            check(style.crTextColor==expected&&!reference_at(target.value,at)&&(style.dwEffects&CFE_AUTOBACKCOLOR),
+                "Unmarked prose borrowed identifier ink or a backdrop from code/context");
+        }
+    };
+    for(const auto role:{RichTextRole::body,RichTextRole::prompt,RichTextRole::heading,RichTextRole::lesson_title}){
+        for(const auto text:{"Caracteres y valores lógicos","El carácter y cualquier emoji forman texto.",
+            "La letra o también aparece aquí.","La variable anterior conserva su valor.",
+            "Supón izquierda y derecha en el dibujo.","La función main y el tipo int son referencias sin marcar."})plain(text,role);
+        plain("The variable anterior and the letter a remain ordinary prose.",role,"en");
+        plain("La variable anterior et la lettre a restent du texte.",role,"fr");
+    }
+    set_rich_text(target.value,"Compara `anterior`, pero anterior sigue siendo prosa.",{},false,RichTextRole::body,"es",{},public_code);
+    const auto visible=wide(edit_text(target.value));const auto first=visible.find(L"anterior"),second=visible.find(L"anterior",first+1);
+    check(first!=visible.npos&&second!=visible.npos,"The two homonymous occurrences disappeared");
+    for(std::size_t n=0;n<8;++n){
+        neutral_reference_background(target.value,character(target.value,static_cast<LONG>(first+n)));
+        check(reference_at(target.value,first+n)&&!reference_at(target.value,second+n),"A delimited reference expanded to an unmarked homonym");
+        check(character(target.value,static_cast<LONG>(second+n)).crTextColor==reader_theme::foreground(target.value),"A nearby marked name changed ordinary prose ink");
+    }
+    const lgaed::curriculum::TextSemantics marked{"La letra y une palabras.",{{9,10,"y",lgaed::curriculum::SemanticRole::cpp}}};
+    set_rich_text(target.value,marked.source,{},false,RichTextRole::body,"es",{},public_code,&marked);
+    check(reference_at(target.value,9)&&!reference_at(target.value,10),"An explicitly authored letter lost its exact reference limits");
+    const lgaed::curriculum::TextSemantics natural{marked.source,{}};
+    set_rich_text(target.value,natural.source,{},false,RichTextRole::body,"es",{},public_code,&natural);
+    check(rich_text_reference_ranges(target.value).empty(),"An explicit empty semantic field inherited a technical letter");
+    const std::string numbers="Hay 12.5 y 0 casos (Autor, 2024, p. 7).";
+    set_rich_text(target.value,numbers,{},false,RichTextRole::body,"es",{},public_code);
+    const auto numeric_text=wide(numbers);
+    for(const auto token:{L"12.5",L"0 casos"}){
+        const auto at=numeric_text.find(token);check(reference_at(target.value,at),"An ordinary curricular number lost its neutral backdrop");
+        check(character(target.value,static_cast<LONG>(at)).crTextColor==reader_theme::foreground(target.value),"A prose number lost its neutral ink");
+    }
+    for(const auto token:{L"2024",L"7)."})check(!reference_at(target.value,numeric_text.find(token)),"A bibliographic locator became code or a curricular quantity");
+    set_rich_text(target.value,"int anterior = 1;",{},true);
+    if(!reader_theme::palette(target.value).high_contrast)
+        check(character(target.value,0).crTextColor!=reader_theme::foreground(target.value),"Actual source code lost its syntax ink");
+    check(!IsWindowVisible(parent.value)&&GetAncestor(GetForegroundWindow(),GA_ROOT)!=parent.value,"The isolated prose check activated the desktop");
+    std::cout<<"PASS unmarked prose in four roles/three locales, exact delimited and authored references, numeric/citation boundaries and real C++ source; hidden controls only, no input/audio.\n";
+}
 int main(int argc,char** argv) {
     if(argc>1){try{
         if((argc==2||argc==3)&&std::string_view(argv[1])=="--technical-background"){
             const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load the native synthetic background fixture");
             technical_background_geometry(argc==3?argv[2]:nullptr);FreeLibrary(module);return 0;}
+        if(argc==2&&std::string_view(argv[1])=="--unmarked-prose"){
+            const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load isolated prose role QA");
+            unmarked_prose_keeps_its_role();FreeLibrary(module);return 0;}
         if(argc==2&&std::string_view(argv[1])=="--technical-stress"){technical_range_stress();return 0;}
         if(argc==2&&std::string_view(argv[1])=="--curricular-roles"){
             const auto module=LoadLibraryW(L"Msftedit.dll");check(module!=nullptr,"Load native curricular role QA");
@@ -551,6 +621,14 @@ int main(int argc,char** argv) {
     if (!module) return 2;
     try {
         using namespace lgaed::presentation;
+        const auto declared_strings=[](std::string_view source,std::initializer_list<std::string_view> literals){
+            lgaed::curriculum::TextSemantics result{std::string(source),{}};
+            for(const auto literal:literals){const auto at=source.find(literal);
+                check(at!=std::string_view::npos,"An explicitly authored string fixture lost its exact literal");
+                const auto first=wide(source.substr(0,at)).size();
+                result.spans.push_back({first,first+wide(literal).size(),std::string(literal),lgaed::curriculum::SemanticRole::string});}
+            lgaed::curriculum::validate_text_semantics(result);return result;
+        };
         curricular_role_formatting();
         technical_range_contract();
         std::cout<<"Android technical ranges: contextual names, syntax, symbols, protected math/URLs and prose neighbors: PASS\n";
@@ -766,14 +844,14 @@ int main(int argc,char** argv) {
             check(emphasized.yHeight==270&&(emphasized.dwEffects&CFE_BOLD)&&(emphasized.dwEffects&CFE_ITALIC)
                 && technical.yHeight==270&&std::wstring(technical.szFaceName)==reader_theme::code_font_face(),
                 "Readable body typography flattened emphasis or changed the inline code face/size");
-            set_rich_text(editor.value,"return 0;");
+            set_rich_text(editor.value,"`return 0;`");
             std::array<CHARFORMAT2W,9> return_with_space;
             for(LONG at=0;at<9;++at){return_with_space[at]=character(editor.value,at);
                 check(std::wstring_view(return_with_space[at].szFaceName)==reader_theme::code_font_face(),
-                    "A prose return statement lost its existing code font");}
-            set_rich_text(editor.value,"return\t0;");
+                    "An explicitly delimited return statement lost its code font");}
+            set_rich_text(editor.value,"`return\t0;`");
             for(LONG at=0;at<9;++at)check(std::wstring_view(character(editor.value,at).szFaceName)==return_with_space[at].szFaceName,
-                "A tab-separated prose return statement changed its existing code font");
+                "A tab-separated delimited return statement changed its code font");
             check(edit_text(editor.value)=="return\t0;","Styling a tab-separated return statement changed its source");
             set_rich_text(editor.value,"Una pregunta",{},false,RichTextRole::heading);
             check(character(editor.value,0).yHeight==345&&(character(editor.value,0).dwEffects&CFE_BOLD),
@@ -818,8 +896,12 @@ int main(int argc,char** argv) {
             }
             const std::string source="𐐀 Lee std::cout y continúa con C++. El operador es << y conserva. No añadas ; a cualquier línea; luego lee.";
             const std::array<lgaed::curriculum::Emphasis,2> emphasis{{{"std::cout",0,"bold_italic"},{"C++",0,"italic"}}};
-            set_rich_text(editor.value,source,emphasis,false,RichTextRole::body,"es");
-            const auto visible=wide(source);check(edit_text(editor.value)==source,"The semantic backdrop changed source bytes or Unicode narration offsets");
+            const auto visible=wide(source);
+            lgaed::curriculum::TextSemantics declared{source,{}};
+            for(const auto token:{L"std::cout",L"<<",L";"}){const auto at=visible.find(token);
+                declared.spans.push_back({at,at+std::wstring_view(token).size(),utf8(token),lgaed::curriculum::SemanticRole::cpp});}
+            set_rich_text(editor.value,source,emphasis,false,RichTextRole::body,"es",{},{},&declared);
+            check(edit_text(editor.value)==source,"The semantic backdrop changed source bytes or Unicode narration offsets");
             std::vector<technical_prose::Range> expected;
             for(const auto token:{L"std::cout",L"<<"}){const auto at=visible.find(token);expected.emplace_back(at,at+std::wstring_view(token).size());}
             expected.emplace_back(visible.find(L';'),visible.find(L';')+1);
@@ -836,7 +918,7 @@ int main(int argc,char** argv) {
             check((language.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&(language.dwEffects&CFE_AUTOBACKCOLOR)&&std::wstring_view(language.szFaceName)==L"Roboto",
                 "The C++ exception lost its existing bold/italic prose treatment");
             for(const int zoom:{75,100,150,200}){
-                set_rich_text(editor.value,source,emphasis);SendMessageW(editor.value,EM_SETZOOM,zoom,100);
+                set_rich_text(editor.value,source,emphasis,false,RichTextRole::body,"es",{},{},&declared);SendMessageW(editor.value,EM_SETZOOM,zoom,100);
                 std::vector<POINTL> positions;for(std::size_t at=0;at<visible.size();++at){POINTL point{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&point),at);positions.push_back(point);}
                 const auto lines=SendMessageW(editor.value,EM_GETLINECOUNT,0,0);
                 // Removing just native background ink supplies an independent
@@ -912,7 +994,9 @@ int main(int argc,char** argv) {
             const auto emphasized=character(editor.value,0);
             check((emphasized.dwEffects&(CFE_BOLD|CFE_ITALIC))==(CFE_BOLD|CFE_ITALIC)&&emphasized.crTextColor==base,
                 "Curricular C++ emphasis must preserve both automatic bold and authored italics");
-            set_rich_text(editor.value,R"code(En std::cout << "C++"; queda el literal de salida.)code");
+            const std::string inline_output=R"code(En std::cout << "C++"; queda el literal de salida.)code";
+            const auto output_string=declared_strings(inline_output,{R"("C++")"});
+            set_rich_text(editor.value,inline_output,{},false,RichTextRole::body,"es",{},{},&output_string);
             const auto string_at=wide(edit_text(editor.value)).find(L"C++");
             check(string_at!=std::wstring::npos&&
                 character(editor.value,static_cast<LONG>(string_at)).crTextColor==green&&
@@ -938,7 +1022,8 @@ int main(int argc,char** argv) {
             };
             const std::string screenshot=R"text(𐐀 Un espacio dentro de un literal sí es parte del mensaje. En std::cout << "Sala" << " " << "Central";, las inserciones aportan Sala, un espacio y Central.)text";
             const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"Un espacio dentro de un literal",0,"bold"}}};
-            set_rich_text(editor.value,screenshot,emphasis);
+            const auto screenshot_strings=declared_strings(screenshot,{R"("Sala")",R"(" ")",R"("Central")"});
+            set_rich_text(editor.value,screenshot,emphasis,false,RichTextRole::body,"es",{},{},&screenshot_strings);
             check(edit_text(editor.value)==screenshot,"Coloring inline strings changed source text or narration offsets");
             for(const auto token:{LR"("Sala")",LR"(" ")",LR"("Central")"})check_ink(token,string_ink);
             check_ink(L"las inserciones aportan Sala",base);
@@ -948,11 +1033,14 @@ int main(int argc,char** argv) {
                 (character(editor.value,static_cast<LONG>(wide(screenshot).find(L"Un espacio"))).dwEffects&CFE_BOLD),
                 "Inline color correction changed the literal's typography or an existing emphasis range");
             const std::string escaped=R"text(En std::cout << "std::cout << \"Hola\"; int // sigue" << '\n';, después "texto normal".)text";
-            set_rich_text(editor.value,escaped);
+            const auto escaped_strings=declared_strings(escaped,{R"text("std::cout << \"Hola\"; int // sigue")text",R"('\n')"});
+            set_rich_text(editor.value,escaped,{},false,RichTextRole::body,"es",{},{},&escaped_strings);
             check(edit_text(editor.value)==escaped,"Inline escaped strings changed their source characters");
             check_ink(LR"text("std::cout << \"Hola\"; int // sigue")text",string_ink);
             check_ink(LR"('\n')",string_ink);check_ink(LR"("texto normal")",base);
-            set_rich_text(editor.value,R"text(En std::cout << escoger(y, "Hola", '\n');, sigue la explicación.)text");
+            const std::string arguments=R"text(En std::cout << escoger(y, "Hola", '\n');, sigue la explicación.)text";
+            const auto argument_strings=declared_strings(arguments,{R"("Hola")",R"('\n')"});
+            set_rich_text(editor.value,arguments,{},false,RichTextRole::body,"es",{},{},&argument_strings);
             check_ink(LR"("Hola")",string_ink);check_ink(LR"('\n')",string_ink);
             for(const auto prose:{R"text(La frase "Hola" es prosa; std::cout representa el recurso.)text",
                 R"text(Se menciona std::cout << "Hola" y luego otra frase; conserva su presentación.)text",
@@ -980,9 +1068,9 @@ int main(int argc,char** argv) {
             set_rich_text(editor.value,lesson,emphasis);
             check(edit_text(editor.value)==lesson,"Character highlighting changed Unicode text or narration offsets");
             check_range(LR"(\n representa)",0,2,string_ink);
-            check_range(L"la letra n, pero",0,9,base);check_range(L"la letra n, pero",9,1,string_ink);
+            check_range(L"la letra n, pero",0,9,base);check_range(L"la letra n, pero",9,1,base);
             check_range(L"la letra n, pero",10,6,base);
-            check_range(L"la letra n: juntas",9,1,string_ink);check_range(L"la letra n: juntas",10,8,base);
+            check_range(L"la letra n: juntas",9,1,base);check_range(L"la letra n: juntas",10,8,base);
             const auto visible=wide(lesson);
             const auto named_style=character(editor.value,static_cast<LONG>(visible.find(L"letra n")+6));
             check(named_style.yHeight==270&&std::wstring(named_style.szFaceName)==L"Roboto"&&(named_style.dwEffects&CFE_ITALIC)
@@ -990,11 +1078,11 @@ int main(int argc,char** argv) {
                 "Coloring a named letter changed its typography or authored emphasis");
             for(const auto source:{"letra n","Letra N:","CARÁCTER n.","caracter t,","carácter q)","carácter v?"}){
                 set_rich_text(editor.value,source);const auto text=wide(source);const auto letter=text.find(L' ')+1;
-                check_range(text,0,letter,base);check_range(text,letter,1,identifier_ink);
+                check_range(text,0,letter,base);check_range(text,letter,1,base);
                 if(letter+1<text.size())check_range(text,letter+1,text.size()-letter-1,base);
             }
             set_rich_text(editor.value,"La letra n se escribe literalmente; su nombre es independiente.");
-            check_range(L"La letra n se",9,1,identifier_ink);
+            check_range(L"La letra n se",9,1,base);
             const std::string escapes=R"(\n \t \r \0 \a \b \f \v)";
             set_rich_text(editor.value,escapes);
             for(const auto token:{LR"(\n)",LR"(\t)",LR"(\r)",LR"(\a)",LR"(\b)",LR"(\f)",LR"(\v)"}){
@@ -1003,9 +1091,9 @@ int main(int argc,char** argv) {
             check_range(LR"(\0)",0,2,string_ink);
             set_rich_text(editor.value,R"text(Dentro del literal, `\n` produce un salto. No escribas barras invertidas visibles ni letras n en lugar de los saltos. La variable `n` cuenta líneas.)text");
             check_range(LR"(\n produce)",0,2,string_ink);
-            check_range(L"letras n en",7,1,string_ink);
+            check_range(L"letras n en",7,1,base);
             check_range(L"variable n cuenta",9,1,identifier_ink);
-            set_rich_text(editor.value,R"text(En el escape, la letra `n` representa el salto; la variable `n` permanece independiente. En `// comentario` el marcador pertenece al comentario, y en el literal "// texto" pertenece a la cadena.)text");
+            set_rich_text(editor.value,R"text(En el escape, la letra `n` representa el salto; la variable `n` permanece independiente. En `// comentario` el marcador pertenece al comentario, y en el literal `"// texto"` pertenece a la cadena.)text");
             check_range(L"la letra n representa",9,1,string_ink);
             check_range(L"variable n permanece",9,1,identifier_ink);
             const auto comment_ink=high_contrast?base:RGB(172,172,172);
@@ -1036,20 +1124,17 @@ int main(int argc,char** argv) {
             set_rich_text(editor.value,ordinary_quotes);
             check_range(wide(ordinary_quotes),0,wide(ordinary_quotes).size(),base);
             const std::string prose=R"text(La letra número, letra nombre, carácter nñ, carácter n2, carácter n_1; la n y una a. \nueva, \tarea, \z y alfa\n; superletra n y áletra n.)text";
-            set_rich_text(editor.value,prose);const auto prose_wide=wide(prose);const auto identifier_at=prose_wide.find(L"n_1;");
-            // The canonical Android oracle owns this exact four-unit atom
-            // (66:70): the complete underscored ID plus its terminator. It must
-            // not revive the old single-letter match inside nñ/n2/n_1.
-            check_range(prose_wide,0,identifier_at,base);check_range(L"n_1;",0,3,identifier_ink);
-            check_range(L"n_1;",3,1,high_contrast?base:RGB(216,216,216));
-            check_range(prose_wide,identifier_at+4,prose_wide.size()-identifier_at-4,base);
+            set_rich_text(editor.value,prose);check(edit_text(editor.value)==prose,"Unmarked homonyms changed their exact source");
+            for(const auto token:{L"número",L"nombre",L"nñ",L"n_1;",L"la n y una a",L"superletra n",L"áletra n"})
+                check_range(token,0,std::wstring_view(token).size(),base);
             const std::string statement=R"text(En std::cout << "letra n: \n";, la letra n: sigue.)text";
-            set_rich_text(editor.value,statement);
+            const auto statement_string=declared_strings(statement,{R"("letra n: \n")"});
+            set_rich_text(editor.value,statement,{},false,RichTextRole::body,"es",{},{},&statement_string);
             check_range(LR"("letra n: \n")",0,std::wstring_view(LR"("letra n: \n")").size(),string_ink);
-            check_range(L"la letra n: sigue",9,1,identifier_ink);check_range(L"la letra n: sigue",10,7,base);
+            check_range(L"la letra n: sigue",9,1,base);check_range(L"la letra n: sigue",10,7,base);
             set_rich_text(editor.value,R"text(𐐀 `"letra n: \n"` y la letra n: sigue.)text");
             check_range(LR"("letra n: \n")",0,std::wstring_view(LR"("letra n: \n")").size(),string_ink);
-            check_range(L"la letra n: sigue",9,1,identifier_ink);check_range(L"la letra n: sigue",10,7,base);
+            check_range(L"la letra n: sigue",9,1,base);check_range(L"la letra n: sigue",10,7,base);
         }
         {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
@@ -1068,10 +1153,14 @@ int main(int argc,char** argv) {
                     check(actual==expected,"An authored C++ type or literal stayed gray in curriculum prose");
                 }
             };
-            // Exact U9L5 p2 b2 question: int is the C++ type even without invented delimiters.
+            // The unchanged authored question does not declare an inline role.
             const std::string constructor_question="¿Cuál declaración describe un constructor de Punto con dos coordenadas int?";
             set_rich_text(editor.value,constructor_question);
             check(edit_text(editor.value)==constructor_question,"Contextual type coloring rewrote the authored question");
+            check_token(L"int",base);
+            const auto type_at=wide(constructor_question).find(L"int?");
+            const lgaed::curriculum::TextSemantics declared_type{constructor_question,{{type_at,type_at+3,"int",lgaed::curriculum::SemanticRole::cpp}}};
+            set_rich_text(editor.value,constructor_question,{},false,RichTextRole::body,"es",{},{},&declared_type);
             check_token(L"int",identifier_ink);
             const std::string question=R"(En un literal válido, ¿qué representa \n?)";
             const std::string option="Los dos caracteres visibles barra invertida y n.";
@@ -1080,12 +1169,13 @@ int main(int argc,char** argv) {
                 check(edit_text(editor.value)==option,"Question context rewrote the original distractor");
                 check_token(L"n.",expected);
             };
-            // Exact U1L3 escape_no_literal options[2]: its role comes from the visible question.
+            // A visible question cannot give an unmarked distractor's letter
+            // a code role. The option keeps its own exact source and styling.
             set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{question,{}});
             const auto option_n=static_cast<LONG>(wide(option).find_last_of(L'n'));
-            check(character(editor.value,option_n).crTextColor==string_ink&&
+            check(character(editor.value,option_n).crTextColor==base&&
                 character(editor.value,option_n+1).crTextColor==base,
-                "The isolated escape distractor lost its question's string ink or colored adjacent punctuation");
+                "A visible question gave an unmarked distractor letter syntax ink");
             check(character(editor.value,option_n).yHeight==270&&
                 std::wstring(character(editor.value,option_n).szFaceName)==L"Roboto",
                 "Contextual escape ink changed the authored typography");
@@ -1096,12 +1186,16 @@ int main(int argc,char** argv) {
             check_option({{},R"code(std::cout << R"(\n)";)code"},base);
             set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},
                 RichTextContext{{},R"code(std::cout << "\n";)code"});
-            check(character(editor.value,option_n).crTextColor==string_ink,
-                "An actual visible C++ string could not supply the escape's original role");
+            check(character(editor.value,option_n).crTextColor==base,
+                "A visible C++ string supplied a role to an unmarked distractor letter");
             set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},
                 RichTextContext{{},R"code(std::cout << "Entrada\nSalida";)code"});
-            check(character(editor.value,option_n).crTextColor==string_ink,
-                "A real newline escape followed by text lost its literal role");
+            check(character(editor.value,option_n).crTextColor==base,
+                "A neighboring literal assigned its escape role to another unmarked field");
+            const lgaed::curriculum::TextSemantics declared_letter{option,{{static_cast<std::size_t>(option_n),static_cast<std::size_t>(option_n)+1,"n",lgaed::curriculum::SemanticRole::string}}};
+            set_rich_text(editor.value,option,{},false,RichTextRole::body,"es",{},RichTextContext{question,{}},&declared_letter);
+            check(character(editor.value,option_n).crTextColor==string_ink&&character(editor.value,option_n+1).crTextColor==base,
+                "An explicitly authored string character lost its palette or absorbed adjacent punctuation");
             set_rich_text(editor.value,"La superletra n y áletra n siguen siendo prosa.",{},false,RichTextRole::body,"es",{},RichTextContext{question,{}});
             check_token(L"superletra n",base);check_token(L"áletra n",base);
             const std::string homonyms="La salida normal y a siguen siendo prosa. La variable `n` cuenta elementos.";
@@ -1119,10 +1213,14 @@ int main(int argc,char** argv) {
             check_token(L"'n'",string_ink);check_token(L"'f'",string_ink);
             set_rich_text(editor.value,"`char` e `int` conservan sus tipos; la categoría `'+'` es un carácter.");
             check_token(L"char",identifier_ink);check_token(L"int",identifier_ink);check_token(L"'+'",string_ink);
-            // Exact U11L9 p4 b4: the closed list-initialization expression is the local code cue.
+            // An unmarked initializer in prose does not identify its nouns.
             const std::string token_question="Con el búfer vacío se intenta devolver Token{'n', 14}. ¿Qué exige este contrato inicial?";
             set_rich_text(editor.value,token_question);
             check(edit_text(editor.value)==token_question,"List-initialization styling rewrote the original question");
+            check_token(L"Token",base);
+            const auto token_at=wide(token_question).find(L"Token{'n', 14}");
+            const lgaed::curriculum::TextSemantics declared_initializer{token_question,{{token_at,token_at+14,"Token{'n', 14}",lgaed::curriculum::SemanticRole::cpp}}};
+            set_rich_text(editor.value,token_question,{},false,RichTextRole::body,"es",{},{},&declared_initializer);
             check_token(L"Token",identifier_ink);check_token(L"'n'",string_ink);
             for(const auto prose:{"Un Token conserva normal, a e y como palabras.",
                 "Se menciona Token{una frase y otra} en la explicación.",
@@ -1135,9 +1233,11 @@ int main(int argc,char** argv) {
                     RichTextContext{{},"struct Token { char clase; int valor; }; int normal; int a; int y;"});
                 check_token(L"Token",base);
             }
-            // Existing Android semantics already recognize quoted brace-containing data as a string.
-            // The new local initializer cue must preserve that ink rather than lex its interior.
-            set_rich_text(editor.value,"La frase \"Token{'n', 14}\" conserva su categoría de cadena.");
+            // The author declares the whole quoted value as string data;
+            // its interior must not be reinterpreted as C++ identifiers.
+            const std::string quoted_initializer="La frase \"Token{'n', 14}\" conserva su categoría de cadena.";
+            const auto initializer_string=declared_strings(quoted_initializer,{R"("Token{'n', 14}")"});
+            set_rich_text(editor.value,quoted_initializer,{},false,RichTextRole::body,"es",{},{},&initializer_string);
             check_token(L"Token",string_ink);
         }
         const std::string original = "#include <iostream>\n\nint main() {\n\tstd::cout << \"área  A\";  \n}\n";

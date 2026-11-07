@@ -631,63 +631,6 @@ std::vector<technical_prose::Range> quoted_prose_ranges(std::wstring_view text) 
     }
     return result;
 }
-std::vector<technical_prose::Range> unambiguous_cpp_types(std::wstring_view text,std::string_view locale) {
-    std::vector<technical_prose::Range> result;
-    if(technical_prose::canonical_locale(locale)!="es")return result;
-    const auto quoted=quoted_prose_ranges(text);
-    for(std::size_t at=0;at<text.size();){
-        if(!identifier_start(text[at])){++at;continue;}
-        const auto begin=at++;while(at<text.size()&&identifier_part(text[at]))++at;
-        const auto word=text.substr(begin,at-begin);
-        // These exact C++ type spellings have no ordinary Spanish homonym.
-        // auto/final/do and arbitrary names from visible code remain contextual.
-        if((word==L"int"||word==L"char")&&technical_prose::boundary(text,begin,at)&&
-            !technical_prose::overlaps({begin,at},quoted))result.emplace_back(begin,at);
-    }
-    return result;
-}
-std::vector<technical_prose::Range> direct_cpp_initializers(std::wstring_view text) {
-    std::vector<technical_prose::Range> result;
-    const auto quoted=quoted_prose_ranges(text);
-    for(std::size_t at=0;at<text.size();){
-        if(!identifier_start(text[at])){++at;continue;}
-        const auto begin=at++;while(at<text.size()&&identifier_part(text[at]))++at;
-        if(at==text.size()||text[at]!=L'{'||!technical_prose::boundary(text,begin,at)||technical_prose::overlaps({begin,at},quoted))continue;
-        const auto end=technical_prose::balanced_end(text,at,L'{',L'}');
-        if(end==at)continue;
-        auto argument=at+1;bool literal=false,valid=true;
-        while(argument<end-1){
-            while(argument<end-1&&technical_prose::space(text[argument]))++argument;
-            if(argument==end-1)break;
-            if(text[argument]==L'"'||text[argument]==L'\''){
-                const auto close=technical_prose::closed_quote_end(text,argument,end-1);
-                if(close==text.npos){valid=false;break;}argument=close;literal=true;
-            }else if(identifier_start(text[argument])){
-                const auto first=argument++;while(argument<end-1&&identifier_part(text[argument]))++argument;
-                const auto word=text.substr(first,argument-first);
-                literal=literal||word==L"true"||word==L"false"||word==L"nullptr";
-            }else{
-                if(text[argument]==L'+'||text[argument]==L'-')++argument;
-                if(argument==end-1||!technical_prose::digit(text[argument])){valid=false;break;}
-                ++argument;
-                while(argument<end-1){
-                    const auto value=text[argument];
-                    if(identifier_part(value)||value==L'.'||value==L'\'')++argument;
-                    else if((value==L'+'||value==L'-')&&std::wstring_view(L"eEpP").find(text[argument-1])!=text.npos)++argument;
-                    else break;
-                }
-                literal=true;
-            }
-            while(argument<end-1&&technical_prose::space(text[argument]))++argument;
-            if(argument==end-1)break;
-            if(text[argument++]!=L','){valid=false;break;}
-        }
-        // A closed literal-bearing initializer is its own local code cue.
-        // A bare known name, prose in braces or an unfinished group is not.
-        if(valid&&literal&&(end==text.size()||technical_mention_boundary(text[end])))result.emplace_back(begin,end);
-    }
-    return result;
-}
 std::vector<technical_prose::Range> contextual_string_characters(HWND edit,std::wstring_view source,RichTextContext context) {
     static const std::wregex descriptive_letter(
         LR"((?:letras?|car[aáÁ]cter(?:es)?)[ \t]+([A-Za-z])|barra(?:s)?[ \t]+(?:inversa(?:s)?|invertida(?:s)?)[ \t]+y[ \t]+(?:la[ \t]+letra[ \t]+)?([A-Za-z]))",
@@ -748,13 +691,6 @@ std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::w
         if(text[index]!=L'\\'||(index&&(!technical_mention_boundary(text[index-1])||text[index-1]==L'\\')))continue;
         const auto end=escape_mention_end(text,index);
         if(end>index){result.emplace_back(index,end);index=end-1;}
-    }
-    static const std::wregex named_letter(LR"((?:letras?|car[aáÁ]cter(?:es)?|letters?|characters?|lettres?)[ \t\r\n]+([A-Za-z]))",std::regex_constants::icase);
-    for(std::regex_iterator<std::wstring_view::const_iterator> match(text.begin(),text.end(),named_letter),end;match!=end;++match){
-        const auto cue=static_cast<std::size_t>(match->position());
-        const auto letter=static_cast<std::size_t>(match->position(1));
-        if((cue==0||technical_mention_boundary(text[cue-1]))&&
-            (letter+1==text.size()||technical_mention_boundary(text[letter+1])))result.emplace_back(letter,letter+1);
     }
     std::sort(result.begin(),result.end());
     return result;
@@ -1139,7 +1075,7 @@ RichTextReferenceRole rich_text_choice_reference_role(std::string_view question,
     return RichTextReferenceRole::automatic;
 }
 void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role,
-    std::string_view locale,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context,
+    std::string_view,std::span<const std::pair<std::size_t,std::size_t>> mathematics,RichTextContext context,
     const curriculum::TextSemantics* semantics) {
     if(semantics){curriculum::validate_text_semantics(*semantics);if(semantics->source!=text)throw std::invalid_argument("Semantic source does not match displayed source");}
     std::string displayed;
@@ -1211,22 +1147,16 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         if(begin_byte==std::string_view::npos||end_byte==std::string_view::npos)throw std::invalid_argument("A mathematical range splits a UTF-16 character");
         displayed_mathematics.emplace_back(wide(std::string_view(displayed).substr(0,mapping[begin_byte])).size(),wide(std::string_view(displayed).substr(0,mapping[end_byte])).size());}}
     const bool curricular=!code&&role!=RichTextRole::lesson_title;
-    auto semantic=curricular?technical_prose::analyze(source,locale,inline_fragments,displayed_mathematics):technical_prose::Analysis{};
-    const auto contextual_strings=curricular?contextual_string_characters(edit,source,context):std::vector<technical_prose::Range>{};
-    if(curricular){
-        for(const auto& range:unambiguous_cpp_types(source,locale))
-            if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
-        for(const auto& range:direct_cpp_initializers(source))
-            if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
-        for(const auto& range:contextual_strings)
-            if(!technical_prose::overlaps(range,semantic.protected_ranges))semantic.fragments.push_back(range);
-        std::ranges::sort(semantic.fragments);
-    }
+    auto semantic=curricular?technical_prose::authored_analysis(source,inline_fragments,displayed_mathematics):technical_prose::Analysis{};
+    auto contextual_strings=curricular?contextual_string_characters(edit,source,context):std::vector<technical_prose::Range>{};
+    std::erase_if(contextual_strings,[&](const auto& range){return
+        !technical_prose::curricular_role_detail::contained(range,inline_fragments)||
+        technical_prose::overlaps(range,semantic.protected_ranges);});
     // Resolve prose/code boundaries before any lexical color pass. A classic
     // analyzer can otherwise expand an explicitly isolated operator into the
     // surrounding natural-language words once its backticks are hidden.
     auto roles=curricular?technical_prose::curricular_roles(
-        source,locale,semantic,wide(context.prose),wide(context.code),inline_fragments):technical_prose::CurricularRoles{};
+        source,semantic,inline_fragments):technical_prose::CurricularRoles{};
     if(curricular&&!source.empty()&&context.reference_role!=RichTextReferenceRole::automatic){
         const technical_prose::Range whole{0,source.size()};
         if(!technical_prose::overlaps(whole,semantic.protected_ranges)){
@@ -1254,12 +1184,13 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             const auto start=mention.start,count=mention.end-start;
             // A language name is never an identifier C plus two operators.
             if(mention.kind==MentionKind::language){language_names.emplace_back(start,start+count);continue;}
-            if(protected_text(start,start+count)||!technical_prose::overlaps({start,start+count},semantic.fragments))continue;
+            if(protected_text(start,start+count)||!technical_prose::curricular_role_detail::contained({start,start+count},semantic.fragments))continue;
             format(edit, start, start + count, backed(start,start+count)?RGB(216,216,216):reader_theme::foreground(edit), reader_theme::code_font_face());
             apply_cpp(edit, std::wstring_view(source).substr(start,count), start, true,backed(start,start+count));
             if(mention.kind==MentionKind::qualified&&(cpp_statements.empty()||start>=cpp_statements.back().second)){
                 const auto statement_end=inline_cpp_statement_end(source,start+count);
-                if(statement_end>start+count)cpp_statements.emplace_back(start,statement_end);
+                if(statement_end>start+count&&technical_prose::curricular_role_detail::contained({start,statement_end},inline_fragments))
+                    cpp_statements.emplace_back(start,statement_end);
             }
         }
         const auto character_mentions=inline_character_mentions(source);
@@ -1289,9 +1220,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
                 std::regex_constants::icase);
             const auto prefix=std::wstring_view(source).substr(0,begin_wide);
             const auto tail=prefix.substr(prefix.size()>128?prefix.size()-128:0);
-            const bool named_string=fragment.size()==1&&
-                std::ranges::find(character_mentions,std::pair{begin_wide,begin_wide+fragment.size()})!=character_mentions.end()&&
-                named_string_character(source,begin_wide,begin_wide+fragment.size());
+            const bool named_string=fragment.size()==1&&named_string_character(source,begin_wide,begin_wide+fragment.size());
             if(std::regex_search(tail.begin(),tail.end(),output_cue)||
                     (fragment.starts_with(L"\\")&&escape_mention_end(fragment,0)==fragment.size())||named_string){
                 format(edit,begin_wide,begin_wide+fragment.size(),cpp_color(edit,CppInk::string,backed(begin_wide,begin_wide+fragment.size())));

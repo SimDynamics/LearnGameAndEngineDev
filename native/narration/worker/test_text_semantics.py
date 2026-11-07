@@ -44,6 +44,229 @@ class ExplicitTextSemanticsTest(unittest.TestCase):
         self.assertNotIn("griega", " ".join(part["spokenText"] for part in explicit))
         self.assertEqual(before, self.plan(source))
 
+    def test_unmarked_prose_never_infers_named_code_letters_and_old_plans_remain_replayable(self):
+        import json
+        sources = ("Caracteres y valores lógicos", "El carácter y cualquier emoji forman texto.",
+                   "El carácter y también la palabra permanecen.", "La letra y es una consonante.",
+                   "La letra b es una consonante.", "El valor a se conserva.",
+                   "La variable y conserva el dato.", "La palabra final describe el cierre.")
+        def recordings(plan):
+            return [(part["spokenText"], part["preparedText"], part["key"]) for part in plan]
+        baseline = {}
+        for source in sources:
+            for context in ("auto", "cpp"):
+                with self.subTest(source=source, context=context):
+                    plain = self.plan(source, voice="ef_dora", readingContext=context)
+                    empty = self.plan(source, {"spans": []}, voice="ef_dora", readingContext=context)
+                    self.assertEqual(source, " ".join(part["spokenText"] for part in plain))
+                    self.assertEqual(recordings(plain), recordings(empty))
+                    baseline[(source, context)] = plain
+                    raw = source.encode("utf-16-le")
+                    for part in plain + empty:
+                        self.assertEqual(part["text"], raw[2 * part["sourceStart"]:2 * part["sourceEnd"]].decode("utf-16-le"))
+                        self.assertEqual(len(part["spokenRanges"]), len(part["displayedRanges"]))
+        # This is the exact result measured from the preceding real Worker,
+        # before removing its ambiguous singular-noun/ASCII-letter inference.
+        source = sources[1]
+        old_spoken = "El carácter i griega cualquier emoji forman texto."
+        previous = self.plan(source, voice="ef_dora", previousProseInference=True)
+        self.assertEqual([old_spoken], [part["spokenText"] for part in previous])
+        self.assertEqual(["\ue002" + old_spoken], [part["preparedText"] for part in previous])
+        self.assertNotEqual([part["key"] for part in previous], [part["key"] for part in baseline[(source, "cpp")]])
+        for policy in ("b42", "original"):
+            self.assertEqual(previous, self.plan(source, voice="ef_dora", outputDataPolicy=policy))
+            self.assertEqual(previous, self.plan(source, voice="ef_dora", outputDataPolicy=policy,
+                                                previousProseInference=True))
+        # The replay switch never defeats authoritative prose or explicit code.
+        self.assertEqual(recordings(baseline[(source, "cpp")]), recordings(
+                         self.plan(source, {"spans": []}, voice="ef_dora", previousProseInference=True)))
+        explicit = (("La variable `y` contiene 1.", "La variable i griega contiene 1.", None),
+                    ("`int y = 1;` conserva la variable.", "int i griega asigna uno punto y coma conserva la variable.", None),
+                    ("La letra y es una consonante.", "La letra i griega es una consonante.",
+                     descriptor(sources[3], start=units("La letra "), end=units("La letra y"))))
+        for text, expected, semantics in explicit:
+            with self.subTest(explicit=text):
+                direct = self.plan(text, semantics, voice="ef_dora")
+                self.assertEqual(expected, " ".join(part["spokenText"] for part in direct))
+                self.assertEqual(direct, self.plan(text, semantics, voice="ef_dora", previousProseInference=True))
+        # Request-local historical replay cannot contaminate later background
+        # planning, including titles, body prose and explicitly empty overlays.
+        blocks = [dict(type="paragraph", text=value) for value in sources]
+        lesson = dict(id="qa-prose-inference", title=sources[0], pages=[dict(blocks=blocks)],
+                      stateLayout=dict(version=2, current=[dict(id="page", blocks=[f"block-{n}" for n in range(len(blocks))])]))
+        for annotated in (False, True):
+            value = deepcopy(lesson)
+            if annotated:
+                value["textSemantics"] = dict(version=1, fields=[
+                    field(f"block-{n}", "/text", text, {"spans": []}) for n, text in enumerate(sources)])
+            snapshot = deepcopy(value)
+            background = self.worker.ask("curriculum_plan", lessonJson=json.dumps(value), page=0, language="es",
+                voice="ef_dora", uiLanguage="es", contentLanguage="es", readingContext="cpp")["segments"]
+            for text in sources:
+                for part in baseline[(text, "auto")]:
+                    self.assertIn(dict(text=part["spokenText"], preparedText=part["preparedText"], key=part["key"]), background)
+                self.assertEqual(baseline[(text, "cpp")], self.plan(text, voice="ef_dora"))
+            self.assertEqual(snapshot, value)
+        for invalid in ("true", 1, None):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(AssertionError, "Invalid previous prose-inference policy"):
+                self.plan(source, previousProseInference=invalid)
+        with self.assertRaisesRegex(AssertionError, "restricted to bookmark planning"):
+            self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson), page=0, language="es", voice="ef_dora",
+                            previousProseInference=False)
+        self.assertEqual(baseline[(source, "cpp")], self.plan(source, voice="ef_dora"))
+
+    def test_prose_dictionary_names_require_source_syntax_or_explicit_semantics(self):
+        import json
+        samples = ("El tipo int conserva una unidad.", "La palabra return aparece en el texto.",
+                   "El tipo array conserva un dato.", "El contenedor vector contiene datos.", "El carácter y_el continúa.")
+        for source in samples:
+            with self.subTest(source=source):
+                current = self.plan(source, voice="ef_dora")
+                self.assertEqual(source, " ".join(part["spokenText"] for part in current))
+                prepared = " ".join(part["preparedText"] for part in current)
+                self.assertNotIn("\ue000", prepared)
+                self.assertNotIn("guion bajo", prepared)
+                before = self.plan(source, voice="ef_dora", previousProseInference=True)
+                self.assertNotEqual([part["key"] for part in current], [part["key"] for part in before])
+                for policy in ("b42", "original"):
+                    self.assertEqual(before, self.plan(source, voice="ef_dora", outputDataPolicy=policy))
+                self.assertEqual(current, self.plan(source, voice="ef_dora"))
+        source = samples[0]
+        previous = self.plan(source, voice="ef_dora", previousProseInference=True)
+        # The pre-fix bare nominal selected encode(code=false), whose exact
+        # historical marker includes ~p; a code span uses encode(code=true).
+        self.assertEqual(["\ue002El tipo \ue000int~p\ue001 conserva una unidad."], [part["preparedText"] for part in previous])
+        # The overlay owns the whole field, including its gaps. Natural parts
+        # never enter the lexical dictionary; explicit code still does, so this
+        # frontend change must not alter any of their existing recordings.
+        marked_source = "El tipo int conserva y; el dato array continúa."
+        start = units("El tipo ")
+        for role, reading in (("cpp", "auto"), ("string", "auto"), ("data", "natural"), ("prose", "natural")):
+            semantics = descriptor(marked_source, role=role, reading=reading, start=start, end=start + 3)
+            with self.subTest(role=role, reading=reading):
+                current = self.plan(marked_source, semantics, voice="ef_dora")
+                self.assertEqual(current, self.plan(marked_source, semantics, voice="ef_dora", previousProseInference=True))
+                if role in ("cpp", "string"):
+                    self.assertIn("\ue000int\ue001", " ".join(part["preparedText"] for part in current))
+                else:
+                    self.assertNotIn("\ue000", " ".join(part["preparedText"] for part in current))
+        for code in ("`int y = 1;`", "int y = 1;", "std::cout << y;", "#include <iostream>",
+                     "std::vector<int> valores;", "vector<int> valores;", "return 0;", "main()"):
+            with self.subTest(code=code):
+                current = self.plan(code, voice="ef_dora")
+                self.assertEqual(current, self.plan(code, voice="ef_dora", previousProseInference=True))
+                self.assertIn("\ue000", " ".join(part["preparedText"] for part in current))
+        for code, semantics in (("foo_bar()", None), ("int foo_bar = 1;", None), ("`y_el`", None),
+                                ("y_el", descriptor("y_el"))):
+            with self.subTest(underscore_code=code, explicit=semantics is not None):
+                current = self.plan(code, semantics, voice="ef_dora")
+                self.assertEqual(current, self.plan(code, semantics, voice="ef_dora", previousProseInference=True))
+                self.assertIn("guion bajo", " ".join(part["spokenText"] for part in current))
+        blocks = [dict(type="paragraph", text=value) for value in samples]
+        lesson = dict(id="qa-prose-lexical-inference", title="Datos y texto", pages=[dict(blocks=blocks)])
+        background = self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson), page=0, language="es", voice="ef_dora",
+                                    uiLanguage="es", contentLanguage="es", readingContext="cpp")["segments"]
+        for source in samples:
+            for part in self.plan(source, voice="ef_dora"):
+                self.assertIn(dict(text=part["spokenText"], preparedText=part["preparedText"], key=part["key"]), background)
+
+    def test_lesson_title_root_semantics_match_native_plans_without_block_layout(self):
+        import json
+        for source in ("😀\r\nCaracteres y y valores 7.", "😀\r\nCaracteres `y` y valores 7."):
+            first = units(source[:source.index("y")])
+            numeric = units(source[:source.index("7")])
+            explicit = {"spans": descriptor(source, start=first, end=first + 1)["spans"] +
+                        descriptor(source, role="data", reading="natural", start=numeric, end=numeric + 1)["spans"]}
+            # Root authorship has no invented block owner or v2 requirement.
+            declaration = dict(path="/title", sourceSha256=hashlib.sha256(source.encode()).hexdigest(), spans=explicit["spans"])
+            lesson = dict(id="qa-root-title", title=source, pages=[dict(blocks=[])],
+                          textSemantics=dict(version=1, fields=[], rootFields=[declaration]))
+            snapshot = deepcopy(lesson)
+            direct = self.plan(source, explicit, voice="ef_dora", readingContext="auto")
+            self.assertEqual(1, " ".join(part["spokenText"] for part in direct).count("i griega"))
+            expected = [dict(text=part["spokenText"], preparedText=part["preparedText"], key=part["key"]) for part in direct]
+            for ui in ("es", "en", "fr"):
+                with self.subTest(title=source, ui=ui):
+                    reply = self.worker.ask("curriculum_plan", lessonJson=json.dumps(lesson), page=0, language="es",
+                        voice="ef_dora", uiLanguage=ui, contentLanguage="es", readingContext="cpp")
+                    self.assertEqual(expected, reply["segments"])
+                    raw = source.encode("utf-16-le")
+                    for part in direct:
+                        self.assertEqual(part["text"], raw[2 * part["sourceStart"]:2 * part["sourceEnd"]].decode("utf-16-le"))
+                        for shown in part["displayedRanges"]:
+                            part["text"].encode("utf-16-le")[2 * shown["start"]:2 * shown["end"]].decode("utf-16-le")
+                    self.assertEqual(snapshot, lesson)
+            # No root annotation, a missing optional array and its empty form
+            # retain the same existing title recording identity.
+            plain = dict(id=lesson["id"], title=source, pages=lesson["pages"])
+            plain_reply = self.worker.ask("curriculum_plan", lessonJson=json.dumps(plain), page=0, language="es",
+                voice="ef_dora", uiLanguage="es", readingContext="cpp")["segments"]
+            for overlay in (dict(version=1, fields=[]), dict(version=1, fields=[], rootFields=[])):
+                value = dict(plain, textSemantics=overlay)
+                self.assertEqual(plain_reply, self.worker.ask("curriculum_plan", lessonJson=json.dumps(value), page=0,
+                    language="es", voice="ef_dora", uiLanguage="es", readingContext="cpp")["segments"])
+
+    def test_lesson_title_root_owner_is_distinct_and_invalid_root_fields_are_rejected(self):
+        import json
+        source = "y"
+        root = dict(path="/title", sourceSha256=hashlib.sha256(source.encode()).hexdigest(), spans=descriptor(source)["spans"])
+        lesson = dict(id="qa-title-owner", title=source, pages=[dict(blocks=[dict(type="paragraph", text=source)]),
+            dict(blocks=[dict(type="paragraph", text="Vecino.")])],
+            stateLayout=dict(version=2, current=[dict(id="p0", blocks=["b0"]), dict(id="p1", blocks=["b1"])]),
+            textSemantics=dict(version=1, fields=[field("b0", "/text", source, {"spans": []})], rootFields=[root]))
+        def background(value, page=0):
+            return self.worker.ask("curriculum_plan", lessonJson=json.dumps(value), page=page, language="es",
+                voice="ef_dora", uiLanguage="es", readingContext="cpp")["segments"]
+        def exported(plan):
+            return [dict(text=part["spokenText"], preparedText=part["preparedText"], key=part["key"]) for part in plan]
+        technical = exported(self.plan(source, descriptor(source), voice="ef_dora", readingContext="auto"))
+        natural = exported(self.plan(source, {"spans": []}, voice="ef_dora", readingContext="auto"))
+        before = background(lesson)
+        self.assertEqual(technical + natural, before)
+        swapped = deepcopy(lesson)
+        swapped["textSemantics"]["rootFields"][0]["spans"] = []
+        swapped["textSemantics"]["fields"][0]["spans"] = descriptor(source)["spans"]
+        self.assertEqual(natural + technical, background(swapped))
+        self.assertEqual(exported(self.plan("Vecino.", voice="ef_dora", readingContext="auto")), background(lesson, 1))
+        invalid = []
+        for patch in (dict(path="/id"), dict(sourceSha256="0" * 64), dict(block="b0"), dict(spans=[dict(start=0, end=1, text="z", role="cpp")])):
+            wrong = deepcopy(lesson); wrong["textSemantics"]["rootFields"][0].update(patch); invalid.append(wrong)
+        wrong = deepcopy(lesson); wrong["textSemantics"]["rootFields"].append(deepcopy(root)); invalid.append(wrong)
+        wrong = deepcopy(lesson); wrong["textSemantics"]["rootFields"] = None; invalid.append(wrong)
+        wrong = deepcopy(lesson); del wrong["textSemantics"]["fields"]; invalid.append(wrong)
+        for value in invalid:
+            with self.subTest(rootFields=value["textSemantics"]), self.assertRaisesRegex(AssertionError, "Narration failed"):
+                background(value)
+        self.assertEqual(before, background(lesson))
+
+    def test_image_alt_and_caption_are_independent_authored_regions_even_when_equal(self):
+        import json
+        for same in (False, True):
+            alt, caption = "y", "y" if same else "Otro y."
+            value = dict(id="qa-image-text", pages=[dict(blocks=[dict(type="image", imageId="qa_image",
+                src="images/qa_image.png", alt=alt, caption=caption)])],
+                stateLayout=dict(version=2, current=[dict(id="page", blocks=["image"])]),
+                textSemantics=dict(version=1, fields=[field("image", "/alt", alt, descriptor(alt)),
+                    field("image", "/caption", caption, {"spans": []})]))
+            snapshot = deepcopy(value)
+            def expected(source, semantics):
+                return [dict(text=part["spokenText"], preparedText=part["preparedText"], key=part["key"])
+                    for part in self.plan(source, semantics, voice="ef_dora", readingContext="auto")]
+            foreground = expected(alt, descriptor(alt)) + expected(caption, {"spans": []})
+            with self.subTest(same_source=same):
+                background = self.worker.ask("curriculum_plan", lessonJson=json.dumps(value), page=0, language="es",
+                    voice="ef_dora", uiLanguage="es", contentLanguage="es", readingContext="cpp")["segments"]
+                self.assertEqual(foreground, background)
+                self.assertEqual(snapshot, value)
+                self.assertNotIn("qa_image", " ".join(part["text"] for part in background))
+                # An optional missing caption emits no synthetic label or copy
+                # of alt, and preserves the exact existing alternative text.
+                without = deepcopy(value)
+                del without["pages"][0]["blocks"][0]["caption"]
+                without["textSemantics"]["fields"] = without["textSemantics"]["fields"][:1]
+                self.assertEqual(expected(alt, descriptor(alt)), self.worker.ask("curriculum_plan", lessonJson=json.dumps(without),
+                    page=0, language="es", voice="ef_dora", uiLanguage="es", readingContext="cpp")["segments"])
+
     def test_role_and_reading_apply_only_to_the_exact_selected_fragment(self):
         source = "letras y palabras: y."
         start = units(source[:source.rindex("y")])

@@ -56,13 +56,37 @@ internal object WindowsTextSemantics {
     fun <T> withCurriculum(lesson: JSONObject, action: () -> T): T {
         val saved = bound.get(); val savedAuthored = authored.get();val values = IdentityHashMap<String,Field>()
         val publicSources = IdentityHashMap<String,Boolean>()
+        fun bind(field: JSONObject, source: String) {
+            val hash = MessageDigest.getInstance("SHA-256").digest(source.toByteArray(Charsets.UTF_8))
+                .joinToString("") { "%02x".format(it.toInt() and 255) }
+            require(field.get("sourceSha256") is String && field.getString("sourceSha256") == hash) { "Stale semantic field source" }
+            val parsed = parse(source,JSONObject().put("spans",field.getJSONArray("spans")))
+            val prior = values.put(source,parsed)
+            require(prior == null || prior == parsed) { "Shared source object has conflicting semantic owners" }
+        }
         try {
             val declaration = lesson.opt("textSemantics")
             if (lesson.has("textSemantics")) {
-                require(declaration is JSONObject && keys(declaration) == setOf("version","fields") && integer(declaration.get("version")) == 1) {
+                require(declaration is JSONObject && keys(declaration).containsAll(setOf("version","fields")) &&
+                        keys(declaration).all { it in setOf("version","fields","rootFields") } && integer(declaration.get("version")) == 1) {
                     "Invalid curricular text semantics"
                 }
                 val fields = declaration.getJSONArray("fields")
+                val roots = WindowsSemanticFields.lesson(lesson)
+                for (source in roots.values) publicSources[source] = true
+                if (declaration.has("rootFields")) {
+                    val rootFields = declaration.getJSONArray("rootFields")
+                    val selected = mutableSetOf<String>()
+                    require(fields.length() + rootFields.length() <= 100000) { "Too many curricular semantic fields" }
+                    for (index in 0 until rootFields.length()) {
+                        val field = rootFields.getJSONObject(index)
+                        require(keys(field) == setOf("path","sourceSha256","spans")) { "Invalid root semantic field" }
+                        val path = field.getString("path")
+                        require(selected.add(path)) { "Duplicate root semantic field" }
+                        val source = roots[path] ?: error("A root semantic pointer must own a supported public field")
+                        bind(field,source)
+                    }
+                }
                 if (fields.length() == 0) {bound.set(values);authored.set(publicSources);return action()}
                 val layout = lesson.getJSONObject("stateLayout")
                 require(integer(layout.get("version")) == 2) { "Semantic fields require their stable v2 owners" }
@@ -84,12 +108,7 @@ internal object WindowsTextSemantics {
                     val owner = field.getString("block"); val path = field.getString("path")
                     require(seen.add(owner to path) && path.startsWith('/') && path.length <= 4096) { "Invalid semantic field pointer" }
                     val source = inventories[owner]?.get(path) ?: error("A semantic pointer must own a supported public field")
-                    val hash = MessageDigest.getInstance("SHA-256").digest(source.toByteArray(Charsets.UTF_8))
-                        .joinToString("") { "%02x".format(it.toInt() and 255) }
-                    require(field.get("sourceSha256") is String && field.getString("sourceSha256") == hash) { "Stale semantic field source" }
-                    val parsed = parse(source,JSONObject().put("spans",field.getJSONArray("spans")))
-                    val prior = values.put(source,parsed)
-                    require(prior == null || prior == parsed) { "Shared source object has conflicting semantic owners" }
+                    bind(field,source)
                 }
                 for ((owner,block) in owners) {
                     val group = WindowsSemanticFields.feedbackOrigins(block,inventories.getValue(owner))

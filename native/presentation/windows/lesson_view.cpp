@@ -19,6 +19,7 @@
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/order_code_view.hpp"
+#include "presentation/windows/curricular_image_view.hpp"
 #include "core/learning_flow.hpp"
 #include "core/compiler_flow.hpp"
 #include "core/lesson_entry_policy.hpp"
@@ -101,7 +102,7 @@ enum class ActionType { check, choose, move_up, move_down, run, reset, tab, edit
     copy_source, copy_console, clear_console, undo, redo, fullscreen_source, fullscreen_console,
     select_stdout, select_stderr, select_diagnostics, copy_simulated, copy_readonly, reset_answer, simulated_menu,
     toggle_wrap, compiler_info, cut_source,paste_source,copy_source_selection,select_all_source,
-    copy_console_selection,select_all_console,copy_compiler_append };
+    copy_console_selection,select_all_console,copy_compiler_append,image_detail };
 struct Action { int control; ActionType type; std::size_t block; std::size_t option = 0; };
 struct PreferenceUpdateRequest {
     const std::function<void(state::StateData&)>* update;
@@ -134,6 +135,7 @@ struct BlockControls {
     std::unique_ptr<CppFillView> fill;
     std::unique_ptr<MathPuzzleView> math;
     std::unique_ptr<OrderCodeView> order_view;
+    std::unique_ptr<CurricularImageView> image;
     std::vector<HWND> choices;
     state::Response response;
     std::vector<std::size_t> order;
@@ -435,6 +437,10 @@ struct LessonView {
     }
     const curriculum::TextSemantics* text_semantics(HWND target,std::string_view text) const {
         const auto id=GetDlgCtrlID(target);
+        if(id==lesson_heading_id&&!laboratory()){
+            const auto found=lesson.text_semantics.find("/title");
+            return found!=lesson.text_semantics.end()&&found->second.source==text?&found->second:nullptr;
+        }
         if(id<1000)return nullptr;
         const auto index=static_cast<std::size_t>((id-1000)/100);
         if(index>=controls.size())return nullptr;
@@ -442,7 +448,8 @@ struct LessonView {
         if(part==4){const auto& value=controls[index].feedback_semantics;
             return value&&value->source==text?&*value:nullptr;}
         const auto& current=block(index);std::string path;
-        if(part==0)path=current.type==BlockType::heading||current.type==BlockType::paragraph||current.type==BlockType::note?"/text":"/question";
+        if(current.type==BlockType::image&&(part==0||part==19))path=part==0?"/alt":"/caption";
+        else if(part==0)path=current.type==BlockType::heading||current.type==BlockType::paragraph||current.type==BlockType::note?"/text":"/question";
         else if(current.type==BlockType::multiple_choice&&part>=21&&(part-21)%2==0&&
             static_cast<std::size_t>((part-21)/2)<current.options.size())path="/options/"+std::to_string((part-21)/2);
         const auto found=current.text_semantics.find(path);
@@ -785,9 +792,12 @@ struct LessonView {
         const bool legacy_programming=script_version==1;
         std::vector<LessonReadingRegion> result;
         if (import_open || deferred_entry.waiting() || !pane) return result;
-        if (const auto heading = find_item(lesson_heading_id); heading)
+        if (const auto heading = find_item(lesson_heading_id); heading){
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + "/title",
                 lesson.title,heading,std::numeric_limits<std::size_t>::max(),false,false,false,true});
+            if(script_version==0&&!laboratory())if(auto semantics=rich_text_semantics(heading);semantics&&semantics->source==lesson.title)
+                result.back().text_semantics=std::move(semantics);
+        }
         const auto add = [&](std::size_t index,HWND target,std::string_view source,bool is_feedback = false) {
             // Fullscreen only reparents/presents the existing page. Its hidden
             // siblings remain part of the same narration script and bookmark.
@@ -815,6 +825,11 @@ struct LessonView {
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index); const auto& vm = controls[index];
             if (!vm.rendered || vm.locked) continue;
+            if(current.type==BlockType::image){
+                if(vm.image&&!vm.image->loaded())add(index,vm.status,vm.image->error());
+                add(index,find_item(control_id(index,0)),current.image->alt);
+                add(index,find_item(control_id(index,19)),current.image->caption);continue;
+            }
             if (current.type == BlockType::note) add(index,find_item(control_id(index,19)),ui("Nota","Note","Note"));
             if (current.type == BlockType::heading || current.type == BlockType::paragraph || current.type == BlockType::note)
                 add(index,find_item(control_id(index,0)),current.text);
@@ -1035,6 +1050,10 @@ struct LessonView {
             for(std::size_t index=0;index<historical.pages[page].blocks.size();++index){const auto& current=historical.pages[page].blocks[index];
                 if(!available(index,current))continue;
                 const auto response=state::get_response(data,historical,current);
+                if(current.type==BlockType::image){
+                    emit(index,current,0,current.image->alt);
+                    emit(index,current,19,current.image->caption);continue;
+                }
                 if(current.type==BlockType::note)emit(index,current,19,ui("Nota","Note","Note"));
                 emit(index,current,0,current.type==BlockType::heading||current.type==BlockType::paragraph||current.type==BlockType::note?current.text:current.question);
                 if(response)emit(index,current,40,choice_history_text(current,*response));
@@ -2686,6 +2705,15 @@ struct LessonView {
             if (const auto saved = state::get_response(data, lesson, current)) vm.response = *saved;
         if(current.type==BlockType::math_puzzle&&!verified_math.contains(key(index)))vm.response.correct=false;
         if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, RichTextRole::heading); return; }
+        if(current.type==BlockType::image){
+            vm.image=std::make_unique<CurricularImageView>(pane,control_id(index,5),lesson.source_path,*current.image);
+            actions.push_back({control_id(index,5),ActionType::image_detail,index});
+            rows.push_back({{vm.image->window()},{0},100,false});
+            if(!vm.image->loaded()){text_row(vm.image->error(),control_id(index,18));vm.status=find_item(control_id(index,18));}
+            text_row(current.image->alt,control_id(index,0));
+            if(!current.image->caption.empty())text_row(current.image->caption,control_id(index,19));
+            return;
+        }
         if (current.type == BlockType::note) text_row(ui("Nota","Note","Note"),control_id(index,19),false,{},RichTextRole::heading);
         if (current.type == BlockType::paragraph || current.type == BlockType::note) { text_row(current.text, control_id(index, 0), false, current.emphasis); return; }
         if (current.type == BlockType::code) {
@@ -3188,6 +3216,7 @@ struct LessonView {
                     }
                     if(vm.fill&&row.cells[0]==vm.fill->window())row.logical_height=MulDiv(vm.fill->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.order_view&&row.cells[0]==vm.order_view->window())row.logical_height=MulDiv(vm.order_view->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
+                    if(vm.image&&row.cells[0]==vm.image->window())row.logical_height=MulDiv(vm.image->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.project&&row.cells[0]==vm.project->window())row.logical_height=MulDiv(vm.project->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.project&&row.cells[0]==vm.project->configuration_window())row.logical_height=MulDiv(vm.project->configuration_height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                 }
@@ -3975,6 +4004,7 @@ struct LessonView {
         if(exercise(block(action.block).type)&&(action.type==ActionType::choose||action.type==ActionType::check
             ||action.type==ActionType::move_up||action.type==ActionType::move_down))selected_puzzle=action.block;
         switch (action.type) {
+        case ActionType::image_detail: if(controls[action.block].image){flush();controls[action.block].image->show_detail(window);}break;
         case ActionType::check: check_answer(action.block); break;
         case ActionType::choose:
             if (vm.response.correct) break;

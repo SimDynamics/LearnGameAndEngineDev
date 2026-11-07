@@ -78,9 +78,12 @@ public:
     // solely for bookmark authentication. It is not a curricular mathMode.
     // B42 and original reconstruct both historical displayed-output policies
     // for identity only; historical plans are never synthesized.
+    // previous_prose_inference reconstructs the immediately preceding prose
+    // reader, including unmarked text, solely for existing-key authentication.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={},
         std::string_view reading_context="auto",std::string_view math_mode="auto",NarrationOutputDataPolicy=NarrationOutputDataPolicy::current,
-        const std::optional<curriculum::TextSemantics>& semantics={},NarrationSemanticPolicy=NarrationSemanticPolicy::current);
+        const std::optional<curriculum::TextSemantics>& semantics={},NarrationSemanticPolicy=NarrationSemanticPolicy::current,
+        bool previous_prose_inference=false);
     // Preserve the old bool API exactly: true means pre-B42; false is current.
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token,
         std::string_view reading_context,std::string_view math_mode,bool previous_output_data);

@@ -90,6 +90,9 @@ def public_text_fields(block):
     kind = block.get("type")
     if kind in {"heading", "paragraph", "note"}:
         text(block, "text", "")
+    elif kind == "image":
+        for field in ("alt", "caption"):
+            text(block, field, "")
     elif kind in {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}:
         for field in ("question", "explanation"):
             text(block, field, "")
@@ -198,19 +201,51 @@ def _blocks(document):
     return result
 
 
-def validate(document):
-    """Return resolved descriptors, without mutating any authored object."""
+def public_lesson_text_fields(document):
+    """Root fields with real presentation/narration consumers; paths stay absolute."""
+    return {"/title": document["title"]} if isinstance(document.get("title"), str) else {}
+
+
+def _descriptor(field, source):
+    try:
+        encoded, utf16 = source.encode("utf-8"), source.encode("utf-16-le")
+    except UnicodeError as error:
+        raise ValueError("Text semantic source contains an invalid Unicode scalar") from error
+    digest = field["sourceSha256"]
+    _require(isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest) is not None and
+             hashlib.sha256(encoded).hexdigest() == digest, "Text semantic source fingerprint is stale")
+    _require(len(encoded) <= 8 * 1024 * 1024, "Text semantic source is too large")
+    spans, previous = field["spans"], 0
+    _require(isinstance(spans, list) and len(spans) <= 100000, "Invalid text semantic span list")
+    for span in spans:
+        _require(isinstance(span, dict) and {"start", "end", "text", "role"} <= set(span) <=
+                 {"start", "end", "text", "role", "reading"}, "Invalid text semantic span structure")
+        start, end = span["start"], span["end"]
+        _require(type(start) is int and type(end) is int and 0 <= previous <= start < end <= len(utf16) // 2,
+                 "Text semantic spans must be ordered disjoint UTF-16 ranges")
+        _require(isinstance(span["text"], str) and isinstance(span["role"], str) and span["role"] in ROLES and
+                 isinstance(span.get("reading", "auto"), str) and span.get("reading", "auto") in READINGS,
+                 "Unknown text semantic role/reading intent")
+        try:
+            selected = utf16[start * 2:end * 2].decode("utf-16-le")
+        except UnicodeError as error:
+            raise ValueError("Text semantic range splits a Unicode scalar") from error
+        _require(selected == span["text"], "Text semantic selection differs from its exact source")
+        previous = end
+    return {"source": source, "spans": deepcopy(spans)}
+
+
+def _resolve(document):
     if ROOT_FIELD not in document:
-        return {}
+        return {}, {}
     metadata = document[ROOT_FIELD]
-    _require(isinstance(metadata, dict) and set(metadata) == {"version", "fields"} and
-             type(metadata["version"]) is int and metadata["version"] == 1,
+    _require(isinstance(metadata, dict) and {"version", "fields"} <= set(metadata) <=
+             {"version", "fields", "rootFields"} and type(metadata["version"]) is int and metadata["version"] == 1,
              "Unknown textSemantics structure/version")
-    fields = metadata["fields"]
-    _require(isinstance(fields, list) and len(fields) <= 100000, "Invalid text semantic field list")
-    if not fields:
-        return {}
-    blocks, result, inventories = _blocks(document), {}, {}
+    fields, root_fields = metadata["fields"], metadata.get("rootFields", [])
+    _require(isinstance(fields, list) and isinstance(root_fields, list) and len(fields) + len(root_fields) <= 100000,
+             "Invalid text semantic field list")
+    blocks, result, inventories = _blocks(document) if fields else {}, {}, {}
     for field in fields:
         _require(isinstance(field, dict) and set(field) == {"block", "path", "sourceSha256", "spans"},
                  "Invalid text semantic field structure")
@@ -220,40 +255,34 @@ def validate(document):
             inventories[owner] = public_text_fields(blocks[owner])
         public = inventories[owner]
         _require(path in public, "Text semantic path is not a supported public string")
-        source = public[path]
-        try:
-            encoded, utf16 = source.encode("utf-8"), source.encode("utf-16-le")
-        except UnicodeError as error:
-            raise ValueError("Text semantic source contains an invalid Unicode scalar") from error
-        digest = field["sourceSha256"]
-        _require(isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest) is not None and
-                 hashlib.sha256(encoded).hexdigest() == digest, "Text semantic source fingerprint is stale")
-        _require(len(encoded) <= 8 * 1024 * 1024, "Text semantic source is too large")
-        spans, previous = field["spans"], 0
-        _require(isinstance(spans, list) and len(spans) <= 100000, "Invalid text semantic span list")
-        for span in spans:
-            _require(isinstance(span, dict) and {"start", "end", "text", "role"} <= set(span) <=
-                     {"start", "end", "text", "role", "reading"}, "Invalid text semantic span structure")
-            start, end = span["start"], span["end"]
-            _require(type(start) is int and type(end) is int and 0 <= previous <= start < end <= len(utf16) // 2,
-                     "Text semantic spans must be ordered disjoint UTF-16 ranges")
-            _require(isinstance(span["text"], str) and isinstance(span["role"], str) and span["role"] in ROLES and
-                     isinstance(span.get("reading", "auto"), str) and span.get("reading", "auto") in READINGS,
-                     "Unknown text semantic role/reading intent")
-            try:
-                selected = utf16[start * 2:end * 2].decode("utf-16-le")
-            except UnicodeError as error:
-                raise ValueError("Text semantic range splits a Unicode scalar") from error
-            _require(selected == span["text"], "Text semantic selection differs from its exact source")
-            previous = end
+        descriptor = _descriptor(field, public[path])
         owned = result.setdefault(owner, {})
         _require(path not in owned, "Duplicate text semantic field")
-        owned[path] = {"source": source, "spans": deepcopy(spans)}
+        owned[path] = descriptor
     for owner, fields in result.items():
         group = feedback_origins(blocks[owner])
         _require(not group.intersection(fields) or group <= fields.keys(),
                  "Annotating mathematical feedback requires every possible authored feedback origin in that block")
-    return result
+    root_public, resolved_root = public_lesson_text_fields(document), {}
+    for field in root_fields:
+        _require(isinstance(field, dict) and set(field) == {"path", "sourceSha256", "spans"},
+                 "Invalid root text semantic field structure")
+        path = field["path"]
+        _require(isinstance(path, str) and path in root_public, "Root text semantic path is not a supported public string")
+        descriptor = _descriptor(field, root_public[path])
+        _require(path not in resolved_root, "Duplicate root text semantic field")
+        resolved_root[path] = descriptor
+    return result, resolved_root
+
+
+def validate(document):
+    """Validate the entire overlay and return its original block-owner mapping."""
+    return _resolve(document)[0]
+
+
+def validate_root_fields(document):
+    """Validate the entire overlay and resolve root fields without fictitious IDs."""
+    return _resolve(document)[1]
 
 
 def select(source, text, role, *, occurrence=None, reading="auto"):
@@ -284,4 +313,12 @@ def make_field(document, block, path, spans):
     fields = public_text_fields(blocks[block])
     _require(path in fields, "Not a supported public field")
     return {"block": block, "path": path, "sourceSha256": hashlib.sha256(fields[path].encode("utf-8")).hexdigest(),
+            "spans": deepcopy(spans)}
+
+
+def make_root_field(document, path, spans):
+    """Prepare one exact root descriptor, without introducing a layout or owner."""
+    fields = public_lesson_text_fields(document)
+    _require(path in fields, "Not a supported public lesson field")
+    return {"path": path, "sourceSha256": hashlib.sha256(fields[path].encode("utf-8")).hexdigest(),
             "spans": deepcopy(spans)}

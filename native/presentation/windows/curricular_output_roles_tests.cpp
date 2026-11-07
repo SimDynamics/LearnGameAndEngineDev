@@ -35,8 +35,8 @@ Range locate_after(std::wstring_view text,std::wstring_view cue,std::wstring_vie
     require(at!=text.npos,"The exact locally introduced public sample disappeared");return {at,at+sample.size()};
 }
 CurricularRoles classify(std::wstring_view text,std::span<const Range> marked={},std::span<const Range> math={}) {
-    const auto semantic=analyze(text,"es",marked,math);
-    return curricular_roles(text,"es",semantic,{}, {},marked);
+    const auto semantic=authored_analysis(text,marked,math);
+    return curricular_roles(text,semantic,marked);
 }
 struct PublicText { std::wstring text;std::vector<Range> marked;CurricularRoles roles; };
 PublicText public_text(std::string_view authored) {

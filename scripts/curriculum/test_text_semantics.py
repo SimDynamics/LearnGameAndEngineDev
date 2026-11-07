@@ -155,19 +155,22 @@ class TextSemanticsTests(unittest.TestCase):
         path = ROOT.parents[1] / "app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json"
         raw = path.read_bytes()
         original = json.loads(raw.decode("utf-8-sig"))
-        candidate = deepcopy(original)
         owner, pointer = "block_0007_0004", "/options/0"
-        field = next(item for item in candidate["textSemantics"]["fields"] if item["block"] == owner and item["path"] == pointer)
-        index = next(i for i, span in enumerate(field["spans"]) if span["text"] == "!")
-        before = deepcopy(field["spans"][index])
-        self.assertEqual((before["role"], before["reading"]), ("data", "natural"))
-        field["spans"][index]["reading"] = "characters"
-        resolved = semantics.validate(candidate)[owner][pointer]
-        self.assertEqual(resolved["spans"][index], dict(before, reading="characters"))
-        layout.validate(candidate)
-        layout.validate_transition(original, candidate)
-        self.assertEqual(candidate["pages"], original["pages"])
-        self.assertEqual(candidate["stateLayout"], original["stateLayout"])
+        field_index = next(i for i, item in enumerate(original["textSemantics"]["fields"]) if item["block"] == owner and item["path"] == pointer)
+        source_field = original["textSemantics"]["fields"][field_index]
+        index = next(i for i, span in enumerate(source_field["spans"]) if span["text"] == "!" and span["role"] == "data")
+        for reading in sorted(semantics.READINGS):
+            candidate = deepcopy(original)
+            candidate["textSemantics"]["fields"][field_index]["spans"][index]["reading"] = reading
+            expected = deepcopy(source_field["spans"])
+            expected[index]["reading"] = reading
+            with self.subTest(reading=reading):
+                resolved = semantics.validate(candidate)[owner][pointer]
+                self.assertEqual(resolved["spans"], expected)
+                layout.validate(candidate)
+                layout.validate_transition(original, candidate)
+                self.assertEqual(candidate["pages"], original["pages"])
+                self.assertEqual(candidate["stateLayout"], original["stateLayout"])
         self.assertEqual(path.read_bytes(), raw)
 
     def test_character_intent_rejects_unknown_spellings_and_non_string_values(self):
@@ -260,6 +263,121 @@ class TextSemanticsTests(unittest.TestCase):
         self.assertNotIn("/responses/0/sources/0/label", semantics.public_text_fields(hidden))
         standalone = {"type": "math_numeric_input", "id": "legacy_id", "label": "legacy_id"}
         self.assertIn("/label", semantics.feedback_origins(standalone))
+
+
+class LessonRootTextSemanticsTests(unittest.TestCase):
+    @staticmethod
+    def root_lesson():
+        return {"id": "qa_root_semantics", "title": "😀 `int` y 2: !\r\ne\u0301", "pages": [{"blocks": []}]}
+
+    @staticmethod
+    def annotate_title(document, spans):
+        field = semantics.make_root_field(document, "/title", spans)
+        document.setdefault("textSemantics", {"version": 1, "fields": []})["rootFields"] = [field]
+        return field
+
+    def test_root_only_is_exact_without_layout_or_invented_block(self):
+        original = self.root_lesson()
+        candidate = deepcopy(original)
+        spans = [semantics.select(candidate["title"], "int", "cpp", reading="technical"),
+                 semantics.select(candidate["title"], "2", "data"),
+                 semantics.select(candidate["title"], "!", "data", reading="characters")]
+        field = self.annotate_title(candidate, spans)
+        self.assertEqual(set(field), {"path", "sourceSha256", "spans"})
+        self.assertEqual(field["sourceSha256"], hashlib.sha256(original["title"].encode("utf-8")).hexdigest())
+        self.assertEqual(spans[0]["start"], 4)  # supplementary emoji + space + backtick
+        self.assertEqual(semantics.validate(candidate), {})  # original block-owner API stays compatible
+        self.assertEqual(semantics.validate_root_fields(candidate), {"/title": {"source": original["title"], "spans": spans}})
+        layout.validate(candidate)
+        self.assertNotIn("stateLayout", candidate)
+        self.assertEqual({key: value for key, value in candidate.items() if key != "textSemantics"}, original)
+        # Returned descriptors do not alias mutable authored spans.
+        semantics.validate_root_fields(candidate)["/title"]["spans"].clear()
+        self.assertEqual(field["spans"], spans)
+
+    def test_explicit_prose_and_all_existing_roles_readings_are_independent(self):
+        for role in sorted(semantics.ROLES):
+            for reading in sorted(semantics.READINGS):
+                document = self.root_lesson()
+                span = semantics.select(document["title"], "!", role, reading=reading)
+                self.annotate_title(document, [span])
+                with self.subTest(role=role, reading=reading):
+                    self.assertEqual(semantics.validate_root_fields(document)["/title"]["spans"], [span])
+        document = self.root_lesson()
+        self.annotate_title(document, [])
+        self.assertEqual(semantics.validate_root_fields(document)["/title"]["spans"], [])
+        self.assertEqual(semantics.validate_root_fields(self.root_lesson()), {})
+
+    def test_preparation_and_transition_keep_family_ids_and_raw_blocks(self):
+        original = self.root_lesson()
+        candidate = deepcopy(original)
+        self.annotate_title(candidate, [semantics.select(candidate["title"], "int", "cpp")])
+        self.assertEqual(layout.prepare(original)["stateLayout"], layout.prepare(candidate)["stateLayout"])
+        previous = layout.prepare_v2(original, "es", {"es": original})
+        current = layout.prepare_v2(candidate, "es", {"es": original}, previous=original)
+        self.assertEqual(current["stateLayout"], previous["stateLayout"])
+        self.assertEqual(current["pages"], previous["pages"])
+        layout.validate_transition(previous, current)
+        mixed = lesson()
+        before = deepcopy(mixed)
+        self.annotate_title(mixed, [])
+        annotate(mixed, 0, "/text", "int p;", "cpp")
+        layout.validate_transition(before, mixed)
+        self.assertEqual(layout.prepare_v2(mixed, "es", {"es": before}, previous=before)["stateLayout"], before["stateLayout"])
+        self.assertEqual(mixed["pages"], before["pages"])
+        self.assertEqual(mixed["stateLayout"], before["stateLayout"])
+        # Root-only support does not bootstrap an owner for block annotations.
+        del mixed["stateLayout"]
+        with self.assertRaises(ValueError):
+            semantics.validate(mixed)
+
+    def test_root_fields_reject_stale_hidden_duplicate_and_wrong_schema(self):
+        original = self.root_lesson()
+        self.annotate_title(original, [semantics.select(original["title"], "int", "cpp")])
+        mutations = [
+            lambda d: d["textSemantics"].pop("fields"),
+            lambda d: d["textSemantics"].update(rootFields={}),
+            lambda d: d["textSemantics"]["rootFields"].append(deepcopy(d["textSemantics"]["rootFields"][0])),
+            lambda d: d["textSemantics"]["rootFields"][0].update(block=""),
+            lambda d: d["textSemantics"]["rootFields"][0].update(sourceSha256="0" * 64),
+            lambda d: d.update(title=d["title"].replace("e\u0301", "é")),
+            lambda d: d.update(title=7),
+            lambda d: d["textSemantics"].update(version=True),
+            lambda d: d["textSemantics"]["rootFields"][0].update(color="red"),
+        ]
+        mutations.extend(lambda d, path=path: d["textSemantics"]["rootFields"][0].update(path=path)
+                         for path in ("/id", "/title/", "title", "/Title", "/pages/0/title", "/title~0", "/stateLayout"))
+        for index, change in enumerate(mutations):
+            candidate = deepcopy(original)
+            change(candidate)
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                semantics.validate(candidate)
+        for path in ("/id", "/title/", "/pages/0/title"):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                semantics.make_root_field(original, path, [])
+
+    def test_root_spans_reject_nonexact_utf16_ranges_and_unknown_intents(self):
+        original = self.root_lesson()
+        self.annotate_title(original, [semantics.select(original["title"], "int", "cpp")])
+        mutations = [dict(start=True), dict(end=100000), dict(text="INT"), dict(reading="character"),
+                     dict(role="keyword"), dict(background="gray"), dict(start=0, end=1, text="😀"),
+                     dict(start=1, end=2, text="😀")]
+        for values in mutations:
+            candidate = deepcopy(original)
+            candidate["textSemantics"]["rootFields"][0]["spans"][0].update(values)
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                semantics.validate_root_fields(candidate)
+        candidate = deepcopy(original)
+        spans = candidate["textSemantics"]["rootFields"][0]["spans"]
+        spans.append(deepcopy(spans[0]))
+        with self.assertRaises(ValueError):
+            semantics.validate(candidate)
+
+    def test_image_inventory_exposes_only_consumed_alt_and_caption(self):
+        image = {"type": "image", "imageId": "qa_image", "src": "images/qa_image.png", "alt": "N=1", "caption": "N=1"}
+        self.assertEqual(semantics.public_text_fields(image), {"/alt": "N=1", "/caption": "N=1"})
+        image.pop("caption")
+        self.assertEqual(semantics.public_text_fields(image), {"/alt": "N=1"})
 
 
 if __name__ == "__main__":

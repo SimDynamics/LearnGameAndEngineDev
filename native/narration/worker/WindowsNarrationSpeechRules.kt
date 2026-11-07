@@ -8,6 +8,16 @@ internal object WindowsNarrationSpeechRules {
     // refinements added to the current policy.
     enum class OutputDataPolicy { CURRENT, B42, ORIGINAL }
     private val outputDataPolicy = ThreadLocal.withInitial { OutputDataPolicy.CURRENT }
+    // Replay only: preserve the preceding frontend's exact implicit prose
+    // pronunciation when authenticating an existing bookmark. New prose uses
+    // its own words; explicit code and semantic spans have separate readers.
+    private val previousProseInference = ThreadLocal.withInitial { false }
+    fun <T> withPreviousProseInference(previous: Boolean, action: () -> T): T {
+        val saved = previousProseInference.get()
+        previousProseInference.set(previous)
+        return try { action() } finally { previousProseInference.set(saved) }
+    }
+    fun keepPreviousProseInference(): Boolean = previousProseInference.get() || outputDataPolicy.get() != OutputDataPolicy.CURRENT
     // Anticipation must apply the same single sentence split as the visible
     // reader. Historical pack export retains the original extractor chunks.
     private val wholeReadingRegions = ThreadLocal.withInitial { false }
@@ -212,6 +222,19 @@ internal object WindowsNarrationSpeechRules {
         return end.takeIf { it > operator + 1 }
     }
 
+    // A complete keyword statement supplies syntax, unlike a noun cue or a
+    // matching spelling in a pronunciation table. Used only to retain English
+    // terms inside actual source when filtering the old lexical selection.
+    private val keywordStatement = Regex("(?:return|throw|break|continue)(?![\\p{L}\\p{M}\\p{N}_])")
+    fun keywordStatementEnd(text: String, start: Int): Int? {
+        val keyword = keywordStatement.matchAt(text, start) ?: return null
+        val next = horizontal(text, keyword.range.last + 1)
+        if (text.getOrNull(next) == ';') return next + 1
+        if (keyword.value == "break" || keyword.value == "continue") return null
+        val end = implicitExpressionEnd(text, next)
+        return end.takeIf { it > next && text.getOrNull(it - 1) == ';' }
+    }
+
     /** Only a prose-introduced displayed output value, never a code statement,
      * symbol explanation, URL, type qualification or a fenced source listing. */
     private val outputValueCue = Regex(
@@ -365,9 +388,10 @@ internal object WindowsNarrationSpeechRules {
         "(?iu)[ \\t]+(?:lo|la|los|las)[ \\t]+(?:pued(?:o|es|e|en)|pod(?:emos|éis)|deb(?:o|es|e|emos|éis|en))" +
         "[ \\t]+[\\p{L}\\p{M}]+(?:ar|er|ir)(?=[ \\t.,;:!?]|$)")
 
-    /** A named ASCII letter is one technical token; its following colon is prose.
-     * Quotes, code and formulas are handled first by the canonical normalizer. */
+    /** Exact historical inference, used only to authenticate old recordings.
+     * New prose needs an explicit code/semantic span to name a code letter. */
     fun isNamedLetter(text: String, index: Int): Boolean {
+        if (!keepPreviousProseInference()) return false
         if (text[index] !in 'a'..'z' && text[index] !in 'A'..'Z') return false
         // In prose, "un carácter y el intento" coordinates two noun phrases;
         // its y is not that character's name. Do not cross punctuation/lines

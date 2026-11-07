@@ -203,6 +203,9 @@ private class Backend(private val resources: File, private val englishResources:
         require(!request.has("previousOutputDataPolicy") || request.opt("previousOutputDataPolicy") is Boolean) {
             "Invalid previous output-data policy"
         }
+        require(!request.has("previousProseInference") || request.opt("previousProseInference") is Boolean) {
+            "Invalid previous prose-inference policy"
+        }
         require(!request.has("outputDataPolicy") || request.opt("outputDataPolicy") is String) {
             "Invalid output-data policy"
         }
@@ -220,14 +223,16 @@ private class Backend(private val resources: File, private val englishResources:
         require(!request.has("outputDataPolicy") || request.getString("outputDataPolicy").isNotEmpty()) {
             "Invalid output-data policy"
         }
-        val items = WindowsNarrationSpeechRules.withOutputDataPolicy(policy) {
-            val source = request.getString("text")
-            val explicit = if (request.has("textSemantics"))
-                WindowsTextSemantics.parse(source,request.getJSONObject("textSemantics")) else null
-            require(!request.has("semanticProjectionPolicy") || explicit!!.spans.none { it.reading == "characters" }) {
-                "The original semantic projection never supported character reading"
+        val items = WindowsNarrationSpeechRules.withPreviousProseInference(request.optBoolean("previousProseInference",false)) {
+            WindowsNarrationSpeechRules.withOutputDataPolicy(policy) {
+                val source = request.getString("text")
+                val explicit = if (request.has("textSemantics"))
+                    WindowsTextSemantics.parse(source,request.getJSONObject("textSemantics")) else null
+                require(!request.has("semanticProjectionPolicy") || explicit!!.spans.none { it.reading == "characters" }) {
+                    "The original semantic projection never supported character reading"
+                }
+                planned(source,language(request),readingMode(request),explicit,request.has("semanticProjectionPolicy"))
             }
-            planned(source,language(request),readingMode(request),explicit,request.has("semanticProjectionPolicy"))
         }
         return JSONObject().put("segments",JSONArray(items.map { (range,segment) ->
             JSONObject().put("text",segment.source).put("preparedText",segment.prepared)
@@ -528,7 +533,7 @@ fun main(arguments: Array<String>) {
                 val id = request.get("id").toString(); require(id.length in 1..128)
                 val command = request.getString("command")
                 replyId = id; replyCommand = command
-                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy") && !request.has("textSemantics") && !request.has("semanticProjectionPolicy"))) {
+                require(command == "plan" || (!request.has("previousOutputDataPolicy") && !request.has("outputDataPolicy") && !request.has("previousProseInference") && !request.has("textSemantics") && !request.has("semanticProjectionPolicy"))) {
                     "Previous output-data policy is restricted to bookmark planning"
                 }
                 if (command == "cancel") {

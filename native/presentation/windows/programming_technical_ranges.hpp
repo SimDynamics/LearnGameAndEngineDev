@@ -263,6 +263,25 @@ inline InlineCodeSpans inline_code_spans(std::wstring_view source,std::span<cons
     }return result;
 }
 struct Analysis {std::vector<Range> fragments,protected_ranges;};
+// Current prose owns technical references only through authored delimiters or
+// exact frontend ranges. Keep the historical analyzer below for comparison
+// with the imported Android corpus; visible source names are never authorship.
+inline Analysis authored_analysis(std::wstring_view text,std::span<const Range> explicit_code={},
+        std::span<const Range> protected_mathematics={}) {
+    Analysis result;const auto protected_text=protection(text,protected_mathematics);
+    result.protected_ranges=protected_text.mathematics;
+    result.protected_ranges.insert(result.protected_ranges.end(),protected_text.links.begin(),protected_text.links.end());
+    const auto add=[&](Range range){
+        if(range.first>=range.second||range.second>text.size()||overlaps(range,protected_text.mathematics)||
+            std::ranges::all_of(text.substr(range.first,range.second-range.first),space))return;
+        result.fragments.push_back(range);
+    };
+    for(const auto range:explicit_code)add(range);
+    for(const auto range:inline_code_spans(text,protected_mathematics).fragments)add(range);
+    std::ranges::sort(result.fragments);
+    result.fragments.erase(std::unique(result.fragments.begin(),result.fragments.end()),result.fragments.end());
+    return result;
+}
 inline std::string_view canonical_locale(std::string_view locale){
     if(locale.size()<2||(locale.size()>2&&locale[2]!='-'&&locale[2]!='_'))return "es";
     const auto ascii=[](char value){return value>='A'&&value<='Z'?static_cast<char>(value-'A'+'a'):value;};

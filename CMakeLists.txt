@@ -90,7 +90,7 @@ endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS "smo_hlsl_compile=${LGAED_SHADER_COMPILE_JOBS}")
 message(STATUS "Optimized HLSL compiler jobs: ${LGAED_SHADER_COMPILE_JOBS}")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp native/core/image_resource.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
@@ -135,6 +135,7 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/cpp_project_view.cpp
     native/presentation/windows/cpp_fill_view.cpp
     native/presentation/windows/order_code_view.cpp
+    native/presentation/windows/curricular_image_view.cpp
     native/presentation/windows/math_puzzle_view.cpp
     native/presentation/windows/math_expression_editor.cpp
     native/presentation/windows/native_math_text.cpp
@@ -227,6 +228,16 @@ if(BUILD_TESTING)
     add_executable(lgaed_text_semantics_loader_tests native/platform/windows/text_semantics_loader_tests.cpp)
     target_link_libraries(lgaed_text_semantics_loader_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.text_semantics_loader COMMAND lgaed_text_semantics_loader_tests)
+    add_executable(lgaed_curricular_image_tests native/presentation/windows/curricular_image_view_tests.cpp)
+    target_link_libraries(lgaed_curricular_image_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.curricular_images COMMAND lgaed_curricular_image_tests)
+    set_tests_properties(native.curricular_images PROPERTIES TIMEOUT 60)
+    add_test(NAME native.curricular_image_contract COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_image_resources.py)
+    set_tests_properties(native.curricular_image_contract PROPERTIES TIMEOUT 30)
+    add_test(NAME native.initial_v2_family_contract COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_initial_v2_family.py)
+    set_tests_properties(native.initial_v2_family_contract PROPERTIES TIMEOUT 30)
     add_executable(lgaed_compiler_feedback_source_tests native/platform/windows/compiler_feedback_source_tests.cpp)
     target_link_libraries(lgaed_compiler_feedback_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.compiler_feedback_source COMMAND lgaed_compiler_feedback_source_tests)
@@ -357,6 +368,8 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_narration_policy_bridge_tests lgaed_narration_runtime)
     add_test(NAME native.narration_policy_bridge COMMAND lgaed_narration_policy_bridge_tests)
     set_tests_properties(native.narration_policy_bridge PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME native.narration_prose_inference_bridge COMMAND lgaed_narration_policy_bridge_tests --prose-inference)
+    set_tests_properties(native.narration_prose_inference_bridge PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_executable(lgaed_curricular_output_roles_tests native/presentation/windows/curricular_output_roles_tests.cpp)
     target_link_libraries(lgaed_curricular_output_roles_tests PRIVATE lgaed_presentation_windows lgaed_host_options)
     add_test(NAME native.curricular_output_roles COMMAND lgaed_curricular_output_roles_tests)
@@ -1364,6 +1377,8 @@ if(BUILD_TESTING)
     add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
     add_test(NAME native.curricular_text_roles COMMAND lgaed_rich_text_tests --curricular-roles)
     set_tests_properties(native.curricular_text_roles PROPERTIES TIMEOUT 60)
+    add_test(NAME native.unmarked_prose_roles COMMAND lgaed_rich_text_tests --unmarked-prose)
+    set_tests_properties(native.unmarked_prose_roles PROPERTIES TIMEOUT 30)
     add_test(NAME native.technical_background COMMAND lgaed_rich_text_tests --technical-background
         "${CMAKE_SOURCE_DIR}/out/qa/technical-background.bmp")
     set_tests_properties(native.technical_background PROPERTIES TIMEOUT 45)

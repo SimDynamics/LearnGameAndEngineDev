@@ -60,11 +60,30 @@ int main() try {
         auto forged=old_auto;forged.context=invalid;
         check(!same_previous_passage(forged,modern),"A malformed or nested historical policy borrowed a current passage");
     }
+    for(const std::string_view context:{"auto","cpp"})for(const std::string_view mode:{"auto","text"}){
+        const std::string unmarked_source="El carácter y cualquier emoji forman texto.";
+        const auto units=std::wstring_view(L"El carácter y cualquier emoji forman texto.").size();
+        const std::string old_context=std::string(prose_inference_prefix)+std::string(context);
+        const Passage before{owner,unmarked_source,old_context,mode,"El carácter i griega cualquier emoji forman texto.",0,units};
+        const Passage after{owner,unmarked_source,context,mode,unmarked_source,0,units};
+        check(same_previous_passage(before,after),"An exact unmarked old-current passage lost its scoped prose alias");
+        auto different=after;different.source="El carácter y otro emoji forman texto.";
+        check(!same_previous_passage(before,different),"A prose policy recognized another visible source");
+        different=after;different.owner="another owner";
+        check(!same_previous_passage(before,different),"A prose policy borrowed another block's old recording");
+        different=after;--different.end;
+        check(!same_previous_passage(before,different),"A prose policy borrowed a different sentence extent");
+        different=after;different.math_mode=mode=="auto"?"text":"auto";
+        check(!same_previous_passage(before,different),"A prose policy changed an explicit mathematical mode");
+        auto invalid=before;const auto repeated=std::string(prose_inference_prefix)+old_context;invalid.context=repeated;
+        check(!same_previous_passage(invalid,after),"Repeated prose policy markers created a generic alias");
+        ++groups;
+    }
     // Real bounded state serialization, with each historical generation in
     // turn. No audio offset or hearing evidence is inferred from a page key.
     namespace narration=lgaed::narration;
     namespace state=lgaed::state;
-    for(const std::string_view generation:{"current","b42","original"})for(const std::size_t slot:{0u,1u,2u}) {
+    for(const std::string_view generation:{"current","b42","original","prose"})for(const std::size_t slot:{0u,1u,2u}) {
         narration::History history;
         for(std::size_t i=0;i<3;++i) {
             narration::Position saved{static_cast<std::int64_t>(i+1),static_cast<std::int64_t>(250+i*100),0,false,
