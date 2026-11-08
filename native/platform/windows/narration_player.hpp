@@ -1,8 +1,27 @@
 #pragma once
+#include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
 
 namespace lgaed::windows {
+// Only values actually obtained from MediaPlayerFailedEventArgs are present.
+// Empty ErrorMessage and a zero HRESULT remain distinct from unavailable data.
+struct NarrationPlayerFailure {
+    std::optional<std::int32_t> error;
+    std::optional<std::int32_t> extended_error_code;
+    std::optional<std::string> error_message;
+    bool operator==(const NarrationPlayerFailure&)const=default;
+};
+class NarrationPlayerError : public std::runtime_error {
+public:
+    explicit NarrationPlayerError(NarrationPlayerFailure);
+    [[nodiscard]] const NarrationPlayerFailure& diagnostic()const noexcept{return diagnostic_;}
+private:
+    NarrationPlayerFailure diagnostic_;
+};
 class NarrationPlayer {
 public:
     NarrationPlayer();~NarrationPlayer();

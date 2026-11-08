@@ -70,6 +70,10 @@ de datos privados del agente.
 `Build-NarrationWorker.ps1` utiliza también ese selector para reconstruir el
 worker por separado. Ambos scripts de compilación restauran el entorno de la
 consola al terminar, para no cambiar el Java de otro proyecto ejecutado después.
+El alcance predeterminado `Application` conserva todas las comprobaciones,
+incluido Vulkan. `Resolve-NativeTools.ps1 -Scope NarrationHost` sirve para la
+preparación aislada del worker y omite sólo Vulkan; mantiene las versiones del
+manifiesto, el JDK completo, FFmpeg y la comprobación de rutas físicas.
 
 Descargar el JDK desde **Android Studio → Download JDK** y conservarlo bajo
 `%USERPROFILE%\.jdks\openjdk-27*`. La selección Oracle OpenJDK del catálogo de
@@ -152,32 +156,104 @@ y no acredita los recorridos pendientes.
 
 El workflow `.github/workflows/windows-narration-player.yml` utiliza
 `Test-NativeCurricularCI.ps1 -Suite NarrationPlayer` y la opción oficial
-`LGAED_NARRATION_PLAYER_QA_ONLY=ON`. Es mutuamente excluyente con la modalidad
-de importación, comparte la preparación y verificación de herramientas y compila
+`LGAED_NARRATION_PLAYER_QA_ONLY=ON`. Es mutuamente excluyente con los demás
+modos focales, comparte la preparación y verificación de herramientas y compila
 las bibliotecas completas `lgaed_core` y `lgaed_platform_windows`.
-Reutiliza, sin modificar su código ni sus aserciones, las dos pruebas que también
-registra la configuración habitual:
+Conserva las aserciones de las dos pruebas positivas y añade una prueba negativa;
+la configuración habitual registra los mismos tres casos:
 
 - `native.narration_player_rates`: reloj real de `MediaPlaybackSession`,
   velocidades, liberación y reapertura con la posición conservada.
 - `native.narration_player_qa_path`: ruta QA resuelta por Windows, identidad
   del archivo, reproducción, pausa, reapertura y desplazamiento de posición.
+- `native.narration_player_failure_diagnostic`: archivo deliberadamente inválido
+  en un QA nuevo, evento `MediaFailed` del reproductor real, conservación de sus
+  propiedades entre llamadas, liberación del decoder y bytes/SHA-256 intactos.
+  No exige un código de error concreto ni acredita reproducción.
 
-Los WAV de ambas pruebas son PCM de ceros creado expresamente para comprobar
-el transporte. Su resultado no acredita síntesis Kokoro, voz audible, escucha
+Los WAV de las dos pruebas positivas son PCM de ceros creado expresamente para
+comprobar el transporte. Su resultado no acredita síntesis Kokoro, voz audible, escucha
 humana ni los recorridos de lecciones con PCM no silencioso. La prueba de ruta
 informa además si observó una redirección real; ejecutarla fuera de MSIX no
 verifica esa redirección.
 
-CTest ejecuta ambos casos en serie con sus límites originales de 45 segundos.
+El reproductor conserva `MediaFailed.Error`, `ExtendedErrorCode` y `ErrorMessage`
+en una instantánea sincronizada. El mensaje público permanece igual; QA muestra
+los campos disponibles y el HRESULT hexadecimal, también para fallos WinRT
+síncronos. La consulta MMDevice identifica los endpoints de render activos y
+las salidas predeterminadas de los tres roles; informa los errores de consulta
+sin convertirlos en un recuento de cero ni omitir el intento de reproducción.
+Un servicio activo o una lista CIM vacía no determina por sí solo la causa del
+fallo de `MediaPlayer`.
+
+CTest ejecuta los tres casos en serie, cada uno con un límite de 45 segundos.
 El build, los logs y el primer WAV se aíslan bajo `out/qa/narration-player-ci`.
-La prueba de ruta conserva su QA nuevo y único bajo el `LocalAppData` que
-resuelve Windows; no crea un almacén de progreso. El script registra los servicios
-y dispositivos presentes y puede arrancar `AudioEndpointBuilder` y `Audiosrv`
+Las pruebas de ruta y diagnóstico conservan cada una su QA nuevo y único bajo
+el `LocalAppData` que resuelve Windows; no crean un almacén de progreso.
+El script registra los servicios y dispositivos presentes y puede arrancar
+`AudioEndpointBuilder` y `Audiosrv`
 si ya existen, están detenidos y están habilitados. No cambia su tipo de inicio,
 instala controladores ni crea endpoints. La disponibilidad de reproducción la
 determinan las pruebas del reproductor, no el inventario de dispositivos.
 El workflow conserva los logs y JUnit durante catorce días.
+
+### Síntesis y diagnóstico del worker en un runner Windows
+
+El workflow `.github/workflows/windows-narration-worker.yml` utiliza
+`Test-NativeCurricularCI.ps1 -Suite NarrationWorker` y la opción oficial
+`LGAED_NARRATION_WORKER_QA_ONLY=ON`, excluyente con los demás modos focales.
+Su propósito es comprobar la síntesis Kokoro/Dora real y el puente nativo en
+Windows, además de la conservación del diagnóstico de un fallo de reproducción.
+No configura el lector, la presentación, los shaders ni las pruebas positivas
+del reproductor. El modo habitual `Application` conserva sus dependencias.
+El workflow se activa en los pushes de `Codex` que coinciden con sus filtros de
+rutas y conserva los logs y el XML JUnit durante catorce días.
+
+En la raíz del checkout del runner efímero de GitHub, la entrada completa es:
+
+```powershell
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationWorker
+```
+
+El aprovisionador conserva las versiones y rutas verificadas del toolchain,
+el perfil C++23 exacto y las bibliotecas completas `lgaed_core` y
+`lgaed_platform_windows`. Prepara el runtime con el alcance `NarrationHost` del
+selector compartido: necesita el JDK completo y FFmpeg del manifiesto, además
+de las dependencias JVM autenticadas; no necesita Vulkan para esta suite.
+
+Los recursos se preparan en directorios de staging aislados. La entrada
+`scripts/windows/prepare_narration_ci_resources.py` recibe `--resources` y
+`--english-resources`, ambos con rutas absolutas separadas. Descarga únicamente
+los seis archivos españoles/Dora definidos por los manifiestos Kotlin existentes,
+con sus revisiones inmutables, tamaños y SHA-256. El paquete auxiliar inglés FP32,
+su procedencia y sus avisos de licencia se verifican y copian desde los recursos
+originales del checkout. Un destino existente incompatible se rechaza; no se
+sobrescriben modelos, recursos fuente ni grabaciones. El workflow no restaura
+cachés de narración: los primeros intentos se realizan en el checkout efímero.
+La prueba de PCM español exige además que su respuesta declare síntesis nueva,
+sin acierto de caché ni reutilización de una grabación empaquetada o histórica;
+el caso nativo conserva su comprobación posterior de reutilización.
+
+La configuración registra exactamente estas tres pruebas y las ejecuta en serie:
+
+| Prueba | Criterios de la prueba |
+| --- | --- |
+| `native.narration_worker` | Puente C++ al worker, síntesis Kokoro con Dora, identidad, tiempos de palabras, reutilización de la misma grabación y matemáticas exactas. Conserva también sus escenarios controlados de protocolo IPC y cancelación, que no son pruebas de audio. |
+| `native.narration_spanish_pcm` | Caso Python original `test_03_spanish_math_is_progressive_through_numbers_and_operators`: PCM mono de 24 kHz y 16 bits no silencioso, correspondencia con el texto y avance sobre números y operadores españoles. |
+| `native.narration_player_failure_diagnostic` | El evento real `MediaFailed` del intento con un medio inválido, sus tres propiedades, su estabilidad y la conservación del archivo al liberar el decoder. No acredita que exista una salida de audio utilizable. |
+
+Los dos casos del worker tienen un límite de 180 segundos; el diagnóstico
+negativo tiene 45 segundos. El build y sus logs quedan bajo
+`out/qa/narration-worker-ci`; el runtime mantiene `out/narration/runtime.json` y
+las pruebas sus directorios QA originales dentro de `out/qa`. Estas rutas
+pertenecen al checkout efímero y no a los perfiles personales del alumno.
+
+La suite debe compilarse y ejecutarse para obtener evidencia de su resultado;
+su registro en CMake no la declara superada. Un resultado satisfactorio acredita
+sólo esos escenarios de síntesis, puente nativo y diagnóstico. No acredita
+reproducción audible, escucha humana, pausas del reproductor ni recorridos
+integrados del lector. Las dos pruebas positivas de reproducción permanecen en
+el probe explícito anterior, con sus aserciones completas.
 
 ### Compilación de los recorridos curriculares en Windows
 

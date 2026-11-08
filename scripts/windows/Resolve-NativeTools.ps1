@@ -1,5 +1,13 @@
 [CmdletBinding()]
-param()
+param(
+    [ValidateSet('Application', 'NarrationHost')]
+    [string] $Scope = 'Application',
+    [string] $CMakePath,
+    [string] $PythonPath,
+    [string] $GitPath,
+    [string] $JavaHome,
+    [string] $FFmpegPath
+)
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -58,19 +66,23 @@ foreach ($sdkTool in @('rc.exe','mt.exe')) {
         throw "Actualiza el Windows SDK a ${minimumSdkServicing}: $sdkTool tiene version '$fileVersion'. El nombre de carpeta $windowsSdk no demuestra el mantenimiento instalado."
     }
 }
-$cmake = Expand-ToolPath $versions.cmake.path
+$cmake = Expand-ToolPath $(if ($CMakePath) { $CMakePath } else { $versions.cmake.path })
 $ctest = Join-Path (Split-Path -Parent $cmake) 'ctest.exe'
 $cmakeGui = Join-Path (Split-Path -Parent $cmake) 'cmake-gui.exe'
-$python = Expand-ToolPath $versions.python.path
-$git = Expand-ToolPath $versions.git.path
-$ffmpeg = Expand-ToolPath $versions.ffmpeg.path
-$vulkan = Expand-ToolPath $versions.vulkan.path
-$glslc = Join-Path $vulkan 'Bin\glslc.exe'
-$vulkanHeader = Join-Path $vulkan 'Include\vulkan\vulkan_core.h'
-foreach ($file in @($vcvars, $cl, $ninja, $cmake, $ctest, $cmakeGui, $python, $git, $ffmpeg, $glslc, $vulkanHeader)) { Require-ToolFile $file }
-& $python -I -S -B (Join-Path $PSScriptRoot 'verify_physical_tools.py') `
-    $vswhere $vcvars $cl $ninja $cmake $ctest $cmakeGui $python $git $ffmpeg $glslc $vulkanHeader `
-    (Join-Path $sdkRoot "bin\$windowsSdk\x64\rc.exe") (Join-Path $sdkRoot "bin\$windowsSdk\x64\mt.exe")
+$python = Expand-ToolPath $(if ($PythonPath) { $PythonPath } else { $versions.python.path })
+$git = Expand-ToolPath $(if ($GitPath) { $GitPath } else { $versions.git.path })
+$ffmpeg = Expand-ToolPath $(if ($FFmpegPath) { $FFmpegPath } else { $versions.ffmpeg.path })
+$vulkan = ''
+$physicalTools = @($vswhere, $vcvars, $cl, $ninja, $cmake, $ctest, $cmakeGui, $python, $git, $ffmpeg,
+    (Join-Path $sdkRoot "bin\$windowsSdk\x64\rc.exe"), (Join-Path $sdkRoot "bin\$windowsSdk\x64\mt.exe"))
+if ($Scope -eq 'Application') {
+    $vulkan = Expand-ToolPath $versions.vulkan.path
+    $glslc = Join-Path $vulkan 'Bin\glslc.exe'
+    $vulkanHeader = Join-Path $vulkan 'Include\vulkan\vulkan_core.h'
+    $physicalTools += @($glslc, $vulkanHeader)
+}
+foreach ($file in $physicalTools) { Require-ToolFile $file }
+& $python -I -S -B (Join-Path $PSScriptRoot 'verify_physical_tools.py') @physicalTools
 if ($LASTEXITCODE -ne 0) { throw 'Las herramientas Windows deben estar en instalaciones fisicas compartidas, fuera de los datos privados del agente.' }
 if (-not (Test-Path -LiteralPath $atl -PathType Leaf)) {
     throw 'La narracion Windows requiere C++ ATL para el toolset elegido. Instala Microsoft.VisualStudio.Component.VC.ATL en Visual Studio Installer.'
@@ -84,14 +96,25 @@ Read-ToolVersion $ninja @('--version') ('^' + [regex]::Escape($versions.visualSt
 Read-ToolVersion $python @('--version') ('^Python ' + [regex]::Escape($versions.python.version) + '$') $versions.python.version
 Read-ToolVersion $git @('--version') ('^git version ' + [regex]::Escape($versions.git.version) + '$') $versions.git.version
 Read-ToolVersion $ffmpeg @('-version') ('(?m)^ffmpeg version ' + [regex]::Escape($versions.ffmpeg.version) + '(?:-|\s)') $versions.ffmpeg.version
-$vulkanRevision = ([version]$versions.vulkan.version).Build
-if ((Get-Content -LiteralPath $vulkanHeader -Raw) -notmatch ('(?m)^#define VK_HEADER_VERSION ' + $vulkanRevision + '\r?$')) {
-    throw "Las cabeceras Vulkan no corresponden al SDK $($versions.vulkan.version)."
+if ($Scope -eq 'Application') {
+    $vulkanRevision = ([version]$versions.vulkan.version).Build
+    if ((Get-Content -LiteralPath $vulkanHeader -Raw) -notmatch ('(?m)^#define VK_HEADER_VERSION ' + $vulkanRevision + '\r?$')) {
+        throw "Las cabeceras Vulkan no corresponden al SDK $($versions.vulkan.version)."
+    }
 }
 
-$jdkPattern = [Environment]::ExpandEnvironmentVariables([string]$versions.java.rootPattern)
-$jdkParent = Expand-ToolPath (Split-Path -Parent $jdkPattern)
-$jdkFilter = Split-Path -Leaf $jdkPattern
+if ($JavaHome) {
+    $jdkPattern = Expand-ToolPath $JavaHome
+    if (-not (Test-Path -LiteralPath $jdkPattern -PathType Container)) {
+        throw "Falta el directorio JDK solicitado: $jdkPattern"
+    }
+    $jdkDirectories = @(Get-Item -LiteralPath $jdkPattern)
+} else {
+    $jdkPattern = [Environment]::ExpandEnvironmentVariables([string]$versions.java.rootPattern)
+    $jdkParent = Expand-ToolPath (Split-Path -Parent $jdkPattern)
+    $jdkFilter = Split-Path -Leaf $jdkPattern
+    $jdkDirectories = @(Get-ChildItem -LiteralPath $jdkParent -Filter $jdkFilter -Directory -ErrorAction SilentlyContinue)
+}
 function Compare-VersionParts([long[]] $Left, [long[]] $Right) {
     for ($index = 0; $index -lt [Math]::Max($Left.Count, $Right.Count); ++$index) {
         $leftPart = if ($index -lt $Left.Count) { $Left[$index] } else { 0 }
@@ -102,7 +125,7 @@ function Compare-VersionParts([long[]] $Left, [long[]] $Right) {
     return 0
 }
 $minimumJava = @(([string]$versions.java.minVersion -split '\.') | ForEach-Object { [long]$_ })
-$jdkCandidates = @(foreach ($directory in @(Get-ChildItem -LiteralPath $jdkParent -Filter $jdkFilter -Directory -ErrorAction SilentlyContinue)) {
+$jdkCandidates = @(foreach ($directory in $jdkDirectories) {
     $root = $directory.FullName
     if (@('release','bin\java.exe','bin\javac.exe','bin\jar.exe','include\jni.h','include\win32\jni_md.h','bin\server\jvm.dll') |
             Where-Object { -not (Test-Path -LiteralPath (Join-Path $root $_) -PathType Leaf) }) { continue }
@@ -144,16 +167,18 @@ $env:LGAED_JAVA_HOME = $javaHome
 $env:JAVA_HOME = $javaHome
 $env:LGAED_PYTHON_EXECUTABLE = $python
 $env:LGAED_FFMPEG_EXECUTABLE = $ffmpeg
-$env:VULKAN_SDK = $vulkan
+if ($Scope -eq 'Application') { $env:VULKAN_SDK = $vulkan }
 $toolDirectories = @((Split-Path -Parent $cmake), (Split-Path -Parent $python),
-    (Join-Path (Split-Path -Parent $python) 'Scripts'), (Split-Path -Parent $ffmpeg),
-    (Join-Path $vulkan 'Bin'), (Join-Path $javaHome 'bin'), (Split-Path -Parent $git))
+    (Join-Path (Split-Path -Parent $python) 'Scripts'), (Split-Path -Parent $ffmpeg))
+if ($Scope -eq 'Application') { $toolDirectories += (Join-Path $vulkan 'Bin') }
+$toolDirectories += @((Join-Path $javaHome 'bin'), (Split-Path -Parent $git))
 $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 $pathEntries = foreach ($entry in @($toolDirectories) + @($env:PATH -split ';')) {
     if ($entry -and $seen.Add($entry.TrimEnd('\','/'))) { $entry }
 }
 $env:PATH = $pathEntries -join ';'
 [pscustomobject]@{
+    Scope=$Scope
     VsRoot=$vsRoot; CMake=$cmake; CTest=$ctest; VcVars=$vcvars; MSVCToolset=$msvcToolset; WindowsSdk=$windowsSdk
     WindowsSdkRoot=$sdkRoot; Ninja=$ninja; Python=$python; Git=$git; FFmpeg=$ffmpeg; VulkanSDK=$vulkan; JavaHome=$javaHome; Manifest=$manifestPath
 }

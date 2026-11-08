@@ -193,8 +193,13 @@ class WorkerDependenciesTest(unittest.TestCase):
         for path in (batch, compiler, rc, source):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(path.name.encode())
-        payload = {"tools": {"Manifest": str(manifest), "MSVCToolset": native["msvcToolset"],
-            "WindowsSdk": native["windowsSdk"], "VsRoot": str(vs), "VcVars": str(batch), "WindowsSdkRoot": str(sdk)},
+        home = self.complete_jdk()
+        ffmpeg = self.folder / "FFmpeg/bin/ffmpeg.exe"
+        ffmpeg.parent.mkdir(parents=True)
+        ffmpeg.write_bytes(b"fixture-only-not-an-executable")
+        payload = {"tools": {"Scope": "Application", "Manifest": str(manifest), "MSVCToolset": native["msvcToolset"],
+            "WindowsSdk": native["windowsSdk"], "VsRoot": str(vs), "VcVars": str(batch), "WindowsSdkRoot": str(sdk),
+            "JavaHome": str(home), "FFmpeg": str(ffmpeg)},
             "environment": {"Path": "fresh-helper-path", "LGAED_JAVA_HOME": "selected-complete-jdk"}}
         with patch.object(build, "ROOT", root), patch.object(build.subprocess, "check_output", return_value=json.dumps(payload)):
             tools = build.launcher_native_tools()
@@ -208,6 +213,7 @@ class WorkerDependenciesTest(unittest.TestCase):
             command = selector.call_args.args[0]
             self.assertEqual(command[0], "powershell.exe")
             self.assertIn(str(root / "scripts/windows/Resolve-NativeTools.ps1"), command[-1])
+            self.assertIn("-Scope 'Application'", command[-1])
             self.assertEqual(tools["compiler"], expected["compiler"])
             self.assertEqual(tools["cpp"], {"standard": 23, "msvcStandardOption": "/std:c++23preview"})
             self.assertEqual(tools["environment"]["PATH"], "fresh-helper-path")
@@ -219,6 +225,72 @@ class WorkerDependenciesTest(unittest.TestCase):
         source = inspect.getsource(build.launcher)
         self.assertNotIn("vcvars64", source)
         self.assertNotIn("vswhere", source)
+
+    def test_launcher_explicit_locations_use_the_real_selector_and_must_be_retained(self):
+        root, payload, _ = self.native_fixture()
+        locations = {"cmake": self.folder / "shared ' tools/$cmake.exe",
+                     "python": self.folder / "shared Python/python.exe",
+                     "git": self.folder / "shared Git/git.exe",
+                     "java_home": Path(payload["tools"]["JavaHome"]),
+                     "ffmpeg": Path(payload["tools"]["FFmpeg"])}
+        fields = {"cmake": ("CMakePath", "CMake"), "python": ("PythonPath", "Python"),
+                  "git": ("GitPath", "Git"), "java_home": ("JavaHome", "JavaHome"),
+                  "ffmpeg": ("FFmpegPath", "FFmpeg")}
+        payload["tools"]["Scope"] = "NarrationHost"
+        for name, (_, field) in fields.items():
+            payload["tools"][field] = str(locations[name])
+        with patch.object(build, "ROOT", root), \
+             patch.object(build.subprocess, "check_output", return_value=json.dumps(payload)) as selector:
+            tools = build.launcher_native_tools(scope="NarrationHost", **locations)
+            script = selector.call_args.args[0][-1]
+            self.assertIn("-Scope 'NarrationHost'", script)
+            for name, (option, _) in fields.items():
+                self.assertIn("-" + option + " '" + str(locations[name]).replace("'", "''") + "'", script)
+            self.assertEqual(tools["java_home"], locations["java_home"])
+            self.assertEqual(tools["ffmpeg"], locations["ffmpeg"])
+        for field in ("CMake", "Python", "Git", "JavaHome", "FFmpeg"):
+            changed = {**payload, "tools": {**payload["tools"], field: str(self.folder / "another installation")}}
+            with self.subTest(field=field), patch.object(build, "ROOT", root), \
+                 patch.object(build.subprocess, "check_output", return_value=json.dumps(changed)):
+                with self.assertRaisesRegex(RuntimeError, "did not retain"):
+                    build.launcher_native_tools(scope="NarrationHost", **locations)
+        with patch.object(build, "ROOT", root), \
+             patch.object(build.subprocess, "check_output", return_value=json.dumps(payload)):
+            with self.assertRaisesRegex(RuntimeError, "does not match"):
+                build.launcher_native_tools()
+        with patch.object(build.subprocess, "check_output", side_effect=AssertionError("unknown scope must fail first")):
+            with self.assertRaisesRegex(ValueError, "scope"):
+                build.launcher_native_tools(scope="SkipValidation")
+
+    def test_build_selects_explicit_tools_before_dependency_downloads_or_compilation(self):
+        options = {"cmake": "shared/cmake.exe", "python": "shared/python.exe", "git": "shared/git.exe",
+                   "java-home": "shared/jdk", "ffmpeg": "shared/ffmpeg.exe"}
+        arguments = ["build_worker.py", "--native-tools-scope", "NarrationHost"]
+        for name, value in options.items():
+            arguments += ["--" + name, value]
+        with patch.object(build.sys, "argv", arguments), patch.object(build, "verify_staged_assets"), \
+             patch.object(build, "launcher_native_tools", side_effect=RuntimeError("selector rejected an installation")) as selector, \
+             patch.object(build, "worker_dependencies", side_effect=AssertionError("must validate before downloads")), \
+             patch.object(build.subprocess, "run", side_effect=AssertionError("must validate before compiling")):
+            with self.assertRaisesRegex(RuntimeError, "selector rejected"):
+                build.build()
+            selector.assert_called_once_with(scope="NarrationHost", **{
+                name.replace("-", "_"): Path(value) for name, value in options.items()})
+
+    def test_launcher_reuses_selection_and_rejects_a_different_jdk_for_jni(self):
+        root, _, tools = self.native_fixture()
+        output = self.folder / "launcher-output"
+        output.mkdir()
+        with patch.object(build, "ROOT", root), patch.object(build, "OUT", output), \
+             patch.object(build, "launcher_native_tools", side_effect=AssertionError("do not select again")), \
+             patch.object(build, "launcher_native_environment", return_value=tools["environment"]), \
+             patch.object(build.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as compiler:
+            build.launcher(tools["java_home"] / "bin/java.exe", tools)
+            self.assertEqual(compiler.call_args.kwargs["env"], tools["environment"])
+            self.assertIn("/I" + str(tools["java_home"] / "include"), compiler.call_args.args[0])
+            with self.assertRaisesRegex(RuntimeError, "JDK validated"):
+                build.launcher(tools["java_home"] / "bin/java.exe", {**tools, "java_home": self.folder / "other-jdk"})
+            self.assertEqual(compiler.call_count, 1)
 
     def test_launcher_rejects_missing_or_ambiguous_cpp_mode_before_tool_selection(self):
         root, _, tools = self.native_fixture()

@@ -11,11 +11,19 @@ project(LearnGameAndEngineDev VERSION 0.1.0 LANGUAGES CXX RC)
 option(LGAED_STATE_IMPORT_QA_ONLY
     "Build only the four published native state-import regressions with the official Windows toolchain" OFF)
 option(LGAED_NARRATION_PLAYER_QA_ONLY
-    "Build only the two real Windows narration-player probes with the official Windows toolchain" OFF)
+    "Build only the three real Windows narration-player probes with the official Windows toolchain" OFF)
 option(LGAED_READER_BUILD_QA_ONLY
     "Compile and link the three original curricular reader/diagnostic test executables without running them" OFF)
-if((LGAED_STATE_IMPORT_QA_ONLY AND LGAED_NARRATION_PLAYER_QA_ONLY)
-        OR (LGAED_READER_BUILD_QA_ONLY AND (LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)))
+option(LGAED_NARRATION_WORKER_QA_ONLY
+    "Build and test real Spanish Kokoro synthesis and playback failure diagnostics without a reader or audio endpoint" OFF)
+set(_lgaed_qa_mode_count 0)
+foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
+        LGAED_READER_BUILD_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY)
+    if(${_mode})
+        math(EXPR _lgaed_qa_mode_count "${_lgaed_qa_mode_count} + 1")
+    endif()
+endforeach()
+if(_lgaed_qa_mode_count GREATER 1)
     message(FATAL_ERROR "Select only one focused Windows QA mode in each build directory.")
 endif()
 
@@ -23,7 +31,7 @@ include(cmake/VerifyNativeToolchain.cmake)
 lgaed_verify_native_toolchain()
 include(cmake/VerifyNativeDependencies.cmake)
 lgaed_verify_native_dependencies()
-if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY OR LGAED_READER_BUILD_QA_ONLY)
+if(_lgaed_qa_mode_count GREATER 0)
     include(cmake/WindowsStateImportQaTools.cmake)
     lgaed_select_windows_state_import_qa_tools()
 else()
@@ -119,8 +127,29 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
     else()
         include(cmake/NarrationPlayerTests.cmake)
         lgaed_add_narration_player_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/narration-player")
-        message(STATUS "Focused native narration-player QA: two real Windows MediaPlayer probes; no synthesis, application or reader verification.")
+        message(STATUS "Focused native narration-player QA: two real Windows playback probes and one failure diagnostic; no synthesis, application or reader verification.")
     endif()
+    return()
+endif()
+
+if(LGAED_NARRATION_WORKER_QA_ONLY)
+    include(CTest)
+    if(NOT BUILD_TESTING)
+        message(FATAL_ERROR "Focused narration-worker QA requires BUILD_TESTING=ON.")
+    endif()
+    if(NOT IS_DIRECTORY "${LGAED_NARRATION_RESOURCES}" OR NOT IS_DIRECTORY "${LGAED_ENGLISH_RESOURCES}")
+        message(FATAL_ERROR "Focused narration-worker QA requires existing authenticated Kokoro and English resource directories.")
+    endif()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    include(cmake/NarrationRuntime.cmake)
+    lgaed_add_narration_runtime(NarrationHost)
+    include(cmake/NarrationWorkerTests.cmake)
+    lgaed_add_narration_worker_tests()
+    set_tests_properties(native.narration_spanish_pcm PROPERTIES
+        ENVIRONMENT "LGAED_REQUIRE_NEW_SPANISH_SYNTHESIS=1")
+    include(cmake/NarrationPlayerTests.cmake)
+    lgaed_add_narration_player_failure_test()
+    message(STATUS "Focused narration-worker QA: native worker, Spanish PCM and real player failure diagnostic; no successful playback or reader verification.")
     return()
 endif()
 
@@ -232,12 +261,8 @@ target_link_libraries(LearnGameAndEngineDev PRIVATE
 # The normal native build prepares the shared linguistic runtime too. Its
 # source/hash check is idempotent and never synthesizes or replaces recordings.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-add_custom_target(lgaed_narration_runtime
-    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/build_worker.py"
-        --java-home "${LGAED_JAVA_HOME}" --ffmpeg "${LGAED_FFMPEG_EXECUTABLE}"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Preparing the shared Kokoro and mathematical runtime"
-    VERBATIM)
+include(cmake/NarrationRuntime.cmake)
+lgaed_add_narration_runtime(Application)
 add_dependencies(LearnGameAndEngineDev lgaed_narration_runtime)
 add_dependencies(LearnGameAndEngineDev lgaed_system_speech_host)
 set_target_properties(LearnGameAndEngineDev PROPERTIES
@@ -1187,10 +1212,8 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_math_expression_editor_tests lgaed_narration_runtime)
     add_test(NAME native.math_expression_editor COMMAND lgaed_math_expression_editor_tests)
     set_tests_properties(native.math_expression_editor PROPERTIES TIMEOUT 90)
-    add_executable(lgaed_narration_worker_tests native/platform/windows/narration_worker_tests.cpp)
-    target_link_libraries(lgaed_narration_worker_tests PRIVATE lgaed_platform_windows)
-    add_dependencies(lgaed_narration_worker_tests lgaed_narration_runtime)
-    add_test(NAME native.narration_worker COMMAND lgaed_narration_worker_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    include(cmake/NarrationWorkerTests.cmake)
+    lgaed_add_narration_worker_tests()
     add_test(NAME native.windows_symbol_speech COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_windows_symbol_speech.py")
     set_tests_properties(native.windows_symbol_speech PROPERTIES TIMEOUT 180)
@@ -1207,7 +1230,6 @@ if(BUILD_TESTING)
     add_test(NAME native.math_calculator_task COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_calculator_task.py")
     add_test(NAME native.worker_dependencies COMMAND "${Python3_EXECUTABLE}" -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/native/narration/worker" -p test_worker_dependencies.py)
-    set_tests_properties(native.narration_worker PROPERTIES TIMEOUT 180)
     add_executable(lgaed_system_speech_tests native/platform/windows/system_speech_tests.cpp)
     target_link_libraries(lgaed_system_speech_tests PRIVATE lgaed_platform_windows)
     add_test(NAME native.system_speech COMMAND lgaed_system_speech_tests "${CMAKE_SOURCE_DIR}/out/qa/system-speech")

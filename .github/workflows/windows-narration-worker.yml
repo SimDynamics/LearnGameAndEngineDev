@@ -1,0 +1,66 @@
+name: Windows real narration worker
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/windows-narration-worker.yml
+      - scripts/windows/Test-NativeCurricularCI.ps1
+      - scripts/windows/Prepare-NarrationCITools.ps1
+      - scripts/windows/Resolve-NativeTools.ps1
+      - scripts/windows/verify_physical_tools.py
+      - scripts/windows/prepare_narration_ci_resources.py
+      - scripts/windows/test_prepare_narration_ci_resources.py
+      - CMakeLists.txt
+      - cmake/**
+      - toolchains/windows.versions.json
+      - native/core/**
+      - native/platform/windows/**
+      - native/narration/**
+      - app/src/main/java/com/learngraphicsprogramming/app/narration/**
+      - english_misaki/src/main/assets/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-narration-worker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  worker:
+    name: Synthesize Spanish PCM and preserve real player errors
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the source without restoring generated audio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select the declared Python version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Prepare authentic tools and resources and execute the real worker
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationWorker
+      - name: Preserve synthesis and failure diagnostic results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-narration-worker-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/narration-worker-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/narration-worker-ci/native-build.log
+            out/qa/narration-worker-ci/narration-tool-archives.json
+            out/qa/narration-worker-ci/narration-resources.log
+            out/qa/narration-worker-ci/narration-worker-results.xml
+            out/qa/narration-worker-ci/narration-worker-results.log
+            out/qa/narration-worker-ci/Testing/Temporary/
+            out/narration/worker-stderr.log

@@ -1102,8 +1102,12 @@ def launcher_cpp_profile(versions: dict) -> dict:
     return {"standard": profile["standard"], "msvcStandardOption": profile["msvcStandardOption"]}
 
 
-def launcher_native_tools() -> dict:
-    """Use the same installation selector as CMake, including direct Python builds."""
+def launcher_native_tools(*, scope: str = "Application", cmake: Path | None = None,
+                          python: Path | None = None, git: Path | None = None,
+                          java_home: Path | None = None, ffmpeg: Path | None = None) -> dict:
+    """Validate the shared installations, including explicitly located CI tools."""
+    if scope not in ("Application", "NarrationHost"):
+        raise ValueError("Unsupported Windows native tool scope")
     manifest = ROOT / "toolchains/windows.versions.json"
     versions = json.loads(manifest.read_text(encoding="utf-8"))
     if versions.get("schemaVersion") != 1:
@@ -1117,18 +1121,28 @@ def launcher_native_tools() -> dict:
     # The helper validates stable VS within versionRange, exact cl.exe version,
     # SDK files and the shared runtime tools. Capture its child-only environment
     # instead of trusting a potentially stale PATH inherited by direct Python.
-    quoted_helper = str(helper).replace("'", "''")
+    def quoted(value) -> str:
+        return "'" + str(value).replace("'", "''") + "'"
+
+    locations = {"CMakePath": cmake, "PythonPath": python, "GitPath": git,
+                 "JavaHome": java_home, "FFmpegPath": ffmpeg}
+    selection = " ".join(["-Scope", quoted(scope), *[
+        f"-{name} {quoted(path)}" for name, path in locations.items() if path is not None]])
     script = ('$ErrorActionPreference = "Stop"; '
               '[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); '
-              f"$tools = & '{quoted_helper}'; "
+              f"$tools = & {quoted(helper)} {selection}; "
               '@{tools=$tools; environment=[Environment]::GetEnvironmentVariables("Process")} '
               '| ConvertTo-Json -Depth 4 -Compress')
     resolved = json.loads(subprocess.check_output(["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive",
         "-ExecutionPolicy", "Bypass", "-Command", script], text=True, encoding="utf-8"))
     tools = resolved["tools"]
-    if (Path(tools["Manifest"]).resolve() != manifest.resolve() or
+    if (tools["Scope"] != scope or Path(tools["Manifest"]).resolve() != manifest.resolve() or
         tools["MSVCToolset"] != native["msvcToolset"] or tools["WindowsSdk"] != native["windowsSdk"]):
         raise RuntimeError("Windows tool selection does not match this checkout's manifest")
+    for field, requested in (("CMake", cmake), ("Python", python), ("Git", git),
+                             ("JavaHome", java_home), ("FFmpeg", ffmpeg)):
+        if requested is not None and Path(tools[field]).resolve() != requested.resolve():
+            raise RuntimeError(f"Windows tool selector did not retain the requested {field} installation")
     vs_root = Path(tools["VsRoot"])
     batch = vs_root / "VC/Auxiliary/Build/vcvarsall.bat"
     if Path(tools["VcVars"]).resolve() != batch.resolve():
@@ -1140,7 +1154,8 @@ def launcher_native_tools() -> dict:
         if not path.is_file():
             raise RuntimeError(f"Missing pinned Windows launcher tool: {path}")
     return {"manifest": manifest, "versions": native, "cpp": cpp, "batch": batch, "compiler": compiler,
-            "sdk_root": sdk_root, "rc": rc,
+            "sdk_root": sdk_root, "rc": rc, "java_home": Path(tools["JavaHome"]),
+            "ffmpeg": Path(tools["FFmpeg"]),
             "environment": {key.upper(): value for key, value in resolved["environment"].items()}}
 
 
@@ -1184,13 +1199,16 @@ def launcher_fingerprint(source: Path, home: Path, tools: dict) -> str:
     return hashlib.sha256((mode + str(home) + "\n".join(str(path) + ":" + digest(path) for path in inputs)).encode()).hexdigest()
 
 
-def launcher(java: Path) -> Path:
+def launcher(java: Path, tools: dict | None = None) -> Path:
     home = java.parent.parent
     if not (home / "include/jni.h").is_file():
         raise RuntimeError("The configured JDK must include the official JNI headers (JRE-only runtimes cannot build the native host)")
     source = ROOT / "native/narration/worker_launcher.cpp"
     output = OUT / "lgaed_narration_host.exe"
-    tools = launcher_native_tools()
+    if tools is None:
+        tools = launcher_native_tools(java_home=home)
+    if home.resolve() != tools["java_home"].resolve():
+        raise RuntimeError("JNI launcher must use the JDK validated by the Windows tool selector")
     signature = launcher_fingerprint(source, home, tools)
     stamp = OUT / "launcher-build.sha256"
     if not output.is_file() or not stamp.is_file() or stamp.read_text() != signature:
@@ -1235,6 +1253,10 @@ def build() -> None:
     parser.add_argument("--english-resources", type=Path)
     parser.add_argument("--java-home", type=Path)
     parser.add_argument("--ffmpeg", type=Path)
+    parser.add_argument("--native-tools-scope", choices=("Application", "NarrationHost"), default="Application")
+    parser.add_argument("--cmake", type=Path)
+    parser.add_argument("--python", type=Path)
+    parser.add_argument("--git", type=Path)
     parser.add_argument("--refresh-dependencies", action="store_true",
                         help="Verify the fixed Maven Central graph and refresh its SHA-256 lock, without running Java")
     args = parser.parse_args()
@@ -1246,7 +1268,9 @@ def build() -> None:
     # build/download so damaged resources never become a successful runtime.
     english = (args.english_resources or ROOT / "english_misaki/src/main/assets").resolve()
     verify_staged_assets(english)
-    java_home = resolve_java_home(args.java_home)
+    native_tools = launcher_native_tools(scope=args.native_tools_scope, cmake=args.cmake,
+        python=args.python, git=args.git, java_home=args.java_home, ffmpeg=args.ffmpeg)
+    java_home = resolve_java_home(native_tools["java_home"])
     java = java_home / "bin/java.exe"
     dependencies = worker_dependencies()
     runtime, compiler = dependencies["runtime"], dependencies["compiler"]
@@ -1259,7 +1283,7 @@ def build() -> None:
     if not java_stamp.is_file() or java_stamp.read_text() != java_signature:
         java_classes.mkdir(parents=True,exist_ok=True)
         subprocess.run([str(java.parent / "javac.exe"),"-encoding","UTF-8","--release",JVM_TARGET,"-d",str(java_classes),
-                        *map(str,java_sources)],check=True,cwd=ROOT)
+                        *map(str,java_sources)],check=True,cwd=ROOT,env=native_tools["environment"])
         java_stamp.write_text(java_signature,encoding="ascii")
     jar = OUT / "kokoro-worker.jar"
     signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)
@@ -1269,19 +1293,18 @@ def build() -> None:
         command = [str(java), "-cp", os.pathsep.join(map(str, compiler)),
             "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", f"-Xjdk-release={JVM_TARGET}",
             "-classpath", os.pathsep.join(map(str, [*runtime,java_classes])), "-d", str(jar), *map(str, sources)]
-        result = subprocess.run(command, cwd=ROOT)
+        result = subprocess.run(command, cwd=ROOT, env=native_tools["environment"])
         if result.returncode:
             raise SystemExit(result.returncode)
-        subprocess.run([str(java.parent / "jar.exe"),"uf",str(jar),"-C",str(java_classes),"."],check=True,cwd=ROOT)
+        subprocess.run([str(java.parent / "jar.exe"),"uf",str(jar),"-C",str(java_classes),"."],
+                       check=True,cwd=ROOT,env=native_tools["environment"])
         stamp.write_text(signature, encoding="ascii")
     origin = ROOT.parent / "LearnGraphicsProgramming/build/kokoro"
     resources = (args.resources or origin / "downloads/1939ad2a8e416c0acfeecc08a694d14ef25f2231").resolve()
-    ffmpeg = str(args.ffmpeg.resolve(strict=True)) if args.ffmpeg else shutil.which("ffmpeg")
-    if ffmpeg and not Path(ffmpeg).is_file():
-        raise RuntimeError(f"FFmpeg must be an executable file: {ffmpeg}")
+    ffmpeg = str(native_tools["ffmpeg"])
     classpath = os.pathsep.join(map(str,[jar,*runtime]))
     original_wavs = (origin / "../first-unit-speech-export").resolve()
-    native_host = launcher(java)
+    native_host = launcher(java, native_tools)
     jvm = java.parent / "server/jvm.dll"
     arguments = [str(jvm),classpath,"lgaed.narration.windows.WindowsNarrationWorkerKt",
         "--resources",str(resources),"--english-resources",str(english),

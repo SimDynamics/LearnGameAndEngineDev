@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import queue
 import re
@@ -173,6 +174,11 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
     def test_03_spanish_math_is_progressive_through_numbers_and_operators(self):
         source = "En nuestro sistema, 6 × 100 = 600 representa seis centenas."
         _, result = self.prepare(source, "es", "ef_dora")
+        print("Spanish PCM evidence: " + json.dumps({name: result[name] for name in
+            ("audioOrigin", "cacheHit", "sampleCount", "sampleRate", "durationMs")}, sort_keys=True), flush=True)
+        if os.environ.get("LGAED_REQUIRE_NEW_SPANISH_SYNTHESIS") == "1":
+            self.assertIs(result["cacheHit"], False, result)
+            self.assertEqual("synthesized", result["audioOrigin"], result)
         self.assertTrue(result["alignmentAvailable"], result)
         for operator in ("×", "="):
             position = source.index(operator)

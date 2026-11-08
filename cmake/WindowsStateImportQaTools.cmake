@@ -1,7 +1,9 @@
 # Focused native QA uses the same native toolchain as the application.
 # Only Python/Git discovery differs: an ephemeral Windows runner has no
-# personal runtime installation paths and these tests never load its models,
-# JVM, FFmpeg or graphics SDK. The normal runtime selector is unchanged.
+# personal runtime installation paths. Import/player/reader-build modes do not
+# load models or JVM; the worker mode additionally selects its full narration
+# tool closure through Resolve-NativeTools.ps1 before building the runtime.
+# The normal application selector is unchanged.
 function(lgaed_select_windows_state_import_qa_tools)
     if(NOT CMAKE_TOOLCHAIN_FILE)
         message(FATAL_ERROR "Focused Windows QA requires cmake/WindowsToolchain.cmake.")

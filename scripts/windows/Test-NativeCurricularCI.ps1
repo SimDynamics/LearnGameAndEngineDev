@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild')]
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker')]
     [string] $Suite = 'StateImport'
 )
 
@@ -38,6 +38,7 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @('lgaed_narration_player_tests')
             Results = 'narration-player'
             Tests = @(
+                'native.narration_player_failure_diagnostic',
                 'native.narration_player_rates',
                 'native.narration_player_qa_path'
             )
@@ -53,6 +54,19 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_u6_diagnostic_flow_tests'
             )
             Results = 'reader-build'
+        }
+    }
+    'NarrationWorker' {
+        @{
+            Directory = 'narration-worker-ci'
+            CMakeOption = 'LGAED_NARRATION_WORKER_QA_ONLY'
+            Targets = @('lgaed_narration_worker_tests', 'lgaed_narration_player_tests')
+            Results = 'narration-worker'
+            Tests = @(
+                'native.narration_worker',
+                'native.narration_spanish_pcm',
+                'native.narration_player_failure_diagnostic'
+            )
         }
     }
 }
@@ -151,8 +165,41 @@ $qaCMake = (Get-Command cmake.exe -CommandType Application -ErrorAction Stop | S
 $qaCTest = Join-Path (Split-Path -Parent $qaCMake) 'ctest.exe'
 $qaPython = (Get-Command python.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPython, $qaGit)) {
-    if ($qaPath -match '["%!?&|<>^\r\n]') { throw "Unsupported command metacharacter in native QA path: $qaPath" }
+$qaRuntimeOptions = ''
+$qaRuntimePaths = @()
+if ($Suite -eq 'NarrationWorker') {
+    # This job uses a new checkout with no restored runtime or audio caches.
+    # Existing QA/user data is never removed to manufacture a first generation.
+    $qaResourceRoot = Join-Path $qaRoot 'out\qa\narration-ci-resources'
+    foreach ($qaFreshPath in @(
+        $qaBuild, $qaResourceRoot, (Join-Path $qaRoot 'out\narration'),
+        (Join-Path $qaRoot 'out\qa\narration-native-tests'),
+        (Join-Path $qaRoot 'out\qa\narration-worker-tests')
+    )) {
+        if (Test-Path -LiteralPath $qaFreshPath) {
+            throw "Real synthesis CI requires a fresh destination; existing data is preserved: $qaFreshPath"
+        }
+    }
+    New-Item -ItemType Directory -Path $qaBuild | Out-Null
+    $qaNarrationTools = & (Join-Path $PSScriptRoot 'Prepare-NarrationCITools.ps1')
+    $qaNarrationTools | ConvertTo-Json |
+        Set-Content -LiteralPath (Join-Path $qaBuild 'narration-tool-archives.json') -Encoding utf8
+    $qaKokoro = Join-Path $qaResourceRoot 'kokoro'
+    $qaEnglish = Join-Path $qaResourceRoot 'english'
+    & $qaPython -B (Join-Path $PSScriptRoot 'prepare_narration_ci_resources.py') `
+        --resources $qaKokoro --english-resources $qaEnglish 2>&1 |
+        Tee-Object -FilePath (Join-Path $qaBuild 'narration-resources.log') | Write-Host
+    if ($LASTEXITCODE -ne 0) { throw 'The authentic narration resources could not be prepared.' }
+    $qaRuntimePaths = @($qaNarrationTools.JavaHome, $qaNarrationTools.FFmpeg, $qaKokoro, $qaEnglish)
+    $qaRuntimeOptions = @(
+        "`"-DLGAED_JAVA_HOME=$($qaNarrationTools.JavaHome)`"",
+        "`"-DLGAED_FFMPEG_EXECUTABLE=$($qaNarrationTools.FFmpeg)`"",
+        "`"-DLGAED_NARRATION_RESOURCES=$qaKokoro`"",
+        "`"-DLGAED_ENGLISH_RESOURCES=$qaEnglish`""
+    ) -join ' '
+}
+foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPython, $qaGit) + $qaRuntimePaths) {
+    if ($qaPath -match '["%!?&|<>^;\r\n]') { throw "Unsupported command metacharacter in native QA path: $qaPath" }
 }
 # CMake checks the actual Python/Git versions against the same manifest and
 # retains the normal compiler, SDK, dependency and exact C++23 checks.
@@ -161,7 +208,7 @@ $qaCommands = @(
     'chcp 65001 >nul',
     "call `"$qaVcVars`" x64 $qaSdkVersion -vcvars_ver=$($qaManifest.visualStudio.msvcToolset)",
     'if errorlevel 1 exit /b %errorlevel%',
-    "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`"",
+    "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions",
     'if errorlevel 1 exit /b %errorlevel%',
     "`"$qaCMake`" --build `"$qaBuild`" --target $qaBuildTargets --parallel 2",
     'exit /b %errorlevel%'
