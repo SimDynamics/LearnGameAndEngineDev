@@ -1339,7 +1339,57 @@ def previous_exercise_difference(old, current):
     return "campos previos modificados sin autorización: " + ", ".join(fields)
 
 
-def preserves_previous_exercise(relative, pn, bn, old, current):
+def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
+                                           previous_document, current_document):
+    """Authorize one owner's explanation from complete, verified v2 sources.
+
+    A detached block pair or its state fingerprint is insufficient: that
+    fingerprint deliberately excludes questions and feedback. Compare every
+    other raw field before the older projections, then authenticate the owner,
+    complete editorial chain and authored /explanation descriptor. The caller
+    reads previous_document from the pinned Git publication, never the draft.
+    """
+    if (old.get("type") not in REVIEW_FEEDBACK_TYPES or current.get("type") != old.get("type")
+            or not isinstance(old.get("explanation"), str) or not old["explanation"].strip()
+            or not isinstance(current.get("explanation"), str) or not current["explanation"].strip()
+            or old["explanation"] == current["explanation"]
+            or current != dict(old, explanation=current["explanation"])
+            or not isinstance(previous_document, dict) or not isinstance(current_document, dict)):
+        return False
+    try:
+        lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT))
+        if len(lesson_path.parts) != 2 or not lesson_path.stem.startswith("lesson_"):
+            return False
+        lesson_id = "__".join(("cpp_fundamentals", lesson_path.parent.name, lesson_path.stem[7:]))
+        if (previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id
+                or current_document.get("stateLayout", {}).get("version") != 2
+                or current_document["stateLayout"].get("locale") != "es"):
+            return False
+        baseline = _state_layout.prepare(previous_document)
+        # This also keeps paired option/explanation guards, explicit editorial
+        # returns, archived bibliography and all executable contracts intact.
+        _state_layout.validate_transition(previous_document, current_document)
+        positions = _state_layout.validate(baseline)
+        matches = [position for position, origin in positions.items() if origin == (pn, bn)]
+        if len(matches) != 1:
+            return False
+        page, block = matches[0]
+        identity = baseline["stateLayout"]["current"][page]["blocks"][block]
+        if (baseline["pages"][page]["blocks"][block] != old
+                or _state_layout._blocks(current_document).get(identity) != current):
+            return False
+        semantics = _state_layout.text_semantics.validate(current_document)
+        # An empty span list explicitly declares prose; absence is not authoring.
+        return "/explanation" in semantics.get(identity, {})
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError):
+        return False
+
+
+def preserves_previous_exercise(relative, pn, bn, old, current, *,
+                                previous_document=None, current_document=None):
+    if preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
+                                               previous_document, current_document):
+        return True
     # A bibliographic revision is proved on the complete original block,
     # before any older guide/representation projection can hide another edit.
     if _bibliography_revision.is_bibliography_only_revision(old, current):
@@ -1558,11 +1608,11 @@ def main(argv=None):
             if not (ROOT / relative).is_file():
                 require(False, relative, "lección previa perdida")
                 continue
-            new = load(ROOT / relative)
+            delivered = load(ROOT / relative)
             try:
                 historical_positions = _state_layout.validate(old)
                 historical_lesson = _state_layout.original_projection(old)
-                new = _state_layout.align_for_previous_validation(old, new)
+                new = _state_layout.align_for_previous_validation(old, delivered)
             except (ValueError, KeyError, TypeError) as error:
                 require(False, relative, f"traslado de estado no verificado: {error}")
                 continue
@@ -1583,13 +1633,14 @@ def main(argv=None):
                     origin_p, origin_b = historical_positions[pn, bn]
                     if kind == "cpp_compiler":
                         require(preserves_previous_compiler(relative, origin_p, origin_b, block, current, historical_lesson), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
-                    elif kind != "multiple_choice" or (
+                    elif kind != "multiple_choice" or block.get("explanation") != current.get("explanation") or (
                         Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
                         origin_p + 1,
                         origin_b + 1,
                     ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS.keys() | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS.keys()
                           | CHOICE_OPTION_REVISION_LOCATIONS):
-                        require(preserves_previous_exercise(relative, origin_p, origin_b, block, current), relative,
+                        require(preserves_previous_exercise(relative, origin_p, origin_b, block, current,
+                                    previous_document=old, current_document=delivered), relative,
                                 f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
 
     if ERRORS:

@@ -776,6 +776,9 @@ if(BUILD_TESTING)
     add_test(NAME native.work_exact_editorials COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_work_exact_editorials.py)
     set_tests_properties(native.work_exact_editorials PROPERTIES TIMEOUT 120)
+    add_test(NAME native.ordinary_explanation_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_ordinary_explanation_revision.py)
+    set_tests_properties(native.ordinary_explanation_authoring PROPERTIES TIMEOUT 120)
     add_executable(lgaed_editorial_return_tests native/core/editorial_return_tests.cpp)
     target_link_libraries(lgaed_editorial_return_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_editorial_return_tests lgaed_editorial_return_fixture)

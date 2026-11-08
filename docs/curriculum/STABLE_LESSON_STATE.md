@@ -170,6 +170,51 @@ y contrasta el resultado con el archivo publicado. La firma de estado del bloque
 debe permanecer igual. El validador curricular sigue autorizando las revisiones:
 no se flexibilizan respuestas ni código.
 
+### Revisión general de explicaciones de actividades ordinarias
+
+Work puede revisar `/explanation` de `multiple_choice`, `output_prediction`,
+`fill_code`, `order_code`, `drag_fill_code` e `inline_fill_code` sin registrar
+cada frase en una lista de autorizaciones. La capacidad se limita a sustituir
+una explicación existente y no vacía por otra explicación no vacía del mismo
+propietario. Pregunta, opciones, índice correcto, programas, fragmentos,
+respuestas, reglas de comparación, guías, tipo, identidad y cualquier otro
+campo del bloque conservan igualdad completa. Esta revisión no permite añadir
+o quitar campos ni combinar una modificación del contrato con el cambio de
+explicación.
+
+La autorización necesita las dos lecciones completas. El validador curricular
+lee la anterior desde el commit publicado indicado en `--base-ref`, verifica
+la familia y la transición, y conserva el documento entregado antes de proyectar
+sus bloques a posiciones históricas. Comprueba la dirección inmutable, los dos
+bloques reales y la cadena editorial completa de ese propietario; no basta con
+que coincidan sus firmas de estado, que excluyen varios campos públicos.
+Las explicaciones de selección múltiple también pasan esta comprobación cuando
+cambian. Las autorizaciones históricas concretas conservan su alcance anterior.
+
+Para preparar la revisión, Work cambia sólo la explicación, actualiza su
+descriptor `textSemantics` para el mismo `block` y `/explanation`, y utiliza
+`prepare_v2` con la publicación anterior y su familia. El descriptor debe
+corresponder al texto nuevo y declarar sus rangos mediante los helpers de
+autoría existentes. `spans: []` declara explícitamente prosa; la ausencia de
+descriptor no cumple esta vía general. La publicación antigua puede no tener
+marcado, pero, si lo tiene, se valida con su texto antiguo. Se conservan los
+demás descriptores y los idiomas no editados.
+
+`preserves_previous_exercise` acepta `previous_document` y `current_document`
+como argumentos nombrados para este caso. Ambos proceden del mismo flujo de
+validación contra Git; una pareja de bloques aislados conserva las reglas
+anteriores y no obtiene por sí sola este permiso. No se añaden propiedades al
+JSON ni se cambian las firmas, direcciones de respuesta o reglas del runtime.
+Las guardas especiales siguen activas, incluida la pareja protegida de opción
+y explicación de tokens, los retornos editoriales explícitos y los archivos
+de procedencia de las revisiones exclusivamente bibliográficas.
+
+La comprobación acredita conservación contractual y procedencia editorial,
+no la corrección pedagógica de una redacción ni una escucha anterior. La nueva
+explicación utiliza la recuperación de lectura existente; no autoriza conceder
+crédito de escucha, reproducir audio automáticamente ni conservar milisegundos
+de un pasaje incompatible.
+
 ### Revisión exclusivamente bibliográfica de una explicación
 
 `scripts/curriculum/bibliography_revision.py` reconoce una revisión conservadora
