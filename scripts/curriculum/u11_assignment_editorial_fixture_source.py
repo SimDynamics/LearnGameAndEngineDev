@@ -31,6 +31,14 @@ SOURCE_HASHES = {
 }
 ORIGIN_SOURCE_HASHES = dict(SOURCE_HASHES, es="cde8f8a248fcc8a7eab16033f2e469932eb24929e5fff3cae3d77c688f1338f8")
 AFTER_SHA256 = "768458f3b6b8d646dcd44fe154b5f264f31f6eb2c3851bb36c5442ebad700157"
+PUBLISHED_COMMITS = {
+    "before": "f90b42a939e663634dee8f8af8d386347c821228",
+    "after": "c0fc45e490212d37cf9ebfc9629f1c7c57622eeb",
+}
+PUBLISHED_SOURCE_HASHES = {
+    "before": "9d884b47683e4e2f3891f572dab8456dcf7e8d6af65bbd33b7c8707f46ea6db8",
+    "after": "69eef7a0633bafaea663bc5b3bfa23da2a8940cf25ecbbd8af60090587204cf9",
+}
 BLOCKS = {
     "block_0002_0003": {
         "historical": (2, 3), "type": "order_code", "activity_id": ACTIVITY_PREFIX + "e03",
@@ -123,6 +131,55 @@ def json_bytes(value: dict) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
+def published_bytes(side: str) -> bytes:
+    """Read a complete published document, never reconstruct an older revision."""
+    if side not in PUBLISHED_COMMITS:
+        raise ValueError("Unknown published assignment revision")
+    relative = PREFIX.format(locale="es") + LESSON
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    payload = subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show", f"{PUBLISHED_COMMITS[side]}:{relative}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    if hashlib.sha256(payload).hexdigest() != PUBLISHED_SOURCE_HASHES[side]:
+        raise ValueError("Published assignment fixture differs from its independently pinned Git bytes")
+    return payload
+
+
+def validate_published_transition(before: dict, after: dict) -> None:
+    """The real 21-to-25 transition changes only the six reviewed public fields."""
+    layout.validate_transition(before, after)
+    previous = before["stateLayout"]["editorial"]
+    following = after["stateLayout"]["editorial"]
+    if len(previous) != 21 or len(following) != 25 or following[:21] != previous:
+        raise ValueError("Published assignment revisions must preserve all 21 earlier editorial edges")
+    old_blocks, new_blocks = layout._blocks(before), layout._blocks(after)
+    expected = deepcopy(before)
+    for identity, spec in BLOCKS.items():
+        old, new = old_blocks[identity], new_blocks[identity]
+        if (old.get("type") != spec["type"] or old.get("id") != spec["activity_id"]
+                or layout.fingerprint(old) != spec["before"] or layout.fingerprint(new) != spec["after"]
+                or layout.state_fingerprint(old) != layout.state_fingerprint(new)):
+            raise ValueError("Published assignment revision changed an original activity contract")
+    for change in CHANGES.values():
+        identity, field = change["identity"], change["field"]
+        if (old_blocks[identity].get(field) != change["before"]
+                or new_blocks[identity].get(field) != change["after"]
+                or tuple(text_hash(change[side]) for side in ("before", "after")) != change["hashes"]):
+            raise ValueError("Published assignment revision changed an exact public text pair")
+        layout._blocks(expected)[identity][field] = change["after"]
+    expected["stateLayout"]["editorial"].extend(
+        {"id": identity, "beforeSha256": spec["before"], "afterSha256": spec["after"]}
+        for identity, spec in BLOCKS.items())
+    if expected != after:
+        raise ValueError("Published assignment revision changed data outside the six public fields and four appended edges")
+
+
+def published_pair() -> tuple[dict, dict]:
+    before, after = (json.loads(published_bytes(side)) for side in ("before", "after"))
+    validate_published_transition(before, after)
+    return before, after
+
+
 def candidate(fields=None) -> tuple[dict, dict, dict[str, dict]]:
     """Prepare all six pairs, or an explicit subset of their named fields."""
     selected = tuple(CHANGES if fields is None else fields)
@@ -161,7 +218,7 @@ def candidate(fields=None) -> tuple[dict, dict, dict[str, dict]]:
     return before, after, family
 
 
-def export(output: Path) -> Path:
+def export(output: Path, *, published: bool = False) -> Path:
     """Authenticate every input and destination before writing new QA files."""
     output = Path(os.path.abspath(output))
     for entry in (output, *output.parents):
@@ -179,8 +236,13 @@ def export(output: Path) -> Path:
             break
         if (parent / ".git").exists():
             raise ValueError("Assignment QA output cannot write another checkout")
-    before, after, _ = candidate()
-    payloads = {"assignment-before.json": historical_bytes(), "assignment-after.json": json_bytes(after)}
+    if published:
+        payloads = {f"assignment-{side}.json": published_bytes(side) for side in ("before", "after")}
+        before, after = (json.loads(payloads[f"assignment-{side}.json"]) for side in ("before", "after"))
+        validate_published_transition(before, after)
+    else:
+        before, after, _ = candidate()
+        payloads = {"assignment-before.json": historical_bytes(), "assignment-after.json": json_bytes(after)}
     manifest = {
         "commit": COMMIT, "originCommit": ORIGIN_COMMIT, "coordinateBase": 0,
         "relative": PREFIX.format(locale="es") + LESSON,
@@ -189,6 +251,15 @@ def export(output: Path) -> Path:
         "after": {"file": "assignment-after.json", "sha256": AFTER_SHA256},
         "blocks": {},
     }
+    if published:
+        manifest.pop("commit")
+        manifest.pop("originCommit")
+        manifest.pop("sourceSha256")
+        manifest.pop("originSourceSha256")
+        manifest["kind"] = "published-assignment-editorial-transition"
+        for side, count in (("before", 21), ("after", 25)):
+            manifest[side] = {"file": f"assignment-{side}.json", "commit": PUBLISHED_COMMITS[side],
+                              "sha256": PUBLISHED_SOURCE_HASHES[side], "editorialCount": count}
     for identity, spec in BLOCKS.items():
         manifest["blocks"][identity] = {
             "historical": list(spec["historical"]), "type": spec["type"], "activityId": spec["activity_id"],
@@ -217,6 +288,11 @@ def export(output: Path) -> Path:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--published", action="store_true",
+                        help="Export the authentic 21-to-25 publication pair instead of the earlier 20-to-24 candidate")
     arguments = parser.parse_args()
-    export(arguments.output_dir)
-    print(f"Verified six U11L20 text pairs from {COMMIT}; origin family {ORIGIN_COMMIT}.")
+    export(arguments.output_dir, published=arguments.published)
+    if arguments.published:
+        print(f"Verified published U11L20 transition with 21-to-25 editorial edges: {PUBLISHED_COMMITS['before']} -> {PUBLISHED_COMMITS['after']}.")
+    else:
+        print(f"Verified six U11L20 text pairs from {COMMIT}; origin family {ORIGIN_COMMIT}.")

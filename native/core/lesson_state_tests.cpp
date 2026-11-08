@@ -15,6 +15,8 @@
 #include "native_build_config.hpp"
 
 #include <windows.h>
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -1080,6 +1082,153 @@ void remainder_editorial_preserves_native_and_imported_state(const std::filesyst
     require(read_bytes(before_path)==before_bytes&&read_bytes(path)==asset,"Remainder editorial import QA changed fixture or curricular bytes");
     std::cout<<"PASS integrated U11L16 exception explanation: authenticated prior/current complete payloads, empty/draft/rejected/correct historical orders, opaque attempts and original compiler draft, read-only preview, real Android XML import/archive and Windows reopen; old narration metadata stays old, with no new heard prefix or execution credit. No synthesis/listening claimed\n";
 }
+void published_u11_assignment_editorial_preserves_imported_state(const std::filesystem::path& base,
+        const std::filesystem::path& before_path,const std::filesystem::path& after_path){
+    using namespace lgaed;using namespace curriculum;using namespace winrt::Windows::Data::Json;
+    const auto before_bytes=read_bytes(before_path),after_bytes=read_bytes(after_path);
+    require(sha256(before_bytes)=="9d884b47683e4e2f3891f572dab8456dcf7e8d6af65bbd33b7c8707f46ea6db8"
+        &&sha256(after_bytes)=="69eef7a0633bafaea663bc5b3bfa23da2a8940cf25ecbbd8af60090587204cf9",
+        "Assignment import requires exact f90b42a and c0fc45e publication bytes, not a reconstructed candidate");
+    const auto before=windows::load_lesson(before_path),current=windows::load_lesson(after_path);
+    require(before.id=="cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada"
+        &&current.id==before.id&&before.locale=="es"&&current.locale=="es"
+        &&before.state_layout.version==2&&current.state_layout.version==2
+        &&before.state_layout.lineage==current.state_layout.lineage&&before.state_layout.signatures==current.state_layout.signatures,
+        "Published assignment import changed the original Spanish family or response contracts");
+    const auto old_edges=JsonObject::Parse(winrt::to_hstring(before.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    const auto new_edges=JsonObject::Parse(winrt::to_hstring(current.raw_json)).GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    require(old_edges.Size()==21&&new_edges.Size()==25,"Assignment import must cover the actual 21-to-25 transition");
+    for(unsigned i=0;i<old_edges.Size();++i)require(old_edges.GetAt(i).Stringify()==new_edges.GetAt(i).Stringify(),
+        "Assignment import rewrote the existing editorial prefix");
+    const auto archived=std::ranges::find(current.state_layout.reading_revisions,std::size_t{21},&StateReadingRevision::editorial_prefix);
+    require(archived!=current.state_layout.reading_revisions.end()&&archived->previous_blocks.size()==4,
+        "The reader loader cannot authenticate all four old owners at the actual 21-edge publication");
+    struct Plan {std::string_view identity;StatePosition position;};
+    constexpr std::array plans{
+        Plan{"block_0002_0003",{2,3}},Plan{"block_0004_0001",{4,1}},
+        Plan{"block_0004_0002",{4,2}},Plan{"block_0007_0001",{7,1}}};
+    const auto editor_at=stable_block_position(before,"block_0005_0002");
+    require(editor_at&&editor_at==stable_block_position(current,"block_0005_0002"),"Assignment import lost its independent compiler owner");
+    const auto& editor=before.pages[editor_at->page].blocks[editor_at->block];
+    const auto editor_key=draft_key("programming",before,editor);
+    StateData current_metadata;prepare_lesson_state(current_metadata,current);
+    const auto make_answer=[](const Block& block,bool correct){
+        Response response;AnswerEvaluation evaluated;
+        if(block.type==BlockType::multiple_choice){
+            require(block.correct_index&&block.options.size()>1,"Assignment import needs a real authored choice");
+            const auto index=correct?*block.correct_index:(*block.correct_index+1)%block.options.size();
+            response.selected=static_cast<std::int64_t>(index);response.answer=block.options[index];evaluated=evaluate_choice(block,index);
+        }else if(block.type==BlockType::order_code){
+            auto order=block.correct_order;require(order.size()>1,"Assignment import needs a real authored order");
+            if(!correct)std::rotate(order.begin(),order.begin()+1,order.end());
+            response.order.assign(order.begin(),order.end());evaluated=evaluate_order(block,order);
+        }else{
+            require(block.type==BlockType::output_prediction&&!block.answers.empty(),"Unexpected assignment import activity type");
+            response.answer=correct?block.answers.front():"__isolated_qa_wrong_answer__";
+            evaluated=evaluate_text_answer(block,response.answer);
+        }
+        require(evaluated.correct==correct,"Assignment import setup did not satisfy its intended authored verdict");
+        response.correct=correct;return response;
+    };
+    std::size_t scenarios=0;
+    for(const auto& plan:plans){
+        const auto old_at=stable_block_position(before,plan.identity),current_at=stable_block_position(current,plan.identity);
+        require(old_at&&current_at&&*old_at==plan.position&&*current_at==plan.position,"Assignment import changed a public owner or address");
+        const auto& old=before.pages[old_at->page].blocks[old_at->block];
+        const auto& block=current.pages[current_at->page].blocks[current_at->block];
+        const auto previous=archived->previous_blocks.find(std::string(plan.identity));
+        require(previous!=archived->previous_blocks.end()
+            &&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(previous->second)))
+                ==test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(old.raw_json))),
+            "The reading archive does not contain the complete authenticated old question and explanation");
+        require(old.id==block.id&&old.type==block.type&&old.options==block.options&&old.correct_index==block.correct_index
+            &&old.answers==block.answers&&old.fragments==block.fragments&&old.correct_order==block.correct_order
+            &&old.code==block.code&&old.review_feedback==block.review_feedback&&old.review_feedback_options==block.review_feedback_options
+            &&exercise_key(before,old)==exercise_key(current,block)&&response_storage_key(before,old)==response_storage_key(current,block),
+            "Assignment import changed a question's activity contract, answer, guide, program or storage key");
+        const auto storage=response_storage_key(before,old),old_text_hash=sha256(old.explanation),new_text_hash=sha256(block.explanation);
+        require(old_text_hash!=new_text_hash,"Assignment import lost an explanation revision");
+        for(const auto mode:{"empty","draft","incorrect","correct"}){
+            const auto stage=std::string_view(mode);StateData original;prepare_lesson_state(original,before);save_current_page(original,before,old_at->page);
+            original.preferences["assignment_import_qa"]["labels"]=std::vector<std::string>{"preservar"," \t original\r\n"};
+            original.preferences["attempt_reserve_seconds_test"]["remaining"]=std::int64_t{763};
+            original.preferences["narration_settings"]["language"]=std::string("es");
+            Draft draft;draft.source="    // borrador propio anterior\r\nint main() { return 0; }\n";
+            draft.input=" \t entrada\r\n";draft.indentation_json=make_indentation_metadata(draft.source,{0});
+            draft.selection_start=2;draft.selection_end=9;put_draft(original,editor_key,draft);
+            if(stage!="empty"){
+                auto response=make_answer(old,stage=="correct");
+                JsonObject opaque;opaque.Insert(L"incorrectAttempts",JsonValue::CreateNumberValue(4));
+                opaque.Insert(L"explanationAtAttempt",JsonValue::CreateStringValue(winrt::to_hstring(old.explanation)));
+                opaque.Insert(L"opaque",JsonObject::Parse(LR"({"selection":17,"note":"isolated historical assignment QA"})"));
+                response.raw_json=winrt::to_string(opaque.Stringify());
+                if(stage=="incorrect")mark_response_reviewed(response,old);put_response(original,before,old,response);
+            }
+            // Deliberate QA metadata tests the three-slot bound and exact
+            // provenance. It is not a claim of historical listening or PCM.
+            auto history=narration::begin({},"assignment-import-untouched-a","assignment-owner-a",{1,239,0,false},"opaque A","assignment-page-a");
+            history=narration::begin(std::move(history),"assignment-import-untouched-b","assignment-owner-b",{2,317,0,false},"opaque B","assignment-page-b");
+            history=narration::begin(std::move(history),"assignment-import-old-explanation","assignment-owner-c",{0,137,0,false},old.explanation,"assignment-page-c");
+            history.entries.front().position.heard_prefix=narration::HeardPrefix{old_text_hash,137000,1000000};
+            narration::write_history(original,history);original.preferences.erase("native_windows");validate_lesson_state(original,before);
+            const auto raw=string_value(original,"learning_progress",storage);
+            const auto saved_response=get_response(original,before,old);
+            const auto verify=[&](const StateData& data){
+                const auto restored=get_response(data,current,block);
+                require(restored.has_value()==saved_response.has_value()&&string_value(data,"learning_progress",storage)==raw,
+                    "Assignment import invented, removed or reserialized an original response");
+                if(saved_response)require(restored->answer==saved_response->answer&&restored->correct==saved_response->correct
+                    &&restored->selected==saved_response->selected&&restored->order==saved_response->order&&restored->raw_json==saved_response->raw_json
+                    &&restored->reviewed_answer_identity==saved_response->reviewed_answer_identity
+                    &&restored->historical_choice==saved_response->historical_choice&&response_reviewed(*restored,block)==(stage=="incorrect"),
+                    "Assignment import regraded an answer or changed the last rejection and opaque attempt metadata");
+                const auto saved_draft=get_draft(data,editor_key,"");
+                require(saved_draft.source==draft.source&&saved_draft.input==draft.input&&saved_draft.indentation_json==draft.indentation_json
+                    &&saved_draft.selection_start==draft.selection_start&&saved_draft.selection_end==draft.selection_end&&saved_draft.has_saved,
+                    "Assignment import changed independent source, input, indentation or caret");
+                const auto restored_history=narration::read_history(data);
+                require(current_page(data,current)==old_at->page&&restored_history==history&&restored_history.entries.size()==3
+                    &&narration::heard_prefix_matches(restored_history.entries.front().position,old_text_hash,1000000)
+                    &&!narration::heard_prefix_matches(restored_history.entries.front().position,new_text_hash,1000000),
+                    "Assignment import changed bookmarks or credited a revised explanation as already heard");
+                for(const auto& [domain,values]:original.preferences)for(const auto& [key,value]:values)
+                    require(find(data,domain,key)&&*find(data,domain,key)==value,"Assignment import changed an original typed value, attempt, answer or proof");
+                for(const auto& [domain,values]:data.preferences)for(const auto& [key,value]:values)if(!find(original,domain,key))
+                    require(find(current_metadata,domain,key)&&*find(current_metadata,domain,key)==value,
+                        "Assignment import added state beyond authenticated current metadata");
+                for(const auto& page:current.pages)for(const auto& compiler:page.blocks)
+                    if(compiler.type==BlockType::cpp_compiler&&compiler.output_check)
+                        require(!windows::compiler_puzzle_completed(data,current,compiler)&&windows::compiler_puzzle_case_count(data,current,compiler)==0
+                            &&windows::compiler_puzzle_historical_case_count(data,current,compiler)==0,
+                            "Assignment import manufactured compiler execution credit from ordinary responses");
+            };
+            auto adopted=original;validate_lesson_state(adopted,current);require(adopted==original,"Read-only assignment validation changed historical state");
+            prepare_lesson_state(adopted,current);verify(adopted);const auto prepared=adopted;prepare_lesson_state(adopted,current);
+            require(adopted==prepared,"Published assignment adoption is not idempotent");
+            const auto name=std::string(plan.identity)+'-'+mode;
+            StateStore native(base/(name+"-native"));(void)native.load();native.save(adopted);
+            const auto native_reopened=native.load();require(native_reopened==adopted,"Assignment native reopen changed adopted state");verify(native_reopened);
+            const auto exported=base/(name+"-export");export_preferences(exported,original,true);
+            const auto preview=inspect_android_export(exported);require(preview.data==original,"Assignment XML import changed typed source values");
+            const auto inspected=preview.data;validate_lesson_state(preview.data,current);require(preview.data==inspected,"Assignment preview validation changed source state");verify(preview.data);
+            const auto destination=base/(name+"-import");commit_android_import(preview,destination);StateStore imported(destination);auto data=imported.load();
+            prepare_lesson_state(data,current);validate_lesson_state(data,current);verify(data);imported.save(data);
+            const auto reopened=imported.load();require(reopened==data,"Assignment import changed on a second native reopen");verify(reopened);
+            for(const auto& file:preview.files)require(sha256(read_bytes(exported/file.relative_path))==file.sha256
+                &&sha256(read_bytes(destination/"state/active/android"/file.relative_path))==file.sha256,
+                "Assignment import modified an XML source or its archived original bytes");
+            if(stage=="correct"){
+                auto invalid=data;auto wrong=make_answer(block,false);wrong.correct=true;put_response(invalid,current,block,wrong);
+                const auto retained=invalid;rejects([&]{validate_lesson_state(invalid,current);});
+                require(invalid==retained,"Rejecting a forged assignment success changed imported state");
+            }
+            ++scenarios;++groups;
+        }
+    }
+    require(scenarios==16&&read_bytes(before_path)==before_bytes&&read_bytes(after_path)==after_bytes,
+        "Assignment import omitted a published owner/state or modified its immutable sources");
+    std::cout<<"PASS published U11L20 21-to-25 editorial transition: sixteen isolated historical response states, authenticated four-owner reading archive, XML import/archive, native adoption/reopen, original attempts/drafts and three stored bookmarks retained; no current compiler or listening credit invented. No player, PCM or human listening exercised.\n";
+}
 void u11_names_preserves_historical_and_added_prediction_state(const std::filesystem::path& base,const std::filesystem::path& before_path){
     using namespace lgaed;using namespace curriculum;using namespace winrt::Windows::Data::Json;
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_nombres_del_lenguaje_y_tokens_con_texto.json";
@@ -1503,8 +1652,9 @@ void rejected_compiler_reviews_preserve_captured_attempts(const std::filesystem:
 int main(int argc, char** argv) {
     try {
         require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"||std::string_view(argv[2])=="--u11-consult"||std::string_view(argv[2])=="--compiler-reviews"))
-            ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names")),
-            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture> or --u11-names <before fixture>");
+            ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names"))
+            ||(argc==5&&std::string_view(argv[2])=="--u11-assignment-editorial"),
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture>, --u11-names <before fixture> or --u11-assignment-editorial <published before> <published after>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
@@ -1515,6 +1665,7 @@ int main(int argc, char** argv) {
             else second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
         if(argc==4){if(std::string_view(argv[2])=="--u11-names")u11_names_preserves_historical_and_added_prediction_state(base,argv[3]);
             else remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
+        if(argc==5){published_u11_assignment_editorial_preserves_imported_state(base,argv[3],argv[4]);return 0;}
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);

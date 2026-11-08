@@ -520,6 +520,23 @@ if(BUILD_TESTING)
         COMMENT "Verifying immutable U11L20 editorial fixtures from local Git publications"
         VERBATIM)
     add_custom_target(lgaed_u11_assignment_editorial_fixtures DEPENDS ${LGAED_U11_ASSIGNMENT_EDITORIAL_FIXTURES})
+    set(LGAED_U11_ASSIGNMENT_PUBLISHED_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u11-assignment-published")
+    set(LGAED_U11_ASSIGNMENT_PUBLISHED_FIXTURES
+        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
+        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json"
+        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/manifest.json")
+    add_custom_command(OUTPUT ${LGAED_U11_ASSIGNMENT_PUBLISHED_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_assignment_editorial_fixture_source.py"
+            --published --output-dir "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_assignment_editorial_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        COMMENT "Verifying the authentic U11L20 publications with twenty-one and twenty-five editorial edges"
+        VERBATIM)
+    add_custom_target(lgaed_u11_assignment_published_fixtures DEPENDS ${LGAED_U11_ASSIGNMENT_PUBLISHED_FIXTURES})
+    add_test(NAME native.u11_assignment_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_assignment_import_fixtures.py)
+    set_tests_properties(native.u11_assignment_import_fixtures PROPERTIES TIMEOUT 60)
     add_executable(lgaed_u11_assignment_editorial_view_tests native/presentation/windows/u11_assignment_editorial_view_tests.cpp)
     target_link_libraries(lgaed_u11_assignment_editorial_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_u11_assignment_editorial_view_tests lgaed_u11_assignment_editorial_fixtures)
@@ -1416,6 +1433,7 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
     add_dependencies(lgaed_state_tests lgaed_work_exact_editorial_fixtures)
+    add_dependencies(lgaed_state_tests lgaed_u11_assignment_published_fixtures)
     set(LGAED_U11_NAMES_BEFORE_FILE "${CMAKE_CURRENT_BINARY_DIR}/u11-names-fixtures/before.json")
     add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_names_fixture_source.py"
@@ -1437,6 +1455,10 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --remainder-editorial "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json")
     set_tests_properties(native.remainder_editorial_state_import PROPERTIES TIMEOUT 120)
+    add_test(NAME native.u11_assignment_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
+        --u11-assignment-editorial "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
+        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json")
+    set_tests_properties(native.u11_assignment_state_import PROPERTIES TIMEOUT 120)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
