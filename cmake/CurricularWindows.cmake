@@ -39,6 +39,8 @@ target_link_options(lgaed_curricular_windows INTERFACE
 function(lgaed_add_curricular_reader_test_targets)
     add_executable(lgaed_lesson_reader_tests native/presentation/windows/lesson_reader_tests.cpp)
     target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_curricular_windows)
+    # The complete reader regression translation unit exceeds MSVC's standard object section limit (C1128).
+    target_compile_options(lgaed_lesson_reader_tests PRIVATE /bigobj)
     add_executable(lgaed_u11_declarations_reader_tests native/presentation/windows/u11_declarations_reader_tests.cpp)
     target_link_libraries(lgaed_u11_declarations_reader_tests PRIVATE lgaed_curricular_windows)
     add_executable(lgaed_u6_diagnostic_flow_tests native/presentation/windows/u6_diagnostic_flow_tests.cpp)
