@@ -397,11 +397,11 @@ El build, los fixtures, los logs y el XML JUnit quedan bajo
 `out/qa/u12-reader-ci`; el runtime conserva `out/narration/runtime.json` y las
 grabaciones de cada escenario utilizan sus directorios QA originales. La
 secuencia opt-in `windows-virtual-audio.yml` sólo inicia esta suite después de
-superar `NarrationPlayer` en el mismo runner. Los resultados de ejecución siguen
-sin estar acreditados por este procedimiento. Si pasa, su alcance será el de
-esas tres fases con el dispositivo observado, sin atribuir escucha humana,
-validación acústica, ejecución del compilador educativo ni aceptación de los
-demás recorridos curriculares.
+superar `NarrationPlayer` en el mismo runner. Los logs y el XML JUnit de cada
+ejecución permiten comprobar qué casos finalizaron correctamente. Una ejecución
+que supere las tres fases acredita ese recorrido con el dispositivo observado,
+sin atribuir escucha humana, validación acústica, ejecución del compilador
+educativo ni aceptación de los demás recorridos curriculares.
 
 ### Comprobación local de ventanas y datos
 
