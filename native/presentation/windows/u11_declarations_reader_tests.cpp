@@ -1,5 +1,6 @@
 #include "core/lesson.hpp"
 #include "core/narration_state.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
@@ -230,12 +231,18 @@ struct Harness {
     struct Recording { std::string sha; std::filesystem::file_time_type modified; };
     std::map<std::filesystem::path, Recording> recordings;
 
-    explicit Harness(std::shared_ptr<windows::NarrationWorker> worker, const ReaderSpec& selected)
+    explicit Harness(std::shared_ptr<windows::NarrationWorker> worker, const ReaderSpec& selected,
+            const std::filesystem::path& historical_source = {}, std::string_view historical_sha = {},
+            std::function<void(state::StateData&, const curriculum::Lesson&)> historical_setup = {})
         : spec(selected), backend(std::move(worker)) {
-        asset = std::filesystem::path(build::source_root) /
-            "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos" / spec.filename;
+        require(historical_source.empty() == historical_sha.empty()
+            && historical_source.empty() == !static_cast<bool>(historical_setup),
+            "A historical reader source needs both its complete hash and explicit isolated entry setup");
+        asset = historical_source.empty() ? std::filesystem::path(build::source_root) /
+            "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos" / spec.filename
+            : historical_source;
         original_asset = state::read_bytes(asset);
-        require(audited_source(original_asset, spec),
+        require(historical_source.empty() ? audited_source(original_asset, spec) : state::sha256(original_asset) == historical_sha,
             "The current " + std::string(spec.label) + " snapshot changed; review its exact reader scope before updating this pin");
         lesson = windows::load_lesson(asset);
         const auto token = wide(spec.token) + L"-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64());
@@ -246,7 +253,8 @@ struct Harness {
         state::StateStore store(environment.paths.root); auto initial = store.load();
         require(initial.preferences.empty(), "The new declarations reader QA already contains student data");
         state::prepare_lesson_state(initial, lesson);
-        entry_setup=test::prepare_compiler_reader_entry(initial,lesson,spec.compiler_page);
+        if(historical_setup)historical_setup(initial,lesson);
+        else entry_setup=test::prepare_compiler_reader_entry(initial,lesson,spec.compiler_page);
         auto& preferences = initial.preferences["lesson_narration_settings"];
         preferences["engine"] = std::string("KOKORO"); preferences["language"] = std::string("es");
         preferences["kokoro_voice:es"] = std::string("ef_dora"); preferences["rate"] = 3.;
@@ -675,6 +683,7 @@ int entry_setup_case(const ReaderSpec& spec){
     return 0;
 }
 int entry_setup_only(){for(const auto* spec:{&declarations,&assignments,&constants})(void)entry_setup_case(*spec);return 0;}
+#include "presentation/windows/u11_constants_historical_reader_test.hpp"
 } // namespace
 
 int main(int argc, char** argv) {
@@ -682,7 +691,9 @@ int main(int argc, char** argv) {
         try{return entry_setup_only();}
         catch(const std::exception& error){std::cerr<<"FAIL headless assignment entry setup: "<<error.what()<<'\n';return 1;}
     }
-    if (argc > 2 || (argc == 2 && std::string_view(argv[1]) != "--assignments" && std::string_view(argv[1]) != "--constants")) return 2;
+    const bool historical=argc==5&&std::string_view(argv[1])=="--constants-historical";
+    if(historical){if(std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;}
+    else if (argc > 2 || (argc == 2 && std::string_view(argv[1]) != "--assignments" && std::string_view(argv[1]) != "--constants")) return 2;
     const auto& spec = argc == 1 ? declarations : std::string_view(argv[1]) == "--assignments" ? assignments : constants;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto apartment = OleInitialize(nullptr); if (FAILED(apartment)) return 2;
@@ -692,7 +703,8 @@ int main(int argc, char** argv) {
         require(rich != nullptr, "Cannot load native RichEdit"); reader_theme::prepare_fonts();
         auto backend = std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root) / "out/narration/runtime.json");
         struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker; ~Shutdown() { worker->shutdown(); } } cleanup{backend};
-        exercise(backend, spec);
+        if(historical)constants_historical::exercise(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),argv[4][0]-'0');
+        else exercise(backend, spec);
     } catch (const std::exception& error) { std::cerr << "FAIL current " << spec.label << " compiler reader: " << error.what() << '\n'; result = 1; }
     if (rich) FreeLibrary(rich); OleUninitialize(); return result;
 }

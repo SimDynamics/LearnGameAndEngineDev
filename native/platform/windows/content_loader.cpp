@@ -724,6 +724,73 @@ bool bibliography_pair(const JsonObject& before,const JsonObject& after){
     old.Remove(L"explanation");now.Remove(L"explanation");
     return fingerprint(old)==fingerprint(now)&&bibliography::only_parenthetical_locator_removal(old_text,new_text);
 }
+std::optional<StatePositionalReadingPage> constants_positional_reading_page(const JsonObject& root,
+        const JsonObject& metadata,const JsonArray& pages,const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    // Complete publications: 617f03472d20a97f2e1e110a3233ad11fd966d01 ->
+    // 5d115a0c99c8d2a17d01eee99dfe887247b82dbb. Their raw byte SHA-256s are
+    // 65b1eb97508bfb7f6dbbc695f25c8cfa27994333892878c44c297b7ccea463cc and
+    // d444222f6ce6f69436279bee30e734f6fb9823ce7c6df592f6085a07734b04db.
+    // Canonical full-document and page proofs ignore JSON formatting while
+    // preserving every value. A later or mixed publication gets no archive.
+    if(pages.Size()!=8||layout.origin.size()!=8||layout.current.size()!=8
+        ||fingerprint(root)!="dfdb12121e27374a4cd54db4bd9ec610c08984f6e097c993929710e6dc95a1ca"
+        ||fingerprint(metadata.GetNamedObject(L"family"))!="3ab92cc5bbda79981a0b6760151cb9c1f420dcd515e0b4e3f802c2182807ba6c"
+        ||fingerprint(array(metadata,"origin"))!="7f2edabeb9c3e5755411100c43237665324e6ad3b1ac843ccd71634f98b053c3"
+        ||fingerprint(array(metadata,"current"))!="e724a0d1a1b61d7df69d8fd2123657712a66c07f7893eb35b471d33f84dfb7d4"
+        ||array(metadata,"editorial").Size()!=22
+        ||fingerprint(array(metadata,"editorial"))!="324cd0b445d434d114fd96fa63ae343226e2ade800bdcd90b2bfe8478f0c1abc"
+        ||fingerprint(pages.GetAt(5))!="86441557dd179650e7bb552b2fab9dbc7e3ba85b8aaaf9ae23fde54f13e8e967")return {};
+    struct OriginalBlock {const char* id;unsigned current;const char* sha256;const char* text;};
+    static constexpr std::array<OriginalBlock,5> original{{
+        {"block_0005_0000",0,"150dde3e216aea9ea11f13f43eda55dcdda7792d59f75a80bfa85639f0d6b594",nullptr},
+        {"block_0005_0001",1,"ec1da1e4ab8fc6afbe539e41a6933385d21cfbcf0c5141035484c3c8eb810741",
+            "Amplía la sesión con la categoría fija y la protección por vínculo.\n\n"
+            "El caso inicial es \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\".\n\n"
+            "Debe aceptar 4,6,9,6 y100, rechazar el cambio de limite y conservar copia=6.\n\n"
+            "No entregues una protección sólo visual: asignar debe rechazar realmente la modificación.\n\n"
+            "Construye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\", \"fija x=5 2;x;\", \"fija x=unidad;x=x+1;x;\", \"crea unidad=3;unidad;\", \"crea a=limite+1;a;\", \"crea a=1;crea b=2;crea c=3;crea d=4;crea e=5;crea f=6;crea g=7;a;\", en ese orden.\n\n"
+            "Cada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\n"
+            "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
+            "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Nombre constante, Nombre no definido, Nombre ya definido, Resultado fuera de dominio, Se esperaba ;, Tabla llena.\n\n"
+            "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
+            "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.\n\n"
+            "Cada vínculo añade su marca (V) si es modificable o (C) si es constante.\n\n"
+            "Cada tabla comienza con unidad=1(C) y limite=100(C), que cuentan dentro de las ocho plazas."},
+        {"block_0005_0002",4,"b31af141cccd6da262f40c46a6d6f3aaf311d8ac6e8fba83a9bf51b65b4bcfdd",nullptr},
+        {"block_0005_0003",2,"6b4b5fda01b16f90576589a4078b992ac0decd104cc57ac58dbc2be228101773",
+            "Las seis pruebas de la batería comprueban inicializador incompleto, constante protegida, duplicación de predefinido, dominio del resultado y capacidad compartida. La consulta final de a después de rechazar la séptima creación comprueba que el estado aceptado sigue disponible."},
+        {"block_0005_0004",3,"79d1aa206257b8dfdbab019177acba1d2ce2982451349f3d18f89d920210f4f0",
+            "Criterios: palabras completas, nombres reservados, copia de la política completa, inicialización única de predefinidos, protección antes de escribir, capacidad compartida y aceptación sólo tras ;. La comprobación contrasta sus informes; revisar la implementación sigue siendo necesario para acreditar esos criterios."}
+    }};
+    if(layout.origin[5].blocks.size()!=original.size()||layout.current[5].blocks.size()!=original.size())return {};
+    StatePositionalReadingPage result;result.page=5;result.original.stable_id="page_5";
+    JsonArray reconstructed;
+    const auto current=array(pages.GetObjectAt(5),"blocks");
+    for(unsigned index=0;index<original.size();++index){
+        const auto& item=original[index];
+        if(layout.origin[5].blocks[index]!=item.id||layout.current[5].blocks[item.current]!=item.id)return {};
+        const auto previous=JsonObject::Parse(current.GetObjectAt(item.current).Stringify());
+        if(item.text){
+            previous.Insert(L"text",JsonValue::CreateStringValue(key(item.text)));
+            if(previous.HasKey(L"emphasis"))previous.Remove(L"emphasis");
+        }
+        if(index==1){
+            JsonObject highlight;highlight.Insert(L"text",JsonValue::CreateStringValue(L"Compilar, ejecutar y comprobar"));
+            highlight.Insert(L"style",JsonValue::CreateStringValue(L"bold"));JsonArray emphasis;emphasis.Append(highlight);
+            previous.Insert(L"emphasis",emphasis);
+        }
+        if(fingerprint(previous)!=item.sha256)return {};
+        reconstructed.Append(previous);
+        const auto raw=utf8(previous.Stringify());auto block=read_block(previous,raw);
+        block.stable_id="block_5_"+std::to_string(index);block.address={5,index,{},result.original.stable_id};
+        result.current_owners.emplace_back(item.id);result.original.blocks.push_back(std::move(block));
+    }
+    const auto original_page=JsonObject::Parse(pages.GetObjectAt(5).Stringify());original_page.Insert(L"blocks",reconstructed);
+    if(fingerprint(original_page)!="3018c71926e1427c7d31df2f0cb098fd6dc43c0f92e54a22ca11a4552d927ebe")return {};
+    return result;
+}
 std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject& metadata,const JsonArray& pages,
         const StateLayout& layout,std::string_view lesson_id) {
     constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada";
@@ -1396,6 +1463,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=composed_feedback_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
+    if(auto positional=constants_positional_reading_page(root,metadata,pages,result,lesson_id))
+        result.positional_reading_pages.push_back(std::move(*positional));
     if(!bibliography_edges.empty()){
         collect_actual();auto actual=return_actual_blocks;
         std::map<std::string,std::optional<TextSemantics>> semantics;

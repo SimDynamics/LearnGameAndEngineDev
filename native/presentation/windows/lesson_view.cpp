@@ -24,6 +24,7 @@
 #include "core/compiler_flow.hpp"
 #include "core/lesson_entry_policy.hpp"
 #include "core/lesson_page_reach.hpp"
+#include "core/positional_reading_archive.hpp"
 #include "core/catalog.hpp"
 #include "core/view_preferences.hpp"
 #include "core/attempts.hpp"
@@ -874,9 +875,71 @@ struct LessonView {
         return result;
     }
 
+    std::vector<LessonReadingArchive> positional_reading_archives(const std::vector<LessonReadingRegion>& displayed) const {
+        std::vector<LessonReadingArchive> archives;
+        for(const auto& saved:lesson.state_layout.positional_reading_pages){
+            if(saved.page!=page||saved.current_owners.size()!=saved.original.blocks.size())continue;
+            LessonReadingArchive archived;
+            archived.page_identity=route+'/'+lesson.id+'/'+std::to_string(saved.page);
+            archived.positional_page_identity=true;
+            auto previous=displayed;std::vector<curriculum::PositionalReadingBlock> order;bool complete=true;
+            for(std::size_t original_index=0;original_index<saved.original.blocks.size();++original_index){
+                const auto& original=saved.original.blocks[original_index];
+                const auto position=curriculum::stable_block_position(lesson,saved.current_owners[original_index]);
+                if(!position||position->page!=saved.page||position->block>=controls.size()
+                    ||block(position->block).type!=original.type){complete=false;break;}
+                const auto index=position->block;
+                // An in-flight control rebuild has no complete visible script
+                // yet. Wait for its normal final content notification instead
+                // of authenticating a partial historical page.
+                if(std::ranges::none_of(displayed,[&](const auto& region){return region.block_index==index;})){
+                    complete=false;break;
+                }
+                const bool compiler=original.type==BlockType::cpp_compiler;
+                const bool completed=compiler&&windows::compiler_puzzle_completed(data,lesson,original);
+                order.push_back({index,compiler,completed});
+                for(auto& region:previous)if(region.block_index==index){
+                    region.text_semantics.reset();region.previous_math_mode.reset();region.compiler_guidance=false;
+                    region.reading_context="auto";reading_context(region,original);
+                    if(!compiler&&!region.feedback&&region.target==find_item(control_id(index,0))){
+                        if(region.source_text!=original.text)archived.revised_regions.push_back(region.key);
+                        region.source_text=original.text;
+                    }
+                }
+                if(!compiler)continue;
+                if(!controls[index].source_editor||!controls[index].feedback){complete=false;break;}
+                // These original editors have no compiler-revision history.
+                // A current verdict is not evidence for the positional script:
+                // read only the old receipt/review against the actual draft.
+                std::erase_if(previous,[&](const auto& region){return region.block_index==index
+                    &&(region.feedback||region.target==find_item(control_id(index,40)));});
+                const auto feedback=windows::compiler_puzzle_current_feedback(data,lesson,original,program_snapshot(index));
+                if(!feedback)continue;
+                const auto first_break=feedback->text.find_first_of("\r\n");
+                auto body=first_break==std::string::npos?std::string{}:feedback->text.substr(first_break);
+                const auto first_text=body.find_first_not_of("\r\n");
+                body=first_text==std::string::npos?std::string{}:body.substr(first_text);
+                LessonReadingRegion region;region.block_index=index;region.target=controls[index].feedback;
+                region.source_text=(feedback->correct?"✓ ":"✗ ")+verdict_text(feedback->correct)+(body.empty()?"":"\n\n"+body);
+                region.feedback=true;region.correct=feedback->correct;region.is_exercise=true;
+                region.required_compiler=true;region.solved=completed;reading_context(region,original);
+                const auto prefix=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+saved.current_owners[original_index];
+                region.key=prefix+'/'+std::to_string(control_id(index,4));region.anchor=prefix+"/part/4";
+                previous.push_back(std::move(region));
+            }
+            if(!complete)continue;
+            // Reordering alone would leak the two paragraphs which were behind
+            // the old editor. Only its original earned receipt opens them in
+            // this private archive; the active v2 objective is unaffected.
+            archived.regions=curriculum::positional_reading_regions(previous,order);
+            archives.push_back(std::move(archived));
+        }
+        return archives;
+    }
+
     std::vector<LessonReadingArchive> editorial_reading_archives() const {
         if(import_open||deferred_entry.waiting()||!pane||!IsWindow(pane))return {};
-        auto regions=reading_regions();std::vector<LessonReadingArchive> archives;
+        auto regions=reading_regions();auto archives=positional_reading_archives(regions);
         const auto identity=page_state().narration_page_identity;
         // These snapshots are complete prior editorial prefixes authenticated
         // by the loader. Do not combine individual old fields into page scripts
@@ -1987,7 +2050,7 @@ struct LessonView {
         }
         state::put_draft(data, draft_key(index), value);
     }
-    windows::CppRunRequest program_snapshot(std::size_t index) {
+    windows::CppRunRequest program_snapshot(std::size_t index) const {
         auto& vm=controls.at(index);windows::CppRunRequest request;
         request.revision=vm.revision;request.source_utf8=vm.source_editor->document().text;
         request.stdin_utf8=block(index).standard_input.value_or("");

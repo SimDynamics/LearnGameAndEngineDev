@@ -297,6 +297,9 @@ if(BUILD_TESTING)
     add_executable(lgaed_narration_semantic_state_tests native/core/narration_semantic_state_tests.cpp)
     target_link_libraries(lgaed_narration_semantic_state_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.narration_semantic_state COMMAND lgaed_narration_semantic_state_tests)
+    add_executable(lgaed_positional_reading_archive_tests native/core/positional_reading_archive_tests.cpp)
+    target_link_libraries(lgaed_positional_reading_archive_tests PRIVATE lgaed_host_options)
+    add_test(NAME native.positional_reading_archive COMMAND lgaed_positional_reading_archive_tests)
     add_executable(lgaed_narration_file_access_tests native/platform/windows/narration_file_access_tests.cpp)
     target_link_libraries(lgaed_narration_file_access_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.narration_file_access COMMAND lgaed_narration_file_access_tests)
@@ -1495,6 +1498,16 @@ if(BUILD_TESTING)
         COMMENT "Verifying five published positional-to-v2 compiler import pairs"
         VERBATIM)
     add_custom_target(lgaed_compiler_import_published_fixtures DEPENDS ${LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES})
+    add_dependencies(lgaed_u11_declarations_reader_tests lgaed_compiler_import_published_fixtures)
+    foreach(constants_reader_phase RANGE 0 1)
+        add_test(NAME native.u11_constants_historical_reader_${constants_reader_phase}
+            COMMAND lgaed_u11_declarations_reader_tests --constants-historical
+                "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/u11l21-before.json"
+                "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/u11l21-after.json"
+                "${constants_reader_phase}")
+        set_tests_properties(native.u11_constants_historical_reader_${constants_reader_phase}
+            PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
+    endforeach()
     add_test(NAME native.compiler_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_import_fixtures.py)
     set_tests_properties(native.compiler_import_fixtures PROPERTIES TIMEOUT 120)

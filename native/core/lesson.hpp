@@ -193,6 +193,15 @@ struct StateReadingRevision {
     std::map<std::string,std::optional<TextSemantics>> previous_explanation_semantics;
     bool bibliography_only = false;
 };
+// A complete positional page authenticated against a closed publication pair.
+// Original blocks retain their old native compiler identities; current_owners
+// only maps their narration back to today's anchors. Neither becomes an active
+// activity, an authored history format or an adopted execution receipt.
+struct StatePositionalReadingPage {
+    std::size_t page = 0;
+    std::vector<std::string> current_owners;
+    Page original;
+};
 struct StateLayout {
     int version = 0;
     std::string locale;
@@ -209,6 +218,7 @@ struct StateLayout {
     std::vector<CompilerRevision> compiler_revisions;
     std::vector<StateEditorialReturn> editorial_returns;
     std::vector<StateReadingRevision> reading_revisions;
+    std::vector<StatePositionalReadingPage> positional_reading_pages;
     // Computed by the loader; ordinary state preparation does not reparse JSON.
     bool has_editorial_returns = false;
 };

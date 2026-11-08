@@ -59,6 +59,103 @@ class CompilerImportFixtureTest(unittest.TestCase):
                         current["outputCheck"]["cases"][0]["outputs"] = [original]
                     self.assertEqual(old, current)
 
+    def test_u11l21_reader_keeps_the_same_reference_starter_and_execution_oracle(self):
+        before, after = (self.documents["u11l21", side] for side in fixture.COMMITS)
+        current = layout._blocks(after)
+        old_editor = before["pages"][5]["blocks"][2]
+        editor = current["block_0005_0002"]
+        old_reference = before["pages"][7]["blocks"][1]
+        reference = current["block_0007_0001"]
+        self.assertEqual(old_editor, editor)
+        self.assertEqual(old_reference, reference)
+        self.assertEqual("code", reference["type"])
+        self.assertEqual("cpp", reference["language"])
+        self.assertEqual(1, len(editor["outputCheck"]["cases"]))
+        case = editor["outputCheck"]["cases"][0]
+        self.assertEqual("", case["standardInput"])
+        self.assertEqual(1, len(case["outputs"]))
+        # These are authored source/expected-output bytes, not an execution
+        # receipt or evidence that the Windows reader has played anything.
+        for value, size, digest in (
+            (reference["code"], 12921,
+             "aec59ea4646f490597dc4e58b4af90b700dda37963b3bc514d56ba77e668fe94"),
+            (editor["initialCode"], 218,
+             "51a215219002d61b592fc70d75374335ae29e5ebb51a7720881f5cfbe6dfa06f"),
+            (case["outputs"][0], 809,
+             "2def5180eeae40e1781aa77fb0ac56801fe9c377cec6b642100e7c7a1e70f7ae"),
+        ):
+            encoded = value.encode("utf-8")
+            self.assertEqual(size, len(encoded))
+            self.assertEqual(digest, hashlib.sha256(encoded).hexdigest())
+        # Neither publication authors per-case feedback. The changed
+        # reading passage belongs to the page's paragraph, not to this oracle.
+        self.assertNotIn("explanation", case)
+        self.assertNotIn("reviewFeedback", case)
+
+    def test_u11l21_reader_reorders_original_guidance_before_its_compiler(self):
+        before, after = (self.documents["u11l21", side] for side in fixture.COMMITS)
+        original = layout._blocks(layout.prepare(before))
+        current = layout._blocks(after)
+        page = after["stateLayout"]["current"][5]
+        identities = [f"block_0005_{index:04d}" for index in (0, 1, 3, 4, 2)]
+        self.assertEqual("page_0005", page["id"])
+        self.assertEqual(identities, page["blocks"])
+        self.assertEqual(set(identities), {item["id"] for item in after["stateLayout"]["origin"][5]["blocks"]})
+        self.assertFalse(set(identities) & {item["id"] for item in after["stateLayout"]["additions"]})
+        positions = layout.validate(after)
+        for visible, historical in enumerate((0, 1, 3, 4, 2)):
+            self.assertEqual((5, historical), positions[5, visible])
+        self.assertEqual(original["block_0005_0000"], current["block_0005_0000"])
+        # The identical title is the compatible-pause source for native QA.
+        # The first old paragraph has a complete newly authored replacement;
+        # formatting/criteria paragraphs also retain their original owners.
+        for identity, before_hash, after_hash in (
+            ("block_0005_0001",
+             "ec1da1e4ab8fc6afbe539e41a6933385d21cfbcf0c5141035484c3c8eb810741",
+             "c6c81086442afa502550bb06ff98e7b25303ffa85d5d865585db935bd2932455"),
+            ("block_0005_0003",
+             "6b4b5fda01b16f90576589a4078b992ac0decd104cc57ac58dbc2be228101773",
+             "590b95539de317ec0e1ac201851b599f46d782e4453b175b2f8a81c978c91158"),
+            ("block_0005_0004",
+             "79d1aa206257b8dfdbab019177acba1d2ce2982451349f3d18f89d920210f4f0",
+             "bfd4bd6f4dd5cd73eb3b09dfce9eb31eeabe61d69beed22354d300bbf0a0fa62"),
+        ):
+            with self.subTest(owner=identity):
+                self.assertEqual("paragraph", original[identity]["type"])
+                self.assertEqual("paragraph", current[identity]["type"])
+                self.assertNotEqual(original[identity]["text"], current[identity]["text"])
+                self.assertEqual(before_hash, layout.fingerprint(original[identity]))
+                self.assertEqual(after_hash, layout.fingerprint(current[identity]))
+                self.assertIn({"id": identity, "beforeSha256": before_hash, "afterSha256": after_hash},
+                              after["stateLayout"]["editorial"])
+        prediction = "work_u11l21_nombres_completos"
+        self.assertNotIn(prediction, original)
+        self.assertEqual("output_prediction", current[prediction]["type"])
+        self.assertEqual(prediction, after["stateLayout"]["current"][6]["blocks"][1])
+        addition = next(item for item in after["stateLayout"]["additions"] if item["id"] == prediction)
+        self.assertEqual({"page": 8, "block": 0}, addition["storage"])
+        self.assertEqual("page_0006", addition["progressPage"])
+        self.assertEqual((8, 0), positions[6, 1])
+        self.assertEqual((6, 1), positions[6, 2])
+        self.assertEqual(before["pages"][6]["blocks"][1], after["pages"][6]["blocks"][2])
+
+    def test_u11l21_reader_exports_require_exact_lf_publication_bytes(self):
+        # Historical-reader inputs come from the exporter's exact Git bytes.
+        # They are distinct from current assets checked out with CRLF. The
+        # existing all-sources test separately rejects the opposite revision.
+        for side in fixture.COMMITS:
+            raw = self.raw["u11l21", side]
+            self.assertNotIn(b"\r", raw)
+            self.assertEqual(raw, fixture.verify_bytes("u11l21", side, raw))
+            for ending, changed in (
+                ("CRLF", raw.replace(b"\n", b"\r\n")),
+                ("mixed", raw.replace(b"\n", b"\r\n", 1)),
+            ):
+                with self.subTest(side=side, ending=ending):
+                    self.assertNotEqual(raw, changed)
+                    with self.assertRaisesRegex(ValueError, "pinned Git bytes"):
+                        fixture.verify_bytes("u11l21", side, changed)
+
     def test_all_ten_sources_are_pinned_raw_git_bytes(self):
         for (name, side), payload in self.raw.items():
             with self.subTest(lesson=name, side=side):
