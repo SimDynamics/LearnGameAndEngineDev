@@ -410,6 +410,10 @@ recorridos originales en tres runners Windows independientes. Se solicita
 mediante un commit de `Codex` cuyo mensaje comience por
 `qa-curricular-readers:` o mediante `workflow_dispatch` cuando esté disponible
 en la rama predeterminada. Los pushes ordinarios no lo activan.
+El prefijo `qa-curricular-u11:` selecciona únicamente `U11EditorialReader`,
+con sus diez casos, para comprobar una revisión localizada sin repetir los
+otros grupos. Esta selección tiene su propia cola y conserva las ejecuciones
+generales en curso. Un dispatch manual mantiene siempre los tres grupos.
 
 Cada job comprueba primero el dispositivo firmado con
 `-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres

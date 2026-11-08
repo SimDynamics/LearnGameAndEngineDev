@@ -203,6 +203,29 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
             check(text[index]==L' '||text[index]==L'\n'||text[index]==L'\r'||text[index]==L'\t'||covered[index],
                 "The prepared assignment feedback omitted authored text");
     }
+    const auto question_target=child(f.view,1000+static_cast<int>(choice_at.block)*100);
+    const auto regions=lesson_reading_regions(f.view);
+    const auto question_region=std::ranges::find_if(regions,[&](const auto& region){
+        return region.block_index==choice_at.block&&!region.feedback&&region.target==question_target;});
+    check(question_region!=regions.end()&&question_region->source_text==new_choice.question,
+        "The revised assignment question lost its complete authored reading region");
+    const auto question_text=wide(new_choice.question);std::vector<bool> question_covered(question_text.size());
+    auto displayed_question=utf8(question_text);std::erase(displayed_question,'`');std::erase(displayed_question,'\r');
+    check(edit_text(question_target)==displayed_question,"The revised assignment question is not fully displayed");
+    std::vector<std::size_t> changed_question;
+    for(std::size_t index=0;index<revised.segments.size();++index){const auto& part=revised.segments[index];
+        if(part.block!=choice_at.block||part.feedback||part.target!=question_target)continue;
+        check(part.region==question_region->key&&part.start<part.end&&part.end<=question_text.size()
+            &&part.source==utf8(question_text.substr(part.start,part.end-part.start)),
+            "The revised assignment question differs from its complete displayed UTF-16 source");
+        for(auto offset=part.start;offset<part.end;++offset)question_covered[offset]=true;
+        (void)verify_feedback_recording(part);changed_question.push_back(index);
+    }
+    for(std::size_t index=0;index<question_text.size();++index)
+        check(question_text[index]==L' '||question_text[index]==L'\n'||question_text[index]==L'\r'
+            ||question_text[index]==L'\t'||question_covered[index],
+            "The prepared assignment question omitted authored text");
+    check(!changed_question.empty(),"The revised assignment question has no PCM segments");
     check(!feedback.empty(),"The revised assignment has no feedback recordings");preserve();
     // Reopening the newly mapped checkpoint must be silent and exact. Compare
     // the durable close checkpoint, including a newly prepared zero certificate.
@@ -220,7 +243,7 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
     preserve();
     if(phase==1){
         std::cout<<"PHASE assignment "<<phase<<" playing the complete reviewed explanations\n";
-        std::set<std::size_t> observed;std::optional<std::size_t> last_part;f.reader->toggle();
+        std::set<std::size_t> observed,observed_question;std::optional<std::size_t> last_part;f.reader->toggle();
         wait([&]{const auto value=f.snapshot();
             if(!last_part||*last_part!=value.index||value.waiting_gate){
                 std::cout<<"PLAY assignment index="<<value.index<<" offset="<<value.offset<<" heard="<<value.heard_through
@@ -230,6 +253,7 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
                 last_part=value.index;
             }
             if(value.playing&&value.segments[value.index].feedback&&value.segments[value.index].correct)observed.insert(value.index);
+            if(value.playing&&std::ranges::find(changed_question,value.index)!=changed_question.end())observed_question.insert(value.index);
             check(!value.finished,"Assignment narration falsely finished the page with a pending third exercise");
             if(value.waiting_gate&&!value.playing&&!value.allocated){
                 check(value.segments[value.index].block==following_at.block,
@@ -240,6 +264,9 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
         check(std::ranges::all_of(feedback,[&](auto index){return observed.contains(index);})
             &&f.snapshot().heard_through>static_cast<std::int64_t>(feedback.back()),
             "Assignment page finished before the revised explanations actually played");
+        check(std::ranges::all_of(changed_question,[&](auto index){return observed_question.contains(index);})
+            &&f.snapshot().heard_through>static_cast<std::int64_t>(changed_question.back()),
+            "Assignment page reached the next exercise before the complete revised question actually played");
         preserve();
     }
     std::cout<<"PASS U11L20 p5 "<<publication<<" editorial reader phase "<<phase<<": real answered controls and PCM pause; "
