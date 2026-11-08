@@ -12,7 +12,10 @@ option(LGAED_STATE_IMPORT_QA_ONLY
     "Build only the four published native state-import regressions with the official Windows toolchain" OFF)
 option(LGAED_NARRATION_PLAYER_QA_ONLY
     "Build only the two real Windows narration-player probes with the official Windows toolchain" OFF)
-if(LGAED_STATE_IMPORT_QA_ONLY AND LGAED_NARRATION_PLAYER_QA_ONLY)
+option(LGAED_READER_BUILD_QA_ONLY
+    "Compile and link the three original curricular reader/diagnostic test executables without running them" OFF)
+if((LGAED_STATE_IMPORT_QA_ONLY AND LGAED_NARRATION_PLAYER_QA_ONLY)
+        OR (LGAED_READER_BUILD_QA_ONLY AND (LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)))
     message(FATAL_ERROR "Select only one focused Windows QA mode in each build directory.")
 endif()
 
@@ -20,7 +23,7 @@ include(cmake/VerifyNativeToolchain.cmake)
 lgaed_verify_native_toolchain()
 include(cmake/VerifyNativeDependencies.cmake)
 lgaed_verify_native_dependencies()
-if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
+if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY OR LGAED_READER_BUILD_QA_ONLY)
     include(cmake/WindowsStateImportQaTools.cmake)
     lgaed_select_windows_state_import_qa_tools()
 else()
@@ -99,7 +102,7 @@ add_library(lgaed_platform_windows STATIC
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
-# Both focused modes still build the complete production core/platform
+# The import/player modes still build the complete production core/platform
 # libraries and their original test translation units. Neither configures
 # presentation, shader assets or the synthesis runtime, which these probes do
 # not use. All native toolchain/dependency/C++23 checks remain mandatory.
@@ -118,6 +121,17 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         lgaed_add_narration_player_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/narration-player")
         message(STATUS "Focused native narration-player QA: two real Windows MediaPlayer probes; no synthesis, application or reader verification.")
     endif()
+    return()
+endif()
+
+include(cmake/CurricularWindows.cmake)
+if(LGAED_READER_BUILD_QA_ONLY)
+    option(BUILD_TESTING "Build the testing tree." ON)
+    if(NOT BUILD_TESTING)
+        message(FATAL_ERROR "LGAED_READER_BUILD_QA_ONLY requires BUILD_TESTING=ON.")
+    endif()
+    lgaed_add_curricular_reader_test_targets()
+    message(STATUS "Focused native reader build: three original test executables; no CTest registration/execution, fixtures, synthesis runtime or application build.")
     return()
 endif()
 
@@ -164,19 +178,8 @@ target_link_libraries(lgaed_system_speech_host PRIVATE lgaed_platform_windows)
 set_target_properties(lgaed_system_speech_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 add_library(lgaed_presentation_windows STATIC
-    native/presentation/windows/window_fullscreen.cpp
     native/presentation/windows/window_frame.cpp
-    native/presentation/windows/internal_window.cpp
-    native/presentation/windows/lesson_view.cpp
-    native/presentation/windows/cpp_project_view.cpp
-    native/presentation/windows/cpp_fill_view.cpp
-    native/presentation/windows/order_code_view.cpp
-    native/presentation/windows/curricular_image_view.cpp
-    native/presentation/windows/math_puzzle_view.cpp
-    native/presentation/windows/math_expression_editor.cpp
-    native/presentation/windows/native_math_text.cpp
     native/presentation/windows/catalog_view.cpp
-    native/presentation/windows/card_list.cpp
     native/presentation/windows/tools_view.cpp
     native/presentation/windows/graphics_view.cpp
     native/presentation/windows/smo_view.cpp
@@ -199,20 +202,10 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/smo_radix_ablation.cpp
     native/presentation/windows/smo_lazy_task.cpp
     native/presentation/windows/smo_subdivision_task.cpp
-    native/presentation/windows/settings_view.cpp
     native/presentation/windows/audio_course_view.cpp
-    native/presentation/windows/narration_licenses.cpp
-    native/presentation/windows/reading_shade.cpp
-    native/presentation/windows/lesson_reader.cpp
-    native/presentation/windows/icons.cpp
-    native/presentation/windows/native_menu.cpp
-    native/presentation/windows/rich_text.cpp
-    native/presentation/windows/reader_theme.cpp
-    native/presentation/windows/editing_bar.cpp
-    native/presentation/windows/code_gutter.cpp
-    native/presentation/windows/code_editor.cpp)
+    native/presentation/windows/narration_licenses.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme dwmapi)
+    lgaed_curricular_windows lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid uxtheme dwmapi)
 add_executable(lgaed_smo_compile native/tools/smo_compile.cpp)
 target_link_libraries(lgaed_smo_compile PRIVATE lgaed_presentation_windows)
 set_target_properties(lgaed_smo_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -231,10 +224,6 @@ if(_lgaed_task_glslc)
     lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 7 LGAED_SMO_SUBDIVISION_SHADER_ROOT
         smo_float12.inc smo_subdivision_task.inc)
 endif()
-# Standard controls and trackbars require the official v6 activation context.
-# Propagate it to every consumer, including the actual UI regression hosts.
-target_link_options(lgaed_presentation_windows INTERFACE
-    "/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'")
 add_executable(LearnGameAndEngineDev WIN32
     native/presentation/windows/main.cpp
     native/presentation/windows/app.manifest)
@@ -259,6 +248,7 @@ option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
     include(cmake/StateImportTests.cmake)
+    lgaed_add_curricular_reader_test_targets()
     add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)
     target_link_libraries(lgaed_text_semantics_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.text_semantics COMMAND lgaed_text_semantics_tests)
@@ -401,8 +391,6 @@ if(BUILD_TESTING)
         add_test(NAME native.${u6_diagnostic} COMMAND lgaed_u6_diagnostic_runner_tests ${u6_diagnostic})
         set_tests_properties(native.${u6_diagnostic} PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     endforeach()
-    add_executable(lgaed_u6_diagnostic_flow_tests native/presentation/windows/u6_diagnostic_flow_tests.cpp)
-    target_link_libraries(lgaed_u6_diagnostic_flow_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_u6_diagnostic_flow_tests lgaed_compiler_contract_fixtures lgaed_cpp_tool_host lgaed_narration_runtime)
     foreach(u6_flow IN ITEMS declarations interfaces project)
         add_test(NAME native.u6_diagnostic_flow_${u6_flow} COMMAND lgaed_u6_diagnostic_flow_tests ${u6_flow})
@@ -721,8 +709,6 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_u11_names_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_test(NAME native.u11_names_reader COMMAND lgaed_u11_names_reader_tests)
     set_tests_properties(native.u11_names_reader PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
-    add_executable(lgaed_u11_declarations_reader_tests native/presentation/windows/u11_declarations_reader_tests.cpp)
-    target_link_libraries(lgaed_u11_declarations_reader_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_u11_declarations_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_test(NAME native.u11_declarations_reader COMMAND lgaed_u11_declarations_reader_tests)
     set_tests_properties(native.u11_declarations_reader PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
@@ -994,8 +980,6 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_order_code_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.order_code_view COMMAND lgaed_order_code_view_tests)
     set_tests_properties(native.order_code_view PROPERTIES TIMEOUT 40)
-    add_executable(lgaed_lesson_reader_tests native/presentation/windows/lesson_reader_tests.cpp)
-    target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_published_fixtures)

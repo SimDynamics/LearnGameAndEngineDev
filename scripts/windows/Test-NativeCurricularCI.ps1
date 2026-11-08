@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer')]
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild')]
     [string] $Suite = 'StateImport'
 )
 
@@ -21,7 +21,7 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Target = 'lgaed_state_tests'
+            Targets = @('lgaed_state_tests')
             Results = 'state-import'
             Tests = @(
                 'native.remainder_published26_state_import',
@@ -35,7 +35,7 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'narration-player-ci'
             CMakeOption = 'LGAED_NARRATION_PLAYER_QA_ONLY'
-            Target = 'lgaed_narration_player_tests'
+            Targets = @('lgaed_narration_player_tests')
             Results = 'narration-player'
             Tests = @(
                 'native.narration_player_rates',
@@ -43,8 +43,21 @@ $qaSuiteConfig = switch ($Suite) {
             )
         }
     }
+    'ReaderBuild' {
+        @{
+            Directory = 'reader-build-ci'
+            CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
+            Targets = @(
+                'lgaed_lesson_reader_tests',
+                'lgaed_u11_declarations_reader_tests',
+                'lgaed_u6_diagnostic_flow_tests'
+            )
+            Results = 'reader-build'
+        }
+    }
 }
 $qaBuild = Join-Path $qaRoot "out\qa\$($qaSuiteConfig.Directory)"
+$qaBuildTargets = $qaSuiteConfig.Targets -join ' '
 Write-Host "Native QA suite: $Suite"
 $qaVsWhere = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) `
     'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -150,13 +163,38 @@ $qaCommands = @(
     'if errorlevel 1 exit /b %errorlevel%',
     "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`"",
     'if errorlevel 1 exit /b %errorlevel%',
-    "`"$qaCMake`" --build `"$qaBuild`" --target $($qaSuiteConfig.Target) --parallel 2",
+    "`"$qaCMake`" --build `"$qaBuild`" --target $qaBuildTargets --parallel 2",
     'exit /b %errorlevel%'
 )
 $qaCommandFile = Join-Path $env:RUNNER_TEMP "lgaed-$($qaSuiteConfig.Results)-build.cmd"
 [System.IO.File]::WriteAllLines($qaCommandFile, $qaCommands, [System.Text.UTF8Encoding]::new($false))
-& $env:ComSpec /d /v:off /c $qaCommandFile
+New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
+& $env:ComSpec /d /v:off /c $qaCommandFile 2>&1 |
+    Tee-Object -FilePath (Join-Path $qaBuild 'native-build.log') | Write-Host
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite target did not configure or compile." }
+
+if ($Suite -eq 'ReaderBuild') {
+    # Building original executables is evidence of compilation/linkage only.
+    # Do not invoke CTest, create fixtures or claim a reader/audio result here.
+    $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
+        $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
+        if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
+            throw "The linked reader executable is missing: $qaExecutable"
+        }
+        $qaFile = Get-Item -LiteralPath $qaExecutable
+        if ($qaFile.Length -eq 0) { throw "The linked reader executable is empty: $qaExecutable" }
+        [PSCustomObject]@{
+            Target = $qaTarget
+            Bytes = $qaFile.Length
+            SHA256 = (Get-FileHash -LiteralPath $qaExecutable -Algorithm SHA256).Hash
+        }
+    }
+    $qaBuiltTargets | ConvertTo-Json |
+        Set-Content -LiteralPath (Join-Path $qaBuild 'reader-build-results.json') -Encoding utf8
+    $qaBuiltTargets | Format-Table -AutoSize | Out-String | Write-Host
+    Write-Host 'PASS original reader/U6 executables compiled and linked; no reader tests, synthesis or playback executed.'
+    return
+}
 
 $qaListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
 if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused native test registration.' }

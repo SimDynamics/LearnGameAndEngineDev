@@ -1,0 +1,54 @@
+name: Windows curricular reader build
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/windows-reader-build.yml
+      - scripts/windows/Test-NativeCurricularCI.ps1
+      - CMakeLists.txt
+      - cmake/**
+      - toolchains/windows.versions.json
+      - native/core/**
+      - native/platform/windows/**
+      - native/presentation/windows/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-reader-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Compile and link the original reader and U6 tests
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select the declared Python version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Verify tools and compile the three original executables
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
+      - name: Preserve configure and compilation results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-reader-build-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/reader-build-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/reader-build-ci/native-build.log
+            out/qa/reader-build-ci/reader-build-results.json

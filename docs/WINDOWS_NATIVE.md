@@ -140,6 +140,16 @@ de pendientes conserva esas verificaciones por separado.
 
 ### Reproductor real en un runner Windows
 
+Este es un diagnóstico explícito del entorno. En la rama `Codex` se solicita
+mediante un commit cuyo mensaje comience por `qa-audio:`; los pushes ordinarios
+no ejecutan el probe. Su omisión no cuenta como una prueba superada.
+Se conserva también `workflow_dispatch`, disponible
+cuando el archivo exista en la rama predeterminada según el
+[contrato de GitHub](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+El runner necesita una salida de audio utilizable: tener los dos servicios
+activos no demuestra que exista un endpoint. Un probe fallido conserva su fallo
+y no acredita los recorridos pendientes.
+
 El workflow `.github/workflows/windows-narration-player.yml` utiliza
 `Test-NativeCurricularCI.ps1 -Suite NarrationPlayer` y la opción oficial
 `LGAED_NARRATION_PLAYER_QA_ONLY=ON`. Es mutuamente excluyente con la modalidad
@@ -168,6 +178,31 @@ si ya existen, están detenidos y están habilitados. No cambia su tipo de inici
 instala controladores ni crea endpoints. La disponibilidad de reproducción la
 determinan las pruebas del reproductor, no el inventario de dispositivos.
 El workflow conserva los logs y JUnit durante catorce días.
+
+### Compilación de los recorridos curriculares en Windows
+
+El workflow `.github/workflows/windows-reader-build.yml` utiliza
+`Test-NativeCurricularCI.ps1 -Suite ReaderBuild` y la opción oficial
+`LGAED_READER_BUILD_QA_ONLY=ON`, excluyente con los otros modos focales.
+Compila y enlaza los tres ejecutables originales:
+
+- `lgaed_lesson_reader_tests`.
+- `lgaed_u11_declarations_reader_tests`.
+- `lgaed_u6_diagnostic_flow_tests`.
+
+La biblioteca curricular contiene las mismas fuentes de presentación que consume
+la aplicación y mantiene el manifiesto de controles comunes. Se conservan las
+bibliotecas completas de núcleo y plataforma y las comprobaciones del toolchain
+Windows y del perfil C++23. Los shaders de las vistas gráficas y el runtime JVM
+no forman parte del enlace de estos ejecutables; la configuración normal sigue
+preparando sus dependencias y registrando sus pruebas.
+
+Este modo sólo comprueba compilación y enlace. No registra ni ejecuta CTest,
+prepara los fixtures históricos, genera voz ni inicia el lector. Los recorridos
+integrados continúan requiriendo sus fuentes auténticas, runtime y modelos
+verificados, reproducción real y ejecución de cada caso. Los binarios y logs
+quedan bajo `out/qa/reader-build-ci`; el workflow conserva durante catorce días
+la salida de compilación y un JSON con tamaño y SHA-256 de cada ejecutable.
 
 ### Comprobación local de ventanas y datos
 
