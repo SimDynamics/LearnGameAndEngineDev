@@ -133,8 +133,11 @@ try {
     $qaDeadline = [DateTime]::UtcNow.AddSeconds(15)
     do {
         $qaEndpoints = @(Get-PnpDevice -Class AudioEndpoint -PresentOnly -ErrorAction SilentlyContinue)
-        $qaRender = @($qaEndpoints | Where-Object { $_.Status -eq 'OK' -and $_.FriendlyName -like 'CABLE Input*' })
-        if ($qaRender.Count -gt 0) { break }
+        # Friendly names vary by driver and Windows localization. PnP presence
+        # is only a preflight; the real tests enumerate active eRender endpoints
+        # and exercise the default MediaPlayer sink and its actual clock.
+        $qaHealthyEndpoints = @($qaEndpoints | Where-Object { $_.Status -eq 'OK' })
+        if ($qaHealthyEndpoints.Count -gt 0) { break }
         Start-Sleep -Milliseconds 500
     } while ([DateTime]::UtcNow -lt $qaDeadline)
     $qaEndpoints | Select-Object FriendlyName, Status, InstanceId |
@@ -143,8 +146,9 @@ try {
         Where-Object { $_.DeviceID -like '*VBAUDIO*' -or $_.DriverProviderName -like '*VB-Audio*' } |
         Select-Object DeviceName, DeviceID, DriverVersion, DriverProviderName, InfName, IsSigned |
         ConvertTo-Json | Set-Content -LiteralPath (Join-Path $LogDirectory 'installed-driver.json') -Encoding utf8
-    if ($qaRender.Count -eq 0) { throw 'No healthy CABLE Input endpoint appeared after installation.' }
-    Write-Host 'A virtual render endpoint is present. The unchanged MediaPlayer tests must now verify actual playback.'
+    if ($qaHealthyEndpoints.Count -eq 0) { throw 'No healthy audio endpoint appeared after installation.' }
+    $qaEndpoints | Select-Object FriendlyName, Status, InstanceId | Format-Table -AutoSize | Out-String | Write-Host
+    Write-Host 'Audio endpoints are present. The unchanged MediaPlayer tests must verify active render endpoints and actual playback.'
 } finally {
     $qaSetupLog = Join-Path $env:windir 'INF\setupapi.dev.log'
     if (Test-Path -LiteralPath $qaSetupLog -PathType Leaf) {
