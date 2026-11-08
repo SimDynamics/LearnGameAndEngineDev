@@ -979,13 +979,34 @@ void reviewed_u11_math_label_preserves_native_and_imported_state(const std::file
     require(read_bytes(path)==asset,"U11 matching import QA changed the curricular asset");
     std::cout<<"PASS U11 domain label: empty/partial/rejected/successful historical matching payload, original Android fingerprint, independent source/stdin draft, native adoption/reopen and explicit Android import; no invented compiler receipts or playback\n";
 }
-void remainder_editorial_preserves_native_and_imported_state(const std::filesystem::path& base,const std::filesystem::path& before_path){
+void remainder_editorial_preserves_native_and_imported_state(const std::filesystem::path& base,const std::filesystem::path& before_path,
+        const std::filesystem::path& published_after_path={},unsigned published_edges=0){
     using namespace lgaed;using namespace curriculum;using namespace winrt::Windows::Data::Json;
-    const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json";
+    const bool published=!published_after_path.empty();
+    require(published?(published_edges==26||published_edges==30):published_edges==0,
+        "A published remainder import requires its explicit destination and stage 26 or 30");
+    const auto path=published?published_after_path:std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_resto_y_asociacion_en_el_interprete.json";
     const auto before_bytes=read_bytes(before_path),asset=read_bytes(path);
     require(sha256(before_bytes)=="e46f006765a5fa313430b13dd5b1b0a305a6add572beea529fe84f14ab0bf739",
         "The remainder import fixture differs from its pinned Git publication");
+    if(published)require(sha256(asset)==(published_edges==26?
+            "0589de4ab11564c318ff0250ad822e01dbef10b7e2caae58f32d7ac7e20f6770":
+            "be8de9afbb1b2bbb5ac07cacb8e8935b448fae295ca7e5235fc51ddb0a924b49"),
+        "The remainder import destination differs from its complete selected Git publication");
     const auto before=windows::load_lesson(before_path),current=windows::load_lesson(path);
+    if(published){
+        require(before.state_layout.version==2&&current.state_layout.version==2
+            &&before.state_layout.signatures==current.state_layout.signatures,
+            "The published remainder import changed its original v2 family");
+        const auto previous_edges=JsonObject::Parse(winrt::to_hstring(before.state_layout.raw_json)).GetNamedArray(L"editorial");
+        const auto current_edges=JsonObject::Parse(winrt::to_hstring(current.state_layout.raw_json)).GetNamedArray(L"editorial");
+        require(previous_edges.Size()==17&&current_edges.Size()==published_edges,
+            "The remainder import selected another editorial publication");
+        for(unsigned index=0;index<previous_edges.Size();++index)
+            require(previous_edges.GetAt(index).Stringify()==current_edges.GetAt(index).Stringify(),
+                "The remainder import rewrote its complete seventeen-edge editorial prefix");
+    }
     const auto previous_at=stable_block_position(before,"block_0002_0002"),current_at=stable_block_position(current,"block_0002_0002");
     require(previous_at&&current_at&&*previous_at==*current_at&&previous_at->page==2&&previous_at->block==2,
         "The remainder explanation import changed its stable or visible address");
@@ -1003,7 +1024,7 @@ void remainder_editorial_preserves_native_and_imported_state(const std::filesyst
         &&new_text_hash=="0d826e2c9c883119e498ec90650b531ec9fe8a1ed3ae5417dfa653e2f3c7238d"
         &&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(old.raw_json)))=="524e9d5823d04f180a87ea73f34ac891b0d102450036493991026f93ce65ae2e"
         &&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(block.raw_json)))=="f1d3e2efbfd02a258da6416c5de3ad4590e2130eb4db28283f97c4a05b1270c0",
-        "The remainder import did not use the independently authenticated complete editorial pair");
+        "The remainder import changed the authenticated original or revised focal contract");
     StateData current_metadata;prepare_lesson_state(current_metadata,current);
     const auto editor_at=stable_block_position(before,"block_0003_0004");require(editor_at.has_value(),"Remainder import lost the independent compiler editor");
     const auto& editor=before.pages[editor_at->page].blocks[editor_at->block];const auto editor_key=draft_key("programming",before,editor);
@@ -1056,7 +1077,8 @@ void remainder_editorial_preserves_native_and_imported_state(const std::filesyst
         auto adopted=original;validate_lesson_state(adopted,current);require(adopted==original,"Read-only remainder editorial validation modified state");
         prepare_lesson_state(adopted,current);verify(adopted);const auto prepared=adopted;prepare_lesson_state(adopted,current);
         require(adopted==prepared,"Remainder editorial adoption is not idempotent");
-        const auto name=std::string("remainder-editorial-")+mode;StateStore native(base/(name+"-native"));(void)native.load();native.save(adopted);
+        const auto name=(published?std::string("remainder-published")+std::to_string(published_edges):std::string("remainder-editorial"))+'-'+mode;
+        StateStore native(base/(name+"-native"));(void)native.load();native.save(adopted);
         auto native_reopened=native.load();validate_lesson_state(native_reopened,current);verify(native_reopened);
         require(native_reopened==adopted,"Remainder editorial native reopening changed the adopted snapshot");
         const auto exported=base/(name+"-export");export_preferences(exported,original,true);
@@ -1074,14 +1096,19 @@ void remainder_editorial_preserves_native_and_imported_state(const std::filesyst
         }
         ++groups;
     }
+    // General ordinary-explanation revisions are allowed with authored
+    // semantics and an updated editorial proof. These negatives retain the
+    // old proof while tampering with its payload, or replace its activity owner.
     for(const auto identity_drift:{false,true}){
         auto invalid=JsonObject::Parse(winrt::to_hstring(current.raw_json));auto changed=invalid.GetNamedArray(L"pages").GetObjectAt(2).GetNamedArray(L"blocks").GetObjectAt(2);
         if(identity_drift)changed.Insert(L"id",JsonValue::CreateStringValue(L"unrelated_editorial_owner"));
-        else changed.Insert(L"explanation",JsonValue::CreateStringValue(L"Lanzar otra excepción sin la autorización exacta."));
+        else changed.Insert(L"explanation",JsonValue::CreateStringValue(L"Explicación QA modificada sin actualizar su prueba editorial."));
         rejects([&]{(void)windows::parse_lesson_json(winrt::to_string(invalid.Stringify()),"es");});
     }
     require(read_bytes(before_path)==before_bytes&&read_bytes(path)==asset,"Remainder editorial import QA changed fixture or curricular bytes");
-    std::cout<<"PASS integrated U11L16 exception explanation: authenticated prior/current complete payloads, empty/draft/rejected/correct historical orders, opaque attempts and original compiler draft, read-only preview, real Android XML import/archive and Windows reopen; old narration metadata stays old, with no new heard prefix or execution credit. No synthesis/listening claimed\n";
+    std::cout<<"PASS U11L16 exception explanation import "
+        <<(published?"published 17-to-"+std::to_string(published_edges):std::string("against active curriculum"))
+        <<": authenticated historical source and protected destination, empty/draft/rejected/correct historical orders, opaque attempts and original compiler draft, read-only preview, real Android XML import/archive and Windows reopen; old narration metadata stays old, with no new heard prefix or execution credit. No synthesis/listening claimed\n";
 }
 void published_u11_assignment_editorial_preserves_imported_state(const std::filesystem::path& base,
         const std::filesystem::path& before_path,const std::filesystem::path& after_path){
@@ -1654,8 +1681,10 @@ int main(int argc, char** argv) {
     try {
         require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"||std::string_view(argv[2])=="--u11-consult"||std::string_view(argv[2])=="--compiler-reviews"))
             ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names"||std::string_view(argv[2])=="--compiler-contract-import"))
-            ||(argc==5&&std::string_view(argv[2])=="--u11-assignment-editorial"),
-            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture>, --u11-names <before fixture>, --compiler-contract-import <fixture directory> or --u11-assignment-editorial <published before> <published after>");
+            ||(argc==5&&std::string_view(argv[2])=="--u11-assignment-editorial")
+            ||(argc==6&&std::string_view(argv[2])=="--remainder-published"
+                &&(std::string_view(argv[5])=="26"||std::string_view(argv[5])=="30")),
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture>, --u11-names <before fixture>, --compiler-contract-import <fixture directory>, --u11-assignment-editorial <published before> <published after> or --remainder-published <published before> <published after> <26|30>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
@@ -1672,6 +1701,8 @@ int main(int argc, char** argv) {
             }
             else remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
         if(argc==5){published_u11_assignment_editorial_preserves_imported_state(base,argv[3],argv[4]);return 0;}
+        if(argc==6){remainder_editorial_preserves_native_and_imported_state(base,argv[3],argv[4],
+            std::string_view(argv[5])=="26"?26u:30u);return 0;}
         refined_order_state_tests(base);
         all_authored_refined_orders_preserve_state(base);
         reviewed_order_equivalences_preserve_history(base);

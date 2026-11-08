@@ -66,7 +66,7 @@ constexpr std::string_view constants_answer =
 static_assert(constants_output.size() == 809 && constants_answer.size() == 149);
 
 struct ReaderSpec {
-    std::string_view label, token, folder, preference, filename, asset_sha;
+    std::string_view label, token, folder, preference, filename, asset_lf_sha, asset_crlf_sha;
     std::string_view compiler, prediction, reference, following;
     std::size_t compiler_page, prediction_page, reference_page, initial_bytes, reference_bytes;
     std::string_view output, answer, wrong, hidden_first, hidden_second;
@@ -74,7 +74,9 @@ struct ReaderSpec {
 };
 const ReaderSpec declarations{
     "U11L19", "declarations-reader", "u11-declarations-reader", "u11_declarations_reader_qa",
-    "lesson_declaraciones_aceptadas_solo_al_completar.json", "fb5275cf607976cfe5d7e8aeb0ddf940b4253956f1ac2e1453ba499fee5f2c8c",
+    "lesson_declaraciones_aceptadas_solo_al_completar.json",
+    "bfaa88c3f4294c30bf50b58f96aff91fbf71ffdbdfd20c7471d1c71e358c1cb6",
+    "fb5275cf607976cfe5d7e8aeb0ddf940b4253956f1ac2e1453ba499fee5f2c8c",
     "block_0004_0002", "work_u11l19_nombre_y_igual", "block_0007_0001", "block_0005_0001",
     4, 5, 7, 195, 11892, expected_output, prediction_answer,
     "Error: Se esperaba =\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 2\nTabla: salto=2",
@@ -82,7 +84,9 @@ const ReaderSpec declarations{
 };
 const ReaderSpec assignments{
     "U11L20", "assignments-reader", "u11-assignment-compiler-reader", "u11_assignments_reader_qa",
-    "lesson_asignaciones_con_anticipacion_limitada.json", "3b550905c93559ecd2506b2f0c1b49039a375c210dd36e12f60964988cf8e8f4",
+    "lesson_asignaciones_con_anticipacion_limitada.json",
+    "69eef7a0633bafaea663bc5b3bfa23da2a8940cf25ecbbd8af60090587204cf9",
+    "3b550905c93559ecd2506b2f0c1b49039a375c210dd36e12f60964988cf8e8f4",
     "block_0005_0002", "block_0007_0001", "block_0008_0001", "block_0007_0002",
     5, 7, 8, 206, 12442, assignment_output, assignment_answer,
     "Valor: 6\nValor: 2\nError: Se esperaba ;\nValor: 2\nValor: 2\nAceptadas: 4\nRechazadas: 1\nTabla: a=2 b=2",
@@ -90,12 +94,23 @@ const ReaderSpec assignments{
 };
 const ReaderSpec constants{
     "U11L21", "constants-reader", "u11-constants-compiler-reader", "u11_constants_reader_qa",
-    "lesson_constantes_del_lenguaje_y_nombres_predefinidos.json", "6bd8244e3e977ac00ffc8d294b7b43a84e9b2065970a07a403a963c6c5c8414b",
+    "lesson_constantes_del_lenguaje_y_nombres_predefinidos.json",
+    "d444222f6ce6f69436279bee30e734f6fb9823ce7c6df592f6085a07734b04db",
+    "47277feda13e97b2d4862886755e6598483a813c4c8247d978e007d2a370db84",
     "block_0005_0002", "work_u11l21_nombres_completos", "block_0007_0001", "block_0006_0001",
     5, 6, 7, 218, 12921, constants_output, constants_answer,
     "Valor: 3\nValor: 4\nValor: 6\nValor: 4\nValor: 2\nValor: 6\nAceptadas: 6\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) fija2=6(V) Fija=2(C)",
     {}, {}, false
 };
+
+bool audited_source(const std::vector<std::uint8_t>& bytes, const ReaderSpec& spec) {
+    // Complete Git publications also authenticated by compiler_import_fixture_source.py.
+    // U11L21 includes the bibliography/text-semantics revision in 06d31ba73be4b0c7.
+    // Admit only the exact LF and CRLF checkout bytes; never normalize or rewrite
+    // the supplied source, accept mixed endings, or fall back to an older lesson.
+    const auto sha = state::sha256(bytes);
+    return sha == spec.asset_lf_sha || sha == spec.asset_crlf_sha;
+}
 
 std::string visible(std::string value) {
     std::erase(value, '`'); std::erase(value, '\r'); return value;
@@ -220,7 +235,7 @@ struct Harness {
         asset = std::filesystem::path(build::source_root) /
             "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos" / spec.filename;
         original_asset = state::read_bytes(asset);
-        require(state::sha256(original_asset) == spec.asset_sha,
+        require(audited_source(original_asset, spec),
             "The current " + std::string(spec.label) + " snapshot changed; review its exact reader scope before updating this pin");
         lesson = windows::load_lesson(asset);
         const auto token = wide(spec.token) + L"-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64());
@@ -582,7 +597,7 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend, const Re
 int entry_setup_case(const ReaderSpec& spec){
     const auto asset=std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/spec.filename;
-    const auto original=state::read_bytes(asset);require(state::sha256(original)==spec.asset_sha,"The current compiler-reader snapshot differs from its audited revision");
+    const auto original=state::read_bytes(asset);require(audited_source(original,spec),"The current compiler-reader snapshot differs from its audited revision");
     const auto lesson=windows::load_lesson(asset);const auto compiler=position(lesson,spec.compiler),prediction=position(lesson,spec.prediction);
     require(compiler.page==spec.compiler_page&&prediction.page==spec.prediction_page,"The audited compiler/recovery destinations changed");
     if(spec.token==assignments.token){

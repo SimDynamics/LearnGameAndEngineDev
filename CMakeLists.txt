@@ -1503,6 +1503,7 @@ if(BUILD_TESTING)
     target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
     add_dependencies(lgaed_state_tests lgaed_work_exact_editorial_fixtures)
     add_dependencies(lgaed_state_tests lgaed_u11_assignment_published_fixtures)
+    add_dependencies(lgaed_state_tests lgaed_u11_remainder_published_fixtures)
     add_dependencies(lgaed_state_tests lgaed_compiler_import_published_fixtures)
     set(LGAED_U11_NAMES_BEFORE_FILE "${CMAKE_CURRENT_BINARY_DIR}/u11-names-fixtures/before.json")
     add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
@@ -1525,6 +1526,14 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --remainder-editorial "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json")
     set_tests_properties(native.remainder_editorial_state_import PROPERTIES TIMEOUT 120)
+    foreach(remainder_publication IN ITEMS 26 30)
+        add_test(NAME native.remainder_published${remainder_publication}_state_import
+            COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state" --remainder-published
+                "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/before.json"
+                "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published${remainder_publication}.json"
+                "${remainder_publication}")
+        set_tests_properties(native.remainder_published${remainder_publication}_state_import PROPERTIES TIMEOUT 120)
+    endforeach()
     add_test(NAME native.u11_assignment_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --u11-assignment-editorial "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
         "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json")
