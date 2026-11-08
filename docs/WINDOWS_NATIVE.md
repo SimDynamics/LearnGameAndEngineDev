@@ -230,12 +230,17 @@ Se exige su SHA-256 fijo
 `bc44e8974191a5a2427d6c979e2dab08dbb09925f3f435dfa2f0ba3e45b6eb90`.
 Antes de crear un dispositivo, se comprueba la firma Microsoft del catálogo
 `vbaudio_cable64_win10.cat` con la confianza existente de Windows y se utiliza
-SignTool con `/kp` y `/o` para verificar la política kernel de la versión real
-del runner y la pertenencia de `vbMmeCable64_win10.inf` y
+SignTool con `verify /kp /v /c` para verificar la política de firma kernel
+y la pertenencia de `vbMmeCable64_win10.inf` y
 `vbaudio_cable64_win10.sys` al catálogo. La comprobación sigue la
 [verificación de firmas de controladores de Microsoft](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/verifying-the-release-signature)
 y las [opciones de SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool).
 El hash o el nombre del firmante por sí solos no acreditan esa aceptación.
+No combina `/kp` con `/o`: el SignTool del SDK declarado rechaza esa combinación
+durante el análisis de argumentos. Se conserva el comando de verificación de
+release documentado por Microsoft; Windows aplica además su política vigente
+al instalar y cargar el dispositivo. Un fallo de firma o pertenencia detiene
+el proceso y conserva también la ayuda del verificador para diagnosticarlo.
 
 Tras superar esas comprobaciones, `install_ci_audio_device.py` utiliza las APIs
 SetupDi y `UpdateDriverForPlugAndPlayDevicesW` con

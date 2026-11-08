@@ -106,13 +106,18 @@ try {
         $qaSignature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=Microsoft Windows Hardware Compatibility Publisher(,|$)') {
         throw 'The driver catalog lacks a valid Microsoft hardware compatibility publisher signature.'
     }
-    $qaOs = [Environment]::OSVersion.Version
-    $qaPolicyVersion = "2:$($qaOs.Major).$($qaOs.Minor).$($qaOs.Build)"
+    # Use Microsoft's documented release-signature command. This SDK rejects
+    # combining /kp and /o before verification; retain /kp and catalog membership.
+    # Windows also applies its actual installation/loading policy to the device.
     foreach ($qaMemberPath in @($qaInf, $qaSys)) {
         $qaMemberName = [IO.Path]::GetFileName($qaMemberPath)
-        & $SignToolPath verify /kp /v /o $qaPolicyVersion /c $qaCat $qaMemberPath 2>&1 |
+        $qaSignArguments = @('verify', '/kp', '/v', '/c', $qaCat, $qaMemberPath)
+        Write-Host "SignTool arguments: $($qaSignArguments | ConvertTo-Json -Compress)"
+        & $SignToolPath @qaSignArguments 2>&1 |
             Tee-Object -FilePath (Join-Path $LogDirectory "$qaMemberName-signature.log") | Write-Host
         if ($LASTEXITCODE -ne 0) {
+            & $SignToolPath verify /? 2>&1 |
+                Tee-Object -FilePath (Join-Path $LogDirectory 'signtool-verify-help.log') | Write-Host
             throw "Windows kernel trust or catalog membership failed: $qaMemberName"
         }
     }
