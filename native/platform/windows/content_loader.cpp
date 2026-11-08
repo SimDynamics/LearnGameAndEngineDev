@@ -724,53 +724,134 @@ bool bibliography_pair(const JsonObject& before,const JsonObject& after){
     old.Remove(L"explanation");now.Remove(L"explanation");
     return fingerprint(old)==fingerprint(now)&&bibliography::only_parenthetical_locator_removal(old_text,new_text);
 }
-std::optional<StatePositionalReadingPage> constants_positional_reading_page(const JsonObject& root,
+std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const JsonObject& root,
         const JsonObject& metadata,const JsonArray& pages,const StateLayout& layout,std::string_view lesson_id) {
-    constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos";
-    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    if(layout.version!=2||layout.locale!="es")return {};
     // Complete publications: 617f03472d20a97f2e1e110a3233ad11fd966d01 ->
-    // 5d115a0c99c8d2a17d01eee99dfe887247b82dbb. Their raw byte SHA-256s are
-    // 65b1eb97508bfb7f6dbbc695f25c8cfa27994333892878c44c297b7ccea463cc and
-    // d444222f6ce6f69436279bee30e734f6fb9823ce7c6df592f6085a07734b04db.
+    // 5d115a0c99c8d2a17d01eee99dfe887247b82dbb. These three reviewed pages
+    // share one original five-block shape and compiler barrier. Only the
+    // closed source data differs; narration/state behavior is not specialized.
+    struct OriginalBlock {const char* id;unsigned current;const char* sha256;const char* text;};
+    struct Publication {
+        const char* owner;unsigned page_count,page,editorial_count;
+        const char* root_sha;const char* family_sha;const char* origin_sha;const char* current_sha;
+        const char* editorial_sha;const char* before_page_sha;const char* after_page_sha;
+        std::array<OriginalBlock,5> original;
+    };
+    static constexpr std::array<Publication,3> publications{{
+        // U11L19 raw source SHA-256, before and after:
+        // 887dbfb3f98c0f04c92567d2d1a46d82ddb1bd3ebe761ecf60c17a905e1815a0
+        // bfaa88c3f4294c30bf50b58f96aff91fbf71ffdbdfd20c7471d1c71e358c1cb6
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar",8,4,27,
+            "3fd93a03d527f964c4fc161b961e4f5ed5709aa3f352604c3f970a8b84526971",
+            "99f329d08b80347be1a68344d1118176db6248e2fcbefa2018afaf5cd49c4827",
+            "4145af91d344e6ed355078e4bcf990884010c6f7d8137b9615cf810382f5b946",
+            "b462421d7889e1a807cf2bdd273d02ffc15f3a47f96e7210dc8ca2931ac4ecf6",
+            "b9e2415d6071dc940cb642d25b5f833c0f8a3c12b365bfae1a7e0933ce22b934",
+            "a391a98e6f4f958095821d9e0779a5bbe29cc9b0797c0af261d1e3ad93da8ee1",
+            "379916e3512869dbbc9dd826ad3560a8d9ac6311e8ea10a72b68a1fdf9a3a73c",
+            {{
+                {"block_0004_0000",0,"135fd28d6ba91926a222df3438d9b006388766e525008ca0fa206d25dcc428c8",nullptr},
+                {"block_0004_0001",1,"12c57e25c4552fc50fd218cad3bbbdf5293b286eaed8f809eeadac23868ebf8e",
+                    "Integra nombre como unidad y crea como sentencia en tu intérprete.\n\n"
+                    "El texto inicial es \"crea base=4;base*3;crea base=8;base;\".\n\n"
+                    "Debe aceptar 4,12 y4, rechazar la redefinición y conservar base=4.\n\n"
+                    "Recupera tus módulos previos, pero aplica la copia de tabla y la publicación sólo después de ;.\n\n"
+                    "Construye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=4;base*3;crea base=8;base;\", \"crea a=0;a;\", \"crea a=-99-1;a;\", \"crea a=99+1;a;\", \"crea a=100;a;\", \"crea a=a+1;crea a=2;a;\", \"crea a=5\", \"crea dato=3;crea dato2=-dato;dato;dato2;\", en ese orden.\n\n"
+                    "Cada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\n"
+                    "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
+                    "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Nombre no definido, Nombre ya definido, Numero fuera de dominio, Se esperaba ;.\n\n"
+                    "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
+                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación."},
+                {"block_0004_0002",4,"f39ac13f9e47680db14cb9ebf76ec35f3c2af8faf2a67303d1ba6bea3c6a6b7e",nullptr},
+                {"block_0004_0003",2,"e7aabc9464c589e774b7c33dab163ddba3e99d264531a145f058f821015fbd37",
+                    "La batería contrasta cero, extremos de resultado, literal 100 rechazado, autorreferencia sin vínculo previo, terminador ausente y dos nombres cercanos. Cada rechazo conserva la tabla aceptada y permite recuperar su propia frontera; consultar no añade un vínculo provisional."},
+                {"block_0004_0004",3,"958ced4d076334214d50b83ae9037cad847c63adf505c8cf6536ba09f7d2ec8f",
+                    "Criterios: inicialización obligatoria, unicidad, consulta pura, límites heredados, conservación de la tabla tras duplicados/ausencia/mala gramática y continuación por la frontera correcta. Una lectura de EOF es final normal sólo entre operaciones; dentro de una creación incompleta es un rechazo."},
+            }}},
+        // U11L20 raw source SHA-256, before and after:
+        // cde8f8a248fcc8a7eab16033f2e469932eb24929e5fff3cae3d77c688f1338f8
+        // 69eef7a0633bafaea663bc5b3bfa23da2a8940cf25ecbbd8af60090587204cf9
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada",9,5,25,
+            "ee52a84f2abb5a9c5bded4da4bdff2f443dea7d96fe143f43cc1c3f3c84069bf",
+            "5b1700977fc6a022db478e6f8e203e0cf3f6b7c9f10ff591f5e5bff7da493ba8",
+            "fb98f229033bafa190fec6bc841a9abf90685944424c2232a46bd9f674887448",
+            "2c8935ee701c092d3713380bb41ac669ca9559e80e3f4491afb0af92ccdeaf5e",
+            "fcb91d108bf5712ca0237cc74c31003ef316383ffc17e8abef8321375ff3c8ed",
+            "e642593c08552a6a96314bab52207e5a3980648c10c14f7ddd0ea2378b1bbeed",
+            "1a780df3c81825c243f8299f1606af80f0bde2d614d07ef5aa4cde92d7026eaf",
+            {{
+                {"block_0005_0000",0,"49f176a0f0dc9d83d233d3d696d60bc5f2d3cbf2b2ddbc417398f455d1ab2dc7",nullptr},
+                {"block_0005_0001",1,"a1688e271a704709a8d0d44c718727d88d5eea377c7d7fef469ef3de5e3d8db6",
+                    "Integra el despacho de sentencias y la continuación desde un valor en el programa de declaraciones.\n\n"
+                    "Parte de \"crea base=7;base=base+2;base*2+1;base=4 8;base;\".\n\n"
+                    "Debe aceptar 7,9,19 y9, rechazar la asignación incompleta y dejar base=9.\n\n"
+                    "El editor no entrega los módulos; recupera su estructura y comprueba cada frontera.\n\n"
+                    "Construye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=7;base=base+2;base*2+1;base=4 8;base;\", \"crea a=4;a=8/0;a;\", \"crea a=4;a=99+2;a;\", \"a=3;crea a=2;a;\", \"crea a=5;crea b=2;a=b=3;a;b;\", \"crea a=5;a=a+1\", \"crea a=6;a%4*3;\", \"crea paso=5;ausente;paso+1;\", en ese orden.\n\n"
+                    "Cada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\n"
+                    "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
+                    "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Divisor cero, Nombre no definido, Resultado fuera de dominio, Se esperaba ;.\n\n"
+                    "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
+                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación."},
+                {"block_0005_0002",4,"2afd4d309a2571e5ac47d1ad64d809edf3293edce7b2cdd6ead5fd06a0036f08",nullptr},
+                {"block_0005_0003",2,"f0adf115232510b37d472d576dc88da5365c116dcd0442ce33804b674d0ea93f",
+                    "Las variantes de la batería comprueban divisor cero, dominio, destino ausente, asignación encadenada, terminador ausente, continuación multiplicativa y consulta ausente antes de una operación válida. El rechazo no cambia la tabla aceptada; el ; reservado de ausente no debe provocar que se descarte paso+1;."},
+                {"block_0005_0004",3,"933dade08349b80446ed7cad157f0265c082edac8f8cbba9c886788f5eeccdfd",
+                    "Criterios: distinguir creación, modificación y consulta; mantener reserva única; completar el término antes de la expresión; consultar el valor anterior en el lado derecho; publicar sólo después del terminador y conservar la tabla tras cada rechazo. No se promete devolver los caracteres consumidos."},
+            }}},
+        // U11L21 raw source SHA-256, before and after:
+        // 65b1eb97508bfb7f6dbbc695f25c8cfa27994333892878c44c297b7ccea463cc
+        // d444222f6ce6f69436279bee30e734f6fb9823ce7c6df592f6085a07734b04db
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos",8,5,22,
+            "dfdb12121e27374a4cd54db4bd9ec610c08984f6e097c993929710e6dc95a1ca",
+            "3ab92cc5bbda79981a0b6760151cb9c1f420dcd515e0b4e3f802c2182807ba6c",
+            "7f2edabeb9c3e5755411100c43237665324e6ad3b1ac843ccd71634f98b053c3",
+            "e724a0d1a1b61d7df69d8fd2123657712a66c07f7893eb35b471d33f84dfb7d4",
+            "324cd0b445d434d114fd96fa63ae343226e2ade800bdcd90b2bfe8478f0c1abc",
+            "3018c71926e1427c7d31df2f0cb098fd6dc43c0f92e54a22ca11a4552d927ebe",
+            "86441557dd179650e7bb552b2fab9dbc7e3ba85b8aaaf9ae23fde54f13e8e967",
+            {{
+                {"block_0005_0000",0,"150dde3e216aea9ea11f13f43eda55dcdda7792d59f75a80bfa85639f0d6b594",nullptr},
+                {"block_0005_0001",1,"ec1da1e4ab8fc6afbe539e41a6933385d21cfbcf0c5141035484c3c8eb810741",
+                    "Amplía la sesión con la categoría fija y la protección por vínculo.\n\n"
+                    "El caso inicial es \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\".\n\n"
+                    "Debe aceptar 4,6,9,6 y100, rechazar el cambio de limite y conservar copia=6.\n\n"
+                    "No entregues una protección sólo visual: asignar debe rechazar realmente la modificación.\n\n"
+                    "Construye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\", \"fija x=5 2;x;\", \"fija x=unidad;x=x+1;x;\", \"crea unidad=3;unidad;\", \"crea a=limite+1;a;\", \"crea a=1;crea b=2;crea c=3;crea d=4;crea e=5;crea f=6;crea g=7;a;\", en ese orden.\n\n"
+                    "Cada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\n"
+                    "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
+                    "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Nombre constante, Nombre no definido, Nombre ya definido, Resultado fuera de dominio, Se esperaba ;, Tabla llena.\n\n"
+                    "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
+                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.\n\n"
+                    "Cada vínculo añade su marca (V) si es modificable o (C) si es constante.\n\n"
+                    "Cada tabla comienza con unidad=1(C) y limite=100(C), que cuentan dentro de las ocho plazas."},
+                {"block_0005_0002",4,"b31af141cccd6da262f40c46a6d6f3aaf311d8ac6e8fba83a9bf51b65b4bcfdd",nullptr},
+                {"block_0005_0003",2,"6b4b5fda01b16f90576589a4078b992ac0decd104cc57ac58dbc2be228101773",
+                    "Las seis pruebas de la batería comprueban inicializador incompleto, constante protegida, duplicación de predefinido, dominio del resultado y capacidad compartida. La consulta final de a después de rechazar la séptima creación comprueba que el estado aceptado sigue disponible."},
+                {"block_0005_0004",3,"79d1aa206257b8dfdbab019177acba1d2ce2982451349f3d18f89d920210f4f0",
+                    "Criterios: palabras completas, nombres reservados, copia de la política completa, inicialización única de predefinidos, protección antes de escribir, capacidad compartida y aceptación sólo tras ;. La comprobación contrasta sus informes; revisar la implementación sigue siendo necesario para acreditar esos criterios."},
+            }}},
+    }};
+    const auto selected=std::ranges::find_if(publications,[&](const auto& value){return lesson_id==value.owner;});
+    if(selected==publications.end())return {};
+    const auto& published=*selected;const auto page=published.page;const auto& original=published.original;
     // Canonical full-document and page proofs ignore JSON formatting while
     // preserving every value. A later or mixed publication gets no archive.
-    if(pages.Size()!=8||layout.origin.size()!=8||layout.current.size()!=8
-        ||fingerprint(root)!="dfdb12121e27374a4cd54db4bd9ec610c08984f6e097c993929710e6dc95a1ca"
-        ||fingerprint(metadata.GetNamedObject(L"family"))!="3ab92cc5bbda79981a0b6760151cb9c1f420dcd515e0b4e3f802c2182807ba6c"
-        ||fingerprint(array(metadata,"origin"))!="7f2edabeb9c3e5755411100c43237665324e6ad3b1ac843ccd71634f98b053c3"
-        ||fingerprint(array(metadata,"current"))!="e724a0d1a1b61d7df69d8fd2123657712a66c07f7893eb35b471d33f84dfb7d4"
-        ||array(metadata,"editorial").Size()!=22
-        ||fingerprint(array(metadata,"editorial"))!="324cd0b445d434d114fd96fa63ae343226e2ade800bdcd90b2bfe8478f0c1abc"
-        ||fingerprint(pages.GetAt(5))!="86441557dd179650e7bb552b2fab9dbc7e3ba85b8aaaf9ae23fde54f13e8e967")return {};
-    struct OriginalBlock {const char* id;unsigned current;const char* sha256;const char* text;};
-    static constexpr std::array<OriginalBlock,5> original{{
-        {"block_0005_0000",0,"150dde3e216aea9ea11f13f43eda55dcdda7792d59f75a80bfa85639f0d6b594",nullptr},
-        {"block_0005_0001",1,"ec1da1e4ab8fc6afbe539e41a6933385d21cfbcf0c5141035484c3c8eb810741",
-            "Amplía la sesión con la categoría fija y la protección por vínculo.\n\n"
-            "El caso inicial es \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\".\n\n"
-            "Debe aceptar 4,6,9,6 y100, rechazar el cambio de limite y conservar copia=6.\n\n"
-            "No entregues una protección sólo visual: asignar debe rechazar realmente la modificación.\n\n"
-            "Construye una sola batería mediante probar(texto), con lector, tabla y contadores nuevos por llamada. main usa \"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\", \"fija x=5 2;x;\", \"fija x=unidad;x=x+1;x;\", \"crea unidad=3;unidad;\", \"crea a=limite+1;a;\", \"crea a=1;crea b=2;crea c=3;crea d=4;crea e=5;crea f=6;crea g=7;a;\", en ese orden.\n\n"
-            "Cada llamada comienza con Caso N, numerado desde 1; conserva las etiquetas Valor: N, Aceptadas:, Rechazadas: y Tabla:, con un espacio antes de cada vínculo en orden de creación.\n\n"
-            "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
-            "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Nombre constante, Nombre no definido, Nombre ya definido, Resultado fuera de dominio, Se esperaba ;, Tabla llena.\n\n"
-            "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
-            "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.\n\n"
-            "Cada vínculo añade su marca (V) si es modificable o (C) si es constante.\n\n"
-            "Cada tabla comienza con unidad=1(C) y limite=100(C), que cuentan dentro de las ocho plazas."},
-        {"block_0005_0002",4,"b31af141cccd6da262f40c46a6d6f3aaf311d8ac6e8fba83a9bf51b65b4bcfdd",nullptr},
-        {"block_0005_0003",2,"6b4b5fda01b16f90576589a4078b992ac0decd104cc57ac58dbc2be228101773",
-            "Las seis pruebas de la batería comprueban inicializador incompleto, constante protegida, duplicación de predefinido, dominio del resultado y capacidad compartida. La consulta final de a después de rechazar la séptima creación comprueba que el estado aceptado sigue disponible."},
-        {"block_0005_0004",3,"79d1aa206257b8dfdbab019177acba1d2ce2982451349f3d18f89d920210f4f0",
-            "Criterios: palabras completas, nombres reservados, copia de la política completa, inicialización única de predefinidos, protección antes de escribir, capacidad compartida y aceptación sólo tras ;. La comprobación contrasta sus informes; revisar la implementación sigue siendo necesario para acreditar esos criterios."}
-    }};
-    if(layout.origin[5].blocks.size()!=original.size()||layout.current[5].blocks.size()!=original.size())return {};
-    StatePositionalReadingPage result;result.page=5;result.original.stable_id="page_5";
+    if(pages.Size()!=published.page_count||layout.origin.size()!=published.page_count||layout.current.size()!=published.page_count
+        ||page>=pages.Size()||fingerprint(root)!=published.root_sha
+        ||fingerprint(metadata.GetNamedObject(L"family"))!=published.family_sha
+        ||fingerprint(array(metadata,"origin"))!=published.origin_sha
+        ||fingerprint(array(metadata,"current"))!=published.current_sha
+        ||array(metadata,"editorial").Size()!=published.editorial_count
+        ||fingerprint(array(metadata,"editorial"))!=published.editorial_sha
+        ||fingerprint(pages.GetAt(page))!=published.after_page_sha)return {};
+    if(layout.origin[page].blocks.size()!=original.size()||layout.current[page].blocks.size()!=original.size())return {};
+    StatePositionalReadingPage result;result.page=page;result.original.stable_id="page_"+std::to_string(page);
     JsonArray reconstructed;
-    const auto current=array(pages.GetObjectAt(5),"blocks");
+    const auto current=array(pages.GetObjectAt(page),"blocks");
     for(unsigned index=0;index<original.size();++index){
         const auto& item=original[index];
-        if(layout.origin[5].blocks[index]!=item.id||layout.current[5].blocks[item.current]!=item.id)return {};
+        if(layout.origin[page].blocks[index]!=item.id||layout.current[page].blocks[item.current]!=item.id)return {};
         const auto previous=JsonObject::Parse(current.GetObjectAt(item.current).Stringify());
         if(item.text){
             previous.Insert(L"text",JsonValue::CreateStringValue(key(item.text)));
@@ -784,11 +865,11 @@ std::optional<StatePositionalReadingPage> constants_positional_reading_page(cons
         if(fingerprint(previous)!=item.sha256)return {};
         reconstructed.Append(previous);
         const auto raw=utf8(previous.Stringify());auto block=read_block(previous,raw);
-        block.stable_id="block_5_"+std::to_string(index);block.address={5,index,{},result.original.stable_id};
+        block.stable_id="block_"+std::to_string(page)+'_'+std::to_string(index);block.address={page,index,{},result.original.stable_id};
         result.current_owners.emplace_back(item.id);result.original.blocks.push_back(std::move(block));
     }
-    const auto original_page=JsonObject::Parse(pages.GetObjectAt(5).Stringify());original_page.Insert(L"blocks",reconstructed);
-    if(fingerprint(original_page)!="3018c71926e1427c7d31df2f0cb098fd6dc43c0f92e54a22ca11a4552d927ebe")return {};
+    const auto original_page=JsonObject::Parse(pages.GetObjectAt(page).Stringify());original_page.Insert(L"blocks",reconstructed);
+    if(fingerprint(original_page)!=published.before_page_sha)return {};
     return result;
 }
 std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject& metadata,const JsonArray& pages,
@@ -1463,7 +1544,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=composed_feedback_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
-    if(auto positional=constants_positional_reading_page(root,metadata,pages,result,lesson_id))
+    if(auto positional=compiler_positional_reading_page(root,metadata,pages,result,lesson_id))
         result.positional_reading_pages.push_back(std::move(*positional));
     if(!bibliography_edges.empty()){
         collect_actual();auto actual=return_actual_blocks;

@@ -683,7 +683,7 @@ int entry_setup_case(const ReaderSpec& spec){
     return 0;
 }
 int entry_setup_only(){for(const auto* spec:{&declarations,&assignments,&constants})(void)entry_setup_case(*spec);return 0;}
-#include "presentation/windows/u11_constants_historical_reader_test.hpp"
+#include "presentation/windows/u11_compiler_historical_reader_test.hpp"
 } // namespace
 
 int main(int argc, char** argv) {
@@ -691,10 +691,15 @@ int main(int argc, char** argv) {
         try{return entry_setup_only();}
         catch(const std::exception& error){std::cerr<<"FAIL headless assignment entry setup: "<<error.what()<<'\n';return 1;}
     }
-    const bool historical=argc==5&&std::string_view(argv[1])=="--constants-historical";
-    if(historical){if(std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;}
+    const compiler_historical::HistoricalReaderSpec* historical=nullptr;
+    if(argc==5){const std::string_view mode=argv[1];
+        if(mode=="--declarations-historical")historical=&compiler_historical::declarations_source;
+        else if(mode=="--assignments-historical")historical=&compiler_historical::assignments_source;
+        else if(mode=="--constants-historical")historical=&compiler_historical::constants_source;
+        if(!historical||(std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1"))return 2;
+    }
     else if (argc > 2 || (argc == 2 && std::string_view(argv[1]) != "--assignments" && std::string_view(argv[1]) != "--constants")) return 2;
-    const auto& spec = argc == 1 ? declarations : std::string_view(argv[1]) == "--assignments" ? assignments : constants;
+    const auto& spec = historical ? historical->current : argc == 1 ? declarations : std::string_view(argv[1]) == "--assignments" ? assignments : constants;
     std::cout << std::unitbuf; std::cerr << std::unitbuf;
     const auto apartment = OleInitialize(nullptr); if (FAILED(apartment)) return 2;
     INITCOMMONCONTROLSEX common{sizeof(common), ICC_STANDARD_CLASSES}; InitCommonControlsEx(&common);
@@ -703,8 +708,8 @@ int main(int argc, char** argv) {
         require(rich != nullptr, "Cannot load native RichEdit"); reader_theme::prepare_fonts();
         auto backend = std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root) / "out/narration/runtime.json");
         struct Shutdown { std::shared_ptr<windows::NarrationWorker> worker; ~Shutdown() { worker->shutdown(); } } cleanup{backend};
-        if(historical)constants_historical::exercise(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),argv[4][0]-'0');
+        if(historical)compiler_historical::exercise(backend,*historical,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),argv[4][0]-'0');
         else exercise(backend, spec);
-    } catch (const std::exception& error) { std::cerr << "FAIL current " << spec.label << " compiler reader: " << error.what() << '\n'; result = 1; }
+    } catch (const std::exception& error) { std::cerr << "FAIL " << (historical?"historical ":"current ") << spec.label << " compiler reader: " << error.what() << '\n'; result = 1; }
     if (rich) FreeLibrary(rich); OleUninitialize(); return result;
 }
