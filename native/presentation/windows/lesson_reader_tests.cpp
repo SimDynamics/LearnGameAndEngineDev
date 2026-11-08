@@ -14,6 +14,7 @@
 #include "core/retirement_test_fixture.hpp"
 #include "core/math_label_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "core/narration_state.hpp"
 #include "core/narration_speed.hpp"
 #include "native_build_config.hpp"
@@ -2487,7 +2488,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool u11_domain_revision_only=argc==2&&std::string_view(argv[1])=="--u11-domain-revision";
     const bool u11_domain_race_only=argc==2&&std::string_view(argv[1])=="--u11-domain-race";
     const bool u11_consult_revision_only=argc==2&&std::string_view(argv[1])=="--u11-consult-revision";
-    const bool u11_assignment_revision_only=argc==5&&std::string_view(argv[1])=="--u11-assignment-revision";
+    const bool u11_assignment_published=argc==5&&std::string_view(argv[1])=="--u11-assignment-published";
+    const bool u11_assignment_revision_only=argc==5&&(std::string_view(argv[1])=="--u11-assignment-revision"||u11_assignment_published);
     if(u11_assignment_revision_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
     const bool u11_literal_spacing_only=argc==5&&std::string_view(argv[1])=="--u11-literal-spacing-revision";
     if(u11_literal_spacing_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
@@ -2545,7 +2547,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(u11_domain_revision_only){u11_domain_label_reader_revision(backend);return 0;}
         if(u11_domain_race_only){u11_domain_label_reader_revision(backend,true);return 0;}
         if(u11_consult_revision_only){u11_consult_choice_reader_revision(backend);return 0;}
-        if(u11_assignment_revision_only){u11_assignment_editorial_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
+        if(u11_assignment_revision_only){u11_assignment_editorial_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u11_assignment_published);return 0;}
         if(u11_literal_spacing_only){u11_literal_spacing_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
         if(u12_file_format_only){u12_file_format_reader(backend,static_cast<std::size_t>(argv[2][0]-'0'));return 0;}
         if(u12_file_roundtrip_only){current_u12_file_roundtrip_reader(backend);return 0;}

@@ -978,6 +978,7 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_published_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_session_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_append_hypothesis_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_output_fixtures)
@@ -1062,6 +1063,11 @@ if(BUILD_TESTING)
                 "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-before.json"
                 "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-after.json" ${assignment_reader_phase})
         set_tests_properties(native.u11_assignment_editorial_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+        add_test(NAME native.u11_assignment_published_reader_${assignment_reader_phase}
+            COMMAND lgaed_lesson_reader_tests --u11-assignment-published
+                "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
+                "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json" ${assignment_reader_phase})
+        set_tests_properties(native.u11_assignment_published_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     endforeach()
     add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
     set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)

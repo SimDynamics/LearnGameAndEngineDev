@@ -2,13 +2,40 @@
 // Included after the private reader Fixture. The two answers below use actual
 // lesson controls; every listening bookmark comes from real PCM playback.
 void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
-        const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase){
+        const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase,bool published=false){
     check(phase<2,"Invalid assignment reader phase");
+    const auto publication=published?"published21-to25":"candidate20-to24";
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
-    check(state::sha256(before_bytes)=="dfbbac04b7a04df14f09c88b4b7b84ed59ab2e6b4b13fc1261d042d93b743fe0"
-        &&state::sha256(after_bytes)=="768458f3b6b8d646dcd44fe154b5f264f31f6eb2c3851bb36c5442ebad700157",
+    check(state::sha256(before_bytes)==(published?"9d884b47683e4e2f3891f572dab8456dcf7e8d6af65bbd33b7c8707f46ea6db8":
+            "dfbbac04b7a04df14f09c88b4b7b84ed59ab2e6b4b13fc1261d042d93b743fe0")
+        &&state::sha256(after_bytes)==(published?"69eef7a0633bafaea663bc5b3bfa23da2a8940cf25ecbbd8af60090587204cf9":
+            "768458f3b6b8d646dcd44fe154b5f264f31f6eb2c3851bb36c5442ebad700157"),
         "Assignment reader fixtures differ from the reviewed complete Git documents");
     const auto original=windows::load_lesson(before_path),current=windows::load_lesson(after_path);
+    check(original.id=="cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada"
+        &&current.id==original.id&&original.locale=="es"&&current.locale=="es"
+        &&original.state_layout.version==2&&current.state_layout.version==2
+        &&original.state_layout.lineage==current.state_layout.lineage
+        &&original.state_layout.signatures==current.state_layout.signatures,
+        "Assignment reading changed its Spanish family or response contracts");
+    using winrt::Windows::Data::Json::JsonObject;
+    const auto old_edges=JsonObject::Parse(winrt::to_hstring(original.state_layout.raw_json)).GetNamedArray(L"editorial");
+    const auto new_edges=JsonObject::Parse(winrt::to_hstring(current.state_layout.raw_json)).GetNamedArray(L"editorial");
+    check(old_edges.Size()==(published?21u:20u)&&new_edges.Size()==old_edges.Size()+4,
+        "Assignment reading selected a different editorial transition");
+    for(unsigned i=0;i<old_edges.Size();++i)check(old_edges.GetAt(i).Stringify()==new_edges.GetAt(i).Stringify(),
+        "Assignment reading rewrote the original editorial prefix");
+    const auto archive=std::ranges::find(current.state_layout.reading_revisions,
+        static_cast<std::size_t>(old_edges.Size()),&curriculum::StateReadingRevision::editorial_prefix);
+    check(archive!=current.state_layout.reading_revisions.end()&&archive->previous_blocks.size()==4,
+        "Assignment reading cannot authenticate all four owners at its selected source publication");
+    for(const auto identity:{"block_0002_0003","block_0004_0001","block_0004_0002","block_0007_0001"}){
+        const auto at=identity_position(original,identity);const auto previous=archive->previous_blocks.find(identity);
+        check(previous!=archive->previous_blocks.end()
+            &&test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(previous->second)))
+                ==test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(original.pages[at.page].blocks[at.block].raw_json))),
+            "Assignment reading archive differs from the complete original activity");
+    }
     const auto predicted_at=identity_position(original,"block_0004_0001"),choice_at=identity_position(original,"block_0004_0002");
     const auto draft_at=identity_position(original,"block_0005_0002");
     const auto& predicted=original.pages[predicted_at.page].blocks[predicted_at.block];
@@ -29,7 +56,7 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
     state::Draft draft;draft.source=draft_owner.initial_code+"\n// QA: borrador independiente\n";
     draft.input=" entrada\t\r\n";draft.indentation_json=state::make_indentation_metadata(draft.source,{});
     draft.selection_start=2;draft.selection_end=9;
-    const auto cache=std::filesystem::path(build::source_root)/"out/qa/u11-assignment-reader"/
+    const auto cache=std::filesystem::path(build::source_root)/"out/qa/u11-assignment-reader"/publication/
         ("pcm-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64())+"-"+std::to_string(phase));
     Fixture f(backend,false,true,true,"es",original,true,4,true,true,[](HWND view){
         update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
@@ -39,7 +66,7 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
     struct FailureShutdown {std::shared_ptr<windows::NarrationWorker> worker;
         ~FailureShutdown(){if(std::uncaught_exceptions())worker->shutdown();}
     } failure_shutdown{backend};
-    std::cout<<"PHASE assignment "<<phase<<" actual controls and original speech\n";
+    std::cout<<"PHASE assignment "<<publication<<' '<<phase<<" actual controls and original speech\n";
     check(!IsWindowVisible(f.host)&&lesson_page_state(f.view).index==4
         &&narration::read_history(read_lesson_state(f.view)).entries.empty(),
         "Assignment reader QA became visible, opened another page or seeded listening");
@@ -201,7 +228,7 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
             "Assignment page finished before the revised explanations actually played");
         preserve();
     }
-    std::cout<<"PASS U11L20 p5 editorial reader phase "<<phase<<": real answered controls and PCM pause; "
+    std::cout<<"PASS U11L20 p5 "<<publication<<" editorial reader phase "<<phase<<": real answered controls and PCM pause; "
         <<(phase==0?"unchanged question offset/certificate retained":"changed explanations revisited with zero inherited hearing and fully played")
         <<"; one bounded slot, silent durable reopen, original WAVs/draft/responses intact. No imports, educational compiler runs, full-lesson or human-listening acceptance claimed.\n";
 }
