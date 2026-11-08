@@ -403,6 +403,71 @@ que supere las tres fases acredita ese recorrido con el dispositivo observado,
 sin atribuir escucha humana, validación acústica, ejecución del compilador
 educativo ni aceptación de los demás recorridos curriculares.
 
+### Recorridos editoriales, compiladores históricos y diagnósticos de U6
+
+El workflow `.github/workflows/windows-curricular-readers.yml` ejecuta los
+recorridos originales en tres runners Windows independientes. Se solicita
+mediante un commit de `Codex` cuyo mensaje comience por
+`qa-curricular-readers:` o mediante `workflow_dispatch` cuando esté disponible
+en la rama predeterminada. Los pushes ordinarios no lo activan.
+
+Cada job comprueba primero el dispositivo firmado con
+`-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres
+pruebas prepara un runtime nuevo y ejecuta la suite asignada. Los jobs no
+comparten perfiles, grabaciones ni runtime; un fallo de un grupo no cancela
+los otros. Cada grupo ejecuta sus casos en serie y conserva los límites de
+tiempo originales de CTest.
+
+| Suite | Modo CMake | Recorridos originales | Directorio bajo `out/qa/` |
+|---|---|---|---|
+| `U11EditorialReader` | `LGAED_U11_EDITORIAL_READER_QA_ONLY` | Diez: asignaciones publicadas, fases 0–5; resto, publicaciones 26 y 30, fases 0–1 | `u11-editorial-reader-ci` |
+| `CompilerHistoricalReader` | `LGAED_COMPILER_HISTORICAL_READER_QA_ONLY` | Catorce: declaraciones, asignaciones y constantes, fases 0–1; sesión y caracteres, fases 0–3 | `compiler-historical-reader-ci` |
+| `U6DiagnosticReader` | `LGAED_U6_DIAGNOSTIC_READER_QA_ONLY` | Tres: declaraciones, interfaces y proyecto; doce diagnósticos curriculares en total | `u6-diagnostic-reader-ci` |
+
+Desde el checkout de un runner hospedado nuevo, este ejemplo ejecuta el grupo
+editorial completo:
+
+```powershell
+$ErrorActionPreference = 'Stop'
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite U11EditorialReader
+```
+
+Para los compiladores históricos, en otro runner nuevo:
+
+```powershell
+$ErrorActionPreference = 'Stop'
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite CompilerHistoricalReader
+```
+
+Para los diagnósticos de U6, también en su propio runner nuevo:
+
+```powershell
+$ErrorActionPreference = 'Stop'
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite U6DiagnosticReader
+```
+
+La preparación de síntesis rechaza destinos ya existentes para conservar los
+datos; no se encadenan estas tres suites dentro del mismo checkout.
+
+Los modos focales utilizan las bibliotecas y controles de producción, los
+ejecutables originales, Kokoro/Dora y los recursos autenticados. Los fixtures
+se exportan de la historia Git completa mediante los mismos generadores que
+el build habitual. Se conserva la procedencia de las respuestas ordinarias
+de preparación QA; los objetivos del compilador y la escucha se acreditan
+mediante las ejecuciones y reproducciones reales que exige cada prueba.
+La configuración debe registrar exactamente los casos de su grupo: una prueba
+ausente, un fallo de preparación o un error de CTest detienen ese job.
+
+Los artefactos de cada grupo conservan durante catorce días los logs de
+preparación, compilación, audio y pruebas, sus informes JUnit y los manifiestos
+de fuentes y herramientas. Los resultados sólo acreditan los casos ejecutados
+correctamente y su versión; la compilación por sí sola no acredita esos
+recorridos. La revisión visual y la escucha humana durante el estudio mantienen
+su alcance propio.
+
 ### Comprobación local de ventanas y datos
 
 Para comprobar ventanas y datos aislados de un ejecutable ya compilado:

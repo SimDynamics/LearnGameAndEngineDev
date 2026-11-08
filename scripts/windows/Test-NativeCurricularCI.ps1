@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker', 'U12Reader')]
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker', 'U12Reader',
+        'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
     [string] $Suite = 'StateImport',
     [switch] $VirtualAudio
 )
@@ -83,6 +84,63 @@ $qaSuiteConfig = switch ($Suite) {
                 'native.u12_composed_output_published17_reader_0',
                 'native.u12_composed_output_published17_reader_1',
                 'native.u12_composed_output_published17_reader_2'
+            )
+        }
+    }
+    'U11EditorialReader' {
+        @{
+            Directory = 'u11-editorial-reader-ci'
+            CMakeOption = 'LGAED_U11_EDITORIAL_READER_QA_ONLY'
+            Targets = @('lgaed_lesson_reader_tests')
+            Results = 'u11-editorial-reader'
+            Tests = @(
+                'native.u11_assignment_published_reader_0',
+                'native.u11_assignment_published_reader_1',
+                'native.u11_assignment_published_reader_2',
+                'native.u11_assignment_published_reader_3',
+                'native.u11_assignment_published_reader_4',
+                'native.u11_assignment_published_reader_5',
+                'native.u11_remainder_published26_reader_0',
+                'native.u11_remainder_published26_reader_1',
+                'native.u11_remainder_published30_reader_0',
+                'native.u11_remainder_published30_reader_1'
+            )
+        }
+    }
+    'CompilerHistoricalReader' {
+        @{
+            Directory = 'compiler-historical-reader-ci'
+            CMakeOption = 'LGAED_COMPILER_HISTORICAL_READER_QA_ONLY'
+            Targets = @('lgaed_u11_declarations_reader_tests')
+            Results = 'compiler-historical-reader'
+            Tests = @(
+                'native.u11_declarations_historical_reader_0',
+                'native.u11_declarations_historical_reader_1',
+                'native.u11_assignments_historical_reader_0',
+                'native.u11_assignments_historical_reader_1',
+                'native.u11_constants_historical_reader_0',
+                'native.u11_constants_historical_reader_1',
+                'native.u11_session_historical_reader_0',
+                'native.u11_session_historical_reader_1',
+                'native.u11_session_historical_reader_2',
+                'native.u11_session_historical_reader_3',
+                'native.u12_characters_historical_reader_0',
+                'native.u12_characters_historical_reader_1',
+                'native.u12_characters_historical_reader_2',
+                'native.u12_characters_historical_reader_3'
+            )
+        }
+    }
+    'U6DiagnosticReader' {
+        @{
+            Directory = 'u6-diagnostic-reader-ci'
+            CMakeOption = 'LGAED_U6_DIAGNOSTIC_READER_QA_ONLY'
+            Targets = @('lgaed_u6_diagnostic_flow_tests')
+            Results = 'u6-diagnostic-reader'
+            Tests = @(
+                'native.u6_diagnostic_flow_declarations',
+                'native.u6_diagnostic_flow_interfaces',
+                'native.u6_diagnostic_flow_project'
             )
         }
     }
@@ -186,7 +244,8 @@ $qaPython = (Get-Command python.exe -CommandType Application -ErrorAction Stop |
 $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $qaRuntimeOptions = ''
 $qaRuntimePaths = @()
-if ($Suite -in @('NarrationWorker', 'U12Reader')) {
+if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
+    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
     # This job uses a new checkout with no restored runtime or audio caches.
     # Existing QA/user data is never removed to manufacture a first generation.
     $qaResourceRoot = Join-Path $qaRoot 'out\qa\narration-ci-resources'
@@ -272,7 +331,8 @@ if ($qaActualTests.Count -ne $qaExpected.Count -or
     throw "The focused $Suite configuration must register exactly its $($qaExpected.Count) declared tests."
 }
 
-if ($Suite -in @('NarrationPlayer', 'U12Reader')) {
+if ($Suite -in @('NarrationPlayer', 'U12Reader', 'U11EditorialReader',
+    'CompilerHistoricalReader', 'U6DiagnosticReader')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
     # service is preparation; the opt-in endpoint evaluation is a separate step.
     & {

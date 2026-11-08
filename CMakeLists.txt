@@ -18,9 +18,17 @@ option(LGAED_NARRATION_WORKER_QA_ONLY
     "Build and test real Spanish Kokoro synthesis and playback failure diagnostics without a reader or audio endpoint" OFF)
 option(LGAED_U12_READER_QA_ONLY
     "Build and run the three original U12L4 published-seventeen reader regressions with real Kokoro playback" OFF)
+option(LGAED_U11_EDITORIAL_READER_QA_ONLY
+    "Build and run the ten original published U11 editorial reader regressions with real Kokoro playback" OFF)
+option(LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
+    "Build and run the fourteen original historical compiler reader regressions with real Kokoro playback" OFF)
+option(LGAED_U6_DIAGNOSTIC_READER_QA_ONLY
+    "Build and run the three original U6 diagnostic reader flows with real Kokoro playback" OFF)
 set(_lgaed_qa_mode_count 0)
 foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
-        LGAED_READER_BUILD_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY)
+        LGAED_READER_BUILD_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
+        LGAED_U11_EDITORIAL_READER_QA_ONLY LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
+        LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     if(${_mode})
         math(EXPR _lgaed_qa_mode_count "${_lgaed_qa_mode_count} + 1")
     endif()
@@ -156,22 +164,43 @@ if(LGAED_NARRATION_WORKER_QA_ONLY)
 endif()
 
 include(cmake/CurricularWindows.cmake)
-if(LGAED_U12_READER_QA_ONLY)
+if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
+        OR LGAED_COMPILER_HISTORICAL_READER_QA_ONLY OR LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
-        message(FATAL_ERROR "Focused U12 reader QA requires BUILD_TESTING=ON.")
+        message(FATAL_ERROR "Focused curricular reader QA requires BUILD_TESTING=ON.")
     endif()
     if(NOT IS_DIRECTORY "${LGAED_NARRATION_RESOURCES}" OR NOT IS_DIRECTORY "${LGAED_ENGLISH_RESOURCES}")
-        message(FATAL_ERROR "Focused U12 reader QA requires existing authenticated Kokoro and English resource directories.")
+        message(FATAL_ERROR "Focused curricular reader QA requires existing authenticated Kokoro and English resource directories.")
     endif()
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     include(cmake/NarrationRuntime.cmake)
     lgaed_add_narration_runtime(NarrationHost)
     lgaed_add_curricular_reader_test_targets()
-    add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
-    include(cmake/U12PublishedReaderTests.cmake)
-    lgaed_add_u12_published_reader_tests()
-    message(STATUS "Focused U12 reader QA: three original published-seventeen reader phases with real Kokoro playback; requires an active Windows render endpoint, without application, shaders or numerical backends.")
+    if(LGAED_U12_READER_QA_ONLY)
+        add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+        include(cmake/U12PublishedReaderTests.cmake)
+        lgaed_add_u12_published_reader_tests()
+        message(STATUS "Focused U12 reader QA: three original published-seventeen reader phases with real Kokoro playback.")
+    elseif(LGAED_U11_EDITORIAL_READER_QA_ONLY)
+        add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+        include(cmake/StateImportTests.cmake)
+        include(cmake/U11EditorialReaderTests.cmake)
+        lgaed_add_u11_editorial_reader_tests()
+        message(STATUS "Focused U11 editorial reader QA: ten original published assignment/remainder phases with real Kokoro playback.")
+    elseif(LGAED_COMPILER_HISTORICAL_READER_QA_ONLY)
+        add_dependencies(lgaed_u11_declarations_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
+        include(cmake/StateImportTests.cmake)
+        include(cmake/CompilerHistoricalReaderTests.cmake)
+        lgaed_add_compiler_historical_reader_tests()
+        message(STATUS "Focused compiler historical reader QA: fourteen original U11/U12 phases with real compilation and Kokoro playback.")
+    else()
+        include(cmake/CompilerContractFixtures.cmake)
+        include(cmake/U6DiagnosticReaderTests.cmake)
+        lgaed_add_u6_diagnostic_reader_tests()
+        message(STATUS "Focused U6 diagnostic reader QA: three original flows covering twelve diagnostics with real compilation and Kokoro playback.")
+    endif()
+    message(STATUS "Focused curricular reader QA requires an active Windows render endpoint; no application, shaders or numerical backends are configured.")
     return()
 endif()
 
@@ -397,22 +426,7 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_lesson_page_reach_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.lesson_page_reach COMMAND lgaed_lesson_page_reach_tests)
     set_tests_properties(native.lesson_page_reach PROPERTIES TIMEOUT 30)
-    set(LGAED_COMPILER_CONTRACT_FIXTURES
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/crt-b9e32b9/lesson_clasificar_caracteres_y_normalizar_una_copia.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-585cef9/lesson_compartir_flujos_sin_acoplar_el_calculo.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/exit-l26-e8389c8/lesson_construir_un_programa_de_carga_y_guardado.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-diagnostics-e8389c8/lesson_declaraciones_y_firmas.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-diagnostics-e8389c8/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-diagnostics-e8389c8/lesson_construir_un_proyecto_desde_su_interfaz.json")
-    add_custom_command(OUTPUT ${LGAED_COMPILER_CONTRACT_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_contract_fixture_source.py"
-            --output-dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_contract_fixture_source.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        COMMENT "Verifying immutable pre-adoption compiler contracts from local Git"
-        VERBATIM)
-    add_custom_target(lgaed_compiler_contract_fixtures DEPENDS ${LGAED_COMPILER_CONTRACT_FIXTURES})
+    include(cmake/CompilerContractFixtures.cmake)
     add_executable(lgaed_u6_diagnostic_source_tests native/core/u6_diagnostic_source_tests.cpp)
     target_link_libraries(lgaed_u6_diagnostic_source_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_u6_diagnostic_source_tests lgaed_compiler_contract_fixtures)
@@ -437,11 +451,8 @@ if(BUILD_TESTING)
         add_test(NAME native.${u6_diagnostic} COMMAND lgaed_u6_diagnostic_runner_tests ${u6_diagnostic})
         set_tests_properties(native.${u6_diagnostic} PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     endforeach()
-    add_dependencies(lgaed_u6_diagnostic_flow_tests lgaed_compiler_contract_fixtures lgaed_cpp_tool_host lgaed_narration_runtime)
-    foreach(u6_flow IN ITEMS declarations interfaces project)
-        add_test(NAME native.u6_diagnostic_flow_${u6_flow} COMMAND lgaed_u6_diagnostic_flow_tests ${u6_flow})
-        set_tests_properties(native.u6_diagnostic_flow_${u6_flow} PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
-    endforeach()
+    include(cmake/U6DiagnosticReaderTests.cmake)
+    lgaed_add_u6_diagnostic_reader_tests()
     add_executable(lgaed_u12l26_exit_tests native/platform/windows/u12l26_exit_tests.cpp)
     target_link_libraries(lgaed_u12l26_exit_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_u12l26_exit_tests lgaed_cpp_tool_host lgaed_compiler_contract_fixtures)
@@ -1012,8 +1023,6 @@ if(BUILD_TESTING)
     set_tests_properties(native.order_code_view PROPERTIES TIMEOUT 40)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
-    add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_published_fixtures)
-    add_dependencies(lgaed_lesson_reader_tests lgaed_u11_remainder_published_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_session_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_append_hypothesis_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_output_fixtures)
@@ -1095,24 +1104,8 @@ if(BUILD_TESTING)
                 "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-after.json" ${assignment_reader_phase})
         set_tests_properties(native.u11_assignment_editorial_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     endforeach()
-    foreach(assignment_reader_phase RANGE 0 5)
-        add_test(NAME native.u11_assignment_published_reader_${assignment_reader_phase}
-            COMMAND lgaed_lesson_reader_tests --u11-assignment-published
-                "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
-                "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json" ${assignment_reader_phase})
-        set_tests_properties(native.u11_assignment_published_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
-    endforeach()
-    foreach(remainder_publication IN ITEMS 26 30)
-        foreach(remainder_reader_phase RANGE 0 1)
-            add_test(NAME native.u11_remainder_published${remainder_publication}_reader_${remainder_reader_phase}
-                COMMAND lgaed_lesson_reader_tests --u11-remainder-published
-                    "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/before.json"
-                    "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published${remainder_publication}.json"
-                    ${remainder_publication} ${remainder_reader_phase})
-            set_tests_properties(native.u11_remainder_published${remainder_publication}_reader_${remainder_reader_phase}
-                PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
-        endforeach()
-    endforeach()
+    include(cmake/U11EditorialReaderTests.cmake)
+    lgaed_add_u11_editorial_reader_tests()
     add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
     set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     add_executable(lgaed_current_reference_reader_tests native/presentation/windows/current_reference_reader_tests.cpp)
@@ -1472,43 +1465,8 @@ if(BUILD_TESTING)
     add_test(NAME native.cpp_project_internal_dialogs COMMAND lgaed_cpp_project_view_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history" --internal-dialogs)
     set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
     set_tests_properties(native.cpp_project_view PROPERTIES TIMEOUT 120)
-    add_dependencies(lgaed_u11_declarations_reader_tests lgaed_compiler_import_published_fixtures)
-    foreach(compiler_reader IN ITEMS declarations assignments constants)
-        if(compiler_reader STREQUAL "declarations")
-            set(compiler_reader_lesson u11l19)
-        elseif(compiler_reader STREQUAL "assignments")
-            set(compiler_reader_lesson u11l20)
-        else()
-            set(compiler_reader_lesson u11l21)
-        endif()
-        foreach(compiler_reader_phase RANGE 0 1)
-            add_test(NAME native.u11_${compiler_reader}_historical_reader_${compiler_reader_phase}
-                COMMAND lgaed_u11_declarations_reader_tests --${compiler_reader}-historical
-                    "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_reader_lesson}-before.json"
-                    "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_reader_lesson}-after.json"
-                    "${compiler_reader_phase}")
-            set_tests_properties(native.u11_${compiler_reader}_historical_reader_${compiler_reader_phase}
-                PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
-        endforeach()
-    endforeach()
-    foreach(compiler_reader IN ITEMS session characters)
-        if(compiler_reader STREQUAL "session")
-            set(compiler_reader_unit u11)
-            set(compiler_reader_lesson u11l22)
-        else()
-            set(compiler_reader_unit u12)
-            set(compiler_reader_lesson u12l20)
-        endif()
-        foreach(compiler_reader_phase RANGE 0 3)
-            add_test(NAME native.${compiler_reader_unit}_${compiler_reader}_historical_reader_${compiler_reader_phase}
-                COMMAND lgaed_u11_declarations_reader_tests --${compiler_reader}-historical
-                    "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_reader_lesson}-before.json"
-                    "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_reader_lesson}-after.json"
-                    "${compiler_reader_phase}")
-            set_tests_properties(native.${compiler_reader_unit}_${compiler_reader}_historical_reader_${compiler_reader_phase}
-                PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
-        endforeach()
-    endforeach()
+    include(cmake/CompilerHistoricalReaderTests.cmake)
+    lgaed_add_compiler_historical_reader_tests()
     add_test(NAME native.compiler_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_import_fixtures.py)
     set_tests_properties(native.compiler_import_fixtures PROPERTIES TIMEOUT 120)

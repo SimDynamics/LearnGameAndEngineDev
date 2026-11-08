@@ -1,0 +1,83 @@
+name: Windows curricular readers evaluation
+
+on:
+  push:
+    branches: [Codex]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-curricular-readers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Original readers (${{ matrix.suite }})
+    # Each group evaluates the signed endpoint on a fresh, disposable runner.
+    # This opt-in does not authorize recurring professional use of VB-CABLE.
+    if: github.ref == 'refs/heads/Codex' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'qa-curricular-readers:'))
+    runs-on: windows-2025-vs2026
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: U11EditorialReader
+            directory: u11-editorial-reader-ci
+            results: u11-editorial-reader
+            timeout: 70
+          - suite: CompilerHistoricalReader
+            directory: compiler-historical-reader-ci
+            results: compiler-historical-reader
+            timeout: 150
+          - suite: U6DiagnosticReader
+            directory: u6-diagnostic-reader-ci
+            results: u6-diagnostic-reader
+            timeout: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select the declared Python version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Verify signatures, install the endpoint and run the three original player tests
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio
+      - name: Run the original reader tests with fresh Kokoro resources
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ${{ matrix.suite }}
+      - name: Preserve installation, sources, build and native test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-${{ matrix.results }}-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/narration-player-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/narration-player-ci/native-build.log
+            out/qa/narration-player-ci/CTestTestfile.cmake
+            out/qa/narration-player-ci/Testing/Temporary/*.log
+            out/qa/narration-player-ci/audio-environment.log
+            out/qa/narration-player-ci/narration-player-results.xml
+            out/qa/narration-player-ci/narration-player-results.log
+            out/qa/narration-player-ci/virtual-audio/*.log
+            out/qa/narration-player-ci/virtual-audio/*.json
+            out/qa/${{ matrix.directory }}/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/${{ matrix.directory }}/native-build.log
+            out/qa/${{ matrix.directory }}/CTestTestfile.cmake
+            out/qa/${{ matrix.directory }}/Testing/Temporary/*.log
+            out/qa/${{ matrix.directory }}/audio-environment.log
+            out/qa/${{ matrix.directory }}/narration-tool-archives.json
+            out/qa/${{ matrix.directory }}/narration-resources.log
+            out/qa/${{ matrix.directory }}/test-fixtures/**/manifest.json
+            out/qa/${{ matrix.directory }}/${{ matrix.results }}-results.xml
+            out/qa/${{ matrix.directory }}/${{ matrix.results }}-results.log
+            out/narration/worker-stderr.log
