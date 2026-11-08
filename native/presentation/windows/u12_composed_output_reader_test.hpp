@@ -1,15 +1,17 @@
 #pragma once
-// Full published documents exercise the first/current stable-layout adoption. The
+// Full published documents exercise the first/current/published17 adoption. The
 // independent compiler draft is explicitly QA data; answers/audio are real.
 void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
-        const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase,bool current_stage=false) {
-    check(phase<3,"Invalid composed-output reader phase");
-    const auto stage_name=current_stage?"current15":"historical8";
+        const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase,
+        bool current_stage=false,bool published17_stage=false) {
+    check(phase<3&&(!published17_stage||current_stage),"Invalid composed-output reader phase or publication");
+    const auto stage_name=published17_stage?"published17":current_stage?"current15":"historical8";
     const auto before_bytes=state::read_bytes(before_path),after_bytes=state::read_bytes(after_path);
     check(state::sha256(before_bytes)=="be285a02171b33a68b30900a7739ffd8b8c5ce5ccee98b6f78ec73f41ad797be"
-        &&state::sha256(after_bytes)==(current_stage?"ef77e1f7d47ab04a43690723c0bf18a97d52bb8ab7323c0df48f34997b807d87":
+        &&state::sha256(after_bytes)==(published17_stage?"72b6f46499f7b902559a51e4a5ee998710489774c49dd42a836e783ad85cd2f1":
+            current_stage?"ef77e1f7d47ab04a43690723c0bf18a97d52bb8ab7323c0df48f34997b807d87":
             "eb160976072ae3bb891ea5fab0bb1336a7d24bb0a83282756634d5189814a6f3"),
-        "The composed-output fixtures differ from the complete published pre-layout lesson or selected eight/fifteen-edge adoption");
+        "The composed-output fixtures differ from the complete published pre-layout lesson or selected eight/fifteen/seventeen-edge adoption");
     const auto before=windows::load_lesson(before_path),after=windows::load_lesson(after_path);
     const std::size_t page=phase==2?1:0,body=phase==0?1:phase==1?3:2;
     const auto& old=before.pages.at(page).blocks.at(body);const auto& revised=after.pages.at(page).blocks.at(body);
@@ -25,7 +27,7 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
         &&after.state_layout.signatures.size()==25,
         "The composed-output adoption changed its authentic prose, independent draft owner or authored availability");
     const auto metadata=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(after.state_layout.raw_json));
-    check(metadata.GetNamedArray(L"editorial").Size()==(current_stage?15u:8u),"The selected composed-output adoption lost its complete editorial history");
+    check(metadata.GetNamedArray(L"editorial").Size()==(published17_stage?17u:current_stage?15u:8u),"The selected composed-output adoption lost its complete editorial history");
     if(current_stage)check(after.compiler_puzzles_required&&after.reference_after.size()==1
         &&after.reference_after[0].activity=="block_0002_0003"&&after.reference_after[0].blocks==std::vector<std::string>{
             "block_0003_0000","block_0003_0001","block_0003_0002","block_0003_0003","block_0003_0004","block_0003_0005"}
@@ -240,7 +242,8 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
         &&restored_final.heard_through==final_checkpoint.heard_through&&restored_final.finished==final_checkpoint.finished&&!restored_final.playing&&!restored_final.allocated
         &&narration::read_history(saved())==final_history,"Final adopted reopening lost actual playback or silently replayed");preserve();
     std::cout<<"PASS U12L4 composed-output adoption "<<stage_name<<" phase "<<phase
-        <<": full published no-map 4741c42 to "<<(current_stage?"current fifteen-edge v2 publication":"first eight-edge v2 publication")<<"; actual "
+        <<": full published no-map 4741c42 to "<<(published17_stage?"published seventeen-edge v2 revision":
+            current_stage?"current fifteen-edge v2 publication":"first eight-edge v2 publication")<<"; actual "
         <<(phase==0?"rejected choice":phase==1?"correct choice":"first prediction correctly heard and second prediction rejected")
         <<" retained; genuine old prose pause moves to the same revised paragraph at zero without inherited audio credit/autoplay; "
         <<"complete new contextual PCM/timings/UTF-16 and explicit 3x playback, appropriate complete feedback and natural retry/finish boundary; "

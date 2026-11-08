@@ -18,6 +18,7 @@ class U12ComposedOutputFixturesTest(unittest.TestCase):
     def setUpClass(cls):
         cls.before, cls.after, cls.family = fixture.candidate()
         cls.current_before, cls.current, cls.current_family = fixture.current_candidate()
+        cls.published_before, cls.published17, cls.published_family = fixture.published17_candidate()
         cls.qa = fixture.ROOT / "out" / "qa" / "u12-composed-output-python"
         cls.qa.mkdir(parents=True, exist_ok=True)
 
@@ -349,6 +350,108 @@ class U12ComposedOutputFixturesTest(unittest.TestCase):
             self.assertEqual([], list(real.iterdir()))
         for output in (fixture.ROOT, fixture.ROOT / "out", fixture.ROOT / "build", fixture.ROOT / "scripts" / "curriculum"):
             with self.subTest(output=output), self.assertRaises(ValueError): fixture.export_current(output)
+
+    def test_direct_published17_pair_uses_real_no_map_source_and_complete_publication(self):
+        self.assertEqual("2c0f7553b1e723d70af0221e55dead047e304a72", fixture.PUBLISHED17_COMMIT)
+        self.assertEqual(self.before, self.published_before)
+        self.assertEqual(self.family, self.published_family)
+        self.assertNotIn("stateLayout", self.published_before)
+        self.assertEqual(self.current["pages"][:2], self.published17["pages"][:2])
+        self.assertEqual(self.current["stateLayout"]["editorial"], self.published17["stateLayout"]["editorial"][:15])
+        self.assertEqual(17, len(self.published17["stateLayout"]["editorial"]))
+        self.assertEqual(fixture.PUBLISHED17_PAGES_SHA256, layout.fingerprint(self.published17["pages"]))
+        self.assertEqual(fixture.PUBLISHED17_EDITORIAL_SHA256, layout.fingerprint(self.published17["stateLayout"]["editorial"]))
+        old, new = layout._blocks(layout.prepare(self.before)), layout._blocks(self.published17)
+        self.assertEqual(25, len(new)); self.assertEqual(old.keys(), new.keys())
+        self.assertEqual(7, sum(field in block for block in old.values() for field in ("code", "initialCode")))
+        for identity in old:
+            for field in ("code", "initialCode", "answers", "options", "correctIndex"):
+                self.assertEqual(old[identity].get(field), new[identity].get(field), (identity, field))
+        for field in ("family", "origin", "current", "additions"):
+            self.assertEqual(self.after["stateLayout"][field], self.published17["stateLayout"][field], field)
+        for field in ("compilerPuzzlesRequired", "referenceAfter", "activityAfter"):
+            self.assertEqual(self.current[field], self.published17[field], field)
+        # Validate this direct transition, without first adopting a v2 pause.
+        fixture.verify_published17_pair(self.before, self.published17, self.family)
+        layout.validate_transition(self.before, self.published17)
+
+    def test_published17_bytes_and_family_are_authenticated_not_recreated_from_current_content(self):
+        for locale in ("es", "en", "fr"):
+            raw = fixture.historical_published17_bytes(locale)
+            self.assertEqual(fixture.PUBLISHED17_SOURCE_HASHES[locale], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(raw, fixture.json_bytes(json.loads(raw)))
+            if locale != "es": self.assertEqual(fixture.historical_bytes(locale), raw)
+            for changed in (raw + b"\n", raw.replace(b"\n", b"\r\n")):
+                with self.subTest(locale=locale), self.assertRaises(ValueError):
+                    fixture.verify_published17_bytes(locale, changed)
+        with self.assertRaises(ValueError): fixture.historical_published17_bytes("de")
+        with self.assertRaises(ValueError): fixture.verify_published17_bytes("de", b"{}")
+        with patch.object(fixture.subprocess, "check_output", return_value=b"{}"), self.assertRaises(ValueError):
+            fixture.published17_candidate()
+        for mode in ("old_source", "new_prose", "code", "answer", "owner", "prefix", "suffix"):
+            before, after = deepcopy(self.before), deepcopy(self.published17)
+            if mode == "old_source": before["pages"][0]["blocks"][1]["text"] += " Otra fuente."
+            elif mode == "new_prose": after["pages"][0]["blocks"][1]["text"] += " Otra revisión."
+            elif mode == "code": after["pages"][2]["blocks"][3]["initialCode"] += "// otro código\n"
+            elif mode == "answer": after["pages"][4]["blocks"][1]["answers"] = ["Otra salida"]
+            elif mode == "owner": after["stateLayout"]["current"][0]["blocks"][1] = "otra_identidad"
+            elif mode == "prefix": after["stateLayout"]["editorial"][0]["beforeSha256"] = "0" * 64
+            else: after["stateLayout"]["editorial"].pop()
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                fixture.verify_published17_pair(before, after, self.family)
+        family = deepcopy(self.family); family["en"]["title"] += " another family"
+        with self.assertRaises(ValueError): fixture.verify_published17_pair(self.before, self.published17, family)
+
+    def test_published17_export_preserves_both_previous_pairs_and_raw_publication(self):
+        with tempfile.TemporaryDirectory(prefix="published17-", dir=self.qa) as temporary:
+            root = Path(temporary)
+            directories = [root / name for name in ("initial8", "current15", "published17")]
+            exporters = [fixture.export, fixture.export_current, fixture.export_published17]
+            for export, output in zip(exporters, directories): export(output)
+            snapshot = lambda output: {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in output.iterdir()}
+            snapshots = [snapshot(output) for output in directories]
+            new = snapshots[2]
+            self.assertEqual({"before.json", "after.json", "manifest.json"}, new.keys())
+            self.assertEqual(fixture.historical_bytes(), new["before.json"][0])
+            self.assertEqual(fixture.historical_published17_bytes(), new["after.json"][0])
+            manifest = json.loads(new["manifest.json"][0])
+            self.assertEqual((fixture.BEFORE_COMMIT, fixture.PUBLISHED17_COMMIT),
+                             (manifest["beforeCommit"], manifest["afterCommit"]))
+            self.assertFalse(manifest["afterIsProposal"])
+            self.assertEqual((0, 2, 0, 17, 25, 7), tuple(manifest[key] for key in
+                             ("beforeLayoutVersion", "afterLayoutVersion", "editorialBefore", "editorialAfter", "identities", "sources")))
+            self.assertEqual([0, 1], manifest["reconstructedPages"])
+            self.assertEqual(self.published17["stateLayout"]["editorial"], manifest["editorial"])
+            self.assertEqual(set(fixture.PARAGRAPHS) | set(fixture.GUIDES), manifest["previousBlocks"].keys())
+            for identity, previous in manifest["previousBlocks"].items():
+                self.assertEqual(layout._blocks(layout.prepare(self.before))[identity], previous)
+            fixture.export_published17(directories[2])
+            for i, output in enumerate(directories):
+                for j, exporter in enumerate(exporters):
+                    if i != j:
+                        with self.subTest(source=j, destination=i), self.assertRaises(FileExistsError): exporter(output)
+            cli = subprocess.run([sys.executable, "-B", str(Path(fixture.__file__)), "--published17-output-dir", str(directories[2])],
+                                 cwd=fixture.ROOT, capture_output=True, text=True)
+            self.assertEqual(0, cli.returncode, cli.stderr)
+            self.assertEqual(snapshots, [snapshot(output) for output in directories])
+
+    def test_published17_export_rejects_bad_sources_and_conflicts_before_any_write(self):
+        with tempfile.TemporaryDirectory(prefix="published17-negative-", dir=self.qa) as temporary:
+            root = Path(temporary)
+            for name in ("before.json", "after.json", "manifest.json"):
+                output = root / name.replace(".", "-"); output.mkdir(); (output / name).write_bytes(b"keep evidence")
+                with self.subTest(name=name), self.assertRaises(FileExistsError): fixture.export_published17(output)
+                self.assertEqual({name: b"keep evidence"}, {path.name: path.read_bytes() for path in output.iterdir()})
+            output = root / "invalid-source"
+            with patch.object(fixture, "historical_published17_bytes", return_value=b"{}"), self.assertRaises(ValueError):
+                fixture.export_published17(output)
+            self.assertFalse(output.exists())
+            output = root / "nested"; output.mkdir(); (output / ".git").write_text("foreign checkout", encoding="utf-8")
+            with patch.object(fixture, "published17_candidate") as source, self.assertRaises(ValueError):
+                fixture.export_published17(output / "out")
+            source.assert_not_called(); self.assertFalse((output / "out").exists())
+        for output in (fixture.ROOT, fixture.ROOT / "out", fixture.ROOT / "build", fixture.ROOT / "scripts" / "curriculum"):
+            with self.subTest(output=output), self.assertRaises(ValueError): fixture.export_published17(output)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import stat
 import subprocess
 
 import stable_state_layout as layout
+import u12_composed_feedback_fixture_source as feedback_fixture
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -75,6 +76,13 @@ CURRENT_SUFFIX = {
     "block_0003_0004": (3, 4, "4c7882e27fbce78d45d53fd67b0e9f7eb25a26693e4ad2709ba1bb2bc6be75da",
                          "3582a8ce527b0e5a588794b19fce3238e5d7560740da2c930c3247a4ed4b55c8"),
 }
+
+# A distinct, published destination for the direct positional -> 17-edge jump.
+# Do not replace either prior pair: their generated evidence remains immutable.
+PUBLISHED17_COMMIT = "2c0f7553b1e723d70af0221e55dead047e304a72"
+PUBLISHED17_SOURCE_HASHES = dict(SOURCE_HASHES, es="72b6f46499f7b902559a51e4a5ee998710489774c49dd42a836e783ad85cd2f1")
+PUBLISHED17_EDITORIAL_SHA256 = "3ff7da20dbe7d2e0709b927606c59890b4dd3d975bfd6e67ad0f44ecb29a0c29"
+PUBLISHED17_PAGES_SHA256 = "e9960d58dacdbb79b32b45e8c4b8d5db23fb0090eee6ab758152078754c65950"
 
 
 def json_bytes(value: dict) -> bytes:
@@ -243,6 +251,53 @@ def current_candidate() -> tuple[dict, dict, dict[str, dict]]:
     return before, current, family
 
 
+def verify_published17_bytes(locale: str, payload: bytes) -> bytes:
+    if locale not in PUBLISHED17_SOURCE_HASHES or hashlib.sha256(payload).hexdigest() != PUBLISHED17_SOURCE_HASHES[locale]:
+        raise ValueError("U12L4 seventeen-edge fixture differs from its complete pinned Git publication")
+    return payload
+
+
+def historical_published17_bytes(locale: str = "es") -> bytes:
+    if locale not in PUBLISHED17_SOURCE_HASHES:
+        raise ValueError("Unsupported seventeen-edge U12L4 QA locale")
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1", GIT_TERMINAL_PROMPT="0")
+    payload = subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show",
+         f"{PUBLISHED17_COMMIT}:{PREFIX.format(locale=locale) + LESSON}"],
+        cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    return verify_published17_bytes(locale, payload)
+
+
+def verify_published17_pair(before: dict, published: dict, family: dict[str, dict]) -> None:
+    """Authenticate the actual v0 -> 17 documents, not a generated old pause."""
+    verify_bytes("es", json_bytes(before))
+    verify_published17_bytes("es", json_bytes(published))
+    current = json.loads(historical_current_bytes())
+    verify_current_pair(before, current, family)
+    # This already reviewed contract authenticates both added complete blocks,
+    # all seven unchanged programs, and every unchanged response/storage owner.
+    feedback_fixture.verify_pair(current, published, dict(family, es=current))
+    if (published["pages"][:2] != current["pages"][:2]
+            or published["stateLayout"]["editorial"][:15] != current["stateLayout"]["editorial"]
+            or len(published["stateLayout"]["editorial"]) != 17
+            or layout.fingerprint(published["stateLayout"]["editorial"]) != PUBLISHED17_EDITORIAL_SHA256
+            or layout.fingerprint(published["pages"]) != PUBLISHED17_PAGES_SHA256):
+        raise ValueError("U12L4 seventeen-edge publication changed its authentic positional pages or editorial prefix")
+    layout.validate_transition(before, published)
+    layout.check_localized_family([published, family["en"], family["fr"]], ["es", "en", "fr"])
+
+
+def published17_candidate() -> tuple[dict, dict, dict[str, dict]]:
+    family = {locale: json.loads(historical_bytes(locale)) for locale in SOURCE_HASHES}
+    before = family["es"]
+    published = json.loads(historical_published17_bytes())
+    for locale in ("en", "fr"):
+        if historical_published17_bytes(locale) != json_bytes(family[locale]):
+            raise ValueError("U12L4 seventeen-edge publication changed an unrevised original translation")
+    verify_published17_pair(before, published, family)
+    return before, published, family
+
+
 def export(output: Path) -> Path:
     """Export immutable fixture bytes only inside the caller checkout's QA area."""
     output = Path(os.path.abspath(output))
@@ -351,13 +406,70 @@ def export_current(output: Path) -> Path:
     return output / "manifest.json"
 
 
+def export_published17(output: Path) -> Path:
+    """Export a third v0 -> 17 pair without overwriting v0 -> 8/15 evidence."""
+    output = Path(os.path.abspath(output))
+    for entry in (output, *output.parents):
+        try:
+            attributes = entry.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(attributes.st_mode) or getattr(attributes, "st_file_attributes", 0) & 0x400:
+            raise ValueError("Seventeen-edge U12L4 QA output cannot follow links or reparse points")
+    output = output.resolve(); owner = ROOT.resolve()
+    if not any(output.is_relative_to(owner / allowed) and output != owner / allowed for allowed in ("out", "build")):
+        raise ValueError("Seventeen-edge U12L4 fixtures must stay in this checkout's out/build QA directory")
+    for parent in (output, *output.parents):
+        if parent == owner:
+            break
+        if (parent / ".git").exists():
+            raise ValueError("Seventeen-edge U12L4 QA output cannot write another checkout")
+    before, published, _ = published17_candidate()
+    prior = layout._blocks(layout.prepare(before))
+    manifest = {
+        "beforeCommit": BEFORE_COMMIT, "afterCommit": PUBLISHED17_COMMIT, "afterIsProposal": False,
+        "adoptionCommit": AFTER_COMMIT, "intermediateCommit": CURRENT_AFTER_COMMIT,
+        "relative": RELATIVE, "lessonId": LESSON_ID, "coordinateBase": 0, "identities": 25, "sources": 7,
+        "beforeLayoutVersion": 0, "afterLayoutVersion": 2, "editorialBefore": 0, "editorialAfter": 17,
+        "sourceSha256": SOURCE_HASHES, "afterSourceSha256": PUBLISHED17_SOURCE_HASHES,
+        "familySha256": FAMILY_SHA256, "originSha256": ORIGIN_SHA256, "currentSha256": CURRENT_SHA256,
+        "editorialPrefixSha256": CURRENT_EDITORIAL_SHA256, "editorialSha256": PUBLISHED17_EDITORIAL_SHA256,
+        "beforePagesSha256": BEFORE_PAGES_SHA256, "afterPagesSha256": PUBLISHED17_PAGES_SHA256,
+        "before": {"file": "before.json", "sha256": SOURCE_HASHES["es"]},
+        "after": {"file": "after.json", "sha256": PUBLISHED17_SOURCE_HASHES["es"]},
+        "previousBlocks": {identity: prior[identity] for identity in sorted({**PARAGRAPHS, **GUIDES})},
+        "reconstructedPages": [0, 1], "editorial": published["stateLayout"]["editorial"],
+        "compilerPuzzlesRequired": published["compilerPuzzlesRequired"],
+        "referenceAfter": published["referenceAfter"], "activityAfter": published["activityAfter"],
+    }
+    payloads = {"before.json": json_bytes(before), "after.json": json_bytes(published), "manifest.json": json_bytes(manifest)}
+    for name, payload in payloads.items():
+        target = output / name
+        if target.exists() or target.is_symlink():
+            attributes = target.lstat()
+            if (not stat.S_ISREG(attributes.st_mode) or getattr(attributes, "st_file_attributes", 0) & 0x400
+                    or target.read_bytes() != payload):
+                raise FileExistsError("Refusing to replace an existing seventeen-edge U12L4 QA document")
+    output.mkdir(parents=True, exist_ok=True)
+    for name, payload in payloads.items():
+        target = output / name
+        if not target.exists():
+            with target.open("xb") as stream:
+                stream.write(payload)
+    return output / "manifest.json"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     destinations = parser.add_mutually_exclusive_group(required=True)
     destinations.add_argument("--output-dir", type=Path)
     destinations.add_argument("--current-output-dir", type=Path)
+    destinations.add_argument("--published17-output-dir", type=Path)
     arguments = parser.parse_args()
-    if arguments.current_output_dir is not None:
+    if arguments.published17_output_dir is not None:
+        export_published17(arguments.published17_output_dir)
+        print(f"Verified U12L4's original publication and published seventeen-edge revision through {PUBLISHED17_COMMIT}.")
+    elif arguments.current_output_dir is not None:
         export_current(arguments.current_output_dir)
         print(f"Verified U12L4's original publication and current fifteen-edge publication through {CURRENT_AFTER_COMMIT}.")
     else:

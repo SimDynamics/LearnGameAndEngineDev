@@ -72,7 +72,7 @@ Las representaciones de math_course_01 usan los componentes matemáticos existen
 
 - **PENDIENTE_ID / ESTADO:** WIN_NARRACION_CURRICULAR_EXISTENTE / CREADO_PENDIENTE_DE_INTEGRACION, sólo para la recuperación histórica pendiente de U12L4.
 - **UBICACIÓN:** es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_componer_salida_sin_imprimirla.json, p1–p2, especialmente block_0000_0001, block_0000_0003 y block_0001_0002.
-- **COMPROBACIÓN FALTANTE:** pausa posicional auténtica de la publicación sin mapa 4741c42 directamente hacia la revisión con diecisiete aristas editoriales. Las pruebas anteriores de ocho y quince aristas y la reapertura de una pausa ya creada con v2 no acreditan ese salto.
+- **COMPROBACIÓN FALTANTE:** ejecutar en Windows las tres fases de `native.u12_composed_output_published17_reader_*`: pausa posicional auténtica de la publicación sin mapa 4741c42 directamente hacia la publicación 2c0f755, con diecisiete aristas editoriales. Usar el fixture autenticado `u12_composed_output_fixture_source.py --published17-output-dir` registrado en CMake; verificar la pausa creada por el lector original, no una pausa preparada con v2.
 - **ESTADO CORRECTO / CRITERIOS:** recuperar el pasaje pertinente sin reproducción automática ni crédito nuevo de escucha; mantener milisegundos sólo con correspondencia autenticada. Conservar respuestas, borradores, audios y hasta tres marcadores. Usar datos QA aislados y fuentes históricas verificables, sin alterar progreso personal ni atribuir al estudiante una pausa preparada para la prueba.
 
 ### CPP_COMPROBACION_POR_OBJETIVO_CMAKE

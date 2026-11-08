@@ -597,7 +597,9 @@ if(BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_output_fixture_source.py"
             --output-dir "${LGAED_U12_COMPOSED_OUTPUT_DIR}"
         DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_output_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_feedback_fixture_source.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
         COMMENT "Verifying the published U12L4 positional lesson and its first stable-layout adoption"
         VERBATIM)
@@ -611,11 +613,29 @@ if(BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_output_fixture_source.py"
             --current-output-dir "${LGAED_U12_COMPOSED_OUTPUT_CURRENT_DIR}"
         DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_output_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_feedback_fixture_source.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
         COMMENT "Verifying the original positional U12L4 lesson against its complete fifteen-revision publication"
         VERBATIM)
     add_custom_target(lgaed_u12_composed_output_current_fixtures DEPENDS ${LGAED_U12_COMPOSED_OUTPUT_CURRENT_FIXTURES})
+    set(LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u12-composed-output-published17")
+    set(LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_FIXTURES
+        "${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR}/before.json"
+        "${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR}/after.json"
+        "${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR}/manifest.json")
+    add_custom_command(OUTPUT ${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_output_fixture_source.py"
+            --published17-output-dir "${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_output_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/u12_composed_feedback_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        COMMENT "Verifying the authentic positional U12L4 publication against its complete seventeen-edge revision"
+        VERBATIM)
+    add_custom_target(lgaed_u12_composed_output_published17_fixtures DEPENDS ${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_FIXTURES})
     add_test(NAME native.u12_composed_output_authoring COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u12_composed_output_fixtures.py)
     set_tests_properties(native.u12_composed_output_authoring PROPERTIES TIMEOUT 90)
@@ -942,6 +962,7 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_append_hypothesis_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_output_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_output_current_fixtures)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_output_published17_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_feedback_fixtures)
     add_test(NAME native.u12_composed_feedback_reader COMMAND lgaed_lesson_reader_tests --u12-composed-feedback
         "${LGAED_U12_COMPOSED_FEEDBACK_DIR}/before.json" "${LGAED_U12_COMPOSED_FEEDBACK_DIR}/after.json")
@@ -964,6 +985,11 @@ if(BUILD_TESTING)
                 "${LGAED_U12_COMPOSED_OUTPUT_CURRENT_DIR}/before.json" "${LGAED_U12_COMPOSED_OUTPUT_CURRENT_DIR}/after.json"
                 "${composed_output_phase}")
         set_tests_properties(native.u12_composed_output_current_reader_${composed_output_phase} PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+        add_test(NAME native.u12_composed_output_published17_reader_${composed_output_phase}
+            COMMAND lgaed_lesson_reader_tests --u12-composed-output-published17
+                "${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR}/before.json" "${LGAED_U12_COMPOSED_OUTPUT_PUBLISHED17_DIR}/after.json"
+                "${composed_output_phase}")
+        set_tests_properties(native.u12_composed_output_published17_reader_${composed_output_phase} PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     endforeach()
     foreach(hypothesis_reader_phase RANGE 0 1)
         add_test(NAME native.u12_append_hypothesis_reader_${hypothesis_reader_phase}
