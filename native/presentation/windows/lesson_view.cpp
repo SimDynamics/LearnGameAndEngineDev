@@ -889,11 +889,23 @@ struct LessonView {
                 if(!position||position->page!=saved.page||position->block>=controls.size()
                     ||block(position->block).type!=original.type){complete=false;break;}
                 const auto index=position->block;
+                const auto prefix=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+saved.current_owners[original_index];
+                const bool prose=original.type==BlockType::heading||original.type==BlockType::paragraph||original.type==BlockType::note;
                 // An in-flight control rebuild has no complete visible script
-                // yet. Wait for its normal final content notification instead
-                // of authenticating a partial historical page.
+                // yet. Only authenticated prose behind today's compiler may
+                // lack a control: reconstruct it in the private archive without
+                // creating a HWND, exposing active text or opening that barrier.
                 if(std::ranges::none_of(displayed,[&](const auto& region){return region.block_index==index;})){
-                    complete=false;break;
+                    if(!prose||original.text.empty()||controls[index].rendered||controls[index].locked||reference_available(block(index))){
+                        complete=false;break;
+                    }
+                    const auto emit=[&](int part,std::string text){
+                        LessonReadingRegion region;region.block_index=index;region.source_text=std::move(text);
+                        region.key=prefix+'/'+std::to_string(control_id(index,part));region.anchor=prefix+"/part/"+std::to_string(part);
+                        reading_context(region,original);previous.push_back(std::move(region));
+                    };
+                    if(original.type==BlockType::note)emit(19,ui("Nota","Note","Note"));
+                    emit(0,original.text);
                 }
                 const bool compiler=original.type==BlockType::cpp_compiler;
                 const bool completed=compiler&&windows::compiler_puzzle_completed(data,lesson,original);
@@ -901,36 +913,52 @@ struct LessonView {
                 for(auto& region:previous)if(region.block_index==index){
                     region.text_semantics.reset();region.previous_math_mode.reset();region.compiler_guidance=false;
                     region.reading_context="auto";reading_context(region,original);
-                    if(!compiler&&!region.feedback&&region.target==find_item(control_id(index,0))){
-                        if(region.source_text!=original.text)archived.revised_regions.push_back(region.key);
-                        region.source_text=original.text;
+                    if(!compiler&&!region.feedback&&region.key==prefix+'/'+std::to_string(control_id(index,0))){
+                        const auto& text=prose?original.text:original.question;
+                        if(region.source_text!=text)archived.revised_regions.push_back(region.key);
+                        region.source_text=text;
                     }
                 }
-                if(!compiler)continue;
-                if(!controls[index].source_editor||!controls[index].feedback){complete=false;break;}
-                // These original editors have no compiler-revision history.
-                // A current verdict is not evidence for the positional script:
-                // read only the old receipt/review against the actual draft.
+                const bool ordinary=exercise(original.type);
+                if(!compiler&&!ordinary)continue;
+                if(!controls[index].feedback||(compiler&&!controls[index].source_editor)){complete=false;break;}
+                // These originals have no compiler-revision history. Read the
+                // real old receipt against the draft, or the persisted ordinary
+                // answer against the original explanation/review contract.
                 std::erase_if(previous,[&](const auto& region){return region.block_index==index
-                    &&(region.feedback||region.target==find_item(control_id(index,40)));});
-                const auto feedback=windows::compiler_puzzle_current_feedback(data,lesson,original,program_snapshot(index));
-                if(!feedback)continue;
-                const auto first_break=feedback->text.find_first_of("\r\n");
-                auto body=first_break==std::string::npos?std::string{}:feedback->text.substr(first_break);
+                    &&(region.feedback||(compiler&&region.target==find_item(control_id(index,40))));});
+                bool correct=false;std::string body;
+                if(compiler){
+                    const auto feedback=windows::compiler_puzzle_current_feedback(data,lesson,original,program_snapshot(index));
+                    if(!feedback)continue;
+                    correct=feedback->correct;const auto first_break=feedback->text.find_first_of("\r\n");
+                    if(first_break!=std::string::npos)body=feedback->text.substr(first_break);
+                }else{
+                    const auto response=state::get_response(data,lesson,original);
+                    if(!response)continue;
+                    correct=response->correct;
+                    if(correct)body=original.type==BlockType::multiple_choice?state::choice_correct_feedback(*response,original):original.explanation;
+                    else if(state::response_reviewed(*response,original)){
+                        body=original.type==BlockType::multiple_choice?state::choice_incorrect_feedback(*response,original)
+                            :curriculum::incorrect_feedback(original,response->selected<0?std::nullopt:std::optional<std::size_t>(response->selected));
+                        if(body.empty())body=default_review();
+                    }else continue;
+                }
                 const auto first_text=body.find_first_not_of("\r\n");
                 body=first_text==std::string::npos?std::string{}:body.substr(first_text);
                 LessonReadingRegion region;region.block_index=index;region.target=controls[index].feedback;
-                region.source_text=(feedback->correct?"✓ ":"✗ ")+verdict_text(feedback->correct)+(body.empty()?"":"\n\n"+body);
-                region.feedback=true;region.correct=feedback->correct;region.is_exercise=true;
-                region.required_compiler=true;region.solved=completed;reading_context(region,original);
-                const auto prefix=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+saved.current_owners[original_index];
+                region.source_text=(correct?"✓ ":"✗ ")+verdict_text(correct)+(body.empty()?"":"\n\n"+body);
+                region.feedback=true;region.correct=correct;region.is_exercise=true;
+                region.required_compiler=compiler;region.solved=compiler?completed:correct;reading_context(region,original);
                 region.key=prefix+'/'+std::to_string(control_id(index,4));region.anchor=prefix+"/part/4";
+                const auto active=std::ranges::find(displayed,region.key,&LessonReadingRegion::key);
+                if(active!=displayed.end()&&active->source_text!=region.source_text)archived.revised_regions.push_back(region.key);
                 previous.push_back(std::move(region));
             }
             if(!complete)continue;
-            // Reordering alone would leak the two paragraphs which were behind
-            // the old editor. Only its original earned receipt opens them in
-            // this private archive; the active v2 objective is unaffected.
+            // Only the original earned receipt opens prose behind the old
+            // editor in this private archive; active v2 objectives and controls
+            // are unaffected, including any prose still hidden behind them.
             archived.regions=curriculum::positional_reading_regions(previous,order);
             archives.push_back(std::move(archived));
         }

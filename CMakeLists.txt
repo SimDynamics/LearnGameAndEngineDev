@@ -1517,6 +1517,24 @@ if(BUILD_TESTING)
                 PROPERTIES TIMEOUT 420 RUN_SERIAL TRUE)
         endforeach()
     endforeach()
+    foreach(compiler_reader IN ITEMS session characters)
+        if(compiler_reader STREQUAL "session")
+            set(compiler_reader_unit u11)
+            set(compiler_reader_lesson u11l22)
+        else()
+            set(compiler_reader_unit u12)
+            set(compiler_reader_lesson u12l20)
+        endif()
+        foreach(compiler_reader_phase RANGE 0 3)
+            add_test(NAME native.${compiler_reader_unit}_${compiler_reader}_historical_reader_${compiler_reader_phase}
+                COMMAND lgaed_u11_declarations_reader_tests --${compiler_reader}-historical
+                    "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_reader_lesson}-before.json"
+                    "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_reader_lesson}-after.json"
+                    "${compiler_reader_phase}")
+            set_tests_properties(native.${compiler_reader_unit}_${compiler_reader}_historical_reader_${compiler_reader_phase}
+                PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+        endforeach()
+    endforeach()
     add_test(NAME native.compiler_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_import_fixtures.py)
     set_tests_properties(native.compiler_import_fixtures PROPERTIES TIMEOUT 120)

@@ -724,22 +724,24 @@ bool bibliography_pair(const JsonObject& before,const JsonObject& after){
     old.Remove(L"explanation");now.Remove(L"explanation");
     return fingerprint(old)==fingerprint(now)&&bibliography::only_parenthetical_locator_removal(old_text,new_text);
 }
-std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const JsonObject& root,
+std::vector<StatePositionalReadingPage> compiler_positional_reading_pages(const JsonObject& root,
         const JsonObject& metadata,const JsonArray& pages,const StateLayout& layout,std::string_view lesson_id) {
     if(layout.version!=2||layout.locale!="es")return {};
     // Complete publications: 617f03472d20a97f2e1e110a3233ad11fd966d01 ->
-    // 5d115a0c99c8d2a17d01eee99dfe887247b82dbb. These three reviewed pages
-    // share one original five-block shape and compiler barrier. Only the
-    // closed source data differs; narration/state behavior is not specialized.
-    struct OriginalBlock {const char* id;unsigned current;const char* sha256;const char* text;};
+    // 5d115a0c99c8d2a17d01eee99dfe887247b82dbb. Only this closed source
+    // data restores positional pages; it grants no active editorial permission.
+    struct OriginalBlock {
+        const char* id;unsigned current;const char* sha256;const char* text;
+        bool command_emphasis=false;unsigned original_output_count=0;
+    };
     struct Publication {
         const char* owner;unsigned page_count,page,editorial_count;
         const char* root_sha;const char* family_sha;const char* origin_sha;const char* current_sha;
         const char* editorial_sha;const char* before_page_sha;const char* after_page_sha;
-        std::array<OriginalBlock,5> original;
+        std::vector<OriginalBlock> original;
     };
-    static constexpr std::array<Publication,3> publications{{
-        // U11L19 raw source SHA-256, before and after:
+    static const std::array<Publication,7> publications{{
+        // U11L19 p5 raw source SHA-256, before and after:
         // 887dbfb3f98c0f04c92567d2d1a46d82ddb1bd3ebe761ecf60c17a905e1815a0
         // bfaa88c3f4294c30bf50b58f96aff91fbf71ffdbdfd20c7471d1c71e358c1cb6
         {"cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar",8,4,27,
@@ -750,7 +752,7 @@ std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const
             "b9e2415d6071dc940cb642d25b5f833c0f8a3c12b365bfae1a7e0933ce22b934",
             "a391a98e6f4f958095821d9e0779a5bbe29cc9b0797c0af261d1e3ad93da8ee1",
             "379916e3512869dbbc9dd826ad3560a8d9ac6311e8ea10a72b68a1fdf9a3a73c",
-            {{
+            {
                 {"block_0004_0000",0,"135fd28d6ba91926a222df3438d9b006388766e525008ca0fa206d25dcc428c8",nullptr},
                 {"block_0004_0001",1,"12c57e25c4552fc50fd218cad3bbbdf5293b286eaed8f809eeadac23868ebf8e",
                     "Integra nombre como unidad y crea como sentencia en tu intérprete.\n\n"
@@ -762,14 +764,14 @@ std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const
                     "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
                     "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Nombre no definido, Nombre ya definido, Numero fuera de dominio, Se esperaba ;.\n\n"
                     "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
-                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación."},
+                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.",true},
                 {"block_0004_0002",4,"f39ac13f9e47680db14cb9ebf76ec35f3c2af8faf2a67303d1ba6bea3c6a6b7e",nullptr},
                 {"block_0004_0003",2,"e7aabc9464c589e774b7c33dab163ddba3e99d264531a145f058f821015fbd37",
                     "La batería contrasta cero, extremos de resultado, literal 100 rechazado, autorreferencia sin vínculo previo, terminador ausente y dos nombres cercanos. Cada rechazo conserva la tabla aceptada y permite recuperar su propia frontera; consultar no añade un vínculo provisional."},
                 {"block_0004_0004",3,"958ced4d076334214d50b83ae9037cad847c63adf505c8cf6536ba09f7d2ec8f",
                     "Criterios: inicialización obligatoria, unicidad, consulta pura, límites heredados, conservación de la tabla tras duplicados/ausencia/mala gramática y continuación por la frontera correcta. Una lectura de EOF es final normal sólo entre operaciones; dentro de una creación incompleta es un rechazo."},
-            }}},
-        // U11L20 raw source SHA-256, before and after:
+            }},
+        // U11L20 p6 raw source SHA-256, before and after:
         // cde8f8a248fcc8a7eab16033f2e469932eb24929e5fff3cae3d77c688f1338f8
         // 69eef7a0633bafaea663bc5b3bfa23da2a8940cf25ecbbd8af60090587204cf9
         {"cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada",9,5,25,
@@ -780,7 +782,7 @@ std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const
             "fcb91d108bf5712ca0237cc74c31003ef316383ffc17e8abef8321375ff3c8ed",
             "e642593c08552a6a96314bab52207e5a3980648c10c14f7ddd0ea2378b1bbeed",
             "1a780df3c81825c243f8299f1606af80f0bde2d614d07ef5aa4cde92d7026eaf",
-            {{
+            {
                 {"block_0005_0000",0,"49f176a0f0dc9d83d233d3d696d60bc5f2d3cbf2b2ddbc417398f455d1ab2dc7",nullptr},
                 {"block_0005_0001",1,"a1688e271a704709a8d0d44c718727d88d5eea377c7d7fef469ef3de5e3d8db6",
                     "Integra el despacho de sentencias y la continuación desde un valor en el programa de declaraciones.\n\n"
@@ -792,14 +794,14 @@ std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const
                     "Todas las líneas terminan con salto, sin líneas vacías añadidas.\n\n"
                     "Los rechazos de esta batería presentan Error: seguido de una de estas causas exactas: Divisor cero, Nombre no definido, Resultado fuera de dominio, Se esperaba ;.\n\n"
                     "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
-                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación."},
+                    "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.",true},
                 {"block_0005_0002",4,"2afd4d309a2571e5ac47d1ad64d809edf3293edce7b2cdd6ead5fd06a0036f08",nullptr},
                 {"block_0005_0003",2,"f0adf115232510b37d472d576dc88da5365c116dcd0442ce33804b674d0ea93f",
                     "Las variantes de la batería comprueban divisor cero, dominio, destino ausente, asignación encadenada, terminador ausente, continuación multiplicativa y consulta ausente antes de una operación válida. El rechazo no cambia la tabla aceptada; el ; reservado de ausente no debe provocar que se descarte paso+1;."},
                 {"block_0005_0004",3,"933dade08349b80446ed7cad157f0265c082edac8f8cbba9c886788f5eeccdfd",
                     "Criterios: distinguir creación, modificación y consulta; mantener reserva única; completar el término antes de la expresión; consultar el valor anterior en el lado derecho; publicar sólo después del terminador y conservar la tabla tras cada rechazo. No se promete devolver los caracteres consumidos."},
-            }}},
-        // U11L21 raw source SHA-256, before and after:
+            }},
+        // U11L21 p6 raw source SHA-256, before and after:
         // 65b1eb97508bfb7f6dbbc695f25c8cfa27994333892878c44c297b7ccea463cc
         // d444222f6ce6f69436279bee30e734f6fb9823ce7c6df592f6085a07734b04db
         {"cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos",8,5,22,
@@ -810,7 +812,7 @@ std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const
             "324cd0b445d434d114fd96fa63ae343226e2ade800bdcd90b2bfe8478f0c1abc",
             "3018c71926e1427c7d31df2f0cb098fd6dc43c0f92e54a22ca11a4552d927ebe",
             "86441557dd179650e7bb552b2fab9dbc7e3ba85b8aaaf9ae23fde54f13e8e967",
-            {{
+            {
                 {"block_0005_0000",0,"150dde3e216aea9ea11f13f43eda55dcdda7792d59f75a80bfa85639f0d6b594",nullptr},
                 {"block_0005_0001",1,"ec1da1e4ab8fc6afbe539e41a6933385d21cfbcf0c5141035484c3c8eb810741",
                     "Amplía la sesión con la categoría fija y la protección por vínculo.\n\n"
@@ -824,52 +826,161 @@ std::optional<StatePositionalReadingPage> compiler_positional_reading_page(const
                     "La comprobación exige ese informe, sin imponer nombres de funciones ni una única organización del programa.\n\n"
                     "Usa Compilar, ejecutar y comprobar con todos los casos de la misma implementación.\n\n"
                     "Cada vínculo añade su marca (V) si es modificable o (C) si es constante.\n\n"
-                    "Cada tabla comienza con unidad=1(C) y limite=100(C), que cuentan dentro de las ocho plazas."},
+                    "Cada tabla comienza con unidad=1(C) y limite=100(C), que cuentan dentro de las ocho plazas.",true},
                 {"block_0005_0002",4,"b31af141cccd6da262f40c46a6d6f3aaf311d8ac6e8fba83a9bf51b65b4bcfdd",nullptr},
                 {"block_0005_0003",2,"6b4b5fda01b16f90576589a4078b992ac0decd104cc57ac58dbc2be228101773",
                     "Las seis pruebas de la batería comprueban inicializador incompleto, constante protegida, duplicación de predefinido, dominio del resultado y capacidad compartida. La consulta final de a después de rechazar la séptima creación comprueba que el estado aceptado sigue disponible."},
                 {"block_0005_0004",3,"79d1aa206257b8dfdbab019177acba1d2ce2982451349f3d18f89d920210f4f0",
                     "Criterios: palabras completas, nombres reservados, copia de la política completa, inicialización única de predefinidos, protección antes de escribir, capacidad compartida y aceptación sólo tras ;. La comprobación contrasta sus informes; revisar la implementación sigue siendo necesario para acreditar esos criterios."},
-            }}},
+            }},
+        // U11L22 p4 raw source SHA-256, before and after:
+        // 02556412590ab4bd53c86eff1074ba2b52145fcf9a4d7d2bee771cd4af806bf7
+        // 1932b3c86cabf23bf02154eb2d0371c3b8e7fe48fc01e42e1d559b3220cb1696
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado",10,3,26,
+            "26d86ac1c857a82759738a34741a72baa293100b7efcb1fd435ef568e9543193",
+            "21ba75fa9504523ce0c8fc5a32d9aea75e3822c1a7b900b3ba3cf02c85bb1780",
+            "8f63bbdd3f8d3dad5be813b865e141df59614dca6bc7dc7adb2df576cad77d10",
+            "6cae82ceaaf28ff37a047ff3c2cf4137ace7c4b611733702a25f0c95876ca418",
+            "12b8619a9c48805b0c7b128d9041dee111b7a8ef36b4f917fba3dcf432a8afb4",
+            "5d1a006b8d0cec809dfd4f6ff36fe310819a20ebc3beff37f9b97256664fa37c",
+            "37f3ef1d2e0ebeaf4937767add00fc78583d5e80aa7bcdbb7b5638a7595e7b83",
+            {
+                {"block_0003_0000",0,"085ba993072a08c1b753b595822eb23daca5caad06034f4a11b32ff73ab1496d",nullptr},
+                {"block_0003_0001",4,"f9e64b47ad9adb230ff94f8fff062faf7e2fc5b4a35e618499dedcca99cb3ad0",nullptr},
+                {"block_0003_0002",1,"2738a6f644854f35d7e8ce0c8ffaf0e7e3ab63f2494cc4a34bf047ec75dfb1ff",
+                    "El editor aporta sólo includes, el texto inicial y main. Recupera ideas o módulos anteriores, decide tus tipos e interfaces y conecta reconocimiento, anticipación, gramática, candidato, recuperación, historial y resumen. No se entregan implementaciones nuevas ni condiciones de decisiones para rellenar."},
+                {"block_0003_0003",2,"e71ffd1ee0e2cbc5b58e365aa18c7769daebd9761305b6c4fe43fc258460e7d3",
+                    "Puedes integrar por etapas y reintentar este mismo objetivo: reconocimiento, consulta sin inserción, creación, asignación, protección y continuación tras error. La batería fija los informes que se comparan; el historial sólo se amplía después de aceptar una operación completa."},
+                {"block_0003_0004",3,"921f98038a4dde1185c32ba75b9a11d761b378feade1789c4a36270b47fc49d2",
+                    "Criterios de corrección: todos los contratos y casos anteriores, reserva coherente con la interfaz de una unidad, ninguna variable global modificable, ausencia de salidas codificadas por caso, publicación sólo tras ; y resumen por consultas que no cambian los vínculos. Una solución distinta de la referencia es válida si demuestra esos resultados y estados."},
+            }},
+        // U11L22 p7 raw source SHA-256, before and after:
+        // 02556412590ab4bd53c86eff1074ba2b52145fcf9a4d7d2bee771cd4af806bf7
+        // 1932b3c86cabf23bf02154eb2d0371c3b8e7fe48fc01e42e1d559b3220cb1696
+        {"cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado",10,6,26,
+            "26d86ac1c857a82759738a34741a72baa293100b7efcb1fd435ef568e9543193",
+            "21ba75fa9504523ce0c8fc5a32d9aea75e3822c1a7b900b3ba3cf02c85bb1780",
+            "8f63bbdd3f8d3dad5be813b865e141df59614dca6bc7dc7adb2df576cad77d10",
+            "6cae82ceaaf28ff37a047ff3c2cf4137ace7c4b611733702a25f0c95876ca418",
+            "12b8619a9c48805b0c7b128d9041dee111b7a8ef36b4f917fba3dcf432a8afb4",
+            "e5901ea62ebdd5b33887e4b9bc0915788ed0af84da9b391a19f9d98f2152470e",
+            "f0790b41d3a1f0cd047a1b0d2c9b5376b96e023eeacc88f4bf00b1c55f0d35f1",
+            {
+                {"block_0006_0000",0,"bb00489c00aa22228b1fbc5591c61e001105c51020dea058f7f683a76004defc",nullptr},
+                {"block_0006_0001",1,"e3366ea6deadcff0d772dddc8f13050fe3d01ebb65fc12eaadfbcaf42be55854",nullptr},
+                {"block_0006_0002",2,"533196badb3b9bfff518c9edd35f695767a9bef13156eadad0a6410c4a1c8a65",
+                    "En el editor nuevo de esta página, amplía sólo el resumen con Ceros: N después de Constantes:. Cuenta vínculos cuyo valor aceptado actual sea cero, sin modificar tabla ni historial. El editor incluye la base del intérprete y cuatro sesiones: \"crea a=0;\", \"crea a=0;a=1;\", \"fija k=unidad;k=0;\" y \"crea a=0;fija b=0;a=2;\". Conserva todas las salidas anteriores y sus cabeceras Caso N. La consulta recorre la tabla mediante const referencia; no cuenta ceros históricos. Cada línea termina con salto. Usa Compilar, ejecutar y comprobar con el programa completo.",true},
+                {"block_0006_0003",3,"a7dba20876cdafcaf129b5a9dac179944d6342763928a4846aecff064093f9f7",nullptr},
+            }},
+        // U12L20 p6 raw source SHA-256, before and after:
+        // f2e04cdddc482d708f29ef5954d388cc68a9d2d69c69345430b0585afed04789
+        // 744739618d59f751567445eedbfa97fca20ce300ce61f3061d33eea610870532
+        {"cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia",11,5,50,
+            "ac0c200bd3be189e18b228c836bb4630df907582d77a1d9eba159710faca5a92",
+            "34da95805cf873ff2eec9d898c778a9f29a7f317fd256ed2c821d75cc29c3497",
+            "df53434c6f265abf1fed8b10f538a60eed9244474d0d2488abbeb0565193d216",
+            "1e108408c50d2dcc98cb1f96b6a02d90303942a1e4c469f60b600aaa24ac26cb",
+            "88189db6d0be92e504dcb415298dcf0132e524b183482162bee4475cf0d3e25c",
+            "13b9e617b3e346eb0f3b838c48cdf62cec21b88ae0a465da165bc3ff37d721e6",
+            "064b0b63804d034068352f93aad407f724fe3a664cf92b060f659355bbe1a7b9",
+            {
+                {"block_0005_0000",0,"ad072b0270086da75fd63d8842bfd411b4723a161bc84e2215a6b00112f1ad0c",nullptr},
+                {"block_0005_0001",1,"8d176d6113a3b161ef96531216cf87850d53fbd545fbc184b28b98a6bb36dcf3",
+                    "Construye texto_admitido(const string&): acepta hasta 40 unidades ASCII, cuyos valores sin signo están entre 0 y 127; rechaza lo demás antes de clasificar o convertir. El string vacío es válido. Este control corresponde a nuestro dominio de trabajo, no a un validador de Unicode."},
+                {"block_0005_0002",2,"0a25844559975c5f4ccafeeecff36811bc152815d4adbb1f9bc552c8deb57601",
+                    "Define Resumen_caracteres con cuatro contadores int: letras, digitos, blancos y otros. resumir recibe texto admitido por referencia const y devuelve los recuentos según isalpha, isdigit e isspace del locale C, con categorías exclusivas. Define copiar_en_minusculas y copiar_en_mayusculas: reciben texto admitido por referencia const, conservan todas sus unidades y devuelven una copia convertida. Las tres funciones trabajan sin imprimir."},
+                {"block_0005_0003",3,"91ab273b9a7506cb041e1a34c292db8400db2b30968c896f6eb96bb7691b8d27",
+                    "main conserva una copia previa de la entrada, valida todo y sólo después llama a las funciones.\n\n"
+                    "Usa \"NoDo 7!\" inicialmente.\n\n"
+                    "Muestra Original:<texto>, Minusculas:<copia>, Mayusculas:<copia>, Letras:L;Digitos:D;Blancos:B;Otros:O y Entrada conservada:V, cada informe en su línea.\n\n"
+                    "V es el bool de comparar entrada con la copia previa.\n\n"
+                    "Para un rechazo muestra únicamente Texto rechazado.\n\n"
+                    "Construye una sola batería mediante probar(const std::string& entrada), con copia previa, validación y resultados locales en cada llamada. main usa \"NoDo 7!\", \"\", \"aZ09_\", cuarenta letras a, cuarenta y una letras a, la cadena de seis caracteres \" \\t\\n\\r\\f\\v\" y una cadena de una unidad construida como std::string(1, static_cast<char>(-1)), en ese orden.\n\n"
+                    "Las escrituras con barra representan caracteres de control reales.\n\n"
+                    "Ante cada prueba presenta Caso N, numerado desde 1.\n\n"
+                    "Las válidas conservan los cinco informes originales y añaden Unidades:N con la longitud; cada informe termina con salto, sin líneas vacías añadidas.\n\n"
+                    "Los rechazos sólo muestran Texto rechazado después de su cabecera.\n\n"
+                    "El último argumento, convertido a unsigned char, supera 127 y debe rechazarse antes de llamar a <cctype>.\n\n"
+                    "Usa Compilar, ejecutar y comprobar para toda la batería.",true},
+                {"block_0005_0004",5,"b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35",nullptr,false,1},
+                {"block_0005_0005",6,"18da8007edca08b9237ea2d9c47891bd48df9f888d7dce9399411eabc5d85171",
+                    "La batería comprueba vacío, letras ya convertidas, dígitos, signos, límites de cuarenta y cuarenta y una unidades, seis clases de blanco y una unidad fuera de ASCII. Los controles pueden mover el cursor al presentar sus copias: la comprobación conserva literalmente esas unidades y observa también Unidades y los recuentos. Cada contador y su suma no exceden 40 en los textos admitidos."},
+                {"block_0005_0006",4,"8ea12040685765a3c2922d75231bb70d22b98bdfd6c262d6d298543120fc2b3c",
+                    "La referencia está después del intento. No se entregan las funciones ni la validación dentro del editor; no escribas un informe fijo que sólo imite la primera muestra. Todas las entradas son strings preparados dentro de esta ejecución."},
+            }},
+        // U12L20 p10 raw source SHA-256, before and after:
+        // f2e04cdddc482d708f29ef5954d388cc68a9d2d69c69345430b0585afed04789
+        // 744739618d59f751567445eedbfa97fca20ce300ce61f3061d33eea610870532
+        {"cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia",11,9,50,
+            "ac0c200bd3be189e18b228c836bb4630df907582d77a1d9eba159710faca5a92",
+            "34da95805cf873ff2eec9d898c778a9f29a7f317fd256ed2c821d75cc29c3497",
+            "df53434c6f265abf1fed8b10f538a60eed9244474d0d2488abbeb0565193d216",
+            "1e108408c50d2dcc98cb1f96b6a02d90303942a1e4c469f60b600aaa24ac26cb",
+            "88189db6d0be92e504dcb415298dcf0132e524b183482162bee4475cf0d3e25c",
+            "74371ef3e67e56b8bfffad9aea1ca2f06c5220e6bb49833a3f38e5ca56dd6d36",
+            "08753dd000150023ab2099e34914d1b3907e7091d95448999701507a21a3896a",
+            {
+                {"block_0009_0000",0,"a11fed3ed0553081988b2741aa6a81e20672515fabf5b4833ed98a2006bd46bc",nullptr},
+                {"block_0009_0001",1,"28a8aa1e53e756d80bbecdb56fc1f830c8a33bf7e5f62088948c56a4f94285ff",
+                    "Reconstruye copiar_en_minusculas(const std::string&) desde este editor. El llamador garantiza hasta cuarenta caracteres ASCII y el locale C inicial; la función devuelve otra string, conserva longitud, orden, dígitos y signos y no imprime. Prepara una sola batería con \"ABC9_\", \"abc9_\" y \"--7\". Presenta sus copias en tres líneas y después el primer argumento original en una cuarta, todas con salto final. Usa Compilar, ejecutar y comprobar; no vuelvas al editor de clasificación.",true},
+                {"block_0009_0002",2,"d33532cf27b2415ea796da3ec14ca23b9f24d111196e6db1a60baa116d182b44",nullptr},
+            }},
     }};
-    const auto selected=std::ranges::find_if(publications,[&](const auto& value){return lesson_id==value.owner;});
-    if(selected==publications.end())return {};
-    const auto& published=*selected;const auto page=published.page;const auto& original=published.original;
-    // Canonical full-document and page proofs ignore JSON formatting while
-    // preserving every value. A later or mixed publication gets no archive.
-    if(pages.Size()!=published.page_count||layout.origin.size()!=published.page_count||layout.current.size()!=published.page_count
-        ||page>=pages.Size()||fingerprint(root)!=published.root_sha
-        ||fingerprint(metadata.GetNamedObject(L"family"))!=published.family_sha
-        ||fingerprint(array(metadata,"origin"))!=published.origin_sha
-        ||fingerprint(array(metadata,"current"))!=published.current_sha
-        ||array(metadata,"editorial").Size()!=published.editorial_count
-        ||fingerprint(array(metadata,"editorial"))!=published.editorial_sha
-        ||fingerprint(pages.GetAt(page))!=published.after_page_sha)return {};
-    if(layout.origin[page].blocks.size()!=original.size()||layout.current[page].blocks.size()!=original.size())return {};
-    StatePositionalReadingPage result;result.page=page;result.original.stable_id="page_"+std::to_string(page);
-    JsonArray reconstructed;
-    const auto current=array(pages.GetObjectAt(page),"blocks");
-    for(unsigned index=0;index<original.size();++index){
-        const auto& item=original[index];
-        if(layout.origin[page].blocks[index]!=item.id||layout.current[page].blocks[item.current]!=item.id)return {};
-        const auto previous=JsonObject::Parse(current.GetObjectAt(item.current).Stringify());
-        if(item.text){
-            previous.Insert(L"text",JsonValue::CreateStringValue(key(item.text)));
-            if(previous.HasKey(L"emphasis"))previous.Remove(L"emphasis");
+    std::vector<StatePositionalReadingPage> result;
+    for(const auto& published:publications){
+        if(lesson_id!=published.owner)continue;
+        const auto page=published.page;const auto& original=published.original;
+        // Canonical full-document and page proofs ignore JSON formatting while
+        // preserving every value. Reject all pages of a later or mixed source.
+        if(pages.Size()!=published.page_count||layout.origin.size()!=published.page_count||layout.current.size()!=published.page_count
+            ||page>=pages.Size()||fingerprint(root)!=published.root_sha
+            ||fingerprint(metadata.GetNamedObject(L"family"))!=published.family_sha
+            ||fingerprint(array(metadata,"origin"))!=published.origin_sha
+            ||fingerprint(array(metadata,"current"))!=published.current_sha
+            ||array(metadata,"editorial").Size()!=published.editorial_count
+            ||fingerprint(array(metadata,"editorial"))!=published.editorial_sha
+            ||fingerprint(pages.GetAt(page))!=published.after_page_sha)return {};
+        if(layout.origin[page].blocks.size()!=original.size()||layout.current[page].blocks.size()!=original.size())return {};
+        StatePositionalReadingPage archived;archived.page=page;archived.original.stable_id="page_"+std::to_string(page);
+        JsonArray reconstructed;
+        const auto current=array(pages.GetObjectAt(page),"blocks");
+        for(unsigned index=0;index<original.size();++index){
+            const auto& item=original[index];
+            if(item.current>=current.Size()||layout.origin[page].blocks[index]!=item.id
+                ||layout.current[page].blocks[item.current]!=item.id)return {};
+            const auto previous=JsonObject::Parse(current.GetObjectAt(item.current).Stringify());
+            if(item.text){
+                previous.Insert(L"text",JsonValue::CreateStringValue(key(item.text)));
+                if(previous.HasKey(L"emphasis"))previous.Remove(L"emphasis");
+            }
+            if(item.command_emphasis){
+                JsonObject highlight;highlight.Insert(L"text",JsonValue::CreateStringValue(L"Compilar, ejecutar y comprobar"));
+                highlight.Insert(L"style",JsonValue::CreateStringValue(L"bold"));JsonArray emphasis;emphasis.Append(highlight);
+                previous.Insert(L"emphasis",emphasis);
+            }
+            // These complete originals predate the authored wrong-answer and
+            // compiler guides. Their full hashes below authenticate the removal.
+            if(previous.HasKey(L"reviewFeedback"))previous.Remove(L"reviewFeedback");
+            if(previous.HasKey(L"outputCheck"))for(const auto& value:array(previous.GetNamedObject(L"outputCheck"),"cases")){
+                const auto test=value.GetObject();
+                if(test.HasKey(L"explanation"))test.Remove(L"explanation");
+                if(test.HasKey(L"reviewFeedback"))test.Remove(L"reviewFeedback");
+                if(item.original_output_count){
+                    const auto outputs=array(test,"outputs");if(outputs.Size()<item.original_output_count)return {};
+                    JsonArray accepted;for(unsigned output=0;output<item.original_output_count;++output)accepted.Append(outputs.GetAt(output));
+                    test.Insert(L"outputs",accepted);
+                }
+            }
+            if(fingerprint(previous)!=item.sha256)return {};
+            reconstructed.Append(previous);
+            const auto raw=utf8(previous.Stringify());auto block=read_block(previous,raw);
+            block.stable_id="block_"+std::to_string(page)+'_'+std::to_string(index);block.address={page,index,{},archived.original.stable_id};
+            archived.current_owners.emplace_back(item.id);archived.original.blocks.push_back(std::move(block));
         }
-        if(index==1){
-            JsonObject highlight;highlight.Insert(L"text",JsonValue::CreateStringValue(L"Compilar, ejecutar y comprobar"));
-            highlight.Insert(L"style",JsonValue::CreateStringValue(L"bold"));JsonArray emphasis;emphasis.Append(highlight);
-            previous.Insert(L"emphasis",emphasis);
-        }
-        if(fingerprint(previous)!=item.sha256)return {};
-        reconstructed.Append(previous);
-        const auto raw=utf8(previous.Stringify());auto block=read_block(previous,raw);
-        block.stable_id="block_"+std::to_string(page)+'_'+std::to_string(index);block.address={page,index,{},result.original.stable_id};
-        result.current_owners.emplace_back(item.id);result.original.blocks.push_back(std::move(block));
+        const auto original_page=JsonObject::Parse(pages.GetObjectAt(page).Stringify());original_page.Insert(L"blocks",reconstructed);
+        if(fingerprint(original_page)!=published.before_page_sha)return {};
+        result.push_back(std::move(archived));
     }
-    const auto original_page=JsonObject::Parse(pages.GetObjectAt(page).Stringify());original_page.Insert(L"blocks",reconstructed);
-    if(fingerprint(original_page)!=published.before_page_sha)return {};
     return result;
 }
 std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject& metadata,const JsonArray& pages,
@@ -1544,8 +1655,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=composed_feedback_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
-    if(auto positional=compiler_positional_reading_page(root,metadata,pages,result,lesson_id))
-        result.positional_reading_pages.push_back(std::move(*positional));
+    result.positional_reading_pages=compiler_positional_reading_pages(root,metadata,pages,result,lesson_id);
     if(!bibliography_edges.empty()){
         collect_actual();auto actual=return_actual_blocks;
         std::map<std::string,std::optional<TextSemantics>> semantics;

@@ -15,6 +15,14 @@ import stable_state_layout as layout
 # Zero-based compiler and complete battery-reference pages in the publications.
 READER_PAGES = {"u11l19": (4, 7), "u11l20": (5, 8), "u11l21": (5, 7)}
 
+# Lesson, old/current compiler coordinates, old/current complete reference.
+DUAL_COMPILER_READERS = (
+    ("u11l22", (3, 1), (3, 4), (8, 1), (8, 1)),
+    ("u11l22", (6, 3), (6, 3), (9, 1), (9, 1)),
+    ("u12l20", (5, 4), (5, 5), (8, 1), (7, 1)),
+    ("u12l20", (9, 2), (9, 2), (10, 1), (10, 1)),
+)
+
 
 class CompilerImportFixtureTest(unittest.TestCase):
     @classmethod
@@ -241,11 +249,187 @@ class CompilerImportFixtureTest(unittest.TestCase):
         self.assertEqual("note", current[2]["type"])
         self.assertNotEqual(old[2]["text"], current[2]["text"])
 
-    def test_u11_reader_exports_require_exact_lf_publication_bytes(self):
+    def test_two_compiler_readers_keep_their_four_complete_reference_programs(self):
+        contracts = {
+            ("u11l22", 3): (
+                (14045, "9c376181ebadf671ea0ca95457fb9c668e1bdfd9ba82553b79feefc8e156136d"),
+                (230, "593a8b8831537bf2f91652148f496ca3ce59877597398d05d43d94109e112dc7"),
+                (2504, "20a5d2ae4850389285d569572b4222aaaa11553716056212d8368aa64259bfd4"),
+            ),
+            ("u11l22", 6): (
+                (13383, "7eb880af297120043fdf6c2049ed8162c0c88fcf81d0e690aaaaa774784ee249"),
+                (13224, "26b8992fdfc9ff7c82c8c18c98130dfcaf4d06375b144867b878fb1976011318"),
+                (620, "fbbdf61b5a97fa2796cf34eab2b78f775010339ea5ec41e3a37890c1fe734d00"),
+            ),
+            ("u12l20", 5): (
+                (2594, "532ede77d6450b3fe22b1a7f95a118fcf4e5c0062796be66e01dae053aea18c5"),
+                (160, "5b5d9a36e9c9b94ae1719daa09ded0942108b6942c82aa0ccc4580f1da2d8584"),
+                (802, "b70c4f3d4868a39d6cb96b98ef77ff711d0cfd777ef74621073c8d96cadbf852"),
+            ),
+            ("u12l20", 9): (
+                (552, "fc2ce4fb5b55ed73a7db9c815d055dd319112c49b4189e128f23b3de9702ae4c"),
+                (142, "1f6e465ea4079dfc144def9a2fe856649f07920bf6f81193b71591057c73a164"),
+                (22, "0e72aa89f954e384f1bc0a08b5a71db1fb2b5e0c3f93e01fae119476f85b6106"),
+            ),
+        }
+        for name, old_at, new_at, old_ref, new_ref in DUAL_COMPILER_READERS:
+            with self.subTest(lesson=name, owner=old_at):
+                before, after = (self.documents[name, side] for side in fixture.COMMITS)
+                old_editor = before["pages"][old_at[0]]["blocks"][old_at[1]]
+                editor = after["pages"][new_at[0]]["blocks"][new_at[1]]
+                reference = before["pages"][old_ref[0]]["blocks"][old_ref[1]]
+                self.assertEqual(reference, after["pages"][new_ref[0]]["blocks"][new_ref[1]])
+                self.assertEqual("code", reference["type"])
+                self.assertEqual("cpp", reference["language"])
+                self.assertEqual(old_editor["initialCode"], editor["initialCode"])
+                for block in (old_editor, editor):
+                    self.assertEqual("cpp_compiler", block["type"])
+                    self.assertEqual(1, len(block["outputCheck"]["cases"]))
+                    self.assertEqual("", block["outputCheck"]["cases"][0]["standardInput"])
+                output = old_editor["outputCheck"]["cases"][0]["outputs"][0]
+                self.assertEqual(output, editor["outputCheck"]["cases"][0]["outputs"][0])
+                for value, (size, digest) in zip(
+                        (reference["code"], editor["initialCode"], output), contracts[name, old_at[0]], strict=True):
+                    payload = value.encode("utf-8")
+                    self.assertEqual(size, len(payload))
+                    self.assertEqual(digest, hashlib.sha256(payload).hexdigest())
+                # Complete battery sources are distinct from earlier examples;
+                # locating a code block by the old visible page is insufficient.
+                positions = layout.validate(after)
+                self.assertEqual(old_at, positions[new_at])
+                self.assertEqual(old_ref, positions[new_ref])
+
+    def test_two_compiler_readers_keep_exact_original_pages_and_editorial_chains(self):
+        pages = {
+            ("u11l22", 3): ((0, 2, 3, 4, 1),
+                ("heading", "cpp_compiler", "paragraph", "paragraph", "paragraph"), (2, 3, 4), None,
+                "5d1a006b8d0cec809dfd4f6ff36fe310819a20ebc3beff37f9b97256664fa37c",
+                "37f3ef1d2e0ebeaf4937767add00fc78583d5e80aa7bcdbb7b5638a7595e7b83"),
+            ("u11l22", 6): ((0, 1, 2, 3),
+                ("heading", "output_prediction", "paragraph", "cpp_compiler"), (1, 2), 2,
+                "e5901ea62ebdd5b33887e4b9bc0915788ed0af84da9b391a19f9d98f2152470e",
+                "f0790b41d3a1f0cd047a1b0d2c9b5376b96e023eeacc88f4bf00b1c55f0d35f1"),
+            ("u12l20", 5): ((0, 1, 2, 3, 6, 4, 5),
+                ("heading", "paragraph", "paragraph", "paragraph", "cpp_compiler", "paragraph", "note"),
+                (1, 2, 3, 4, 5, 6), 3,
+                "13b9e617b3e346eb0f3b838c48cdf62cec21b88ae0a465da165bc3ff37d721e6",
+                "064b0b63804d034068352f93aad407f724fe3a664cf92b060f659355bbe1a7b9"),
+            ("u12l20", 9): ((0, 1, 2),
+                ("heading", "paragraph", "cpp_compiler"), (1, 2), 1,
+                "74371ef3e67e56b8bfffad9aea1ca2f06c5220e6bb49833a3f38e5ca56dd6d36",
+                "08753dd000150023ab2099e34914d1b3907e7091d95448999701507a21a3896a"),
+        }
+        for (name, page), (order, types, changed, emphasis_at, old_sha, new_sha) in pages.items():
+            with self.subTest(lesson=name, page=page):
+                before, after = (self.documents[name, side] for side in fixture.COMMITS)
+                old_page, new_page = before["pages"][page], after["pages"][page]
+                self.assertEqual(old_sha, layout.fingerprint(old_page))
+                self.assertEqual(new_sha, layout.fingerprint(new_page))
+                self.assertEqual(types, tuple(block["type"] for block in old_page["blocks"]))
+                self.assertEqual([], after["stateLayout"]["additions"])
+                self.assertEqual([f"block_{page:04d}_{index:04d}" for index in order],
+                                 after["stateLayout"]["current"][page]["blocks"])
+                current, positions = layout._blocks(after), layout.validate(after)
+                actual_changed = []
+                for visible, original in enumerate(order):
+                    self.assertEqual((page, original), positions[page, visible])
+                for index, old in enumerate(old_page["blocks"]):
+                    identity = f"block_{page:04d}_{index:04d}"
+                    expected_emphasis = ([{"text": "Compilar, ejecutar y comprobar", "style": "bold"}]
+                                         if index == emphasis_at else [])
+                    self.assertEqual(expected_emphasis, old.get("emphasis", []))
+                    edges = [edge for edge in after["stateLayout"]["editorial"] if edge["id"] == identity]
+                    if old == current[identity]:
+                        self.assertEqual([], edges)
+                        continue
+                    actual_changed.append(index)
+                    # U12's first compiler retains both the presentation and
+                    # exact CRT-alternative revisions; no invented direct edge.
+                    self.assertEqual(2 if (name, page, index) == ("u12l20", 5, 4) else 1, len(edges))
+                    self.assertEqual(layout.fingerprint(old), edges[0]["beforeSha256"])
+                    self.assertEqual(layout.fingerprint(current[identity]), edges[-1]["afterSha256"])
+                    self.assertEqual([edge["afterSha256"] for edge in edges[:-1]],
+                                     [edge["beforeSha256"] for edge in edges[1:]])
+                self.assertEqual(changed, tuple(actual_changed))
+        # The whole U12 reference page moves before the later ordinary
+        # activities; both keep their original storage coordinates.
+        after = self.documents["u12l20", "after"]
+        self.assertEqual([f"page_{p:04d}" for p in (0, 1, 2, 3, 4, 5, 6, 8, 7, 9, 10)],
+                         [page["id"] for page in after["stateLayout"]["current"]])
+
+    def test_two_compiler_readers_account_for_prior_and_same_page_objectives(self):
+        u11_first = ((1, 4, "multiple_choice"), (2, 4, "multiple_choice"))
+        u12_first = ((0, 5, "output_prediction"), (0, 6, "multiple_choice"), (1, 3, "fill_code"),
+                     (1, 5, "output_prediction"), (1, 6, "multiple_choice"), (2, 3, "output_prediction"),
+                     (2, 4, "multiple_choice"), (2, 5, "output_prediction"), (3, 4, "output_prediction"),
+                     (3, 5, "multiple_choice"), (4, 4, "multiple_choice"), (4, 6, "multiple_choice"))
+        prerequisites = {
+            ("u11l22", 3): u11_first,
+            ("u11l22", 6): u11_first + ((3, 1, "cpp_compiler"), (4, 1, "multiple_choice"),
+                                       (4, 2, "multiple_choice"), (6, 1, "output_prediction")),
+            ("u12l20", 5): u12_first,
+            ("u12l20", 9): u12_first + ((5, 4, "cpp_compiler"), (7, 1, "multiple_choice"),
+                                       (7, 2, "output_prediction"), (7, 4, "multiple_choice")),
+        }
+        for name, old_at, new_at, _, _ in DUAL_COMPILER_READERS:
+            with self.subTest(lesson=name, owner=old_at):
+                before, after = (self.documents[name, side] for side in fixture.COMMITS)
+                expected = prerequisites[name, old_at[0]]
+                for document, focal in ((before, old_at), (after, new_at)):
+                    mapping = layout.validate(document if "stateLayout" in document else layout.prepare(document))
+                    actual = tuple((*mapping[p, i], block["type"])
+                                   for p, page in enumerate(document["pages"][:focal[0] + 1])
+                                   for i, block in enumerate(page["blocks"])
+                                   if (p < focal[0] or i < focal[1])
+                                   and block["type"] not in ("heading", "paragraph", "code", "note"))
+                    self.assertEqual(expected, actual)
+                current = layout._blocks(after)
+                for page, block, kind in expected:
+                    if kind == "cpp_compiler":
+                        # This owner requires a real educational run in native
+                        # QA. It cannot be prepared as an ordinary response.
+                        self.assertIn(f"block_{page:04d}_{block:04d}", fixture.FIXTURES[name]["owners"])
+                        continue
+                    old = before["pages"][page]["blocks"][block]
+                    new = current[f"block_{page:04d}_{block:04d}"]
+                    def response_contract(value):
+                        return {key: item for key, item in value.items()
+                                if key not in ("explanation", "reviewFeedback")}
+                    self.assertEqual(response_contract(old), response_contract(new))
+
+    def test_u12_compiler_reader_distinguishes_old_generic_and_new_authored_feedback(self):
+        after_case_hashes = {
+            (5, 4): "826df2f9c33fff3e41868f1188bca103bc7736e696d86d0fd58b0cfd5112e34d",
+            (9, 2): "e54c152100cb4c86240342f4eb2fc7e9ddca8b5e8390f1d55560a955fb35b52f",
+        }
+        before, after = (self.documents["u12l20", side] for side in fixture.COMMITS)
+        current = layout._blocks(after)
+        for (page, block), case_hash in after_case_hashes.items():
+            with self.subTest(owner=(page, block)):
+                old_case = before["pages"][page]["blocks"][block]["outputCheck"]["cases"][0]
+                case = current[f"block_{page:04d}_{block:04d}"]["outputCheck"]["cases"][0]
+                self.assertEqual({"standardInput", "outputs"}, set(old_case))
+                self.assertEqual({"standardInput", "outputs", "explanation", "reviewFeedback"}, set(case))
+                self.assertEqual(case_hash, layout.fingerprint(case))
+                self.assertTrue(case["explanation"])
+                self.assertEqual(2 if page == 5 else 1, len(case["reviewFeedback"]))
+                self.assertEqual([""], case["reviewFeedback"][0]["outputs"])
+                self.assertTrue(case["reviewFeedback"][0]["text"])
+                self.assertNotIn("", case["outputs"])
+        # U11's two compiler cases retain generic feedback despite the new
+        # review of the ordinary prediction preceding its second compiler.
+        for identity in fixture.FIXTURES["u11l22"]["owners"]:
+            for side in fixture.COMMITS:
+                document = self.documents["u11l22", side]
+                mapped = document if "stateLayout" in document else layout.prepare(document)
+                case = layout._blocks(mapped)[identity]["outputCheck"]["cases"][0]
+                self.assertEqual({"standardInput", "outputs"}, set(case))
+
+    def test_compiler_reader_exports_require_exact_lf_publication_bytes(self):
         # Historical-reader inputs come from the exporter's exact Git bytes.
         # They are distinct from current assets checked out with CRLF. The
         # existing all-sources test separately rejects the opposite revision.
-        for name in READER_PAGES:
+        for name in fixture.FIXTURES:
             for side in fixture.COMMITS:
                 raw = self.raw[name, side]
                 self.assertNotIn(b"\r", raw)
@@ -275,20 +459,20 @@ class CompilerImportFixtureTest(unittest.TestCase):
 
     def test_rejects_foreign_ownership_source_or_execution_requirements(self):
         for name, spec in fixture.FIXTURES.items():
-            identity = next(iter(spec["owners"]))
-            for mutation in ("family", "origin", "source", "input", "output", "required"):
-                with self.subTest(lesson=name, mutation=mutation):
-                    before = self.documents[name, "before"]
-                    changed = deepcopy(self.documents[name, "after"])
-                    owner = layout._blocks(changed)[identity]
-                    if mutation == "family": changed["stateLayout"]["family"]["es"]["sha256"] = "0" * 64
-                    elif mutation == "origin": changed["stateLayout"]["origin"][0]["blocks"][0] = "foreign"
-                    elif mutation == "source": owner["initialCode"] += "\n// another program\n"
-                    elif mutation == "input": owner["outputCheck"]["cases"][0]["standardInput"] = "different"
-                    elif mutation == "output": owner["outputCheck"]["cases"][0]["outputs"][0] += "different"
-                    else: changed["compilerPuzzlesRequired"] = False
-                    with self.assertRaises((ValueError, layout.LayoutError)):
-                        fixture.validate_pair(name, before, changed)
+            for identity in spec["owners"]:
+                for mutation in ("family", "origin", "source", "input", "output", "required"):
+                    with self.subTest(lesson=name, owner=identity, mutation=mutation):
+                        before = self.documents[name, "before"]
+                        changed = deepcopy(self.documents[name, "after"])
+                        owner = layout._blocks(changed)[identity]
+                        if mutation == "family": changed["stateLayout"]["family"]["es"]["sha256"] = "0" * 64
+                        elif mutation == "origin": changed["stateLayout"]["origin"][0]["blocks"][0] = "foreign"
+                        elif mutation == "source": owner["initialCode"] += "\n// another program\n"
+                        elif mutation == "input": owner["outputCheck"]["cases"][0]["standardInput"] = "different"
+                        elif mutation == "output": owner["outputCheck"]["cases"][0]["outputs"][0] += "different"
+                        else: changed["compilerPuzzlesRequired"] = False
+                        with self.assertRaises((ValueError, layout.LayoutError)):
+                            fixture.validate_pair(name, before, changed)
 
     def test_export_preserves_exact_publications_and_never_rewrites_same_files(self):
         with tempfile.TemporaryDirectory() as folder:
