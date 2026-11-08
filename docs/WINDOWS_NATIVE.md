@@ -190,12 +190,81 @@ CTest ejecuta los tres casos en serie, cada uno con un límite de 45 segundos.
 El build, los logs y el primer WAV se aíslan bajo `out/qa/narration-player-ci`.
 Las pruebas de ruta y diagnóstico conservan cada una su QA nuevo y único bajo
 el `LocalAppData` que resuelve Windows; no crean un almacén de progreso.
-El script registra los servicios y dispositivos presentes y puede arrancar
-`AudioEndpointBuilder` y `Audiosrv`
+En este probe sin `-VirtualAudio`, el script registra los servicios y dispositivos
+presentes y puede arrancar `AudioEndpointBuilder` y `Audiosrv`
 si ya existen, están detenidos y están habilitados. No cambia su tipo de inicio,
 instala controladores ni crea endpoints. La disponibilidad de reproducción la
 determinan las pruebas del reproductor, no el inventario de dispositivos.
 El workflow conserva los logs y JUnit durante catorce días.
+
+### Evaluación con un endpoint virtual en un runner hospedado
+
+El workflow `.github/workflows/windows-virtual-audio.yml` es un experimento
+explícito y acotado: se solicita mediante `workflow_dispatch` cuando esté
+disponible en la rama predeterminada, o con un commit de `Codex` cuyo mensaje
+comience por `qa-virtual-audio:`. Los pushes ordinarios no lo activan.
+Primero ejecuta `Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio`.
+Sólo si pasan sus tres pruebas originales continúa con `-Suite U12Reader`, en
+el mismo runner, para conservar el endpoint entre ambas suites. No reduce las
+aserciones ni convierte un fallo de preparación o reproducción en una omisión
+satisfactoria.
+
+Las entradas completas, exclusivamente desde el checkout de un runner Windows
+efímero hospedado por GitHub, son:
+
+```powershell
+$ErrorActionPreference = 'Stop'
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio
+& .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite U12Reader
+```
+
+`-VirtualAudio` sólo se admite junto con `-Suite NarrationPlayer`. La preparación
+no se utiliza en la PC del usuario ni forma parte de los botones de compilación
+local. El aprovisionador invoca `Prepare-VirtualAudioCI.ps1` con las rutas ya
+seleccionadas mediante `-PythonPath`, `-SignToolPath` y `-LogDirectory`; los
+diagnósticos de esta preparación quedan en
+`out/qa/narration-player-ci/virtual-audio`.
+
+La descarga procede del [paquete oficial VB-CABLE46](https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack46.zip).
+Se exige su SHA-256 fijo
+`bc44e8974191a5a2427d6c979e2dab08dbb09925f3f435dfa2f0ba3e45b6eb90`.
+Antes de crear un dispositivo, se comprueba la firma Microsoft del catálogo
+`vbaudio_cable64_win10.cat` con la confianza existente de Windows y se utiliza
+SignTool con `/kp` y `/o` para verificar la política kernel de la versión real
+del runner y la pertenencia de `vbMmeCable64_win10.inf` y
+`vbaudio_cable64_win10.sys` al catálogo. La comprobación sigue la
+[verificación de firmas de controladores de Microsoft](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/verifying-the-release-signature)
+y las [opciones de SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool).
+El hash o el nombre del firmante por sí solos no acreditan esa aceptación.
+
+Tras superar esas comprobaciones, `install_ci_audio_device.py` utiliza las APIs
+SetupDi y `UpdateDriverForPlugAndPlayDevicesW` con
+`INSTALLFLAG_NONINTERACTIVE`, sin `INSTALLFLAG_FORCE`. Rechaza un dispositivo
+previo con el mismo identificador de hardware. No ejecuta el instalador EXE del
+proveedor, importa certificados, modifica almacenes de confianza ni cambia la
+integridad de código, Secure Boot o el modo de prueba de firmas. Si Windows
+requiere una interacción, la llamada falla; no se automatiza su aceptación.
+
+El README del paquete y el [manual de VB-CABLE](https://vb-audio.com/Cable/VBCABLE_ReferenceManual.pdf)
+indican reiniciar para finalizar la instalación. Este experimento con las APIs
+de Microsoft no afirma seguir la instalación recomendada del proveedor sin
+ese reinicio: falla si observa `DI_NEEDRESTART`, `DI_NEEDREBOOT` o
+`bRebootRequired`, y nunca reinicia automáticamente. Un retorno satisfactorio
+de la API tampoco acredita reproducción. La consulta MMDevice y las pruebas
+originales determinan si hay un endpoint utilizable y si el transporte real
+de MediaPlayer funciona con él.
+
+VB-CABLE es donationware. La [licencia del proveedor](https://vb-audio.com/Services/licensing.htm)
+permite instalar y evaluar primero; este workflow opt-in documenta esa
+evaluación acotada y no concede aprobación tácita para un despliegue profesional
+repetido. El endpoint virtual transporta audio dentro del sistema: un resultado
+satisfactorio no acreditaría salida acústica ni escucha humana. La revisión
+visual y auditiva durante el estudio sigue correspondiendo al usuario.
+
+La preparación y la secuencia de suites deben ejecutarse para obtener un
+resultado. Su incorporación al repositorio no acredita que la firma sea
+aceptada en el runner, que el endpoint llegue a estar operativo ni que las
+pruebas hayan pasado.
 
 ### Síntesis y diagnóstico del worker en un runner Windows
 
@@ -252,8 +321,8 @@ La suite debe compilarse y ejecutarse para obtener evidencia de su resultado;
 su registro en CMake no la declara superada. Un resultado satisfactorio acredita
 sólo esos escenarios de síntesis, puente nativo y diagnóstico. No acredita
 reproducción audible, escucha humana, pausas del reproductor ni recorridos
-integrados del lector. Las dos pruebas positivas de reproducción permanecen en
-el probe explícito anterior, con sus aserciones completas.
+integrados del lector. Las dos pruebas positivas de reproducción se conservan
+en los probes explícitos del reproductor, con sus aserciones completas.
 
 ### Compilación de los recorridos curriculares en Windows
 
@@ -279,6 +348,55 @@ integrados continúan requiriendo sus fuentes auténticas, runtime y modelos
 verificados, reproducción real y ejecución de cada caso. Los binarios y logs
 quedan bajo `out/qa/reader-build-ci`; el workflow conserva durante catorce días
 la salida de compilación y un JSON con tamaño y SHA-256 de cada ejecutable.
+
+### Lector histórico de U12 con síntesis y reproducción reales
+
+`Test-NativeCurricularCI.ps1 -Suite U12Reader` y
+`LGAED_U12_READER_QA_ONLY=ON` preparan y ejecutan las tres fases originales de
+la recuperación histórica de narración de U12, lección 4. El modo es excluyente
+con los demás modos focales y conserva el toolchain Windows, el perfil C++23
+exacto, las bibliotecas completas de núcleo y plataforma, los controles
+curriculares de producción y el ejecutable completo `lgaed_lesson_reader_tests`.
+No configura la aplicación gráfica completa, sus shaders ni los backends
+numéricos que estas pruebas no utilizan.
+
+El runtime real se prepara con `NarrationHost`, las herramientas exactas del
+manifiesto, Kokoro/Dora y los recursos auxiliares ingleses autenticados. Emplea
+el mismo preparador y staging aislado descritos para `NarrationWorker`, con
+destinos nuevos y sin restaurar cachés de narración. Requiere además un endpoint
+Windows de renderizado operativo; la síntesis por sí sola no satisface las
+aserciones de reproducción.
+
+`cmake/U12PublishedReaderTests.cmake` comparte con el modo habitual el exportador
+histórico, los fixtures auténticos `before.json`, `after.json` y `manifest.json`,
+y el registro de las pruebas. Conserva los argumentos y las aserciones de la
+adopción directa de la publicación posicional de U12L4 a su revisión publicada
+con diecisiete entradas editoriales. La exportación necesita la historia Git
+completa para autenticar ambas publicaciones. Se registran exactamente estos
+tres casos:
+
+- `native.u12_composed_output_published17_reader_0`.
+- `native.u12_composed_output_published17_reader_1`.
+- `native.u12_composed_output_published17_reader_2`.
+
+CTest los ejecuta en serie, con un límite de 300 segundos por caso. Las pruebas
+exigen PCM y tiempos reales, una pausa obtenida mediante reproducción, la
+recuperación del párrafo correspondiente al adoptar la revisión y la
+conservación de respuestas, borradores independientes y WAV compatibles.
+La respuesta ordinaria previa que aísla la entrada de la tercera fase sigue
+identificada como dato QA sintético: no concede una comprobación del compilador
+ni un marcador de reproducción. No se fabrican avances del reloj, eventos del
+reproductor ni evidencia de reproducción para suplir un endpoint ausente.
+
+El build, los fixtures, los logs y el XML JUnit quedan bajo
+`out/qa/u12-reader-ci`; el runtime conserva `out/narration/runtime.json` y las
+grabaciones de cada escenario utilizan sus directorios QA originales. La
+secuencia opt-in `windows-virtual-audio.yml` sólo inicia esta suite después de
+superar `NarrationPlayer` en el mismo runner. Los resultados de ejecución siguen
+sin estar acreditados por este procedimiento. Si pasa, su alcance será el de
+esas tres fases con el dispositivo observado, sin atribuir escucha humana,
+validación acústica, ejecución del compilador educativo ni aceptación de los
+demás recorridos curriculares.
 
 ### Comprobación local de ventanas y datos
 

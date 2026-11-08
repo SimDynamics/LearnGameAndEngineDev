@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker')]
-    [string] $Suite = 'StateImport'
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker', 'U12Reader')]
+    [string] $Suite = 'StateImport',
+    [switch] $VirtualAudio
 )
 
 $ErrorActionPreference = 'Stop'
@@ -11,6 +12,9 @@ $PSNativeCommandUseErrorActionPreference = $false
 # Local application builds keep using Build-Native.ps1 and the existing tools.
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Run this provisioning script only on a disposable GitHub-hosted Windows runner.'
+}
+if ($VirtualAudio -and $Suite -ne 'NarrationPlayer') {
+    throw 'Evaluate the virtual audio endpoint with the real NarrationPlayer tests first.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -69,6 +73,19 @@ $qaSuiteConfig = switch ($Suite) {
             )
         }
     }
+    'U12Reader' {
+        @{
+            Directory = 'u12-reader-ci'
+            CMakeOption = 'LGAED_U12_READER_QA_ONLY'
+            Targets = @('lgaed_lesson_reader_tests')
+            Results = 'u12-reader'
+            Tests = @(
+                'native.u12_composed_output_published17_reader_0',
+                'native.u12_composed_output_published17_reader_1',
+                'native.u12_composed_output_published17_reader_2'
+            )
+        }
+    }
 }
 $qaBuild = Join-Path $qaRoot "out\qa\$($qaSuiteConfig.Directory)"
 $qaBuildTargets = $qaSuiteConfig.Targets -join ' '
@@ -113,7 +130,9 @@ Write-Host "Verified MSVC: $($qaManifest.visualStudio.msvcToolset); cl.exe $($qa
 $qaSdkRoot = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10'
 $qaSdkVersion = $qaManifest.visualStudio.windowsSdk
 $qaSdkMinimum = [version]$qaManifest.visualStudio.windowsSdkServicing
-$qaSdkTools = @('rc.exe', 'mt.exe') | ForEach-Object {
+$qaSdkToolNames = @('rc.exe', 'mt.exe')
+if ($VirtualAudio) { $qaSdkToolNames += 'signtool.exe' }
+$qaSdkTools = $qaSdkToolNames | ForEach-Object {
     Join-Path $qaSdkRoot "bin\$qaSdkVersion\x64\$_"
 }
 $qaSdkReady = $true
@@ -167,7 +186,7 @@ $qaPython = (Get-Command python.exe -CommandType Application -ErrorAction Stop |
 $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $qaRuntimeOptions = ''
 $qaRuntimePaths = @()
-if ($Suite -eq 'NarrationWorker') {
+if ($Suite -in @('NarrationWorker', 'U12Reader')) {
     # This job uses a new checkout with no restored runtime or audio caches.
     # Existing QA/user data is never removed to manufacture a first generation.
     $qaResourceRoot = Join-Path $qaRoot 'out\qa\narration-ci-resources'
@@ -253,9 +272,9 @@ if ($qaActualTests.Count -ne $qaExpected.Count -or
     throw "The focused $Suite configuration must register exactly its $($qaExpected.Count) declared tests."
 }
 
-if ($Suite -eq 'NarrationPlayer') {
+if ($Suite -in @('NarrationPlayer', 'U12Reader')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
-    # service is preparation; no drivers, endpoints or startup types are replaced.
+    # service is preparation; the opt-in endpoint evaluation is a separate step.
     & {
         Write-Output "Windows audio environment: $([DateTime]::UtcNow.ToString('O'))"
         foreach ($qaServiceName in @('AudioEndpointBuilder', 'Audiosrv')) {
@@ -285,6 +304,12 @@ if ($Suite -eq 'NarrationPlayer') {
             Write-Output "Audio device inventory unavailable: $($_.Exception.Message)"
         }
     } | Tee-Object -FilePath (Join-Path $qaBuild 'audio-environment.log') | Write-Host
+}
+
+if ($VirtualAudio) {
+    $qaSignTool = Join-Path $qaSdkRoot "bin\$qaSdkVersion\x64\signtool.exe"
+    & (Join-Path $PSScriptRoot 'Prepare-VirtualAudioCI.ps1') -PythonPath $qaPython `
+        -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
 }
 
 & $qaCTest --test-dir $qaBuild --parallel 1 --verbose --output-on-failure --no-tests=error `
