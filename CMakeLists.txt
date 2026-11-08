@@ -8,12 +8,20 @@ include(cmake/WindowsCxxStandard.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WindowsCxxStandard.cmake")
 project(LearnGameAndEngineDev VERSION 0.1.0 LANGUAGES CXX RC)
 
+option(LGAED_STATE_IMPORT_QA_ONLY
+    "Build only the four published native state-import regressions with the official Windows toolchain" OFF)
+
 include(cmake/VerifyNativeToolchain.cmake)
 lgaed_verify_native_toolchain()
 include(cmake/VerifyNativeDependencies.cmake)
 lgaed_verify_native_dependencies()
-include(cmake/WindowsRuntimeTools.cmake)
-lgaed_select_windows_runtime_tools()
+if(LGAED_STATE_IMPORT_QA_ONLY)
+    include(cmake/WindowsStateImportQaTools.cmake)
+    lgaed_select_windows_state_import_qa_tools()
+else()
+    include(cmake/WindowsRuntimeTools.cmake)
+    lgaed_select_windows_runtime_tools()
+endif()
 
 include(CheckCXXSourceCompiles)
 set(CMAKE_REQUIRED_FLAGS "/Zc:__cplusplus")
@@ -61,6 +69,47 @@ add_executable(lgaed_cpp_tool_host native/platform/windows/cpp_tool_host.cpp)
 target_link_libraries(lgaed_cpp_tool_host PRIVATE lgaed_host_options user32)
 set_target_properties(lgaed_cpp_tool_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp native/core/image_resource.cpp
+    native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
+target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
+
+add_library(lgaed_platform_windows STATIC
+    native/platform/windows/environment.cpp
+    native/platform/windows/profile_migration.cpp
+    native/platform/windows/content_loader.cpp
+    native/platform/windows/bibliography_revision.cpp
+    native/platform/windows/narration_preferences.cpp
+    native/platform/windows/catalog_loader.cpp
+    native/platform/windows/audio_generation.cpp
+    native/platform/windows/narration_worker.cpp
+    native/platform/windows/narration_cpu_policy.cpp
+    native/platform/windows/narration_player.cpp
+    native/platform/windows/system_speech.cpp
+    native/platform/windows/system_speech_process.cpp
+    native/platform/windows/state_store.cpp
+    native/platform/windows/android_import.cpp
+    native/platform/windows/cpp_project_history.cpp
+    native/platform/windows/cpp_runner.cpp
+    native/platform/windows/compiler_completion.cpp)
+target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
+add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
+target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
+# This mode still builds the complete production core/platform libraries and
+# the original state-test translation unit. It does not configure presentation,
+# shader assets or the narration runtime, which these four import modes do not
+# use. All native toolchain/dependency/C++23 checks above remain mandatory.
+if(LGAED_STATE_IMPORT_QA_ONLY)
+    include(CTest)
+    if(NOT BUILD_TESTING)
+        message(FATAL_ERROR "LGAED_STATE_IMPORT_QA_ONLY requires BUILD_TESTING=ON.")
+    endif()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    include(cmake/StateImportTests.cmake)
+    lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
+    message(STATUS "Focused native import QA: four tests / 52 scenarios; no application, reader or audio verification.")
+    return()
+endif()
+
 # Author-time shader compiler: deliberately independent of presentation, which
 # consumes its outputs. Shader optimization/IEEE flags are identical in every
 # host build configuration; Debug does not turn these kernels into /Od shaders.
@@ -90,10 +139,6 @@ endif()
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS "smo_hlsl_compile=${LGAED_SHADER_COMPILE_JOBS}")
 message(STATUS "Optimized HLSL compiler jobs: ${LGAED_SHADER_COMPILE_JOBS}")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/compile_check.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/lesson_page_reach.cpp native/core/text_semantics.cpp native/core/cpp_project.cpp native/core/image_resource.cpp
-    native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
-target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
-
 # Pure numerical references can be verified without preparing graphics assets
 # or creating a GPU device. The application links these same implementations.
 add_library(lgaed_smo_arithmetic STATIC
@@ -103,27 +148,6 @@ add_library(lgaed_smo_arithmetic STATIC
     native/presentation/windows/smo_numeric_scene_reference.cpp)
 target_link_libraries(lgaed_smo_arithmetic PUBLIC lgaed_core lgaed_host_options)
 
-add_library(lgaed_platform_windows STATIC
-    native/platform/windows/environment.cpp
-    native/platform/windows/profile_migration.cpp
-    native/platform/windows/content_loader.cpp
-    native/platform/windows/bibliography_revision.cpp
-    native/platform/windows/narration_preferences.cpp
-    native/platform/windows/catalog_loader.cpp
-    native/platform/windows/audio_generation.cpp
-    native/platform/windows/narration_worker.cpp
-    native/platform/windows/narration_cpu_policy.cpp
-    native/platform/windows/narration_player.cpp
-    native/platform/windows/system_speech.cpp
-    native/platform/windows/system_speech_process.cpp
-    native/platform/windows/state_store.cpp
-    native/platform/windows/android_import.cpp
-    native/platform/windows/cpp_project_history.cpp
-    native/platform/windows/cpp_runner.cpp
-    native/platform/windows/compiler_completion.cpp)
-target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
-add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
-target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 add_executable(lgaed_system_speech_host native/platform/windows/system_speech_host_main.cpp)
 target_link_libraries(lgaed_system_speech_host PRIVATE lgaed_platform_windows)
 set_target_properties(lgaed_system_speech_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -223,6 +247,7 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    include(cmake/StateImportTests.cmake)
     add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)
     target_link_libraries(lgaed_text_semantics_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.text_semantics COMMAND lgaed_text_semantics_tests)
@@ -491,21 +516,6 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_remainder_context_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.remainder_technical_context COMMAND lgaed_remainder_context_view_tests)
     set_tests_properties(native.remainder_technical_context PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
-    set(LGAED_WORK_EXACT_EDITORIAL_DIR "${CMAKE_CURRENT_BINARY_DIR}/work-exact-editorials")
-    set(LGAED_WORK_EXACT_EDITORIAL_FIXTURES
-        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-before.json"
-        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/duplication-after.json"
-        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json"
-        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-after.json"
-        "${LGAED_WORK_EXACT_EDITORIAL_DIR}/manifest.json")
-    add_custom_command(OUTPUT ${LGAED_WORK_EXACT_EDITORIAL_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/work_exact_editorial_fixture_source.py"
-            --output-dir "${LGAED_WORK_EXACT_EDITORIAL_DIR}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/work_exact_editorial_fixture_source.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
-        VERBATIM)
-    add_custom_target(lgaed_work_exact_editorial_fixtures DEPENDS ${LGAED_WORK_EXACT_EDITORIAL_FIXTURES})
     add_dependencies(lgaed_technical_context_view_tests lgaed_work_exact_editorial_fixtures)
     add_test(NAME native.technical_context_view COMMAND lgaed_technical_context_view_tests)
     set_tests_properties(native.technical_context_view PROPERTIES TIMEOUT 120)
@@ -516,21 +526,6 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_exception_editorial COMMAND lgaed_technical_context_view_tests --remainder-revision
         "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json" "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-after.json")
     set_tests_properties(native.duplication_code_mention native.remainder_exception_editorial PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
-    set(LGAED_U11_REMAINDER_PUBLISHED_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u11-remainder-published")
-    set(LGAED_U11_REMAINDER_PUBLISHED_FIXTURES
-        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/before.json"
-        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published26.json"
-        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published30.json"
-        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/manifest.json")
-    add_custom_command(OUTPUT ${LGAED_U11_REMAINDER_PUBLISHED_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_remainder_editorial_fixture_source.py"
-            --output-dir "${LGAED_U11_REMAINDER_PUBLISHED_DIR}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_remainder_editorial_fixture_source.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
-        COMMENT "Verifying complete U11L16 publications with seventeen, twenty-six and thirty editorial edges"
-        VERBATIM)
-    add_custom_target(lgaed_u11_remainder_published_fixtures DEPENDS ${LGAED_U11_REMAINDER_PUBLISHED_FIXTURES})
     add_test(NAME native.u11_remainder_editorial_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_remainder_editorial_fixtures.py)
     set_tests_properties(native.u11_remainder_editorial_fixtures PROPERTIES TIMEOUT 60)
@@ -548,20 +543,6 @@ if(BUILD_TESTING)
         COMMENT "Verifying immutable U11L20 editorial fixtures from local Git publications"
         VERBATIM)
     add_custom_target(lgaed_u11_assignment_editorial_fixtures DEPENDS ${LGAED_U11_ASSIGNMENT_EDITORIAL_FIXTURES})
-    set(LGAED_U11_ASSIGNMENT_PUBLISHED_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u11-assignment-published")
-    set(LGAED_U11_ASSIGNMENT_PUBLISHED_FIXTURES
-        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
-        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json"
-        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/manifest.json")
-    add_custom_command(OUTPUT ${LGAED_U11_ASSIGNMENT_PUBLISHED_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_assignment_editorial_fixture_source.py"
-            --published --output-dir "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_assignment_editorial_fixture_source.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
-        COMMENT "Verifying the authentic U11L20 publications with twenty-one and twenty-five editorial edges"
-        VERBATIM)
-    add_custom_target(lgaed_u11_assignment_published_fixtures DEPENDS ${LGAED_U11_ASSIGNMENT_PUBLISHED_FIXTURES})
     add_test(NAME native.u11_assignment_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_assignment_import_fixtures.py)
     set_tests_properties(native.u11_assignment_import_fixtures PROPERTIES TIMEOUT 60)
@@ -1477,27 +1458,6 @@ if(BUILD_TESTING)
     add_test(NAME native.cpp_project_internal_dialogs COMMAND lgaed_cpp_project_view_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history" --internal-dialogs)
     set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
     set_tests_properties(native.cpp_project_view PROPERTIES TIMEOUT 120)
-    set(LGAED_COMPILER_IMPORT_PUBLISHED_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/compiler-import-published")
-    set(LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/manifest.json")
-    foreach(compiler_import_lesson IN ITEMS u11l19 u11l20 u11l21 u11l22 u12l20)
-        foreach(compiler_import_side IN ITEMS before after)
-            list(APPEND LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES
-                "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_import_lesson}-${compiler_import_side}.json")
-        endforeach()
-    endforeach()
-    add_custom_command(OUTPUT ${LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_import_fixture_source.py"
-            --output-dir "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_import_fixture_source.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        COMMENT "Verifying five published positional-to-v2 compiler import pairs"
-        VERBATIM)
-    add_custom_target(lgaed_compiler_import_published_fixtures DEPENDS ${LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES})
     add_dependencies(lgaed_u11_declarations_reader_tests lgaed_compiler_import_published_fixtures)
     foreach(compiler_reader IN ITEMS declarations assignments constants)
         if(compiler_reader STREQUAL "declarations")
@@ -1538,22 +1498,7 @@ if(BUILD_TESTING)
     add_test(NAME native.compiler_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_import_fixtures.py)
     set_tests_properties(native.compiler_import_fixtures PROPERTIES TIMEOUT 120)
-    add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
-    target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
-    target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
-    add_dependencies(lgaed_state_tests lgaed_work_exact_editorial_fixtures)
-    add_dependencies(lgaed_state_tests lgaed_u11_assignment_published_fixtures)
-    add_dependencies(lgaed_state_tests lgaed_u11_remainder_published_fixtures)
-    add_dependencies(lgaed_state_tests lgaed_compiler_import_published_fixtures)
-    set(LGAED_U11_NAMES_BEFORE_FILE "${CMAKE_CURRENT_BINARY_DIR}/u11-names-fixtures/before.json")
-    add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_names_fixture_source.py"
-            --output "${LGAED_U11_NAMES_BEFORE_FILE}" --git "${GIT_EXECUTABLE}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_names_fixture_source.py"
-        VERBATIM)
-    add_custom_target(lgaed_u11_names_fixture DEPENDS "${LGAED_U11_NAMES_BEFORE_FILE}")
-    add_dependencies(lgaed_state_tests lgaed_u11_names_fixture)
-    target_compile_definitions(lgaed_state_tests PRIVATE LGAED_U11_NAMES_BEFORE_FILE="${LGAED_U11_NAMES_BEFORE_FILE}")
+    lgaed_add_state_import_tests("${CMAKE_SOURCE_DIR}/out/qa/state")
     add_test(NAME native.u11_names_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --u11-names "${LGAED_U11_NAMES_BEFORE_FILE}")
     set_tests_properties(native.u11_names_state_import PROPERTIES TIMEOUT 120)
@@ -1566,21 +1511,6 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --remainder-editorial "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json")
     set_tests_properties(native.remainder_editorial_state_import PROPERTIES TIMEOUT 120)
-    foreach(remainder_publication IN ITEMS 26 30)
-        add_test(NAME native.remainder_published${remainder_publication}_state_import
-            COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state" --remainder-published
-                "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/before.json"
-                "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published${remainder_publication}.json"
-                "${remainder_publication}")
-        set_tests_properties(native.remainder_published${remainder_publication}_state_import PROPERTIES TIMEOUT 120)
-    endforeach()
-    add_test(NAME native.u11_assignment_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
-        --u11-assignment-editorial "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
-        "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json")
-    set_tests_properties(native.u11_assignment_state_import PROPERTIES TIMEOUT 120)
-    add_test(NAME native.compiler_contract_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
-        --compiler-contract-import "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}")
-    set_tests_properties(native.compiler_contract_state_import PROPERTIES TIMEOUT 180)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)

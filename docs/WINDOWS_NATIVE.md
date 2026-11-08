@@ -106,6 +106,38 @@ Cada preset genera sus propios archivos en `out/build/<preset>`; el ejecutable
 está en `bin/LearnGameAndEngineDev.exe` dentro de ese directorio. La instalación
 CMake, si se solicita posteriormente, utiliza `out/install/<preset>`.
 
+### Importación histórica en un runner Windows
+
+El workflow `.github/workflows/windows-state-import.yml__ ejecuta las cuatro
+pruebas publicadas de importación de U11L16, U11L20 y los contratos de compilador
+U11L19–L22/U12L20. Reutiliza los 52 escenarios existentes, las bibliotecas completas
+`lgaed_core` y `lgaed_platform_windows`, el importador real y las fuentes
+históricas autenticadas; recupera la historia Git completa.
+
+La opción explícita `LGAED_STATE_IMPORT_QA_ONLY=ON__ configura exclusivamente
+esas cuatro pruebas en el CMake oficial. Conserva el toolchain Windows,
+la verificación de dependencias y el perfil C++23 exacto. Comprueba las versiones
+de MSVC, SDK/UCRT, CMake, Ninja, Python y Git del manifiesto; Python y Git pueden
+proceder de las instalaciones compartidas del runner. Esta modalidad no configura
+la presentación, los shaders ni el runtime JVM, que los modos de importación
+seleccionados no utilizan. La configuración habitual conserva sus dependencias.
+
+`scripts/windows/Test-StateImportCI.ps1__ sólo admite un runner efímero alojado
+por GitHub. Verifica físicamente el compilador antes de preparar el SDK; si falta
+el mantenimiento requerido, obtiene su instalador oficial y comprueba la firma
+Microsoft. No selecciona un toolset alternativo cuando el requerido está ausente.
+Este script de aprovisionamiento no se utiliza en la PC del estudiante.
+
+La ejecución utiliza `out/qa/state-import-ci`, registra exactamente cuatro
+pruebas y las ejecuta en serie. El workflow conserva la salida de CTest y su XML
+JUnit como artefactos durante catorce días. No publica cambios en la rama.
+Un resultado satisfactorio acredita la importación y reapertura examinadas por
+esos escenarios; no acredita la aplicación completa, los controles del lector,
+la reproducción de PCM ni una ejecución educativa del compilador. El registro
+de pendientes conserva esas verificaciones por separado.
+
+### Comprobación local de ventanas y datos
+
 Para comprobar ventanas y datos aislados de un ejecutable ya compilado:
 
 ```powershell
