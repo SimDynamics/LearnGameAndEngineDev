@@ -69,6 +69,8 @@ void u11_assignment_editorial_reader(const std::shared_ptr<windows::NarrationWor
         update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
     },[&](state::StateData& data){
         entry_setup=test::prepare_compiler_reader_entry(data,original,4);
+        // Select Spanish interface verdicts independently of the narration voice/runtime.
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
         state::put_draft(data,draft_key,draft);data.preferences["u11_assignment_reader_qa"]["opaque"]=std::string("\t conservar\r\n保存");
     },cache);
     struct FailureShutdown {std::shared_ptr<windows::NarrationWorker> worker;
@@ -284,6 +286,8 @@ void u11_assignment_outer_reader(const std::shared_ptr<windows::NarrationWorker>
         update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
     },[&](state::StateData& data){
         entry_setup=test::prepare_compiler_reader_entry(data,original,entry_page);state::put_draft(data,draft_key,draft);
+        // Select Spanish interface verdicts independently of the narration voice/runtime.
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["u11_assignment_outer_reader_qa"]["opaque"]=std::string("\t conservar\r\n保存");
     },cache);
     struct FailureShutdown {std::shared_ptr<windows::NarrationWorker> worker;

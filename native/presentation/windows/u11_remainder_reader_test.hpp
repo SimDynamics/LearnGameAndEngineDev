@@ -61,6 +61,8 @@ void u11_remainder_editorial_reader(const std::shared_ptr<windows::NarrationWork
         // evaluated by the same contracts. The focal answer remains unset;
         // this page precedes every compiler, so no execution receipt is made.
         prerequisites=test::prepare_compiler_reader_entry(data,before,at.page);
+        // Select Spanish interface verdicts independently of the narration voice/runtime.
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
         state::put_draft(data,draft_key,draft);
         data.preferences["u11_remainder_reader_qa"]["opaque"]=std::string("\t conservar\r\n保存");},cache);
     struct FailureShutdown{std::shared_ptr<windows::NarrationWorker> worker;
