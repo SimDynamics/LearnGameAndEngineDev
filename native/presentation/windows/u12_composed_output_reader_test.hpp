@@ -47,7 +47,12 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
     Fixture f(backend,false,true,true,"es",before,true,page,true,false,[&](HWND view){
         check(lesson_page_state(view).index==page,"Composed-output QA did not enter its actual focal page");
         update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
-    },[&](state::StateData& data){state::put_draft(data,draft_key,draft);
+    },[&](state::StateData& data){
+        // The narration language does not select the interface verdicts. This
+        // Spanish scenario must choose its own UI language before the view is
+        // created, independently of the disposable runner's Windows locale.
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
+        state::put_draft(data,draft_key,draft);
         data.preferences["u12_composed_output_qa"]["opaque"]=std::string("\t conservar\r\n保存");
         if(phase==2){
             // A saved arrival cannot satisfy an unanswered earlier activity.
@@ -234,9 +239,16 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
     const auto final_regions=lesson_reading_regions(f.view);
     const auto feedback_region=std::ranges::find_if(final_regions,[&](const auto& region){return region.block_index==feedback_block&&region.feedback;});
     auto visible_feedback=expected_feedback;std::erase(visible_feedback,'`');
-    check(feedback_region!=final_regions.end()&&feedback_region->source_text==expected_feedback
-        &&feedback_region->correct==correct&&edit_text(feedback_region->target)==visible_feedback,
-        "Adoption lost the current correct explanation or the guide appropriate to the actual retained error");
+    check(feedback_region!=final_regions.end(),
+        "Adoption omitted the retained response's current feedback region");
+    check(feedback_region->source_text==expected_feedback,
+        "Adoption changed the retained response's complete feedback source. Expected: "+expected_feedback
+            +"\nActual: "+feedback_region->source_text);
+    check(feedback_region->correct==correct,
+        "Adoption changed the retained response's feedback verdict");
+    check(edit_text(feedback_region->target)==visible_feedback,
+        "Adoption changed the retained response's complete displayed feedback. Expected: "+visible_feedback
+            +"\nActual: "+edit_text(feedback_region->target));
     const auto feedback_plan=backend->plan(expected_feedback,"es",{},feedback_region->reading_context,feedback_region->math_mode);
     const auto feedback_source=wide(expected_feedback);std::vector<std::size_t> feedback_parts;
     std::vector<bool> feedback_covered(feedback_source.size());const auto prepared=f.snapshot();
