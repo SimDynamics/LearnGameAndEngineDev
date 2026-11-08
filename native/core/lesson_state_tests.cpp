@@ -5,6 +5,7 @@
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
 #include "core/compile_check_test_fixture.hpp"
+#include "core/compiler_contract_import_test.hpp"
 #include "core/math_label_test_fixture.hpp"
 #include "core/narration_state.hpp"
 #include "platform/windows/compiler_completion.hpp"
@@ -1652,9 +1653,9 @@ void rejected_compiler_reviews_preserve_captured_attempts(const std::filesystem:
 int main(int argc, char** argv) {
     try {
         require(argc==2||(argc==3&&(std::string_view(argv[2])=="--u11-starter"||std::string_view(argv[2])=="--compiler-expansions"||std::string_view(argv[2])=="--u11-consult"||std::string_view(argv[2])=="--compiler-reviews"))
-            ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names"))
+            ||(argc==4&&(std::string_view(argv[2])=="--remainder-editorial"||std::string_view(argv[2])=="--u11-names"||std::string_view(argv[2])=="--compiler-contract-import"))
             ||(argc==5&&std::string_view(argv[2])=="--u11-assignment-editorial"),
-            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture>, --u11-names <before fixture> or --u11-assignment-editorial <published before> <published after>");
+            "Supply an isolated output/QA directory, optional --u11-starter, --compiler-expansions, --u11-consult, --compiler-reviews, --remainder-editorial <before fixture>, --u11-names <before fixture>, --compiler-contract-import <fixture directory> or --u11-assignment-editorial <published before> <published after>");
         const auto base = std::filesystem::absolute(argv[1]) /
             ("state-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(base), "QA directory must not preexist");
@@ -1664,6 +1665,11 @@ int main(int argc, char** argv) {
             else if(std::string_view(argv[2])=="--compiler-expansions")reviewed_compiler_expansions_preserve_execution_history(base);
             else second_u11_compiler_starter_preserves_independent_drafts_and_receipts(base);return 0;}
         if(argc==4){if(std::string_view(argv[2])=="--u11-names")u11_names_preserves_historical_and_added_prediction_state(base,argv[3]);
+            else if(std::string_view(argv[2])=="--compiler-contract-import"){
+                const auto count=lgaed::test::compiler_contract_import_state_tests(base,std::filesystem::path(argv[3]),
+                    [](const std::filesystem::path& root,const StateData& data){export_preferences(root,data,true);});
+                std::cout<<"PASS "<<count<<" published positional-to-v2 compiler import scenarios; isolated QA state, no native execution or listening credit claimed\n";
+            }
             else remainder_editorial_preserves_native_and_imported_state(base,argv[3]);return 0;}
         if(argc==5){published_u11_assignment_editorial_preserves_imported_state(base,argv[3],argv[4]);return 0;}
         refined_order_state_tests(base);

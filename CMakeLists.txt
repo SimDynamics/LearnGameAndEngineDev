@@ -362,6 +362,13 @@ if(BUILD_TESTING)
         add_test(NAME native.${u6_diagnostic} COMMAND lgaed_u6_diagnostic_runner_tests ${u6_diagnostic})
         set_tests_properties(native.${u6_diagnostic} PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     endforeach()
+    add_executable(lgaed_u6_diagnostic_flow_tests native/presentation/windows/u6_diagnostic_flow_tests.cpp)
+    target_link_libraries(lgaed_u6_diagnostic_flow_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_u6_diagnostic_flow_tests lgaed_compiler_contract_fixtures lgaed_cpp_tool_host lgaed_narration_runtime)
+    foreach(u6_flow IN ITEMS declarations interfaces project)
+        add_test(NAME native.u6_diagnostic_flow_${u6_flow} COMMAND lgaed_u6_diagnostic_flow_tests ${u6_flow})
+        set_tests_properties(native.u6_diagnostic_flow_${u6_flow} PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE)
+    endforeach()
     add_executable(lgaed_u12l26_exit_tests native/platform/windows/u12l26_exit_tests.cpp)
     target_link_libraries(lgaed_u12l26_exit_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_u12l26_exit_tests lgaed_cpp_tool_host lgaed_compiler_contract_fixtures)
@@ -1435,11 +1442,36 @@ if(BUILD_TESTING)
     add_test(NAME native.cpp_project_internal_dialogs COMMAND lgaed_cpp_project_view_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history" --internal-dialogs)
     set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
     set_tests_properties(native.cpp_project_view PROPERTIES TIMEOUT 120)
+    set(LGAED_COMPILER_IMPORT_PUBLISHED_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/compiler-import-published")
+    set(LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/manifest.json")
+    foreach(compiler_import_lesson IN ITEMS u11l19 u11l20 u11l21 u11l22 u12l20)
+        foreach(compiler_import_side IN ITEMS before after)
+            list(APPEND LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES
+                "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}/${compiler_import_lesson}-${compiler_import_side}.json")
+        endforeach()
+    endforeach()
+    add_custom_command(OUTPUT ${LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_import_fixture_source.py"
+            --output-dir "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_import_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMENT "Verifying five published positional-to-v2 compiler import pairs"
+        VERBATIM)
+    add_custom_target(lgaed_compiler_import_published_fixtures DEPENDS ${LGAED_COMPILER_IMPORT_PUBLISHED_FIXTURES})
+    add_test(NAME native.compiler_import_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_compiler_import_fixtures.py)
+    set_tests_properties(native.compiler_import_fixtures PROPERTIES TIMEOUT 120)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
     add_dependencies(lgaed_state_tests lgaed_work_exact_editorial_fixtures)
     add_dependencies(lgaed_state_tests lgaed_u11_assignment_published_fixtures)
+    add_dependencies(lgaed_state_tests lgaed_compiler_import_published_fixtures)
     set(LGAED_U11_NAMES_BEFORE_FILE "${CMAKE_CURRENT_BINARY_DIR}/u11-names-fixtures/before.json")
     add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_names_fixture_source.py"
@@ -1465,6 +1497,9 @@ if(BUILD_TESTING)
         --u11-assignment-editorial "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
         "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json")
     set_tests_properties(native.u11_assignment_state_import PROPERTIES TIMEOUT 120)
+    add_test(NAME native.compiler_contract_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
+        --compiler-contract-import "${LGAED_COMPILER_IMPORT_PUBLISHED_DIR}")
+    set_tests_properties(native.compiler_contract_state_import PROPERTIES TIMEOUT 180)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
