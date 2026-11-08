@@ -17,6 +17,7 @@
 #include "core/compile_check_test_fixture.hpp"
 #include "core/narration_state.hpp"
 #include "core/narration_speed.hpp"
+#include "presentation/windows/u11_assignment_entry_fixture.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
@@ -204,6 +205,7 @@ struct Fixture{
 #include "presentation/windows/u11_domain_reader_test.hpp"
 #include "presentation/windows/u11_consult_reader_test.hpp"
 #include "presentation/windows/u11_assignment_reader_test.hpp"
+#include "presentation/windows/u11_remainder_reader_test.hpp"
 #include "presentation/windows/u11_literal_spacing_reader_test.hpp"
 #include "presentation/windows/u12_file_format_reader_test.hpp"
 #include "presentation/windows/u12_file_roundtrip_reader_test.hpp"
@@ -2490,7 +2492,11 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool u11_consult_revision_only=argc==2&&std::string_view(argv[1])=="--u11-consult-revision";
     const bool u11_assignment_published=argc==5&&std::string_view(argv[1])=="--u11-assignment-published";
     const bool u11_assignment_revision_only=argc==5&&(std::string_view(argv[1])=="--u11-assignment-revision"||u11_assignment_published);
-    if(u11_assignment_revision_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
+    if(u11_assignment_revision_only&&(std::string_view(argv[4]).size()!=1||argv[4][0]<'0'
+        ||argv[4][0]>(u11_assignment_published?'5':'1')))return 2;
+    const bool u11_remainder_published=argc==6&&std::string_view(argv[1])=="--u11-remainder-published";
+    if(u11_remainder_published&&((std::string_view(argv[4])!="26"&&std::string_view(argv[4])!="30")
+        ||(std::string_view(argv[5])!="0"&&std::string_view(argv[5])!="1")))return 2;
     const bool u11_literal_spacing_only=argc==5&&std::string_view(argv[1])=="--u11-literal-spacing-revision";
     if(u11_literal_spacing_only&&std::string_view(argv[4])!="0"&&std::string_view(argv[4])!="1")return 2;
     const bool u12_file_format_only=argc==3&&std::string_view(argv[1])=="--u12-file-format-reader";
@@ -2526,7 +2532,7 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
     const bool cpp_numeric_context_only=argc==2&&std::string_view(argv[1])=="--cpp-numeric-context";
     const bool cpp_parenthesis_context_only=argc==2&&std::string_view(argv[1])=="--cpp-parenthesis-context";
     const bool state_compatibility_only=argc==2&&std::string_view(argv[1])=="--state-compatibility";
-    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
+    if(argc>1&&!suspend_only&&!stderr_only&&!dependencies_only&&!integrated_only&&!integrated_order_only&&!integrated_matching_only&&!u11_domain_revision_only&&!u11_domain_race_only&&!u11_consult_revision_only&&!u11_assignment_revision_only&&!u11_remainder_published&&!u11_literal_spacing_only&&!u12_file_format_only&&!u12_file_roundtrip_only&&!u12_file_append_only&&!u12_file_repairs_only&&!u12_append_hypothesis_only&&!u12_composed_output_only&&!u12_composed_feedback_only&&!u12_composed_question_only&&!current_inline_only&&!rates_only&&!compiler_focus_only&&!required_compiler_only&&!seek_keys_only&&!missing_recording_only&&!changed_recording_only&&!curricular_colors_only&&!cpp_numeric_context_only&&!cpp_parenthesis_context_only&&!state_compatibility_only)return 2;
     std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll");if(!rich)return 2;
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
@@ -2548,6 +2554,8 @@ int main(int argc,char** argv){const bool stderr_only=argc==2&&std::string_view(
         if(u11_domain_race_only){u11_domain_label_reader_revision(backend,true);return 0;}
         if(u11_consult_revision_only){u11_consult_choice_reader_revision(backend);return 0;}
         if(u11_assignment_revision_only){u11_assignment_editorial_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'),u11_assignment_published);return 0;}
+        if(u11_remainder_published){u11_remainder_editorial_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),
+            static_cast<unsigned>(argv[5][0]-'0'),std::string_view(argv[4])=="30");return 0;}
         if(u11_literal_spacing_only){u11_literal_spacing_reader(backend,std::filesystem::path(argv[2]),std::filesystem::path(argv[3]),static_cast<unsigned>(argv[4][0]-'0'));return 0;}
         if(u12_file_format_only){u12_file_format_reader(backend,static_cast<std::size_t>(argv[2][0]-'0'));return 0;}
         if(u12_file_roundtrip_only){current_u12_file_roundtrip_reader(backend);return 0;}

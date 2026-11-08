@@ -513,6 +513,24 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_exception_editorial COMMAND lgaed_technical_context_view_tests --remainder-revision
         "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json" "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-after.json")
     set_tests_properties(native.duplication_code_mention native.remainder_exception_editorial PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    set(LGAED_U11_REMAINDER_PUBLISHED_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u11-remainder-published")
+    set(LGAED_U11_REMAINDER_PUBLISHED_FIXTURES
+        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/before.json"
+        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published26.json"
+        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published30.json"
+        "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/manifest.json")
+    add_custom_command(OUTPUT ${LGAED_U11_REMAINDER_PUBLISHED_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_remainder_editorial_fixture_source.py"
+            --output-dir "${LGAED_U11_REMAINDER_PUBLISHED_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/u11_remainder_editorial_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        COMMENT "Verifying complete U11L16 publications with seventeen, twenty-six and thirty editorial edges"
+        VERBATIM)
+    add_custom_target(lgaed_u11_remainder_published_fixtures DEPENDS ${LGAED_U11_REMAINDER_PUBLISHED_FIXTURES})
+    add_test(NAME native.u11_remainder_editorial_fixtures COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_u11_remainder_editorial_fixtures.py)
+    set_tests_properties(native.u11_remainder_editorial_fixtures PROPERTIES TIMEOUT 60)
     set(LGAED_U11_ASSIGNMENT_EDITORIAL_DIR "${CMAKE_CURRENT_BINARY_DIR}/u11-assignment-editorials")
     set(LGAED_U11_ASSIGNMENT_EDITORIAL_FIXTURES
         "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-before.json"
@@ -986,6 +1004,7 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime lgaed_cpp_tool_host)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_assignment_published_fixtures)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_u11_remainder_published_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u11_session_editorial_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_append_hypothesis_fixtures)
     add_dependencies(lgaed_lesson_reader_tests lgaed_u12_composed_output_fixtures)
@@ -1070,11 +1089,24 @@ if(BUILD_TESTING)
                 "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-before.json"
                 "${LGAED_U11_ASSIGNMENT_EDITORIAL_DIR}/assignment-after.json" ${assignment_reader_phase})
         set_tests_properties(native.u11_assignment_editorial_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    endforeach()
+    foreach(assignment_reader_phase RANGE 0 5)
         add_test(NAME native.u11_assignment_published_reader_${assignment_reader_phase}
             COMMAND lgaed_lesson_reader_tests --u11-assignment-published
                 "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-before.json"
                 "${LGAED_U11_ASSIGNMENT_PUBLISHED_DIR}/assignment-after.json" ${assignment_reader_phase})
         set_tests_properties(native.u11_assignment_published_reader_${assignment_reader_phase} PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    endforeach()
+    foreach(remainder_publication IN ITEMS 26 30)
+        foreach(remainder_reader_phase RANGE 0 1)
+            add_test(NAME native.u11_remainder_published${remainder_publication}_reader_${remainder_reader_phase}
+                COMMAND lgaed_lesson_reader_tests --u11-remainder-published
+                    "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/before.json"
+                    "${LGAED_U11_REMAINDER_PUBLISHED_DIR}/published${remainder_publication}.json"
+                    ${remainder_publication} ${remainder_reader_phase})
+            set_tests_properties(native.u11_remainder_published${remainder_publication}_reader_${remainder_reader_phase}
+                PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+        endforeach()
     endforeach()
     add_test(NAME native.curricular_color_reader COMMAND lgaed_lesson_reader_tests --curricular-colors)
     set_tests_properties(native.curricular_color_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)

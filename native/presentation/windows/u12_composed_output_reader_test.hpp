@@ -1,6 +1,7 @@
 #pragma once
 // Full published documents exercise the first/current/published17 adoption. The
-// independent compiler draft is explicitly QA data; answers/audio are real.
+// independent compiler draft and phase-2 entry choice are explicit QA data;
+// focal responses and listening come from the actual controls and reader.
 void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>& backend,
         const std::filesystem::path& before_path,const std::filesystem::path& after_path,unsigned phase,
         bool current_stage=false,bool published17_stage=false) {
@@ -42,10 +43,34 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
     draft.selection_start=3;draft.selection_end=12;
     const auto cache=std::filesystem::path(build::source_root)/"out/qa/u12-composed-output-reader"/
         ("pcm-"+std::to_string(GetCurrentProcessId())+'-'+std::to_string(GetTickCount64())+'-'+stage_name+'-'+std::to_string(phase));
-    Fixture f(backend,false,true,true,"es",before,true,page,true,false,[](HWND view){
+    std::optional<state::Response> entry_choice;
+    Fixture f(backend,false,true,true,"es",before,true,page,true,false,[&](HWND view){
+        check(lesson_page_state(view).index==page,"Composed-output QA did not enter its actual focal page");
         update_lesson_preferences(view,[](state::StateData& data){data.preferences["lesson_narration_settings"]["rate"]=3.;});
     },[&](state::StateData& data){state::put_draft(data,draft_key,draft);
-        data.preferences["u12_composed_output_qa"]["opaque"]=std::string("\t conservar\r\n保存");},cache);
+        data.preferences["u12_composed_output_qa"]["opaque"]=std::string("\t conservar\r\n保存");
+        if(phase==2){
+            // A saved arrival cannot satisfy an unanswered earlier activity.
+            // Prepare only this ordinary prerequisite in the isolated store;
+            // it grants neither a compiler receipt nor a listening bookmark.
+            const auto& choice=before.pages.at(0).blocks.at(4);const auto& adopted=after.pages.at(0).blocks.at(4);
+            check(choice.type==curriculum::BlockType::multiple_choice&&adopted.type==choice.type
+                &&choice.stable_id=="block_0_4"&&adopted.stable_id=="block_0000_0004"
+                &&choice.id=="componer_no_mostrar"&&adopted.id==choice.id&&choice.correct_index==2
+                &&adopted.correct_index==choice.correct_index&&adopted.options==choice.options
+                &&choice.options.at(2)=="std::cout << mensaje"
+                &&state::response_storage_key(before,choice)==state::response_storage_key(after,adopted)
+                &&!state::get_response(data,before,choice),"The composed-output entry choice lost its exact historical contract");
+            const auto evaluation=curriculum::evaluate_choice(choice,*choice.correct_index);
+            check(evaluation.correct,"The synthetic composed-output prerequisite failed its authored evaluator");
+            state::Response response;response.selected=static_cast<std::int64_t>(*choice.correct_index);
+            response.answer=choice.options[*choice.correct_index];response.correct=evaluation.correct;
+            state::mark_response_reviewed(response,choice);state::put_response(data,before,choice,response);
+            entry_choice=state::get_response(data,before,choice);
+            check(entry_choice&&entry_choice->correct&&!entry_choice->raw_json.empty()&&narration::read_history(data).entries.empty(),
+                "The synthetic entry choice was not saved separately from listening");
+            data.preferences["u12_composed_output_qa"]["synthetic_ordinary_prerequisites"]=std::vector<std::string>{choice.id};
+        }},cache);
     struct FailureShutdown{std::shared_ptr<windows::NarrationWorker> worker;
         ~FailureShutdown(){if(std::uncaught_exceptions())worker->shutdown();}} shutdown{backend};
     const auto saved=[&]{return read_lesson_state(f.view);};
@@ -57,8 +82,12 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
     ready();f.reader->pause();
     check(!IsWindowVisible(f.host)&&narration::read_history(saved()).entries.empty(),
         "A fresh composed-output fixture inherited hearing or exposed its QA window");
-    for(const auto& p:before.pages)for(const auto& block:p.blocks)
-        check(!state::get_response(saved(),before,block),"A composed-output response was seeded");
+    for(std::size_t p=0;p<before.pages.size();++p)for(std::size_t b=0;b<before.pages[p].blocks.size();++b){
+        const auto response=state::get_response(saved(),before,before.pages[p].blocks[b]);
+        if(phase==2&&p==0&&b==4)check(entry_choice&&response&&response->raw_json==entry_choice->raw_json,
+            "The explicitly synthetic entry choice was lost before the focal reader began");
+        else check(!response,"An undisclosed composed-output response was seeded");
+    }
     const auto opaque=saved().preferences.at("u12_composed_output_qa");
     std::map<std::size_t,state::Response> responses;
     const auto remember=[&](std::size_t block,bool correct){const auto& goal=before.pages.at(page).blocks.at(block);
@@ -129,7 +158,9 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
     const auto preserve=[&]{const auto data=saved();
         for(std::size_t p=0;p<after.pages.size();++p)for(std::size_t b=0;b<after.pages[p].blocks.size();++b){const auto& goal=after.pages[p].blocks[b];
             const auto answer=state::get_response(data,after,goal);const auto retained=p==page?responses.find(b):responses.end();
-            if(retained==responses.end())check(!answer,"Composed-output migration fabricated an independent answer");
+            if(phase==2&&p==0&&b==4)check(entry_choice&&answer&&answer->raw_json==entry_choice->raw_json,
+                "Composed-output migration changed its disclosed synthetic entry choice");
+            else if(retained==responses.end())check(!answer,"Composed-output migration fabricated an independent answer");
             else check(answer&&answer->raw_json==retained->second.raw_json&&answer->answer==retained->second.answer
                 &&answer->correct==retained->second.correct&&answer->selected==retained->second.selected
                 &&answer->reviewed_answer_identity==retained->second.reviewed_answer_identity
@@ -156,6 +187,7 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
         hooks.before_page_change=[&](HWND){if(f.reader)f.reader->pause();};hooks.content_changed=[&](HWND){if(f.reader)f.reader->content_changed();};
         hooks.feedback_changed=[&](HWND,std::size_t block,bool correct){if(f.reader)f.reader->feedback(block,correct);};
         f.view=create_lesson_view(f.host,f.environment,after,std::move(hooks));check(f.view!=nullptr,"Cannot mount the complete adopted composed-output lesson");
+        check(lesson_page_state(f.view).index==page,"The adopted composed-output entry did not retain its actual focal page");
         MoveWindow(f.view,0,0,980,720,TRUE);f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});ready();return durable;
     };
     reopen();const auto mapped=f.snapshot();const auto regions=lesson_reading_regions(f.view);
@@ -247,6 +279,8 @@ void u12_composed_output_reader(const std::shared_ptr<windows::NarrationWorker>&
         <<(phase==0?"rejected choice":phase==1?"correct choice":"first prediction correctly heard and second prediction rejected")
         <<" retained; genuine old prose pause moves to the same revised paragraph at zero without inherited audio credit/autoplay; "
         <<"complete new contextual PCM/timings/UTF-16 and explicit 3x playback, appropriate complete feedback and natural retry/finish boundary; "
-        <<"two silent adopted reopens, original WAV/source and independent explicit QA draft preserved. No compiler run, synthetic hearing, "
+        <<"two silent adopted reopens, original WAV/source and independent explicit QA draft preserved. "
+        <<(phase==2?"The earlier componer_no_mostrar choice is a disclosed synthetic QA prerequisite, evaluated by its original contract and retained through v2; it is not student work. ":"")
+        <<"No compiler run, synthetic hearing, "
         <<"color acceptance, human listening acceptance or whole-course completion claimed.\n";
 }

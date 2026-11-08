@@ -14,6 +14,7 @@
 
 namespace lgaed::test {
 inline constexpr std::array compiler_reader_entry_owners{
+    std::string_view{"cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete"},
     std::string_view{"cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar"},
     std::string_view{"cpp_fundamentals__texto_interpretacion_y_flujos__asignaciones_con_anticipacion_limitada"},
     std::string_view{"cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos"}};
@@ -25,7 +26,7 @@ inline curriculum::LessonEntryDecision compiler_reader_entry_decision(const stat
         const curriculum::Lesson& lesson,std::size_t requested){
     if(std::ranges::find(compiler_reader_entry_owners,lesson.id)==compiler_reader_entry_owners.end()||
             lesson.locale!="es"||lesson.state_layout.version!=2)
-        throw std::runtime_error("The compiler-reader QA helper requires one of its three audited Spanish v2 owners");
+        throw std::runtime_error("The compiler-reader QA helper requires one of its audited Spanish v2 owners");
     std::vector<curriculum::EntryRequirement> requirements;
     for(std::size_t page=0;page<lesson.pages.size();++page)for(const auto& block:lesson.pages[page].blocks){
         if(curriculum::compiler_requires_completion(block))requirements.push_back({page,
