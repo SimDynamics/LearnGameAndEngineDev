@@ -108,13 +108,13 @@ CMake, si se solicita posteriormente, utiliza `out/install/<preset>`.
 
 ### Importación histórica en un runner Windows
 
-El workflow `.github/workflows/windows-state-import.yml__ ejecuta las cuatro
+El workflow `.github/workflows/windows-state-import.yml` ejecuta las cuatro
 pruebas publicadas de importación de U11L16, U11L20 y los contratos de compilador
 U11L19–L22/U12L20. Reutiliza los 52 escenarios existentes, las bibliotecas completas
 `lgaed_core` y `lgaed_platform_windows`, el importador real y las fuentes
 históricas autenticadas; recupera la historia Git completa.
 
-La opción explícita `LGAED_STATE_IMPORT_QA_ONLY=ON__ configura exclusivamente
+La opción explícita `LGAED_STATE_IMPORT_QA_ONLY=ON` configura exclusivamente
 esas cuatro pruebas en el CMake oficial. Conserva el toolchain Windows,
 la verificación de dependencias y el perfil C++23 exacto. Comprueba las versiones
 de MSVC, SDK/UCRT, CMake, Ninja, Python y Git del manifiesto; Python y Git pueden
@@ -122,8 +122,10 @@ proceder de las instalaciones compartidas del runner. Esta modalidad no configur
 la presentación, los shaders ni el runtime JVM, que los modos de importación
 seleccionados no utilizan. La configuración habitual conserva sus dependencias.
 
-`scripts/windows/Test-StateImportCI.ps1__ sólo admite un runner efímero alojado
-por GitHub. Verifica físicamente el compilador antes de preparar el SDK; si falta
+`scripts/windows/Test-StateImportCI.ps1` conserva la entrada de importación y
+delega en `Test-NativeCurricularCI.ps1 -Suite StateImport`. El aprovisionador
+compartido sólo admite un runner efímero alojado por GitHub. Verifica físicamente
+el compilador antes de preparar el SDK; si falta
 el mantenimiento requerido, obtiene su instalador oficial y comprueba la firma
 Microsoft. No selecciona un toolset alternativo cuando el requerido está ausente.
 Este script de aprovisionamiento no se utiliza en la PC del estudiante.
@@ -135,6 +137,37 @@ Un resultado satisfactorio acredita la importación y reapertura examinadas por
 esos escenarios; no acredita la aplicación completa, los controles del lector,
 la reproducción de PCM ni una ejecución educativa del compilador. El registro
 de pendientes conserva esas verificaciones por separado.
+
+### Reproductor real en un runner Windows
+
+El workflow `.github/workflows/windows-narration-player.yml` utiliza
+`Test-NativeCurricularCI.ps1 -Suite NarrationPlayer` y la opción oficial
+`LGAED_NARRATION_PLAYER_QA_ONLY=ON`. Es mutuamente excluyente con la modalidad
+de importación, comparte la preparación y verificación de herramientas y compila
+las bibliotecas completas `lgaed_core` y `lgaed_platform_windows`.
+Reutiliza, sin modificar su código ni sus aserciones, las dos pruebas que también
+registra la configuración habitual:
+
+- `native.narration_player_rates`: reloj real de `MediaPlaybackSession`,
+  velocidades, liberación y reapertura con la posición conservada.
+- `native.narration_player_qa_path`: ruta QA resuelta por Windows, identidad
+  del archivo, reproducción, pausa, reapertura y desplazamiento de posición.
+
+Los WAV de ambas pruebas son PCM de ceros creado expresamente para comprobar
+el transporte. Su resultado no acredita síntesis Kokoro, voz audible, escucha
+humana ni los recorridos de lecciones con PCM no silencioso. La prueba de ruta
+informa además si observó una redirección real; ejecutarla fuera de MSIX no
+verifica esa redirección.
+
+CTest ejecuta ambos casos en serie con sus límites originales de 45 segundos.
+El build, los logs y el primer WAV se aíslan bajo `out/qa/narration-player-ci`.
+La prueba de ruta conserva su QA nuevo y único bajo el `LocalAppData` que
+resuelve Windows; no crea un almacén de progreso. El script registra los servicios
+y dispositivos presentes y puede arrancar `AudioEndpointBuilder` y `Audiosrv`
+si ya existen, están detenidos y están habilitados. No cambia su tipo de inicio,
+instala controladores ni crea endpoints. La disponibilidad de reproducción la
+determinan las pruebas del reproductor, no el inventario de dispositivos.
+El workflow conserva los logs y JUnit durante catorce días.
 
 ### Comprobación local de ventanas y datos
 

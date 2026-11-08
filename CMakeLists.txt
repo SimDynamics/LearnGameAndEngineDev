@@ -10,12 +10,17 @@ project(LearnGameAndEngineDev VERSION 0.1.0 LANGUAGES CXX RC)
 
 option(LGAED_STATE_IMPORT_QA_ONLY
     "Build only the four published native state-import regressions with the official Windows toolchain" OFF)
+option(LGAED_NARRATION_PLAYER_QA_ONLY
+    "Build only the two real Windows narration-player probes with the official Windows toolchain" OFF)
+if(LGAED_STATE_IMPORT_QA_ONLY AND LGAED_NARRATION_PLAYER_QA_ONLY)
+    message(FATAL_ERROR "Select only one focused Windows QA mode in each build directory.")
+endif()
 
 include(cmake/VerifyNativeToolchain.cmake)
 lgaed_verify_native_toolchain()
 include(cmake/VerifyNativeDependencies.cmake)
 lgaed_verify_native_dependencies()
-if(LGAED_STATE_IMPORT_QA_ONLY)
+if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
     include(cmake/WindowsStateImportQaTools.cmake)
     lgaed_select_windows_state_import_qa_tools()
 else()
@@ -94,19 +99,25 @@ add_library(lgaed_platform_windows STATIC
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
-# This mode still builds the complete production core/platform libraries and
-# the original state-test translation unit. It does not configure presentation,
-# shader assets or the narration runtime, which these four import modes do not
-# use. All native toolchain/dependency/C++23 checks above remain mandatory.
-if(LGAED_STATE_IMPORT_QA_ONLY)
+# Both focused modes still build the complete production core/platform
+# libraries and their original test translation units. Neither configures
+# presentation, shader assets or the synthesis runtime, which these probes do
+# not use. All native toolchain/dependency/C++23 checks remain mandatory.
+if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
-        message(FATAL_ERROR "LGAED_STATE_IMPORT_QA_ONLY requires BUILD_TESTING=ON.")
+        message(FATAL_ERROR "Focused Windows QA requires BUILD_TESTING=ON.")
     endif()
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    include(cmake/StateImportTests.cmake)
-    lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
-    message(STATUS "Focused native import QA: four tests / 52 scenarios; no application, reader or audio verification.")
+    if(LGAED_STATE_IMPORT_QA_ONLY)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        include(cmake/StateImportTests.cmake)
+        lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
+        message(STATUS "Focused native import QA: four tests / 52 scenarios; no application, reader or audio verification.")
+    else()
+        include(cmake/NarrationPlayerTests.cmake)
+        lgaed_add_narration_player_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/narration-player")
+        message(STATUS "Focused native narration-player QA: two real Windows MediaPlayer probes; no synthesis, application or reader verification.")
+    endif()
     return()
 endif()
 
@@ -1138,12 +1149,8 @@ if(BUILD_TESTING)
     add_test(NAME native.u11_consult_revision_reader COMMAND lgaed_lesson_reader_tests --u11-consult-revision)
     set_tests_properties(native.u11_consult_revision_reader PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     set_tests_properties(native.u11_domain_revision_reader native.u11_domain_race_reader PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
-    add_executable(lgaed_narration_player_tests native/platform/windows/narration_player_tests.cpp)
-    target_link_libraries(lgaed_narration_player_tests PRIVATE lgaed_platform_windows)
-    add_test(NAME native.narration_player_rates COMMAND lgaed_narration_player_tests "${CMAKE_SOURCE_DIR}/out/qa/narration-playback-rate")
-    set_tests_properties(native.narration_player_rates PROPERTIES TIMEOUT 45)
-    add_test(NAME native.narration_player_qa_path COMMAND lgaed_narration_player_tests --qa-path)
-    set_tests_properties(native.narration_player_qa_path PROPERTIES TIMEOUT 45 RUN_SERIAL TRUE)
+    include(cmake/NarrationPlayerTests.cmake)
+    lgaed_add_narration_player_tests("${CMAKE_SOURCE_DIR}/out/qa/narration-playback-rate")
     add_test(NAME native.dependent_puzzle_reader COMMAND lgaed_lesson_reader_tests --dependent-puzzles)
     set_tests_properties(native.dependent_puzzle_reader PROPERTIES TIMEOUT 150)
     add_test(NAME native.integrated_u1_reader COMMAND lgaed_lesson_reader_tests --integrated-u1)
