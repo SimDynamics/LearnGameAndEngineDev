@@ -1,7 +1,8 @@
 [CmdletBinding()]
-param([string] $Manifest = (Join-Path $PSScriptRoot 'InspectionLog.publication.json'))
+param([string] $Manifest = '')
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($Manifest)) { $Manifest = Join-Path $PSScriptRoot 'InspectionLog.publication.json' }
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Run only on a disposable GitHub-hosted Windows runner.'
 }
