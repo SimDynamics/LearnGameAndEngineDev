@@ -93,9 +93,10 @@ public static class CurricularWindowCapture {
 }
 '@
 
-function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath) {
+function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath,
+                           [int] $qaTargetWidth = 1000, [int] $qaTargetHeight = 640) {
     [CurricularWindowCapture]::ShowWindow($qaWindow, 9) | Out-Null
-    [CurricularWindowCapture]::MoveWindow($qaWindow, 0, 0, 1000, 640, $true) | Out-Null
+    [CurricularWindowCapture]::MoveWindow($qaWindow, 0, 0, $qaTargetWidth, $qaTargetHeight, $true) | Out-Null
     [CurricularWindowCapture]::SetForegroundWindow($qaWindow) | Out-Null
     Start-Sleep -Milliseconds 300
     $qaRect = New-Object CurricularWindowCapture+Rect
@@ -211,25 +212,76 @@ function Inspect-InstalledSelection([string] $qaName, [string] $qaChannel) {
             $qaWindow = Find-InstallerWindow
         }
         if ($qaWindow -eq [IntPtr]::Zero) { throw 'The real installation-selection window is unavailable.' }
-        Start-Sleep -Seconds 3
-        Save-ActualWindow $qaWindow (Join-Path $qaOutput ($qaName + '.png'))
-        # Record only the installer subtree; no browser, account or unrelated window is read.
-        try {
-            Add-Type -AssemblyName UIAutomationClient
-            Add-Type -AssemblyName UIAutomationTypes
-            $qaElement = [System.Windows.Automation.AutomationElement]::FromHandle($qaWindow)
+        Add-Type -AssemblyName UIAutomationClient
+        Add-Type -AssemblyName UIAutomationTypes
+        [CurricularWindowCapture]::MoveWindow($qaWindow, 0, 0, 1200, 900, $true) | Out-Null
+        $qaElement = [System.Windows.Automation.AutomationElement]::FromHandle($qaWindow)
+        $qaReadyLimit = [DateTime]::UtcNow.AddMinutes(2)
+        $qaLoaded = $false
+        do {
             $qaNodes = $qaElement.FindAll([System.Windows.Automation.TreeScope]::Descendants,
-                                        [System.Windows.Automation.Condition]::TrueCondition)
-            $qaControls = foreach ($qaNode in $qaNodes) {
-                $qaToggle = $null
-                if ($qaNode.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref] $qaToggle)) {
-                    $qaToggleState = $qaToggle.Current.ToggleState.ToString()
-                } else { $qaToggleState = $null }
-                [ordered]@{name = $qaNode.Current.Name; id = $qaNode.Current.AutomationId;
-                    type = $qaNode.Current.ControlType.ProgrammaticName; offscreen = $qaNode.Current.IsOffscreen; toggle = $qaToggleState}
+                                         [System.Windows.Automation.Condition]::TrueCondition)
+            # The first run captured the observed LoadingLiveTextBlock. Wait for
+            # the actual workload controls instead of assuming a fixed delay.
+            $qaLoading = @($qaNodes | Where-Object {
+                -not $_.Current.IsOffscreen -and
+                ($_.Current.AutomationId -eq 'LoadingLiveTextBlock' -or
+                 $_.Current.Name -match 'Getting things ready|Preparando todo')
+            }).Count -ne 0
+            $qaWorkloadLabels = @($qaNodes | Where-Object {
+                -not $_.Current.IsOffscreen -and
+                $_.Current.Name -match '^Workloads$|^Cargas de trabajo$|Desktop development with C\+\+|Desarrollo para el escritorio con C\+\+'
+            })
+            $qaLoaded = -not $qaLoading -and $qaWorkloadLabels.Count -gt 0 -and $qaNodes.Count -gt 25
+            if (-not $qaLoaded) { Start-Sleep -Milliseconds 500 }
+        } while (-not $qaLoaded -and [DateTime]::UtcNow -lt $qaReadyLimit)
+
+        # Read and scroll the observed C++ card; never toggle a component here.
+        $qaCppCards = @($qaNodes | Where-Object {
+            $_.Current.Name -match '^Desktop development with C\+\+|^Desarrollo para el escritorio con C\+\+'
+        })
+        if ($qaLoaded -and $qaCppCards.Count -gt 0) {
+            $qaCard = $qaCppCards[0]
+            if ($qaCard.Current.IsOffscreen) {
+                $qaScrollItem = $null
+                if ($qaCard.TryGetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern, [ref] $qaScrollItem)) {
+                    $qaScrollItem.ScrollIntoView()
+                } else {
+                    $qaAncestor = [System.Windows.Automation.TreeWalker]::ControlViewWalker.GetParent($qaCard)
+                    $qaScroller = $null
+                    while ($null -ne $qaAncestor) {
+                        if ($qaAncestor.TryGetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern, [ref] $qaScroller) -and
+                            $qaScroller.Current.VerticallyScrollable) { break }
+                        $qaScroller = $null
+                        $qaAncestor = [System.Windows.Automation.TreeWalker]::ControlViewWalker.GetParent($qaAncestor)
+                    }
+                    for ($qaScrollCount = 0; $null -ne $qaScroller -and $qaCard.Current.IsOffscreen -and $qaScrollCount -lt 12; $qaScrollCount++) {
+                        $qaScroller.Scroll([System.Windows.Automation.ScrollAmount]::NoAmount,
+                                           [System.Windows.Automation.ScrollAmount]::LargeIncrement)
+                        Start-Sleep -Milliseconds 200
+                    }
+                }
             }
-            $qaControls | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $qaOutput ($qaName + '-controls.json')) -Encoding utf8
-        } catch { $_.ToString() | Set-Content -LiteralPath (Join-Path $qaOutput ($qaName + '-automation.log')) }
+        }
+        Start-Sleep -Milliseconds 400
+        Save-ActualWindow $qaWindow (Join-Path $qaOutput ($qaName + '.png')) 1200 900
+        # Preserve the actual installer subtree, including a useful diagnostic if
+        # it never loaded. No browser, account or unrelated window is inspected.
+        $qaNodes = $qaElement.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+                                     [System.Windows.Automation.Condition]::TrueCondition)
+        $qaControls = foreach ($qaNode in $qaNodes) {
+            $qaToggle = $null
+            if ($qaNode.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref] $qaToggle)) {
+                $qaToggleState = $qaToggle.Current.ToggleState.ToString()
+            } else { $qaToggleState = $null }
+            [ordered]@{name = $qaNode.Current.Name; id = $qaNode.Current.AutomationId;
+                type = $qaNode.Current.ControlType.ProgrammaticName; offscreen = $qaNode.Current.IsOffscreen; toggle = $qaToggleState}
+        }
+        $qaControls | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $qaOutput ($qaName + '-controls.json')) -Encoding utf8
+        if (-not $qaLoaded) { throw 'The installer did not finish loading its workload selection.' }
+        if ($qaCppCards.Count -eq 0 -or $qaCppCards[0].Current.IsOffscreen) {
+            throw 'The C++ workload card is not visible; no selection screenshot is claimed.'
+        }
         [CurricularWindowCapture]::PostMessage($qaWindow, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
         Start-Sleep -Seconds 2
     }
@@ -263,7 +315,7 @@ try {
     $qaCompilerFilesBefore = @(Get-ChildItem -LiteralPath (Join-Path $qaInstallRoot 'VC\Tools\MSVC') -Filter cl.exe -File -Recurse -ErrorAction SilentlyContinue)
     $qaEvidence.coreInstance = $qaCommunity[0]
     $qaEvidence.compilerComponentPresentBefore = $qaCompilerBefore.Count -ne 0
-    $qaEvidence.compilerFilesBefore = @($qaCompilerFilesBefore.FullName)
+    $qaEvidence.compilerFilesBefore = @($qaCompilerFilesBefore | ForEach-Object FullName)
     Save-Evidence
     if ($qaCompilerBefore.Count -ne 0 -or $qaCompilerFilesBefore.Count -ne 0) {
         throw 'C++ tools are already present in the new instance; no missing-component claim can be made.'
