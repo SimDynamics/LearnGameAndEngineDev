@@ -435,6 +435,17 @@ Conserva el registro completo de diez casos y verifica los cuatro nombres antes
 de aplicar el mismo filtro a la ejecución. Su cola es independiente; `All`
 sigue siendo el valor predeterminado y el dispatch manual conserva los tres grupos.
 
+Para observar la primera preparación de la página 3 de asignaciones,
+`qa-curricular-u11-assignment:` selecciona únicamente
+`native.u11_assignment_published_reader_2`, mediante `-EditorialGroup AssignmentP3`.
+Conserva la comprobación del registro de diez casos, valida el nombre exacto
+seleccionado y aplica el mismo filtro al listar y ejecutar; tiene su propia cola.
+La fase 2 registra `READY_BEGIN`, `READY_PROGRESS` y `READY_COMPLETE`, con tiempos,
+clave de plan, grabaciones disponibles y primer segmento pendiente, desde la
+espera inicial del fixture. `READY_FAILURE` conserva el estado y las fuentes al
+fallar. La observación mantiene el predicado original, el límite absoluto de
+60 segundos de cada espera y los 240 segundos de CTest.
+
 Cada job comprueba primero el dispositivo firmado con
 `-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres
 pruebas prepara un runtime nuevo y ejecuta la suite asignada. Los jobs no

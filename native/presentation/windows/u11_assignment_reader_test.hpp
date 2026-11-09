@@ -316,7 +316,7 @@ void u11_assignment_outer_reader(const std::shared_ptr<windows::NarrationWorker>
         // Select Spanish interface verdicts independently of the narration voice/runtime.
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         data.preferences["u11_assignment_outer_reader_qa"]["opaque"]=std::string("\t conservar\r\n保存");
-    },cache);
+    },cache,false,phase==2); // Observe the first cold p3 preparation without changing its wait.
     struct FailureShutdown {std::shared_ptr<windows::NarrationWorker> worker;
         ~FailureShutdown(){if(std::uncaught_exceptions())worker->shutdown();}
     } failure_shutdown{backend};

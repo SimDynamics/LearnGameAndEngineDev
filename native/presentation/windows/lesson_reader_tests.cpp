@@ -204,8 +204,9 @@ curriculum::Lesson compiler_model(bool required=false){
 }
 struct Fixture{
     WindowsEnvironment environment;HWND host=nullptr,view=nullptr;std::unique_ptr<LessonReader> reader;
-    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={},std::function<void(state::StateData&)> initialize_state={},std::filesystem::path private_cache={},bool validate_math=false):
-        environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})){
+    bool observe_ready=false;std::size_t ready_sequence=0;
+    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false,std::size_t initial_page=0,bool hidden_host=false,bool wait_initial=true,std::function<void(HWND)> before_reader={},std::function<void(state::StateData&)> initialize_state={},std::filesystem::path private_cache={},bool validate_math=false,bool trace_ready=false):
+        environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})),observe_ready(trace_ready){
         check(!std::filesystem::exists(environment.paths.root),"QA profile already exists");
         if(!private_cache.empty()){
             check(private_audio&&private_cache.is_absolute()&&!std::filesystem::exists(private_cache),"An owned narration cache must be a new absolute path");
@@ -236,7 +237,38 @@ struct Fixture{
     LessonReaderSnapshot snapshot(){auto result=reader->snapshot();check(result.error.empty(),"Real reader error: "+result.error);return result;}
     void ready(const std::source_location& caller=std::source_location::current()){
         const auto started=GetTickCount64();
-        try{wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"real page synthesis/word alignment");}
+        const auto sequence=observe_ready?++ready_sequence:0;
+        std::optional<std::string> observed_key;std::size_t observed_total=0,observed_available=0;
+        bool observed_planned=false,observed_preparing=false,observed_suspended=false;
+        ULONGLONG observed_elapsed=0;
+        const auto observe=[&](std::string_view event,const LessonReaderSnapshot& value){
+            if(!observe_ready)return;
+            try{
+                const auto available=static_cast<std::size_t>(std::ranges::count_if(value.segments,[](const auto& part){return part.available;}));
+                if(event=="PROGRESS"&&observed_key&&*observed_key==value.key&&observed_total==value.segments.size()
+                    &&observed_available==available&&observed_planned==value.planned
+                    &&observed_preparing==value.preparing&&observed_suspended==value.preparation_suspended)return;
+                const auto elapsed=GetTickCount64()-started;
+                const auto quoted_key=winrt::to_string(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(value.key)).Stringify());
+                std::cout<<"READY_"<<event<<" sequence="<<sequence<<" caller="<<caller.file_name()<<':'<<caller.line()
+                    <<" elapsed_ms="<<elapsed<<" delta_ms="<<elapsed-observed_elapsed<<" page="<<lesson_page_state(view).index
+                    <<" planned="<<value.planned<<" preparing="<<value.preparing<<" suspended="<<value.preparation_suspended
+                    <<" available="<<available<<'/'<<value.segments.size()<<" selected="<<value.index<<" key="<<quoted_key;
+                const auto pending=std::ranges::find_if(value.segments,[](const auto& part){return !part.available;});
+                if(pending==value.segments.end())std::cout<<" first_pending=none";
+                else std::cout<<" first_pending="<<static_cast<std::size_t>(pending-value.segments.begin())
+                    <<" block="<<pending->block<<" range="<<pending->start<<':'<<pending->end<<" feedback="<<pending->feedback;
+                std::cout<<'\n';
+                observed_key=value.key;observed_total=value.segments.size();observed_available=available;
+                observed_planned=value.planned;observed_preparing=value.preparing;observed_suspended=value.preparation_suspended;
+                observed_elapsed=elapsed;
+            }catch(...){std::cerr<<"READY_OBSERVATION unavailable\n";}
+        };
+        try{
+            if(observe_ready)observe("BEGIN",reader->snapshot());
+            wait([&]{const auto value=snapshot();observe("PROGRESS",value);return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"real page synthesis/word alignment");
+            if(observe_ready)observe("COMPLETE",reader->snapshot());
+        }
         catch(...){
             // Observe the existing state without pumping, retrying, or masking
             // the original failure (snapshot() deliberately rejects errors).

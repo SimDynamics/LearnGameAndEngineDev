@@ -5,7 +5,7 @@ param(
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
     [string] $CompilerHistoryGroup = 'All',
-    [ValidateSet('All', 'Remainder')]
+    [ValidateSet('All', 'Remainder', 'AssignmentP3')]
     [string] $EditorialGroup = 'All',
     [switch] $VirtualAudio
 )
@@ -342,7 +342,7 @@ if ($qaActualTests.Count -ne $qaExpected.Count -or
 }
 
 # Keep the complete suite registration intact. An explicit focal run
-# validates its exact four original names before using the same CTest filter.
+# validates its exact original names before using the same CTest filter.
 $qaCTestSelection = @()
 if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All') {
     if ($CompilerHistoryGroup -ne 'All') {
@@ -356,8 +356,12 @@ if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All') {
         }
     } else {
         $qaSelectionLabel = "editorial $EditorialGroup"
-        $qaSelectedExpected = @('native.u11_remainder_published26_reader_0', 'native.u11_remainder_published26_reader_1',
-            'native.u11_remainder_published30_reader_0', 'native.u11_remainder_published30_reader_1')
+        if ($EditorialGroup -eq 'AssignmentP3') {
+            $qaSelectedExpected = @('native.u11_assignment_published_reader_2')
+        } else {
+            $qaSelectedExpected = @('native.u11_remainder_published26_reader_0', 'native.u11_remainder_published26_reader_1',
+                'native.u11_remainder_published30_reader_0', 'native.u11_remainder_published30_reader_1')
+        }
     }
     $qaSelectionPattern = '^(' + (($qaSelectedExpected | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')$'
     $qaCTestSelection = @('-R', $qaSelectionPattern)
@@ -365,9 +369,9 @@ if ($CompilerHistoryGroup -ne 'All' -or $EditorialGroup -ne 'All') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the selected original reader tests.' }
     $qaSelectedListing = ($qaSelectedText -join "`n") | ConvertFrom-Json
     $qaSelectedActual = @($qaSelectedListing.tests | ForEach-Object { $_.name })
-    if ($qaSelectedActual.Count -ne 4 -or
+    if ($qaSelectedActual.Count -ne $qaSelectedExpected.Count -or
         (Compare-Object -ReferenceObject $qaSelectedExpected -DifferenceObject $qaSelectedActual)) {
-        throw "The $qaSelectionLabel selection must contain exactly its four original tests."
+        throw "The $qaSelectionLabel selection must contain exactly its $($qaSelectedExpected.Count) original tests."
     }
     Write-Host "Original reader selection: $qaSelectionLabel ($($qaSelectedActual -join ', '))"
 }
