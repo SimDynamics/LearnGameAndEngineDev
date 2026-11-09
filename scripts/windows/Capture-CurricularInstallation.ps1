@@ -40,6 +40,7 @@ if (@($qaEvidence.initialInstances | Where-Object productId -eq $qaProduct).Coun
 if ((Get-PSDrive -Name C).Free -lt 12GB) { throw 'Insufficient free space for an isolated Community installation.' }
 
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @'
 using System;
 using System.Diagnostics;
@@ -68,6 +69,7 @@ public static class CurricularWindowCapture {
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr window, int x, int y, int width, int height, bool repaint);
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] struct StartupInfo {
         public int cb; public string reserved, desktop, title;
@@ -96,9 +98,11 @@ public static class CurricularWindowCapture {
 function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath,
                            [int] $qaTargetWidth = 1000, [int] $qaTargetHeight = 640) {
     [CurricularWindowCapture]::ShowWindow($qaWindow, 9) | Out-Null
-    [CurricularWindowCapture]::MoveWindow($qaWindow, 0, 0, $qaTargetWidth, $qaTargetHeight, $true) | Out-Null
+    $qaScreen = [Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    [CurricularWindowCapture]::MoveWindow($qaWindow, $qaScreen.Left, $qaScreen.Top,
+        [Math]::Min($qaTargetWidth, $qaScreen.Width), [Math]::Min($qaTargetHeight, $qaScreen.Height), $true) | Out-Null
     [CurricularWindowCapture]::SetForegroundWindow($qaWindow) | Out-Null
-    Start-Sleep -Milliseconds 300
+    Start-Sleep -Milliseconds 700
     $qaRect = New-Object CurricularWindowCapture+Rect
     if (-not [CurricularWindowCapture]::GetWindowRect($qaWindow, [ref] $qaRect)) { throw 'Cannot locate the real console window.' }
     $qaWidth = $qaRect.Right - $qaRect.Left
@@ -107,10 +111,14 @@ function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath,
     $qaBitmap = [System.Drawing.Bitmap]::new($qaWidth, $qaHeight)
     $qaGraphics = [System.Drawing.Graphics]::FromImage($qaBitmap)
     try {
-        $qaDc = $qaGraphics.GetHdc()
-        try { $qaPrinted = [CurricularWindowCapture]::PrintWindow($qaWindow, $qaDc, 2) }
-        finally { $qaGraphics.ReleaseHdc($qaDc) }
-        if (-not $qaPrinted) { throw 'Windows did not provide the real console pixels.' }
+        if ([CurricularWindowCapture]::GetForegroundWindow() -ne $qaWindow) {
+            throw 'The actual installation or command window is not foreground.'
+        }
+        if ($qaRect.Left -lt $qaScreen.Left -or $qaRect.Top -lt $qaScreen.Top -or
+            $qaRect.Right -gt $qaScreen.Right -or $qaRect.Bottom -gt $qaScreen.Bottom) {
+            throw 'The actual window does not fit the display; refusing a clipped screenshot.'
+        }
+        $qaGraphics.CopyFromScreen($qaRect.Left, $qaRect.Top, 0, 0, $qaBitmap.Size)
         $qaBitmap.Save($qaPath, [System.Drawing.Imaging.ImageFormat]::Png)
     }
     finally { $qaGraphics.Dispose(); $qaBitmap.Dispose() }
@@ -214,7 +222,9 @@ function Inspect-InstalledSelection([string] $qaName, [string] $qaChannel) {
         if ($qaWindow -eq [IntPtr]::Zero) { throw 'The real installation-selection window is unavailable.' }
         Add-Type -AssemblyName UIAutomationClient
         Add-Type -AssemblyName UIAutomationTypes
-        [CurricularWindowCapture]::MoveWindow($qaWindow, 0, 0, 1200, 900, $true) | Out-Null
+        $qaScreen = [Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+        [CurricularWindowCapture]::MoveWindow($qaWindow, $qaScreen.Left, $qaScreen.Top,
+            [Math]::Min(1200, $qaScreen.Width), [Math]::Min(900, $qaScreen.Height), $true) | Out-Null
         $qaElement = [System.Windows.Automation.AutomationElement]::FromHandle($qaWindow)
         $qaReadyLimit = [DateTime]::UtcNow.AddMinutes(2)
         $qaLoaded = $false
