@@ -122,7 +122,7 @@
           "answers": [
             "n:99\nf"
           ],
-          "explanation": "Se reunieron los dígitos válidamente. El intento de get posterior llega al final, que termina el número; no hay un carácter que devolver. La próxima llamada entrega el token de final.",
+          "explanation": "La primera lectura obtiene el primer 9 y lo usa como acumulado. Al incorporar el segundo, calcula 9 * 10 + 9 = 99, que todavía pertenece al dominio. El siguiente get llega al final sin obtener otro carácter. Esa frontera termina el número: la función entrega su categoría y valor, y se imprime n:99.\n\nNo se llama a putback porque ese último intento no obtuvo un carácter. La segunda llamada a leer_token encuentra el final y entrega la categoría f, que el cliente presenta en la última línea, sin salto posterior. El fin del origen no invalida el número que ya se reconoció.",
           "reviewFeedback": "Sigue el último intento de get después de las cifras. Distingue el número ya reconocido de la lectura posterior que busca otra unidad."
         },
         {
@@ -148,7 +148,7 @@
             "Se entregan 10 y 0 como dos tokens para aceptar cualquier texto."
           ],
           "correctIndex": 0,
-          "explanation": "El cálculo del candidato es representable y permite rechazar el valor mayor que 99. La secuencia de dígitos forma una unidad; no se divide para eludir el contrato.",
+          "explanation": "El primer dígito fija el acumulado en 1. Incorporar el primer 0 da 1 * 10 + 0 = 10; incorporar el siguiente da 10 * 10 + 0 = 100. Ese candidato cabe en int, pero supera el máximo 99 del lenguaje y se rechaza inmediatamente.\n\nLos tres caracteres son cifras consecutivas: no apareció una frontera que permitiera entregar 10 y después 0 como números distintos. Separarlos así cambiaría el contrato para aceptar una entrada que debía rechazarse.",
           "reviewFeedback": [
             "Sigue el valor acumulado tras cada cifra y la comparación que se realiza inmediatamente después.",
             "Calcula el candidato antes del rechazo y contrástalo con el rango garantizado de int. Distingue un límite del lenguaje de un límite del tipo.",
@@ -171,7 +171,7 @@
           "answers": [
             "Signo: -\nNumero: 12\nSigno: +\nNumero: 7\nSigno: ;\nFin"
           ],
-          "explanation": "El signo menos se entrega por separado. 12 y 07 son secuencias de dígitos; la segunda representa 7. Interpretar el signo como negación será una regla de la gramática.",
+          "explanation": "El lector omite el espacio inicial y entrega - como signo. La llamada siguiente reúne las cifras de 12 en un número y devuelve al flujo el + que encuentra después. Por eso las primeras líneas son Signo: - y Numero: 12, seguidas de Signo: +.\n\nDespués, 07 se acumula como 0 * 10 + 7 = 7 y produce Numero: 7. Quedan el terminador y el final: Signo: ; y Fin. Este inspector reconoce unidades; todavía no aplica el signo menos al número ni calcula una suma.",
           "reviewFeedback": "Recorre las llamadas en orden y separa la clasificación de los signos del valor formado por cifras. Respeta cada salto de línea del cliente."
         },
         {
@@ -197,7 +197,7 @@
             "El rechazo de 12 porque el primer lector sólo admitía dígitos aislados."
           ],
           "correctIndex": 1,
-          "explanation": "La ampliación cambia el tamaño posible de un número, pero conserva la frontera de espacios entre unidades.",
+          "explanation": "La primera lectura reúne 1 y 2 hasta formar 12. El espacio siguiente no es una cifra: se conserva como frontera y la función entrega ese primer token. La llamada posterior omite el espacio y reconoce 3 como otro token numérico.\n\nLa ampliación permite varias cifras consecutivas dentro de un número; no elimina los separadores entre números. La gramática tendrá que decidir si esos dos tokens pueden aparecer juntos en una expresión.",
           "reviewFeedback": [
             "Sigue el carácter que pone fin a la primera secuencia. Comprueba cuándo regresa la función y desde dónde comienza la siguiente lectura.",
             "Distingue reconocer cada unidad de comprobar las reglas que permiten combinar varias unidades.",
@@ -244,7 +244,7 @@
             "Se entrega un número por dígito: 0, 0 y 7."
           ],
           "correctIndex": 1,
-          "explanation": "El límite corresponde al valor acumulado, no a dos caracteres máximos. Los ceros iniciales conservan el valor y el primer carácter no numérico sigue disponible.",
+          "explanation": "Las cifras de 007 actualizan el acumulado a 0, 0 y 7. Ningún paso supera el máximo 99, de modo que se acepta un único token numérico de valor 7. El signo + termina esa secuencia, se conserva y será la unidad siguiente; después se leerá 2.\n\nLa condición valor > 99 comprueba un valor, no una cantidad de cifras. Rechazar sólo porque aparecen tres caracteres de dígito impondría un límite de longitud que este lenguaje no establece.",
           "reviewFeedback": [
             "Comprueba qué limita la condición valor > 99: el valor acumulado o la cantidad de caracteres leídos.",
             "Sigue el acumulado después de cada cero y observa qué ocurre con el primer carácter que ya no es un dígito.",
@@ -336,7 +336,7 @@
           "answers": [
             "Numero: 8\nSigno: ;\nError: Numero fuera de dominio"
           ],
-          "explanation": "8 y ; se reconocen. La secuencia 100 excede 99 durante su acumulación y se rechaza. El inspector todavía termina al capturar ese error y no recupera 2;.",
+          "explanation": "El inspector reconoce 8 y después ;, por lo que ya ha presentado Numero: 8 y Signo: ;. Al leer 100, el acumulado pasa por 1, 10 y el candidato 100. Ese último valor supera 99 y provoca la excepción antes de entregar otro token numérico.\n\nEl catch está fuera del bucle: presenta Error: Numero fuera de dominio y termina la prueba. Las dos líneas anteriores permanecen, pero el lector no vuelve a procesar el texto pendiente ;2;. Lanzar la excepción no realiza por sí solo una recuperación.",
           "reviewFeedback": "Localiza dónde se lanza la excepción y qué parte del programa la captura. Conserva las líneas que ya se imprimieron antes de ese punto."
         },
         {
@@ -352,11 +352,73 @@
               "style": "bold"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar los límites del número reservado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tus definiciones de Token, leer_token, token_valido, Lector_tokens y trazar antes de examinar_reserva en este editor. Conserva la interfaz y el cliente proporcionado. El programa vuelve a ejecutar toda la batería anterior y añade cuatro pruebas de reserva, para los valores 0, 99, -1 y 100.\n\nCada prueba crea un lector nuevo con el texto 8; y la reserva vacía. El cliente intenta devolver un token numérico con el valor indicado. La categoría numérica admite exactamente 0..99, incluidos ambos extremos. Un rechazo debe dejar vacía la reserva y conservar el recorrido del texto. Después se consulta el estado, se lee una unidad y se consulta otra vez.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva los informes originales y las cuatro trazas nuevas, con los rótulos y saltos del cliente. Si falla un caso, corrige la misma implementación y vuelve a ejecutar el cliente completo. Los dos puntos de Leido: n:0 separan el rótulo, la categoría y el valor; no indican una operación aritmética."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nNumero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus definiciones y funciones, sin repetir main.\n\nvoid examinar_reserva(int valor) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(Token{'n', valor});\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Leido: \" << siguiente.clase << ':' << siguiente.valor << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n}\n\nint main() {\n    trazar(\"34+5;\");\n    trazar(\"99+0;\");\n    trazar(\"007+2;\");\n    trazar(\"100+1;\");\n    Lector_tokens final{\"99\"};\n    std::cout << \"Numero final: \" << final.leer().valor << \"\\n\";\n    std::cout << \"Fin: \" << final.leer().clase << \"\\n\";\n    Lector_tokens separados{\"1 2\"};\n    const Token primero = separados.leer();\n    const Token segundo = separados.leer();\n    std::cout << \"Separados: \" << primero.valor << \":\" << segundo.valor << \"\\n\";\n    trazar(\"0007+2;\");\n    examinar_reserva(0);\n    examinar_reserva(99);\n    examinar_reserva(-1);\n    examinar_reserva(100);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Reservar 0 y 99 tiene éxito: la consulta muestra Pendiente: 1 y la lectura entrega el token reservado antes del texto. Reservar -1 o 100 debe producir Reserva: Token invalido, mantener Pendiente: 0 y permitir leer el 8 original. Después de cada lectura la reserva queda vacía.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\n"
+                    ],
+                    "text": "La reserva rechaza 0, aunque pertenece al dominio 0..99. Revisa si has usado un límite inferior estricto que sólo permite valores positivos. Reconocer un cero en el texto y admitirlo en la reserva deben obedecer al mismo dominio."
+                  },
+                  {
+                    "outputs": [
+                      "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:-1\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\n"
+                    ],
+                    "text": "La traza acepta el token de valor -1 y lo entrega desde la reserva. Ese valor puede representarse en int, pero no pertenece al dominio numérico 0..99. Comprueba ambos límites antes de modificar el token guardado y el indicador de ocupación."
+                  },
+                  {
+                    "outputs": [
+                      "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:100\nPendiente: 0\n"
+                    ],
+                    "text": "La traza acepta el token de valor 100 y lo entrega desde la reserva. El rechazo de 100 por el lector de caracteres no protege una devolución directa. token_valido también debe comprobar el máximo 99 antes de ocupar la reserva."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar reconocimiento y validación de la reserva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las pruebas originales reservaban números de valor 34, 99 y 7, pero no reservaban 0 ni intentaban devolver valores numéricos exteriores al dominio ampliado. El caso 100+1; se rechazaba durante el reconocimiento, antes de llamar a devolver. Por eso no distinguía una validación de reserva que olvidara uno de sus límites.\n\nEn las pruebas nuevas, 0 y 99 se guardan y ocupan la reserva; la primera lectura entrega respectivamente n:0 y n:99, aunque el texto aún comience por 8. Para -1 y 100, la validación debe lanzar la excepción antes de cambiar los miembros: la reserva sigue vacía y la lectura entrega n:8. Las consultas posteriores muestran también que leer una reserva la vacía.\n\nLa función siguiente mantiene el dominio de la categoría numérica y las reglas anteriores para signos y final. Se conserva el orden de devolver: comprobar ocupación, validar el token y sólo entonces guardar la copia y marcar la reserva llena."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n"
+        },
         {
           "type": "heading",
           "text": "De reconocer unidades a combinarlas"
@@ -399,6 +461,14 @@
         "block_0005_0003",
         "block_0008_0000",
         "block_0008_0001"
+      ]
+    },
+    {
+      "activity": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+      "blocks": [
+        "u11_reserva_numerica_en_ambos_limites_referencia_titulo",
+        "u11_reserva_numerica_en_ambos_limites_referencia_razonamiento",
+        "u11_reserva_numerica_en_ambos_limites_referencia_codigo"
       ]
     }
   ],
@@ -651,12 +721,19 @@
         "blocks": [
           "block_0006_0000",
           "block_0006_0001",
-          "block_0006_0002"
+          "block_0006_0002",
+          "u11_reserva_numerica_en_ambos_limites_titulo",
+          "u11_reserva_numerica_en_ambos_limites_consigna",
+          "u11_reserva_numerica_en_ambos_limites_salida",
+          "u11_reserva_numerica_en_ambos_limites_comprobacion"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
+          "u11_reserva_numerica_en_ambos_limites_referencia_titulo",
+          "u11_reserva_numerica_en_ambos_limites_referencia_razonamiento",
+          "u11_reserva_numerica_en_ambos_limites_referencia_codigo",
           "block_0007_0000",
           "block_0007_0001"
         ]
@@ -1203,7 +1280,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "sha256": "ee2714dd0cc59d3e4b62f524d205a5f4c3b13cbba7dcac7f23919c062f5a2971",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_referencia_codigo",
+        "sha256": "549c4e692691d1e2833a3aa1c32d86961d5a83c85dc925df219cbc88f88a2f1c",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0000",
@@ -1384,6 +1525,36 @@
         "id": "block_0002_0002",
         "beforeSha256": "f9c7f2997252923934de2b8bf0da4c5dfa63395c745adfcde86ee9456e01033a",
         "afterSha256": "eb63a460b6d5a2846b195af9f5013fd5849e79418e3fc861a770cd0d3bea80de"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "711dd657e990403f9c20633c82f38023b9394f5a8d1c45a7ca484b68671b9675",
+        "afterSha256": "6c20af2cd1586811417ad830925c42380caf2505eeb3e6f1403df2a0d577de80"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "b18b9f78cfa55271d8a179652a72b6b098058107887469cb8e931605ecfba4cd",
+        "afterSha256": "852b8e338f4c6612f84d4f0cb90ee2253bf23fd5d22a10ee626d8ffda37891d7"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "e8abf5fa6451d6fd8c8a4f9fbd0c16c5004a54f56d6e95cd54bedba3764787b7",
+        "afterSha256": "65aba32c046aa66de3f3b0634570eb887c37d0838ae8e0ae055fc47bed84fbb3"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "b779c5fbe296d3bc220361998158678fe287a306b47a6a591eff05d6415c3c24",
+        "afterSha256": "5676532414351fdf81e3946ab01d5e67a5b7d85755f5cbf2eaf2a6c3542978c3"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "15e57424f2c23a110eeb144784fc73d0a99eac58b96628d4eacaa687e5c216e9",
+        "afterSha256": "333b7f76ce97dafea1aa811ef0826bc6400bdca43999388638e8acbd63a8f130"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "5bdfaf1768f5f0db114a8be37a6c19f722a285e0d4956db42a60d2bd0d4af523",
+        "afterSha256": "e924460677ea8241c3d1b194c24f72ace4a9a951c988e791dcc809699b9d1d77"
       }
     ],
     "compilerRevisions": [
@@ -1873,13 +2044,56 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "2cf83eddc739dd9536f1b1607260857a1a1bd56e348621b0dcc88056e4f023a4",
+        "sourceSha256": "1c4529918d7601368c74230dfdbaa921d85ac07e087c1bfe8b739205cbc415fd",
         "spans": [
           {
-            "start": 52,
-            "end": 55,
+            "start": 37,
+            "end": 38,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 113,
+            "text": "9 * 10 + 9 = 99",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 165,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 298,
+            "text": "n:99",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 322,
+            "text": "putback",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 393,
+            "end": 403,
+            "text": "leer_token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 446,
+            "end": 447,
+            "text": "f",
+            "role": "output",
+            "reading": "characters"
           }
         ]
       },
@@ -1913,12 +2127,61 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "41658cd92b0d44fbb0c2e00ee17eb07a202fd438c1747d09b7278fd4a71e0ea9",
+        "sourceSha256": "79020947bad2850923cc4cc8b8863cbfb316acdcb4c8074d4be39cf744671494",
         "spans": [
           {
-            "start": 80,
+            "start": 38,
+            "end": 39,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
             "end": 82,
+            "text": "1 * 10 + 0 = 10",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 128,
+            "text": "10 * 10 + 0 = 100",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 155,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 181,
             "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 319,
+            "end": 321,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 333,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           }
@@ -2012,27 +2275,83 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "f3078ee917e1d8d15a74e844c134dc561907f500b4f19156dcd575fb49b30ada",
+        "sourceSha256": "ad35fd3bd3641d2cb4d50769c439f7c3d08ac949cac067ae43a9ffb945a1b29e",
         "spans": [
           {
-            "start": 40,
-            "end": 42,
+            "start": 45,
+            "end": 46,
+            "text": "-",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 100,
+            "end": 102,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 47,
-            "text": "07",
+            "start": 139,
+            "end": 140,
+            "text": "+",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 196,
+            "end": 204,
+            "text": "Signo: -",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 97,
-            "end": 98,
-            "text": "7",
+            "start": 207,
+            "end": 217,
+            "text": "Numero: 12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 239,
+            "text": "Signo: +",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 253,
+            "text": "07",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 270,
+            "end": 284,
+            "text": "0 * 10 + 7 = 7",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 304,
+            "text": "Numero: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 347,
+            "text": "Signo: ;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 353,
+            "text": "Fin",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2170,8 +2489,37 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "f62a587290225d58a27aa7e38db324c797ef2a5e932893249bcad12e59c22767",
-        "spans": []
+        "sourceSha256": "5a2152f7fb3c453fb2479e33de23dfbb57f3d2b87c70111f908b6ea9addb1dbd",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 201,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2433,8 +2781,72 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "ea93c8a1761f624666fb5bc455a3a43da90457ee00b95ac3abc5c7125a8ad8e9",
-        "spans": []
+        "sourceSha256": "47d60611549172f6ab959fc816f59e7d365743e5d7a026624291f5699ae27dba",
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 85,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 236,
+            "end": 237,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 263,
+            "text": "valor > 99",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2685,42 +3097,91 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "f54bcef2ae40e69514610f029c484928a1abb3aee2cf56dc4f952ed0db1324ad",
+        "sourceSha256": "bda03f0f1238635d4cece5f38fe6f6e09df1fafa92fc2f4d509398dd76c0b7c3",
         "spans": [
           {
-            "start": 0,
-            "end": 1,
+            "start": 22,
+            "end": 23,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 4,
-            "end": 5,
+            "start": 34,
+            "end": 35,
             "text": ";",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 33,
-            "end": 36,
+            "start": 65,
+            "end": 74,
+            "text": "Numero: 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 85,
+            "text": "Signo: ;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 98,
             "text": "100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 44,
-            "end": 46,
+            "start": 122,
+            "end": 123,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 127,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 146,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 174,
             "text": "99",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 149,
-            "end": 151,
-            "text": "2;",
-            "role": "data",
+            "start": 241,
+            "end": 246,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 308,
+            "text": "Error: Numero fuera de dominio",
+            "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 423,
+            "end": 426,
+            "text": ";2;",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -2774,6 +3235,389 @@
         "path": "/text",
         "sourceSha256": "7ca888a95f38ed5b86a27233c5bcfd89f7f4a60019d5d203124edef60c840d0b",
         "spans": []
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_titulo",
+        "path": "/text",
+        "sourceSha256": "cd98da3ba9d5d91826ed744d54259e9546cba9ac98a4f9237433b286071f8b7e",
+        "spans": []
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_consigna",
+        "path": "/text",
+        "sourceSha256": "44ca1cda326005470c1e9b659e94f6b3971ee3f6b1719a174ab853336de6d4af",
+        "spans": [
+          {
+            "start": 26,
+            "end": 31,
+            "text": "Token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 43,
+            "text": "leer_token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 57,
+            "text": "token_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 72,
+            "text": "Lector_tokens",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 81,
+            "text": "trazar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 107,
+            "text": "examinar_reserva",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 281,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 285,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 289,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 295,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 346,
+            "text": "8;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 477,
+            "end": 482,
+            "text": "0..99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 907,
+            "end": 917,
+            "text": "Leido: n:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_salida",
+        "path": "/text",
+        "sourceSha256": "027480dc21ea99c9bd2d263ac61f9343a4779ad296e67b43d6add8229482928b",
+        "spans": [
+          {
+            "start": 33,
+            "end": 515,
+            "text": "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "bf33b406c65ca84ca7a3c6454c00d82f13d466f6c69143704b1e5eec75efe4e7",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 55,
+            "text": "0..99",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "8a709151f0667c26633bb0f08f5d2ff8a6ffc3c8cc749d7431ff1626201080be",
+        "spans": [
+          {
+            "start": 34,
+            "end": 36,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 104,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 149,
+            "text": "0..99",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "0acf0d8f3781ba8d107a67601db14634157fabc203ecd92f5dbc21698b5c30ee",
+        "spans": [
+          {
+            "start": 34,
+            "end": 37,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 86,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 162,
+            "text": "token_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 198,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0bc601e197afd1ad99501f13cb5cd633e4bb93a988d757cfc57bfb01ee57f40b",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 13,
+            "end": 15,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 61,
+            "text": "Pendiente: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 136,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 174,
+            "text": "Reserva: Token invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 197,
+            "text": "Pendiente: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "8078d06f99d6878c6b17bbd3ab9c5d19576142112fd7648cfb54e3686af13c60",
+        "spans": []
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "57e684c5f6cc1301b8fb55864475b8b8dcf2f29f5141acb101df005fd5b9d315",
+        "spans": [
+          {
+            "start": 51,
+            "end": 53,
+            "text": "34",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 57,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 171,
+            "text": "100+1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 230,
+            "end": 238,
+            "text": "devolver",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 346,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 351,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 427,
+            "end": 430,
+            "text": "n:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 437,
+            "text": "n:99",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 473,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 482,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 485,
+            "end": 488,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 604,
+            "end": 607,
+            "text": "n:8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 819,
+            "end": 827,
+            "text": "devolver",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2783,5 +3627,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+      "requires": [
+        "block_0004_0003"
+      ]
+    }
+  ]
 }

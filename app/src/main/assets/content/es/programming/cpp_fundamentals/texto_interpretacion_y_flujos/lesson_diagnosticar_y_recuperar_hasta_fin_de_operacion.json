@@ -61,7 +61,7 @@
             "Consumir la reserva, devolver true y dejar disponible 9;."
           ],
           "correctIndex": 2,
-          "explanation": "La reserva ya es el terminador de la operación incorrecta. Consumir caracteres hasta otro punto y coma perdería la siguiente operación.",
+          "explanation": "El token ; reservado ya cierra la operación que carecía de operando. descartar_operacion vacía esa reserva y devuelve true sin leer más caracteres. Así, 9; permanece disponible para que el ciclo intente analizarlo.\n\nSi el método buscara otro punto y coma en el texto, consumiría también 9;. Habría encontrado una frontera, pero sería la de una operación que todavía no debía descartar.",
           "reviewFeedback": [
             "Comprueba si el terminador de la operación rechazada ya está en el búfer antes de consumir más caracteres.",
             "Distingue un token pendiente que sirve de frontera de una situación que impida toda recuperación.",
@@ -120,7 +120,7 @@
             "Devolver 4 como resultado parcial y reiniciar el texto completo."
           ],
           "correctIndex": 1,
-          "explanation": "El terminador reservado ya es el final que se busca. Consumir otro perdería 7*2;. La recuperación abandona sólo la operación incompleta.",
+          "explanation": "Después de obtener 4 y consumir +, la regla de unidad encuentra ; en lugar del operando derecho. Lo reserva y lanza Se esperaba una unidad; el valor parcial 4 no se presenta como resultado aceptado.\n\nLa recuperación consume ese punto y coma reservado, sin buscar otro entre los caracteres. La próxima operación empieza en 7, calcula 7 * 2 = 14 y produce Resultado: 14. Buscar otra frontera descartaría justamente esa operación válida.",
           "reviewFeedback": [
             "Localiza el terminador que la gramática dejó pendiente antes de buscar otro en los caracteres.",
             "Sigue el estado del búfer cuando falta el operando y decide qué delimitador pertenece a la operación rechazada.",
@@ -146,6 +146,55 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Comprobar una reserva que no es frontera y el resultado del descarte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tu lector ampliado, la gramática y probar antes del main proporcionado. El cliente conserva los once casos anteriores y añade \"2 3+4;6;\". Mantén el mismo programa para toda la batería y conserva las cabeceras, textos y saltos de línea.\n\nEl cliente también construye dos lectores nuevos y llama directamente a descartar_operacion: uno contiene \"x;\" y el otro \"x\". Esas llamadas descartan caracteres desde el inicio, sin pedir que se reconozcan como tokens. Presentan el booleano devuelto con las etiquetas Con frontera: y Sin frontera:, usando 1 para verdadero y 0 para falso. Si tus interfaces tienen otros nombres, adapta estas referencias sin cambiar lo que se comprueba.\n\nPulsa «Compilar, ejecutar y comprobar». Cada rechazo debe abandonar sólo su propia operación. El booleano debe indicar si se consumió su terminador; no indica que exista otra operación válida después de él. Si corriges una función, comprueba otra vez el cliente completo.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nCaso 1\nError: Se esperaba una unidad\nResultado: 14\nCaso 2\nError: Divisor cero\nResultado: 5\nCaso 3\nError: Numero fuera de dominio\nResultado: 6\nCaso 4\nError: Se esperaba )\nResultado: 4\nCaso 5\nError: Se esperaba una unidad\nResultado: 5\nCaso 6\nError: Se esperaba ;\nCaso 7\nResultado: 5\nError: Caracter no admitido\nResultado: 4\nCaso 8\nCaso 9\nCaso 10\nResultado: 5\nCaso 11\nError: Caracter no admitido\nResultado: 4\nCaso 12\nError: Se esperaba ;\nResultado: 6\nCon frontera: 1\nSin frontera: 0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin otro main.\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"4+;7*2;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"8/0;2+3;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"100;6;\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"(2+3;4;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\";5;\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"2+3\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"2+3;?;4;\");\n    std::cout << \"Caso 8\\n\";\n    probar(\"\");\n    std::cout << \"Caso 9\\n\";\n    probar(\" \\t\\n\");\n    std::cout << \"Caso 10\\n\";\n    probar(\"2+3\\n;\");\n    std::cout << \"Caso 11\\n\";\n    probar(\"?z;4;\");\n    std::cout << \"Caso 12\\n\";\n    probar(\"2 3+4;6;\");\n    Lector_tokens con_frontera{\"x;\"};\n    std::cout << \"Con frontera: \" << con_frontera.descartar_operacion() << \"\\n\";\n    Lector_tokens sin_frontera{\"x\"};\n    std::cout << \"Sin frontera: \" << sin_frontera.descartar_operacion() << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nError: Se esperaba una unidad\nResultado: 14\nCaso 2\nError: Divisor cero\nResultado: 5\nCaso 3\nError: Numero fuera de dominio\nResultado: 6\nCaso 4\nError: Se esperaba )\nResultado: 4\nCaso 5\nError: Se esperaba una unidad\nResultado: 5\nCaso 6\nError: Se esperaba ;\nCaso 7\nResultado: 5\nError: Caracter no admitido\nResultado: 4\nCaso 8\nCaso 9\nCaso 10\nResultado: 5\nCaso 11\nError: Caracter no admitido\nResultado: 4\nCaso 12\nError: Se esperaba ;\nResultado: 6\nCon frontera: 1\nSin frontera: 0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "En 2 3+4;6;, el número 3 queda reservado cuando se esperaba ;. La recuperación abandona esa reserva y los caracteres +4;, por lo que sólo 6; produce un resultado. Descartar x; encuentra su terminador y devuelve verdadero; descartar x llega al final sin encontrarlo y devuelve falso.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Caso 1\nError: Se esperaba una unidad\nResultado: 14\nCaso 2\nError: Divisor cero\nResultado: 5\nCaso 3\nError: Numero fuera de dominio\nResultado: 6\nCaso 4\nError: Se esperaba )\nResultado: 4\nCaso 5\nError: Se esperaba una unidad\nResultado: 5\nCaso 6\nError: Se esperaba ;\nCaso 7\nResultado: 5\nError: Caracter no admitido\nResultado: 4\nCaso 8\nCaso 9\nCaso 10\nResultado: 5\nCaso 11\nError: Caracter no admitido\nResultado: 4\nCaso 12\nError: Se esperaba ;\nResultado: 4\nResultado: 6\nCon frontera: 1\nSin frontera: 0\n"
+                    ],
+                    "text": "El token reservado de clase numérica no es un terminador. Abandonarlo y anunciar inmediatamente una frontera deja los caracteres +4; disponibles para otra interpretación, aunque pertenecen a la operación rechazada. Después de vaciar esa reserva, continúa el descarte hasta su punto y coma."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nError: Se esperaba una unidad\nResultado: 14\nCaso 2\nError: Divisor cero\nResultado: 5\nCaso 3\nError: Numero fuera de dominio\nResultado: 6\nCaso 4\nError: Se esperaba )\nResultado: 4\nCaso 5\nError: Se esperaba una unidad\nResultado: 5\nCaso 6\nError: Se esperaba ;\nCaso 7\nResultado: 5\nError: Caracter no admitido\nResultado: 4\nCaso 8\nCaso 9\nCaso 10\nResultado: 5\nCaso 11\nError: Caracter no admitido\nResultado: 4\nCaso 12\nError: Se esperaba ;\nResultado: 6\nCon frontera: 1\nSin frontera: 1\n"
+                    ],
+                    "text": "La llamada sobre x llega al final sin consumir ningún punto y coma. Debe devolver falso, aunque la siguiente lectura del ciclo también terminaría normalmente. Revisa el resultado devuelto al acabar el recorrido de caracteres sin encontrar la frontera."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
           "type": "paragraph",
           "text": "La captura debe abarcar el reconocimiento inicial y la operación. La recuperación consume el ; reservado, descarta caracteres inválidos hasta la frontera o termina cuando no queda otra. Conservar indefinidamente el mismo token sin terminar ni avanzar incumpliría el progreso."
         }
@@ -153,6 +202,14 @@
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar reserva, frontera y fin del texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "La expresión de 2 3+4;6; obtiene 2 y devuelve el token numérico de 3 al lector, porque no es un operador de ese nivel. leer_operacion encuentra ese mismo token donde exige ;, lo reserva y rechaza la operación. El descarte debe abandonar 3 y consumir también la secuencia +4; antes de dejar disponible 6;, cuyo resultado es 6. Tratar cualquier reserva como una frontera produciría indebidamente un resultado de +4;.\n\nLos dos lectores adicionales terminan sin más caracteres disponibles, pero llegan allí de distinta manera. Al descartar x; se consume un punto y coma y se devuelve true: la línea es Con frontera: 1. Al descartar x no se encuentra ese terminador y se devuelve false: la línea es Sin frontera: 0.\n\nLa batería anterior sólo necesitaba continuar o terminar el ciclo. Una devolución incorrecta de verdadero al final podía quedar oculta porque la siguiente lectura encontraba el token final y terminaba de todos modos. Observar directamente el booleano comprueba ese contrato. La función de descarte de la referencia siguiente distingue la clase de la reserva y las dos salidas del recorrido de caracteres."
+        },
         {
           "type": "heading",
           "text": "Referencia posterior de la recuperación y del ciclo exterior"
@@ -208,7 +265,7 @@
           "answers": [
             "Error: Se esperaba una unidad\nResultado: 4\nResultado: 12"
           ],
-          "explanation": "El punto y coma de 3+; se conserva y consume al recuperar. 9/2 produce 4 por división entera; la última agrupación entrega 3 y se multiplica por 4.",
+          "explanation": "En 3+;, falta la unidad derecha de la suma. El token ; queda reservado y la captura presenta Error: Se esperaba una unidad. La recuperación consume esa reserva; no descarta ninguna parte de 9/2;.\n\nLa operación siguiente calcula la división entera 9 / 2 = 4, valida su terminador y presenta Resultado: 4. La última resuelve primero 2 + 1 = 3 dentro de la agrupación y después 4 * 3 = 12, por lo que presenta Resultado: 12. El orden de las tres líneas conserva el orden de los intentos.",
           "reviewFeedback": "Separa el descarte de la operación incompleta de las operaciones posteriores. Después aplica las reglas de división entera y agrupación en el orden de la entrada."
         },
         {
@@ -219,7 +276,7 @@
           "answers": [
             "Error: Caracter no admitido\nResultado: 4"
           ],
-          "explanation": "El lector consume ? y lanza una excepción. La recuperación descarta +9; como resto de la operación incorrecta; la siguiente operación produce 4.",
+          "explanation": "El lector reconoce 2, pero al solicitar el token siguiente consume ? y lanza Caracter no admitido. La primera operación aún no tiene un terminador aceptado, así que no se presenta ese 2 como resultado.\n\nLa recuperación descarta los caracteres +9; que quedaban en la operación rechazada. El ciclo puede entonces analizar 5-1;, calcular 5 - 1 = 4 y presentar Resultado: 4 después del diagnóstico.",
           "reviewFeedback": "Sigue el carácter ya consumido al fallar, qué parte de esa operación queda por descartar y dónde comienza la operación posterior."
         }
       ]
@@ -239,7 +296,7 @@
             "Crear un token numérico 0 para que siempre exista un resultado."
           ],
           "correctIndex": 1,
-          "explanation": "El método no sabe reparar un origen grave. Lo comunica y el ciclo termina, en vez de fingir una recuperación o producir un dato inventado.",
+          "explanation": "Con bad() activo, descartar_operacion lanza Flujo irrecuperable antes de modificar la reserva o intentar consumir caracteres. La captura interior del ciclo presenta Recuperacion detenida: Flujo irrecuperable y termina ese recorrido.\n\nBorrar un indicador no demostraría que la causa del fallo desapareció. Tampoco hay una lectura que permita inventar un resultado numérico: comunicar el fallo evita presentar datos que el origen no proporcionó.",
           "reviewFeedback": [
             "Cambiar un indicador de estado no demuestra que la causa del fallo haya desaparecido. Revisa qué garantiza el método antes de continuar.",
             "Distingue abandonar este recorrido de seguir analizando datos sobre un flujo que ya señala un fallo grave.",
@@ -498,12 +555,18 @@
           "block_0004_0002",
           "block_0004_0003",
           "block_0004_0004",
+          "u11_reserva_no_frontera_y_fin_sin_delimitador_titulo",
+          "u11_reserva_no_frontera_y_fin_sin_delimitador_consigna",
+          "u11_reserva_no_frontera_y_fin_sin_delimitador_salida",
+          "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
           "block_0004_0005"
         ]
       },
       {
         "id": "page_0003",
         "blocks": [
+          "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_titulo",
+          "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_razonamiento",
           "block_0003_0000",
           "block_0001_0002",
           "block_0003_0002",
@@ -1101,7 +1164,62 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_reserva_no_frontera_y_fin_sin_delimitador_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_reserva_no_frontera_y_fin_sin_delimitador_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_reserva_no_frontera_y_fin_sin_delimitador_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
+        "sha256": "93ae68f0ef0962b35d8e65c4c5b36f795344c8945e878c6c2d9067e012a0cb3b",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0003",
@@ -1252,6 +1370,31 @@
         "id": "block_0004_0001",
         "beforeSha256": "57fb726cbf2b25e1e51d8cdcfdd5d3c14f69003d7b77a4efe3841f56760b2c0a",
         "afterSha256": "e80c6aad3e39fce6c9391298763cfcae65dc0b449fe7e3f8f1677d8ff7d406cb"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "9a7e4f3f22589cc6db9cba54daf40c9c134e94a1c207871decf319ad2e0197b8",
+        "afterSha256": "73dc8b3dd4ae46c438b72abb4561cfe78021df320bf96ce02c147425b2db2c4c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "b3bd309fb033c2fc3d6b688dd8f8dc9941fa919fa533ca679e428dd937e591b0",
+        "afterSha256": "d3a45c2fb4bf8a17ac815781375051d4115f1df6a7098b93e086dd54e0db2b3c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "39f91ed2f760d33f5d57ba419633c0fcced3c49eaceb499952323a38180d37ae",
+        "afterSha256": "8145991f28a5e1dfa4b796257f8817e177ea9c38155e6f8a5791d899d5f4b051"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "874ca9f94a235149ee8e93866c35cf7daed4aba3d0ad97adce4fcccfd1bce4a6",
+        "afterSha256": "9eea43f29f69bdd14159bf271fa56ec91a2bd566ae9a64653d7686466937d65c"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "571e7f17ffd3bf84f8a15c500503af9cfeceed04f8e6a23738c9ed2856a4f1ba",
+        "afterSha256": "be4010a1be18989e5ae97f9e0656d6805095d78e96567bbf7619d3c3ad305214"
       }
     ],
     "compilerRevisions": [
@@ -1327,7 +1470,7 @@
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0004_0004",
+      "activity": "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
       "blocks": [
         "block_0004_0005",
         "block_0003_0000",
@@ -1339,7 +1482,9 @@
         "block_0005_0002",
         "block_0005_0003",
         "block_0008_0000",
-        "block_0008_0001"
+        "block_0008_0001",
+        "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_titulo",
+        "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_razonamiento"
       ]
     }
   ],
@@ -1347,11 +1492,19 @@
     {
       "activity": "block_0006_0001",
       "requires": [
-        "block_0004_0004"
+        "block_0004_0004",
+        "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion"
       ]
     },
     {
       "activity": "block_0006_0002",
+      "requires": [
+        "block_0004_0004",
+        "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion"
+      ]
+    },
+    {
+      "activity": "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
       "requires": [
         "block_0004_0004"
       ]
@@ -1528,7 +1681,8 @@
             "start": 75,
             "end": 79,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 161,
@@ -1546,7 +1700,8 @@
             "start": 225,
             "end": 230,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 510,
@@ -1610,7 +1765,8 @@
             "start": 14,
             "end": 18,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 24,
@@ -1622,7 +1778,8 @@
             "start": 155,
             "end": 159,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 218,
@@ -1635,7 +1792,8 @@
             "start": 307,
             "end": 312,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1669,8 +1827,44 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "bb78434647b2d5af49e7a1c7fcbbd1016380f65a672622f2fe7356dab848118e",
-        "spans": []
+        "sourceSha256": "106f6c7b1d473ee04af3a632f4a9cfad6f5c2f0ca5e8f6d298ac145109df6ef2",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 69,
+            "end": 88,
+            "text": "descartar_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 155,
+            "text": "9;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 287,
+            "end": 289,
+            "text": "9;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1702,7 +1896,8 @@
             "start": 9,
             "end": 14,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1715,14 +1910,15 @@
             "start": 30,
             "end": 34,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 54,
             "end": 56,
             "text": "9;",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2049,13 +2245,62 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "a7c25e9774f1c22f5bafd0746c0b24e27d1d4c29e099e0f64a5f13423d32c84c",
+        "sourceSha256": "a727a0c4adf8758f869cefeb81b0352dfb3753fafab50af57a44ad2b94404f64",
         "spans": [
           {
-            "start": 76,
-            "end": 80,
-            "text": "7*2;",
+            "start": 19,
+            "end": 20,
+            "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 116,
+            "end": 138,
+            "text": "Se esperaba una unidad",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 323,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 343,
+            "text": "7 * 2 = 14",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 354,
+            "end": 367,
+            "text": "Resultado: 14",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2255,39 +2500,68 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "998a1ad2182df7e5c25a1c02ce35450a71e3a7e3d6c04da0a053755ad3f79361",
+        "sourceSha256": "cbf0bd86f70beb71c8036e1ad808c8268eb19674374a2fa9f4be70ae18b9e763",
         "spans": [
           {
-            "start": 19,
-            "end": 22,
+            "start": 3,
+            "end": 6,
             "text": "3+;",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 59,
-            "end": 62,
-            "text": "9/2",
-            "role": "math"
+            "start": 53,
+            "end": 54,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 71,
-            "end": 72,
-            "text": "4",
+            "start": 93,
+            "end": 122,
+            "text": "Error: Se esperaba una unidad",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 124,
-            "text": "3",
+            "start": 190,
+            "end": 194,
+            "text": "9/2;",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 247,
+            "end": 256,
+            "text": "9 / 2 = 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 302,
+            "text": "Resultado: 4",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 145,
-            "end": 146,
-            "text": "4",
+            "start": 331,
+            "end": 340,
+            "text": "2 + 1 = 3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 375,
+            "end": 385,
+            "text": "4 * 3 = 12",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 407,
+            "end": 420,
+            "text": "Resultado: 12",
             "role": "output",
             "reading": "natural"
           }
@@ -2308,26 +2582,61 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "a9b2baed596a3e465940d3b425f065c17eed32115e2c4632b4d03e0ab56a2f90",
+        "sourceSha256": "0bb7fb79170a300e2b9c8a1a1879dfe7650efeff581ca1b45f68f29dee6c0f77",
         "spans": [
           {
-            "start": 18,
-            "end": 19,
+            "start": 19,
+            "end": 20,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 68,
             "text": "?",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 68,
-            "end": 71,
-            "text": "+9;",
+            "start": 77,
+            "end": 97,
+            "text": "Caracter no admitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 142,
-            "end": 143,
-            "text": "4",
+            "start": 243,
+            "end": 246,
+            "text": "+9;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 320,
+            "end": 324,
+            "text": "5-1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 335,
+            "end": 344,
+            "text": "5 - 1 = 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 357,
+            "end": 369,
+            "text": "Resultado: 4",
             "role": "output",
             "reading": "natural"
           }
@@ -2367,8 +2676,37 @@
       {
         "block": "block_0007_0001",
         "path": "/explanation",
-        "sourceSha256": "4364f09771e09a2e0317d8ea5983b45725453ea044e0417ef5f8b31342d78775",
-        "spans": []
+        "sourceSha256": "b23d61dba7f91809631465c5b9e97536631dd6f1c3631e6bc396a96879e4f3c4",
+        "spans": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 37,
+            "text": "descartar_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 63,
+            "text": "Flujo irrecuperable",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 207,
+            "text": "Recuperacion detenida: Flujo irrecuperable",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0001",
@@ -2425,6 +2763,312 @@
         "path": "/text",
         "sourceSha256": "44da93e20936cac6632ae9b50e6c08b762abf581338640347568dd28bf5137e3",
         "spans": []
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_titulo",
+        "path": "/text",
+        "sourceSha256": "2b4d513fbc38fb95bf3eb50082dba7c668fbd31dce93ba36c22ff0bae28c09ad",
+        "spans": []
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_consigna",
+        "path": "/text",
+        "sourceSha256": "44c67e95aa353de35d05283efd0451d0fee0f2db8f83e8e47477cf01ed6ec6d3",
+        "spans": [
+          {
+            "start": 41,
+            "end": 47,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 142,
+            "text": "\"2 3+4;6;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 334,
+            "text": "descartar_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 349,
+            "end": 353,
+            "text": "\"x;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 367,
+            "text": "\"x\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 511,
+            "end": 524,
+            "text": "Con frontera:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 540,
+            "text": "Sin frontera:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 549,
+            "end": 550,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 569,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_salida",
+        "path": "/text",
+        "sourceSha256": "f60d1e5cd277819fe21a505e97d82a9fbcaf05ccc311597d2aa3e762aa949e10",
+        "spans": [
+          {
+            "start": 33,
+            "end": 512,
+            "text": "Caso 1\nError: Se esperaba una unidad\nResultado: 14\nCaso 2\nError: Divisor cero\nResultado: 5\nCaso 3\nError: Numero fuera de dominio\nResultado: 6\nCaso 4\nError: Se esperaba )\nResultado: 4\nCaso 5\nError: Se esperaba una unidad\nResultado: 5\nCaso 6\nError: Se esperaba ;\nCaso 7\nResultado: 5\nError: Caracter no admitido\nResultado: 4\nCaso 8\nCaso 9\nCaso 10\nResultado: 5\nCaso 11\nError: Caracter no admitido\nResultado: 4\nCaso 12\nError: Se esperaba ;\nResultado: 6\nCon frontera: 1\nSin frontera: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "b69662ce3deca6500f35254dde81e64f2957e1ff594e1522d0f22362797578c4",
+        "spans": [
+          {
+            "start": 129,
+            "end": 132,
+            "text": "+4;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "7f641723626dfaeef92affa75bc385b14f9ef08eea23d0664e162afddea85220",
+        "spans": [
+          {
+            "start": 17,
+            "end": 18,
+            "text": "x",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "15b99d0e06eb5be9b51515262a32bce657c87cce287e2f2ca7a3840b9f74c250",
+        "spans": [
+          {
+            "start": 3,
+            "end": 11,
+            "text": "2 3+4;6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 23,
+            "end": 24,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 117,
+            "end": 120,
+            "text": "+4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 173,
+            "end": 175,
+            "text": "x;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 232,
+            "end": 233,
+            "text": "x",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "8f97b927cbc9dcba083f9f72690ce80cc0aa2f27f99ba739e8baae3003528b9a",
+        "spans": []
+      },
+      {
+        "block": "u11_reserva_no_frontera_y_fin_sin_delimitador_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "9420d0a689235e60258b7a22f403141e960c66e30ce4924df515a5377134637d",
+        "spans": [
+          {
+            "start": 16,
+            "end": 24,
+            "text": "2 3+4;6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 133,
+            "text": "leer_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 274,
+            "text": "+4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 301,
+            "end": 303,
+            "text": "6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 323,
+            "end": 324,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 413,
+            "text": "+4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 536,
+            "end": 538,
+            "text": "x;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 580,
+            "end": 584,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 598,
+            "end": 613,
+            "text": "Con frontera: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 628,
+            "end": 629,
+            "text": "x",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 675,
+            "end": 680,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 694,
+            "end": 709,
+            "text": "Sin frontera: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

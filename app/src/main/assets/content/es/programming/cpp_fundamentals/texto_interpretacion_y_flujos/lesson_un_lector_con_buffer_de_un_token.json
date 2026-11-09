@@ -125,7 +125,7 @@
           "answers": [
             "Primero: 8\nPendiente: 1\nRepetido: /\nPendiente: 0\nSiguiente: 4"
           ],
-          "explanation": "El signo / se leyó de los caracteres y luego se reservó. La lectura siguiente devuelve esa copia y vacía el búfer; la posterior continúa el flujo para obtener 4.",
+          "explanation": "La primera lectura obtiene 8 y permite escribir Primero: 8. La segunda obtiene el signo / desde el texto; al devolverlo, la reserva queda llena y se muestra Pendiente: 1. Los caracteres aún no consumidos empiezan en 4;.\n\nLa lectura siguiente entrega el signo guardado, por eso se escribe Repetido: /. También vacía la reserva, y la consulta muestra Pendiente: 0. Sólo la lectura posterior vuelve al flujo de caracteres y obtiene 4, produciendo Siguiente: 4. No se ha retrocedido ni saltado ningún carácter.",
           "reviewFeedback": "Sigue por separado el flujo de caracteres y la marca de la reserva. Después de una devolución, comprueba de dónde obtiene la unidad cada llamada a leer y cuándo cambia la marca."
         },
         {
@@ -137,7 +137,7 @@
             "Se vuelve al comienzo del texto para conservar el orden."
           ],
           "correctIndex": 1,
-          "explanation": "La devolución es lógica: se almacena una copia del token. No se modifica la posición del lector de caracteres.",
+          "explanation": "En la traza anterior, el signo / ya salió del flujo y los caracteres pendientes empiezan en 4;. devolver copia ese token a guardado_ y activa lleno_; ninguna de esas asignaciones modifica entrada_. Por eso la siguiente llamada a leer() entrega la reserva mientras el flujo sigue ante 4. La llamada posterior, con la reserva vacía, puede obtener ese número.",
           "reviewFeedback": [
             "Distingue guardar un Token de cambiar la posición del flujo de caracteres. Localiza qué instrucciones ejecuta realmente devolver.",
             "Sigue qué objeto conserva la unidad y qué lectura se atiende sin pedir otro carácter.",
@@ -180,7 +180,7 @@
             "Rechazarlo sin llenar el búfer, porque no está en 0..9."
           ],
           "correctIndex": 2,
-          "explanation": "La representación numérica de esta versión admite un dígito por token. La validación ocurre antes de cambiar guardado_ o lleno_.",
+          "explanation": "La categoría 'n' exige un valor entre 0 y 9. El valor 14 supera ese máximo, aunque quepa en el miembro de tipo int. Con la reserva vacía, devolver alcanza la validación del token y lanza Token invalido antes de asignar guardado_ o activar lleno_. La reserva continúa vacía y la próxima lectura parte del mismo lugar del texto; no se han creado dos tokens ni consumido caracteres.",
           "reviewFeedback": [
             "Que un valor quepa en int no implica que pertenezca al dominio de la categoría numérica de esta versión. Comprueba las condiciones de token_valido.",
             "El argumento es un Token con un valor numérico, no el texto que escribe ese número. Distingue validar esa unidad de volver a leer sus dígitos.",
@@ -227,7 +227,7 @@
             "El token de final, porque cualquier rechazo vacía el búfer."
           ],
           "correctIndex": 1,
-          "explanation": "La capacidad de una unidad se comprueba antes de sustituir guardado_. El error no publica la segunda propuesta ni borra la primera.",
+          "explanation": "Al intentar devolver -, la marca lleno_ ya indica que está reservado +. La primera comprobación lanza Buffer ocupado antes de copiar el nuevo argumento. guardado_ sigue conteniendo el signo más y la marca sigue activa. La siguiente llamada a leer() entrega esa copia de + y vacía entonces la reserva; el rechazo no la había sustituido ni borrado.",
           "reviewFeedback": [
             "El último argumento recibido es una propuesta que puede rechazarse. Sigue si ese rechazo autoriza sustituir la unidad que ya estaba guardada.",
             "Comprueba qué estado debe conservarse cuando se rechaza una segunda reserva.",
@@ -323,7 +323,7 @@
           "answers": [
             "1\nf 0\nf"
           ],
-          "explanation": "El final es un token coherente que se puede reservar. Leerlo vacía el búfer; pedir después otra unidad al texto agotado vuelve a indicar final. El cliente decide detenerse al recibirlo.",
+          "explanation": "El texto está vacío, así que la primera lectura devuelve el token Token{'f', 0}. La devolución lo guarda y la primera consulta imprime 1. Después, leer() entrega esa copia y desactiva la marca, por lo que se imprime f 0.\n\nLa última lectura encuentra la reserva vacía y vuelve a consultar el origen, que continúa agotado. Obtiene otra vez la categoría final y se imprime f. Reservar y recuperar el token no añadió caracteres al texto; el cliente es quien debe detenerse cuando ese final complete su tarea.",
           "reviewFeedback": "Distingue reservar una unidad de insertar caracteres. Sigue la marca después de entregar la copia y revisa qué puede devolver el lector cuando el texto ya está agotado."
         },
         {
@@ -1293,6 +1293,31 @@
         "id": "block_0005_0003",
         "beforeSha256": "37c5af52d6dd0578e615477fd9433dd3203a0a74a9cf609ab7c78a56e4911c8e",
         "afterSha256": "d119a4a319110b6786bb369e35da97305648430f70a699bda0697312a4e12485"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "58d7fb015d5d55d249ab60812bbde6e1a851c2f3116458dff89ae3ff0eda6c87",
+        "afterSha256": "0a373655cd840ebf58688d6661d1de3d4f34c55aa253d05231faac3aacbce220"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "3968e338a6fbeead108302155792d045a0cd8fb850f6139ce89ae7a4ca9f4d2c",
+        "afterSha256": "5b09bab5829295fcfaaa4e0db914cb56d608fd60770e6311cd3fc8b622b1cf66"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "baea2a49a7294a25e09945718c6141e71d1e985742a12e7b40c71bb3fc2df84e",
+        "afterSha256": "d464612532733c0e8a88f95f62f29431b0f0fb4cb127a802386a4e50809478fd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "6bccaebad4a8ac300d3edbfdbc228cdda98fce4e4460573890c3098cb921ff61",
+        "afterSha256": "c661287773c39256a04a5f672df3e071a3374896709a3b7e22fb294cd4ddcc32"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "88d1b8a866853ba7d8230f78d159725e760ec303ed50f1ca17e2fcb32fd5df4b",
+        "afterSha256": "2fc3d1824bbe39b9396069b593b3bb10ca842f0a95f28585f20f2fd50a07aa95"
       }
     ]
   },
@@ -1743,20 +1768,69 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "f1ecce20deeaea1b946edadffc5e3f00b2f9598f3fc86ac5cd6efb96a51c01a0",
+        "sourceSha256": "da706a209c271c3b11e5fd30751c167859746ac4b732af4cf71f63a3fb3e758f",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 27,
+            "end": 28,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 58,
+            "text": "Primero: 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
             "text": "/",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 159,
-            "end": 160,
+            "start": 157,
+            "end": 169,
+            "text": "Pendiente: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 218,
+            "text": "4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 288,
+            "end": 299,
+            "text": "Repetido: /",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 361,
+            "text": "Pendiente: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 430,
             "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 456,
+            "text": "Siguiente: 4",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1796,8 +1870,65 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "2e296e0ad73f871d3bcee4daeb8ea577fcb9e5ddc5258f3e0ec68f6dfba73402",
-        "spans": []
+        "sourceSha256": "990a2132e7f504620b44545845e73acf2b34cbdfe022f4a21242db5dc9d87d84",
+        "spans": [
+          {
+            "start": 31,
+            "end": 32,
+            "text": "/",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 92,
+            "end": 94,
+            "text": "4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 96,
+            "end": 104,
+            "text": "devolver",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 132,
+            "text": "guardado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 148,
+            "text": "lleno_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 196,
+            "text": "entrada_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 235,
+            "text": "leer()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 285,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1916,19 +2047,70 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "04b9aabe9b687675034dc2efaa9dd25266bf17038381a997b0da36f8f98fa6c0",
+        "sourceSha256": "88f2870173370f543b3dfe0dec3055c4d8915c1b366079dd191953eddebc0748",
         "spans": [
           {
-            "start": 109,
-            "end": 118,
-            "text": "guardado_",
-            "role": "cpp"
+            "start": 13,
+            "end": 16,
+            "text": "'n'",
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 127,
+            "start": 38,
+            "end": 39,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 114,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 146,
+            "text": "devolver",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 201,
+            "text": "Token invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 228,
+            "text": "guardado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 245,
             "text": "lleno_",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2174,13 +2356,56 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "dd58e4a70562407f862ebe09dc1ab729e4f3e4473613840a9f895cd739a26073",
+        "sourceSha256": "81bb333d92357d01c1bd0c3dc63e156f8a381164df805c75f3745594a7d602ef",
         "spans": [
           {
-            "start": 59,
-            "end": 68,
+            "start": 21,
+            "end": 22,
+            "text": "-",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 33,
+            "end": 39,
+            "text": "lleno_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 102,
+            "end": 116,
+            "text": "Buffer ocupado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 162,
             "text": "guardado_",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 248,
+            "text": "leer()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -2288,8 +2513,44 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "15fa6ffe2b5484417cc3a21f0ca266ef8c675c40677423558ebd8eb46a8fb9e4",
-        "spans": []
+        "sourceSha256": "204e2780fb66349db752ff6c22b8b46929f52e8c55408bc33502e28fb2cf97f3",
+        "spans": [
+          {
+            "start": 66,
+            "end": 79,
+            "text": "Token{'f', 0}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 153,
+            "text": "leer()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 219,
+            "text": "f 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "f",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0001",

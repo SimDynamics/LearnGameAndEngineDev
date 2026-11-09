@@ -29,7 +29,7 @@
             "Entrega ( como si fuera un número con valor 0."
           ],
           "correctIndex": 0,
-          "explanation": "La regla que abre la agrupación debe validar su cierre. El nivel de expresión puede terminar al encontrar ), pero no decide por sí solo que la agrupación está completa.",
+          "explanation": "leer_unidad consume la apertura ( y solicita el cálculo interior. leer_expresion obtiene 3 y 4, calcula 3 + 4 = 7 y termina cuando encuentra ), que devuelve al lector. La llamada de leer_unidad que abrió la agrupación lee entonces ese token, comprueba que sea el cierre y lo consume.\n\nObtener el valor 7 todavía no demuestra que la agrupación esté completa. Sin esa última comprobación también podría aceptarse una apertura cuyo cierre faltara.",
           "reviewFeedback": [
             "Identifica qué llamada inició la agrupación y qué token debe comprobar al regresar de la expresión interior.",
             "Revisa por qué una apertura necesita su propio cierre; omitirlos no comprueba la estructura de la agrupación.",
@@ -70,7 +70,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye las funciones de unidad, término y expresión a partir de sus reglas. Conecta la declaración anticipada con las definiciones y conserva el lector de tokens del programa inicial.\n\nEl editor parte de la etapa de términos sin agrupación.\n\nAmplíala para admitir unidades numéricas, signos unarios `+` y `-`, y expresiones entre paréntesis.\n\nPara `\"-(4+3)*2;\"` debe producir Resultado: -14.\n\nPropaga una profundidad inicial `0` e incrementa sólo al entrar tras un signo unario o una apertura.\n\nUn nivel superior a `8` debe rechazarse como anidamiento excesivo.\n\nAgrupa las pruebas en una sola batería: define `probar(const std::string& texto)`, crea un lector nuevo por llamada y no cambies la implementación entre casos. `main` llama, en este orden, con `\"-(4+3)*2;\"`, `\"2*(3+4);\"`, `\"-9/2;\"`, `\"8/-2;\"`, `\"+5;\"`, `\"--6;\"`, `\"8/(3-3);\"`, `\"(2+3;\"`, `\"2(3+4);\"`, `\"++++++++1;\"`, `\"+++++++++1;\"`, `\"99+1;\"`, `\"-99-1;\"`, `\"100;\"`, `\"11*10/2;\"`, `\"(((((((((1)))))))));\"`.\n\nCada llamada presenta su resultado o diagnóstico en una línea terminada con salto, sin títulos ni líneas vacías.\n\nPara comparar stdout, conserva los mensajes exactos Resultado: N o Error: seguido de la causa: Anidamiento excesivo, Divisor cero, Numero fuera de dominio, Se esperaba ), Se esperaba ;.\n\nDistintos nombres de funciones y organizaciones siguen siendo válidos si conservan reglas, seguridad y estos mensajes observables.\n\nUsa Compilar, ejecutar y comprobar con toda la batería; un fallo de compilación o ejecución conserva su diagnóstico técnico sin veredicto de stdout.",
+          "text": "Construye las funciones de unidad, término y expresión a partir de sus reglas. Conecta la declaración anticipada con las definiciones y conserva el lector de tokens del programa inicial.\n\nEl editor parte de la etapa de términos sin agrupación.\n\nAmplíala para admitir unidades numéricas, signos unarios `+` y `-`, y expresiones entre paréntesis.\n\nPara `\"-(4+3)*2;\"` debe producir Resultado: -14.\n\nPropaga una profundidad inicial `0` e incrementa sólo al entrar tras un signo unario o una apertura.\n\nUn nivel superior a `8` debe rechazarse como anidamiento excesivo.\n\nAgrupa las pruebas en una sola batería: define `probar(const std::string& texto)`, crea un lector nuevo por llamada y no cambies la implementación entre casos. `main` llama, en este orden, con `\"-(4+3)*2;\"`, `\"2*(3+4);\"`, `\"-9/2;\"`, `\"8/-2;\"`, `\"+5;\"`, `\"--6;\"`, `\"8/(3-3);\"`, `\"(2+3;\"`, `\"2(3+4);\"`, `\"++++++++1;\"`, `\"+++++++++1;\"`, `\"99+1;\"`, `\"-99-1;\"`, `\"100;\"`, `\"11*10/2;\"`, `\"(((((((((1)))))))));\"`.\n\nCada llamada presenta su resultado o diagnóstico en una línea terminada con salto, sin títulos ni líneas vacías.\n\nPara comparar stdout, conserva los mensajes exactos Resultado: N o Error: seguido de la causa: Anidamiento excesivo, Divisor cero, Numero fuera de dominio, Resultado fuera de dominio, Se esperaba ), Se esperaba ;.\n\nDistintos nombres de funciones y organizaciones siguen siendo válidos si conservan reglas, seguridad y estos mensajes observables.\n\nUsa Compilar, ejecutar y comprobar con toda la batería; un fallo de compilación o ejecución conserva su diagnóstico técnico sin veredicto de stdout.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -92,7 +92,7 @@
             "Ocho ya se rechazan, porque la profundidad inicial cuenta como primer signo."
           ],
           "correctIndex": 1,
-          "explanation": "La guarda rechaza un nivel superior a ocho. Consumir el signo antes de llamar justifica el progreso; incrementar la profundidad justifica el límite.",
+          "explanation": "La primera llamada recibe profundidad 0, antes de consumir ningún signo. Cada + consumido pide otra unidad con un nivel más: tras ocho signos, la llamada que obtiene 1 recibe 8 y la guarda permite continuar. Con nueve signos se solicita profundidad 9; la guarda rechaza esa llamada antes de leer el número.\n\nLeer el número no reinicia los parámetros de las llamadas que esperan su retorno. Consumir cada signo permite avanzar por el texto, y comprobar el nivel limita cuántas de esas llamadas pueden quedar pendientes.",
           "reviewFeedback": [
             "Cada llamada conserva su parámetro mientras espera el retorno. Leer el número no reinicia los valores de las llamadas que siguen pendientes.",
             "Empieza en profundidad cero y cuenta un incremento por cada signo consumido antes de la llamada.",
@@ -114,6 +114,55 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Comprobar profundidad compartida y unidades sucesivas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tus tipos, lector, reglas y función probar antes del main de este editor. Conserva las dieciséis llamadas anteriores del cliente y las tres nuevas que ya aparecen al final. Si usaste otros nombres, adapta las llamadas conservando los textos, el orden y el formato de salida.\n\nLos nuevos textos son \"++++((((1))));\", \"+++++((((1))));\" y \"++++++++1+ ++++++++2;\". Sigue vigente el límite de ocho signos unarios y aperturas pendientes en una misma cadena de llamadas. Cuenta ambas clases dentro de ese límite y distingue el anidamiento de las unidades que se calculan una después de otra. Los espacios conservan su función de separadores.\n\nPulsa «Compilar, ejecutar y comprobar» con el cliente completo. Mantén una sola implementación para todos los casos; después de corregirla, vuelve a comprobar la batería entera. Cada llamada debe producir una línea terminada con salto.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nResultado: -14\nResultado: 14\nResultado: -4\nResultado: -4\nResultado: 5\nResultado: 6\nError: Divisor cero\nError: Se esperaba )\nError: Se esperaba ;\nResultado: 1\nError: Anidamiento excesivo\nResultado: 100\nResultado: -100\nError: Numero fuera de dominio\nError: Resultado fuera de dominio\nError: Anidamiento excesivo\nResultado: 1\nError: Anidamiento excesivo\nResultado: 3"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin otro main.\n\nint main() {\n    probar(\"-(4+3)*2;\");\n    probar(\"2*(3+4);\");\n    probar(\"-9/2;\");\n    probar(\"8/-2;\");\n    probar(\"+5;\");\n    probar(\"--6;\");\n    probar(\"8/(3-3);\");\n    probar(\"(2+3;\");\n    probar(\"2(3+4);\");\n    probar(\"++++++++1;\");\n    probar(\"+++++++++1;\");\n    probar(\"99+1;\");\n    probar(\"-99-1;\");\n    probar(\"100;\");\n    probar(\"11*10/2;\");\n    probar(\"(((((((((1)))))))));\");\n    probar(\"++++((((1))));\");\n    probar(\"+++++((((1))));\");\n    probar(\"++++++++1+ ++++++++2;\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Resultado: -14\nResultado: 14\nResultado: -4\nResultado: -4\nResultado: 5\nResultado: 6\nError: Divisor cero\nError: Se esperaba )\nError: Se esperaba ;\nResultado: 1\nError: Anidamiento excesivo\nResultado: 100\nResultado: -100\nError: Numero fuera de dominio\nError: Resultado fuera de dominio\nError: Anidamiento excesivo\nResultado: 1\nError: Anidamiento excesivo\nResultado: 3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "En la primera llamada nueva, cuatro signos y cuatro aperturas llevan a profundidad 8 y se obtiene Resultado: 1. En la segunda, cinco signos y cuatro aperturas solicitan profundidad 9 y producen Error: Anidamiento excesivo. En la tercera, la unidad izquierda y la derecha llegan cada una a 8, pero no quedan pendientes al mismo tiempo; la suma produce Resultado: 3.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Resultado: -14\nResultado: 14\nResultado: -4\nResultado: -4\nResultado: 5\nResultado: 6\nError: Divisor cero\nError: Se esperaba )\nError: Se esperaba ;\nResultado: 1\nError: Anidamiento excesivo\nResultado: 100\nResultado: -100\nError: Numero fuera de dominio\nError: Resultado fuera de dominio\nError: Anidamiento excesivo\nResultado: 1\nResultado: 1\nResultado: 3\n"
+                    ],
+                    "text": "El texto con cinco signos y cuatro aperturas reúne nueve niveles pendientes. Permitir ocho de cada clase por separado cambia el límite de esta gramática. Revisa si ambas clases contribuyen a la misma profundidad de la llamada que interpreta el número."
+                  },
+                  {
+                    "outputs": [
+                      "Resultado: -14\nResultado: 14\nResultado: -4\nResultado: -4\nResultado: 5\nResultado: 6\nError: Divisor cero\nError: Se esperaba )\nError: Se esperaba ;\nResultado: 1\nError: Anidamiento excesivo\nResultado: 100\nResultado: -100\nError: Numero fuera de dominio\nError: Resultado fuera de dominio\nError: Anidamiento excesivo\nResultado: 1\nError: Anidamiento excesivo\nError: Anidamiento excesivo\n"
+                    ],
+                    "text": "Las dos unidades de ocho signos se evalúan sucesivamente. Cuando termina la izquierda, sus llamadas ya retornaron; no deben contarse como niveles pendientes al comenzar la derecha. Revisa si acumulas todas las entradas recursivas de la operación sin recuperar el nivel exterior."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
           "type": "paragraph",
           "text": "La unidad consume la apertura o el signo antes de entrar a la llamada recursiva, y la agrupación consume su cierre al retornar. Término y expresión transmiten la misma profundidad para operadores binarios. La batería contrasta los límites y resultados; revisar estas responsabilidades sigue siendo necesario para justificar progreso y seguridad."
         }
@@ -121,6 +170,14 @@
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar la profundidad de las llamadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En ++++((((1))));, los cuatro signos quedan pendientes mientras se abren cuatro grupos. La llamada que obtiene 1 recibe profundidad 8 y puede devolverlo. Añadir un quinto signo solicita 9 antes de obtener el número; tener como máximo ocho signos y ocho grupos por separado no cumple el límite conjunto.\n\nEn ++++++++1+ ++++++++2;, primero terminan las llamadas de la unidad izquierda y se obtiene 1. La expresión exterior conserva su profundidad inicial. Después solicita la unidad derecha, que llega de nuevo a 8 y devuelve 2. Su suma es 3; el total de signos escritos no es la cantidad de llamadas pendientes.\n\nLos casos anteriores separaban los signos de los anidamientos profundos y no repetían dos unidades de profundidad máxima en una operación. Por eso permitían pasar tanto contadores separados por clase como un contador que nunca recuperaba el nivel exterior. Las funciones de la referencia siguiente transmiten la profundidad por valor: cada llamada conserva la suya al regresar de la interior. Su misma implementación sirve para el cliente ampliado."
+        },
         {
           "type": "heading",
           "text": "Referencia de las cuatro funciones"
@@ -165,7 +222,7 @@
           "answers": [
             "Resultado: 21"
           ],
-          "explanation": "La unidad agrupada obtiene 7 de su expresión interior y consume ). El término exterior utiliza esa unidad para multiplicar por 3.",
+          "explanation": "La unidad que consume ( pide resolver 2+5. La expresión interior calcula 2 + 5 = 7 y deja ) reservado. La unidad comprueba y consume ese cierre antes de entregar 7 al término exterior.\n\nEse término continúa desde * y calcula 7 * 3 = 21. Después se acepta el terminador ; y se confirma el final del texto. La línea presentada es Resultado: 21; multiplicar sólo 5 por 3 ignoraría la agrupación que ya se ha reconocido.",
           "reviewFeedback": "Sigue primero la expresión situada entre paréntesis. Devuelve su valor al término exterior antes de continuar con la multiplicación."
         },
         {
@@ -176,7 +233,7 @@
           "answers": [
             "Resultado: -1"
           ],
-          "explanation": "La unidad produce -9. La división entera entre 2 descarta hacia cero y produce -4; la suma exterior añade 3 y produce -1.",
+          "explanation": "La unidad consume el signo unario y obtiene el número 9, por lo que entrega -9. El término calcula su división entera entre 2: descarta la parte fraccionaria hacia cero y obtiene -4, no -5.\n\nAl llegar a +, termina ese término. La expresión exterior suma el siguiente término, 3, y obtiene -4 + 3 = -1. Tras aceptar ; y el final del texto, se presenta Resultado: -1.",
           "reviewFeedback": "Distingue el signo unario de la división. Conserva el cociente entero, con truncamiento hacia cero, antes de volver al nivel exterior."
         }
       ]
@@ -220,7 +277,7 @@
           "answers": [
             "Resultado: 12"
           ],
-          "explanation": "La agrupación entrega -3; el signo unario exterior produce 3; el término multiplica por 4. Cada resultado parcial está dentro del dominio.",
+          "explanation": "Dentro de los paréntesis se calcula 2 - 5 = -3. La unidad agrupada comprueba su cierre y devuelve ese -3 a la llamada que había consumido el signo unario exterior. Negar el valor completo de la agrupación produce 3.\n\nEl término exterior multiplica ese resultado por 4 y obtiene 12. Los parciales -3, 3 y 12 respetan la banda permitida; con el terminador aceptado, la consola muestra Resultado: 12.",
           "reviewFeedback": "Resuelve el interior de la agrupación, aplica el signo exterior a esa unidad y continúa con el término."
         },
         {
@@ -231,7 +288,7 @@
           "answers": [
             "Error: Se esperaba )"
           ],
-          "explanation": "La expresión interior obtiene 6 y conserva ;. La unidad agrupada esperaba ) y rechaza la estructura, conservando el token inesperado para una política posterior.",
+          "explanation": "La expresión interior calcula 2 + 4 = 6, pero encuentra ; donde ya no puede continuar con otra suma o resta. Devuelve ese token al lector. La llamada de unidad que consumió ( lo obtiene y comprueba que no es ).\n\nEsa unidad vuelve a reservar ; y lanza el error. La multiplicación exterior no llega a producir un resultado aceptado: la agrupación sigue incompleta. Por eso se presenta únicamente Error: Se esperaba ), conservando la frontera para una recuperación posterior.",
           "reviewFeedback": "Localiza la llamada que consumió la apertura y comprueba qué token encuentra cuando solicita su cierre."
         }
       ]
@@ -251,7 +308,7 @@
             "Sólo falta comprobar el cierre: devolver la apertura ya asegura que la llamada siguiente avance."
           ],
           "correctIndex": 1,
-          "explanation": "La recursión debe avanzar o reducir un problema. Un texto finito no garantiza terminación si se vuelve a preguntar por la misma unidad. Devolver la apertura la deja disponible; repetir la misma pregunta sin consumirla puede reproducir indefinidamente el mismo estado.",
+          "explanation": "La primera llamada obtiene (, pero lo devuelve al búfer antes de pedir otra expresión. Esa expresión pide un término y después una unidad; la nueva unidad vuelve a recibir la misma apertura reservada. Si repite las mismas acciones y tampoco aumenta la profundidad, reproduce el estado anterior sin avanzar hacia el contenido interior.\n\nQue el texto tenga pocos caracteres no evita esa repetición. La versión correcta consume la apertura antes de entrar en la expresión interior y solicita un nivel mayor; después comprueba el cierre al retornar.",
           "reviewFeedback": [
             "La longitud finita sólo ayuda si el recorrido avanza por el texto; comprueba qué token vuelve a recibir la siguiente llamada.",
             "Sigue el token pendiente antes de repetir la misma llamada y comprueba si cambia la entrada disponible.",
@@ -534,12 +591,18 @@
           "block_0004_0002",
           "block_0004_0003",
           "block_0004_0004",
+          "u11_profundidad_mixta_y_unidades_sucesivas_titulo",
+          "u11_profundidad_mixta_y_unidades_sucesivas_consigna",
+          "u11_profundidad_mixta_y_unidades_sucesivas_salida",
+          "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
           "block_0004_0005"
         ]
       },
       {
         "id": "page_0002",
         "blocks": [
+          "u11_profundidad_mixta_y_unidades_sucesivas_referencia_titulo",
+          "u11_profundidad_mixta_y_unidades_sucesivas_referencia_razonamiento",
           "block_0002_0000",
           "block_0001_0003",
           "block_0001_0004",
@@ -1218,7 +1281,62 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_profundidad_mixta_y_unidades_sucesivas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_profundidad_mixta_y_unidades_sucesivas_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_profundidad_mixta_y_unidades_sucesivas_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
+        "sha256": "f64a88bd201d49980c06d8b345ad1de917999ffb40679fde4a9cfc4774d432eb",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_profundidad_mixta_y_unidades_sucesivas_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u11_profundidad_mixta_y_unidades_sucesivas_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0002"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1414,6 +1532,46 @@
         "id": "block_0004_0001",
         "beforeSha256": "79affc476c499ccdb79707ba8aeb99977934999b8b8c04de71ccf00d8ec31909",
         "afterSha256": "e6c83765f46f6e83a5bd9ec8f5c8c5fb98bdae3c3d8a0787d6363aa9e9d7cc84"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "9dcaadaa7e4e6bce244901027db45e2a7a0d3cdc68c9da7fae0bd202db001650",
+        "afterSha256": "0f03f05f8f7fb51fff526ad9942a24b617e56655e2b02ff9fda68e1f273c62f9"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e6c83765f46f6e83a5bd9ec8f5c8c5fb98bdae3c3d8a0787d6363aa9e9d7cc84",
+        "afterSha256": "fb867d7895367df7292ab47fc42f228d8c21713adf003889f3c9ba222f2e7f48"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "bc14a358d030f7c518af5d075356d9a54bcf9a61b97f6d94e15bb3f447e07eb3",
+        "afterSha256": "6ad3fa9b6a90d366dfec53493d11759525023cd05bfaf4f666d41e1499ff182e"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9cea8b52a2e5afccb5ed990b74b70ccdcd281a83292ef81b774feec5b1465510",
+        "afterSha256": "678f58b46236331210bd095b276769d73c02d2a1c3a61d5e0018bea63a2d13f0"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "39f05160ce6e2ca27f9d5c3438dfb45bf574f231bd0fc07cec0caf6e403fcc1a",
+        "afterSha256": "f5132c765ade31fb2c073adafbabe1e8d275b481e1b8b4a63f188cf9c0222c47"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "a255c3d742415d860acb7bf247318425b786b2068820a5ac389a6ca71ae00593",
+        "afterSha256": "54f62a0d537f757bae6279a31326aae6eb4a7e7e8b71f25a513df7442ae05912"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "03a2f7025a488793abf8ddbc7afc9390a836e2028ec6ae361a805297223c1e7e",
+        "afterSha256": "7c383e45f6891269fa27b34017244cfc8a6dff46eaf0f75248bde05d33c24851"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "0d0202409769ffdc19e147d0ac245db08c9f10327600df0b0c1e23103cee7052",
+        "afterSha256": "41b7d23828d58567cbb7992f7ca8847b5d10d6157f7b6bc8967aa04999e22543"
       }
     ],
     "compilerRevisions": [
@@ -1449,7 +1607,7 @@
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0004_0004",
+      "activity": "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
       "blocks": [
         "block_0004_0005",
         "block_0002_0000",
@@ -1464,7 +1622,9 @@
         "block_0005_0003",
         "block_0009_0000",
         "block_0009_0001",
-        "block_0003_0002"
+        "block_0003_0002",
+        "u11_profundidad_mixta_y_unidades_sucesivas_referencia_titulo",
+        "u11_profundidad_mixta_y_unidades_sucesivas_referencia_razonamiento"
       ]
     }
   ],
@@ -1472,23 +1632,33 @@
     {
       "activity": "block_0003_0001",
       "requires": [
-        "block_0004_0004"
+        "block_0004_0004",
+        "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion"
       ]
     },
     {
       "activity": "block_0003_0003",
       "requires": [
-        "block_0004_0004"
+        "block_0004_0004",
+        "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion"
       ]
     },
     {
       "activity": "block_0006_0001",
       "requires": [
-        "block_0004_0004"
+        "block_0004_0004",
+        "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion"
       ]
     },
     {
       "activity": "block_0006_0002",
+      "requires": [
+        "block_0004_0004",
+        "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion"
+      ]
+    },
+    {
+      "activity": "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
       "requires": [
         "block_0004_0004"
       ]
@@ -1695,14 +1865,70 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "484d32246c2d0ae307dba77a9051af131209a8dac2d4a1a182236f50bd6ac124",
+        "sourceSha256": "2970fc57719e381bd2ecf19a856410dac0050247bf10d0d73ef65769541da031",
         "spans": [
           {
-            "start": 106,
-            "end": 107,
+            "start": 0,
+            "end": 11,
+            "text": "leer_unidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "(",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 66,
+            "end": 80,
+            "text": "leer_expresion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 113,
+            "text": "3 + 4 = 7",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 142,
             "text": ")",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 182,
+            "end": 193,
+            "text": "leer_unidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 303,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1930,7 +2156,7 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "1df75741c58cace8ecc00b4770e8e79ed4093b55e63586457c45b5303c73a330",
+        "sourceSha256": "8c99b5aaf5e712b9867ff0754653822848f92081ae67e10cc957d1e46ff17b25",
         "spans": [
           {
             "start": 303,
@@ -2118,14 +2344,21 @@
           },
           {
             "start": 1244,
-            "end": 1257,
+            "end": 1270,
+            "text": "Resultado fuera de dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1272,
+            "end": 1285,
             "text": "Se esperaba )",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1259,
-            "end": 1272,
+            "start": 1287,
+            "end": 1300,
             "text": "Se esperaba ;",
             "role": "output",
             "reading": "natural"
@@ -2281,8 +2514,44 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "c26037cf18c046b43c756f43f05b31c16a275e9761321f8e935f138e912e7b10",
-        "spans": []
+        "sourceSha256": "0dc5d34e2ef0ee03c5ea157c04559d6dcb435721ef35148fa4c3d9296abc3963",
+        "spans": [
+          {
+            "start": 38,
+            "end": 39,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 176,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2410,25 +2679,81 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "48b75678bbb2d3471cf82b6652d11d6386dcb39bd62795feedad94c5bcc95d44",
+        "sourceSha256": "27d23e70a458de6fbe49669c4a9951daa02f66fc60d631ad1906bf86f9c5fb9a",
         "spans": [
           {
-            "start": 27,
-            "end": 28,
-            "text": "7",
+            "start": 22,
+            "end": 23,
+            "text": "(",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 64,
-            "end": 65,
+            "start": 38,
+            "end": 41,
+            "text": "2+5",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "2 + 5 = 7",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 91,
             "text": ")",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 127,
-            "end": 128,
+            "start": 162,
+            "end": 163,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 214,
+            "text": "*",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 225,
+            "end": 235,
+            "text": "7 * 3 = 21",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 328,
+            "end": 341,
+            "text": "Resultado: 21",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 361,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 367,
             "text": "3",
             "role": "data",
             "reading": "natural"
@@ -2450,41 +2775,76 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "fafa1a993fd2c11b21908e1d95ad5bd61fd14099c5c644aa21c82c9af74e2fb3",
+        "sourceSha256": "71eb94e6e2e727dcb67e7e45f22684bfb75c8656344d6d20997eb54303920d99",
         "spans": [
           {
-            "start": 18,
-            "end": 20,
+            "start": 54,
+            "end": 55,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 78,
             "text": "-9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 47,
-            "end": 48,
+            "start": 124,
+            "end": 125,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 81,
+            "start": 179,
+            "end": 181,
             "text": "-4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 106,
-            "end": 107,
+            "start": 186,
+            "end": 188,
+            "text": "-5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 204,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 276,
+            "end": 277,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 118,
-            "end": 120,
-            "text": "-1",
+            "start": 289,
+            "end": 300,
+            "text": "-4 + 3 = -1",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 316,
+            "text": ";",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 351,
+            "end": 364,
+            "text": "Resultado: -1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2617,27 +2977,69 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "f9f80450d2b54ad2591180e8543ad43a790d4c88dce14248e25a18591ababb2f",
+        "sourceSha256": "84b9b7342bf92386b6db948b002b1808a04f7db82ccd59836f127fe89aa99ee0",
         "spans": [
           {
-            "start": 22,
-            "end": 24,
+            "start": 36,
+            "end": 46,
+            "text": "2 - 5 = -3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 104,
             "text": "-3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 59,
-            "end": 60,
+            "start": 213,
+            "end": 214,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 88,
-            "end": 89,
+            "start": 266,
+            "end": 267,
             "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 280,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 298,
+            "text": "-3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 301,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 306,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 396,
+            "text": "Resultado: 12",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2657,28 +3059,49 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "b5bc0d8fc60d8738187db9ab4a9e10e7e6f8de3fd7cdf14d7f5925164f5174ca",
+        "sourceSha256": "f7da3aeba0c9147291d07dc08ee18f8e76cea08eec74c8a8ae51a86ace03311b",
         "spans": [
           {
             "start": 30,
-            "end": 31,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
+            "end": 39,
+            "text": "2 + 4 = 6",
+            "role": "math",
+            "reading": "technical"
           },
           {
-            "start": 43,
-            "end": 44,
+            "start": 56,
+            "end": 57,
             "text": ";",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 74,
-            "end": 75,
+            "start": 173,
+            "end": 174,
+            "text": "(",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 208,
+            "end": 209,
             "text": ")",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 394,
+            "end": 414,
+            "text": "Error: Se esperaba )",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2711,8 +3134,16 @@
       {
         "block": "block_0007_0001",
         "path": "/explanation",
-        "sourceSha256": "0a7c44bcfe684de1bbcc07eb2d25cd799e04b91fd7ab33d3801b58e0ecb2448c",
-        "spans": []
+        "sourceSha256": "5b9e0ba2aa807f6c984e4be628ce7b3426e1b00fc63adacc3a495b893ab6424a",
+        "spans": [
+          {
+            "start": 27,
+            "end": 28,
+            "text": "(",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0007_0001",
@@ -2794,6 +3225,205 @@
         "path": "/text",
         "sourceSha256": "ff8f67773eed13e79865cddff18bf185b43f247061b836c598aa72141bf85866",
         "spans": []
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_titulo",
+        "path": "/text",
+        "sourceSha256": "636f753be3f34ec69a262e65f34788b1750d62f9b71cb631da81a8cdc378184b",
+        "spans": []
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_consigna",
+        "path": "/text",
+        "sourceSha256": "bf83b16f1d6c38573727c480f01fc9b5f317c1cd79918f6d9ce19b29d80b1610",
+        "spans": [
+          {
+            "start": 42,
+            "end": 48,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 63,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 320,
+            "text": "\"++++((((1))));\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 339,
+            "text": "\"+++++((((1))));\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 342,
+            "end": 365,
+            "text": "\"++++++++1+ ++++++++2;\"",
+            "role": "string",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_salida",
+        "path": "/text",
+        "sourceSha256": "8cc659a585767e383eb64112af9a5c4c557eef66990c957d5445e4b7712d5c2a",
+        "spans": [
+          {
+            "start": 33,
+            "end": 396,
+            "text": "Resultado: -14\nResultado: 14\nResultado: -4\nResultado: -4\nResultado: 5\nResultado: 6\nError: Divisor cero\nError: Se esperaba )\nError: Se esperaba ;\nResultado: 1\nError: Anidamiento excesivo\nResultado: 100\nResultado: -100\nError: Numero fuera de dominio\nError: Resultado fuera de dominio\nError: Anidamiento excesivo\nResultado: 1\nError: Anidamiento excesivo\nResultado: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "598c4f9ad336d432f5defafb4a85cf86043c002f4ee5e7a742db04232f8f238d",
+        "spans": []
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "8df85883ad593b8ff96c232698ae7445c5a7a06f5f95250645c94d868ffa3350",
+        "spans": []
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1eb1af6617d5bc2262de408219c769b07eb4b52d28914d92b5412bfc5649127c",
+        "spans": [
+          {
+            "start": 83,
+            "end": 84,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 110,
+            "text": "Resultado: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 221,
+            "text": "Error: Anidamiento excesivo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 290,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 363,
+            "text": "Resultado: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "cb7914eb91a3371e046b2cc787665b477e9307b9d8a2979eff969b18a3f7f0e0",
+        "spans": []
+      },
+      {
+        "block": "u11_profundidad_mixta_y_unidades_sucesivas_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "fb40b201d3eb02576e18b163c1b23fd6e476e4d8a007204246f587cf546fbba2",
+        "spans": [
+          {
+            "start": 3,
+            "end": 17,
+            "text": "++++((((1))));",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 187,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 328,
+            "text": "++++++++1+ ++++++++2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 396,
+            "end": 397,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 512,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 524,
+            "end": 525,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 539,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

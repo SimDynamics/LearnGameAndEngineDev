@@ -67,7 +67,7 @@
             "6+2+1;"
           ],
           "correctIndex": 2,
-          "explanation": "Cada signo + tiene un número después y la operación termina con ;. Las otras secuencias omiten un operando o un signo necesario.",
+          "explanation": "En 6+2+1;, el primer número es 6 y después aparecen dos pares completos: +2 y +1. La unidad ; termina la operación. Esa secuencia cumple la gramática inicial.\n\nEn 6+;, el signo + exige un número y encuentra el terminador. En 6 2;, aparece otro número donde debía llegar un signo de suma o el terminador. Reconocer cada token no corrige ninguno de esos dos problemas de combinación.",
           "reviewFeedback": [
             "Después del signo, comprueba qué categoría exige la regla antes de llegar al final de la operación.",
             "Compara las dos unidades numéricas consecutivas con el patrón que debe repetirse después del primer número.",
@@ -149,7 +149,7 @@
           "answers": [
             "Resultado: 22"
           ],
-          "explanation": "Se comienza con 7, se incorpora 12 y después 3. Cada par + y número actualiza el acumulado. ; se devuelve al nivel que valida el final de la operación.",
+          "explanation": "La expresión comienza con el acumulado 7. El primer par añade 12 y obtiene 19; el segundo añade 3 y obtiene 22. Ambos resultados parciales permanecen dentro del dominio.\n\nAl encontrar ;, la expresión lo reserva y devuelve 22. leer_operacion recupera ese terminador, y el cliente comprueba además que no haya otra unidad. Sólo después presenta Resultado: 22. La reserva permite que la regla exterior compruebe la unidad que detuvo el bucle.",
           "reviewFeedback": "Sigue las actualizaciones del acumulado y distingue el token que devuelve la expresión del que consume el nivel de operación."
         },
         {
@@ -161,7 +161,7 @@
             "Devolver cualquier token hace que el flujo retroceda al principio."
           ],
           "correctIndex": 0,
-          "explanation": "Una vuelta que continúa consume el signo y un número; una vuelta que conserva otra unidad termina la función. Si una función encuentra una categoría inadmisible, lanza una excepción y abandona esa regla. Así no se repite la misma decisión sobre una unidad reservada.",
+          "explanation": "En una entrada como 7+12+3;, cada vuelta que continúa consume un + y el número posterior, y actualiza el acumulado. Cuando llega ;, la función lo reserva y retorna: no inicia otra vuelta sobre esa misma unidad.\n\nSi después de + no aparece un número, leer_numero lanza una excepción y también se abandona la regla. Por tanto, las ramas consumen el par, terminan la función o propagan un rechazo. Reservar un token y volver a preguntar por él sin ninguna de esas acciones no garantizaría el progreso.",
           "reviewFeedback": [
             "Distingue la rama que actualiza el acumulado de la rama que termina la función tras reservar el token.",
             "Lee las operaciones de la reserva: una lectura puede entregar la misma unidad que se reservó. Comprueba qué otra acción garantiza el progreso del bucle.",
@@ -227,7 +227,7 @@
             "Volver a leer 20 desde el principio para cada signo."
           ],
           "correctIndex": 1,
-          "explanation": "El acumulado resume los pares ya procesados. La siguiente resta utiliza 14 y 3, conservando asociación izquierda.",
+          "explanation": "La primera resta calcula 20 - 6 = 14 y guarda 14 como acumulado. El siguiente par es -3, así que utiliza ese valor izquierdo y calcula 14 - 3 = 11. No vuelve a obtener 20 ni agrupa primero la parte derecha.\n\nCalcular antes 6 - 3 = 3 llevaría a 20 - 3 = 17, que corresponde a otra asociación. Los mismos números y signos pueden producir un resultado distinto si se cambia el orden de agrupación.",
           "reviewFeedback": [
             "Identifica qué operaciones ya resume el acumulado y cuál es el siguiente par todavía pendiente.",
             "Usa el acumulado que dejó la primera resta como valor izquierdo del siguiente paso.",
@@ -274,7 +274,7 @@
             "Un rechazo, porque dos restas requieren paréntesis."
           ],
           "correctIndex": 0,
-          "explanation": "El bucle actualiza el acumulado después de cada par. La resta binaria se aplica de izquierda a derecha y esta etapa todavía no admite paréntesis en el texto.",
+          "explanation": "El primer par transforma el acumulado 20 en 14 al restar 6. El segundo resta 3 a ese acumulado y obtiene 11. Son las actualizaciones que exige la asociación de izquierda a derecha.\n\nLa regla admite repetir pares de signo y número, de modo que dos restas no requieren paréntesis. Agrupar primero 6 - 3 daría 17 al restarlo de 20, pero cambiaría la asociación del lenguaje; esta etapa tampoco admite paréntesis en el texto de entrada.",
           "reviewFeedback": [
             "Recorre un par de signo y número cada vez y conserva el resultado como acumulado del siguiente paso.",
             "Compara agrupar toda la parte derecha con actualizar el acumulado al terminar cada par.",
@@ -366,7 +366,7 @@
           "answers": [
             "Resultado: -3"
           ],
-          "explanation": "El acumulado pasa de 3 a -5 y luego a -3. Ambos resultados parciales están dentro del dominio.",
+          "explanation": "La expresión obtiene 3 como valor inicial. El par -8 actualiza el acumulado a -5, y el par +2 lo cambia a -3. Los valores -5 y -3 están dentro de -100..100, aunque los tokens numéricos de entrada sean no negativos.\n\nLa expresión reserva ;, la operación lo consume y el cliente confirma el final del texto. Por eso presenta Resultado: -3. Confundir el dominio de los números leídos con el de los resultados rechazaría indebidamente esta operación.",
           "reviewFeedback": "Calcula cada actualización en orden, conservando el signo del acumulado antes de incorporar el par siguiente."
         },
         {
@@ -377,13 +377,69 @@
           "answers": [
             "Error: Se esperaba un numero"
           ],
-          "explanation": "Después de -, leer_numero encuentra ;. Reserva esa unidad y lanza una excepción con el diagnóstico de operando ausente. El cliente captura el rechazo y no presenta un resultado de operación válido.",
+          "explanation": "La expresión obtiene 9 y después el signo -. Para completar ese par llama a leer_numero, pero la unidad siguiente es ;, no un número. Esa función conserva el terminador en la reserva y lanza la excepción.\n\nLa llamada no devuelve un operando derecho y la resta no se ejecuta. El rechazo llega al catch del cliente, que presenta Error: Se esperaba un numero. La operación no entrega un resultado aceptado ni convierte el operando ausente en cero.",
           "reviewFeedback": "Sigue la función llamada después del signo. Comprueba qué categoría obtiene y en qué punto deja de producir un resultado aceptado."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la unidad conservada tras un rechazo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tu módulo de tokens, tus funciones de análisis y probar antes de examinar_rechazo en este editor. El cliente usa leer_operacion para reconocer una operación; si elegiste otro nombre para esa función, adapta esa llamada y conserva los datos y el formato del cliente.\n\nEl programa conserva las catorce llamadas anteriores y añade 6+; y 6 2;. Después de cada rechazo consulta tiene_pendiente(), obtiene una unidad con leer() y vuelve a consultar la reserva. Sigue vigente el contrato de las reglas: el token que no satisface el número o el terminador exigido se conserva antes de lanzar la excepción.\n\nPulsa «Compilar, ejecutar y comprobar» y contrasta el informe completo. Un diagnóstico correcto no basta si la función ha perdido la unidad que debía reservar. El cliente observa ese estado después del rechazo; no intenta recuperar ni aceptar una operación posterior. Cada informe termina con salto de línea, sin líneas vacías añadidas."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nResultado: 15\nResultado: 11\nResultado: 0\nResultado: -3\nError: Se esperaba un numero\nError: Se esperaba ;\nError: Se esperaba ;\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nError: Texto extra tras la operacion\nResultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nPendiente: 1\nConservado: ;:0\nPendiente: 0\nError: Se esperaba ;\nPendiente: 1\nConservado: n:2\nPendiente: 0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus definiciones y funciones, sin repetir main.\n\nvoid examinar_rechazo(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        const int resultado = leer_operacion(lector);\n        std::cout << \"Resultado: \" << resultado << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Conservado: \" << siguiente.clase << ':' << siguiente.valor << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n}\n\nint main() {\n    probar(\"17-6+4;\");\n    probar(\"20-6-3;\");\n    probar(\"0;\");\n    probar(\"2-5;\");\n    probar(\"4+;\");\n    probar(\"4 2;\");\n    probar(\"4+2\");\n    probar(\"99+2;\");\n    probar(\"\");\n    probar(\"2;3;\");\n    probar(\"99+1;\");\n    probar(\"0-99-1;\");\n    probar(\"99+2-2;\");\n    probar(\"0-99-2+2;\");\n    examinar_rechazo(\"6+;\");\n    examinar_rechazo(\"6 2;\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Resultado: 15\nResultado: 11\nResultado: 0\nResultado: -3\nError: Se esperaba un numero\nError: Se esperaba ;\nError: Se esperaba ;\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nError: Texto extra tras la operacion\nResultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nPendiente: 1\nConservado: ;:0\nPendiente: 0\nError: Se esperaba ;\nPendiente: 1\nConservado: n:2\nPendiente: 0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "En 6+;, la regla de número encuentra ;, lo reserva y rechaza el operando ausente. En 6 2;, la expresión conserva el segundo número y la regla de operación lo vuelve a reservar al rechazarlo como terminador. Por eso ambas consultas iniciales muestran Pendiente: 1; las lecturas entregan respectivamente Conservado: ;:0 y Conservado: n:2, y vacían la reserva.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Resultado: 15\nResultado: 11\nResultado: 0\nResultado: -3\nError: Se esperaba un numero\nError: Se esperaba ;\nError: Se esperaba ;\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nError: Texto extra tras la operacion\nResultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nPendiente: 0\nConservado: f:0\nPendiente: 0\nError: Se esperaba ;\nPendiente: 1\nConservado: n:2\nPendiente: 0\n"
+                    ],
+                    "text": "El diagnóstico de 6+; es correcto, pero la consulta encuentra la reserva vacía y la lectura posterior entrega el final. Revisa la rama en que la regla exige un número y obtiene ;: debe conservar ese token antes de lanzar la excepción. El mensaje por sí solo no acredita esa conservación."
+                  },
+                  {
+                    "outputs": [
+                      "Resultado: 15\nResultado: 11\nResultado: 0\nResultado: -3\nError: Se esperaba un numero\nError: Se esperaba ;\nError: Se esperaba ;\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nError: Texto extra tras la operacion\nResultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nPendiente: 1\nConservado: ;:0\nPendiente: 0\nError: Se esperaba ;\nPendiente: 0\nConservado: ;:0\nPendiente: 0\n"
+                    ],
+                    "text": "El diagnóstico de 6 2; es correcto, pero después se lee ; en lugar del número 2. La regla de operación consumió el token que no podía aceptar como terminador. Debe devolverlo a la reserva antes de lanzar la excepción, para conservar la posición lógica del análisis."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar el diagnóstico con el estado que deja la regla"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 6+;, la expresión ya obtuvo 6 y el signo +. La llamada que exige un número encuentra ;. Antes de lanzar Se esperaba un numero, debe reservar esa misma unidad. La consulta posterior confirma la reserva llena, y una lectura permite observar ;:0.\n\nEn 6 2;, la expresión obtiene 6 y reserva el número siguiente, porque no es un signo de suma o resta. La regla de operación recupera ese 2, comprueba que no es ; y lo vuelve a reservar antes de lanzar Se esperaba ;. No necesita otra posición de búfer: la lectura previa ya había vaciado la reserva.\n\nOmitir cualquiera de esas devoluciones dejaba intactos los catorce informes anteriores, porque cada prueba terminaba después de presentar su diagnóstico. Las dos trazas nuevas también observan el estado que deja el rechazo. Estos fragmentos de la referencia se integran con la expresión y el módulo existentes; la recuperación de varias operaciones tendrá su propia regla más adelante."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba un numero\");\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n"
+        },
         {
           "type": "heading",
           "text": "Preparar el siguiente nivel de prioridad"
@@ -441,6 +497,14 @@
         "block_0008_0000",
         "block_0008_0001"
       ]
+    },
+    {
+      "activity": "u11_tokens_conservados_al_rechazar_comprobacion",
+      "blocks": [
+        "u11_tokens_conservados_al_rechazar_referencia_titulo",
+        "u11_tokens_conservados_al_rechazar_referencia_razonamiento",
+        "u11_tokens_conservados_al_rechazar_referencia_codigo"
+      ]
     }
   ],
   "activityAfter": [
@@ -452,6 +516,12 @@
     },
     {
       "activity": "block_0006_0002",
+      "requires": [
+        "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "u11_tokens_conservados_al_rechazar_comprobacion",
       "requires": [
         "block_0004_0003"
       ]
@@ -710,12 +780,19 @@
         "blocks": [
           "block_0006_0000",
           "block_0006_0001",
-          "block_0006_0002"
+          "block_0006_0002",
+          "u11_tokens_conservados_al_rechazar_titulo",
+          "u11_tokens_conservados_al_rechazar_consigna",
+          "u11_tokens_conservados_al_rechazar_salida",
+          "u11_tokens_conservados_al_rechazar_comprobacion"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
+          "u11_tokens_conservados_al_rechazar_referencia_titulo",
+          "u11_tokens_conservados_al_rechazar_referencia_razonamiento",
+          "u11_tokens_conservados_al_rechazar_referencia_codigo",
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002"
@@ -1275,7 +1352,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_tokens_conservados_al_rechazar_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_tokens_conservados_al_rechazar_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_tokens_conservados_al_rechazar_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_tokens_conservados_al_rechazar_comprobacion",
+        "sha256": "1a9b0185e9e49d8950f83b6b52abf33e89ffe9b0dd97eb0b8206a2bb11932f17",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_tokens_conservados_al_rechazar_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_tokens_conservados_al_rechazar_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_tokens_conservados_al_rechazar_referencia_codigo",
+        "sha256": "50c6ba39b5f476dd99704841b963a5aa0b1413f1f43aeb330f97ec52c546856e",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0000",
@@ -1466,6 +1607,41 @@
         "id": "block_0001_0003",
         "beforeSha256": "d5d533a2afb239ad76f3d2a443b61bf325379f1717f33d0049c642845e94ab6b",
         "afterSha256": "9607553ae5a852e6f35e1c5cd4be701b523b1f2691d880bf0dc3cef2dfb6ff9a"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "1f626394c23ef58540c7eb4e54769e536f4ee7816dd75d03e323266bd98b0dea",
+        "afterSha256": "367033a80052ec9891346d096f2cd1c0babf3e6dffb25201c04167aea77778b1"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "676127ca0c2e847caf98cfc1e3a0415c547e436ef3cc035f0bef4b33d1bcbecd",
+        "afterSha256": "ce98c91206a3fb2034c03b5a3eea12a86f07dac55225a23702a69c0516278252"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "eb885c59de663d09e26a4c3d65fa1654812abeeaeae9a2624ff442046e811195",
+        "afterSha256": "31f6d3ef7b4c6c06e172eb3fbb45c46e078f9d4e1fa3c033dab6179dd8ff8994"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "729a8e7c2265acad2891664c54d668f26fef94fc276252b8a8726f5f18b66b79",
+        "afterSha256": "0fbe92ad6a1bee998b32035fd5e09b61004d58d81fd5e5258c67132fcbb4c9bb"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "860464a85c4bdcda34cfef3713f5261f5a8227fab63c7e3f803b27f61a180597",
+        "afterSha256": "1af3b2b54c1767214ab90fbf74558bc0e4402d1c40a6ed7f060eadfe708b8cab"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "209faf5fe282d48750cbc185d04b1127f9d87b6a4fcf9e3bb0cc7e7dc508f5df",
+        "afterSha256": "66a0694f1b8ae3ce25fda07a99d87ecb797f362f51df9782c8458556a07098f0"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "b1deb82a8a2a30c7f684e230787a538e2800bc1797f6deccfb9f4306a65cefb9",
+        "afterSha256": "c313c8fb2e261658307d5b91039e6ba54741ca62603245262701daadec5cce6f"
       }
     ],
     "compilerRevisions": [
@@ -1784,19 +1960,61 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "9ad95d972ee2640516bbacf8d568e1c70202ea5e7da6cc72a3ab27e39d0c51c0",
+        "sourceSha256": "983f82538f3802ddd898034e48a55895722a21af116b0ca5de41710a8c620eaf",
         "spans": [
           {
-            "start": 11,
-            "end": 12,
+            "start": 3,
+            "end": 9,
+            "text": "6+2+1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 31,
+            "end": 32,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 75,
+            "text": "+2",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 78,
+            "end": 80,
+            "text": "+1",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 163,
+            "end": 166,
+            "text": "6+;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 177,
+            "end": 178,
             "text": "+",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 64,
-            "end": 65,
-            "text": ";",
+            "start": 225,
+            "end": 229,
+            "text": "6 2;",
             "role": "data",
             "reading": "characters"
           }
@@ -2031,42 +2249,70 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "10a35041f9f4ff36381e2ab045d3d007021fcba7eefde288e1c8c5539a5a0d94",
+        "sourceSha256": "6b278b21cdf56cef6c2360b8c6b96442268990da8065d6d077dfc474f5fde14e",
         "spans": [
           {
-            "start": 16,
-            "end": 17,
+            "start": 39,
+            "end": 40,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 34,
+            "start": 62,
+            "end": 64,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 46,
+            "start": 75,
+            "end": 77,
+            "text": "19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 97,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 57,
-            "end": 58,
-            "text": "+",
+            "start": 108,
+            "end": 110,
+            "text": "22",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": ";",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 92,
-            "end": 93,
-            "text": ";",
-            "role": "data",
-            "reading": "characters"
+            "start": 222,
+            "end": 224,
+            "text": "22",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 240,
+            "text": "leer_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 343,
+            "end": 356,
+            "text": "Resultado: 22",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2098,8 +2344,44 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "c85463058609727aaf54b4ea6721db53136af0bf37068c86bcc0b8f7b198a2e2",
-        "spans": []
+        "sourceSha256": "52d7b2f760a54be0e68b30df177b7e52f5c2b97c6776ef8f29cc9713263689b5",
+        "spans": [
+          {
+            "start": 20,
+            "end": 27,
+            "text": "7+12+3;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 226,
+            "end": 227,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 250,
+            "end": 261,
+            "text": "leer_numero",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -2281,21 +2563,56 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "b86ee5543679cd1cbeca0442c51f8de996c859cfd48d6856941074a02fcd455f",
+        "sourceSha256": "f99f6b1758e184aa74f05b2e42ccfcad5f675890c3aa53e73273cbbb260a242c",
         "spans": [
           {
-            "start": 72,
-            "end": 74,
+            "start": 25,
+            "end": 36,
+            "text": "20 - 6 = 14",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 48,
             "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 87,
+            "text": "-3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 135,
+            "end": 146,
+            "text": "14 - 3 = 11",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 170,
+            "text": "20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 77,
-            "end": 78,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
+            "start": 223,
+            "end": 232,
+            "text": "6 - 3 = 3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 255,
+            "text": "20 - 3 = 17",
+            "role": "math",
+            "reading": "technical"
           }
         ]
       },
@@ -2576,8 +2893,65 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "97fea2db0d7f9f2aa01c06f24f9961e2e7f283c2417c4a4a96dc564106f95632",
-        "spans": []
+        "sourceSha256": "a4fa5a4fe49e43d174a4efb8ec8ff12176817f401d42826cb1519be997ed6728",
+        "spans": [
+          {
+            "start": 38,
+            "end": 40,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 107,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 300,
+            "text": "6 - 3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 309,
+            "text": "17",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 327,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2739,7 +3113,7 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "50c65fa6bd4f33cabc351bc1defd11657c77cf234ffd3a5c629306e69176ebb0",
+        "sourceSha256": "f291b67c3497a514f636b88a0f121fc1b74cf89d1f5abdbdf0049863bd228bbe",
         "spans": [
           {
             "start": 21,
@@ -2749,17 +3123,66 @@
             "reading": "natural"
           },
           {
-            "start": 25,
-            "end": 27,
+            "start": 50,
+            "end": 52,
+            "text": "-8",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 78,
+            "end": 80,
             "text": "-5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 93,
+            "text": "+2",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 106,
+            "end": 108,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "-5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 129,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 155,
+            "text": "-100..100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 40,
-            "text": "-3",
+            "start": 237,
+            "end": 238,
+            "text": ";",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 323,
+            "end": 336,
+            "text": "Resultado: -3",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2779,27 +3202,49 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "eb3bd0aea79408b2146891b3116c41678e8cf098bbd56d3328dba1ba936ebadd",
+        "sourceSha256": "983668387faf7419eafd1bdba4b7efeaccb71feda9ea1c471566ea88a39241ef",
         "spans": [
           {
-            "start": 11,
-            "end": 12,
+            "start": 21,
+            "end": 22,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 43,
             "text": "-",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 14,
-            "end": 25,
+            "start": 76,
+            "end": 87,
             "text": "leer_numero",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 37,
+            "start": 117,
+            "end": 118,
             "text": ";",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 295,
+            "end": 300,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 355,
+            "text": "Error: Se esperaba un numero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2881,6 +3326,270 @@
         "path": "/text",
         "sourceSha256": "ff8f67773eed13e79865cddff18bf185b43f247061b836c598aa72141bf85866",
         "spans": []
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_titulo",
+        "path": "/text",
+        "sourceSha256": "0bfa5885f8f7a31e2a91f95bbb98347e19b2068d1b347574fe92246b37a3b700",
+        "spans": []
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_consigna",
+        "path": "/text",
+        "sourceSha256": "a2d99d690e70c00ccfeebe578121b0fd7a39c5846d7ab9c31cb334e8528b6d73",
+        "spans": [
+          {
+            "start": 55,
+            "end": 61,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 87,
+            "text": "examinar_rechazo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 133,
+            "text": "leer_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 337,
+            "text": "6+;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 340,
+            "end": 344,
+            "text": "6 2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 379,
+            "end": 396,
+            "text": "tiene_pendiente()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 421,
+            "end": 427,
+            "text": "leer()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_salida",
+        "path": "/text",
+        "sourceSha256": "d55880de608593cc7f7ddecb316311bc8f85e55afc6bc795e572fa752acd73af",
+        "spans": [
+          {
+            "start": 33,
+            "end": 491,
+            "text": "Resultado: 15\nResultado: 11\nResultado: 0\nResultado: -3\nError: Se esperaba un numero\nError: Se esperaba ;\nError: Se esperaba ;\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nError: Texto extra tras la operacion\nResultado: 100\nResultado: -100\nError: Resultado fuera de dominio\nError: Resultado fuera de dominio\nError: Se esperaba un numero\nPendiente: 1\nConservado: ;:0\nPendiente: 0\nError: Se esperaba ;\nPendiente: 1\nConservado: n:2\nPendiente: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "086fdf6b2d889188e536ca8652879d1d6815fd43a1686ff1915741a88e2f9875",
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "6+;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "469bba8023d642fe2241269d0d5b2966e3824d7dcd0a0976541e026072502a10",
+        "spans": [
+          {
+            "start": 18,
+            "end": 22,
+            "text": "6 2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "b0fa22f10d864f595f0965aaa32a9c16c87e5068f33afbd13f4cd2a4f1423d2a",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "6+;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 85,
+            "end": 89,
+            "text": "6 2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 250,
+            "end": 262,
+            "text": "Pendiente: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 317,
+            "text": "Conservado: ;:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 335,
+            "text": "Conservado: n:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "2360a04251115696899d1ab4e99fa2771b546f0d4e8bea7a527834926f6a0b11",
+        "spans": []
+      },
+      {
+        "block": "u11_tokens_conservados_al_rechazar_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "8886f208ca8979b7196389652d8ca0ef5dde214e3fabe05d3d0b9a848804ca46",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "6+;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 31,
+            "end": 32,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 107,
+            "end": 128,
+            "text": "Se esperaba un numero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 245,
+            "text": ";:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 255,
+            "text": "6 2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 278,
+            "end": 279,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 386,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 449,
+            "end": 462,
+            "text": "Se esperaba ;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
