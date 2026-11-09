@@ -1,0 +1,45 @@
+name: Windows InspectionLog published reproduction
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/windows-inspection-publication.yml
+      - scripts/windows/Capture-InspectionPublication.ps1
+      - scripts/windows/InspectionLog.publication.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-inspection-publication-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reproduce:
+    name: Extract and reproduce the published InspectionLog ZIP
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 12
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the isolated reproduction recipe
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download, extract, build and execute the pinned publication
+        timeout-minutes: 10
+        run: |
+          $qaPowerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+          & $qaPowerShell -NoLogo -NoProfile -NonInteractive -STA -ExecutionPolicy Bypass -File .\scripts\windows\Capture-InspectionPublication.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Published InspectionLog reproduction failed with exit $LASTEXITCODE." }
+      - name: Preserve the downloaded ZIP, hashes, commands and real captures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inspection-publication-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: out/qa/inspection-publication/**
