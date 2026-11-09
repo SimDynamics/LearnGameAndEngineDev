@@ -30,6 +30,21 @@ using System.Text;
 public static class CurricularWindowCapture {
     [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string name, string title);
+    delegate bool WindowVisitor(IntPtr window, IntPtr parameter);
+    [DllImport("user32.dll")] static extern bool EnumWindows(WindowVisitor visitor, IntPtr parameter);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr window, StringBuilder title, int length);
+    public static IntPtr FindTitledWindow(string expectedTitle) {
+        IntPtr found = IntPtr.Zero;
+        EnumWindows((window, parameter) => {
+            var title = new StringBuilder(1024);
+            GetWindowText(window, title, title.Capacity);
+            // Elevated consoles prepend a localized Administrator label.
+            if (title.ToString().IndexOf(expectedTitle, StringComparison.Ordinal) < 0) return true;
+            found = window;
+            return false;
+        }, IntPtr.Zero);
+        return found;
+    }
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr window, out Rect rect);
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr window, IntPtr dc, uint flags);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
@@ -108,7 +123,7 @@ pause >nul
             if ([DateTime]::UtcNow -gt $qaLimit) { throw 'The command window did not reach its capture point.' }
             Start-Sleep -Milliseconds 100
         }
-        $qaWindow = [CurricularWindowCapture]::FindWindow($null, $qaTitle)
+        $qaWindow = [CurricularWindowCapture]::FindTitledWindow($qaTitle)
         if ($qaWindow -eq [IntPtr]::Zero) { throw 'The native command window is unavailable; no screenshot has been fabricated.' }
         Save-ActualWindow $qaWindow (Join-Path $qaOutput ($qaId + '.png'))
     }
