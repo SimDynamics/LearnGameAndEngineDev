@@ -1,0 +1,38 @@
+name: Windows curricular SDK installation
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - '.github/workflows/windows-curricular-sdk.yml'
+      - 'scripts/windows/Capture-CurricularSdk.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-curricular-sdk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  install-sdk:
+    name: Install an absent SDK and verify its explicit selection
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 22
+    steps:
+      - name: Read the SDK installation and capture recipe
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install and verify the absent SDK
+        shell: pwsh
+        run: ./scripts/windows/Capture-CurricularSdk.ps1
+      - name: Preserve real SDK screenshots and structured evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: curricular-sdk-${{ github.sha }}
+          path: out/qa/curricular-sdk/**
+          if-no-files-found: warn
+          retention-days: 14

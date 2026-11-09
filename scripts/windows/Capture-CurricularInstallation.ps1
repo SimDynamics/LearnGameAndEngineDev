@@ -360,10 +360,15 @@ echo %ERRORLEVEL%
     $qaEvidence.completedAtUtc = [DateTime]::UtcNow.ToString('o')
     Save-Evidence
 } finally {
-    # Installation diagnostics remain local to this isolated runner and the QA artifact.
-    Get-ChildItem -LiteralPath $env:TEMP -Filter 'dd_bootstrapper*.log' -File -ErrorAction SilentlyContinue |
-        Copy-Item -Destination $qaOutput -ErrorAction SilentlyContinue
-    Get-ChildItem -LiteralPath $env:TEMP -Filter 'dd_installer*.log' -File -ErrorAction SilentlyContinue |
-        Copy-Item -Destination $qaOutput -ErrorAction SilentlyContinue
+    # VS installer diagnostics can dump the process environment, including
+    # unrelated runner service passwords. Preserve useful diagnostics without
+    # copying any environment values into a downloadable artifact.
+    foreach ($qaPattern in @('dd_bootstrapper*.log', 'dd_installer*.log')) {
+        foreach ($qaLog in (Get-ChildItem -LiteralPath $env:TEMP -Filter $qaPattern -File -ErrorAction SilentlyContinue)) {
+            Get-Content -LiteralPath $qaLog.FullName -ErrorAction SilentlyContinue |
+                Where-Object { $_ -notmatch 'Environment variable:' } |
+                Set-Content -LiteralPath (Join-Path $qaOutput $qaLog.Name) -Encoding utf8
+        }
+    }
     Save-Evidence
 }
