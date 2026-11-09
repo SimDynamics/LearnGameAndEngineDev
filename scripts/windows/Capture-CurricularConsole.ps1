@@ -24,7 +24,9 @@ if (-not (Test-Path -LiteralPath $qaDeveloper)) { throw 'The installation has no
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 public static class CurricularWindowCapture {
     [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string name, string title);
@@ -33,6 +35,27 @@ public static class CurricularWindowCapture {
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr window, int x, int y, int width, int height, bool repaint);
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] struct StartupInfo {
+        public int cb; public string reserved, desktop, title;
+        public int x, y, width, height, charsX, charsY, fill, flags;
+        public short show, reservedCount; public IntPtr reservedBytes, input, output, error;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct ProcessInfo { public IntPtr process, thread; public int processId, threadId; }
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern bool CreateProcess(string application, StringBuilder command, IntPtr processAttributes,
+        IntPtr threadAttributes, bool inheritHandles, uint flags, IntPtr environment, string directory,
+        ref StartupInfo startup, out ProcessInfo process);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
+    public static Process StartConsole(string executable, string batch, string directory, string title) {
+        var startup = new StartupInfo { cb = Marshal.SizeOf(typeof(StartupInfo)), title = title, flags = 1, show = 1 };
+        ProcessInfo info;
+        // CREATE_NEW_CONSOLE prevents inheriting the runner's redirected/pseudo console.
+        if (!CreateProcess(executable, new StringBuilder("\"" + executable + "\" /d /c \"" + batch + "\""),
+            IntPtr.Zero, IntPtr.Zero, false, 0x10, IntPtr.Zero, directory, ref startup, out info))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        try { return Process.GetProcessById(info.processId); }
+        finally { CloseHandle(info.thread); CloseHandle(info.process); }
+    }
 }
 '@
 
@@ -77,7 +100,7 @@ $qaBody
 pause >nul
 "@ | Set-Content -LiteralPath $qaBatch -Encoding ascii
     Copy-Item -LiteralPath $qaBatch -Destination $qaOutput
-    $qaProcess = Start-Process -FilePath $env:ComSpec -ArgumentList '/d', '/c', ('"' + $qaBatch + '"') -PassThru
+    $qaProcess = [CurricularWindowCapture]::StartConsole($env:ComSpec, $qaBatch, $qaWorking, $qaTitle)
     try {
         $qaLimit = [DateTime]::UtcNow.AddSeconds(30)
         while (-not (Test-Path -LiteralPath $qaReady)) {
